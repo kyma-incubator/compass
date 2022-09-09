@@ -59,6 +59,7 @@ type ApplicationRepository interface {
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
@@ -204,6 +205,20 @@ func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (
 	}
 
 	return s.appRepo.ListGlobal(ctx, pageSize, cursor)
+}
+
+// ListAllByApplicationTemplateID lists all applications which have the given app template id
+func (s *service) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
+	apps, err := s.appRepo.ListAllByApplicationTemplateID(ctx, applicationTemplateID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting applications for app template with id %q", applicationTemplateID)
+	}
+
+	if len(apps) == 0 {
+		return []*model.Application{}, nil
+	}
+
+	return apps, nil
 }
 
 // ListByRuntimeID missing godoc

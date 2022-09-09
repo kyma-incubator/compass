@@ -39,22 +39,22 @@ func (_m *ApplicationService) GetForUpdate(ctx context.Context, id string) (*mod
 	return r0, r1
 }
 
-// ListGlobal provides a mock function with given fields: ctx, pageSize, cursor
-func (_m *ApplicationService) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
-	ret := _m.Called(ctx, pageSize, cursor)
+// ListAllByApplicationTemplateID provides a mock function with given fields: ctx, applicationTemplateID
+func (_m *ApplicationService) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
+	ret := _m.Called(ctx, applicationTemplateID)
 
-	var r0 *model.ApplicationPage
-	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.ApplicationPage); ok {
-		r0 = rf(ctx, pageSize, cursor)
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Application); ok {
+		r0 = rf(ctx, applicationTemplateID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ApplicationPage)
+			r0 = ret.Get(0).([]*model.Application)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
-		r1 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, applicationTemplateID)
 	} else {
 		r1 = ret.Error(1)
 	}
