@@ -123,7 +123,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2614"
+      version: "PR-2598"
       name: compass-director
     hydrator:
       dir:
@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2612"
+      version: "PR-2598"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -699,7 +699,7 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
-    maxParallelApplicationProcessors: 4
+    maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     containerName: "ord-aggregator"
   systemFetcher:

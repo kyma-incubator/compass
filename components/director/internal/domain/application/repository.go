@@ -42,6 +42,7 @@ type pgRepository struct {
 	globalGetter          repo.SingleGetterGlobal
 	globalDeleter         repo.DeleterGlobal
 	lister                repo.Lister
+	listerGlobal          repo.ListerGlobal
 	deleter               repo.Deleter
 	pageableQuerier       repo.PageableQuerier
 	globalPageableQuerier repo.PageableQuerierGlobal
@@ -62,6 +63,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
 		deleter:               repo.NewDeleter(applicationTable),
 		lister:                repo.NewLister(applicationTable, applicationColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.Application, applicationTable, applicationColumns),
 		pageableQuerier:       repo.NewPageableQuerier(applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(applicationTable, applicationColumns),
@@ -233,6 +235,27 @@ func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filte
 	}
 
 	return r.multipleFromEntities(entities)
+}
+
+// ListAllByApplicationTemplateID retrieves all applications which have the given app template id
+func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
+	var appsCollection EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("app_template_id", applicationTemplateID),
+	}
+	if err := r.listerGlobal.ListGlobal(ctx, &appsCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(appsCollection))
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+
+	return items, nil
 }
 
 // List missing godoc
