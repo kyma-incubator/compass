@@ -3,8 +3,11 @@ package destinationfetchersvc_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -55,6 +58,7 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 		BundleRepo          func() *automock.BundleRepo
 		UUIDService         func() *automock.UUIDService
 		ExpectedErrorOutput string
+		DestServiceHandler  func(w http.ResponseWriter, r *http.Request)
 	}{
 		{
 			Name: "Sync tenant destinations",
@@ -64,6 +68,16 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
 			BundleRepo:  successfulBundleRepo("bundleID"),
 			DestRepo:    successfulDestinationRepo("bundleID"),
+			UUIDService: successfulUUIDService,
+		},
+		{
+			Name: "Successful sync of destinations but failing to delete old should not return error",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(5)
+			},
+			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:  successfulBundleRepo("bundleID"),
+			DestRepo:    successfulInsertFailingDeleteDestinationRepo("bundleID"),
 			UUIDService: successfulUUIDService,
 		},
 		{
@@ -155,9 +169,58 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 			UUIDService:         unusedUUIDService,
 			ExpectedErrorOutput: testErr.Error(),
 		},
+		{
+			Name: "When destination service returns only invalid destinations - do not store them and remove old ones",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(4)
+			},
+			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:  unusedBundleRepo,
+			DestRepo:    successfulDeleteDestinationRepo,
+			UUIDService: successfulUUIDService,
+			DestServiceHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Page-Count", "1")
+
+				var (
+					invalidDest1 = `{
+						"Name": "badS4URL",
+						"URL": "invalid",
+						"XFSystemName": "Test S4HANA system",
+						"product.name": "SAP S/4HANA Cloud",
+						"communicationScenarioId": "SAP_COM_0108"
+					}`
+					invalidDest2 = `{
+						"Name": "no URL",
+						"XFSystemName": "Test S4HANA system",
+						"product.name": "SAP S/4HANA Cloud",
+						"x-correlation-id": "correlation-id"
+					}`
+					invalidDest3 = `{
+						"Name": "bad URL",
+						"URL": ":invalidURL",
+						"x-system-name": "Test S4HANA system",
+						"x-system-type": "SAP S/4HANA Cloud",
+						"x-correlation-id": "correlation-id"
+					}`
+					invalidDest4 = `{
+						"Name": "no correlation id",
+						"x-system-type": "systemType",
+						"x-system-id": "systemId"
+					}`
+				)
+				_, err := w.Write([]byte(fmt.Sprintf("[%s, %s, %s, %s]",
+					invalidDest1, invalidDest2, invalidDest3, invalidDest4)))
+				assert.NoError(t, err)
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
+			destinationServer.handler.customTenantDestinationHandler = testCase.DestServiceHandler
+			defer func() {
+				destinationServer.handler.customTenantDestinationHandler = nil
+			}()
 			_, tx := testCase.Transactioner()
 			destRepo := testCase.DestRepo()
 			labelRepo := testCase.LabelRepo()
@@ -451,6 +514,17 @@ func successfulDestinationRepo(bundleID string) func() *automock.DestinationRepo
 			mock.Anything, mock.Anything, mock.Anything, mock.Anything, bundleID, mock.Anything).Return(nil)
 		destinationRepo.On("DeleteOld",
 			mock.Anything, UUID, labelTenantID).Return(nil)
+		return destinationRepo
+	}
+}
+
+func successfulInsertFailingDeleteDestinationRepo(bundleID string) func() *automock.DestinationRepo {
+	return func() *automock.DestinationRepo {
+		destinationRepo := unusedDestinationsRepo()
+		destinationRepo.On("Upsert",
+			mock.Anything, mock.Anything, mock.Anything, mock.Anything, bundleID, mock.Anything).Return(nil)
+		destinationRepo.On("DeleteOld",
+			mock.Anything, UUID, labelTenantID).Return(testErr)
 		return destinationRepo
 	}
 }
