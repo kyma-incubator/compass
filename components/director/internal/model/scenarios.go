@@ -42,9 +42,7 @@ var (
 							"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
 							"maxLength": 128,
 						},
-						"contains": map[string]interface{}{
-							"const": "test-scenario",
-						},
+						"contains": map[string]interface{}{},
 					},
 				},
 			},
