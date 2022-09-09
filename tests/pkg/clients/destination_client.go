@@ -109,7 +109,7 @@ func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName stri
 	url := c.apiURL + c.apiConfig.EndpointTenantDestinations
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	query := request.URL.Query()
-	query.Add("$filter", "Name in(" + destinationName + ")")
+	query.Add("$filter", "Name in("+destinationName+")")
 	request.URL.RawQuery = query.Encode()
 	require.NoError(t, err)
 
