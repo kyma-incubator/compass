@@ -375,7 +375,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			client := ord.NewClient(clientCfg, testHTTPClient, executorProviderMock)
 
 			testApp := fixApplicationPage().Data[0]
-			testWebhook := fixWebhooks()[0]
+			testWebhook := fixWebhooksForApplication()[0]
 
 			testWebhook.Auth = test.Credentials
 
