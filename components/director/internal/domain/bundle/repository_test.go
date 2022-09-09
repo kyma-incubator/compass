@@ -354,7 +354,7 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 	modelBundle := fixBundleModel("foo", "bar")
 
 	destinationWithSystemName := model.DestinationInput{
-		URL:               "http://localhost",
+		XSystemBaseURL:    "http://localhost",
 		XSystemTenantName: "system_name",
 		XCorrelationID:    "correlation_id",
 	}
@@ -377,7 +377,7 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 						AND name = $2 AND base_url = $3
 				) AND correlation_ids ?| array[$4]`),
 				Args: []driver.Value{tenantID, destinationWithSystemName.XSystemTenantName,
-					destinationWithSystemName.URL, destinationWithSystemName.XCorrelationID},
+					destinationWithSystemName.XSystemBaseURL, destinationWithSystemName.XCorrelationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
