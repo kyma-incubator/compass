@@ -131,7 +131,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 		go func(ctx context.Context, region string, regionalClient EventAPIClient, ch chan *model.BusinessTenantMappingInput) {
 			createdRegionalTenants, err := fetchCreatedTenantsWithRetries(regionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("Failed to fetch created tenants from")
+				log.C(ctx).WithError(err).Errorf("Failed to fetch created tenants from region %s: %v", region, err)
 			}
 
 			if len(createdRegionalTenants) == 1 {

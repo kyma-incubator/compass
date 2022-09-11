@@ -247,7 +247,10 @@ func (ts *TenantsSynchronizer) fetchFromDirector(ctx context.Context, tenantID s
 		return nil, errors.Wrapf(err, "while checking if tenant with external ID %s already exists", tenantID)
 	}
 
-	return tnt, tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return tnt, nil
 }
 
 func (ts *TenantsSynchronizer) currentTenants(ctx context.Context, tenantsIDs []string) (map[string]string, error) {
