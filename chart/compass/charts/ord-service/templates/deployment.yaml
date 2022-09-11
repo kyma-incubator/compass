@@ -38,6 +38,10 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.ord_service.dir }}compass-ord-service:{{ .Values.global.images.ord_service.version }}
@@ -95,6 +99,16 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: SUBSCRIPTION_TOKEN_PREFIX
               value: {{ .Values.global.director.subscription.tokenPrefix }}
+            - name: DESTINATION_FETCHER_RELOAD_URL
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: DESTINATION_FETCHER_SENSITIVE_DATA_URL
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
+            - name: DESTINATION_FETCHER_SENSITIVE_DATA_QUERY_PARAM
+              value: {{ .Values.global.destinationFetcher.server.sensitiveDataQueryParam | quote }}
+            - name: DESTINATION_FETCHER_AUTH_TOKEN_PATH
+              value: {{ .Values.global.ordService.authTokenPath | quote }}
+            - name: DESTINATION_FETCHER_SKIP_SSL_VALIDATION
+              value: {{ .Values.global.ordService.skipSSLValidation | quote }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

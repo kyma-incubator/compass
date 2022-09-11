@@ -475,7 +475,7 @@ func TestNewSelfRegisterManager(t *testing.T) {
 		cfg := config.SelfRegConfig{}
 		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "self registration secret path cannot be empty")
+		require.Contains(t, err.Error(), "config path cannot be empty")
 		require.Nil(t, manager)
 	})
 }
