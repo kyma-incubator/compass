@@ -493,7 +493,23 @@ func TestUpdateApplicationWithLocalTenantIDShouldBeAllowedOnlyForIntegrationSyst
 	updatedApp := graphql.ApplicationExt{}
 
 	t.Run("should fail for non-integration system", func(t *testing.T) {
-		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
+		runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "test-runtime", tenant.TestTenants.GetDefaultTenantID())
+		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &runtime)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
+
+		runtimeAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), runtime.ID)
+		require.NotEmpty(t, runtimeAuth)
+		defer fixtures.DeleteSystemAuthForRuntime(t, ctx, certSecuredGraphQLClient, runtimeAuth.ID)
+
+		runtimeOauthCredentialData, ok := runtimeAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, runtimeOauthCredentialData, token.RuntimeScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, request, &updatedApp)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "insufficient scopes provided")
 	})
