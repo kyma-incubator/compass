@@ -7,6 +7,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	testing "testing"
+
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -40,13 +42,8 @@ func (_m *WebhookClient) Do(ctx context.Context, request *webhookclient.Request)
 	return r0, r1
 }
 
-type NewWebhookClientT interface {
-	mock.TestingT
-	Cleanup(func())
-}
-
-// NewWebhookClient creates a new instance of WebhookClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookClient(t NewWebhookClientT) *WebhookClient {
+// NewWebhookClient creates a new instance of WebhookClient. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
+func NewWebhookClient(t testing.TB) *WebhookClient {
 	mock := &WebhookClient{}
 	mock.Mock.Test(t)
 

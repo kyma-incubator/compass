@@ -224,7 +224,7 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
   --k3d-arg='--servers-memory '"${K3D_MEMORY}" \
   --k3d-arg='--agents-memory '"${K3D_MEMORY}" \
-  --k3d-arg='--volume '"${DATA_DIR}:/dbdata" \
+  --k3d-arg='--volume '"${DATA_DIR}:/tmp/dbdata" \
   --timeout "${K3D_TIMEOUT}" \
   --kube-version "${APISERVER_VERSION}"
   echo "Adding k3d registry entry to /etc/hosts..."

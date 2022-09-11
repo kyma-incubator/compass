@@ -59,6 +59,7 @@ type ApplicationRepository interface {
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
@@ -84,6 +85,7 @@ type LabelRepository interface {
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
+	ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 }
 
 // FormationService missing godoc
@@ -203,6 +205,20 @@ func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (
 	}
 
 	return s.appRepo.ListGlobal(ctx, pageSize, cursor)
+}
+
+// ListAllByApplicationTemplateID lists all applications which have the given app template id
+func (s *service) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
+	apps, err := s.appRepo.ListAllByApplicationTemplateID(ctx, applicationTemplateID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting applications for app template with id %q", applicationTemplateID)
+	}
+
+	if len(apps) == 0 {
+		return []*model.Application{}, nil
+	}
+
+	return apps, nil
 }
 
 // ListByRuntimeID missing godoc
@@ -1238,6 +1254,49 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
 
+	if err = s.createWebhooksIfNotExist(ctx, app.ID, appTenant, in.Webhooks); err != nil {
+		return errors.Wrapf(err, "while processing webhooks for application with id %q", app.ID)
+	}
+
+	return nil
+}
+
+func (s *service) createWebhooksIfNotExist(ctx context.Context, appID, appTenant string, appWebhooks []*model.WebhookInput) error {
+	if len(appWebhooks) == 0 {
+		return nil
+	}
+
+	webhooksFromDB, err := s.webhookRepo.ListByReferenceObjectID(ctx, appTenant, appID, model.ApplicationWebhookReference)
+	if err != nil {
+		return errors.Wrapf(err, "while listig webhooks for application with id %q", appID)
+	}
+
+	webhooks := make([]*model.Webhook, 0, len(appWebhooks))
+	for _, item := range appWebhooks {
+		webhooks = append(webhooks, item.ToWebhook(s.uidService.Generate(), appID, model.ApplicationWebhookReference))
+	}
+
+	webhooksToCreate := make([]*model.Webhook, 0, len(appWebhooks))
+	for _, wh := range webhooks {
+		found := false
+		for _, whDB := range webhooksFromDB {
+			if wh.Type == whDB.Type && wh.ObjectID == whDB.ObjectID && str.PtrStrToStr(wh.URL) == str.PtrStrToStr(whDB.URL) {
+				if (wh.Auth == nil && whDB.Auth == nil) || (wh.Auth != nil && whDB.Auth != nil && str.PtrStrToStr(wh.Auth.AccessStrategy) == str.PtrStrToStr(whDB.Auth.AccessStrategy)) {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			webhooksToCreate = append(webhooksToCreate, wh)
+		}
+	}
+
+	if len(webhooksToCreate) > 0 {
+		if err = s.webhookRepo.CreateMany(ctx, appTenant, webhooksToCreate); err != nil {
+			return errors.Wrapf(err, "while creating webhooks for application with id %q", appID)
+		}
+	}
 	return nil
 }
 

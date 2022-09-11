@@ -127,7 +127,7 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2575"
+      version: "PR-2596"
       name: compass-hydrator
     gateway:
       dir:
@@ -559,10 +559,6 @@ global:
       goroutineLimit: 100
       requestTimeout: "30s"
       pageSize: 10
-      pageParam: "\\$page"
-      pageSizeParam: "\\$pageSize"
-      pageCountParam: "\\$pageCount"
-      pageCountHeader: "Page-Count"
       oauthTokenPath: "/oauth/token"
     instance:
       clientIdPath: "clientid"
@@ -681,7 +677,7 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
-    maxParallelApplicationProcessors: 4
+    maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     containerName: "ord-aggregator"
   systemFetcher:
@@ -873,6 +869,7 @@ global:
         skipSSLValidation: false
     externalCertConfiguration:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
+      issuerLocalityRegion2: "local"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"

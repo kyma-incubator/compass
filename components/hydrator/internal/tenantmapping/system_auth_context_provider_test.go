@@ -381,7 +381,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, directorClientMock, directorClientMock)
 	})
 
-	t.Run("returns error when tenant is subaccount and unable to get subaccount region in the Integration System SystemAuth case", func(t *testing.T) {
+	t.Run("returns tenant with empty region when tenant is subaccount and unable to get subaccount region label in the Integration System SystemAuth case", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
@@ -418,8 +418,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
-		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for subaccount with ID: %q", expectedExternalTenantID))
+		require.NoError(t, err)
 
 		mock.AssertExpectationsForObjects(t, directorClientMock, directorClientMock)
 	})
@@ -467,7 +466,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, directorClientMock, scopesGetterMock)
 	})
 
-	t.Run("returns error when tenant is subaccount and unable to get subaccount region in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
+	t.Run("returns tenant with empty region when tenant is subaccount and unable to get subaccount region label in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
@@ -506,8 +505,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
-		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for subaccount with ID: %q", expectedExternalTenantID))
+		require.NoError(t, err)
 
 		mock.AssertExpectationsForObjects(t, directorClientMock, scopesGetterMock)
 	})
