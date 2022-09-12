@@ -17,11 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	correlationIDPrefix = "sap.s4:communicationScenario:"
-	s4HANAType          = "SAP S/4HANA Cloud"
-	regionLabelKey      = "region"
-)
+const regionLabelKey = "region"
 
 //go:generate mockery --name=UUIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 // UUIDService missing godoc
