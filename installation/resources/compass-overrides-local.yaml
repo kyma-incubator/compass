@@ -213,9 +213,6 @@ global:
     request:
       skipSSLValidation: true
       oauthTokenPath: "/cert/token"
-    server:
-      tenantDestinationsEndpoint: "/destination-configuration/v1/subaccountDestinations"
-      sensitiveDataEndpoint: "/destination-configuration/v1/destinations"
 operations-controller:
   http:
     client:
