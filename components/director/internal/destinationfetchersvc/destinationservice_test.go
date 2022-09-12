@@ -16,7 +16,7 @@ const (
 	exampleDestination1 = `{
         "Name": "mys4_1",
         "Type": "HTTP",
-        "URL": "https://localhost:443",
+        "URL": "https://my54321-api.s4.com:443",
         "Authentication": "BasicAuthentication",
         "ProxyType": "Internet",
         "XFSystemName": "Test S4HANA system",
@@ -29,24 +29,22 @@ const (
         "WebIDEUsage": "odata_gen"
     }`
 	exampleDestination2 = `{
-        "Name": "mys4_2",
+        "Name": "mysystem_2",
         "Type": "HTTP",
-        "URL": "https://localhost:443",
+        "URL": "https://mysystem.com",
         "Authentication": "BasicAuthentication",
         "ProxyType": "Internet",
-        "XFSystemName": "Test S4HANA system",
         "HTML5.DynamicDestination": "true",
         "User": "SOME_USER",
-        "product.name": "SAP S/4HANA Cloud",
-        "WebIDEEnabled": "true",
-        "communicationScenarioId": "SAP_COM_0109",
         "Password": "SecretPassword",
-        "WebIDEUsage": "odata_gen"
+		"x-system-id": "system-id",
+		"x-system-type": "mysystem"
     }`
 )
 
 type destinationHandler struct {
-	t *testing.T
+	customTenantDestinationHandler func(w http.ResponseWriter, req *http.Request)
+	t                              *testing.T
 }
 
 func (dh *destinationHandler) mux() *http.ServeMux {
@@ -62,24 +60,29 @@ func (dh *destinationHandler) mux() *http.ServeMux {
 }
 
 func (dh *destinationHandler) tenantDestinationHandler(w http.ResponseWriter, req *http.Request) {
+	if dh.customTenantDestinationHandler != nil {
+		dh.customTenantDestinationHandler(w, req)
+		return
+	}
 	query := req.URL.Query()
 	page := query.Get("$page")
 
 	w.Header().Set("Content-Type", "application/json")
 	// assuming pageSize is always 1
+	var response []byte
 	switch page {
 	case "1":
-		w.Header().Set("Page-Count", "2")
-		_, err := w.Write([]byte(fmt.Sprintf("[%s]", exampleDestination1)))
-		assert.NoError(dh.t, err)
+		response = []byte(fmt.Sprintf("[%s]", exampleDestination1))
 	case "2":
-		w.Header().Set("Page-Count", "2")
-		_, err := w.Write([]byte(fmt.Sprintf("[%s]", exampleDestination2)))
-		assert.NoError(dh.t, err)
+		response = []byte(fmt.Sprintf("[%s]", exampleDestination2))
 	default:
 		dh.t.Logf("Expected page size to be 1 or 2, got '%s'", page)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+	w.Header().Set("Page-Count", "2")
+	_, err := w.Write(response)
+	assert.NoError(dh.t, err)
 }
 
 var defaultDestinations = map[string]string{

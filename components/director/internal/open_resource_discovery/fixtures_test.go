@@ -36,7 +36,6 @@ const (
 	appID            = "testApp"
 	appTemplateID    = "testAppTemplate"
 	whID             = "testWh"
-	whID2            = "testWh2"
 	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
 	packageID        = "testPkg"
@@ -566,8 +565,21 @@ func fixApplicationPage() *model.ApplicationPage {
 		TotalCount: 1,
 	}
 }
+func fixApplications() []*model.Application {
+	return []*model.Application{
+		{
+			Name: "testApp",
+			BaseEntity: &model.BaseEntity{
+				ID:    appID,
+				Ready: true,
+			},
+			Type:                  testApplicationType,
+			ApplicationTemplateID: str.Ptr(appTemplateID),
+		},
+	}
+}
 
-func fixWebhooks() []*model.Webhook {
+func fixWebhooksForApplication() []*model.Webhook {
 	return []*model.Webhook{
 		{
 			ID:         whID,
@@ -576,9 +588,13 @@ func fixWebhooks() []*model.Webhook {
 			Type:       model.WebhookTypeOpenResourceDiscovery,
 			URL:        str.Ptr(baseURL),
 		},
+	}
+}
+func fixOrdWebhooksForAppTemplate() []*model.Webhook {
+	return []*model.Webhook{
 		{
-			ID:         whID2,
-			ObjectID:   appID,
+			ID:         whID,
+			ObjectID:   appTemplateID,
 			ObjectType: model.ApplicationTemplateWebhookReference,
 			Type:       model.WebhookTypeOpenResourceDiscovery,
 			URL:        str.Ptr(baseURL),

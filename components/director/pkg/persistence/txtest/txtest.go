@@ -80,6 +80,10 @@ func (g txCtxGenerator) ThatSucceeds() (*automock.PersistenceTx, *automock.Trans
 	return g.ThatSucceedsMultipleTimes(1)
 }
 
+func (g txCtxGenerator) ThatSucceedsTwice() (*automock.PersistenceTx, *automock.Transactioner) {
+	return g.ThatSucceedsMultipleTimes(2)
+}
+
 // ThatSucceedsMultipleTimes missing godoc
 func (g txCtxGenerator) ThatSucceedsMultipleTimes(times int) (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}

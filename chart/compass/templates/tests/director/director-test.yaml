@@ -212,6 +212,8 @@ spec:
               value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN
               value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
+              value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
             - name: APP_CONSUMER_TOKEN_URL
               value: {{ .Values.global.tests.subscription.consumerTokenURL }}
             - name: APP_PROVIDER_CLIENT_ID
