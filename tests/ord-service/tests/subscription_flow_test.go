@@ -341,6 +341,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
+		stdT.Log("Validating no destination is returned after successful unsubscription request...")
+		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		require.Empty(stdT, gjson.Get(respBody, "value").Array())
+		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
+
 		stdT.Log("Validating director returns error during claims validation after unsubscribe request is successfully executed...")
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRtmReq, &rtmExt)
 		require.Error(stdT, err)
