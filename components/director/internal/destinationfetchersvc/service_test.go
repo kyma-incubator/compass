@@ -569,6 +569,7 @@ func defaultAPIConfig() destinationfetchersvc.DestinationServiceAPIConfig {
 		PagingSizeParam:               "$pageSize",
 		PagingCountParam:              "$pageCount",
 		PagingCountHeader:             "Page-Count",
+		OAuthTokenPath:                "/oauth/token",
 	}
 }
 
@@ -586,6 +587,5 @@ func defaultDestinationConfig(t *testing.T, destinationServerURL string) config.
 		RegionToInstanceConfig: map[string]config.InstanceConfig{
 			region: instanceConfig,
 		},
-		OauthTokenPath: "/oauth/token",
 	}
 }

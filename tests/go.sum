@@ -135,6 +135,8 @@ github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4
 github.com/fsnotify/fsnotify v1.5.1 h1:mZcQUHVQUQWoPXXtuf9yuEXKudkV2sx1E06UadKWpgI=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
+github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 h1:Mn26/9ZMNWSw9C9ERFA1PUxfmGpolnw2v0bKOREu5ew=
+github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/go-chi/chi v3.3.2+incompatible/go.mod h1:eB3wogJHnLi3x/kFX2A+IbTBlXxmMeXJVKy9tTv1XzQ=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
@@ -316,8 +318,8 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2022022
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:EPQuWKlrkBDEK2Fj4G3qrnPCQhAvM48z7JzbWD2dUts=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b h1:CTvWA/b4sbr4D91mmmHUEZYM6iWi0BXtDOCNxG0BwSI=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:wGzvH5XWBA34gt7cb+UVrovLHsIqjNddzP+DkPBZ3u0=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220826071906-af66b79fd2ab h1:rvIlStGiSLoxMjKBTt4Xfrw4Yezbcz2cvrfgzUkJUYE=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220826071906-af66b79fd2ab/go.mod h1:JAyqA+S+pbBOruiew+ZuA7D1sMTAbUOn+oJHccvT33w=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220909070157-0196703d20b8 h1:Ua9bA1l/dTXVkZx4UG6pd1gKvNYn1lsWlHfPjY81GQQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220909070157-0196703d20b8/go.mod h1:Q+/NbgUGbwo19uU3DY+UEzzbPfxXSNrS47h9W/EYy/g=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b h1:4R8r0Us/Arb5LyJojWuLJFImHLolGNKSsJGubZqoapY=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:GW13QCwxZX0gyEBKypJ0OX1VRyOrKe1BFvL4q1RZODY=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b h1:oxx4DknU9x54foCUWRoFzaSK7Z1Xpj0eG6Fr1gPQkOI=
@@ -383,6 +385,8 @@ github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
 github.com/olekukonko/tablewriter v0.0.0-20170122224234-a0225b3f23b5/go.mod h1:vsDQFd/mU46D+Z4whnwzcISnGGzXWMclvtLoiIKAKIo=
+github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 h1:Yl0tPBa8QPjGmesFh1D0rDy+q1Twx6FyU7VWHi8wZbI=
+github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852/go.mod h1:eqOVx5Vwu4gd2mmMZvVZsgIqNSaW3xxRThUJ0k/TPk4=
 github.com/onrik/logrus v0.9.0 h1:oT7VstCUxWBoX7fswYK61fi9bzRBSpROq5CR2b7wxQo=
 github.com/onrik/logrus v0.9.0/go.mod h1:qfe9NeZVAJfIxviw3cYkZo3kvBtLoPRJriAO8zl7qTk=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=

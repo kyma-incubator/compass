@@ -17,9 +17,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-const (
-	expectedTenantID = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
-)
+const expectedTenantID = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
 
 func TestHandler_SyncDestinations(t *testing.T) {
 	target := "/v1/fetch"
