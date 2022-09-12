@@ -107,6 +107,23 @@ spec:
                   echo $CERT_SVC_OAUTH_CLIENT_CERT | openssl enc -base64 -d -A -out /tmp/client-cert.pem
                   echo $CERT_SVC_OAUTH_CLIENT_KEY | openssl enc -base64 -d -A -out /tmp/client-key.pem
 
+                  echo "CERT_SVC_OAUTH_CLIENT_CERT: $CERT_SVC_OAUTH_CLIENT_CERT"
+                  echo "CERT_SVC_OAUTH_CLIENT_KEY: $CERT_SVC_OAUTH_CLIENT_KEY"
+
+                  TOKEN_RESPONSE=$(curl \
+                    -s $SKIP_SSL_VALIDATION_FLAG \
+                    -m 30 \
+                    -X POST \
+                    --cert /tmp/client-cert.pem \
+                    --key /tmp/client-key.pem \
+                    "$CERT_SVC_OAUTH_URL$CERT_SVC_TOKEN_PATH" \
+                    -H "Content-Type: application/x-www-form-urlencoded" \
+                    -H "Accept: application/json" \
+                    -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID")
+                  
+                  echo "TOKEN_REQUEST: curl -s $SKIP_SSL_VALIDATION_FLAG -m 30 -X POST --cert /tmp/client-cert.pem --key /tmp/client-key.pem \"$CERT_SVC_OAUTH_URL$CERT_SVC_TOKEN_PATH\" -H \"Content-Type: application/x-www-form-urlencoded\" -H \"Accept: application/json\" -d \"grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID\""
+                  echo "TOKEN_RESPONSE: $TOKEN_RESPONSE"
+
                   TOKEN=$(curl \
                     -s $SKIP_SSL_VALIDATION_FLAG \
                     -m 30 \
