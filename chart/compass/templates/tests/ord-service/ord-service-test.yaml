@@ -131,6 +131,32 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: APP_DESTINATION_SECRET_PATH
+              value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
+            - name: APP_DESTINATION_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientIdPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientSecretPath }}
+            - name: APP_DESTINATION_INSTANCE_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.urlPath }}
+            - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
+            - name: APP_DESTINATION_OAUTH_MODE
+              value: {{ .Values.global.destinationFetcher.oauthMode }}
+            - name: APP_DESTINATION_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
+            - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
+              value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
+            - name: APP_DESTINATIONS_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: TEST_EXTERNAL_CERT_CN
@@ -183,6 +209,10 @@ spec:
               value: {{ .Values.global.tests.ordService.skipPattern }}
             - name: APP_APPLICATION_TYPE_LABEL_KEY
               value: {{ .Values.global.director.applicationTypeLabelKey }}
+          volumeMounts:
+            - name: dest-svc-instances
+              mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
+              readOnly: true
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
@@ -211,6 +241,10 @@ spec:
           {{- end }}
           {{end}}
       restartPolicy: Never
+      volumes:
+        - name: dest-svc-instances
+          secret:
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
 ---
 apiVersion: v1
 kind: ServiceAccount

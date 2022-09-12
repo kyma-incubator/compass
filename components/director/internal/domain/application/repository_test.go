@@ -538,6 +538,48 @@ func TestRepository_GetGlobalByIDForUpdate(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_ListAllByApplicationTemplateID(t *testing.T) {
+	appID := givenID()
+	appTemplateID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
+	entity := fixDetailedEntityApplication(t, appID, givenTenant(), "App", "App desc")
+	entity.ApplicationTemplateID = repo.NewValidNullableString(appTemplateID)
+
+	appModel := fixDetailedModelApplication(t, appID, givenTenant(), "App", "App desc")
+	appModel.ApplicationTemplateID = str.Ptr(appTemplateID)
+	suite := testdb.RepoListTestSuite{
+		Name: "List applications by app template id",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.applications WHERE app_template_id = $1`),
+				Args:     []driver.Value{appTemplateID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixAppColumns()).
+							AddRow(entity.ID, entity.ApplicationTemplateID, entity.SystemNumber, entity.LocalTenantID, entity.Name, entity.Description, entity.StatusCondition, entity.StatusTimestamp, entity.SystemStatus, entity.HealthCheckURL, entity.IntegrationSystemID, entity.ProviderName, entity.BaseURL, entity.OrdLabels, entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.CorrelationIDs, entity.DocumentationLabels),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixAppColumns()),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       application.NewRepository,
+		ExpectedModelEntities:     []interface{}{appModel},
+		ExpectedDBEntities:        []interface{}{entity},
+		MethodName:                "ListAllByApplicationTemplateID",
+		MethodArgs:                []interface{}{appTemplateID},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_List(t *testing.T) {
 	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"

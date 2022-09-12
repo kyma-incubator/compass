@@ -12,16 +12,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"golang.org/x/sync/semaphore"
-
 	"github.com/pkg/errors"
+	"golang.org/x/sync/semaphore"
 )
 
-const (
-	correlationIDPrefix = "sap.s4:communicationScenario:"
-	s4HANAType          = "SAP S/4HANA Cloud"
-	regionLabelKey      = "region"
-)
+const regionLabelKey = "region"
 
 //go:generate mockery --name=UUIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 // UUIDService missing godoc
@@ -120,7 +115,7 @@ func (d *DestinationService) generateClientBySubdomainLabel(ctx context.Context,
 		return nil, errors.New(fmt.Sprintf("No destination instance credentials found for region '%s'", region))
 	}
 
-	client, err := NewClient(instanceConfig, d.APIConfig, d.DestinationsConfig.OauthTokenPath, subdomain)
+	client, err := NewClient(instanceConfig, d.APIConfig, subdomain)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to create Destination API client")
 		return nil, err

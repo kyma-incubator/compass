@@ -23,6 +23,12 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+const (
+	correlationIDPrefix = "sap.s4:communicationScenario:"
+	s4HANAType          = "SAP S/4HANA Cloud"
+	s4HANABaseURLSuffix = "-api"
+)
+
 // DestinationServiceAPIConfig destination service api configuration
 type DestinationServiceAPIConfig struct {
 	GoroutineLimit                int64         `envconfig:"APP_DESTINATIONS_SENSITIVE_GOROUTINE_LIMIT,default=10"`
@@ -37,6 +43,7 @@ type DestinationServiceAPIConfig struct {
 	PagingCountParam              string        `envconfig:"APP_DESTINATIONS_PAGE_COUNT_PARAM,default=$pageCount"`
 	PagingCountHeader             string        `envconfig:"APP_DESTINATIONS_PAGE_COUNT_HEADER,default=Page-Count"`
 	SkipSSLVerify                 bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
+	OAuthTokenPath                string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
 }
 
 // Client destination client
@@ -59,6 +66,42 @@ type destinationFromService struct {
 	XSystemTenantID         string `json:"x-system-id"`
 	XSystemTenantName       string `json:"x-system-name"`
 	XSystemType             string `json:"x-system-type"`
+	XSystemBaseURL          string `json:"x-system-base-url"`
+}
+
+func (d *destinationFromService) setDefaults(result *model.DestinationInput) error {
+	// Set values from custom properties
+	if result.XSystemType == "" {
+		result.XSystemType = d.ProductName
+	}
+	if result.XSystemType != s4HANAType {
+		return nil
+	}
+	if result.XCorrelationID == "" {
+		if d.CommunicationScenarioID != "" {
+			result.XCorrelationID = correlationIDPrefix + d.CommunicationScenarioID
+		}
+	}
+	if result.XSystemTenantName == "" {
+		result.XSystemTenantName = d.XFSystemName
+	}
+	if result.XSystemBaseURL != "" || result.URL == "" {
+		return nil
+	}
+
+	baseURL, err := url.Parse(result.URL)
+	if err != nil {
+		return errors.Wrapf(err, "%s destination has invalid URL '%s'", s4HANAType, result.URL)
+	}
+	subdomains := strings.Split(baseURL.Hostname(), ".")
+	if len(subdomains) < 2 {
+		return fmt.Errorf(
+			"%s destination has invalid URL '%s'. Expected at least 2 subdomains", s4HANAType, result.URL)
+	}
+	subdomains[0] = strings.TrimSuffix(subdomains[0], s4HANABaseURLSuffix)
+
+	result.XSystemBaseURL = fmt.Sprintf("%s://%s", baseURL.Scheme, strings.Join(subdomains, "."))
+	return nil
 }
 
 // ToModel missing godoc
@@ -72,31 +115,14 @@ func (d *destinationFromService) ToModel() (model.DestinationInput, error) {
 		XSystemTenantID:   d.XSystemTenantID,
 		XSystemTenantName: d.XSystemTenantName,
 		XSystemType:       d.XSystemType,
+		XSystemBaseURL:    d.XSystemBaseURL,
 	}
 
-	// Set values from custom properties
-	if result.XSystemType == "" {
-		result.XSystemType = d.ProductName
-	}
-	if result.XSystemType == "" {
-		return model.DestinationInput{}, errors.New("system type not found in destination")
-	}
-	if result.XCorrelationID == "" {
-		if result.XSystemType == s4HANAType && d.CommunicationScenarioID != "" {
-			result.XCorrelationID = correlationIDPrefix + d.CommunicationScenarioID
-		}
-	}
-	if result.XCorrelationID == "" {
-		return model.DestinationInput{}, errors.New("no correlation id found in destination")
-	}
-	if result.XSystemTenantName == "" {
-		result.XSystemTenantName = d.XFSystemName
+	if err := d.setDefaults(&result); err != nil {
+		return model.DestinationInput{}, err
 	}
 
-	if result.XSystemTenantID == "" && (result.XSystemTenantName == "" || result.URL == "") {
-		return model.DestinationInput{}, errors.New("system tenant could not be determined by destination")
-	}
-	return result, nil
+	return result, result.Validate()
 }
 
 // DestinationResponse paged response from destination service
@@ -107,7 +133,7 @@ type DestinationResponse struct {
 
 // NewClient returns new destination client
 func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
-	tokenPath, subdomain string) (*Client, error) {
+	subdomain string) (*Client, error) {
 	ctx := context.Background()
 
 	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
@@ -120,7 +146,7 @@ func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServic
 	}
 	originalSubdomain := parts[0]
 
-	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + tokenPath
+	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
 	cfg := clientcredentials.Config{
 		ClientID:  instanceConfig.ClientID,
 		TokenURL:  tokenURL,
