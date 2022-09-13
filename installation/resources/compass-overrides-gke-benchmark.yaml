@@ -2,7 +2,7 @@ gateway:
   gateway:
     auditlog:
       authMode: "oauth-mtls"
-      enabled: false
+      enabled: true
 global:
   isForTesting: true
   auditlog:
