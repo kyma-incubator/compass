@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -17,7 +16,6 @@ const (
 	pageCountQueryParameter = "$pageCount"
 	pageQueryParameter      = "$page"
 	pageSizeQueryParameter  = "$pageSize"
-	deleteQueryParameter    = "$filter"
 )
 
 type Destination struct {
@@ -158,47 +156,32 @@ func (h *Handler) deleteDestination(name string) {
 
 func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	filter := req.URL.Query().Get(deleteQueryParameter)
+	destinationName := mux.Vars(req)["name"]
 
-	if len(filter) == 0 {
-		http.Error(writer, "Failed to read $filter query parameter", http.StatusBadRequest)
+	if len(destinationName) == 0 {
+		http.Error(writer, "Bad request - missing destination name", http.StatusBadRequest)
 		return
 	}
-
-	if !strings.HasPrefix(filter, "Name in") {
-		http.Error(writer, "Invalid $filter format. Only name is supported", http.StatusBadRequest)
-		return
-	}
-
-	filter = strings.ReplaceAll(filter, " ", "")
-	firstBracketIndex := strings.IndexByte(filter, '(') + 1
-	secondBracketIndex := strings.IndexByte(filter, ')')
-
-	destinationNames := strings.Split(filter[firstBracketIndex:secondBracketIndex], ",")
 
 	deleteResponse := DeleteResponse{Count: 0}
 
-	for _, destinationName := range destinationNames {
-		if _, ok := h.destinationsSensitive[destinationName]; !ok {
-			deleteResponse.Summary = append(deleteResponse.Summary, DeleteStatus{
-				Name:   destinationName,
-				Status: "NOT_FOUND",
-				Reason: "Could not find destination",
-			})
-
-			continue
-		}
-
-		delete(h.destinationsSensitive, destinationName)
-		deleteResponse.Count = deleteResponse.Count + 1
-
+	if _, ok := h.destinationsSensitive[destinationName]; !ok {
 		deleteResponse.Summary = append(deleteResponse.Summary, DeleteStatus{
 			Name:   destinationName,
-			Status: "DELETED",
+			Status: "NOT_FOUND",
+			Reason: "Could not find destination",
 		})
-
-		h.deleteDestination(destinationName)
 	}
+
+	delete(h.destinationsSensitive, destinationName)
+	deleteResponse.Count = deleteResponse.Count + 1
+
+	deleteResponse.Summary = append(deleteResponse.Summary, DeleteStatus{
+		Name:   destinationName,
+		Status: "DELETED",
+	})
+
+	h.deleteDestination(destinationName)
 
 	responseJSON, err := json.Marshal(deleteResponse)
 	if err != nil {
