@@ -431,78 +431,136 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 }
 
 func TestUpdateApplication(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
 
-	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "before", tenant.TestTenants.GetDefaultTenantID())
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
-	require.NoError(t, err)
-	require.NotEmpty(t, actualApp.ID)
+		actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "before", tenant.TestTenants.GetDefaultTenantID())
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+		require.NoError(t, err)
+		require.NotEmpty(t, actualApp.ID)
 
-	updateStatusCond := graphql.ApplicationStatusConditionConnected
+		updateStatusCond := graphql.ApplicationStatusConditionConnected
 
-	expectedApp := actualApp
-	expectedApp.Name = "before"
-	expectedApp.ProviderName = ptr.String("after")
-	expectedApp.Description = ptr.String("after")
-	expectedApp.HealthCheckURL = ptr.String(conf.WebhookUrl)
-	expectedApp.BaseURL = ptr.String("after")
-	expectedApp.Status.Condition = updateStatusCond
-	expectedApp.Labels["name"] = "before"
+		expectedApp := actualApp
+		expectedApp.Name = "before"
+		expectedApp.ProviderName = ptr.String("after")
+		expectedApp.Description = ptr.String("after")
+		expectedApp.HealthCheckURL = ptr.String(conf.WebhookUrl)
+		expectedApp.BaseURL = ptr.String("after")
+		expectedApp.Status.Condition = updateStatusCond
+		expectedApp.Labels["name"] = "before"
 
-	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
-	updateInput.BaseURL = ptr.String("after")
-	updateInput.StatusCondition = &updateStatusCond
-	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
-	require.NoError(t, err)
-	request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
-	updatedApp := graphql.ApplicationExt{}
+		updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+		updateInput.BaseURL = ptr.String("after")
+		updateInput.StatusCondition = &updateStatusCond
+		updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+		require.NoError(t, err)
+		request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+		updatedApp := graphql.ApplicationExt{}
 
-	//WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
+		//WHEN
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
 
-	//THEN
-	require.NoError(t, err)
-	assert.Equal(t, expectedApp.ID, updatedApp.ID)
-	assert.Equal(t, expectedApp.Name, updatedApp.Name)
-	assert.Equal(t, expectedApp.ProviderName, updatedApp.ProviderName)
-	assert.Equal(t, expectedApp.Description, updatedApp.Description)
-	assert.Equal(t, expectedApp.HealthCheckURL, updatedApp.HealthCheckURL)
-	assert.Equal(t, expectedApp.BaseURL, updatedApp.BaseURL)
-	assert.Equal(t, expectedApp.Status.Condition, updatedApp.Status.Condition)
+		//THEN
+		require.NoError(t, err)
+		assert.Equal(t, expectedApp.ID, updatedApp.ID)
+		assert.Equal(t, expectedApp.Name, updatedApp.Name)
+		assert.Equal(t, expectedApp.ProviderName, updatedApp.ProviderName)
+		assert.Equal(t, expectedApp.Description, updatedApp.Description)
+		assert.Equal(t, expectedApp.HealthCheckURL, updatedApp.HealthCheckURL)
+		assert.Equal(t, expectedApp.BaseURL, updatedApp.BaseURL)
+		assert.Equal(t, expectedApp.Status.Condition, updatedApp.Status.Condition)
 
-	saveExample(t, request.Query(), "update application")
-}
+		saveExample(t, request.Query(), "update application")
+	})
 
-func TestUpdateApplicationWithWebhook(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
+	t.Run("Create webhook when updating application with baseURL", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
 
-	appInput := fixtures.FixSampleApplicationRegisterInput("before")
-	appInput.Labels["applicationType"] = "SAP temp-1"
-	actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
-	require.NoError(t, err)
-	require.NotEmpty(t, actualApp.ID)
+		appInput := fixtures.FixSampleApplicationRegisterInput("before")
+		appInput.Labels["applicationType"] = "SAP temp-1"
+		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+		require.NoError(t, err)
+		require.NotEmpty(t, actualApp.ID)
 
-	updateStatusCond := graphql.ApplicationStatusConditionConnected
+		updateStatusCond := graphql.ApplicationStatusConditionConnected
 
-	require.Empty(t, actualApp.Webhooks)
+		require.Empty(t, actualApp.Webhooks)
 
-	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
-	updateInput.BaseURL = ptr.String("https://local.com")
-	updateInput.StatusCondition = &updateStatusCond
-	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
-	require.NoError(t, err)
-	request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
-	updatedApp := graphql.ApplicationExt{}
+		updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+		updateInput.BaseURL = ptr.String("https://local.com")
+		updateInput.StatusCondition = &updateStatusCond
+		updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+		require.NoError(t, err)
+		request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+		updatedApp := graphql.ApplicationExt{}
 
-	//WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
+		//WHEN
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
 
-	//THEN
-	require.NoError(t, err)
-	require.Len(t, updatedApp.Webhooks, 1)
+		//THEN
+		require.NoError(t, err)
+		require.Len(t, updatedApp.Webhooks, 1)
+	})
+
+	t.Run("Does not create webhook when updating application without baseURL", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+
+		appInput := fixtures.FixSampleApplicationRegisterInput("before")
+		appInput.Labels["applicationType"] = "SAP temp-1"
+		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+		require.NoError(t, err)
+		require.NotEmpty(t, actualApp.ID)
+
+		require.Empty(t, actualApp.Webhooks)
+
+		updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+		updateStatusCond := graphql.ApplicationStatusConditionConnected
+		updateInput.StatusCondition = &updateStatusCond
+		updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+		require.NoError(t, err)
+		request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+		updatedApp := graphql.ApplicationExt{}
+
+		//WHEN
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
+
+		//THEN
+		require.NoError(t, err)
+		require.Empty(t, updatedApp.Webhooks)
+	})
+
+	t.Run("Does not create webhook when updating application that has no matching applicationType from configuration", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+
+		appInput := fixtures.FixSampleApplicationRegisterInput("before")
+		appInput.Labels["applicationType"] = "SAP unsupported"
+		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+		require.NoError(t, err)
+		require.NotEmpty(t, actualApp.ID)
+
+		require.Empty(t, actualApp.Webhooks)
+
+		updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+		updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+		require.NoError(t, err)
+		request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+		updatedApp := graphql.ApplicationExt{}
+
+		//WHEN
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
+
+		//THEN
+		require.NoError(t, err)
+		require.Empty(t, updatedApp.Webhooks)
+	})
 }
 
 func TestUpdateApplicationWithLocalTenantIDShouldBeAllowedOnlyForIntegrationSystems(t *testing.T) {

@@ -1439,7 +1439,7 @@ func (s *service) getMappingORDConfiguration(applicationType string) (ORDWebhook
 	return ORDWebhookMapping{}, false
 }
 
-func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationType, ppmsProductVersionId string) *model.WebhookInput {
+func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationType, ppmsProductVersionID string) *model.WebhookInput {
 	if baseURL == "" {
 		log.C(ctx).Infof("No baseURL found in input. Will not create a webhook")
 		return nil
@@ -1451,8 +1451,8 @@ func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationTyp
 		return nil
 	}
 
-	if ppmsProductVersionId != "" && !isPpmsProductVersionPresentInConfig(ppmsProductVersionId, mappingCfg) {
-		log.C(ctx).Infof("Product with ppms ID %q is not supported", ppmsProductVersionId)
+	if ppmsProductVersionID != "" && !isPpmsProductVersionPresentInConfig(ppmsProductVersionID, mappingCfg) {
+		log.C(ctx).Infof("Product with ppms ID %q is not supported", ppmsProductVersionID)
 		return nil
 	}
 

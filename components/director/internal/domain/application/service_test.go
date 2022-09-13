@@ -2439,7 +2439,7 @@ func TestService_Update(t *testing.T) {
 		Key:   "applicationType",
 		Value: "test-app",
 	}
-	ppmsVersionIdLabel := &model.Label{
+	ppmsVersionIDLabel := &model.Label{
 		Key:   "ppmsProductVersionId",
 		Value: "test-app",
 	}
@@ -2495,7 +2495,7 @@ func TestService_Update(t *testing.T) {
 				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
 				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
 				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "applicationType").Return(appTypeLabel, nil).Once()
-				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(ppmsVersionIdLabel, nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(ppmsVersionIDLabel, nil).Once()
 				return svc
 			},
 			InputID:            "foo",
@@ -2517,7 +2517,7 @@ func TestService_Update(t *testing.T) {
 				svc := &automock.LabelService{}
 				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
 				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "applicationType").Return(appTypeLabel, nil).Once()
-				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(ppmsVersionIdLabel, nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(ppmsVersionIDLabel, nil).Once()
 				return svc
 			},
 			InputID:            "foo",
