@@ -5,8 +5,6 @@ gateway:
       enabled: false
 global:
   isForTesting: true
-  gateway:
-    enabled: true
   auditlog:
     skipSSLValidation: true
   cockpit:
