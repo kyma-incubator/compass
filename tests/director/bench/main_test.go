@@ -18,7 +18,6 @@ import (
 )
 
 type config struct {
-	DefaultScenario                string `envconfig:"default=DEFAULT"`
 	DirectorExternalCertSecuredURL string
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
