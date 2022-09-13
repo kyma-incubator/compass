@@ -18,6 +18,9 @@ import (
 func TestViewerQuery(t *testing.T) {
 	ctx := context.Background()
 
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, testScenario)
+
 	t.Run("Test viewer as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System via Certificate Secured Client")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
@@ -51,7 +54,7 @@ func TestViewerQuery(t *testing.T) {
 		appInput := graphql.ApplicationRegisterInput{
 			Name: "test-app",
 			Labels: graphql.Labels{
-				"scenarios": []interface{}{"DEFAULT"},
+				"scenarios": []interface{}{testScenario},
 			},
 		}
 
@@ -86,7 +89,7 @@ func TestViewerQuery(t *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test-runtime",
 			Labels: graphql.Labels{
-				"scenarios": []interface{}{"DEFAULT"},
+				"scenarios": []interface{}{testScenario},
 			},
 		}
 
