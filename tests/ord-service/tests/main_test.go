@@ -51,7 +51,6 @@ type config struct {
 	ORDExternalCertSecuredServiceURL string
 	ORDServiceStaticPrefix           string
 	ORDServiceDefaultResponseType    string
-	DefaultScenarioEnabled           bool `envconfig:"default=true"`
 	ConsumerTokenURL                 string
 	TokenPath                        string
 	ProviderClientID                 string
