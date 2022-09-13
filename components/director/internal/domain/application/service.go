@@ -553,7 +553,9 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 
 	ppmsProductVersionId := ""
 	if ppmsProductVersionIdLbl != nil {
-		ppmsProductVersionId = ppmsProductVersionIdLbl.Value.(string)
+		if ppmsProductVersionIdValue, ok := ppmsProductVersionIdLbl.Value.(string); ok {
+			ppmsProductVersionId = ppmsProductVersionIdValue
+		}
 	}
 
 	ordWebhook := s.prepareORDWebhook(ctx, str.PtrStrToStr(in.BaseURL), appTypeLbl.Value.(string), ppmsProductVersionId)
@@ -1307,9 +1309,11 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 
 	ppmsProductVersionId := ""
 
-	ppmsProductVersionIdLbl := in.Labels[ppmsProductVersionIdLabelKey]
-	if ppmsProductVersionIdLbl != nil {
-		ppmsProductVersionId = ppmsProductVersionIdLbl.(string)
+	ppmsProductVersionIdLbl, ok := in.Labels[ppmsProductVersionIdLabelKey]
+	if ppmsProductVersionIdLbl != nil && ok {
+		if ppmsProductVersionIdValue, ok := ppmsProductVersionIdLbl.(string); ok {
+			ppmsProductVersionId = ppmsProductVersionIdValue
+		}
 	}
 
 	ordWebhook := s.prepareORDWebhook(ctx, str.PtrStrToStr(in.BaseURL), appTypeLbl.(string), ppmsProductVersionId)
