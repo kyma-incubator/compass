@@ -2,9 +2,11 @@ gateway:
   gateway:
     auditlog:
       authMode: "oauth-mtls"
-      enabled: true
+      enabled: false
 global:
   isForTesting: true
+  gateway:
+    enabled: true
   auditlog:
     skipSSLValidation: true
   cockpit:
