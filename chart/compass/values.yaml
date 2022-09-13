@@ -263,7 +263,6 @@ global:
       clientKeyKey: client-key
   log:
     format: "kibana"
-  enableCompassDefaultScenarioAssignment: true
   tenantConfig:
     useDefaultTenants: true
     dbPool:
