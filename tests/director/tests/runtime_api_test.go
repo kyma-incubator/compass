@@ -50,7 +50,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
-	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertRuntime(t, givenInput, actualRuntime)
 
 	// add Label
 	actualLabel := graphql.Label{}
@@ -69,11 +69,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
-	if conf.DefaultScenarioEnabled {
-		assert.Len(t, actualRuntime.Labels, 4)
-	} else {
-		assert.Len(t, actualRuntime.Labels, 3)
-	}
+	assert.Len(t, actualRuntime.Labels, 3)
 
 	// add agent auth
 	// GIVEN
@@ -155,7 +151,7 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualRuntime.ID)
-	assertions.AssertRuntime(t, in, actualRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertRuntime(t, in, actualRuntime)
 }
 
 func TestModifyRuntimeWebhooks(t *testing.T) {
@@ -233,9 +229,6 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 }
 
 func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
-	const (
-		testFormation = "test-scenario"
-	)
 	// GIVEN
 	ctx := context.Background()
 	subaccount := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
@@ -250,14 +243,14 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &actualRuntime)
 
 	//THEN
-	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, true)
+	assertions.AssertRuntime(t, givenInput, actualRuntime)
 
 	// update label definition
-	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testFormation, "DEFAULT"})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{"DEFAULT"})
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
 	// assign to formation
-	givenFormation := graphql.FormationInput{Name: testFormation}
+	givenFormation := graphql.FormationInput{Name: testScenario}
 
 	actualFormation := graphql.Formation{}
 
@@ -277,7 +270,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
 	assert.True(t, hasScenarios)
 	assert.Len(t, scenarios, 1)
-	assert.Contains(t, scenarios, testFormation)
+	assert.Contains(t, scenarios, testScenario)
 
 	// delete runtime
 
@@ -457,6 +450,9 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
+
 	name := "test-create-runtime-without-labels"
 	runtimeInput := fixRuntimeInput(name)
 
@@ -470,12 +466,12 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime)
 
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
 	secondInput := fixRuntimeUpdateInput(name)
-	secondInput.Labels[ScenariosLabel] = []interface{}{"DEFAULT"}
+	secondInput.Labels[ScenariosLabel] = []interface{}{testScenario}
 	secondInput.Description = ptr.String("runtime-1-description")
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(secondInput)
 	require.NoError(t, err)
@@ -486,7 +482,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertions.AssertUpdatedRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertUpdatedRuntime(t, secondInput, secondRuntime)
 }
 
 func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
@@ -494,6 +490,9 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	ctx := context.Background()
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	name := "test-create-runtime-without-labels"
 	runtimeInput := fixRuntimeInput(name)
@@ -509,13 +508,13 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
-	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertRuntime(t, runtimeInput, fetchedRuntime)
 
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
 	secondInput := fixRuntimeUpdateInput(name)
 	secondInput.Description = ptr.String("runtime-1-description")
-	secondInput.Labels[ScenariosLabel] = []interface{}{"DEFAULT"}
+	secondInput.Labels[ScenariosLabel] = []interface{}{testScenario}
 	secondInput.Labels[IsNormalizedLabel] = "true"
 
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(secondInput)
@@ -527,7 +526,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertions.AssertUpdatedRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertUpdatedRuntime(t, secondInput, secondRuntime)
 }
 
 func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
@@ -547,7 +546,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		//THEN
 		require.NotEmpty(t, actualRuntime.ID)
-		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
+		assertions.AssertRuntime(t, runtimeInput, actualRuntime)
 
 		t.Log("Successfully set regular runtime label using certificate")
 		// GIVEN
@@ -754,7 +753,7 @@ func TestRuntimeTypeLabels(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
+		assertions.AssertRuntime(t, runtimeInput, actualRuntime)
 
 		t.Logf("Validate %q label is not added when runtime is registered without integration system credentials...", conf.RuntimeTypeLabelKey)
 		runtimeTypeLabelValue, ok := actualRuntime.Labels[conf.RuntimeTypeLabelKey].(string)

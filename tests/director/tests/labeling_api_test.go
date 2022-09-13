@@ -73,7 +73,7 @@ func TestCreateLabel(t *testing.T) {
 	assert.Equal(t, labelKey, delLabel.Key)
 }
 
-func TestLachoCreateScenariosLabel(t *testing.T) {
+func TestCreateScenariosLabel(t *testing.T) {
 	// GIVEN
 	t.Log("Create application")
 	ctx := context.Background()
@@ -102,7 +102,7 @@ func TestLachoCreateScenariosLabel(t *testing.T) {
 	require.NotEmpty(t, actualApp)
 }
 
-func TestLachoUpdateScenariosLabelDefinitionValue(t *testing.T) {
+func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
@@ -118,18 +118,7 @@ func TestLachoUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	labelKey := "scenarios"
 	additionalValue := "ADDITIONAL"
 
-	t.Log("Create Label Definition")
-	scenarioSchema := map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": []string{testScenario},
-		},
-	}
-	var schema interface{} = scenarioSchema
-	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, ScenariosLabel, schema, tenantId)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	t.Logf("Update Label Definition scenarios enum with additional value %s", additionalValue)
 
@@ -143,10 +132,9 @@ func TestLachoUpdateScenariosLabelDefinitionValue(t *testing.T) {
 		"uniqueItems": true,
 	}
 
-	schema = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: json.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, jsonSchema),
 	}
 
 	ldInputGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(ldInput)
@@ -158,6 +146,8 @@ func TestLachoUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
 
 	require.NoError(t, err)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, additionalValue)
 
 	scenarios := []string{additionalValue}
 
@@ -182,7 +172,7 @@ func TestLachoUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	assert.Equal(t, scenarios, actualScenariosEnum)
 }
 
-func TestLachoSearchApplicationsByLabels(t *testing.T) {
+func TestSearchApplicationsByLabels(t *testing.T) {
 	// GIVEN
 	//Create first application
 	ctx := context.Background()
@@ -266,7 +256,7 @@ func TestLachoSearchApplicationsByLabels(t *testing.T) {
 	saveExampleInCustomDir(t, applicationRequest.Query(), queryApplicationsCategory, "query applications with label filter")
 }
 
-func TestLachoSearchRuntimesByLabels(t *testing.T) {
+func TestSearchRuntimesByLabels(t *testing.T) {
 	// GIVEN
 	//Create first runtime
 	ctx := context.Background()
@@ -352,7 +342,7 @@ func TestLachoSearchRuntimesByLabels(t *testing.T) {
 	saveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with label filter")
 }
 
-func TestLachoListLabelDefinitions(t *testing.T) {
+func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 	defer tenant.TestTenants.CleanupTenant(tenantID)
@@ -396,7 +386,7 @@ func TestLachoListLabelDefinitions(t *testing.T) {
 	assert.Contains(t, labelDefinitions, firstLabelDefinition)
 }
 
-func TestLachoDeleteLastScenarioForApplication(t *testing.T) {
+func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 
@@ -404,23 +394,16 @@ func TestLachoDeleteLastScenarioForApplication(t *testing.T) {
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{"Christmas", "New Year"}
 
-	scenarioSchema := map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": scenarios,
-		},
-	}
-	var schema interface{} = scenarioSchema
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[0])
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[0])
 
-	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, ScenariosLabel, schema, tenantID)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[1])
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[1])
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
 		Labels: graphql.Labels{
-			ScenariosLabel: []string{"Christmas", "New Year"},
+			ScenariosLabel: scenarios,
 		},
 	}
 
@@ -431,7 +414,7 @@ func TestLachoDeleteLastScenarioForApplication(t *testing.T) {
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 	//WHEN
-	appLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{"Christmas"})
+	appLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{scenarios[0]})
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, appLabelRequest, nil))
 
 	//remove last label
