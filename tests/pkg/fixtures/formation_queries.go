@@ -31,7 +31,8 @@ func CreateFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 	return formation
 }
 
-func CreateFormationWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantId, formationName string) graphql.Formation {
+func CreateFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantId, formationName string) graphql.Formation {
+	t.Logf("Creating formation with name: %q", formationName)
 	var formation graphql.Formation
 	createFirstFormationReq := FixCreateFormationRequest(formationName)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantId, createFirstFormationReq, &formation)

@@ -20,8 +20,14 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
 
 	testScenario := "test-scenario"
+
 	b.Logf("Creating formation with name: %q", testScenario)
-	fixtures.CreateFormationWithinTenant(b, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+	var formation graphql.Formation
+	createFirstFormationReq := fixtures.FixCreateFormationRequest(testScenario)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createFirstFormationReq, &formation)
+	require.NoError(b, err)
+	require.Equal(b, testScenario, formation.Name)
+
 	defer func() {
 		b.Logf("Deleting formation with name: %q", testScenario)
 		deleteRequest := fixtures.FixDeleteFormationRequest(testScenario)
