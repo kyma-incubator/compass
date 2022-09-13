@@ -474,6 +474,37 @@ func TestUpdateApplication(t *testing.T) {
 	saveExample(t, request.Query(), "update application")
 }
 
+func TestUpdateApplicationWithWebhook(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	appInput := fixtures.FixSampleApplicationRegisterInput("before")
+	appInput.Labels["applicationType"] = "SAP temp-1"
+	actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+
+	updateStatusCond := graphql.ApplicationStatusConditionConnected
+
+	require.Empty(t, actualApp.Webhooks)
+
+	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+	updateInput.BaseURL = ptr.String("https://local.com")
+	updateInput.StatusCondition = &updateStatusCond
+	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+	request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+	updatedApp := graphql.ApplicationExt{}
+
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
+
+	//THEN
+	require.NoError(t, err)
+	require.Len(t, updatedApp.Webhooks, 1)
+}
+
 func TestUpdateApplicationWithLocalTenantIDShouldBeAllowedOnlyForIntegrationSystems(t *testing.T) {
 	ctx := context.Background()
 
