@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
@@ -33,4 +34,6 @@ type Configuration struct {
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 	RuntimeTypeLabelKey             string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 	ApplicationTypeLabelKey         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+
+	ORDWebhookMappings []application.ORDWebhookMapping `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 }

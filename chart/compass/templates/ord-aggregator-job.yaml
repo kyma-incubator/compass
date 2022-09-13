@@ -97,6 +97,8 @@ spec:
                   value: "{{ .Values.global.ordAggregator.maxParallelDocumentsPerApplication }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
                   value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+                - name: APP_ORD_WEBHOOK_MAPPINGS
+                  value: {{ .Values.global.director.ordWebhookMappings | quote }}
               command:
                 - "/bin/sh"
               args:

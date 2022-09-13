@@ -114,7 +114,7 @@ type IntegrationSystemRepository interface {
 }
 
 // LabelService missing godoc
-//go:generate mockery --name=labelService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
@@ -1500,7 +1500,7 @@ func createORDWebhookInput(baseURL, suffix, ordPath string) (*model.WebhookInput
 		Type: model.WebhookTypeOpenResourceDiscovery,
 		URL:  str.Ptr(webhookURL),
 		Auth: &model.AuthInput{
-			AccessStrategy: str.Ptr(accessstrategy.CMPmTLSAccessStrategy),
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
 		},
 	}, nil
 }

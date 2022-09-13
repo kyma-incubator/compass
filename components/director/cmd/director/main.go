@@ -267,6 +267,7 @@ func main() {
 		accessStrategyExecutorProvider,
 		cfg.SubscriptionConfig,
 		cfg.TenantOnDemandConfig,
+		cfg.ORDWebhookMappings,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 

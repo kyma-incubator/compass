@@ -150,7 +150,7 @@ func main() {
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, conf.ORDWebhookMappings)
 
 	err = registerAppTemplate(ctx, transact, appTemplateSvc)
 	exitOnError(err, "while registering application template")

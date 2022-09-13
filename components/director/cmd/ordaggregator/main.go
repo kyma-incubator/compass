@@ -80,6 +80,8 @@ type config struct {
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
+
+	ORDWebhookMappings []application.ORDWebhookMapping `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 }
 
 func main() {
@@ -200,7 +202,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey, config.ORDWebhookMappings)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
