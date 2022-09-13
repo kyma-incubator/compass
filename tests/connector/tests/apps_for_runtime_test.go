@@ -11,14 +11,13 @@ import (
 )
 
 const (
-	ScenariosLabel  = "scenarios"
-	TestScenario    = "test-scenario"
-	DefaultScenario = "DEFAULT"
+	ScenariosLabel = "scenarios"
+	TestScenario   = "test-scenario"
 )
 
 func TestAppsForRuntimeWithCertificates(t *testing.T) {
-	scenarios := []string{DefaultScenario, TestScenario}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, scenarios)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, TestScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, TestScenario)
 
 	appIdToCommonName := make(map[string]string)
 
