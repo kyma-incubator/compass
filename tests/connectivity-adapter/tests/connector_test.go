@@ -1,11 +1,14 @@
 package tests
 
 import (
+	"context"
 	"crypto/rsa"
 	"net/http"
 	"net/url"
 	"strconv"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -21,20 +24,26 @@ import (
 )
 
 const (
-	TestApp     = "mytestapp"
-	TestRuntime = "mytestrunt"
+	TestApp      = "mytestapp"
+	TestRuntime  = "mytestrunt"
+	testScenario = "test-scenario"
 )
 
 var defaultAppNameNormalizer = &normalizer.DefaultNormalizator{}
 
 func TestConnector(t *testing.T) {
+	ctx := context.Background()
+
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, testScenario)
+
 	appInput := directorSchema.ApplicationRegisterInput{
 		Name:           TestApp,
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{testScenario},
 		},
 	}
 

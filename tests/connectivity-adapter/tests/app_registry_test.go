@@ -17,7 +17,10 @@
 package tests
 
 import (
+	"context"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -28,13 +31,18 @@ import (
 )
 
 func TestAppRegistry(t *testing.T) {
+	ctx := context.Background()
+
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, testScenario)
+
 	appInput := directorSchema.ApplicationRegisterInput{
 		Name:           TestApp,
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{testScenario},
 		},
 	}
 
@@ -152,7 +160,7 @@ func fixRuntimeInput(descr string) directorSchema.RuntimeRegisterInput {
 		Name:        TestRuntime,
 		Description: &descr,
 		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{testScenario},
 		},
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/machinebox/graphql"
+
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -29,7 +31,10 @@ type config struct {
 	CertLoaderConfig               certloader.Config
 }
 
-var testConfig config
+var (
+	testConfig               config
+	certSecuredGraphQLClient *graphql.Client
+)
 
 func TestMain(m *testing.M) {
 	err := envconfig.InitWithPrefix(&testConfig, "APP")
@@ -47,7 +52,7 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
 	directorClient, err = clients.NewDirectorClient(certSecuredGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
 	if err != nil {
 		log.D().Fatal(err)
