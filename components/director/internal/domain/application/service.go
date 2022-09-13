@@ -44,7 +44,7 @@ const (
 	locationIDKey                = "LocationID"
 	urlSuffixToBeTrimmed         = "/"
 	applicationTypeLabelKey      = "applicationType"
-	ppmsProductVersionIdLabelKey = "ppmsProductVersionId"
+	ppmsProductVersionIDLabelKey = "ppmsProductVersionId"
 	urlSubdomainSeparator        = "."
 )
 
@@ -544,21 +544,21 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return nil
 	}
 
-	ppmsProductVersionIdLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, ppmsProductVersionIdLabelKey)
+	ppmsProductVersionIDLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, ppmsProductVersionIDLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return errors.Wrapf(err, "while getting label %q for %q with id %q", ppmsProductVersionIdLabelKey, model.ApplicationLabelableObject, app.ID)
+			return errors.Wrapf(err, "while getting label %q for %q with id %q", ppmsProductVersionIDLabelKey, model.ApplicationLabelableObject, app.ID)
 		}
 	}
 
-	ppmsProductVersionId := ""
-	if ppmsProductVersionIdLbl != nil {
-		if ppmsProductVersionIdValue, ok := ppmsProductVersionIdLbl.Value.(string); ok {
-			ppmsProductVersionId = ppmsProductVersionIdValue
+	ppmsProductVersionID := ""
+	if ppmsProductVersionIDLbl != nil {
+		if ppmsProductVersionIDValue, ok := ppmsProductVersionIDLbl.Value.(string); ok {
+			ppmsProductVersionID = ppmsProductVersionIDValue
 		}
 	}
 
-	ordWebhook := s.prepareORDWebhook(ctx, str.PtrStrToStr(in.BaseURL), appTypeLbl.Value.(string), ppmsProductVersionId)
+	ordWebhook := s.prepareORDWebhook(ctx, str.PtrStrToStr(in.BaseURL), appTypeLbl.Value.(string), ppmsProductVersionID)
 	if ordWebhook == nil {
 		log.C(ctx).Infof("Skipping ORD Webhook creation for app with id %q.", app.ID)
 		return nil
@@ -1307,16 +1307,16 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 		return nil
 	}
 
-	ppmsProductVersionId := ""
+	ppmsProductVersionID := ""
 
-	ppmsProductVersionIdLbl, ok := in.Labels[ppmsProductVersionIdLabelKey]
-	if ppmsProductVersionIdLbl != nil && ok {
-		if ppmsProductVersionIdValue, ok := ppmsProductVersionIdLbl.(string); ok {
-			ppmsProductVersionId = ppmsProductVersionIdValue
+	ppmsProductVersionIDLbl, ok := in.Labels[ppmsProductVersionIDLabelKey]
+	if ppmsProductVersionIDLbl != nil && ok {
+		if ppmsProductVersionIDValue, ok := ppmsProductVersionIDLbl.(string); ok {
+			ppmsProductVersionID = ppmsProductVersionIDValue
 		}
 	}
 
-	ordWebhook := s.prepareORDWebhook(ctx, str.PtrStrToStr(in.BaseURL), appTypeLbl.(string), ppmsProductVersionId)
+	ordWebhook := s.prepareORDWebhook(ctx, str.PtrStrToStr(in.BaseURL), appTypeLbl.(string), ppmsProductVersionID)
 	if ordWebhook == nil {
 		log.C(ctx).Infof("Skipping ORD Webhook creation for app with id %q.", app.ID)
 		return nil
@@ -1456,7 +1456,7 @@ func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationTyp
 		return nil
 	}
 
-	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg.SubdomainSuffix, mappingCfg.OrdUrlPath)
+	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg.SubdomainSuffix, mappingCfg.OrdURLPath)
 	if err != nil {
 		log.C(ctx).Infof("Creating ORD Webhook failed with error: %v", err)
 		return nil
@@ -1465,9 +1465,9 @@ func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationTyp
 	return webhookInput
 }
 
-func isPpmsProductVersionPresentInConfig(ppmsProductVersionId string, mappingCfg ORDWebhookMapping) bool {
+func isPpmsProductVersionPresentInConfig(ppmsProductVersionID string, mappingCfg ORDWebhookMapping) bool {
 	for _, productVersion := range mappingCfg.PpmsProductVersions {
-		if productVersion == ppmsProductVersionId {
+		if productVersion == ppmsProductVersionID {
 			return true
 		}
 	}
