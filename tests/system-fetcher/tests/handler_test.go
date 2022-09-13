@@ -795,7 +795,6 @@ func cleanupMockSystems(t *testing.T) {
 
 func applicationLabels(name, appTemplateName string, fromTemplate bool) directorSchema.Labels {
 	labels := directorSchema.Labels{
-		"scenarios":            []interface{}{"DEFAULT"},
 		"managed":              "true",
 		"name":                 fmt.Sprintf("mp-%s", name),
 		"integrationSystemID":  "",
