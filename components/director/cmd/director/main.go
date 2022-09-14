@@ -163,7 +163,7 @@ type config struct {
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
-	ORDWebhookMappings []application.ORDWebhookMapping `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 }
 
 func main() {
@@ -181,6 +181,9 @@ func main() {
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
+
+	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
+	exitOnError(err, "Error while loading ORD Webhook Mappings")
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
@@ -267,7 +270,7 @@ func main() {
 		accessStrategyExecutorProvider,
 		cfg.SubscriptionConfig,
 		cfg.TenantOnDemandConfig,
-		cfg.ORDWebhookMappings,
+		ordWebhookMapping,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -283,7 +286,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg, httpClient, mtlsHTTPClient), runtimeCtxSvc(cfg, httpClient, mtlsHTTPClient), appTemplateSvc(), applicationSvc(cfg, httpClient, mtlsHTTPClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg, httpClient, mtlsHTTPClient), runtimeCtxSvc(cfg, httpClient, mtlsHTTPClient), appTemplateSvc(), applicationSvc(cfg, httpClient, mtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -724,7 +727,7 @@ func appTemplateSvc() claims.ApplicationTemplateService {
 	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 }
 
-func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client, certCache certloader.Cache) claims.ApplicationService {
+func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client, certCache certloader.Cache, ordWebhookMapping []application.ORDWebhookMapping) claims.ApplicationService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
@@ -794,7 +797,7 @@ func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client, 
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
-	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, cfg.ORDWebhookMappings)
+	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 }
 
 func intSystemSvc() claims.IntegrationSystemService {

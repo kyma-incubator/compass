@@ -76,6 +76,9 @@ func main() {
 	err := envconfig.InitWithPrefix(&conf, "APP")
 	exitOnError(err, "while reading ns adapter configuration")
 
+	ordWebhookMapping, err := application.UnmarshalMappings(conf.ORDWebhookMappings)
+	exitOnError(err, "failed while unmarshalling ord webhook mappings")
+
 	transact, closeDBConn, err := persistence.Configure(ctx, conf.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 	defer func() {
@@ -150,7 +153,7 @@ func main() {
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, conf.ORDWebhookMappings)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 
 	err = registerAppTemplate(ctx, transact, appTemplateSvc)
 	exitOnError(err, "while registering application template")

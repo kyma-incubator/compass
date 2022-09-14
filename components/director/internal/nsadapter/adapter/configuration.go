@@ -3,8 +3,6 @@ package adapter
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -36,5 +34,5 @@ type Configuration struct {
 	RuntimeTypeLabelKey             string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 	ApplicationTypeLabelKey         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 
-	ORDWebhookMappings []application.ORDWebhookMapping `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 }
