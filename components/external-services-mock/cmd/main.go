@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
@@ -54,16 +55,23 @@ type config struct {
 	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	ORDServers    ORDServers
-	SelfRegConfig selfreg.Config
-	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
-	TrustedTenant string `envconfig:"APP_TRUSTED_TENANT"`
+	DestinationServiceConfig DestinationServiceConfig
+	ORDServers               ORDServers
+	SelfRegConfig            selfreg.Config
+	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
+	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
 
 	CACert string `envconfig:"APP_CA_CERT"`
 	CAKey  string `envconfig:"APP_CA_KEY"`
+}
+
+// DestinationServiceConfig configuration for destination service endpoints
+type DestinationServiceConfig struct {
+	TenantDestinationsEndpoint string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
+	SensitiveDataEndpoint      string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -94,7 +102,7 @@ type BasicCredentialsConfig struct {
 	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
-func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, iss string, scopes []string, extAttributes map[string]interface{}) oauth.ClaimsGetterFunc {
+func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, userNameClaim, iss string, scopes []string, extAttributes map[string]interface{}) oauth.ClaimsGetterFunc {
 	return func() map[string]interface{} {
 		return map[string]interface{}{
 			uniqueAttrKey: uniqueAttrValue,
@@ -103,6 +111,7 @@ func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, is
 			"client_id":   clientID,
 			"tenant":      tenantID,
 			"identity":    identity,
+			"user_name":   userNameClaim,
 			"iss":         iss,
 			"exp":         time.Now().Unix() + int64(time.Minute.Seconds()*10),
 		}
@@ -118,9 +127,9 @@ func main() {
 
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
-		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{}),
-		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
+		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -132,7 +141,7 @@ func main() {
 	wg.Add(2)
 
 	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 2 * time.Minute,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
@@ -199,6 +208,16 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	configChangeRouter := router.PathPrefix("/audit-log/v2/configuration-changes").Subrouter()
 	configChangeRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
+
+	// Destination Service handler
+	destinationHandler := destinationfetcher.NewHandler()
+	tenantDestinationEndpoint := cfg.DestinationServiceConfig.TenantDestinationsEndpoint
+	sensitiveDataEndpoint := cfg.DestinationServiceConfig.SensitiveDataEndpoint + "/{name}"
+	router.HandleFunc(tenantDestinationEndpoint,
+		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
+	router.HandleFunc(tenantDestinationEndpoint, destinationHandler.PostDestination).Methods(http.MethodPost)
+	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
+	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)

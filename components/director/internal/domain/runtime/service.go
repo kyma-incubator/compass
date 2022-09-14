@@ -270,11 +270,9 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		in.Labels[key] = value
 	}
 
-	if scenarios, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
-		if err := s.assignRuntimeScenarios(ctx, rtmTenant, id, scenarios); err != nil {
-			return err
-		}
-
+	var scenariosToAssign interface{} = nil
+	if _, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
+		scenariosToAssign = in.Labels[model.ScenariosKey]
 		delete(in.Labels, model.ScenariosKey)
 	}
 
@@ -289,6 +287,12 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 
 	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Runtime")
+	}
+
+	if scenariosToAssign != nil {
+		if err := s.assignRuntimeScenarios(ctx, rtmTenant, id, scenariosToAssign); err != nil {
+			return err
+		}
 	}
 
 	for _, w := range in.Webhooks {

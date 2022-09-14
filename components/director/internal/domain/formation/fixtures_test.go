@@ -47,28 +47,32 @@ var (
 )
 
 const (
-	TargetTenantID             = "targetTenantID"
-	ScenarioName               = "scenario-A"
-	ScenarioName2              = "scenario-B"
-	ErrMsg                     = "some error"
-	Tnt                        = "953ac686-5773-4ad0-8eb1-2349e931f852"
-	TargetTenant               = "targetTenant"
-	ExternalTnt                = "external-tnt"
-	TenantID2                  = "18271026-3998-4391-be58-b783a09fcca8"
-	TargetTenantID2            = "targetTenantID2"
-	WebhookID                  = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
-	RuntimeID                  = "rt-id"
-	WebhookForRuntimeContextID = "5202f196-46d7-4d1e-be50-434dd9fcd157"
-	RuntimeContextRuntimeID    = "rt-ctx-rt-id"
-	RuntimeContextID           = "rt-ctx-id"
-	FormationTemplateID        = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
-	FormationID                = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
-	testFormationName          = "test-formation"
-	secondTestFormationName    = "second-formation"
-	ApplicationID              = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
-	Application2ID             = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
-	ApplicationTemplateID      = "58963c6f-24f6-4128-a05c-51d5356e7e09"
-	runtimeType                = "runtimeType"
+	TargetTenantID                   = "targetTenantID"
+	ScenarioName                     = "scenario-A"
+	ScenarioName2                    = "scenario-B"
+	ErrMsg                           = "some error"
+	Tnt                              = "953ac686-5773-4ad0-8eb1-2349e931f852"
+	TargetTenant                     = "targetTenant"
+	ExternalTnt                      = "external-tnt"
+	TenantID2                        = "18271026-3998-4391-be58-b783a09fcca8"
+	TargetTenantID2                  = "targetTenantID2"
+	WebhookID                        = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
+	RuntimeID                        = "rt-id"
+	WebhookForRuntimeContextID       = "5202f196-46d7-4d1e-be50-434dd9fcd157"
+	AppTenantMappingWebhookIDForApp1 = "b91e7d97-65ed-4b72-a225-4a3b484c27e1"
+	AppTenantMappingWebhookIDForApp2 = "df7e9387-7bdf-46bb-b0c2-de5ec9a40a21"
+	RuntimeContextRuntimeID          = "rt-ctx-rt-id"
+	RuntimeContextID                 = "rt-ctx-id"
+	FormationTemplateID              = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
+	FormationID                      = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
+	testFormationName                = "test-formation"
+	secondTestFormationName          = "second-formation"
+	testFormationTemplateName        = "test-formation-template"
+	ApplicationID                    = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
+	Application2ID                   = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
+	ApplicationTemplateID            = "58963c6f-24f6-4128-a05c-51d5356e7e09"
+	runtimeType                      = "runtimeType"
+	applicationType                  = "applicationType"
 )
 
 func unusedLabelService() *automock.LabelService {
@@ -286,11 +290,28 @@ func fixWebhookModel(webhookID, runtimeID string) *model.Webhook {
 	}
 }
 
+func fixApplicationTenantMappingWebhookModel(webhookID, appID string) *model.Webhook {
+	return &model.Webhook{
+		ID:         webhookID,
+		ObjectID:   appID,
+		ObjectType: model.ApplicationWebhookReference,
+		Type:       model.WebhookTypeApplicationTenantMapping,
+	}
+}
+
 func fixWebhookGQLModel(webhookID, runtimeID string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:        webhookID,
 		RuntimeID: str.Ptr(runtimeID),
 		Type:      graphql.WebhookTypeConfigurationChanged,
+	}
+}
+
+func fixApplicationTenantMappingWebhookGQLModel(webhookID, appID string) *graphql.Webhook {
+	return &graphql.Webhook{
+		ID:        webhookID,
+		RuntimeID: str.Ptr(appID),
+		Type:      graphql.WebhookTypeApplicationTenantMapping,
 	}
 }
 

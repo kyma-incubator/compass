@@ -392,11 +392,15 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 					username
 					password
 				}
-				...  on OAuthCredentialData {
+				...  on CertificateOAuthCredentialData {
+					clientId
+					certificate
+					url
+				}
+   				...  on OAuthCredentialData {
 					clientId
 					clientSecret
 					url
-					
 				}
 			}
 			oneTimeToken {
@@ -421,12 +425,16 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 					clientId
 					clientSecret
 					url
-					
+				  }
+				  ...  on CertificateOAuthCredentialData {
+					clientId
+					certificate
+					url
 				  }
 			    }
 				additionalHeaders
 				additionalQueryParams
-			}
+			  }
 			}
 		`
 }

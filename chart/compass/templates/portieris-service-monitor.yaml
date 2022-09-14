@@ -1,0 +1,39 @@
+{{- if eq .Values.global.metrics.enabled true -}}
+{{ if eq .Values.global.portieris.isEnabled true }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: portieris
+  namespace: portieris
+  labels:
+    prometheus: monitoring
+    app: portieris
+spec:
+  endpoints:
+    - port: metrics
+      scheme: https
+      tlsConfig:
+        ca:
+          secret:
+            key: ca.crt
+            name: portieris-certs
+        cert:
+          secret:
+            key: tls.crt
+            name: portieris-certs
+        keySecret:
+          key: tls.key
+          name: portieris-certs
+        insecureSkipVerify: true
+      metricRelabelings:
+        - sourceLabels: [ __name__ ]
+          regex: ^(portieris_pod_admission_decision_deny_count)$
+          action: keep
+  namespaceSelector:
+    matchNames:
+      - "portieris"
+  selector:
+    matchLabels:
+      app: "portieris"
+  {{ end }}
+  {{- end }}

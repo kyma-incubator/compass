@@ -125,6 +125,11 @@ func BuildTenantFetcherRegionalURL(regionalHandlerEndpoint, tenantPathParam, reg
 	return tenantFetcherFullRegionalURL
 }
 
+func BuildRegionalDependenciesURL(tenantFetcherURL, rootAPI, dependenciesEndpoint, regionPathParam string) string {
+	regionalEndpoint := strings.Replace(dependenciesEndpoint, fmt.Sprintf("{%s}", regionPathParam), RegionPathParamValue, 1)
+	return tenantFetcherURL + rootAPI + regionalEndpoint
+}
+
 func DefaultClaims(externalServicesMockURL string) map[string]interface{} {
 	claims := map[string]interface{}{
 		"test": "tenant-fetcher",

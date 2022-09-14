@@ -496,7 +496,12 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepoFn:   UnusedWebhookRepository,
 			IntSysRepoFn:    UnusedIntegrationSystemRepository,
-			LabelServiceFn:  UnusedLabelService,
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithScenarios).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, labelsWithScenarios).Return(nil).Once()
+				return svc
+			},
 			BundleServiceFn: UnusedBundleService,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -1078,6 +1083,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 		IntSysRepoFn      func() *automock.IntegrationSystemRepository
 		LabelServiceFn    func() *automock.LabelUpsertService
 		UIDServiceFn      func() *automock.UIDService
+		WebhookRepoFn      func() *automock.WebhookRepository
 		Input             model.ApplicationRegisterInput
 		ExpectedErr       error
 	}{
@@ -1104,6 +1110,16 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				wh := &model.Webhook{
+					URL:      stringPtr("test.foo.com"),
+					ObjectID: id,
+				}
+				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return([]*model.Webhook{wh}, nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(nil)
+				return webhookRepo
+			},
 			Input:       applicationRegisterInputWithScenarios(),
 			ExpectedErr: nil,
 		},
@@ -1127,8 +1143,9 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input:       model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
-			ExpectedErr: nil,
+			WebhookRepoFn: UnusedWebhookRepository,
+			Input:         model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
+			ExpectedErr:   nil,
 		},
 		{
 			Name:              "Success when scenarios label provided",
@@ -1150,11 +1167,75 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			WebhookRepoFn: UnusedWebhookRepository,
 			Input: model.ApplicationRegisterInput{
 				Name:   "test",
 				Labels: labelsWithoutIntSys,
 			},
 			ExpectedErr: nil,
+		},
+		{
+			Name:              "Returns error when listing webhooks",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelScenarios).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return(nil, testErr)
+				return webhookRepo
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:              "Returns error when creating webhooks",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelScenarios).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return([]*model.Webhook{}, nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(testErr)
+				return webhookRepo
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when application creation failed",
@@ -1179,8 +1260,9 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			Input:       applicationRegisterInputWithScenarios(),
-			ExpectedErr: testErr,
+			WebhookRepoFn: UnusedWebhookRepository,
+			Input:         applicationRegisterInputWithScenarios(),
+			ExpectedErr:   testErr,
 		},
 		{
 			Name:              "Returns error when integration system doesn't exist",
@@ -1195,6 +1277,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			},
 			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn:   UnusedUIDService,
+			WebhookRepoFn:      UnusedWebhookRepository,
 			Input:          applicationRegisterInputWithScenarios(),
 			ExpectedErr:    errors.New("Object not found"),
 		},
@@ -1211,6 +1294,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			},
 			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn:   UnusedUIDService,
+			WebhookRepoFn:      UnusedWebhookRepository,
 			Input:          applicationRegisterInputWithScenarios(),
 			ExpectedErr:    testErr,
 		},
@@ -1223,7 +1307,8 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "")
+			webhookRepo := testCase.WebhookRepoFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "")
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1240,6 +1325,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			appRepo.AssertExpectations(t)
 			intSysRepo.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
+			webhookRepo.AssertExpectations(t)
 		})
 
 		t.Run(testCase.Name+"_TrustedUpsert", func(t *testing.T) {
@@ -1248,7 +1334,8 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "")
+			webhookRepo := testCase.WebhookRepoFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "")
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1333,6 +1420,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 		IntSysRepoFn      func() *automock.IntegrationSystemRepository
 		LabelServiceFn    func() *automock.LabelUpsertService
 		UIDServiceFn      func() *automock.UIDService
+		WebhookRepoFn      func() *automock.WebhookRepository
 		Input             model.ApplicationRegisterInput
 		ExpectedErr       error
 	}{
@@ -1359,8 +1447,18 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input:       applicationRegisterInputWithScenarios(),
-			ExpectedErr: nil,
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				wh := &model.Webhook{
+					URL:      stringPtr("test.foo.com"),
+					ObjectID: id,
+				}
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return([]*model.Webhook{wh}, nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(nil)
+				return webhookRepo
+			},
+			Input:         applicationRegisterInputWithScenarios(),
+			ExpectedErr:   nil,
 		},
 		{
 			Name:              "Success when no labels provided",
@@ -1382,8 +1480,9 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			Input:       model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
-			ExpectedErr: nil,
+			WebhookRepoFn: UnusedWebhookRepository,
+			Input:         model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
+			ExpectedErr:   nil,
 		},
 		{
 			Name:              "Success when scenarios label provided",
@@ -1405,11 +1504,75 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			WebhookRepoFn: UnusedWebhookRepository,
 			Input: model.ApplicationRegisterInput{
 				Name:   "test",
 				Labels: labelsWithoutIntSys,
 			},
 			ExpectedErr: nil,
+		},
+		{
+			Name:              "Returns error when listing webhooks",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("TrustedUpsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelScenarios).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return(nil, testErr)
+				return webhookRepo
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
+		},
+		{
+			Name:              "Returns error when creating webhooks",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("TrustedUpsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelScenarios).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return([]*model.Webhook{}, nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(testErr)
+				return webhookRepo
+			},
+			Input:       modelInput,
+			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when application creation failed",
@@ -1434,8 +1597,9 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
-			Input:       applicationRegisterInputWithScenarios(),
-			ExpectedErr: testErr,
+			WebhookRepoFn: UnusedWebhookRepository,
+			Input:         applicationRegisterInputWithScenarios(),
+			ExpectedErr:   testErr,
 		},
 		{
 			Name:              "Returns error when integration system doesn't exist",
@@ -1450,6 +1614,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			},
 			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn:   UnusedUIDService,
+			WebhookRepoFn:      UnusedWebhookRepository,
 			Input:          applicationRegisterInputWithScenarios(),
 			ExpectedErr:    errors.New("Object not found"),
 		},
@@ -1466,6 +1631,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			},
 			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn:   UnusedUIDService,
+			WebhookRepoFn:      UnusedWebhookRepository,
 			Input:          applicationRegisterInputWithScenarios(),
 			ExpectedErr:    testErr,
 		},
@@ -1478,7 +1644,8 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "")
+			webhookRepo := testCase.WebhookRepoFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, nil, uidSvc, nil, "")
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1495,6 +1662,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			appRepo.AssertExpectations(t)
 			intSysRepo.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
+			webhookRepo.AssertExpectations(t)
 		})
 	}
 
@@ -3181,109 +3349,6 @@ func TestService_ListAll(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
-		})
-	}
-}
-
-func TestService_ListGlobal(t *testing.T) {
-	// GIVEN
-	testErr := errors.New("Test error")
-
-	modelApplications := []*model.Application{
-		fixModelApplication("foo", "tenant-foo", "foo", "Lorem Ipsum"),
-		fixModelApplication("bar", "tenant-bar", "bar", "Lorem Ipsum"),
-	}
-	applicationPage := &model.ApplicationPage{
-		Data:       modelApplications,
-		TotalCount: len(modelApplications),
-		PageInfo: &pagination.Page{
-			HasNextPage: false,
-			EndCursor:   "end",
-			StartCursor: "start",
-		},
-	}
-
-	first := 2
-	after := "test"
-	filter := []*labelfilter.LabelFilter{{Key: ""}}
-
-	tnt := "tenant"
-	externalTnt := "external-tnt"
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.ApplicationRepository
-		InputLabelFilters  []*labelfilter.LabelFilter
-		InputPageSize      int
-		ExpectedResult     *model.ApplicationPage
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListGlobal", ctx, first, after).Return(applicationPage, nil).Once()
-				return repo
-			},
-			InputPageSize:      first,
-			InputLabelFilters:  filter,
-			ExpectedResult:     applicationPage,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Returns error when application listing failed",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListGlobal", ctx, first, after).Return(nil, testErr).Once()
-				return repo
-			},
-			InputPageSize:      first,
-			InputLabelFilters:  filter,
-			ExpectedResult:     nil,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name:         "Returns error when page size is less than 1",
-			RepositoryFn: UnusedApplicationRepository,
-
-			InputPageSize:      0,
-			InputLabelFilters:  filter,
-			ExpectedResult:     nil,
-			ExpectedErrMessage: "page size must be between 1 and 200",
-		},
-		{
-			Name:         "Returns error when page size is bigger than 200",
-			RepositoryFn: UnusedApplicationRepository,
-
-			InputPageSize:      201,
-			InputLabelFilters:  filter,
-			ExpectedResult:     nil,
-			ExpectedErrMessage: "page size must be between 1 and 200",
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "")
-
-			// WHEN
-			app, err := svc.ListGlobal(ctx, testCase.InputPageSize, after)
-
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, app)
-			} else {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
 		})
 	}
 }

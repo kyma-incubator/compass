@@ -101,18 +101,18 @@ function cleanup() {
 
     if [[ ${DEBUG} == true ]]; then
        echo -e "${GREEN}Cleanup Director binary${NC}"
-       rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director 
+       rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director
     fi
 
     if [[ ${SKIP_DB_CLEANUP} = false ]]; then
         echo -e "${GREEN}Cleanup Postgres container${NC}"
-        docker rm --force ${POSTGRES_CONTAINER} 
+        docker rm --force ${POSTGRES_CONTAINER}
     else
         echo -e "${GREEN}Skipping Postgres container cleanup${NC}"
     fi
 
     echo -e "${GREEN}Destroying k3d cluster...${NC}"
-    k3d cluster delete k3d-cluster 
+    k3d cluster delete k3d-cluster
 }
 
 trap cleanup EXIT
@@ -224,8 +224,6 @@ export APP_HEALTH_CONFIG_INDICATORS="{database,5s,1s,1s,3}"
 export APP_SUGGEST_TOKEN_HTTP_HEADER=suggest_token
 export APP_SCHEMA_MIGRATION_VERSION=$(ls -lr ${ROOT_PATH}/../schema-migrator/migrations/director | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
 export APP_ALLOW_JWT_SIGNING_NONE=true
-export APP_INFO_CERT_ISSUER="C=BG, L=Local, O=CMP, OU=Local, CN=CMP"
-export APP_INFO_CERT_SUBJECT="C=BG, O=CMP, OU=Local, L=Local, CN=local-clients"
 export APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY="non-existent-label-key"
 export APP_EXTERNAL_CLIENT_CERT_SECRET=${CLIENT_CERT_SECRET_NAMESPACE}/${CLIENT_CERT_SECRET_NAME}
 export APP_EXTERNAL_CLIENT_CERT_KEY="tls.crt"
@@ -237,6 +235,7 @@ export APP_SELF_REGISTER_OAUTH_X509_CERT="LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk
 export APP_SELF_REGISTER_OAUTH_X509_KEY="LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlKS1FJQkFBS0NBZ0VBb1Q5d3FIT2RVRWo2K0ZtaGdsckVhc1BjaXd3MHBLNC8wN3A3NjFWVzdCY1ZOc1lyCnd5dDdQUHhxbWxJODdHNk9UYTM3SlFKT0g5cjFKeVV2VEl6MG1rdnFrME1aa0tCT3Y2U0xEeUNwcDhnNE1HekMKS0dyV05ZQkhGY3Iwd0tLbDVvVXRYbjl0MEc4U1c4bU1GMXFaT2k5aUxkRVl4T2RuR3Jhb1p6OUU2dExUUFNBQwp0Qkc5UFJ0Q3BvRVA5WXl2L1dKMDdnOUx4bUsvc1lVbXBKMHpFZ2xwOWJhVERONTVDcmhQNE5zcUtkdS9LR3dwCis4SVM3MXBncFhLaGFna3kzclhVVnluY2RtcEhLWDRuQTRHSHRLTFIyQTU5UHIrWlZZK2xQV2FwdE54d1hGekYKQ0FRUlJtNWJvUUhFSFNSaE1tcHIvemF6Z1pTMGhubTNJL21pRk5mODkvc0VJalpnQWI1eFp6VFNDMzVLOFpFdwprd0Q5L2F1RUZEd3BvL0RiS3JLM21JNzhwWWp3bE0rMHp3T2tkTmxUdVpRVjZWYVNCUnpMNC9pQXdLZ0NXSU0zCmRvVEZzNmJUdytVeVYrbG4vN2RwMUFlbGtublM1WmQwWG1SSHg1dWVyaFFBRkNjWXc5Sk9uQVk5NW8vUVBqeEUKaFZpL21LZHZnUDZVWDlPWitUdnVQUHpOeWYrTkp4OUVOT3RQNUxWTnBQdVJnMmtNeDZWeG52VHlKOC8wUjUxRgo5bmpndnF3MXQ0NHJnQnkvcTRVaWsrWHZBTDR1VjRpZzJwVStwRWJ5bWp6SjJlM2kzQUpKV0NOYWVHRmt3NmFBCmlOWE5maThUaTVGN214ODBLYnlLQWZWUzA0MmpFSG0wdi9jek03aXE1d1FaRUVJRlA2cWQ5ODNHWms4Q0F3RUEKQVFLQ0FnRUFqUDBpYlRmQjZrd1ZuUWNKOENlYkxGc2JRRDBvM29FNWI5RFR2ejQ4Sld3OWNVb3ZRNVNHU2huTwp3Q1o5L0tEaUxrdWNsNHgvY04wTGsvR3dmTGVXdkQ3NjJVNUhVU3pLRGtrNkNiMGVlb1RYbElmVDhIRVI0Vy9MCk4rUGd3M3F6b203NTczRnVQRnlSNmMyOWYwSUpUbFhWKzRlanA2OUplSk1UaGt0TTRDSDg3NnBJa3RnYjVnMHEKNXRsY2NmQlVoVElNV1lib1U0dE9YMUswS2lVRlhaVDdvQXZHWWU4NFdNWTFtYjhvQzdlSFdqblJMNzlPdlJnQgovMGZPbVI5MzZrR0VhNzQvZFE2U01GYU1tRVV1dWlQUFphR3RveXIyVUZpc081YkRkazkwczEydUxjY1lyOE9ZCnZKd0Z0UkYxSnhia1hSK2dMd0l1SXBMVUxsRjhoR2ZEb3QvWUZvZGJBM3A0dlM1MEc4c212YWlROVhnVXdGdFoKMFdpWU5iQ2JKdlY1d0w2aXlPcTRqakFGeExqU2lqc20ybFpVcTZiVDY5YVFpR0xmbXJDYnJDRnJFSkNpU1F3WgpGenVrMGlXYnM4ZXRySWFnNjdtY0kvTlF4RkVQbXB2ZEdQTllGZ0RwUDdEMnlhUnA4MzVjeWJVd04vcUE2RnBGCkJHSEQ0ZWl6OWd0WlhwT25NYzBibk9KcG5qMlNpaUUwaS95a0NuTlZvRm1SeXladVY0YVlQd29laWpOZ1NjZWIKQTY1TThHaWtUdmdiemFaL3YvOVdlWElURGJVWjcvQTBwYlRDTjZZZ0xscjBpQlJPMUFmeGhNNkVmems4QlFUSQpidWJ5U3ZwQWhiRk83aTZLVVAvZW03eVV0ckxBekdOR2dnTFJMVEpRWGdYUWNSeUdVWkVDZ2dFQkFNOUVhZW5nCm9peE1QaE5jTlN0dENEekhER2RDSFRWcDN2U0s0bkNHRFhGY3N2aytqMGRRM2pQYWx2V3dDMjBYOTZWQlR1bzAKTFhhcGgwZ0xHYloyS3JWQ0tPOWZrZXpQVWMwOWMzNmp1OExFZ3NBZ0dGOUpXeDVlMUVleUIzS0w0RnIreXVVVwpLbDc0azltYmZVK1dRcG1vc3hKdW41ZjBqbzhoclRucGtqR2FqUHhTL05GaE1YVHpGdjl6dEhVblZhTzJVYzI3ClB1WUJNSkxGdTQ2Y2xxWG53RTQxUTVwVHFLZGwxaUw0dFRrVER5ekFNUHZucW9HSld4Q1ZidjR3b2Z1WXBrY0gKSG50SlVEMVhhSnI1N0xoSU4zeDRCN2pFU3JYTUwrOVVIcWgzTDRna2FwV0VTTDlsY1d3aWxlcHhYdG5RdDI3NgprK0NXVVpuY09TUklVM2NDZ2dFQkFNY3BGRGdBWHVYS040b0Z3TC9lRkkvUWVSeXBDakQ2LytidVdCV2F0SXdQCnprQ1h6ODNaY256NmQ4YUlHc2I1bi9tbFYwaHBCdkdtZzBkN0ZHbHZoWDVhZDRzeXFLZWZJajZtWG1PMDRrQ3gKa29kZkErUVh5Q1EwWlFSRi9TenRyNWxWQi9yYnhhYzdCVlplQUxvVUtSSzdUMFhCOHczVXN1SnNyNGR0QVkwZQpDUDlmQlRybFowYjBFSnROWXlVbGFSNWRkaFVuYnJFeHFkUzg5Yk8ybUxBUjVDTVJJRXZScTRseGlQYzRTTXhYCmhUY2FSTmpBU2M3WE5NUUI1WVpXeUxaYzN1RndQaXRHK0sxTGMwNWs1VFpWeEtNdmVhOXBiZkRHLysyQm9IcHIKOEFHVXVKVlk2bCtGTzNleXlmenRPVGtpMUkwNmlxU2dURzVrbzJ0bXlla0NnZ0VBUjVYZWFzdU4xM1RodjdnSwpHUnlJU3MySXFDVTZoMWN3alE5bTAreEl1azJFOXZhM2I2OHJmNGRRdWp4NlJjeVFXTUFzckZFbkhxUEF1STQwCjdFTDF6ekt4aHJOZ2FBVFd3T2NuZTZhN1U3S2hZZy96dXYxUC9qWk1aUkxFNWJnUDNmM0FQODBmQnp3ZGZIdnEKbE5GVjRWSlZ2dGo4UC9SVVJIVWlLaTFVczlNb1BJSEJGZVBXdkFpMWViY1JyYURQUUVMWkVCQkswZys1SWdndgpGanRaQUtZQlVrR3RQcUVFVUFTcEo5ejBZbWtGeGJQL2R4RjFYMVg4WU1icjFka2dLUkI0NVhFOUF1RzRWK2RYCmxxY1pMakNyRVU4M2c0WXdNNGY1U2xTb1hoRUVGcVpWTlp6QnIzRXU4bVVqbUJ4ZDRTYm9JK2xocDZEalFCdkMKbEpoeVV3S0NBUUI4QUpyREo0L3VtVkt0VUZtcjNQV0dlYkgrNDAwaUpCWFRUbEZ2Mml4U0RNRkp2SHc1V2d1TAp2MU4yUEdZWHYzTVl1QmE1VWhOdHdGUjYzQ3BnWDN5SnFJQklIaG1lakZtQkVvc3duMzVEODR3ZFYwNlA1VExMClFBZ3BlZjVoeS9nS2kwUDFzSUxIVmR0RDVER2xxa25Nak8yVnJHWE9GY0h2Y3VaemRxNkJrOUxjVmVobXZGRHEKZjZvYldEckQ5U0FYTlBBQnlkU0U1VHd0NWgxQmNRNXVpaVUycEVJc2t2YXdGQTNJaDdYajdSWlhzYlp1RW9PaQpFcUthNitkaUZvVFA3dEVqSW9UQzQyU1FXYXNJZzQrbm5nMVo0WVJ0Y0VKd3FTYk9WV2g2OE51MTBFaUJUS1JaCkp4Wll0K3hGMjlwR05lYUxySWlJYWZwTXZjSjJhOENKQW9JQkFRRE5Nbk43M1k4UWNwSld4eTk4SmNLSklrTTQKY3BIeUM1U2dva2QvRWdBZzdMdW96a0grQWtWREZTUmcxdmRDSjdSMU9yTXNxeUVyYy9xV0pDYWpqVWJ6UlVyOApJQlN5b2Y1Zko3UHZ1VFc2WkV6RUR2WEw5WW90VExLM1VnUWpGc0N6c3dIUVhOaEE1QVBHWWZZa2hsTnlubVdpCnpyYlFYU1Q2RkxDeSt3UW9UQ3NzVHF4NW8yOEZiZ21RSTZvQzdmQ0ViTzZNL2dCTUxtbjhFNW03dWJVWE9wZmYKaEhsVGcwaVpKU0lDTDNRK25aZ0J4dVNSZ1hsMjJkUjZNYndiRDR6TTltNFhjTjNLTkNGMFY2bkJuQ0dnQ2hNaQp3aWpnS0w5RU1LemZFN0N4K05ZR0x5em9icVBXWDdMak81UjlPUWlpa3FBNmxxTldlN1g0b2NacFZ6c28KLS0tLS1FTkQgUlNBIFBSSVZBVEUgS0VZLS0tLS0K"
 # Tenant Fetcher properties
 export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback
+export APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH="/tmp/dependencies.json"
 
 # Self Register Properties
 export APP_SELF_REGISTER_SECRET_PATH="/tmp/keyConfig"
@@ -275,6 +274,14 @@ cat <<EOF > /tmp/keyConfig
 }
 EOF
 
+# This file contains regional dependencies configuration for tenants service
+cat <<EOF > /tmp/dependencies.json
+    {
+        "eu-1": "{\n \"xsappname\": \"xsappname1\", \"clientid\": \"clientid-1\", \"certificate\": \"client-cert-1\", \"key\": \"client-cert-key-1\", \"url\": \"http://token-url\", \"uri\": \"http://destination-service\"\n}",
+        "eu-2": "{\n \"xsappname\": \"xsappname2\", \"clientid\": \"clientid-2\", \"certificate\": \"client-cert-2\", \"key\": \"client-cert-key-2\", \"url\": \"http://token-url\", \"uri\": \"http://destination-service\"\n}"
+    }
+EOF
+
 kubectl create secret generic "$CLIENT_CERT_SECRET_NAME" --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
 
 # pairing adapters configmap needed for the watcher started in the director
@@ -288,7 +295,7 @@ if [[  ${DEBUG} == true ]]; then
 else
     if [[  ${AUTO_TERMINATE} == true ]]; then
         cd ${ROOT_PATH}
-        go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go 
+        go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go
         MAIN_APP_LOGFILE=${ROOT_PATH}/main.log
 
         ${ROOT_PATH}/main > ${MAIN_APP_LOGFILE} &
@@ -303,7 +310,7 @@ else
             echo "[Director] left ${SECONDS_LEFT} seconds. Wait ..."
             sleep 10
         done
-        
+
         echo "Timeout of ${TERMINAION_TIMEOUT_IN_SECONDS} seconds for starting director reached. Killing the process."
         echo -e "${GREEN}Kill main process..${NC}"
         kill -SIGINT "${MAIN_PROCESS_PID}"

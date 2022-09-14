@@ -40,6 +40,29 @@ func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id 
 	return r0, r1
 }
 
+// ListByScenariosAndIDs provides a mock function with given fields: ctx, tenant, scenarios, ids
+func (_m *ApplicationRepository) ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error) {
+	ret := _m.Called(ctx, tenant, scenarios, ids)
+
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []string) []*model.Application); ok {
+		r0 = rf(ctx, tenant, scenarios, ids)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []string) error); ok {
+		r1 = rf(ctx, tenant, scenarios, ids)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByScenariosNoPaging provides a mock function with given fields: ctx, tenant, scenarios
 func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenant, scenarios)

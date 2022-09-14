@@ -11,11 +11,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/k8s"
+
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -328,6 +330,18 @@ func TestORDAggregator(stdT *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &seventhApp)
 		require.NoError(t, err)
 
+		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+		require.NoError(t, err)
+		jobName := "ord-aggregator-test"
+		namespace := "compass-system"
+		k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
+		defer func() {
+			k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
+			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		}()
+
+		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
 
@@ -545,7 +559,7 @@ func TestORDAggregator(stdT *testing.T) {
 		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplate)
 
@@ -554,7 +568,7 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Contains(t, selfRegLabelValue, testConfig.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTemplate.ID)
 
 		httpClient := &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 2 * time.Minute,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
 			},
@@ -589,16 +603,19 @@ func TestORDAggregator(stdT *testing.T) {
 
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+		err = resp.Body.Close()
+		require.NoError(t, err)
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
@@ -646,6 +663,18 @@ func TestORDAggregator(stdT *testing.T) {
 
 		require.Len(t, actualAppPage.Data, 1)
 		require.Equal(t, appTemplate.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+
+		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+		require.NoError(t, err)
+		jobName := "ord-aggregator-test"
+		namespace := "compass-system"
+		k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
+		defer func() {
+			k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
+			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		}()
+
+		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -708,9 +737,6 @@ func TestORDAggregator(stdT *testing.T) {
 				t.Log("Missing Products...will try again")
 				return false
 			}
-			t.Logf("Expected total number of product: %d", expectedTotalNumberOfProducts)
-			t.Logf("Products response body: %s", respBody)
-			t.Logf("Expected products map: %v", productsMap)
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
 			assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
 			t.Log("Successfully verified products")
@@ -913,7 +939,6 @@ func createAppTemplateName(name string) string {
 func fixAppTemplateInput(name, webhookURL string) directorSchema.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplateWithORDWebhook(name, webhookURL)
 	input.Labels[testConfig.SubscriptionConfig.SelfRegDistinguishLabelKey] = testConfig.SubscriptionConfig.SelfRegDistinguishLabelValue
-	input.Labels[tenantfetcher.RegionKey] = testConfig.SubscriptionConfig.SelfRegRegion
 
 	return input
 }

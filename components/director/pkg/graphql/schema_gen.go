@@ -185,6 +185,7 @@ type ComplexityRoot struct {
 	Bundle struct {
 		APIDefinition                  func(childComplexity int, id string) int
 		APIDefinitions                 func(childComplexity int, group *string, first *int, after *PageCursor) int
+		CorrelationIDs                 func(childComplexity int) int
 		CreatedAt                      func(childComplexity int) int
 		DefaultInstanceAuth            func(childComplexity int) int
 		DeletedAt                      func(childComplexity int) int
@@ -232,6 +233,12 @@ type ComplexityRoot struct {
 		AdditionalQueryParamsSerialized func(childComplexity int) int
 		Credential                      func(childComplexity int) int
 		TokenEndpointURL                func(childComplexity int) int
+	}
+
+	CertificateOAuthCredentialData struct {
+		Certificate func(childComplexity int) int
+		ClientID    func(childComplexity int) int
+		URL         func(childComplexity int) int
 	}
 
 	CredentialRequestAuth struct {
@@ -581,6 +588,7 @@ type ComplexityRoot struct {
 		Labels      func(childComplexity int, key *string) int
 		Name        func(childComplexity int) int
 		ParentID    func(childComplexity int) int
+		Provider    func(childComplexity int) int
 		Type        func(childComplexity int) int
 	}
 
@@ -650,6 +658,7 @@ type BundleResolver interface {
 	Documents(ctx context.Context, obj *Bundle, first *int, after *PageCursor) (*DocumentPage, error)
 	APIDefinition(ctx context.Context, obj *Bundle, id string) (*APIDefinition, error)
 	EventDefinition(ctx context.Context, obj *Bundle, id string) (*EventDefinition, error)
+
 	Document(ctx context.Context, obj *Bundle, id string) (*Document, error)
 }
 type DocumentResolver interface {
@@ -1408,6 +1417,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Bundle.APIDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Bundle.correlationIDs":
+		if e.complexity.Bundle.CorrelationIDs == nil {
+			break
+		}
+
+		return e.complexity.Bundle.CorrelationIDs(childComplexity), true
+
 	case "Bundle.createdAt":
 		if e.complexity.Bundle.CreatedAt == nil {
 			break
@@ -1677,6 +1693,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CSRFTokenCredentialRequestAuth.TokenEndpointURL(childComplexity), true
+
+	case "CertificateOAuthCredentialData.certificate":
+		if e.complexity.CertificateOAuthCredentialData.Certificate == nil {
+			break
+		}
+
+		return e.complexity.CertificateOAuthCredentialData.Certificate(childComplexity), true
+
+	case "CertificateOAuthCredentialData.clientId":
+		if e.complexity.CertificateOAuthCredentialData.ClientID == nil {
+			break
+		}
+
+		return e.complexity.CertificateOAuthCredentialData.ClientID(childComplexity), true
+
+	case "CertificateOAuthCredentialData.url":
+		if e.complexity.CertificateOAuthCredentialData.URL == nil {
+			break
+		}
+
+		return e.complexity.CertificateOAuthCredentialData.URL(childComplexity), true
 
 	case "CredentialRequestAuth.csrf":
 		if e.complexity.CredentialRequestAuth.Csrf == nil {
@@ -3901,6 +3938,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.ParentID(childComplexity), true
 
+	case "Tenant.provider":
+		if e.complexity.Tenant.Provider == nil {
+			break
+		}
+
+		return e.complexity.Tenant.Provider(childComplexity), true
+
 	case "Tenant.type":
 		if e.complexity.Tenant.Type == nil {
 			break
@@ -4337,6 +4381,7 @@ enum WebhookMode {
 
 enum WebhookType {
 	CONFIGURATION_CHANGED
+	APPLICATION_TENANT_MAPPING
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
@@ -4374,7 +4419,7 @@ interface SystemAuth {
 	referenceObjectId: ID
 }
 
-union CredentialData = BasicCredentialData | OAuthCredentialData
+union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
 
 input APIDefinitionInput {
 	"""
@@ -4554,6 +4599,7 @@ input BundleCreateInput {
 	apiDefinitions: [APIDefinitionInput!]
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
+	correlationIDs: [String!]
 }
 
 input BundleInstanceAuthRequestInput {
@@ -4643,12 +4689,22 @@ input CSRFTokenCredentialRequestAuthInput {
 	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
+input CertificateOAuthCredentialDataInput {
+	clientId: ID!
+	certificate: String!
+	"""
+	**Validation:** valid URL
+	"""
+	url: String!
+}
+
 """
-**Validation:** basic or oauth field required
+**Validation:** basic or oauth or certificateOAuth field required
 """
 input CredentialDataInput {
 	basic: BasicCredentialDataInput
 	oauth: OAuthCredentialDataInput
+	certificateOAuth: CertificateOAuthCredentialDataInput
 }
 
 input CredentialRequestAuthInput {
@@ -5046,6 +5102,7 @@ type Bundle {
 	documents(first: Int = 200, after: PageCursor): DocumentPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
+	correlationIDs: [String!]
 	document(id: ID!): Document
 	createdAt: Timestamp
 	updatedAt: Timestamp
@@ -5101,6 +5158,12 @@ type CSRFTokenCredentialRequestAuth {
 	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
 	additionalQueryParamsSerialized: QueryParamsSerialized
+}
+
+type CertificateOAuthCredentialData {
+	clientId: ID!
+	certificate: String!
+	url: String!
 }
 
 type CredentialRequestAuth {
@@ -5360,6 +5423,7 @@ type Tenant {
 	parentID: ID
 	initialized: Boolean
 	labels(key: String): Labels
+	provider: String!
 }
 
 type TenantPage implements Pageable {
@@ -11781,6 +11845,37 @@ func (ec *executionContext) _Bundle_eventDefinition(ctx context.Context, field g
 	return ec.marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Bundle_correlationIDs(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CorrelationIDs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Bundle_document(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -12591,6 +12686,108 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth_additionalQueryParam
 	res := resTmp.(*QueryParamsSerialized)
 	fc.Result = res
 	return ec.marshalOQueryParamsSerialized2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐQueryParamsSerialized(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CertificateOAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *CertificateOAuthCredentialData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CertificateOAuthCredentialData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CertificateOAuthCredentialData_certificate(ctx context.Context, field graphql.CollectedField, obj *CertificateOAuthCredentialData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CertificateOAuthCredentialData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Certificate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CertificateOAuthCredentialData_url(ctx context.Context, field graphql.CollectedField, obj *CertificateOAuthCredentialData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CertificateOAuthCredentialData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _CredentialRequestAuth_csrf(ctx context.Context, field graphql.CollectedField, obj *CredentialRequestAuth) (ret graphql.Marshaler) {
@@ -24102,6 +24299,40 @@ func (ec *executionContext) _Tenant_labels(ctx context.Context, field graphql.Co
 	return ec.marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Tenant_provider(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TenantPage_data(ctx context.Context, field graphql.CollectedField, obj *TenantPage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -26559,6 +26790,12 @@ func (ec *executionContext) unmarshalInputBundleCreateInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "correlationIDs":
+			var err error
+			it.CorrelationIDs, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -26791,6 +27028,36 @@ func (ec *executionContext) unmarshalInputCSRFTokenCredentialRequestAuthInput(ct
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCertificateOAuthCredentialDataInput(ctx context.Context, obj interface{}) (CertificateOAuthCredentialDataInput, error) {
+	var it CertificateOAuthCredentialDataInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "clientId":
+			var err error
+			it.ClientID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "certificate":
+			var err error
+			it.Certificate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "url":
+			var err error
+			it.URL, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCredentialDataInput(ctx context.Context, obj interface{}) (CredentialDataInput, error) {
 	var it CredentialDataInput
 	var asMap = obj.(map[string]interface{})
@@ -26806,6 +27073,12 @@ func (ec *executionContext) unmarshalInputCredentialDataInput(ctx context.Contex
 		case "oauth":
 			var err error
 			it.Oauth, err = ec.unmarshalOOAuthCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOAuthCredentialDataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "certificateOAuth":
+			var err error
+			it.CertificateOAuth, err = ec.unmarshalOCertificateOAuthCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCertificateOAuthCredentialDataInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -27597,6 +27870,13 @@ func (ec *executionContext) _CredentialData(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._OAuthCredentialData(ctx, sel, obj)
+	case CertificateOAuthCredentialData:
+		return ec._CertificateOAuthCredentialData(ctx, sel, &obj)
+	case *CertificateOAuthCredentialData:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._CertificateOAuthCredentialData(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -28517,6 +28797,8 @@ func (ec *executionContext) _Bundle(ctx context.Context, sel ast.SelectionSet, o
 				res = ec._Bundle_eventDefinition(ctx, field, obj)
 				return res
 			})
+		case "correlationIDs":
+			out.Values[i] = ec._Bundle_correlationIDs(ctx, field, obj)
 		case "document":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -28694,6 +28976,43 @@ func (ec *executionContext) _CSRFTokenCredentialRequestAuth(ctx context.Context,
 			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalQueryParams(ctx, field, obj)
 		case "additionalQueryParamsSerialized":
 			out.Values[i] = ec._CSRFTokenCredentialRequestAuth_additionalQueryParamsSerialized(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var certificateOAuthCredentialDataImplementors = []string{"CertificateOAuthCredentialData", "CredentialData"}
+
+func (ec *executionContext) _CertificateOAuthCredentialData(ctx context.Context, sel ast.SelectionSet, obj *CertificateOAuthCredentialData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, certificateOAuthCredentialDataImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CertificateOAuthCredentialData")
+		case "clientId":
+			out.Values[i] = ec._CertificateOAuthCredentialData_clientId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "certificate":
+			out.Values[i] = ec._CertificateOAuthCredentialData_certificate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "url":
+			out.Values[i] = ec._CertificateOAuthCredentialData_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -30860,6 +31179,11 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 				res = ec._Tenant_labels(ctx, field, obj)
 				return res
 			})
+		case "provider":
+			out.Values[i] = ec._Tenant_provider(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -33609,6 +33933,18 @@ func (ec *executionContext) unmarshalOCSRFTokenCredentialRequestAuthInput2ᚖgit
 		return nil, nil
 	}
 	res, err := ec.unmarshalOCSRFTokenCredentialRequestAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCSRFTokenCredentialRequestAuthInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOCertificateOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCertificateOAuthCredentialDataInput(ctx context.Context, v interface{}) (CertificateOAuthCredentialDataInput, error) {
+	return ec.unmarshalInputCertificateOAuthCredentialDataInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOCertificateOAuthCredentialDataInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCertificateOAuthCredentialDataInput(ctx context.Context, v interface{}) (*CertificateOAuthCredentialDataInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOCertificateOAuthCredentialDataInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCertificateOAuthCredentialDataInput(ctx, v)
 	return &res, err
 }
 

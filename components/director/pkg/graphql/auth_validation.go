@@ -27,10 +27,11 @@ func (i CredentialDataInput) Validate() error {
 	return validation.Errors{
 		"Rule.ExactlyOneNotNil": inputvalidation.ValidateExactlyOneNotNil(
 			"exactly one credential input has to be specified",
-			i.Basic, i.Oauth,
+			i.Basic, i.Oauth, i.CertificateOAuth,
 		),
-		"Basic": validation.Validate(i.Basic),
-		"Oauth": validation.Validate(i.Oauth),
+		"Basic":            validation.Validate(i.Basic),
+		"Oauth":            validation.Validate(i.Oauth),
+		"CertificateOAuth": validation.Validate(i.CertificateOAuth),
 	}.Filter()
 }
 
@@ -47,6 +48,15 @@ func (i OAuthCredentialDataInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.ClientID, validation.Required),
 		validation.Field(&i.ClientSecret, validation.Required),
+		validation.Field(&i.URL, validation.Required, is.URL),
+	)
+}
+
+// Validate missing godoc
+func (i CertificateOAuthCredentialDataInput) Validate() error {
+	return validation.ValidateStruct(&i,
+		validation.Field(&i.ClientID, validation.Required),
+		validation.Field(&i.Certificate, validation.Required),
 		validation.Field(&i.URL, validation.Required, is.URL),
 	)
 }

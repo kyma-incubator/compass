@@ -19,7 +19,6 @@ package tests
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -327,27 +326,131 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 }
 
 func TestGetDependenciesHandler(t *testing.T) {
-	t.Run("Returns empty body", func(t *testing.T) {
+
+	t.Run("Should succeed when a valid region is provided with omit flag", func(t *testing.T) {
 		// GIVEN
-		request, err := http.NewRequest(http.MethodGet, config.TenantFetcherFullDependenciesURL, nil)
+		// It currently just calls https://compass-gateway.local.kyma.dev/tenants/v1/regional/{region}/dependencies
+		regionalEndpoint := strings.Replace(config.DependenciesEndpoint, "{region}", config.SelfRegRegion, 1)
+		validRegionUrl := config.TenantFetcherURL + config.RootAPI + regionalEndpoint
+		request, err := http.NewRequest(http.MethodGet, validRegionUrl, nil)
+
+		q := request.URL.Query()
+		q.Add(config.OmitDependenciesCallbackParam, config.OmitDependenciesCallbackParamValue)
+		request.URL.RawQuery = q.Encode()
+
 		require.NoError(t, err)
 
-		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID, config.ClientSecret, "tenantFetcherClaims")
+		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
+			config.ClientSecret, "tenantFetcherClaims")
 		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 		// WHEN
 		response, err := httpClient.Do(request)
 		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		body, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
-		responseBodyJson := make(map[string]interface{}, 0)
+		require.Equal(t, "[]", string(body))
 
 		// THEN
-		err = json.Unmarshal(responseBody, &responseBodyJson)
+		require.Equal(t, http.StatusOK, response.StatusCode)
+	})
+
+	t.Run("Should succeed when a valid region is provided", func(t *testing.T) {
+		// GIVEN
+		// It currently just calls https://compass-gateway.local.kyma.dev/tenants/v1/regional/{region}/dependencies
+		regionalEndpoint := strings.Replace(config.DependenciesEndpoint, "{region}", config.SelfRegRegion, 1)
+		validRegionUrl := config.TenantFetcherURL + config.RootAPI + regionalEndpoint
+		request, err := http.NewRequest(http.MethodGet, validRegionUrl, nil)
 		require.NoError(t, err)
-		require.Empty(t, responseBodyJson)
+
+		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
+			config.ClientSecret, "tenantFetcherClaims")
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
+
+		// WHEN
+		response, err := httpClient.Do(request)
+		require.NoError(t, err)
+
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		body, err := ioutil.ReadAll(response.Body)
+		require.NoError(t, err)
+		require.NotEqual(t, "[]", string(body))
+
+		// THEN
+		require.Equal(t, http.StatusOK, response.StatusCode)
+	})
+
+	t.Run("Should succeed when a valid region is provided with invalid omit flag", func(t *testing.T) {
+		// GIVEN
+		// It currently just calls https://compass-gateway.local.kyma.dev/tenants/v1/regional/{region}/dependencies
+		regionalEndpoint := strings.Replace(config.DependenciesEndpoint, "{region}", config.SelfRegRegion, 1)
+		validRegionUrl := config.TenantFetcherURL + config.RootAPI + regionalEndpoint
+		request, err := http.NewRequest(http.MethodGet, validRegionUrl, nil)
+		require.NoError(t, err)
+
+		q := request.URL.Query()
+		q.Add(config.OmitDependenciesCallbackParam, "invalid")
+		request.URL.RawQuery = q.Encode()
+
+		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
+			config.ClientSecret, "tenantFetcherClaims")
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
+
+		// WHEN
+		response, err := httpClient.Do(request)
+		require.NoError(t, err)
+
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		body, err := ioutil.ReadAll(response.Body)
+		require.NoError(t, err)
+		require.NotEqual(t, "[]", string(body))
+
+		// THEN
+		require.Equal(t, http.StatusOK, response.StatusCode)
+	})
+
+	t.Run("Should fail when invalid region is provided", func(t *testing.T) {
+
+		// GIVEN
+		// It currently just calls https://compass-gateway.local.kyma.dev/tenants/v1/regional/{region}/dependencies
+
+		regionalEndpoint := strings.Replace(config.DependenciesEndpoint, "{region}", "invalid", 1)
+		invalidRegionUrl := config.TenantFetcherURL + config.RootAPI + regionalEndpoint
+		request, err := http.NewRequest(http.MethodGet, invalidRegionUrl, nil)
+		require.NoError(t, err)
+
+		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
+			config.ClientSecret, "tenantFetcherClaims")
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
+
+		// WHEN
+		response, err := httpClient.Do(request)
+		require.NoError(t, err)
+
+		// THEN
+		require.Equal(t, http.StatusBadRequest, response.StatusCode)
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		body, err := ioutil.ReadAll(response.Body)
+		require.NoError(t, err)
+		require.Equal(t, "Invalid region provided: invalid\n", string(body))
 	})
 }
 

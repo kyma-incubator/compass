@@ -31,10 +31,14 @@ type testConfig struct {
 	TenantFetcherURL               string
 	RootAPI                        string
 	RegionalHandlerEndpoint        string
-	DependenciesEndpoint           string
-	TenantPathParam                string
-	RegionPathParam                string
-	SubscriptionCallbackScope      string
+
+	DependenciesEndpoint               string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT"`
+	OmitDependenciesCallbackParam      string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_NAME"`
+	OmitDependenciesCallbackParamValue string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_VALUE"`
+	SelfRegistrationRegion             string `envconfig:"APP_SELF_REG_REGION"`
+	TenantPathParam                    string
+	RegionPathParam                    string
+	SubscriptionCallbackScope          string
 	TenantProviderConfig
 	ExternalServicesMockURL          string
 	ClientID                         string
@@ -112,7 +116,7 @@ func TestMain(m *testing.M) {
 
 	config.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(config.RegionalHandlerEndpoint, config.TenantPathParam, config.RegionPathParam, config.TenantFetcherURL, config.RootAPI)
 
-	config.TenantFetcherFullDependenciesURL = config.TenantFetcherURL + config.RootAPI + config.DependenciesEndpoint
+	config.TenantFetcherFullDependenciesURL = tenantfetcher.BuildRegionalDependenciesURL(config.TenantFetcherURL, config.RootAPI, config.DependenciesEndpoint, config.RegionPathParam)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

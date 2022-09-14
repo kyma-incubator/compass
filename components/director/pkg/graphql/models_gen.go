@@ -227,6 +227,7 @@ type BundleCreateInput struct {
 	APIDefinitions                 []*APIDefinitionInput   `json:"apiDefinitions"`
 	EventDefinitions               []*EventDefinitionInput `json:"eventDefinitions"`
 	Documents                      []*DocumentInput        `json:"documents"`
+	CorrelationIDs                 []string                `json:"correlationIDs"`
 }
 
 type BundleInstanceAuth struct {
@@ -336,10 +337,26 @@ type CSRFTokenCredentialRequestAuthInput struct {
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 }
 
-// **Validation:** basic or oauth field required
+type CertificateOAuthCredentialData struct {
+	ClientID    string `json:"clientId"`
+	Certificate string `json:"certificate"`
+	URL         string `json:"url"`
+}
+
+func (CertificateOAuthCredentialData) IsCredentialData() {}
+
+type CertificateOAuthCredentialDataInput struct {
+	ClientID    string `json:"clientId"`
+	Certificate string `json:"certificate"`
+	// **Validation:** valid URL
+	URL string `json:"url"`
+}
+
+// **Validation:** basic or oauth or certificateOAuth field required
 type CredentialDataInput struct {
-	Basic *BasicCredentialDataInput `json:"basic"`
-	Oauth *OAuthCredentialDataInput `json:"oauth"`
+	Basic            *BasicCredentialDataInput            `json:"basic"`
+	Oauth            *OAuthCredentialDataInput            `json:"oauth"`
+	CertificateOAuth *CertificateOAuthCredentialDataInput `json:"certificateOAuth"`
 }
 
 type CredentialRequestAuth struct {
@@ -1643,15 +1660,17 @@ func (e WebhookMode) MarshalGQL(w io.Writer) {
 type WebhookType string
 
 const (
-	WebhookTypeConfigurationChanged  WebhookType = "CONFIGURATION_CHANGED"
-	WebhookTypeRegisterApplication   WebhookType = "REGISTER_APPLICATION"
-	WebhookTypeUnregisterApplication WebhookType = "UNREGISTER_APPLICATION"
-	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
-	WebhookTypeUnpairApplication     WebhookType = "UNPAIR_APPLICATION"
+	WebhookTypeConfigurationChanged     WebhookType = "CONFIGURATION_CHANGED"
+	WebhookTypeApplicationTenantMapping WebhookType = "APPLICATION_TENANT_MAPPING"
+	WebhookTypeRegisterApplication      WebhookType = "REGISTER_APPLICATION"
+	WebhookTypeUnregisterApplication    WebhookType = "UNREGISTER_APPLICATION"
+	WebhookTypeOpenResourceDiscovery    WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	WebhookTypeUnpairApplication        WebhookType = "UNPAIR_APPLICATION"
 )
 
 var AllWebhookType = []WebhookType{
 	WebhookTypeConfigurationChanged,
+	WebhookTypeApplicationTenantMapping,
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
@@ -1660,7 +1679,7 @@ var AllWebhookType = []WebhookType{
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication:
 		return true
 	}
 	return false

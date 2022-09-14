@@ -22,11 +22,15 @@ spec:
         app: {{ .Chart.Name }}-ord-service-bench-app
     spec:
       serviceAccountName: {{ .Chart.Name }}-ord-service-bench-app
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
       nodeSelector:
         benchmark: "true" # This guarantees that benchmark tests will be executed on one and the same node. The gke-benchamrk job adds the benchmark=true label to the node with the lowest cpu load.
       containers:
         - name: ord-service-bench # This should be unique across all benchmark containers.
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./ord-service.bench -test.v -test.bench=. -test.benchtime 5s -test.count 5; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]

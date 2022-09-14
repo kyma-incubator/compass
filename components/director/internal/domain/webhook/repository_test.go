@@ -426,6 +426,44 @@ func testListByObjectID(t *testing.T, methodName string, lockClause string, args
 	suite.Run(t)
 }
 
+func TestRepository_ListByWebhookType(t *testing.T) {
+	whID := "whID1"
+	whType := model.WebhookTypeOpenResourceDiscovery
+
+	whModel := fixApplicationModelWebhook(whID, givenApplicationID(), givenTenant(), "http://kyma.io")
+	whModel.Type = whType
+	whEntity := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID, whType)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "List Webhooks by type",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE type = $1`),
+				Args:     []driver.Value{whType},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(whModel.ID, givenApplicationID(), nil, whModel.Type, whModel.URL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   webhook.NewRepository,
+		ExpectedModelEntities: []interface{}{whModel},
+		ExpectedDBEntities:    []interface{}{whEntity},
+		MethodArgs:            []interface{}{whType},
+		MethodName:            "ListByWebhookType",
+	}
+
+	suite.Run(t)
+}
+
 func TestRepositoryListByApplicationTemplateID(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// GIVEN

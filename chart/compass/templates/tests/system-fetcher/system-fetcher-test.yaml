@@ -22,9 +22,13 @@ spec:
         app: {{ .Chart.Name }}-system-fetcher-tests-app
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-system-fetcher
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
       containers:
         - name: {{ .Values.global.systemFetcher.containerName }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./system-fetcher.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
@@ -37,8 +41,6 @@ spec:
               value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
             - name: SYSTEM_FETCHER_CONTAINER_NAME
               value: "{{ .Values.global.systemFetcher.containerName }}"
-            - name: SYSTEM_FETCHER_TEMPLATE_REGION
-              value: "{{ .Values.global.systemFetcher.templateRegion }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

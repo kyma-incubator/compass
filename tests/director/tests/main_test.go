@@ -33,30 +33,32 @@ type DirectorConfig struct {
 	ConsumerID                     string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
-	SubscriptionConfig                     subscription.Config
-	TestProviderAccountID                  string
-	TestProviderSubaccountID               string
-	TestConsumerAccountID                  string
-	TestConsumerSubaccountID               string
-	TestConsumerTenantID                   string
-	TestProviderSubaccountIDRegion2        string
-	ExternalServicesMockBaseURL            string
-	ExternalServicesMockMtlsSecuredURL     string
-	TokenPath                              string
-	SubscriptionProviderAppNameValue       string
-	ConsumerSubaccountLabelKey             string
-	SubscriptionLabelKey                   string
-	RuntimeTypeLabelKey                    string
-	KymaRuntimeTypeLabelValue              string
-	ConsumerTokenURL                       string
-	ProviderClientID                       string
-	ProviderClientSecret                   string
-	BasicUsername                          string
-	BasicPassword                          string
-	ExternalCertCommonName                 string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
-	CertSvcInstanceTestIntSystemSecretName string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
-	ExternalCertTestIntSystemOUSubaccount  string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
-	ExternalCertTestIntSystemCommonName    string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
+	SubscriptionConfig                              subscription.Config
+	TestProviderAccountID                           string
+	TestProviderSubaccountID                        string
+	TestConsumerAccountID                           string
+	TestConsumerSubaccountID                        string
+	TestConsumerTenantID                            string
+	TestProviderSubaccountIDRegion2                 string
+	ExternalServicesMockBaseURL                     string
+	ExternalServicesMockMtlsSecuredURL              string
+	TokenPath                                       string
+	SubscriptionProviderAppNameValue                string
+	ConsumerSubaccountLabelKey                      string
+	SubscriptionLabelKey                            string
+	RuntimeTypeLabelKey                             string
+	ApplicationTypeLabelKey                         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	KymaRuntimeTypeLabelValue                       string
+	ConsumerTokenURL                                string
+	ProviderClientID                                string
+	ProviderClientSecret                            string
+	BasicUsername                                   string
+	BasicPassword                                   string
+	ExternalCertCommonName                          string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
+	CertSvcInstanceTestIntSystemSecretName          string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
+	ExternalCertTestIntSystemOUSubaccount           string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
+	ExternalCertTestIntSystemCommonName             string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
+	ExternalClientCertExpectedIssuerLocalityRegion2 string `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
 }
 
 var (

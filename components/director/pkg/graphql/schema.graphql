@@ -181,6 +181,7 @@ enum WebhookMode {
 
 enum WebhookType {
 	CONFIGURATION_CHANGED
+	APPLICATION_TENANT_MAPPING
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
@@ -218,7 +219,7 @@ interface SystemAuth {
 	referenceObjectId: ID
 }
 
-union CredentialData = BasicCredentialData | OAuthCredentialData
+union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
 
 input APIDefinitionInput {
 	"""
@@ -398,6 +399,7 @@ input BundleCreateInput {
 	apiDefinitions: [APIDefinitionInput!]
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
+	correlationIDs: [String!]
 }
 
 input BundleInstanceAuthRequestInput {
@@ -487,12 +489,22 @@ input CSRFTokenCredentialRequestAuthInput {
 	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
+input CertificateOAuthCredentialDataInput {
+	clientId: ID!
+	certificate: String!
+	"""
+	**Validation:** valid URL
+	"""
+	url: String!
+}
+
 """
-**Validation:** basic or oauth field required
+**Validation:** basic or oauth or certificateOAuth field required
 """
 input CredentialDataInput {
 	basic: BasicCredentialDataInput
 	oauth: OAuthCredentialDataInput
+	certificateOAuth: CertificateOAuthCredentialDataInput
 }
 
 input CredentialRequestAuthInput {
@@ -890,6 +902,7 @@ type Bundle {
 	documents(first: Int = 200, after: PageCursor): DocumentPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
+	correlationIDs: [String!]
 	document(id: ID!): Document
 	createdAt: Timestamp
 	updatedAt: Timestamp
@@ -945,6 +958,12 @@ type CSRFTokenCredentialRequestAuth {
 	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
 	additionalQueryParamsSerialized: QueryParamsSerialized
+}
+
+type CertificateOAuthCredentialData {
+	clientId: ID!
+	certificate: String!
+	url: String!
 }
 
 type CredentialRequestAuth {
@@ -1204,6 +1223,7 @@ type Tenant {
 	parentID: ID
 	initialized: Boolean
 	labels(key: String): Labels
+	provider: String!
 }
 
 type TenantPage implements Pageable {

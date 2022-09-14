@@ -4,16 +4,12 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: "{{ $.Chart.Name }}-ord-aggregator"
-  {{ if .Values.global.isLocalEnv }} # ord-aggregator job needs fully initialized DB, so it is installed with helm post hook
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "0"
-  {{ end }}
 spec:
   schedule: "{{ .Values.global.ordAggregator.schedule }}"
   failedJobsHistoryLimit: 5
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 60 # Fix for https://github.com/kyma-incubator/compass/issues/1155
+  suspend: {{ .Values.global.ordAggregator.suspend }}
   jobTemplate:
     metadata:
       labels:
@@ -27,8 +23,12 @@ spec:
             cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
+        {{ if eq .Values.global.portieris.isEnabled true }}
+          imagePullSecrets:
+          - name: {{ .Values.global.portieris.imagePullSecretName }}
+        {{ end }}
           containers:
-            - name: aggregator
+            - name: {{ .Values.global.ordAggregator.containerName }}
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
               imagePullPolicy: IfNotPresent
               volumeMounts:
@@ -91,8 +91,10 @@ spec:
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
                 - name: APP_GLOBAL_REGISTRY_URL
                   value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
-                - name: APP_MAX_PARALLEL_APPLICATION_PROCESSORS
-                  value: "{{ .Values.global.ordAggregator.maxParallelApplicationProcessors }}"
+                - name: APP_MAX_PARALLEL_WEBHOOK_PROCESSORS
+                  value: "{{ .Values.global.ordAggregator.maxParallelWebhookProcessors }}"
+                - name: APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION
+                  value: "{{ .Values.global.ordAggregator.maxParallelDocumentsPerApplication }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
                   value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
               command:

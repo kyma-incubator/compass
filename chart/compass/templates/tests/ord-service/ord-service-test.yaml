@@ -21,9 +21,13 @@ spec:
         app: {{ .Chart.Name }}-ord-service-tests-app
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-ord-service
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
       containers:
         - name: ord-service-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./ord-service.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
@@ -127,12 +131,34 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: APP_DESTINATION_SECRET_PATH
+              value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
+            - name: APP_DESTINATION_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientIdPath }}
+            - name: APP_DESTINATION_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientSecretPath }}
+            - name: APP_DESTINATION_INSTANCE_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.urlPath }}
+            - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
+            - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
+            - name: APP_DESTINATION_OAUTH_MODE
+              value: {{ .Values.global.destinationFetcher.oauthMode }}
+            - name: APP_DESTINATION_OAUTH_TOKEN_PATH
+              value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
+            - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
+              value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
+            - name: APP_DESTINATIONS_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
             - name: TEST_EXTERNAL_CERT_CN
-              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
-            - name: TEST_EXTERNAL_CERT_OU
-              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
-            - name: TEST_EXTERNAL_CERT_OU2
-              value: {{ .Values.global.tests.externalCertConfiguration.ouCertSubaccountID }}
+              value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
@@ -179,6 +205,12 @@ spec:
               value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
+          volumeMounts:
+            - name: dest-svc-instances
+              mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
+              readOnly: true
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
@@ -207,6 +239,10 @@ spec:
           {{- end }}
           {{end}}
       restartPolicy: Never
+      volumes:
+        - name: dest-svc-instances
+          secret:
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
 ---
 apiVersion: v1
 kind: ServiceAccount

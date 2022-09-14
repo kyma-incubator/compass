@@ -8,7 +8,7 @@ import (
 const (
 	TenantPathParamValue = "tenant"
 	RegionPathParamValue = "eu-1"
-	DefaultSubdomain     = "default-subdomain"
+	DefaultSubdomain     = "compass-external-services-mock-sap-mtls"
 )
 
 type Config struct {
@@ -25,6 +25,8 @@ type Config struct {
 	PropagatedProviderSubaccountHeader string
 	SubscriptionProviderAppNameValue   string
 	TestTenantOnDemandID               string
+	ConsumerClaimsTenantIDKey          string
+	ConsumerClaimsSubdomainKey         string
 }
 
 // ProviderConfig includes the configuration for tenant providers - the tenant ID json property names - account, subaccount, customer. The subdomain property name and subscription provider ID property.

@@ -24,7 +24,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	// Register first Application
 	firstApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-first-app",
-		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
+		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: "SAP Cloud for Customer"},
 	})
 	defer func() {
 		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, firstApp.ID)
@@ -46,7 +46,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	// Register Runtime
 	input := fixtures.FixRuntimeRegisterInput("test-runtime")
 	input.Labels[ScenariosLabel] = []string{TestScenario}
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &input)
+	runtime := fixtures.RegisterKymaRuntime(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, input, cfg.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
@@ -61,7 +61,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	// Register second Application
 	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-second-app",
-		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
+		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: "SAP Cloud for Customer"},
 	})
 	defer func() {
 		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, secondApp.ID)

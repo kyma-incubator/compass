@@ -7,6 +7,9 @@ import (
 	"sync"
 	"time"
 
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -63,7 +66,8 @@ type Config struct {
 	DirectorRequestTimeout    time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
 	DirectorSkipSSLValidation bool          `envconfig:"default=false,APP_DIRECTOR_SKIP_SSL_VALIDATION"`
 
-	EnableSystemDeletion bool `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
+	EnableSystemDeletion bool   `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
+	OperationalMode      string `envconfig:"APP_OPERATIONAL_MODE"`
 }
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
@@ -279,6 +283,21 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 		input.LocalTenantID = input.SystemNumber
 	}
 
+	if isOrdReady(sc.TemplateID) {
+		if input.BaseURL == nil || str.PtrStrToStr(input.BaseURL) == "" {
+			log.C(ctx).Error("ORD webhook cannot be created, base url is missing")
+			return &model.ApplicationRegisterInputWithTemplate{
+				ApplicationRegisterInput: *input,
+				TemplateID:               sc.TemplateID,
+			}, nil
+		}
+
+		if input.Webhooks == nil {
+			input.Webhooks = []*model.WebhookInput{}
+		}
+		input.Webhooks = append(input.Webhooks, createORDWebhookInput(str.PtrStrToStr(input.BaseURL)))
+	}
+
 	return &model.ApplicationRegisterInputWithTemplate{
 		ApplicationRegisterInput: *input,
 		TemplateID:               sc.TemplateID,
@@ -305,4 +324,26 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 			"ppmsProductVersionId": &sc.PpmsProductVersionID,
 		},
 	}, nil
+}
+
+func createORDWebhookInput(baseURL string) *model.WebhookInput {
+	url := strings.TrimSuffix(baseURL, "/")
+	ordURL := fmt.Sprintf("%s%s", url, ord.WellKnownEndpoint)
+
+	return &model.WebhookInput{
+		Type: model.WebhookTypeOpenResourceDiscovery,
+		URL:  str.Ptr(ordURL),
+		Auth: &model.AuthInput{
+			AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
+		},
+	}
+}
+
+func isOrdReady(appTemplateID string) bool {
+	for _, tm := range Mappings {
+		if tm.ID == appTemplateID {
+			return tm.OrdReady
+		}
+	}
+	return false
 }

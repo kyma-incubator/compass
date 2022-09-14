@@ -1,9 +1,11 @@
 package authenticator_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -50,6 +52,25 @@ const (
 	fakeJWKSURL     = "file://testdata/invalid.json"
 )
 
+type mockRoundTripper struct{}
+
+func (rt *mockRoundTripper) RoundTrip(*http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusFound,
+		Header: map[string][]string{
+			"Location": {"somewhere.else.gone"},
+		},
+		Body: ioutil.NopCloser(bytes.NewBufferString("")),
+	}, nil
+}
+
+var httpClientWithoutRedirectsWithMockTransport = &http.Client{
+	Transport: &mockRoundTripper{},
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+
 var httpClientWithoutRedirects = &http.Client{
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
@@ -95,7 +116,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("http client configured without redirects", func(t *testing.T) {
 		// WHEN
-		jwks, err := authenticator.FetchJWK(context.TODO(), "https://redirect.com/test", jwk.WithHTTPClient(httpClientWithoutRedirects))
+		jwks, err := authenticator.FetchJWK(context.TODO(), "http://idonotexist.gone", jwk.WithHTTPClient(httpClientWithoutRedirectsWithMockTransport))
 
 		// THEN
 		require.Nil(t, jwks)

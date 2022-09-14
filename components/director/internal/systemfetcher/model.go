@@ -16,9 +16,11 @@ var (
 // TemplateMapping missing godoc
 type TemplateMapping struct {
 	Name        string
+	Region      string
 	ID          string
 	SourceKey   []string
 	SourceValue []string
+	OrdReady    bool
 }
 
 // AdditionalURLs missing godoc

@@ -39,6 +39,10 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+      {{ end }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -145,10 +149,6 @@ spec:
               value: {{ .Values.global.director.suggestTokenHeaderKey }}
             - name: APP_INFO_API_ENDPOINT
               value: {{ .Values.global.director.info.path }}
-            - name: APP_INFO_CERT_SUBJECT
-              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
-            - name: APP_INFO_CERT_ISSUER
-              value: {{ .Values.global.externalCertConfiguration.issuer }}
             - name: APP_INFO_ROOT_CA
               valueFrom:
                 secretKeyRef:
@@ -183,6 +183,8 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: APP_RUNTIME_TYPE_LABEL_KEY
               value: {{ .Values.global.director.runtimeTypeLabelKey }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
               value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
