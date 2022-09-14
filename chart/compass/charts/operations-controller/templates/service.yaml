@@ -12,6 +12,7 @@ spec:
   ports:
     - port: {{ .Values.metrics.port }}
       protocol: TCP
+      appProtocol: http
       name: metrics
   selector:
     app: {{ .Chart.Name }}
