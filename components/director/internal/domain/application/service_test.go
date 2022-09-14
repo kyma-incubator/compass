@@ -1467,11 +1467,33 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 		},
 
 		Labels: map[string]interface{}{
-			"label":           "value",
-			"applicationType": "test-app",
+			"label":                "value",
+			"applicationType":      "test-app",
+			"ppmsProductVersionId": "1",
 		},
 		IntegrationSystemID: &intSysID,
 		BaseURL:             str.Ptr("http://test.com"),
+	}
+
+	modelInputWithoutApplicationType := model.ApplicationRegisterInput{
+		Name: "foo.bar-not",
+		Labels: map[string]interface{}{
+			"label":                "value",
+			"ppmsProductVersionId": "1",
+		},
+		IntegrationSystemID: &intSysID,
+		BaseURL:             str.Ptr("http://test.com"),
+	}
+
+	modelInputWithoutBaseURL := model.ApplicationRegisterInput{
+		Name: "foo.bar-not",
+		Labels: map[string]interface{}{
+			"label":                "value",
+			"applicationType":      "test-app-with-ppms",
+			"ppmsProductVersionId": "1",
+		},
+		IntegrationSystemID: &intSysID,
+		BaseURL:             str.Ptr(""),
 	}
 
 	bundles := []*model.BundleCreateInput{
@@ -1525,11 +1547,12 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	normalizedModelInput.Bundles = bundles
 
 	defaultLabels := map[string]interface{}{
-		model.ScenariosKey:    model.ScenariosDefaultValue,
-		"integrationSystemID": intSysID,
-		"label":               "value",
-		"name":                "mp-foo-bar-not",
-		"applicationType":     "test-app",
+		model.ScenariosKey:     model.ScenariosDefaultValue,
+		"integrationSystemID":  intSysID,
+		"label":                "value",
+		"name":                 "mp-foo-bar-not",
+		"applicationType":      "test-app-with-ppms",
+		"ppmsProductVersionId": "1",
 	}
 	defaultLabelsWithoutIntSys := map[string]interface{}{
 		model.ScenariosKey:    model.ScenariosDefaultValue,
@@ -1562,6 +1585,10 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	ordWebhookMapping := []application.ORDWebhookMapping{
 		{
 			Type: "test-app",
+		},
+		{
+			Type:                "test-app-with-ppms",
+			PpmsProductVersions: []string{"1"},
 		},
 	}
 
@@ -1597,9 +1624,10 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
-						"label":            "value",
-						model.ScenariosKey: model.ScenariosDefaultValue,
-						"applicationType":  "test-app",
+						"label":                "value",
+						model.ScenariosKey:     model.ScenariosDefaultValue,
+						"applicationType":      "test-app-with-ppms",
+						"ppmsProductVersionId": "1",
 					}
 				}).Once()
 				return repo
@@ -1743,9 +1771,10 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
-						"label":            "value",
-						model.ScenariosKey: model.ScenariosDefaultValue,
-						"applicationType":  "test-app",
+						"label":                "value",
+						model.ScenariosKey:     model.ScenariosDefaultValue,
+						"applicationType":      "test-app-with-ppms",
+						"ppmsProductVersionId": "1",
 					}
 				}).Once()
 				return repo
@@ -1788,9 +1817,10 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 					arg, ok := args.Get(2).(*map[string]interface{})
 					require.True(t, ok)
 					*arg = map[string]interface{}{
-						"label":            "value",
-						model.ScenariosKey: model.ScenariosDefaultValue,
-						"applicationType":  "test-app",
+						"label":                "value",
+						model.ScenariosKey:     model.ScenariosDefaultValue,
+						"applicationType":      "test-app-with-ppms",
+						"ppmsProductVersionId": "1",
 					}
 				}).Once()
 				return repo
@@ -1878,6 +1908,96 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			WebhookRepoFn:      UnusedWebhookRepository,
 			Input:              modelInput,
 			ExpectedErr:        testErr,
+		},
+		{
+			Name:              "Should not create webhooks when application type is missing from input labels",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInputWithoutApplicationType.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
+					require.True(t, ok)
+					*arg = map[string]interface{}{
+						"label":                "value",
+						model.ScenariosKey:     model.ScenariosDefaultValue,
+						"ppmsProductVersionId": "1",
+					}
+				}).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				labels := map[string]interface{}{
+					model.ScenariosKey:     model.ScenariosDefaultValue,
+					"integrationSystemID":  intSysID,
+					"label":                "value",
+					"name":                 "mp-foo-bar-not",
+					"ppmsProductVersionId": "1",
+				}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			WebhookRepoFn:     UnusedWebhookRepository,
+			OrdWebhookMapping: ordWebhookMapping,
+			Input:             modelInputWithoutApplicationType,
+			ExpectedErr:       nil,
+		},
+		{
+			Name:              "Should not create webhooks when baseURL is missing from input",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInputWithoutBaseURL.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
+					require.True(t, ok)
+					*arg = map[string]interface{}{
+						"label":                "value",
+						model.ScenariosKey:     model.ScenariosDefaultValue,
+						"ppmsProductVersionId": "1",
+						"applicationType":      "test-app-with-ppms",
+					}
+				}).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			WebhookRepoFn:     UnusedWebhookRepository,
+			OrdWebhookMapping: ordWebhookMapping,
+			Input:             modelInputWithoutBaseURL,
+			ExpectedErr:       nil,
 		},
 	}
 

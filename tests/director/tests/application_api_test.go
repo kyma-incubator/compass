@@ -549,6 +549,7 @@ func TestUpdateApplication(t *testing.T) {
 		require.Empty(t, actualApp.Webhooks)
 
 		updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+		updateInput.BaseURL = ptr.String("https://local.com")
 		updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
 		require.NoError(t, err)
 		request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
