@@ -431,6 +431,8 @@ func TestCreateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 }
 
 func TestUpdateApplication(t *testing.T) {
+	supportedApplicationType := "SAP temp1"
+
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
@@ -480,7 +482,7 @@ func TestUpdateApplication(t *testing.T) {
 		ctx := context.Background()
 
 		appInput := fixtures.FixSampleApplicationRegisterInput("before")
-		appInput.Labels["applicationType"] = "SAP temp-1"
+		appInput.Labels["applicationType"] = supportedApplicationType
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
@@ -511,7 +513,7 @@ func TestUpdateApplication(t *testing.T) {
 		ctx := context.Background()
 
 		appInput := fixtures.FixSampleApplicationRegisterInput("before")
-		appInput.Labels["applicationType"] = "SAP temp-1"
+		appInput.Labels["applicationType"] = supportedApplicationType
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
