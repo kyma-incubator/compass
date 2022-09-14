@@ -29,6 +29,25 @@ const ordDocument = `{
    "description":"Global Registry Test Document",
    "products": [
     {
+      "ordId": "sap:product:SAPCustomerExperience:",
+      "title": "SAP Customer Experience",
+      "shortDescription": "Bring together customer data, machine learning technology, and microservices to power real-time customer engagements across sales, service, marketing, and commerce.",
+      "vendor": "sap:vendor:SAP:"
+    },
+    {
+      "ordId": "sap:product:SAPServiceCloudV2:",
+      "title": "SAP Service Cloud Version 2",
+      "shortDescription": "Enables you to run service processes efficiently with service agents having customer information at their fingertips.",
+      "vendor": "sap:vendor:SAP:",
+      "parent": "sap:product:SAPCustomerExperience:"
+    },
+    {
+      "ordId": "sap:product:SAPGraph:",
+      "title": "SAP Graph",
+      "shortDescription": "SAP Graph is the easy-to-use API for the data of the Intelligent Enterprise from SAP.\nIt provides an intuitive programming model that you can use to easily build new extensions and applications using SAP data.",
+      "vendor": "sap:vendor:SAP:"
+    },
+    {
       "ordId": "sap:product:SAPS4HANACloud:",
       "title": "SAP S/4HANA Cloud",
       "shortDescription": "The next generation digital core designed to help you run simple\nin a digital economy. It provides the industry-specific capabilities and cloud\nbenefits that your business needs.",
