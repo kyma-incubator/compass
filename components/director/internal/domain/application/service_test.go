@@ -1433,13 +1433,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			appRepo.AssertExpectations(t)
-			intSysRepo.AssertExpectations(t)
-			webhookRepo.AssertExpectations(t)
-			scenariosSvc.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
-			bndlSvc.AssertExpectations(t)
-			formationSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, appRepo, intSysRepo, scenariosSvc, uidSvc, bndlSvc, formationSvc)
 		})
 	}
 
@@ -1494,6 +1488,28 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 		},
 		IntegrationSystemID: &intSysID,
 		BaseURL:             str.Ptr(""),
+	}
+
+	modelInputWithInvalidBaseURL := model.ApplicationRegisterInput{
+		Name: "foo.bar-not",
+		Labels: map[string]interface{}{
+			"label":                "value",
+			"applicationType":      "test-app-with-ppms",
+			"ppmsProductVersionId": "1",
+		},
+		IntegrationSystemID: &intSysID,
+		BaseURL:             str.Ptr("123://localhost"),
+	}
+
+	modelInputWithInvalidPpmsProductVersion := model.ApplicationRegisterInput{
+		Name: "foo.bar-not",
+		Labels: map[string]interface{}{
+			"label":                "value",
+			"applicationType":      "test-app-with-ppms",
+			"ppmsProductVersionId": "2",
+		},
+		IntegrationSystemID: &intSysID,
+		BaseURL:             str.Ptr("123://localhost"),
 	}
 
 	bundles := []*model.BundleCreateInput{
@@ -1558,6 +1574,14 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": "",
 		"name":                "mp-test",
+	}
+	defaultLabelsWithInvalidPpmsProductVersion := map[string]interface{}{
+		model.ScenariosKey:     model.ScenariosDefaultValue,
+		"integrationSystemID":  intSysID,
+		"label":                "value",
+		"name":                 "mp-foo-bar-not",
+		"applicationType":      "test-app-with-ppms",
+		"ppmsProductVersionId": "2",
 	}
 	labelsWithoutIntSys := map[string]interface{}{
 		"integrationSystemID": "",
@@ -1997,6 +2021,90 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			WebhookRepoFn:     UnusedWebhookRepository,
 			OrdWebhookMapping: ordWebhookMapping,
 			Input:             modelInputWithoutBaseURL,
+			ExpectedErr:       nil,
+		},
+		{
+			Name:              "Should not create webhooks when baseURL is invalid",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInputWithInvalidBaseURL.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
+					require.True(t, ok)
+					*arg = map[string]interface{}{
+						"label":                "value",
+						model.ScenariosKey:     model.ScenariosDefaultValue,
+						"ppmsProductVersionId": "1",
+						"applicationType":      "test-app-with-ppms",
+					}
+				}).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabels).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			WebhookRepoFn:     UnusedWebhookRepository,
+			OrdWebhookMapping: ordWebhookMapping,
+			Input:             modelInputWithInvalidBaseURL,
+			ExpectedErr:       nil,
+		},
+		{
+			Name:              "Should not create webhooks when ppmsProductVersion is present in input but is not in configuration",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			ScenariosServiceFn: func() *automock.ScenariosService {
+				repo := &automock.ScenariosService{}
+				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &modelInputWithInvalidPpmsProductVersion.Labels).Run(func(args mock.Arguments) {
+					arg, ok := args.Get(2).(*map[string]interface{})
+					require.True(t, ok)
+					*arg = map[string]interface{}{
+						"label":                "value",
+						model.ScenariosKey:     model.ScenariosDefaultValue,
+						"ppmsProductVersionId": "2",
+						"applicationType":      "test-app-with-ppms",
+					}
+				}).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, defaultLabelsWithInvalidPpmsProductVersion).Return(nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id).Once()
+				return svc
+			},
+			WebhookRepoFn:     UnusedWebhookRepository,
+			OrdWebhookMapping: ordWebhookMapping,
+			Input:             modelInputWithInvalidPpmsProductVersion,
 			ExpectedErr:       nil,
 		},
 	}
@@ -2561,7 +2669,13 @@ func TestService_Update(t *testing.T) {
 	}
 	ppmsVersionIDLabel := &model.Label{
 		Key:   "ppmsProductVersionId",
-		Value: "test-app",
+		Value: "1",
+	}
+	ordWebhookMapping := []application.ORDWebhookMapping{
+		{
+			Type:                "test-app",
+			PpmsProductVersions: []string{"1"},
+		},
 	}
 
 	ctx := context.TODO()
@@ -2591,8 +2705,11 @@ func TestService_Update(t *testing.T) {
 		AppRepoFn          func() *automock.ApplicationRepository
 		IntSysRepoFn       func() *automock.IntegrationSystemRepository
 		LabelUpsertSvcFn   func() *automock.LabelService
+		WebhookRepoFn      func() *automock.WebhookRepository
+		UIDServiceFn       func() *automock.UIDService
 		Input              model.ApplicationUpdateInput
 		InputID            string
+		ORDWebhookMapping  []application.ORDWebhookMapping
 		ExpectedErrMessage string
 	}{
 		{
@@ -2618,7 +2735,23 @@ func TestService_Update(t *testing.T) {
 				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(ppmsVersionIDLabel, nil).Once()
 				return svc
 			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				wh := &model.Webhook{
+					URL:      stringPtr("test.foo.com"),
+					ObjectID: id,
+				}
+				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return([]*model.Webhook{wh}, nil)
+				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(nil)
+				return webhookRepo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
 			InputID:            "foo",
+			ORDWebhookMapping:  ordWebhookMapping,
 			Input:              updateInput,
 			ExpectedErrMessage: "",
 		},
@@ -2640,6 +2773,9 @@ func TestService_Update(t *testing.T) {
 				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(ppmsVersionIDLabel, nil).Once()
 				return svc
 			},
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
+			ORDWebhookMapping:  ordWebhookMapping,
 			InputID:            "foo",
 			Input:              updateInputStatusOnly,
 			ExpectedErrMessage: "",
@@ -2659,6 +2795,8 @@ func TestService_Update(t *testing.T) {
 				return repo
 			},
 			LabelUpsertSvcFn:   UnusedLabelUpsertService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -2677,6 +2815,8 @@ func TestService_Update(t *testing.T) {
 				return repo
 			},
 			LabelUpsertSvcFn:   UnusedLabelUpsertService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -2691,6 +2831,8 @@ func TestService_Update(t *testing.T) {
 				return repo
 			},
 			LabelUpsertSvcFn:   UnusedLabelUpsertService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: errors.New("Object not found").Error(),
@@ -2705,6 +2847,8 @@ func TestService_Update(t *testing.T) {
 				return repo
 			},
 			LabelUpsertSvcFn:   UnusedLabelUpsertService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -2729,6 +2873,8 @@ func TestService_Update(t *testing.T) {
 				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(testErr).Once()
 				return svc
 			},
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -2749,6 +2895,8 @@ func TestService_Update(t *testing.T) {
 				return repo
 			},
 			LabelUpsertSvcFn:   UnusedLabelUpsertService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: "Object not found",
@@ -2769,6 +2917,93 @@ func TestService_Update(t *testing.T) {
 				return repo
 			},
 			LabelUpsertSvcFn:   UnusedLabelUpsertService,
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:              "Should return error when fetching applicationType label",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Twice()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "applicationType").Return(nil, testErr).Once()
+				return svc
+			},
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:              "Should not create webhooks when applicationType label is missing",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Twice()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "applicationType").Return(nil, apperrors.NewNotFoundErrorWithType(resource.Label)).Once()
+				return svc
+			},
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:              "Should return error when fetching applicationType label",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Twice()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "applicationType").Return(appTypeLabel, nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(nil, testErr).Once()
+				return svc
+			},
+			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -2782,7 +3017,9 @@ func TestService_Update(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil, nil, "", nil)
+			webhookRepo := testCase.WebhookRepoFn()
+			uidSvc := testCase.UIDServiceFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, uidSvc, nil, "", testCase.ORDWebhookMapping)
 			svc.SetTimestampGen(timestampGenFunc)
 
 			// WHEN
@@ -2796,9 +3033,7 @@ func TestService_Update(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			appRepo.AssertExpectations(t)
-			intSysRepo.AssertExpectations(t)
-			lblUpsrtSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, uidSvc, webhookRepo, appRepo, intSysRepo, lblUpsrtSvc)
 		})
 	}
 }
