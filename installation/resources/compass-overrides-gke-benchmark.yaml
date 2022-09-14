@@ -63,7 +63,7 @@ global:
       client:
         skipSSLValidation: true
     systemToTemplateMappings: '[{"Name": "SAP temp1", "Region": "eu-1", "SourceKey": ["prop"], "SourceValue": ["val1"] },{"Name": "SAP temp2", "Region": "eu-1", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
-    ordWebhookMappings: '[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": [], "SubdomainSuffix": "" }]'
+    ordWebhookMappings: '[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }]'
     systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
     systemsAPIFilterCriteria: "no"
   tests:

@@ -22,7 +22,7 @@ global:
   director:
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-    ordWebhookMappings: '[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": [], "SubdomainSuffix": "" }]'
+    ordWebhookMappings: '[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }]'
   externalCertConfiguration:
     secrets:
       externalCertSvcSecret:
