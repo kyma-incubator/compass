@@ -3042,6 +3042,41 @@ func TestService_Update(t *testing.T) {
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
 		},
+		{
+			Name:              "Not matching ord mapping configuration",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Twice()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "applicationType").Return(appTypeLabel, nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(ppmsVersionIDLabel, nil).Once()
+				return svc
+			},
+			WebhookRepoFn: UnusedWebhookRepository,
+			ORDWebhookMapping: []application.ORDWebhookMapping{
+				{
+					Type:                "test-app-not-match",
+					PpmsProductVersions: []string{"1"},
+				},
+			},
+			UIDServiceFn:       UnusedUIDService,
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: "",
+		},
 	}
 
 	for _, testCase := range testCases {
