@@ -854,6 +854,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.NotNil(t, actualWebhook.URL)
+		assert.NotNil(t, actualWebhook.CreatedAt)
 		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
 		assert.Equal(t, graphql.WebhookTypeUnregisterApplication, actualWebhook.Type)
 		id := actualWebhook.ID
