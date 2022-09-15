@@ -35,25 +35,31 @@ const unassignFormationCategory = "unassign formation"
 
 func TestGetFormation(t *testing.T) {
 	ctx := context.Background()
-	formationName := "formation1"
 
-	t.Logf("Should create formation: %q", formationName)
-	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	t.Logf("Should create formation: %q", testScenario)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
 
-	t.Logf("Should get formation %q by id %q", formationName, formation.ID)
+	var formation graphql.Formation
+	createReq := fixtures.FixCreateFormationRequest(testScenario)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, testScenario, formation.Name)
+
+	saveExample(t, createReq.Query(), "create formation")
+
+	t.Logf("Should get formation %q by id %q", testScenario, formation.ID)
 	var gotFormation graphql.Formation
 	getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
 	saveExample(t, getFormationReq.Query(), "query formation")
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
 	require.NoError(t, err)
 	require.Equal(t, formation, gotFormation)
 
-	t.Logf("Should delete formation %q", formationName)
-	deleteFormation := fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	t.Logf("Should delete formation %q", testScenario)
+	deleteFormation := fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
 	assert.Equal(t, formation, *deleteFormation)
 
-	t.Logf("Should NOT get formation %q by id %q because it is already deleted", formationName, formation.ID)
+	t.Logf("Should NOT get formation %q by id %q because it is already deleted", testScenario, formation.ID)
 	var nonexistentFormation *graphql.Formation
 	getNonexistentFormationReq := fixtures.FixGetFormationRequest(formation.ID)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getNonexistentFormationReq, nonexistentFormation)
@@ -129,8 +135,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
-
-	saveExample(t, createReq.Query(), "create formation")
 
 	nonExistingFormation := "nonExistingFormation"
 	t.Logf("Shoud not assign application to formation %s, as it is not in the label definition", nonExistingFormation)
