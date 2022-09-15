@@ -2675,6 +2675,7 @@ func TestService_Update(t *testing.T) {
 		{
 			Type:                "test-app",
 			PpmsProductVersions: []string{"1"},
+			SubdomainSuffix:     "-test",
 		},
 	}
 
