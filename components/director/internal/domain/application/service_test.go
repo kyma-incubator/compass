@@ -494,8 +494,8 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
-			WebhookRepoFn:   UnusedWebhookRepository,
-			IntSysRepoFn:    UnusedIntegrationSystemRepository,
+			WebhookRepoFn: UnusedWebhookRepository,
+			IntSysRepoFn:  UnusedIntegrationSystemRepository,
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithScenarios).Return(nil).Once()
@@ -1083,7 +1083,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 		IntSysRepoFn      func() *automock.IntegrationSystemRepository
 		LabelServiceFn    func() *automock.LabelUpsertService
 		UIDServiceFn      func() *automock.UIDService
-		WebhookRepoFn      func() *automock.WebhookRepository
+		WebhookRepoFn     func() *automock.WebhookRepository
 		Input             model.ApplicationRegisterInput
 		ExpectedErr       error
 	}{
@@ -1189,7 +1189,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelScenarios).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1220,7 +1220,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelScenarios).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1277,7 +1277,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			},
 			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn:   UnusedUIDService,
-			WebhookRepoFn:      UnusedWebhookRepository,
+			WebhookRepoFn:  UnusedWebhookRepository,
 			Input:          applicationRegisterInputWithScenarios(),
 			ExpectedErr:    errors.New("Object not found"),
 		},
@@ -1294,7 +1294,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			},
 			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn:   UnusedUIDService,
-			WebhookRepoFn:      UnusedWebhookRepository,
+			WebhookRepoFn:  UnusedWebhookRepository,
 			Input:          applicationRegisterInputWithScenarios(),
 			ExpectedErr:    testErr,
 		},
@@ -1420,7 +1420,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 		IntSysRepoFn      func() *automock.IntegrationSystemRepository
 		LabelServiceFn    func() *automock.LabelUpsertService
 		UIDServiceFn      func() *automock.UIDService
-		WebhookRepoFn      func() *automock.WebhookRepository
+		WebhookRepoFn     func() *automock.WebhookRepository
 		Input             model.ApplicationRegisterInput
 		ExpectedErr       error
 	}{
@@ -1457,8 +1457,8 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				webhookRepo.On("CreateMany", ctx, tnt, mock.AnythingOfType("[]*model.Webhook")).Return(nil)
 				return webhookRepo
 			},
-			Input:         applicationRegisterInputWithScenarios(),
-			ExpectedErr:   nil,
+			Input:       applicationRegisterInputWithScenarios(),
+			ExpectedErr: nil,
 		},
 		{
 			Name:              "Success when no labels provided",
@@ -1526,7 +1526,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelScenarios).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithTestScenario).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1557,7 +1557,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelScenarios).Return(nil).Once()
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithTestScenario).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1614,7 +1614,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			},
 			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn:   UnusedUIDService,
-			WebhookRepoFn:      UnusedWebhookRepository,
+			WebhookRepoFn:  UnusedWebhookRepository,
 			Input:          applicationRegisterInputWithScenarios(),
 			ExpectedErr:    errors.New("Object not found"),
 		},
@@ -1631,7 +1631,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			},
 			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn:   UnusedUIDService,
-			WebhookRepoFn:      UnusedWebhookRepository,
+			WebhookRepoFn:  UnusedWebhookRepository,
 			Input:          applicationRegisterInputWithScenarios(),
 			ExpectedErr:    testErr,
 		},

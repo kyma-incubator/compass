@@ -388,25 +388,22 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 }
 
 func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
-	// TODO Remove default scenario check after removing default scenario
-	if formation.Name != model.DefaultScenario {
-		switch objectType {
-		case graphql.FormationObjectTypeApplication:
-			if err := s.isValidApplicationType(ctx, tnt, objectID, formation); err != nil {
-				return errors.Wrapf(err, "while validating application type for application %q", objectID)
-			}
-		case graphql.FormationObjectTypeRuntime:
-			if err := s.isValidRuntimeType(ctx, tnt, objectID, formation); err != nil {
-				return errors.Wrapf(err, "while validating runtime type")
-			}
-		case graphql.FormationObjectTypeRuntimeContext:
-			runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
-			if err != nil {
-				return errors.Wrapf(err, "while getting runtime context")
-			}
-			if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation); err != nil {
-				return errors.Wrapf(err, "while validating runtime type of runtime")
-			}
+	switch objectType {
+	case graphql.FormationObjectTypeApplication:
+		if err := s.isValidApplicationType(ctx, tnt, objectID, formation); err != nil {
+			return errors.Wrapf(err, "while validating application type for application %q", objectID)
+		}
+	case graphql.FormationObjectTypeRuntime:
+		if err := s.isValidRuntimeType(ctx, tnt, objectID, formation); err != nil {
+			return errors.Wrapf(err, "while validating runtime type")
+		}
+	case graphql.FormationObjectTypeRuntimeContext:
+		runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting runtime context")
+		}
+		if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation); err != nil {
+			return errors.Wrapf(err, "while validating runtime type of runtime")
 		}
 	}
 	return nil

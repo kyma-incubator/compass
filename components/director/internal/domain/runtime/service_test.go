@@ -626,9 +626,9 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, tnt, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithMandatoryLabels).Return(nil).Once()
 				return repo
 			},
-			TenantSvcFn:          unusedTenantService,
-			UIDServiceFn:         rtmtest.UnusedUUIDService,
-			WebhookServiceFn:     unusedWebhookService,
+			TenantSvcFn:      unusedTenantService,
+			UIDServiceFn:     rtmtest.UnusedUUIDService,
+			WebhookServiceFn: unusedWebhookService,
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(nil, testErr)

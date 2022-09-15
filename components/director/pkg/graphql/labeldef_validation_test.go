@@ -108,22 +108,6 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 			},
 			ExpectedValid: false,
 		},
-		{
-			Name: "Invalid - scenarios schema without DEFAULT enum value",
-			Value: graphql.LabelDefinitionInput{
-				Key: model.ScenariosKey,
-				Schema: jsonSchemaPtr(`{
-					"type":        "array",
-					"minItems":    1,
-					"uniqueItems": true,
-					"items": {
-						"type": "string",
-						"enum": ["Abc"]
-					}
-				}`),
-			},
-			ExpectedValid: false,
-		},
 	}
 
 	for _, testCase := range testCases {
