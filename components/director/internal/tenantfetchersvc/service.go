@@ -24,8 +24,6 @@ import (
 )
 
 const (
-	// DefaultScenario is the name of the default scenario
-	DefaultScenario = "DEFAULT"
 	// TenantOnDemandProvider is the name of the business tenant mapping provider used when the tenant is not found in the events service
 	TenantOnDemandProvider = "lazily-tenant-fetcher"
 )
@@ -654,9 +652,7 @@ func (s SubaccountService) checkForScenarios(ctx context.Context, subaccountInte
 			return err
 		}
 		for _, scenario := range scenarios {
-			if scenario != DefaultScenario {
-				return errors.Errorf("could not move subaccount %s: runtime %s is in scenario %s in the source GA %s", subaccountInternalID, scenariosLabel.ObjectID, scenario, sourceGA.ID)
-			}
+			return errors.Errorf("could not move subaccount %s: runtime %s is in scenario %s in the source GA %s", subaccountInternalID, scenariosLabel.ObjectID, scenario, sourceGA.ID)
 		}
 	}
 	return nil

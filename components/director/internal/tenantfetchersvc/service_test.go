@@ -1427,7 +1427,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepo {
 				svc := &automock.LabelRepo{}
-				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
+				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{}}}, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -1656,7 +1656,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepo {
 				svc := &automock.LabelRepo{}
-				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
+				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{}}}, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -1768,7 +1768,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepo {
 				svc := &automock.LabelRepo{}
-				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
+				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{}}}, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -1836,7 +1836,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepo {
 				svc := &automock.LabelRepo{}
-				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
+				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{}}}, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -2513,7 +2513,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepo {
 				svc := &automock.LabelRepo{}
-				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
+				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{}}}, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
