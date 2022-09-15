@@ -552,7 +552,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	}
 
 	ppmsProductVersionID := ""
-	if ppmsProductVersionIDLbl != nil {
+	if ppmsProductVersionIDLbl != nil && ppmsProductVersionIDLbl.Value != nil {
 		if ppmsProductVersionIDValue, ok := ppmsProductVersionIDLbl.Value.(string); ok {
 			ppmsProductVersionID = ppmsProductVersionIDValue
 		}
@@ -564,10 +564,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return nil
 	}
 
-	ordWebhooks := make([]*model.WebhookInput, 0)
-	ordWebhooks = append(ordWebhooks, ordWebhook)
-
-	if err = s.createWebhooksIfNotExist(ctx, app.ID, appTenant, ordWebhooks); err != nil {
+	if err = s.createWebhooksIfNotExist(ctx, app.ID, appTenant, []*model.WebhookInput{ordWebhook}); err != nil {
 		return errors.Wrapf(err, "while processing webhooks for application with id %q", app.ID)
 	}
 
