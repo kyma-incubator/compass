@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
@@ -25,6 +26,7 @@ type Entity struct {
 	HeaderTemplate        sql.NullString `db:"header_template"`
 	OutputTemplate        sql.NullString `db:"output_template"`
 	StatusTemplate        sql.NullString `db:"status_template"`
+	CreatedAt             *time.Time     `db:"created_at"`
 }
 
 // GetID returns the ID of the entity.

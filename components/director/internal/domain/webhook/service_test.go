@@ -3,6 +3,7 @@ package webhook_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -21,11 +22,11 @@ import (
 func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
-
+	createdAt := time.Now()
 	modelInput := fixModelWebhookInput("foo")
 
 	webhookModel := mock.MatchedBy(func(webhook *model.Webhook) bool {
-		return webhook.Type == modelInput.Type && webhook.URL == modelInput.URL
+		return webhook.Type == modelInput.Type && webhook.URL == modelInput.URL && webhook.CreatedAt.String() == createdAt.String()
 	})
 
 	ctx := context.TODO()
@@ -34,11 +35,12 @@ func TestService_Create(t *testing.T) {
 	ctxNoTenant = tenant.SaveToContext(ctx, "", "")
 
 	testCases := []struct {
-		Name         string
-		RepositoryFn func() *automock.WebhookRepository
-		UIDServiceFn func() *automock.UIDService
-		ExpectedErr  error
-		Context      context.Context
+		Name          string
+		RepositoryFn  func() *automock.WebhookRepository
+		UIDServiceFn  func() *automock.UIDService
+		TimeServiceFn func() *automock.TimeService
+		ExpectedErr   error
+		Context       context.Context
 	}{
 		{
 			Name: "Success",
@@ -50,6 +52,11 @@ func TestService_Create(t *testing.T) {
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return("foo").Once()
+				return svc
+			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				svc.On("Now").Return(createdAt).Once()
 				return svc
 			},
 			ExpectedErr: nil,
@@ -67,6 +74,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return("foo").Once()
 				return svc
 			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				svc.On("Now").Return(createdAt).Once()
+				return svc
+			},
 			ExpectedErr: nil,
 			Context:     ctxNoTenant,
 		},
@@ -82,6 +94,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return("").Once()
 				return svc
 			},
+			TimeServiceFn: func() *automock.TimeService {
+				svc := &automock.TimeService{}
+				svc.On("Now").Return(createdAt).Once()
+				return svc
+			},
 			ExpectedErr: testErr,
 			Context:     ctx,
 		},
@@ -91,8 +108,9 @@ func TestService_Create(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
+			timeSvc := testCase.TimeServiceFn()
 
-			svc := webhook.NewService(repo, nil, uidSvc)
+			svc := webhook.NewService(repo, nil, uidSvc, timeSvc)
 
 			// WHEN
 			result, err := svc.Create(testCase.Context, givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
@@ -106,13 +124,12 @@ func TestService_Create(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
-			repo.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, repo, uidSvc, timeSvc)
 		})
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -126,7 +143,7 @@ func TestService_Get(t *testing.T) {
 	id := "foo"
 	url := "bar"
 
-	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url)
+	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
@@ -162,7 +179,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.Get(ctx, id, model.ApplicationWebhookReference)
@@ -185,8 +202,8 @@ func TestService_ListForApplication(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelWebhooks := []*model.Webhook{
-		fixApplicationModelWebhook("1", "foo", givenTenant(), "Foo"),
-		fixApplicationModelWebhook("2", "bar", givenTenant(), "Bar"),
+		fixApplicationModelWebhook("1", "foo", givenTenant(), "Foo", time.Time{}),
+		fixApplicationModelWebhook("2", "bar", givenTenant(), "Bar", time.Time{}),
 	}
 	applicationID := "foo"
 
@@ -224,7 +241,7 @@ func TestService_ListForApplication(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListForApplication(ctx, applicationID)
@@ -242,7 +259,7 @@ func TestService_ListForApplication(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -293,7 +310,7 @@ func TestService_ListForRuntime(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListForRuntime(ctx, runtimeID)
@@ -311,7 +328,7 @@ func TestService_ListForRuntime(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForRuntime(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -361,7 +378,7 @@ func TestService_ListForApplicationTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListForApplicationTemplate(ctx, applicationTemplateID)
@@ -398,8 +415,8 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 	}
 
 	appModelWebhooks := []*model.Webhook{
-		fixApplicationModelWebhookWithType("app-webhook-1", "app-1", givenTenant(), "test-url-1.com", model.WebhookTypeRegisterApplication),
-		fixApplicationModelWebhookWithType("app-webhook-2", "app-1", givenTenant(), "test-url-2.com", model.WebhookTypeDeleteApplication),
+		fixApplicationModelWebhookWithType("app-webhook-1", "app-1", givenTenant(), "test-url-1.com", model.WebhookTypeRegisterApplication, time.Time{}),
+		fixApplicationModelWebhookWithType("app-webhook-2", "app-1", givenTenant(), "test-url-2.com", model.WebhookTypeDeleteApplication, time.Time{}),
 	}
 	appTemplateModelWebhooks := []*model.Webhook{
 		fixApplicationTemplateModelWebhookWithType("app-template-webhook-1", "app-template-1", "test-url-1.com", model.WebhookTypeRegisterApplication),
@@ -534,7 +551,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			webhookRepo := testCase.WebhookRepositoryFn()
 			applicationRepo := testCase.ApplicationRepositoryFn()
-			svc := webhook.NewService(webhookRepo, applicationRepo, nil)
+			svc := webhook.NewService(webhookRepo, applicationRepo, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListAllApplicationWebhooks(ctx, application.ID)
@@ -554,7 +571,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -573,7 +590,7 @@ func TestService_Update(t *testing.T) {
 		return webhook.URL == modelInput.URL
 	})
 
-	applicationWebhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url)
+	applicationWebhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
 	applicationTemplateWebhookModel := fixApplicationTemplateModelWebhook("1", id, url)
 	noIDWebhookModel := &model.Webhook{}
 	*noIDWebhookModel = *applicationWebhookModel
@@ -653,7 +670,7 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.WebhookRepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			err := svc.Update(testCase.Context, id, *modelInput, testCase.WebhookType)
@@ -669,7 +686,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), givenApplicationID(), model.WebhookInput{}, model.ApplicationWebhookReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -683,7 +700,7 @@ func TestService_Delete(t *testing.T) {
 	id := "foo"
 	url := "bar"
 
-	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url)
+	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
@@ -727,7 +744,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, id, model.ApplicationWebhookReference)

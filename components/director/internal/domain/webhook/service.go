@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -40,6 +41,12 @@ type UIDService interface {
 	Generate() string
 }
 
+// TimeService missing godoc
+//go:generate mockery --name=TimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TimeService interface {
+	Now() time.Time
+}
+
 // OwningResource missing godoc
 type OwningResource string
 
@@ -47,14 +54,16 @@ type service struct {
 	webhookRepo WebhookRepository
 	appRepo     ApplicationRepository
 	uidSvc      UIDService
+	timeService TimeService
 }
 
 // NewService missing godoc
-func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UIDService) *service {
+func NewService(repo WebhookRepository, appRepo ApplicationRepository, uidSvc UIDService, timeService TimeService) *service {
 	return &service{
 		webhookRepo: repo,
 		uidSvc:      uidSvc,
 		appRepo:     appRepo,
+		timeService: timeService,
 	}
 }
 
@@ -111,7 +120,7 @@ func (s *service) ListForRuntime(ctx context.Context, runtimeID string) ([]*mode
 	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, runtimeID, model.RuntimeWebhookReference)
 }
 
-// Create missing godoc
+// Create creates a model.Webhook with generated ID and CreatedAt properties. Returns the ID of the webhook.
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if apperrors.IsTenantRequired(err) {
@@ -120,7 +129,10 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 		return "", err
 	}
 	id := s.uidSvc.Generate()
+	now := s.timeService.Now()
+
 	webhook := in.ToWebhook(id, owningResourceID, objectType)
+	webhook.CreatedAt = &now
 
 	if err = s.webhookRepo.Create(ctx, tnt, webhook); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhook with type: %q and ID: %q for Application with ID: %q", webhook.Type, id, owningResourceID)

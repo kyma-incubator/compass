@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -14,7 +15,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
+var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at"}
 
 var emptyTemplate = `{}`
 
@@ -22,7 +23,7 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-func fixApplicationModelWebhook(id, appID, tenant, url string) *model.Webhook {
+func fixApplicationModelWebhook(id, appID, tenant, url string, createdAt time.Time) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
 		ObjectID:       appID,
@@ -35,6 +36,7 @@ func fixApplicationModelWebhook(id, appID, tenant, url string) *model.Webhook {
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
+		CreatedAt:      &createdAt,
 	}
 }
 
@@ -82,6 +84,7 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
+		CreatedAt:      &graphql.Timestamp{},
 	}
 }
 
@@ -111,8 +114,8 @@ func fixGQLWebhookInput(url string) *graphql.WebhookInput {
 	}
 }
 
-func fixApplicationModelWebhookWithType(id, appID, tenant, url string, webhookType model.WebhookType) (w *model.Webhook) {
-	w = fixApplicationModelWebhook(id, appID, tenant, url)
+func fixApplicationModelWebhookWithType(id, appID, tenant, url string, webhookType model.WebhookType, createdAt time.Time) (w *model.Webhook) {
+	w = fixApplicationModelWebhook(id, appID, tenant, url, createdAt)
 	w.Type = webhookType
 	return
 }
@@ -140,15 +143,15 @@ func fixAuthAsAString(t *testing.T) string {
 	return string(b)
 }
 
-func fixApplicationWebhookEntity(t *testing.T) *webhook.Entity {
-	return fixApplicationWebhookEntityWithID(t, givenID())
+func fixApplicationWebhookEntity(t *testing.T, createdAt time.Time) *webhook.Entity {
+	return fixApplicationWebhookEntityWithID(t, givenID(), createdAt)
 }
 
-func fixApplicationWebhookEntityWithID(t *testing.T, id string) *webhook.Entity {
-	return fixApplicationWebhookEntityWithIDAndWebhookType(t, id, model.WebhookTypeConfigurationChanged)
+func fixApplicationWebhookEntityWithID(t *testing.T, id string, createdAt time.Time) *webhook.Entity {
+	return fixApplicationWebhookEntityWithIDAndWebhookType(t, id, model.WebhookTypeConfigurationChanged, createdAt)
 }
 
-func fixApplicationWebhookEntityWithIDAndWebhookType(t *testing.T, id string, whType model.WebhookType) *webhook.Entity {
+func fixApplicationWebhookEntityWithIDAndWebhookType(t *testing.T, id string, whType model.WebhookType, createdAt time.Time) *webhook.Entity {
 	return &webhook.Entity{
 		ID:             id,
 		ApplicationID:  repo.NewValidNullableString(givenApplicationID()),
@@ -160,6 +163,7 @@ func fixApplicationWebhookEntityWithIDAndWebhookType(t *testing.T, id string, wh
 		InputTemplate:  repo.NewValidNullableString(emptyTemplate),
 		HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
 		OutputTemplate: repo.NewValidNullableString(emptyTemplate),
+		CreatedAt:      &createdAt,
 	}
 }
 
@@ -190,6 +194,7 @@ func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
 		InputTemplate:         repo.NewValidNullableString(emptyTemplate),
 		HeaderTemplate:        repo.NewValidNullableString(emptyTemplate),
 		OutputTemplate:        repo.NewValidNullableString(emptyTemplate),
+		CreatedAt:             nil,
 	}
 }
 

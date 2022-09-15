@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
@@ -551,11 +552,12 @@ func applicationRepo() application.ApplicationRepository {
 func webhookService() webhook.WebhookService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
+	timeSvc := directorTime.NewService()
 
 	webhookConverter := webhook.NewConverter(authConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
-	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
+	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc, timeSvc)
 }
 
 func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
