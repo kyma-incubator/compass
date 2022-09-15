@@ -2537,8 +2537,16 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				return webhookRepo
 			},
 			OrdWebhookMapping: ordWebhookMapping,
-			Input:             modelInput,
-			ExpectedErr:       testErr,
+			Input: model.ApplicationRegisterInput{
+				Name: "foo.bar-not",
+				Labels: map[string]interface{}{
+					"label":           "value",
+					"applicationType": "test-app",
+				},
+				IntegrationSystemID: &intSysID,
+				BaseURL:             str.Ptr("http://localhost.com"),
+			},
+			ExpectedErr: testErr,
 		},
 		{
 			Name:              "Returns error when application creation failed",
