@@ -2775,7 +2775,6 @@ func TestService_Update(t *testing.T) {
 			},
 			WebhookRepoFn:      UnusedWebhookRepository,
 			UIDServiceFn:       UnusedUIDService,
-			ORDWebhookMapping:  ordWebhookMapping,
 			InputID:            "foo",
 			Input:              updateInputStatusOnly,
 			ExpectedErrMessage: "",
@@ -3003,6 +3002,40 @@ func TestService_Update(t *testing.T) {
 				return svc
 			},
 			WebhookRepoFn:      UnusedWebhookRepository,
+			UIDServiceFn:       UnusedUIDService,
+			InputID:            "foo",
+			Input:              updateInput,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:              "Should return error while creating webhook",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
+				repo.On("Exists", ctx, tnt, id).Return(true, nil).Twice()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.On("UpsertLabel", ctx, tnt, intSysLabel).Return(nil).Once()
+				svc.On("UpsertLabel", ctx, tnt, nameLabel).Return(nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "applicationType").Return(appTypeLabel, nil).Once()
+				svc.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, id, "ppmsProductVersionId").Return(ppmsVersionIDLabel, nil).Once()
+				return svc
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectID", ctx, tnt, id, model.ApplicationWebhookReference).Return(nil, testErr)
+				return webhookRepo
+			},
+			ORDWebhookMapping:  ordWebhookMapping,
 			UIDServiceFn:       UnusedUIDService,
 			InputID:            "foo",
 			Input:              updateInput,
