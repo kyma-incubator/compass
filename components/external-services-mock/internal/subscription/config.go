@@ -8,7 +8,7 @@ import (
 const (
 	TenantPathParamValue = "tenant"
 	RegionPathParamValue = "eu-1"
-	DefaultSubdomain     = "default-subdomain"
+	DefaultSubdomain     = "compass-external-services-mock-sap-mtls"
 )
 
 type Config struct {

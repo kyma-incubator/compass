@@ -29,6 +29,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -153,17 +154,27 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
 		// Register application
-		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", secondaryTenant)
+		const applicationType = "SAP Cloud for Customer"
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, applicationType, secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, app.ID)
 
 		// Register consumer application
-		consumerApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", secondaryTenant)
+		const localTenantID = "localTenantID"
+		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, applicationType, localTenantID, secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &consumerApp)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, consumerApp.ID)
 		require.NotEmpty(stdT, consumerApp.Name)
+
+		const correlationID = "correlationID"
+		bndlInput := graphql.BundleCreateInput{
+			Name:           "test-bundle",
+			CorrelationIDs: []string{correlationID},
+		}
+		bundle := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput)
+		require.NotEmpty(stdT, bundle.ID)
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name %s...", consumerFormationName)
@@ -268,6 +279,27 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
 		stdT.Log("Director claims validation was successful")
 
+		// Create destination that matches to the created bundle
+		region := conf.SubscriptionConfig.SelfRegRegion
+		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
+		require.True(t, ok)
+
+		subdomain := conf.DestinationConsumerSubdomain
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		require.NoError(stdT, err)
+
+		destination := clients.Destination{
+			Name:            "test",
+			Type:            "HTTP",
+			URL:             "http://localhost",
+			Authentication:  "BasicAuthentication",
+			XCorrelationID:  correlationID,
+			XSystemTenantID: localTenantID,
+			XSystemType:     applicationType,
+		}
+
+		client.CreateDestination(stdT, destination)
+		defer client.DeleteDestination(stdT, destination.Name)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -276,16 +308,43 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
+		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
+
+		// Make a request to the ORD service expanding bundles and destinations.
+		// With no destinations
+		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json", headers)
+
+		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
+		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
+		require.Empty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Array())
+		stdT.Log("Successfully fetched system with bundles with no destinations")
+
+		// With destinations
+		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", headers)
+		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
+		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
+		destinationsFromResponse := gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Array()
+		require.Len(stdT, destinationsFromResponse, 1)
+		require.Equal(stdT, destination.Name, destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String())
+		stdT.Log("Successfully fetched system with bundles and destinations")
 
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
 		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-		require.Equal(stdT, 0, len(gjson.Get(respBody, "value").Array()))
+		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
+
+		stdT.Log("Validating no destination is returned after successful unsubscription request...")
+		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		require.Empty(stdT, gjson.Get(respBody, "value").Array())
+		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
 		stdT.Log("Validating director returns error during claims validation after unsubscribe request is successfully executed...")
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRtmReq, &rtmExt)
@@ -314,17 +373,27 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
 		// Register application
-		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", secondaryTenant)
+		const applicationType = "SAP Cloud for Customer"
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, applicationType, secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, app.ID)
 
 		// Register consumer application
-		consumerApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", secondaryTenant)
+		const localTenantID = "localTenantID"
+		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, applicationType, localTenantID, secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &consumerApp)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, consumerApp.ID)
 		require.NotEmpty(stdT, consumerApp.Name)
+
+		const correlationID = "correlationID"
+		bndlInput := graphql.BundleCreateInput{
+			Name:           "test-bundle",
+			CorrelationIDs: []string{correlationID},
+		}
+		bundle := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput)
+		require.NotEmpty(stdT, bundle.ID)
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name %s...", consumerFormationName)
@@ -431,6 +500,27 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
 		stdT.Log("Director claims validation was successful")
 
+		// Create destination that matches to the created bundle
+		region := conf.SubscriptionConfig.SelfRegRegion
+		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
+		require.True(t, ok)
+
+		subdomain := conf.DestinationConsumerSubdomain
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		require.NoError(stdT, err)
+
+		destination := clients.Destination{
+			Name:            "test",
+			Type:            "HTTP",
+			URL:             "http://localhost",
+			Authentication:  "BasicAuthentication",
+			XCorrelationID:  correlationID,
+			XSystemTenantID: localTenantID,
+			XSystemType:     applicationType,
+		}
+
+		client.CreateDestination(stdT, destination)
+		defer client.DeleteDestination(stdT, destination.Name)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -439,16 +529,43 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
+		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
+
+		// Make a request to the ORD service expanding bundles and destinations.
+		// With no destinations
+		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json", headers)
+
+		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
+		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
+		require.Empty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Array())
+		stdT.Log("Successfully fetched system with bundles with no destinations")
+
+		// With destinations
+		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", headers)
+		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
+		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
+		destinationsFromResponse := gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Array()
+		require.Len(stdT, destinationsFromResponse, 1)
+		require.Equal(stdT, destination.Name, destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String())
+		stdT.Log("Successfully fetched system with bundles and destinations")
 
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
 		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-		require.Equal(stdT, 0, len(gjson.Get(respBody, "value").Array()))
+		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
+
+		stdT.Log("Validating no destination is returned after successful unsubscription request...")
+		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		require.Empty(stdT, gjson.Get(respBody, "value").Array())
+		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
 		stdT.Log("Validating director returns error during claims validation after unsubscribe request is successfully executed...")
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRtmReq, &rtmExt)

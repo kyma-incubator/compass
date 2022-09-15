@@ -156,7 +156,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2594"
+      version: "PR-2630"
       name: compass-external-services-mock
     console:
       dir:
@@ -886,6 +886,8 @@ global:
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
+    destination:
+      consumerSubdomain: "compass-external-services-mock-sap-mtls"
     subscription:
       tenants:
         providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
@@ -1012,6 +1014,7 @@ global:
       super_admin:
         - "application:read"
         - "application:write"
+        - "application.local_tenant_id:write"
         - "application_template:read"
         - "application_template:write"
         - "integration_system:read"
