@@ -192,7 +192,8 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		statusTemplate
 		auth {
 		  %s
-		}`, fp.ForAuth())
+		}
+		createdAt`, fp.ForAuth())
 }
 
 // OmitForAPIDefinition missing godoc
