@@ -39,7 +39,10 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	appsCount := 5
 	for i := 0; i < appsCount; i++ {
 		appInput := fixtures.CreateApp(fmt.Sprintf("director-%d", i))
-		appInput.Labels = map[string]interface{}{"scenarios": []string{testScenario}}
+		appInput.Labels = map[string]interface{}{
+			"scenarios":                  []string{testScenario},
+			conf.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+		}
 		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, appInput)
 		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, tenantID, &appResp)
 		require.NoError(b, err)
@@ -47,16 +50,14 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	}
 
 	//create runtime without normalization
-	runtime := fixtures.FixRuntimeRegisterInput("runtime")
-	(runtime.Labels)["scenarios"] = []string{testScenario}
-	(runtime.Labels)["isNormalized"] = "false"
+	runtimeInput := fixtures.FixRuntimeRegisterInput("runtime")
+	(runtimeInput.Labels)["scenarios"] = []string{testScenario}
+	(runtimeInput.Labels)["isNormalized"] = "false"
 
-	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
-	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &rt)
-	require.NoError(b, err)
-	require.NotEmpty(b, rt.ID)
+	runtime := fixtures.RegisterKymaRuntimeBench(b, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
+	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 
-	request := fixtures.FixApplicationForRuntimeRequestWithPageSize(rt.ID, appsCount)
+	request := fixtures.FixApplicationForRuntimeRequestWithPageSize(runtime.ID, appsCount)
 	request.Header.Set("Tenant", tenantID)
 
 	res := struct {
