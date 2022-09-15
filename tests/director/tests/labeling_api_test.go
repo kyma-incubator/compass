@@ -421,5 +421,5 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `must be one of the following: "Christmas", "New Year"`)
+	assert.Contains(t, err.Error(), `graphql: Object not found [object=formations]`)
 }

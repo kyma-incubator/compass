@@ -15,7 +15,6 @@ import (
 const (
 	webhookURL          = "https://kyma-project.io"
 	integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
-	testScenario        = "test-scenario"
 )
 
 type ORDConfigSecurity struct {
@@ -138,9 +137,6 @@ func FixApplicationRegisterInputWithBundles(t require.TestingT) graphql.Applicat
 		ProviderName: ptr.String("compass"),
 		Bundles: []*graphql.BundleCreateInput{
 			&bndl1, &bndl2,
-		},
-		Labels: graphql.Labels{
-			"scenarios": []interface{}{testScenario},
 		},
 	}
 }
@@ -339,14 +335,14 @@ func FixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
 }
 
 // TODO: Delete after bundles are adopted
-func FixRegisterApplicationWithPackagesRequest(name string) *gcli.Request {
+func FixRegisterApplicationWithPackagesRequest(name, applicationTypeLabelKey, applicationTypeValue string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			  result: registerApplication(
 				in: {
 				  name: "%s"
 				  providerName: "compass"
-				  labels: { scenarios: ["test-scenario"] }
+				  labels: { scenarios: ["test-scenario"], %s: %q }
 				  packages: [
 					{
 					  name: "foo"
@@ -960,7 +956,7 @@ func FixRegisterApplicationWithPackagesRequest(name string) *gcli.Request {
 				}
 			  }
 			}
-		`, name))
+		`, name, applicationTypeLabelKey, applicationTypeValue))
 }
 
 // TODO: Delete after bundles are adopted

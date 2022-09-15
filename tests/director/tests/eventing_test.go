@@ -33,7 +33,9 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	runtime2EventingURL := "https://eventing.runtime2.local"
 
 	appName := "app-test-eventing"
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	applicationInput := fixtures.FixSampleApplicationRegisterInput(appName)
+	applicationInput.Labels = graphql.Labels{conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
@@ -104,7 +106,9 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 
 	appName := "app-test-eventing"
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	applicationInput := fixtures.FixSampleApplicationRegisterInput(appName)
+	applicationInput.Labels = graphql.Labels{conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
@@ -193,7 +197,9 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 
 	appName := "app-test-eventing"
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	applicationInput := fixtures.FixSampleApplicationRegisterInput(appName)
+	applicationInput.Labels = graphql.Labels{conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)

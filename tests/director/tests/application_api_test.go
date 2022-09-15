@@ -49,8 +49,9 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			"group":        []interface{}{"production", "experimental"},
-			ScenariosLabel: []interface{}{testScenario},
+			"group":                      []interface{}{"production", "experimental"},
+			ScenariosLabel:               []interface{}{testScenario},
+			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -254,8 +255,9 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			"group":        []interface{}{"production", "experimental"},
-			ScenariosLabel: []interface{}{testScenario},
+			"group":                      []interface{}{"production", "experimental"},
+			ScenariosLabel:               []interface{}{testScenario},
+			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 		StatusCondition: &statusCond,
 	}
@@ -298,7 +300,8 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 			},
 		},
 		Labels: graphql.Labels{
-			ScenariosLabel: []interface{}{testScenario},
+			ScenariosLabel:               []interface{}{testScenario},
+			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -322,6 +325,10 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := fixtures.FixApplicationRegisterInputWithBundles(t)
+	in.Labels = graphql.Labels{
+		"scenarios":                  []interface{}{testScenario},
+		conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+	}
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
@@ -362,7 +369,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 	t.Run("Register Application with Packages should succeed", func(t *testing.T) {
 		var actualApp ApplicationWithPackagesExt
-		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName)
+		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName, conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
 		err := testctx.Tc.NewOperation(ctx).Run(request, certSecuredGraphQLClient, &actualApp)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &graphql.ApplicationExt{Application: actualApp.Application})
 		require.NoError(t, err)
@@ -1442,7 +1449,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			ScenariosLabel:                  scenarios,
+			ScenariosLabel:               scenarios,
 			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 	}
