@@ -53,7 +53,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
@@ -137,8 +136,6 @@ func ctxTenantProvider(ctx context.Context) (string, error) {
 }
 
 func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, accessStrategyExecutorProviderWithTenant *accessstrategy.Provider, accessStrategyExecutorProviderWithoutTenant *accessstrategy.Provider, retryHTTPExecutor *retry.HTTPExecutor) *ord.Service {
-	timeSvc := directorTime.NewService()
-
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -196,7 +193,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, timeSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)

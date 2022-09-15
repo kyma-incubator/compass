@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -211,6 +212,11 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Webh
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
+	}
+
+	if entity.CreatedAt == nil || entity.CreatedAt.IsZero() {
+		now := time.Now()
+		entity.CreatedAt = &now
 	}
 
 	log.C(ctx).Debugf("Persisting Webhook entity with type %s and id %s for %s to db", item.Type, item.ID, item.ObjectType)
