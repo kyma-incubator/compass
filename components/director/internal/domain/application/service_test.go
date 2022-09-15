@@ -997,7 +997,6 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, bndlSvc, uidSvc, formationSvc, "")
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
-			fmt.Printf("TestName %q modelInput: %+v", testCase.Name, testCase.Input)
 			// WHEN
 			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplteID)
 
