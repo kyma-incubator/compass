@@ -731,8 +731,6 @@ global:
     containerName: "system-fetcher"
   tenantFetchers:
     job1:
-      cron:
-        enabled: false
       enabled: true
       job:
         interval: "5m"
@@ -792,34 +790,35 @@ global:
           subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
           subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
       regionalConfig:
-        eu-east:
-          api:
-            oauthMode: "oauth-mtls"
-            authConfigSecretKey: "central"
-            fieldMapping:
-              totalPagesField: "totalPages"
-              totalResultsField: "totalResults"
-              tenantEventsField: "events"
-              idField: "guid"
-              nameField: "displayName"
-              customerIdField: "customerId"
-              subdomainField: "subdomain"
-              discriminatorField: ""
-              discriminatorValue: ""
-              detailsField: "details"
-              entityTypeField: "entityType"
-              globalAccountID: "globalAccountGUID"
-              regionField: "region"
-              movedSubaccountTargetField: "targetGlobalAccountGUID"
-              movedSubaccountSourceField: "sourceGlobalAccountGUID"
-            endpoints:
-              accountCreated: "127.0.0.1/events?type=account-created"
-              accountDeleted: "127.0.0.1/events?type=account-deleted"
-              accountUpdated: "127.0.0.1/events?type=account-updated"
-              subaccountCreated: "127.0.0.1/events?type=subaccount-created"
-              subaccountDeleted: "127.0.0.1/events?type=subaccount-deleted"
-              subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
-              subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
+        fieldMapping:
+          totalPagesField: "totalPages"
+          totalResultsField: "totalResults"
+          tenantEventsField: "events"
+          idField: "guid"
+          nameField: "displayName"
+          customerIdField: "customerId"
+          subdomainField: "subdomain"
+          discriminatorField: ""
+          discriminatorValue: ""
+          detailsField: "details"
+          entityTypeField: "entityType"
+          globalAccountID: "globalAccountGUID"
+          regionField: "region"
+          movedSubaccountTargetField: "targetGlobalAccountGUID"
+          movedSubaccountSourceField: "sourceGlobalAccountGUID"
+        regions:
+          eu-east:
+            api:
+              oauthMode: "oauth-mtls"
+              authConfigSecretKey: "central"
+              endpoints:
+                accountCreated: "127.0.0.1/events?type=account-created"
+                accountDeleted: "127.0.0.1/events?type=account-deleted"
+                accountUpdated: "127.0.0.1/events?type=account-updated"
+                subaccountCreated: "127.0.0.1/events?type=subaccount-created"
+                subaccountDeleted: "127.0.0.1/events?type=subaccount-deleted"
+                subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
+                subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
       dbPool:
         maxOpenConnections: 1
         maxIdleConnections: 1

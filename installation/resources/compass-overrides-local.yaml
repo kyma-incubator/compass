@@ -86,8 +86,6 @@ global:
     systemsAPIFilterCriteria: "no"
   tenantFetchers:
     account-fetcher:
-      cron:
-        enabled: false
       job:
         interval: "10s"
       tenantType: "account"

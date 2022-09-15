@@ -79,7 +79,7 @@ func (ep EventsPage) getEventsDetails() [][]byte {
 			case gjson.Null:
 				allDetails[key] = nil
 			default:
-				log.D().Warnf("Unknown property type %s", result.Type)
+				log.D().Debugf("Unknown property type %s", result.Type)
 			}
 		}
 		currentTenantDetails, err := json.Marshal(allDetails)
@@ -202,7 +202,7 @@ func constructGlobalAccountTenant(jsonPayload, name, subdomain, externalTenant s
 func constructSubaccountTenant(jsonPayload, name, subdomain, externalTenant string, ep EventsPage) (*model.BusinessTenantMappingInput, error) {
 	regionField := gjson.Get(jsonPayload, ep.FieldMapping.RegionField)
 	if !regionField.Exists() {
-		log.D().Warnf("Missing or invalid format of region field: %s for tenant with ID: %s", ep.FieldMapping.RegionField, externalTenant)
+		log.D().Debugf("Missing or invalid format of region field: %s for tenant with ID: %s", ep.FieldMapping.RegionField, externalTenant)
 	}
 	region := regionField.String()
 	parentIDField := gjson.Get(jsonPayload, ep.FieldMapping.GlobalAccountKey)

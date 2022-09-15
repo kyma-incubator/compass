@@ -268,12 +268,6 @@ func TestJobConfig_ReadJobConfig(t *testing.T) {
 			propInErrorMsg:  "EndpointSubaccountUpdated",
 		},
 		{
-			name:            "Fails when moved endpoint is not provided for subaccount tenant type",
-			tenantType:      tenant.Subaccount,
-			missingProperty: "APP_%s_API_ENDPOINT_SUBACCOUNT_MOVED",
-			propInErrorMsg:  "EndpointSubaccountMoved",
-		},
-		{
 			name:            "Fails when deleted endpoint is not provided for subaccount tenant type",
 			tenantType:      tenant.Subaccount,
 			missingProperty: "APP_%s_API_ENDPOINT_SUBACCOUNT_DELETED",

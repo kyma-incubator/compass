@@ -101,9 +101,6 @@ func (c EventsAPIConfig) Validate(tenantType tenant.Type) error {
 		if len(c.APIEndpointsConfig.EndpointSubaccountUpdated) == 0 {
 			missingProperties = append(missingProperties, "EndpointSubaccountUpdated")
 		}
-		if len(c.APIEndpointsConfig.EndpointSubaccountMoved) == 0 {
-			missingProperties = append(missingProperties, "EndpointSubaccountMoved")
-		}
 		if len(c.APIEndpointsConfig.EndpointSubaccountDeleted) == 0 {
 			missingProperties = append(missingProperties, "EndpointSubaccountDeleted")
 		}

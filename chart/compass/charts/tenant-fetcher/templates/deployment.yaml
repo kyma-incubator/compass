@@ -170,6 +170,8 @@ spec:
             {{- if eq $config.enabled true }}
             - name: APP_{{ $tenantFetcherJobName }}_JOB_NAME
               value: {{ $tenantFetcherJobName | quote }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGION_PREFIX
+              value: {{ $config.api.regionPrefix | quote }}
             # Database config
             - name: APP_{{ $tenantFetcherJobName }}_DB_MAX_OPEN_CONNECTIONS
               value: {{ $config.dbPool.maxOpenConnections | quote }}
@@ -194,9 +196,9 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_SECRET_TOKEN_PATH
               value: {{ $config.authConfig.tokenURLPath }}
             - name: APP_{{ $tenantFetcherJobName }}_SECRET_OAUTH_SKIP_SSL_VALIDATION
-              value: {{ $config.authConfig.skipSSLValidation | quote }}
+              value: {{ default "false" $config.authConfig.skipSSLValidation | quote }}
             - name: APP_{{ $tenantFetcherJobName }}_API_REGION_NAME
-              value:  {{ $config.api.authConfigSecretKey }}
+              value:  {{ $config.api.regionName }}
             - name: APP_{{ $tenantFetcherJobName }}_API_AUTH_MODE
               value: {{ $config.authConfig.oauthMode }}
             # API Config
@@ -210,9 +212,9 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_CUSTOMER_ID
               value: {{ $config.api.fieldMapping.customerIdField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_SUBDOMAIN
-              value: {{ $config.api.fieldMapping.subdomainField }}
+              value: {{ default "subdomain" $config.api.fieldMapping.subdomainField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_REGION
-              value: {{ default "region" $config.api.fieldMapping.regionField }}
+              value: {{ $config.api.fieldMapping.regionField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_ENTITY_TYPE
               value: {{ $config.api.fieldMapping.entityTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_DISCRIMINATOR
@@ -223,9 +225,9 @@ spec:
               value: {{ $config.api.fieldMapping.detailsField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" $config.api.fieldMapping.globalAccountID }}
-            - name: APP_{{ $tenantFetcherJobName }}_API_TENANT_TOTAL_PAGES_FIELD
+            - name: APP_{{ $tenantFetcherJobName }}_TENANT_TOTAL_PAGES_FIELD
               value: {{ $config.api.fieldMapping.totalPagesField }}
-            - name: APP_{{ $tenantFetcherJobName }}_API_TENANT_TOTAL_RESULTS_FIELD
+            - name: APP_{{ $tenantFetcherJobName }}_TENANT_TOTAL_RESULTS_FIELD
               value: {{ $config.api.fieldMapping.totalResultsField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_TENANT_EVENTS_FIELD
               value: {{ $config.api.fieldMapping.tenantEventsField }}
@@ -250,7 +252,8 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_API_ENDPOINT_SUBACCOUNT_MOVED
               value: {{ default "127.0.0.1/events?type=subaccount-moved" $config.api.endpoints.subaccountMoved }}
             # Regional APIs config
-            {{- range $region, $regionCfg := $config.regionalConfig }}
+            {{- if $config.regionalConfig }}
+            {{- range $region, $regionCfg := $config.regionalConfig.regions }}
             {{- $regionNameEnv := $region | upper }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_AUTH_CONFIG_SECRET_KEY
               value: {{ $regionCfg.api.authConfigSecretKey }}
@@ -260,36 +263,36 @@ spec:
               value: {{ $regionCfg.api.oauthMode }}
             # Regional API Config: field mapping
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_NAME
-              value: {{ $regionCfg.api.fieldMapping.nameField }}
+              value: {{ $config.regionalConfig.fieldMapping.nameField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_ID
-              value: {{ $regionCfg.api.fieldMapping.idField }}
+              value: {{ $config.regionalConfig.fieldMapping.idField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_CUSTOMER_ID
-              value: {{ $regionCfg.api.fieldMapping.customerIdField }}
+              value: {{ $config.regionalConfig.fieldMapping.customerIdField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBDOMAIN
-              value: {{ $regionCfg.api.fieldMapping.subdomainField }}
+              value: {{ default "subdomain" $config.regionalConfig.fieldMapping.subdomainField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_REGION
-              value: {{ default "region" $regionCfg.api.fieldMapping.regionField }}
+              value: {{ default "region"  $config.regionalConfig.fieldMapping.regionField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_ENTITY_TYPE
-              value: {{ $regionCfg.api.fieldMapping.entityTypeField }}
+              value: {{ $config.regionalConfig.fieldMapping.entityTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_DISCRIMINATOR
-              value: {{ $regionCfg.api.fieldMapping.discriminatorField }}
+              value: {{ $config.regionalConfig.fieldMapping.discriminatorField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_VALUE_DISCRIMINATOR
-              value: {{ $regionCfg.api.fieldMapping.discriminatorValue }}
+              value: {{ $config.regionalConfig.fieldMapping.discriminatorValue }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_DETAILS
-              value: {{ $regionCfg.api.fieldMapping.detailsField }}
+              value: {{ $config.regionalConfig.fieldMapping.detailsField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_GLOBAL_ACCOUNT_KEY
-              value: {{ default "gaID" $regionCfg.api.fieldMapping.globalAccountID }}
+              value: {{ default "gaID" $config.regionalConfig.fieldMapping.globalAccountID }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_TENANT_TOTAL_PAGES_FIELD
-              value: {{ $regionCfg.api.fieldMapping.totalPagesField }}
+              value: {{ $config.regionalConfig.fieldMapping.totalPagesField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_TENANT_TOTAL_RESULTS_FIELD
-              value: {{ $regionCfg.api.fieldMapping.totalResultsField }}
+              value: {{ $config.regionalConfig.fieldMapping.totalResultsField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_TENANT_EVENTS_FIELD
-              value: {{ $regionCfg.api.fieldMapping.tenantEventsField }}
+              value: {{ $config.regionalConfig.fieldMapping.tenantEventsField }}
             # API Config: Moved subaccount field mapping
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD
-              value: {{ default "sourceGlobalAccountGUID" $regionCfg.api.fieldMapping.movedSubaccountSourceField }}
+              value: {{ default "sourceGlobalAccountGUID" $config.regionalConfig.fieldMapping.movedSubaccountSourceField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD
-              value: {{ default "targetGlobalAccountGUID" $regionCfg.api.fieldMapping.movedSubaccountTargetField }}
+              value: {{ default "targetGlobalAccountGUID" $config.regionalConfig.fieldMapping.movedSubaccountTargetField }}
             # API Config: endpoints config
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_ENDPOINT_TENANT_CREATED
               value: {{ $regionCfg.api.endpoints.accountCreated }}
@@ -305,6 +308,7 @@ spec:
               value: {{ $regionCfg.api.endpoints.subaccountUpdated }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_ENDPOINT_SUBACCOUNT_MOVED
               value: {{ $regionCfg.api.endpoints.subaccountMoved }}
+            {{- end }}
             {{- end }}
             # Kubernetes config
             - name: APP_{{ $tenantFetcherJobName }}_USE_KUBERNETES
