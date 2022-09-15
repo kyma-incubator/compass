@@ -55,16 +55,23 @@ type config struct {
 	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	ORDServers    ORDServers
-	SelfRegConfig selfreg.Config
-	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
-	TrustedTenant string `envconfig:"APP_TRUSTED_TENANT"`
+	DestinationServiceConfig DestinationServiceConfig
+	ORDServers               ORDServers
+	SelfRegConfig            selfreg.Config
+	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
+	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
 
 	CACert string `envconfig:"APP_CA_CERT"`
 	CAKey  string `envconfig:"APP_CA_KEY"`
+}
+
+// DestinationServiceConfig configuration for destination service endpoints
+type DestinationServiceConfig struct {
+	TenantDestinationsEndpoint string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
+	SensitiveDataEndpoint      string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -203,12 +210,14 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
 	// Destination Service handler
-	destinationsRouter := router.PathPrefix("/destination-configuration/v1").Subrouter()
 	destinationHandler := destinationfetcher.NewHandler()
-	destinationsRouter.HandleFunc("/subaccountDestinations",
+	tenantDestinationEndpoint := cfg.DestinationServiceConfig.TenantDestinationsEndpoint
+	sensitiveDataEndpoint := cfg.DestinationServiceConfig.SensitiveDataEndpoint + "/{name}"
+	router.HandleFunc(tenantDestinationEndpoint,
 		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
-	destinationsRouter.HandleFunc("/destinations/{name}",
-		destinationHandler.GetSensitiveData).Methods(http.MethodGet)
+	router.HandleFunc(tenantDestinationEndpoint, destinationHandler.PostDestination).Methods(http.MethodPost)
+	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
+	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)

@@ -21,7 +21,7 @@ spec:
         name: monitoring-alertmanager
         namespace: kyma-system
         pathPrefix: /
-        port: web
+        port: http-web
         scheme: https
         tlsConfig:
           caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
