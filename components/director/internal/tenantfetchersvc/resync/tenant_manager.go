@@ -124,7 +124,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 		return &fetchedTenants[0], err
 	}
 
-	log.C(ctx).Infof("Tenant not found from central region, checking regional APIst")
+	log.C(ctx).Infof("Tenant not found from central region, checking regional APIs")
 
 	tenantChan := make(chan *model.BusinessTenantMappingInput, len(tm.regionalClients))
 	for region, regionalClient := range tm.regionalClients {
@@ -150,6 +150,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 		log.C(ctx).Error("no regions are configured")
 		return nil, nil
 	}
+	
 	var tenant *model.BusinessTenantMappingInput
 	for result := range tenantChan {
 		if result != nil {
@@ -200,6 +201,7 @@ func (tm *TenantsManager) fetchTenantsForEventType(ctx context.Context, region, 
 	if err != nil {
 		return nil, err
 	}
+
 	createdRegionalTenants = excludeTenants(createdRegionalTenants, fetchedTenants)
 	fetchedTenants = append(fetchedTenants, createdRegionalTenants...)
 
@@ -278,16 +280,14 @@ func fetchCreatedTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber u
 
 func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, eventsType EventsType, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
 	var tenants []model.BusinessTenantMappingInput
-	err := fetchWithRetries(retryNumber, func() error {
+	if err := fetchWithRetries(retryNumber, func() error {
 		fetchedTenants, err := fetchTenants(eventAPIClient, eventsType, configProvider)
 		if err != nil {
 			return fmt.Errorf("while fetching tenants: %v", err)
 		}
 		tenants = fetchedTenants
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
@@ -296,13 +296,11 @@ func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, ev
 
 func fetchTenants(eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
 	tenants := make([]model.BusinessTenantMappingInput, 0)
-	err := walkThroughPages(eventAPIClient, eventsType, configProvider, func(page *EventsPage) error {
+	if err := walkThroughPages(eventAPIClient, eventsType, configProvider, func(page *EventsPage) error {
 		mappings := page.GetTenantMappings(eventsType)
 		tenants = append(tenants, mappings...)
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, fmt.Errorf("while walking through pages: %v", err)
 	}
 
@@ -310,12 +308,7 @@ func fetchTenants(eventAPIClient EventAPIClient, eventsType EventsType, configPr
 }
 
 func fetchWithRetries(retryAttempts uint, applyFunc func() error) error {
-	err := retry.Do(applyFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
-
-	if err != nil {
-		return err
-	}
-	return nil
+	return retry.Do(applyFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
 }
 
 func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig), applyFunc func(*EventsPage) error) error {
@@ -328,8 +321,7 @@ func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, conf
 		return nil
 	}
 
-	err = applyFunc(firstPage)
-	if err != nil {
+	if err = applyFunc(firstPage); err != nil {
 		return fmt.Errorf("while applyfunc on event page: %v", err)
 	}
 

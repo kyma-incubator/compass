@@ -52,7 +52,7 @@ type TenantMover interface {
 // TenantsSynchronizer takes care of synchronizing tenants with external tenants registry.
 // It creates, updates, deletes and moves tenants that were created, updated, deleted or moved in that external registry.
 type TenantsSynchronizer struct {
-	supportedRegions []string // k=region, v=prefix
+	supportedRegions []string
 
 	transact             persistence.Transactioner
 	tenantStorageService TenantStorageService
