@@ -123,7 +123,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2618"
+      version: "PR-2617"
       name: compass-director
     hydrator:
       dir:
@@ -160,11 +160,11 @@ global:
       name: compass-external-services-mock
     console:
       dir:
-      version: "PR-71"
+      version: "PR-69"
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2624"
+      version: "PR-2617"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
