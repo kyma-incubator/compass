@@ -28,6 +28,8 @@ type config struct {
 	EventsBaseURL                  string `envconfig:"default=https://events.com"`
 	Tenant                         string `envconfig:"default=3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"`
 	DirectorReadyzUrl              string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/readyz"`
+	ApplicationTypeLabelKey        string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
 	CertLoaderConfig               certloader.Config
 }
 

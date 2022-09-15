@@ -42,7 +42,8 @@ func TestAppRegistry(t *testing.T) {
 		Description:    ptr.String("my application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{testScenario},
+			"scenarios":                        []interface{}{testScenario},
+			testConfig.ApplicationTypeLabelKey: "SAP Cloud for Customer",
 		},
 	}
 
@@ -56,14 +57,12 @@ func TestAppRegistry(t *testing.T) {
 	}()
 	require.NoError(t, err)
 
-	runtimeID, err := directorClient.CreateRuntime(runtimeInput)
-	defer func() {
-		err = directorClient.CleanupRuntime(runtimeID)
-		require.NoError(t, err)
-	}()
+	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, runtimeInput, testConfig.GatewayOauth)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, &runtime)
+
 	require.NoError(t, err)
 
-	err = directorClient.SetDefaultEventing(runtimeID, appID, testConfig.EventsBaseURL)
+	err = directorClient.SetDefaultEventing(runtime.ID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)
 
 	t.Run("App Registry Service flow for Application", func(t *testing.T) {

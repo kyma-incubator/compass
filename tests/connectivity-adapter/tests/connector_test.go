@@ -43,7 +43,8 @@ func TestConnector(t *testing.T) {
 		Description:    ptr.String("my application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{testScenario},
+			"scenarios":                        []interface{}{testScenario},
+			testConfig.ApplicationTypeLabelKey: "SAP Cloud for Customer",
 		},
 	}
 
@@ -57,14 +58,10 @@ func TestConnector(t *testing.T) {
 	}()
 	require.NoError(t, err)
 
-	runtimeID, err := directorClient.CreateRuntime(runtimeInput)
-	defer func() {
-		err = directorClient.CleanupRuntime(runtimeID)
-		require.NoError(t, err)
-	}()
-	require.NoError(t, err)
+	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, runtimeInput, testConfig.GatewayOauth)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, &runtime)
 
-	err = directorClient.SetDefaultEventing(runtimeID, appID, testConfig.EventsBaseURL)
+	err = directorClient.SetDefaultEventing(runtime.ID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)
 
 	t.Run("Connector Service flow for Application", func(t *testing.T) {
@@ -73,7 +70,7 @@ func TestConnector(t *testing.T) {
 		certificateRevocationSuite(t, directorClient, appID)
 
 		for _, shouldNormalizeEventURL := range []bool{true, false} {
-			err := directorClient.SetRuntimeLabel(runtimeID, "isNormalized", strconv.FormatBool(shouldNormalizeEventURL))
+			err := directorClient.SetRuntimeLabel(runtime.ID, "isNormalized", strconv.FormatBool(shouldNormalizeEventURL))
 			require.NoError(t, err)
 
 			for _, appNameLabelExists := range []bool{true, false} {
