@@ -169,6 +169,7 @@ func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string 
 		"outputTemplate":   "outputTemplate",
 		"statusTemplate":   "statusTemplate",
 		"auth":             fmt.Sprintf("auth {%s}", fp.ForAuth()),
+		"createdAt":        "createdAt",
 	}, omittedProperties)
 }
 
