@@ -150,7 +150,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 		log.C(ctx).Error("no regions are configured")
 		return nil, nil
 	}
-	
+
 	var tenant *model.BusinessTenantMappingInput
 	for result := range tenantChan {
 		if result != nil {
