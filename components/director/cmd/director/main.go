@@ -405,7 +405,7 @@ func getPairingAdaptersMapping(ctx context.Context, k8sClient *kubernetes.Client
 		return nil, err
 	}
 
-	logger.Infof("Successfully read pairing adapters configuration from the cluster")
+	logger.Infof("Successfully read pairing adapters configuration from the cluster.")
 
 	a := pkgadapters.NewAdapters()
 	a.Update(adaptersMap)
