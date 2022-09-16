@@ -2,7 +2,7 @@ global:
   disableLegacyConnectivity: true
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
   defaultTenantRegion: "eu-1"
-  tenants: # tenant order matters, so new tenants should be added to the end of the list
+  tenants: # tenant order matters,so new tenants should be added to the end of the list
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
       type: account
