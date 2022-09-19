@@ -141,7 +141,6 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-	defer tenant.TestTenants.CleanupTenant(tenantID)
 	invalidInput := graphql.LabelDefinitionInput{
 		Key: "",
 	}

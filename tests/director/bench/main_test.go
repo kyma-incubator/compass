@@ -37,7 +37,6 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 	tenant.TestTenants.Init()
-	defer tenant.TestTenants.Cleanup()
 
 	cfg.ReadConfig(&conf)
 	ctx := context.Background()

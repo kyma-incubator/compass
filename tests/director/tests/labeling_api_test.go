@@ -341,10 +341,10 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
-	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
-	defer tenant.TestTenants.CleanupTenant(tenantID)
-
 	ctx := context.TODO()
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
+
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
@@ -368,7 +368,11 @@ func TestListLabelDefinitions(t *testing.T) {
 	saveExample(t, createRequest.Query(), "create label definition")
 
 	output := graphql.LabelDefinition{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output)
+	if err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output); err != nil {
+		// The Label Definition already exists
+		updateRequest := fixtures.FixUpdateLabelDefinitionRequest(in)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, updateRequest, &output)
+	}
 	require.NoError(t, err)
 
 	firstLabelDefinition := &output

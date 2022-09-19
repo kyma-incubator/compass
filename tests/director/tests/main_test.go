@@ -67,7 +67,6 @@ var (
 
 func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
-	defer tenant.TestTenants.Cleanup()
 
 	config.ReadConfig(conf)
 

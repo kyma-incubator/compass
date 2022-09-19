@@ -68,11 +68,6 @@ func TestGetFormation(t *testing.T) {
 }
 
 func TestListFormations(t *testing.T) {
-	// Pre-cleanup because the formations table may be dirty by previous tests in the director,
-	// which delete their created formations after the end of all director tests.
-	tenantID := tenant.TestTenants.GetDefaultTenantID()
-	tenant.TestTenants.CleanupTenant(tenantID)
-
 	ctx := context.Background()
 
 	firstFormationName := "formation1"
