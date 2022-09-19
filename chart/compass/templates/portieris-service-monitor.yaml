@@ -11,20 +11,6 @@ metadata:
 spec:
   endpoints:
     - port: metrics
-      scheme: https
-      tlsConfig:
-        ca:
-          secret:
-            key: ca.crt
-            name: portieris-certs
-        cert:
-          secret:
-            key: tls.crt
-            name: portieris-certs
-        keySecret:
-          key: tls.key
-          name: portieris-certs
-        insecureSkipVerify: true
       metricRelabelings:
         - sourceLabels: [ __name__ ]
           regex: ^(portieris_pod_admission_decision_deny_count)$

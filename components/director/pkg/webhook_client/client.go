@@ -212,7 +212,7 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 		return nil, err
 	}
 
-	body := make(map[string]string, 0)
+	body := make(map[string]string)
 	if len(respBody) > 0 {
 		tmpBody := make(map[string]interface{})
 		if err := json.Unmarshal(respBody, &tmpBody); err != nil {
@@ -227,7 +227,7 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 		}
 	}
 
-	headers := make(map[string]string, 0)
+	headers := make(map[string]string)
 	for key, value := range resp.Header {
 		headers[key] = value[0]
 	}
