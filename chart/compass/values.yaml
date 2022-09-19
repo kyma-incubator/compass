@@ -873,6 +873,7 @@ global:
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
+      supportedOrdApplicationType: "SAP temp1"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
       region: "eu-1"
