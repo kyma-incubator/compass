@@ -1,11 +1,13 @@
 package metrics
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
@@ -103,4 +105,17 @@ func (p *Pusher) Push() {
 		wrappedErr := errors.Wrap(err, "while pushing metrics to Pushgateway")
 		log.D().WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
 	}
+}
+
+// ReportFailedSync reports failed tenant fetcher job
+func (p *Pusher) ReportFailedSync(ctx context.Context, err error) {
+	log.C(ctx).WithError(err).Errorf("Reporting failed job sync with error: %v", err)
+	if p.pusher == nil {
+		log.C(ctx).Error("Failed to report job sync failure: metrics pusher is not configured")
+		return
+	}
+
+	desc := resync.GetErrorDesc(err)
+	p.RecordTenantsSyncJobFailure(http.MethodGet, 0, desc)
+	p.Push()
 }
