@@ -180,14 +180,18 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 		for _, event := range doc.EventResources {
-			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
-				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
+			if event.Name != "" {
+				if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
+					errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
+				}
 			}
 			if event.OrdID != nil {
 				if _, ok := eventIDs[*event.OrdID]; ok {
 					errs = multierror.Append(errs, errors.Errorf("found duplicate event with ord id %q", *event.OrdID))
 				}
-				eventIDs[*event.OrdID] = true
+				if event.Name != "" {
+					eventIDs[*event.OrdID] = true
+				}
 			}
 		}
 		for _, vendor := range doc.Vendors {

@@ -178,7 +178,7 @@ var shortDescriptionRules = []validation.Rule{
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.NilOrNotEmpty, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.Length(1, 2048), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 // ValidateSystemInstanceInput validates the given SystemInstance
@@ -322,7 +322,8 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
-		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
+		// validation is softened temporarily
+		validation.Field(&api.Successors, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
 		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
@@ -681,14 +682,14 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 		return nil
 	}
 
-	eventResourceDef, ok := value.([]*model.EventResourceDefinition)
+	_, ok := value.([]*model.EventResourceDefinition)
 	if !ok {
 		return errors.New("error while casting to EventResourceDefinition")
 	}
 
-	if len(eventResourceDef) == 0 {
-		return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
-	}
+	//if len(eventResourceDef) == 0 {
+	//	return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
+	//}
 
 	return nil
 }
@@ -1158,12 +1159,12 @@ func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBu
 }
 
 func validateExtensibleField(value interface{}, ordPackageID *string, packagePolicyLevels map[string]string) error {
-	pkgOrdID := str.PtrStrToStr(ordPackageID)
-	policyLevel := packagePolicyLevels[pkgOrdID]
-
-	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (value == nil || value.(json.RawMessage) == nil) {
-		return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
-	}
+	//pkgOrdID := str.PtrStrToStr(ordPackageID)
+	//policyLevel := packagePolicyLevels[pkgOrdID]
+	//
+	//if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (value == nil || value.(json.RawMessage) == nil) {
+	//	return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
+	//}
 
 	return validateJSONObjects(value, map[string][]validation.Rule{
 		"supported": {
