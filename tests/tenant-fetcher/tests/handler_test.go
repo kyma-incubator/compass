@@ -486,6 +486,8 @@ func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdoma
 }
 
 const (
+	testProvider = "e2e-test-provider"
+
 	timeout       = time.Minute * 3
 	checkInterval = time.Second * 5
 
@@ -583,7 +585,6 @@ func TestMoveSubaccounts(t *testing.T) {
 	directoryParentGUID := "test-id" // this is not the global account parent ID but has different semantics
 
 	region := "local"
-	provider := "test"
 
 	runtimeNames := []string{"runtime1", "runtime2"}
 
@@ -595,7 +596,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Subdomain:      &subdomains[0],
 			Region:         &region,
 			Type:           string(tenant.Account),
-			Provider:       provider,
+			Provider:       testProvider,
 		},
 		{
 			Name:           gaNames[1],
@@ -604,7 +605,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Subdomain:      &subdomains[1],
 			Region:         &region,
 			Type:           string(tenant.Account),
-			Provider:       provider,
+			Provider:       testProvider,
 		},
 		{
 			Name:           subaccountNames[0],
@@ -613,7 +614,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
-			Provider:       provider,
+			Provider:       testProvider,
 		},
 		{
 			Name:           subaccountNames[1],
@@ -622,7 +623,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Subdomain:      &subaccountSubdomain,
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
-			Provider:       provider,
+			Provider:       testProvider,
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
@@ -699,7 +700,6 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	gaNames := []string{"ga2"}
 	subdomains := []string{"ga1"}
 
-	subaccountNames := []string{"sub1"}
 	subaccountExternalTenants := []string{"sub1"}
 	subaccountRegion := "test"
 	subaccountSubdomain := "sub1"
@@ -725,7 +725,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 			Provider:       provider,
 		},
 		{
-			Name:           subaccountNames[0],
+			Name:           subaccountExternalTenants[0],
 			ExternalTenant: subaccountExternalTenants[0],
 			Parent:         &defaultTenant.InternalID,
 			Subdomain:      &subaccountSubdomain,
@@ -755,7 +755,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountExternalTenants[0], defaultTenantID)
 
-	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
+	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountExternalTenants[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
 	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1}, ","), 1), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
@@ -877,6 +877,20 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 	subaccountSubdomain := "sub1"
 	subaccountParent := "ga1"
 	directoryParentGUID := "test-id"
+
+	tenants := []graphql.BusinessTenantMappingInput{
+		{
+			Name:           gaExternalTenantIDs[1],
+			ExternalTenant: gaExternalTenantIDs[1],
+			Parent:         nil,
+			Subdomain:      &subaccountSubdomain,
+			Region:         &subaccountRegion,
+			Type:           string(tenant.Account),
+			Provider:       testProvider,
+		},
+	}
+	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
+	assert.NoError(t, err)
 
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, []string{subaccountExternalTenant, gaExternalTenantIDs[1]})
 

@@ -270,7 +270,7 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	ctx = persistence.SaveToContext(ctx, tx)
 	tenantModels := r.conv.MultipleInputFromGraphQL([]*graphql.BusinessTenantMappingInput{&in})
 	if err := r.srv.Update(ctx, id, tenantModels[0]); err != nil {
-		return nil, errors.Wrap(err, "while deleting tenants")
+		return nil, errors.Wrapf(err, "while updating tenant with internal ID %s and external ID %s", id, in.ExternalTenant)
 	}
 
 	tenant, err := r.srv.GetTenantByExternalID(ctx, in.ExternalTenant)
