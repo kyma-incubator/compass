@@ -731,7 +731,7 @@ global:
     containerName: "system-fetcher"
   tenantFetchers:
     job1:
-      enabled: true
+      enabled: false
       job:
         interval: "5m"
       configMapNamespace: "compass-system"
