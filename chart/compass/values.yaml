@@ -243,7 +243,7 @@ global:
         saasAppNameCfg:
           name: "saas-app-names"
           key: "appNameConfig"
-          path: "/tmp"
+          path: "/tmp/appNameConfig"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
       urlPath: "url"
