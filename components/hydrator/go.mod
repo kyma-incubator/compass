@@ -10,11 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220327143459-11b81bddcce9
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220420124254-ee69592dca21
-<<<<<<< HEAD
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220622092507-0ff6a9016a1f
-=======
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220803145251-adcd4fea489b
->>>>>>> main
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 // indirect
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
@@ -59,10 +55,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
-<<<<<<< HEAD
-=======
 	github.com/jmoiron/sqlx v1.3.4 // indirect
->>>>>>> main
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
