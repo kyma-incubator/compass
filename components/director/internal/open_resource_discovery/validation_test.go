@@ -2789,7 +2789,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Valid when missing `successors` field when `releaseStatus` field has value `deprecated` for API",
+			Name: "Valid missing `successors` field when `releaseStatus` field has value `deprecated` for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
@@ -3198,7 +3198,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `Extensible` field when `policyLevel` is sap for API",
+			Name: "Valid missing `Extensible` field when `policyLevel` is sap for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
@@ -3206,9 +3206,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-			ExpectedToBeValid: true,
 		}, {
-			Name: "Missing `Extensible` field when `policyLevel` is sap partner for API",
+			Name: "Valid missing `Extensible` field when `policyLevel` is sap partner for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
@@ -3217,7 +3216,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid `Extensible` field due to empty json object for API",
 			DocumentProvider: func() []*ord.Document {
@@ -3627,7 +3625,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `title` field for Event",
+			Name: "Valid missing `title` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Name = ""
@@ -4030,7 +4028,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
-			Name: "Valid event when missing `resourceDefinitions` field for Event",
+			Name: "Valid missing `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions = nil

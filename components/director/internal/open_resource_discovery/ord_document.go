@@ -179,21 +179,35 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				apiIDs[*api.OrdID] = true
 			}
 		}
-		for _, event := range doc.EventResources {
-			if event.Name != "" {
-				if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
-					errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
-				}
+
+		eventsIndicesWithEmptyName := make([]int, 0)
+
+		for i, event := range doc.EventResources {
+			if event.Name == "" {
+				eventsIndicesWithEmptyName = append(eventsIndicesWithEmptyName, i)
+				continue
 			}
+
+			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
+				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
+			}
+
 			if event.OrdID != nil {
 				if _, ok := eventIDs[*event.OrdID]; ok {
 					errs = multierror.Append(errs, errors.Errorf("found duplicate event with ord id %q", *event.OrdID))
 				}
-				if event.Name != "" {
-					eventIDs[*event.OrdID] = true
-				}
+
+				eventIDs[*event.OrdID] = true
 			}
 		}
+
+		decreaseIndexForDeleting := 0
+		for eventIndex := range eventsIndicesWithEmptyName {
+			deleteIndex := eventIndex - decreaseIndexForDeleting
+			doc.EventResources = append(doc.EventResources[:deleteIndex], doc.EventResources[deleteIndex+1:]...)
+			decreaseIndexForDeleting++
+		}
+
 		for _, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))

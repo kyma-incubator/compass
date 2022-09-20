@@ -402,9 +402,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.DefaultConsumptionBundle, validation.Match(regexp.MustCompile(BundleOrdIDRegex)), validation.By(func(value interface{}) error {
 			return validateDefaultConsumptionBundle(value, event.PartOfConsumptionBundles)
 		})),
-		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
-			return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
-		})),
+		validation.Field(&event.Extensible, validation.By(validateExtensibleFieldForEvent)),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -687,9 +685,10 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 		return errors.New("error while casting to EventResourceDefinition")
 	}
 
-	//if len(eventResourceDef) == 0 {
+	// soften validation temporarily
+	// if len(eventResourceDef) == 0 {
 	//	return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
-	//}
+	// }
 
 	return nil
 }
@@ -1159,13 +1158,23 @@ func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBu
 }
 
 func validateExtensibleField(value interface{}, ordPackageID *string, packagePolicyLevels map[string]string) error {
-	//pkgOrdID := str.PtrStrToStr(ordPackageID)
-	//policyLevel := packagePolicyLevels[pkgOrdID]
-	//
-	//if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (value == nil || value.(json.RawMessage) == nil) {
-	//	return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
-	//}
+	pkgOrdID := str.PtrStrToStr(ordPackageID)
+	policyLevel := packagePolicyLevels[pkgOrdID]
 
+	if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) && (value == nil || value.(json.RawMessage) == nil) {
+		return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
+	}
+
+	return validateJSONObjects(value, map[string][]validation.Rule{
+		"supported": {
+			validation.Required,
+			validation.In("no", "manual", "automatic"),
+		},
+		"description": {},
+	}, validateExtensibleInnerFields)
+}
+
+func validateExtensibleFieldForEvent(value interface{}) error {
 	return validateJSONObjects(value, map[string][]validation.Rule{
 		"supported": {
 			validation.Required,
