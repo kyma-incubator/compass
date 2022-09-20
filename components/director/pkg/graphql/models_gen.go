@@ -732,6 +732,7 @@ type Webhook struct {
 	HeaderTemplate        *string      `json:"headerTemplate"`
 	OutputTemplate        *string      `json:"outputTemplate"`
 	StatusTemplate        *string      `json:"statusTemplate"`
+	CreatedAt             *Timestamp   `json:"createdAt"`
 }
 
 type WebhookInput struct {
