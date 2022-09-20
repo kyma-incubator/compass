@@ -237,6 +237,8 @@ spec:
               value: {{ tpl .Values.global.director.fetchTenantEndpoint $ | quote }}
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
+            - name: APP_ORD_WEBHOOK_MAPPINGS
+              value: {{ .Values.global.director.ordWebhookMappings | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
