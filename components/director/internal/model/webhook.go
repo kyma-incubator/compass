@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
@@ -21,6 +23,7 @@ type Webhook struct {
 	HeaderTemplate   *string
 	OutputTemplate   *string
 	StatusTemplate   *string
+	CreatedAt        *time.Time
 }
 
 // WebhookInput represents a webhook input for creating/updating webhooks.
