@@ -33,16 +33,16 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- end }}
 		{{- if .Webhooks }}
 		webhooks: [
-			{{- range $i, $e := .Webhooks }} 
+			{{- range $i, $e := .Webhooks }}
 				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
 			{{- end }} ],
 		{{- end}}
 		{{- if .HealthCheckURL }}
 		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
-		{{- if .Bundles }} 
+		{{- if .Bundles }}
 		bundles: [
-			{{- range $i, $e := .Bundles }} 
+			{{- range $i, $e := .Bundles }}
 				{{- if $i}}, {{- end}} {{- BundleCreateInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
@@ -98,7 +98,7 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}
 		placeholders: [
-			{{- range $i, $e := .Placeholders }} 
+			{{- range $i, $e := .Placeholders }}
 				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
@@ -108,10 +108,10 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 		{{- end }}
 		{{- if .Webhooks }}
 		webhooks: [
-			{{- range $i, $e := .Webhooks }} 
+			{{- range $i, $e := .Webhooks }}
 				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
 			{{- end }} ],
-		{{- end}}	
+		{{- end}}
 	}`)
 }
 
@@ -128,7 +128,7 @@ func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.Application
 		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}
 		placeholders: [
-			{{- range $i, $e := .Placeholders }} 
+			{{- range $i, $e := .Placeholders }}
 				{{- if $i}}, {{- end}} {{ PlaceholderDefinitionInputToGQL $e }}
 			{{- end }} ],
 		{{- end }}
@@ -194,6 +194,13 @@ func (g *Graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) 
 				clientId: "{{ .Oauth.ClientID }}",
 				clientSecret: "{{ .Oauth.ClientSecret }}",
 				url: "{{ .Oauth.URL }}",
+			},
+			{{- end }}
+			{{- if .CertificateOAuth }}
+			certificateOAuth: {
+				clientId: "{{ .CertificateOAuth.ClientID }}",
+				certificate: "{{ .CertificateOAuth.Certificate }}",
+				url: "{{ .CertificateOAuth.URL }}",
 			},
 			{{- end }}
 	}`)
@@ -319,34 +326,34 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 		{{- if .URL }}
 		url: "{{.URL }}",
 		{{- end }}
-		{{- if .Auth }} 
+		{{- if .Auth }}
 		auth: {{- AuthInputToGQL .Auth }},
 		{{- end }}
-		{{- if .Mode }} 
+		{{- if .Mode }}
 		mode: {{.Mode }},
 		{{- end }}
-		{{- if .CorrelationIDKey }} 
+		{{- if .CorrelationIDKey }}
 		correlationIdKey: "{{.CorrelationIDKey }}",
 		{{- end }}
-		{{- if .RetryInterval }} 
+		{{- if .RetryInterval }}
 		retryInterval: {{.RetryInterval }},
 		{{- end }}
-		{{- if .Timeout }} 
+		{{- if .Timeout }}
 		timeout: {{.Timeout }},
 		{{- end }}
-		{{- if .URLTemplate }} 
+		{{- if .URLTemplate }}
 		urlTemplate: "{{.URLTemplate }}",
 		{{- end }}
-		{{- if .InputTemplate }} 
+		{{- if .InputTemplate }}
 		inputTemplate: "{{.InputTemplate }}",
 		{{- end }}
-		{{- if .HeaderTemplate }} 
+		{{- if .HeaderTemplate }}
 		headerTemplate: "{{.HeaderTemplate }}",
 		{{- end }}
-		{{- if .OutputTemplate }} 
+		{{- if .OutputTemplate }}
 		outputTemplate: "{{.OutputTemplate }}",
 		{{- end }}
-		{{- if .StatusTemplate }} 
+		{{- if .StatusTemplate }}
 		statusTemplate: "{{.StatusTemplate }}",
 		{{- end }}
 	}`)
@@ -383,7 +390,7 @@ func (g *Graphqlizer) EventDefinitionInputToGQL(in graphql.EventDefinitionInput)
 		spec: {{ EventAPISpecInputToGQL .Spec }},
 		{{- end }}
 		{{- if .Group }}
-		group: "{{.Group}}", 
+		group: "{{.Group}}",
 		{{- end }}
 		{{- if .Version }}
 		version: {{- VersionInputToGQL .Version }},
@@ -412,7 +419,7 @@ func (g *Graphqlizer) APISpecInputToGQL(in graphql.APISpecInput) (string, error)
 	return g.genericToGQL(in, `{
 		{{- if .Data}}
 		data: {{.Data}},
-		{{- end}}	
+		{{- end}}
 		type: {{.Type}},
 		format: {{.Format}},
 		{{- if .FetchRequest }}
@@ -449,7 +456,7 @@ func (g *Graphqlizer) RuntimeRegisterInputToGQL(in graphql.RuntimeRegisterInput)
 		{{- end }}
 		{{- if .Webhooks }}
 		webhooks: [
-			{{- range $i, $e := .Webhooks }} 
+			{{- range $i, $e := .Webhooks }}
 				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
 			{{- end }} ],
 		{{- end}}
@@ -531,15 +538,23 @@ func (g *Graphqlizer) TemplateValueInputToGQL(in graphql.TemplateValueInput) (st
 	}`)
 }
 
+// FormationInputToGQL converts go formation input structure into graphql format
+func (g *Graphqlizer) FormationInputToGQL(in graphql.FormationInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		templateName: "{{.TemplateName}}"
+	}`)
+}
+
 // FormationTemplateInputToGQL missing godoc
 func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}"
 		applicationTypes: [
-			{{- range $i, $e := .ApplicationTypes}} 
+			{{- range $i, $e := .ApplicationTypes}}
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
-		runtimeType: "{{.RuntimeType}}" 
+		runtimeType: "{{.RuntimeType}}"
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
 		runtimeArtifactKind: {{.RuntimeArtifactKind}}
 	}`)
@@ -551,7 +566,7 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 		templateName: "{{.TemplateName}}"
 		{{- if .Values }}
 		values: [
-			{{- range $i, $e := .Values }} 
+			{{- range $i, $e := .Values }}
 				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
 			{{- end }} ],
 		{{- end }},
@@ -583,11 +598,17 @@ func (g *Graphqlizer) BundleCreateInputToGQL(in graphql.BundleCreateInput) (stri
 				{{- if $i}}, {{- end}} {{ EventDefinitionInputToGQL $e }}
 			{{- end }}],
 		{{- end }}
-		{{- if .Documents }} 
+		{{- if .Documents }}
 		documents: [
-			{{- range $i, $e := .Documents }} 
+			{{- range $i, $e := .Documents }}
 				{{- if $i}}, {{- end}} {{- DocumentInputToGQL $e }}
 			{{- end }} ],
+		{{- end }}
+		{{- if .CorrelationIDs }}
+		correlationIDs: [
+			{{- range $i, $e := .CorrelationIDs }}
+				{{- if $i}}, {{- end}} "{{$e}}"
+			{{- end }} ]
 		{{- end }}
 	}`)
 }
@@ -626,7 +647,7 @@ func (g *Graphqlizer) BundleInstanceAuthRequestInputToGQL(in graphql.BundleInsta
 	return g.genericToGQL(in, `{
 		{{- if .ID }}
 		id: "{{ .ID }}"
-		{{- end }}		
+		{{- end }}
 		{{- if .Context }}
 		context: {{ .Context }}
 		{{- end }}

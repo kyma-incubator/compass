@@ -43,11 +43,11 @@ func (_m *Service) AssignFormation(ctx context.Context, tnt string, objectID str
 }
 
 // CreateFormation provides a mock function with given fields: ctx, tnt, _a2, templateName
-func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Formation, templateName *string) (*model.Formation, error) {
+func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Formation, templateName string) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, _a2, templateName)
 
 	var r0 *model.Formation
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, *string) *model.Formation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, string) *model.Formation); ok {
 		r0 = rf(ctx, tnt, _a2, templateName)
 	} else {
 		if ret.Get(0) != nil {
@@ -56,7 +56,7 @@ func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Fo
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation, string) error); ok {
 		r1 = rf(ctx, tnt, _a2, templateName)
 	} else {
 		r1 = ret.Error(1)
@@ -81,6 +81,52 @@ func (_m *Service) DeleteFormation(ctx context.Context, tnt string, _a2 model.Fo
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation) error); ok {
 		r1 = rf(ctx, tnt, _a2)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Get provides a mock function with given fields: ctx, id
+func (_m *Service) Get(ctx context.Context, id string) (*model.Formation, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Formation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// List provides a mock function with given fields: ctx, pageSize, cursor
+func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
+	ret := _m.Called(ctx, pageSize, cursor)
+
+	var r0 *model.FormationPage
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.FormationPage); ok {
+		r0 = rf(ctx, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
+		r1 = rf(ctx, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

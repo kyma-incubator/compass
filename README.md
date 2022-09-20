@@ -19,9 +19,11 @@ For more information about the Compass architecture, technical details, and comp
 ## Prerequisites
 
 - [Docker](https://www.docker.com/get-started)
-- [Minikube](https://github.com/kubernetes/minikube) 1.6.2
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.16.3
-- [Kyma CLI](https://github.com/kyma-project/cli) stable
+- [k3d](https://github.com/k3d-io/k3d) v5.2.2+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.23.0+
+- [Kyma CLI](https://github.com/kyma-project/cli) 2.1.3
+- [helm](https://github.com/helm/helm) v3.8.0+
+- [yq](https://github.com/mikefarah/yq) v4+
 
 ## Installation
 
@@ -30,7 +32,7 @@ Install Compass locally or on a cluster. See the [installation document](https:/
 ### Dependencies
 
 Compass depends on [Kyma](https://github.com/kyma-project/kyma).
-For installation and CI integration jobs, a fixed Kyma version is used. To change the Kyma version, see the [`README.md`](./installation/resources/README.md) in the `installation/resources` directory.
+For installation and CI integration jobs, a fixed Kyma version is used, which can be checked at `./installation/resources/KYMA_VERSION`.
 
 ## Testing
 

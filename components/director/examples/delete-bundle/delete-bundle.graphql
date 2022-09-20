@@ -15,6 +15,11 @@ mutation {
             username
             password
           }
+          ... on CertificateOAuthCredentialData {
+            clientId
+            certificate
+            url
+          }
           ... on OAuthCredentialData {
             clientId
             clientSecret
@@ -44,6 +49,11 @@ mutation {
                 clientSecret
                 url
               }
+              ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
+                url
+              }
             }
             additionalHeaders
             additionalQueryParams
@@ -64,6 +74,11 @@ mutation {
         ... on BasicCredentialData {
           username
           password
+        }
+        ... on CertificateOAuthCredentialData {
+          clientId
+          certificate
+          url
         }
         ... on OAuthCredentialData {
           clientId
@@ -94,6 +109,11 @@ mutation {
               clientSecret
               url
             }
+            ... on CertificateOAuthCredentialData {
+              clientId
+              certificate
+              url
+            }
           }
           additionalHeaders
           additionalQueryParams
@@ -117,6 +137,11 @@ mutation {
                 ... on BasicCredentialData {
                   username
                   password
+                }
+                ... on CertificateOAuthCredentialData {
+                  clientId
+                  certificate
+                  url
                 }
                 ... on OAuthCredentialData {
                   clientId
@@ -145,6 +170,11 @@ mutation {
                     ... on OAuthCredentialData {
                       clientId
                       clientSecret
+                      url
+                    }
+                    ... on CertificateOAuthCredentialData {
+                      clientId
+                      certificate
                       url
                     }
                   }
@@ -197,6 +227,11 @@ mutation {
                   username
                   password
                 }
+                ... on CertificateOAuthCredentialData {
+                  clientId
+                  certificate
+                  url
+                }
                 ... on OAuthCredentialData {
                   clientId
                   clientSecret
@@ -224,6 +259,11 @@ mutation {
                     ... on OAuthCredentialData {
                       clientId
                       clientSecret
+                      url
+                    }
+                    ... on CertificateOAuthCredentialData {
+                      clientId
+                      certificate
                       url
                     }
                   }
@@ -272,6 +312,11 @@ mutation {
                 username
                 password
               }
+              ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
+                url
+              }
               ... on OAuthCredentialData {
                 clientId
                 clientSecret
@@ -299,6 +344,11 @@ mutation {
                   ... on OAuthCredentialData {
                     clientId
                     clientSecret
+                    url
+                  }
+                  ... on CertificateOAuthCredentialData {
+                    clientId
+                    certificate
                     url
                   }
                 }

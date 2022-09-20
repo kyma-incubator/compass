@@ -1,0 +1,25 @@
+{{- if eq .Values.global.metrics.enabled true -}}
+{{ if eq .Values.global.portieris.isEnabled true }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: portieris
+  namespace: portieris
+  labels:
+    prometheus: monitoring
+    app: portieris
+spec:
+  endpoints:
+    - port: metrics
+      metricRelabelings:
+        - sourceLabels: [ __name__ ]
+          regex: ^(portieris_pod_admission_decision_deny_count)$
+          action: keep
+  namespaceSelector:
+    matchNames:
+      - "portieris"
+  selector:
+    matchLabels:
+      app: "portieris"
+  {{ end }}
+  {{- end }}

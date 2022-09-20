@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -37,6 +39,7 @@ type runtimeRepository interface {
 	Update(ctx context.Context, tenant string, item *model.Runtime) error
 	ListAll(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Delete(ctx context.Context, tenant, id string) error
+	GetByFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 }
 
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -84,8 +87,10 @@ type service struct {
 	webhookService        WebhookService
 	runtimeContextService RuntimeContextService
 
-	protectedLabelPattern string
-	immutableLabelPattern string
+	protectedLabelPattern     string
+	immutableLabelPattern     string
+	runtimeTypeLabelKey       string
+	kymaRuntimeTypeLabelValue string
 }
 
 // NewService missing godoc
@@ -98,20 +103,21 @@ func NewService(repo runtimeRepository,
 	tenantService tenantService,
 	webhookService WebhookService,
 	runtimeContextService RuntimeContextService,
-	protectedLabelPattern string,
-	immutableLabelPattern string) *service {
+	protectedLabelPattern, immutableLabelPattern, runtimeTypeLabelKey, kymaRuntimeTypeLabelValue string) *service {
 	return &service{
-		repo:                  repo,
-		labelRepo:             labelRepo,
-		scenariosService:      scenariosService,
-		labelUpsertService:    labelUpsertService,
-		uidService:            uidService,
-		formationService:      formationService,
-		tenantSvc:             tenantService,
-		webhookService:        webhookService,
-		runtimeContextService: runtimeContextService,
-		protectedLabelPattern: protectedLabelPattern,
-		immutableLabelPattern: immutableLabelPattern,
+		repo:                      repo,
+		labelRepo:                 labelRepo,
+		scenariosService:          scenariosService,
+		labelUpsertService:        labelUpsertService,
+		uidService:                uidService,
+		formationService:          formationService,
+		tenantSvc:                 tenantService,
+		webhookService:            webhookService,
+		runtimeContextService:     runtimeContextService,
+		protectedLabelPattern:     protectedLabelPattern,
+		immutableLabelPattern:     immutableLabelPattern,
+		runtimeTypeLabelKey:       runtimeTypeLabelKey,
+		kymaRuntimeTypeLabelValue: kymaRuntimeTypeLabelValue,
 	}
 }
 
@@ -172,6 +178,20 @@ func (s *service) GetByFiltersGlobal(ctx context.Context, filters []*labelfilter
 		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
 	}
 	return runtimes, nil
+}
+
+// GetByFilters retrieves model.Runtime matching on the given label filters
+func (s *service) GetByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtime, err := s.repo.GetByFilters(ctx, rtmTenant, filters)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtime by filters from repo")
+	}
+	return runtime, nil
 }
 
 // ListByFiltersGlobal missing godoc
@@ -252,7 +272,7 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	if in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
+	if in.Labels, err = s.UnsafeExtractModifiableLabels(in.Labels); err != nil {
 		return err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
@@ -261,16 +281,29 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		in.Labels[key] = value
 	}
 
-	if scenarios, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
-		if err := s.assignRuntimeScenarios(ctx, rtmTenant, id, scenarios); err != nil {
-			return err
-		}
-
+	var scenariosToAssign interface{} = nil
+	if _, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
+		scenariosToAssign = in.Labels[model.ScenariosKey]
 		delete(in.Labels, model.ScenariosKey)
+	}
+
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading consumer")
+	}
+
+	if consumerInfo.ConsumerType == consumer.IntegrationSystem {
+		in.Labels[s.runtimeTypeLabelKey] = s.kymaRuntimeTypeLabelValue
 	}
 
 	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Runtime")
+	}
+
+	if scenariosToAssign != nil {
+		if err := s.assignRuntimeScenarios(ctx, rtmTenant, id, scenariosToAssign); err != nil {
+			return err
+		}
 	}
 
 	for _, w := range in.Webhooks {
@@ -334,14 +367,14 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 	delete(in.Labels, model.ScenariosKey)
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	if in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
+	if in.Labels, err = s.UnsafeExtractModifiableLabels(in.Labels); err != nil {
 		return err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
-	protectedAndScenariosPattern := s.protectedLabelPattern + "|^" + model.ScenariosKey + "$"
+	unmodifiablePattern := s.protectedLabelPattern + "|^" + model.ScenariosKey + "$" + "|" + s.immutableLabelPattern
 	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
-	if err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, protectedAndScenariosPattern); err != nil {
+	if err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, unmodifiablePattern); err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
 
@@ -490,6 +523,21 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 	}
 
 	return nil
+}
+
+// UnsafeExtractModifiableLabels returns all labels except the protected and immutable labels
+func (s *service) UnsafeExtractModifiableLabels(labels map[string]interface{}) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	for labelKey, lbl := range labels {
+		modifiable, err := isLabelModifiable(labelKey, s.protectedLabelPattern, s.immutableLabelPattern)
+		if err != nil {
+			return nil, err
+		}
+		if modifiable {
+			result[labelKey] = lbl
+		}
+	}
+	return result, nil
 }
 
 func (s *service) ensureRuntimeExists(ctx context.Context, tnt string, runtimeID string) error {
@@ -642,20 +690,6 @@ func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKey
 			return nil, err
 		}
 		if !protected {
-			result[labelKey] = label
-		}
-	}
-	return result, nil
-}
-
-func unsafeExtractModifiableLabels(labels map[string]interface{}, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
-	for labelKey, label := range labels {
-		modifiable, err := isLabelModifiable(labelKey, protectedLabelsKeyPattern, immutableLabelsKeyPattern)
-		if err != nil {
-			return result, err
-		}
-		if modifiable {
 			result[labelKey] = label
 		}
 	}

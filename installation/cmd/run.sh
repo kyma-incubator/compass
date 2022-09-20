@@ -9,6 +9,8 @@ NC='\033[0m' # No Color
 
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
+DATA_DIR="${CURRENT_DIR}/../data"
+mkdir -p "${DATA_DIR}"
 source $SCRIPTS_DIR/utils.sh
 source $SCRIPTS_DIR/prom-mtls-patch.sh
 
@@ -18,11 +20,12 @@ PATH_TO_HYDRATOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/hydrator/values
 PATH_TO_COMPASS_OIDC_CONFIG_FILE="$HOME/.compass.yaml"
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
+SCHEMA_MIGRATOR_COMPONENT_PATH=${ROOT_PATH}/components/schema-migrator
 RESET_VALUES_YAML=true
 
 K3D_MEMORY=8192MB
 K3D_TIMEOUT=10m0s
-APISERVER_VERSION=1.20.11
+APISERVER_VERSION=1.21.12
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -30,11 +33,6 @@ do
     key="$1"
 
     case ${key} in
-        --kyma-release)
-            checkInputParameterValue "${2}"
-            KYMA_RELEASE="${2}"
-            shift # past argument
-        ;;
         --kyma-installation)
             checkInputParameterValue "${2}"
             KYMA_INSTALLATION="${2}"
@@ -51,7 +49,6 @@ do
         ;;
         --dump-db)
             DUMP_DB=true
-            DUMP_IMAGE_TAG="dump"
             shift # past argument
         ;;
         --k3d-memory)
@@ -103,7 +100,6 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 function revert_migrator_file() {
-    echo "$MIGRATOR_FILE" > "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml
     echo "$UPDATE_EXPECTED_SCHEMA_VERSION_FILE" > "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml
 }
 
@@ -125,11 +121,11 @@ function cleanup_trap() {
   fi
   if [[ ${DUMP_DB} ]]; then
       revert_migrator_file
+      rm -f "${DATA_DIR}"/dump.sql || true
   fi
   if [[ ${RESET_VALUES_YAML} ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
   fi
-
   pkill -P $$ || true # This MUST be at the end of the cleanup_trap function.
 }
 
@@ -176,10 +172,6 @@ else
   fi
 fi
 
-if [ -z "$KYMA_RELEASE" ]; then
-  KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
-fi
-
 if [ -z "$KYMA_INSTALLATION" ]; then
   KYMA_INSTALLATION="minimal"
 fi
@@ -187,31 +179,52 @@ fi
 if [[ ${DUMP_DB} ]]; then
     echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
 
-    if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
-        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
-        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
-    else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-        sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
-        sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
+    REMOTE_VERSIONS=($(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | sort -r))
+    LOCAL_VERSIONS=($(ls "$SCHEMA_MIGRATOR_COMPONENT_PATH"/migrations/director | grep -o -E '^[0-9]+' | sed -e 's/^0\+//' | sort -ru))
+
+    SCHEMA_VERSION=""
+    for r in "${REMOTE_VERSIONS[@]}"; do
+       for l in "${LOCAL_VERSIONS[@]}"; do
+          if [[ "$r" == "$l" ]]; then
+            SCHEMA_VERSION=$r
+            break 2;
+          fi
+       done
+    done
+
+    if [[ -z $SCHEMA_VERSION ]]; then
+      echo -e "${RED}\$SCHEMA_VERSION variable cannot be empty${NC}"
     fi
 
+    echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $SCHEMA_VERSION...${NC}"
+    gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql
+    STATUS=$?
 
-    if [[ ! -f ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql ]]; then
-        echo -e "${YELLOW}Will pull DB dump from GCR bucket${NC}"
-        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql
+    if [[ $STATUS ]]; then
+      echo -e "${GREEN}DB dump with migration number: $SCHEMA_VERSION exists in the bucket. Will use it...${NC}"
     else
-        echo -e "${GREEN}DB dump already exists on system, will reuse it${NC}"
+      echo -e "${RED}There is no DB dump with migration number: $SCHEMA_VERSION in the bucket.${NC}"
+      exit 1
     fi
+
+    if [[ ! -f ${DATA_DIR}/dump-${SCHEMA_VERSION}.sql ]]; then
+        echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
+        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql "${DATA_DIR}"/dump-"${SCHEMA_VERSION}".sql
+    else
+        echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
+    fi
+    rm -f "${DATA_DIR}"/dump.sql || true
+    cp "${DATA_DIR}"/dump-"${SCHEMA_VERSION}".sql "${DATA_DIR}"/dump.sql
 fi
 
 if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
-  # todo cpu limit
   kyma provision k3d \
   --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*' \
   --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
   --k3d-arg='--servers-memory '"${K3D_MEMORY}" \
   --k3d-arg='--agents-memory '"${K3D_MEMORY}" \
+  --k3d-arg='--volume '"${DATA_DIR}:/tmp/dbdata" \
   --timeout "${K3D_TIMEOUT}" \
   --kube-version "${APISERVER_VERSION}"
   echo "Adding k3d registry entry to /etc/hosts..."
@@ -224,14 +237,8 @@ echo "Label k3d node for benchmark execution..."
 NODE=$(kubectl get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
 kubectl label --overwrite node "$NODE" benchmark=true || true
 
-if [[ ${DUMP_DB} ]]; then
-    echo -e "${YELLOW}DUMP_DB option is selected. Building an image for the schema-migrator using local files...${NC}"
-    export DOCKER_TAG=$DUMP_IMAGE_TAG
-    make -C ${ROOT_PATH}/components/schema-migrator build-for-k3d
-fi
-
 if [[ ! ${SKIP_KYMA_START} ]]; then
-  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
+  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-installation ${KYMA_INSTALLATION}
   kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
   kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
   until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
@@ -256,6 +263,12 @@ function patchJWKS() {
   kubectl get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
 }
 patchJWKS&
+
+echo 'Installing DB'
+DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
+bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
+STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
+echo "DB installation status ${STATUS}"
 
 echo 'Installing Compass'
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"

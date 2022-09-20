@@ -1,0 +1,8 @@
+# This file is not part of official PostgreSQL chart
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "postgresql.fullname" . }}-db-init
+data:
+  init-director-db.sql: |
+    CREATE DATABASE postgres;

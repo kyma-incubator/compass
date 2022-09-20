@@ -25,4 +25,31 @@ import (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . HTTPRoundTripper
 type HTTPRoundTripper interface {
 	RoundTrip(*http.Request) (*http.Response, error)
+	Clone() HTTPRoundTripper
+	GetTransport() *http.Transport
+}
+
+type httpTransportWrapper struct {
+	tr *http.Transport
+}
+
+// NewHTTPTransportWrapper wraps http transport
+func NewHTTPTransportWrapper(tr *http.Transport) HTTPRoundTripper {
+	return &httpTransportWrapper{
+		tr: tr,
+	}
+}
+
+func (h *httpTransportWrapper) RoundTrip(request *http.Request) (*http.Response, error) {
+	return h.tr.RoundTrip(request)
+}
+
+func (h *httpTransportWrapper) Clone() HTTPRoundTripper {
+	return &httpTransportWrapper{
+		tr: h.tr.Clone(),
+	}
+}
+
+func (h *httpTransportWrapper) GetTransport() *http.Transport {
+	return h.tr
 }

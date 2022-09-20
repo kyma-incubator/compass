@@ -3,8 +3,11 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -24,14 +27,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+const globalSubaccountIDLabelKey = "global_subaccount_id"
+
 // ApplicationTemplateService missing godoc
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
+	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
+	GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
+	ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
+	ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
@@ -194,14 +202,6 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.L
 
 // CreateApplicationTemplate missing godoc
 func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -220,7 +220,13 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	validate := func() error {
 		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders)
 	}
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
+
+	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +236,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				label, ok := in.Labels[selfregmanager.RegionLabel].(string)
+				label, ok := selfRegLabels[selfregmanager.RegionLabel].(string)
 				if !ok {
 					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
@@ -240,8 +246,14 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		}
 	}()
 
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := r.checkProviderAppTemplateExistence(ctx, selfRegLabels); err != nil {
+		return nil, err
+	}
+
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
-	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, labels)
+	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, selfRegLabels)
 	if err != nil {
 		return nil, err
 	}
@@ -304,8 +316,13 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.ApplicationTemplate,
 	return gqlLabels, nil
 }
 
-// RegisterApplicationFromTemplate missing godoc
+// RegisterApplicationFromTemplate registers an Application using Application Template
 func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graphql.ApplicationFromTemplateInput) (*graphql.Application, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while fetching consumer info from context")
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -317,16 +334,11 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	log.C(ctx).Infof("Registering an Application from Application Template with name %s", in.TemplateName)
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
-	log.C(ctx).Debugf("Extracting Application Template with name %s from GraphQL input", in.TemplateName)
-	appTemplate, err := r.appTemplateSvc.GetByName(ctx, convertedIn.TemplateName)
+	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id %q from GraphQL input", in.TemplateName, consumerInfo.ConsumerID)
+	appTemplate, err := r.retrieveAppTemplate(ctx, convertedIn.TemplateName, consumerInfo.ConsumerID)
 	if err != nil {
 		return nil, err
 	}
-	applicationName, err := extractApplicationNameFromTemplateInput(appTemplate.ApplicationInputJSON)
-	if err != nil {
-		return nil, err
-	}
-	log.C(ctx).Infof("Registering an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
@@ -355,6 +367,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 	appCreateInputModel.Labels["managed"] = "false"
 
+	applicationName, err := extractApplicationNameFromTemplateInput(appCreateInputJSON)
+	if err != nil {
+		return nil, err
+	}
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
 	if err != nil {
@@ -544,6 +560,45 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, id, region string) 
 	}
 }
 
+func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, consumerID string) (*model.ApplicationTemplate, error) {
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", consumerID)),
+	}
+	appTemplates, err := r.appTemplateSvc.ListByFilters(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, appTemplate := range appTemplates {
+		if appTemplate.Name == appTemplateName {
+			return appTemplate, nil
+		}
+	}
+
+	appTemplates, err = r.appTemplateSvc.ListByName(ctx, appTemplateName)
+	if err != nil {
+		return nil, err
+	}
+	templates := make([]*model.ApplicationTemplate, 0, len(appTemplates))
+	for _, appTemplate := range appTemplates {
+		_, err := r.appTemplateSvc.GetLabel(ctx, appTemplate.ID, globalSubaccountIDLabelKey)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while getting %q label", globalSubaccountIDLabelKey)
+		}
+		if err != nil && apperrors.IsNotFoundError(err) {
+			templates = append(templates, appTemplate)
+		}
+	}
+
+	if len(templates) < 1 {
+		return nil, errors.Errorf("application template with name %q and consumer id %q not found", appTemplateName, consumerID)
+	}
+	if len(templates) > 1 {
+		return nil, errors.Errorf("unexpected number of application templates. found %d", len(appTemplates))
+	}
+	return templates[0], nil
+}
+
 func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder) error {
 	if len(placeholders) != 2 {
 		return errors.Errorf("expecting %q and %q placeholders", "name", "display-name")
@@ -562,5 +617,33 @@ func validateAppTemplateForSelfReg(name string, placeholders []model.Application
 		return errors.Errorf("application template name %q does not comply with the following naming convention: %q", name, "SAP <product name>")
 	}
 
+	return nil
+}
+
+func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels map[string]interface{}) error {
+	distinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+	regionLabelKey := selfregmanager.RegionLabel
+
+	distinguishLabelValue, distinguishLabelExists := labels[distinguishLabelKey]
+	region, regionExists := labels[regionLabelKey]
+
+	if distinguishLabelExists && regionExists {
+		filters := []*labelfilter.LabelFilter{
+			labelfilter.NewForKeyWithQuery(distinguishLabelKey, fmt.Sprintf("\"%s\"", distinguishLabelValue)),
+			labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)),
+		}
+
+		log.C(ctx).Infof("Getting application template for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+		appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return errors.Wrap(err, fmt.Sprintf("Failed to get application template for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+		}
+
+		if appTemplate != nil {
+			msg := fmt.Sprintf("Cannot have more than one application template with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+			log.C(ctx).Error(msg)
+			return errors.New(msg)
+		}
+	}
 	return nil
 }

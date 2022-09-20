@@ -125,7 +125,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
 	require.NoError(t, err)
@@ -196,7 +196,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
 	require.NoError(t, err)
@@ -333,17 +333,13 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelKeyBar := "bar"
 
 	inputFirst := fixRuntimeInput("first")
-	firstRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputFirst)
+	firstRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputFirst, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &firstRuntime)
-	require.NoError(t, err)
-	require.NotEmpty(t, firstRuntime.ID)
 
 	//Create second runtime
 	inputSecond := fixRuntimeInput("second")
-	secondRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputSecond)
+	secondRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputSecond, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &secondRuntime)
-	require.NoError(t, err)
-	require.NotEmpty(t, secondRuntime.ID)
 
 	//Set label "foo" on both runtimes
 	labelValueFoo := "val"
@@ -460,23 +456,14 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	name := "deleting-last-scenario-for-app-fail"
 	scenarios := []string{conf.DefaultScenario, "Christmas", "New Year"}
 
-	scenarioSchema := map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": scenarios,
-		},
-	}
-	var schema interface{} = scenarioSchema
-
-	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, ScenariosLabel, schema, tenantID)
+	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{conf.DefaultScenario})
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
 		Labels: graphql.Labels{
-			ScenariosLabel: []string{"Christmas", "New Year"},
+			ScenariosLabel:               []string{"Christmas", "New Year"},
+			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -496,7 +483,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
+	assert.Contains(t, err.Error(), `Object not found [object=formations]`)
 }
 
 func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {

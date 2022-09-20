@@ -47,17 +47,19 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
-	tenantMapping, err := p.directorClient.GetTenantByExternalID(ctx, externalTenantID)
+	tenantMapping, region, err := getTenantWithRegion(ctx, p.directorClient, externalTenantID)
 	if err != nil {
 		if directorErrors.IsGQLNotFoundError(err) {
 			// tenant not in DB yet, might be because we have not imported all subaccounts yet
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, "", mergeWithOtherScopes, authDetails.Region,
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, "", mergeWithOtherScopes, "",
 				"", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
+
+	authDetails.Region = region
 
 	if err := p.verifyTenantAccessLevels(tenantMapping.Type, authDetails, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to verify tenant access level: %v", err)

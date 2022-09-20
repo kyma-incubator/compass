@@ -4,7 +4,6 @@ mutation {
     in: {
       name: "runtime-with-webhooks"
       description: "runtime-1-description"
-      labels: { ggg: ["hhh"] }
       webhooks: [
         {
           type: CONFIGURATION_CHANGED
@@ -37,6 +36,11 @@ mutation {
             username
             password
           }
+          ... on CertificateOAuthCredentialData {
+            clientId
+            certificate
+            url
+          }
           ... on OAuthCredentialData {
             clientId
             clientSecret
@@ -64,6 +68,11 @@ mutation {
               ... on OAuthCredentialData {
                 clientId
                 clientSecret
+                url
+              }
+              ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
                 url
               }
             }
@@ -109,6 +118,11 @@ mutation {
             username
             password
           }
+          ... on CertificateOAuthCredentialData {
+            clientId
+            certificate
+            url
+          }
           ... on OAuthCredentialData {
             clientId
             clientSecret
@@ -136,6 +150,11 @@ mutation {
               ... on OAuthCredentialData {
                 clientId
                 clientSecret
+                url
+              }
+              ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
                 url
               }
             }

@@ -181,6 +181,7 @@ enum WebhookMode {
 
 enum WebhookType {
 	CONFIGURATION_CHANGED
+	APPLICATION_TENANT_MAPPING
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
@@ -218,7 +219,7 @@ interface SystemAuth {
 	referenceObjectId: ID
 }
 
-union CredentialData = BasicCredentialData | OAuthCredentialData
+union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
 
 input APIDefinitionInput {
 	"""
@@ -398,6 +399,7 @@ input BundleCreateInput {
 	apiDefinitions: [APIDefinitionInput!]
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
+	correlationIDs: [String!]
 }
 
 input BundleInstanceAuthRequestInput {
@@ -487,12 +489,22 @@ input CSRFTokenCredentialRequestAuthInput {
 	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
+input CertificateOAuthCredentialDataInput {
+	clientId: ID!
+	certificate: String!
+	"""
+	**Validation:** valid URL
+	"""
+	url: String!
+}
+
 """
-**Validation:** basic or oauth field required
+**Validation:** basic or oauth or certificateOAuth field required
 """
 input CredentialDataInput {
 	basic: BasicCredentialDataInput
 	oauth: OAuthCredentialDataInput
+	certificateOAuth: CertificateOAuthCredentialDataInput
 }
 
 input CredentialRequestAuthInput {
@@ -575,6 +587,7 @@ input FetchRequestInput {
 
 input FormationInput {
 	name: String!
+	templateName: String
 }
 
 input FormationTemplateInput {
@@ -889,6 +902,7 @@ type Bundle {
 	documents(first: Int = 200, after: PageCursor): DocumentPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
+	correlationIDs: [String!]
 	document(id: ID!): Document
 	createdAt: Timestamp
 	updatedAt: Timestamp
@@ -944,6 +958,12 @@ type CSRFTokenCredentialRequestAuth {
 	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
 	additionalQueryParamsSerialized: QueryParamsSerialized
+}
+
+type CertificateOAuthCredentialData {
+	clientId: ID!
+	certificate: String!
+	url: String!
 }
 
 type CredentialRequestAuth {
@@ -1022,7 +1042,15 @@ type FetchRequestStatus {
 }
 
 type Formation {
+	id: ID!
 	name: String!
+	formationTemplateId: ID!
+}
+
+type FormationPage implements Pageable {
+	data: [Formation!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type FormationTemplate {
@@ -1195,6 +1223,7 @@ type Tenant {
 	parentID: ID
 	initialized: Boolean
 	labels(key: String): Labels
+	provider: String!
 }
 
 type TenantPage implements Pageable {
@@ -1339,6 +1368,16 @@ type Query {
 	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 	systemAuth(id: ID!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
 	systemAuthByToken(token: String!): SystemAuth @hasScopes(path: "graphql.query.systemAuthByToken")
+	"""
+	**Examples**
+	- [query formation](examples/query-formation/query-formation.graphql)
+	"""
+	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
+	"""
+	**Examples**
+	- [query formations](examples/query-formations/query-formations.graphql)
+	"""
+	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
 	"""
 	**Examples**
 	- [query formation template](examples/query-formation-template/query-formation-template.graphql)
@@ -1519,7 +1558,7 @@ type Mutation {
 	**Examples**
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
-	createFormation(formation: FormationInput!, templateName: String): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -1636,8 +1675,8 @@ type Mutation {
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
-	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
+	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
+	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)

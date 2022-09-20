@@ -28,6 +28,9 @@ func TestContextEnrichMiddleware_AttachCorrelationIDToContext(t *testing.T) {
 
 			headerFromRequest := r.Header.Get(correlation.RequestIDHeaderKey)
 			assert.Equal(t, headerFromRequest, expectedRequestID)
+
+			correlationID := correlation.CorrelationIDFromContext(r.Context())
+			assert.Equal(t, correlationID, expectedRequestID)
 		})
 
 		req := httptest.NewRequest("GET", "/", nil)
@@ -47,6 +50,9 @@ func TestContextEnrichMiddleware_AttachCorrelationIDToContext(t *testing.T) {
 
 			headerFromRequest := r.Header.Get(correlation.RequestIDHeaderKey)
 			assert.NotEmpty(t, headerFromRequest)
+
+			correlationID := correlation.CorrelationIDFromContext(r.Context())
+			assert.NotEmpty(t, correlationID)
 		})
 
 		req := httptest.NewRequest("GET", "/", nil)

@@ -16,21 +16,22 @@ import (
 )
 
 type config struct {
-	Auditlog                           pkgConfig.AuditlogConfig
-	DefaultTestTenant                  string
-	DirectorExternalCertSecuredURL     string
-	ExternalServicesMockBaseURL        string
-	ExternalServicesMockMTLSSecuredURL string `envconfig:"EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL"`
-	BasicCredentialsUsername           string
-	BasicCredentialsPassword           string
-	AppClientID                        string
-	AppClientSecret                    string
-	SkipSSLValidation                  bool
-	CertLoaderConfig                   certloader.Config
-	ConsumerID                         string
-	AppSelfRegDistinguishLabelKey      string
-	AppSelfRegDistinguishLabelValue    string
-	AppSelfRegRegion                   string
+	Auditlog                                  pkgConfig.AuditlogConfig
+	DefaultTestTenant                         string
+	DirectorExternalCertSecuredURL            string
+	ExternalServicesMockBaseURL               string
+	ExternalServicesMockMTLSSecuredURL        string `envconfig:"EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL"`
+	ExternalServicesMockORDServerUnsecuredURL string `envconfig:"EXTERNAL_SERVICES_MOCK_ORD_SERVER_UNSECURED_URL"`
+	BasicCredentialsUsername                  string
+	BasicCredentialsPassword                  string
+	AppClientID                               string
+	AppClientSecret                           string
+	SkipSSLValidation                         bool
+	CertLoaderConfig                          certloader.Config
+	ConsumerID                                string
+	AppSelfRegDistinguishLabelKey             string
+	AppSelfRegDistinguishLabelValue           string
+	AppSelfRegRegion                          string
 }
 
 var (

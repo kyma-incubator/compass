@@ -3,9 +3,10 @@
 package automock
 
 import (
-	http "net/http"
-
+	http "github.com/kyma-incubator/compass/components/director/pkg/http"
 	mock "github.com/stretchr/testify/mock"
+
+	nethttp "net/http"
 
 	testing "testing"
 )
@@ -15,21 +16,53 @@ type HTTPRoundTripper struct {
 	mock.Mock
 }
 
+// Clone provides a mock function with given fields:
+func (_m *HTTPRoundTripper) Clone() http.HTTPRoundTripper {
+	ret := _m.Called()
+
+	var r0 http.HTTPRoundTripper
+	if rf, ok := ret.Get(0).(func() http.HTTPRoundTripper); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(http.HTTPRoundTripper)
+		}
+	}
+
+	return r0
+}
+
+// GetTransport provides a mock function with given fields:
+func (_m *HTTPRoundTripper) GetTransport() *nethttp.Transport {
+	ret := _m.Called()
+
+	var r0 *nethttp.Transport
+	if rf, ok := ret.Get(0).(func() *nethttp.Transport); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*nethttp.Transport)
+		}
+	}
+
+	return r0
+}
+
 // RoundTrip provides a mock function with given fields: _a0
-func (_m *HTTPRoundTripper) RoundTrip(_a0 *http.Request) (*http.Response, error) {
+func (_m *HTTPRoundTripper) RoundTrip(_a0 *nethttp.Request) (*nethttp.Response, error) {
 	ret := _m.Called(_a0)
 
-	var r0 *http.Response
-	if rf, ok := ret.Get(0).(func(*http.Request) *http.Response); ok {
+	var r0 *nethttp.Response
+	if rf, ok := ret.Get(0).(func(*nethttp.Request) *nethttp.Response); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*http.Response)
+			r0 = ret.Get(0).(*nethttp.Response)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*http.Request) error); ok {
+	if rf, ok := ret.Get(1).(func(*nethttp.Request) error); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)

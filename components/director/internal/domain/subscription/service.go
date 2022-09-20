@@ -3,18 +3,15 @@ package subscription
 import (
 	"context"
 	"fmt"
-	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/avast/retry-go"
-	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -25,15 +22,25 @@ import (
 
 // Config is configuration for the tenant subscription flow
 type Config struct {
-	ProviderLabelKey              string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
-	ConsumerSubaccountIDsLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY,default=consumer_subaccount_ids"`
+	ProviderLabelKey           string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
+	ConsumerSubaccountLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_LABEL_KEY,default=global_subaccount_id"`
+	SubscriptionLabelKey       string `envconfig:"APP_SUBSCRIPTION_LABEL_KEY,default=subscription"`
+	RuntimeTypeLabelKey        string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 }
 
 // RuntimeService is responsible for Runtime operations
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
-	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	GetByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error)
+	GetByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error)
+}
+
+// RuntimeCtxService provide functionality to interact with the runtime contexts(create, list, delete).
+//go:generate mockery --name=RuntimeCtxService --output=automock --outpkg=automock --case=underscore
+type RuntimeCtxService interface {
+	Create(ctx context.Context, in model.RuntimeContextInput) (string, error)
+	Delete(ctx context.Context, id string) error
+	ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
 }
 
 // TenantService provides functionality for retrieving, and creating tenants.
@@ -49,6 +56,7 @@ type LabelService interface {
 	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
 	CreateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 	UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
+	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 //go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -80,136 +88,185 @@ type ApplicationService interface {
 	Delete(ctx context.Context, id string) error
 }
 
-const (
-	retryAttempts          = 2
-	retryDelayMilliseconds = 100
-)
-
 type service struct {
-	runtimeSvc                    RuntimeService
-	tenantSvc                     TenantService
-	labelSvc                      LabelService
-	appTemplateSvc                ApplicationTemplateService
-	appConv                       ApplicationConverter
-	appSvc                        ApplicationService
-	uidSvc                        uidService
-	subscriptionProviderLabelKey  string
-	consumerSubaccountIDsLabelKey string
+	runtimeSvc                   RuntimeService
+	runtimeCtxSvc                RuntimeCtxService
+	tenantSvc                    TenantService
+	labelSvc                     LabelService
+	appTemplateSvc               ApplicationTemplateService
+	appConv                      ApplicationConverter
+	appSvc                       ApplicationService
+	uidSvc                       uidService
+	consumerSubaccountLabelKey   string
+	subscriptionLabelKey         string
+	runtimeTypeLabelKey          string
+	subscriptionProviderLabelKey string
 }
 
 // NewService returns a new object responsible for service-layer Subscription operations.
-func NewService(runtimeSvc RuntimeService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appSvc ApplicationService, uidService uidService,
-	subscriptionProviderLabelKey string, consumerSubaccountIDsLabelKey string) *service {
+func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appSvc ApplicationService, uidService uidService,
+	consumerSubaccountLabelKey, subscriptionLabelKey, runtimeTypeLabelKey, subscriptionProviderLabelKey string) *service {
 	return &service{
-		runtimeSvc:                    runtimeSvc,
-		tenantSvc:                     tenantSvc,
-		labelSvc:                      labelSvc,
-		appTemplateSvc:                appTemplateSvc,
-		appConv:                       appConv,
-		appSvc:                        appSvc,
-		uidSvc:                        uidService,
-		subscriptionProviderLabelKey:  subscriptionProviderLabelKey,
-		consumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
+		runtimeSvc:                   runtimeSvc,
+		runtimeCtxSvc:                runtimeCtxSvc,
+		tenantSvc:                    tenantSvc,
+		labelSvc:                     labelSvc,
+		appTemplateSvc:               appTemplateSvc,
+		appConv:                      appConv,
+		appSvc:                       appSvc,
+		uidSvc:                       uidService,
+		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
+		subscriptionLabelKey:         subscriptionLabelKey,
+		runtimeTypeLabelKey:          runtimeTypeLabelKey,
+		subscriptionProviderLabelKey: subscriptionProviderLabelKey,
 	}
 }
 
 // SubscribeTenantToRuntime subscribes a tenant to runtimes by labeling the runtime
-func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, region string) (bool, error) {
+func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error) {
+	log.C(ctx).Infof("Subscribe request is triggerred between consumer with tenant: %q and subaccount: %q and provider with subaccount: %q", consumerTenantID, subaccountTenantID, providerSubaccountID)
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
-		return false, errors.Wrap(err, "while getting provider subaccount internal ID")
+		return false, errors.Wrapf(err, "while getting provider subaccount internal ID from external ID: %q", providerSubaccountID)
 	}
 	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
 
 	filters := s.buildLabelFilters(providerID, region)
-	runtimes, err := s.runtimeSvc.ListByFilters(ctx, filters)
+	log.C(ctx).Infof("Getting provider runtime in tenant %q for labels %q: %q and %q: %q", providerSubaccountID, tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID)
+	runtime, err := s.runtimeSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
 		}
 
-		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtime for labels %q: %q and %q: %q", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
 	}
 
-	for _, provider := range runtimes {
-		tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, provider.ID)
-		if err != nil {
-			return false, err
-		}
+	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subaccountTenantID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subaccountTenantID, err)
+		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subaccountTenantID)
+	}
 
-		label, err := s.labelSvc.GetLabel(ctx, tnt, &model.LabelInput{
-			Key:        s.consumerSubaccountIDsLabelKey,
-			ObjectID:   provider.ID,
-			ObjectType: model.RuntimeLabelableObject,
-		})
+	runtimeID := runtime.ID
+	log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for label with key: %q and value: %q", subaccountTenantID, s.consumerSubaccountLabelKey, subaccountTenantID)
+	rtmCtxPage, err := s.runtimeCtxSvc.ListByFilter(tenant.SaveToContext(ctx, consumerInternalTenant, subaccountTenantID), runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(s.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantID))}, 100, "")
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while listing runtime contexts with key: %q and value: %q for runtime with ID: %q: %v", s.consumerSubaccountLabelKey, subaccountTenantID, runtimeID, err)
+		return false, err
+	}
+	log.C(ctx).Infof("Found %d runtime context(s) with key: %q and value: %q for runtime with ID: %q", len(rtmCtxPage.Data), s.consumerSubaccountLabelKey, subaccountTenantID, runtimeID)
 
-		if err != nil {
-			if !apperrors.IsNotFoundError(err) {
-				return false, errors.Wrap(err, fmt.Sprintf("Failed to get label for runtime with id: %s and key: %s", provider.ID, s.consumerSubaccountIDsLabelKey))
-			}
-			if err := s.createLabel(ctx, tnt, provider, subaccountTenantID); err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("Failed to create label with key: %s", s.consumerSubaccountIDsLabelKey))
-			}
-		} else {
-			labelOldValue, err := labelPkg.ValueToStringsSlice(label.Value)
-			if err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
-			}
-			labelNewValue := append(labelOldValue, subaccountTenantID)
-
-			if err := s.updateLabelWithRetry(ctx, tnt, provider, label, labelNewValue); err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", provider.ID))
-			}
+	for _, rtmCtx := range rtmCtxPage.Data {
+		if rtmCtx.Value == consumerTenantID {
+			// Already subscribed
+			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
+			return true, nil
 		}
 	}
+
+	tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, runtime.ID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting lowest owner for resource type: %q with ID: %q: %v", resource.Runtime, runtime.ID, err)
+		return false, err
+	}
+
+	log.C(ctx).Debugf("Upserting runtime label with key: %q and value: %q", s.runtimeTypeLabelKey, subscriptionAppName)
+	if err := s.labelSvc.UpsertLabel(ctx, tnt, &model.LabelInput{
+		Key:        s.runtimeTypeLabelKey,
+		Value:      subscriptionAppName,
+		ObjectType: model.RuntimeLabelableObject,
+		ObjectID:   runtime.ID,
+	}); err != nil {
+		log.C(ctx).Errorf("An error occurred while upserting label with key: %q and value: %q for object type: %q and ID: %q: %v", s.runtimeTypeLabelKey, subscriptionAppName, model.RuntimeLabelableObject, runtime.ID, err)
+		return false, err
+	}
+
+	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subaccountTenantID)
+
+	m2mTable, ok := resource.Runtime.TenantAccessTable()
+	if !ok {
+		return false, errors.Errorf("entity %s does not have access table", resource.Runtime)
+	}
+
+	if err := repo.UpsertTenantAccessRecursively(ctx, m2mTable, &repo.TenantAccess{
+		TenantID:   consumerInternalTenant,
+		ResourceID: runtime.ID,
+		Owner:      false,
+	}); err != nil {
+		return false, err
+	}
+
+	rtmCtxID, err := s.runtimeCtxSvc.Create(ctx, model.RuntimeContextInput{
+		Key:       s.subscriptionLabelKey,
+		Value:     consumerTenantID,
+		RuntimeID: runtime.ID,
+	})
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while creating runtime context with key: %q and value: %q, and runtime ID: %q: %v", s.subscriptionLabelKey, consumerTenantID, runtime.ID, err)
+		return false, errors.Wrapf(err, "while creating runtime context with value: %q and runtime ID: %q during subscription", consumerTenantID, runtime.ID)
+	}
+
+	log.C(ctx).Infof("Creating label for runtime context with ID: %q with key: %q and value: %q", rtmCtxID, s.consumerSubaccountLabelKey, subaccountTenantID)
+	if err := s.labelSvc.CreateLabel(ctx, consumerInternalTenant, s.uidSvc.Generate(), &model.LabelInput{
+		Key:        s.consumerSubaccountLabelKey,
+		Value:      subaccountTenantID,
+		ObjectID:   rtmCtxID,
+		ObjectType: model.RuntimeContextLabelableObject,
+	}); err != nil {
+		log.C(ctx).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q: %v", s.consumerSubaccountLabelKey, subaccountTenantID, model.RuntimeContextLabelableObject, rtmCtxID, err)
+		return false, errors.Wrap(err, fmt.Sprintf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", s.consumerSubaccountLabelKey, subaccountTenantID, model.RuntimeContextLabelableObject, rtmCtxID))
+	}
+
 	return true, nil
 }
 
 // UnsubscribeTenantFromRuntime unsubscribes a tenant from runtimes by removing labels from runtime
-func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
+func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error) {
+	log.C(ctx).Infof("Unsubscribe request is triggerred between consumer with tenant: %q and subaccount: %q and provider with subaccount: %q", consumerTenantID, subaccountTenantID, providerSubaccountID)
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
-		return false, errors.Wrap(err, "while getting provider subaccount internal ID")
+		return false, errors.Wrapf(err, "while getting provider subaccount internal ID from external ID: %q", providerSubaccountID)
 	}
 	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
 
 	filters := s.buildLabelFilters(providerID, region)
-	runtimes, err := s.runtimeSvc.ListByFilters(ctx, filters)
+	log.C(ctx).Infof("Getting provider runtime in tenant %q for labels %q: %q and %q: %q", providerSubaccountID, tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID)
+	runtime, err := s.runtimeSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
 		}
 
-		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtime for labels %q: %q and %q: %q", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
 	}
 
-	for _, runtime := range runtimes {
-		tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, runtime.ID)
-		if err != nil {
-			return false, err
-		}
+	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subaccountTenantID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subaccountTenantID, err)
+		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subaccountTenantID)
+	}
+	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subaccountTenantID)
 
-		label, err := s.labelSvc.GetLabel(ctx, tnt, &model.LabelInput{
-			Key:        s.consumerSubaccountIDsLabelKey,
-			ObjectID:   runtime.ID,
-			ObjectType: model.RuntimeLabelableObject,
-		})
+	runtimeID := runtime.ID
+	log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for label with key: %q and value: %q", subaccountTenantID, s.consumerSubaccountLabelKey, subaccountTenantID)
+	rtmCtxPage, err := s.runtimeCtxSvc.ListByFilter(ctx, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(s.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantID))}, 100, "")
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while listing runtime contexts with key: %q and value: %q for runtime with ID: %q: %v", s.consumerSubaccountLabelKey, subaccountTenantID, runtimeID, err)
+		return false, err
+	}
+	log.C(ctx).Infof("Found %d runtime context(s) with key: %q and value: %q for runtime with ID: %q", len(rtmCtxPage.Data), s.consumerSubaccountLabelKey, subaccountTenantID, runtimeID)
 
-		if err != nil {
-			if !apperrors.IsNotFoundError(err) {
-				return false, errors.Wrap(err, fmt.Sprintf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, s.consumerSubaccountIDsLabelKey))
+	for _, rtmCtx := range rtmCtxPage.Data {
+		// if the current subscription(runtime context) is the one for which the unsubscribe request is initiated, delete the record from the DB
+		if rtmCtx.Value == consumerTenantID {
+			log.C(ctx).Infof("Deleting runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
+			if err := s.runtimeCtxSvc.Delete(ctx, rtmCtx.ID); err != nil {
+				log.C(ctx).Errorf("An error occurred while deleting runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
+				return false, err
 			}
-			return true, nil
-		} else {
-			labelOldValue, err := labelPkg.ValueToStringsSlice(label.Value)
-			if err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
-			}
-			labelNewValue := removeElement(labelOldValue, subaccountTenantID)
-
-			if err := s.updateLabelWithRetry(ctx, tnt, runtime, label, labelNewValue); err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
-			}
+			log.C(ctx).Infof("Successfully deleted runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
+			break
 		}
 	}
 
@@ -217,13 +274,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID s
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName string) (bool, error) {
-	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
-	if err != nil {
-		return false, errors.Wrapf(err, "while getting provider subaccount internal ID: %q", providerSubaccountID)
-	}
-	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
-
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName string) (bool, error) {
 	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
@@ -234,7 +285,27 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
 	}
 
-	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, subscribedAppName); err != nil {
+	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subscribedSubaccountID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during application subscription: %v", subscribedSubaccountID, err)
+		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
+	}
+
+	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subscribedSubaccountID)
+
+	applications, err := s.appSvc.ListAll(ctx)
+	if err != nil {
+		return false, errors.Wrapf(err, "while listing applications")
+	}
+
+	for _, app := range applications {
+		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
+			// Already subscribed
+			return true, nil
+		}
+	}
+
+	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName); err != nil {
 		return false, err
 	}
 
@@ -242,15 +313,8 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 }
 
 // UnsubscribeTenantFromApplication fetches model.ApplicationTemplate by region and provider, lists all applications for
-// the providerSubaccountID tenant and deletes them synchronously
-func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, providerID, providerSubaccountID, region string) (bool, error) {
-	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
-	if err != nil {
-		return false, errors.Wrapf(err, "while getting provider subaccount internal ID: %q", providerSubaccountID)
-	}
-
-	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
-
+// the subscribedSubaccountID tenant and deletes them synchronously
+func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, providerID, subscribedSubaccountID, region string) (bool, error) {
 	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
@@ -260,6 +324,14 @@ func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, provider
 
 		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
 	}
+
+	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subscribedSubaccountID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during application unsubscription: %v", subscribedSubaccountID, err)
+		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
+	}
+
+	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subscribedSubaccountID)
 
 	if err := s.deleteApplicationsByAppTemplateID(ctx, appTemplate.ID); err != nil {
 		return false, err
@@ -305,7 +377,7 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, subscribedAppName string) error {
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID string, subscribedAppName string) error {
 	values := []*model.ApplicationTemplateValueInput{
 		{Placeholder: "name", Value: subscribedAppName},
 		{Placeholder: "display-name", Value: subscribedAppName},
@@ -336,7 +408,8 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
 	appCreateInputModel.Labels["managed"] = "false"
-	appCreateInputModel.Labels[scenarioassignment.SubaccountIDKey] = subscribedSubaccountID
+	appCreateInputModel.Labels[s.consumerSubaccountLabelKey] = subscribedSubaccountID
+	appCreateInputModel.LocalTenantID = &consumerTenantID
 
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
 	_, err = s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
@@ -364,44 +437,9 @@ func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemp
 	return nil
 }
 
-func (s *service) buildLabelFilters(subscriptionLabelValue, region string) []*labelfilter.LabelFilter {
+func (s *service) buildLabelFilters(subscriptionProviderID, region string) []*labelfilter.LabelFilter {
 	return []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", subscriptionLabelValue)),
+		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", subscriptionProviderID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
-}
-
-func (s *service) createLabel(ctx context.Context, tenant string, runtime *model.Runtime, subaccountTenantID string) error {
-	return s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
-		Key:        s.consumerSubaccountIDsLabelKey,
-		Value:      []string{subaccountTenantID},
-		ObjectType: model.RuntimeLabelableObject,
-		ObjectID:   runtime.ID,
-	})
-}
-
-func (s *service) updateLabelWithRetry(ctx context.Context, tenant string, runtime *model.Runtime, label *model.Label, labelNewValue []string) error {
-	return retry.Do(func() error {
-		err := s.labelSvc.UpdateLabel(ctx, tenant, label.ID, &model.LabelInput{
-			Key:        s.consumerSubaccountIDsLabelKey,
-			Value:      labelNewValue,
-			ObjectType: model.RuntimeLabelableObject,
-			ObjectID:   runtime.ID,
-			Version:    label.Version,
-		})
-		if err != nil {
-			return errors.Wrap(err, "while updating label")
-		}
-		return nil
-	}, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
-}
-
-func removeElement(slice []string, elem string) []string {
-	result := make([]string, 0)
-	for _, e := range slice {
-		if e != elem {
-			result = append(result, e)
-		}
-	}
-	return result
 }

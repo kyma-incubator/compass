@@ -27,13 +27,14 @@ import (
 )
 
 func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
+	emptyCtx := context.TODO()
+	consumerTenantID := "3944c2f9-f614-4680-b4a9-0f07315bc982"
+	providerTenantID := uuid.New().String()
+
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
 	tenantKeyNotFoundErr := apperrors.NewKeyDoesNotExistError(string(resource.Tenant))
 
-	emptyCtx := context.TODO()
-	consumerTenantID := "3944c2f9-f614-4680-b4a9-0f07315bc982"
-	providerTenantID := uuid.New().String()
 	authDetails := oathkeeper.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
 	reqData := oathkeeper.ReqData{
@@ -47,16 +48,22 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	}
 
 	internalSubaccount := "internalSubaccountID"
+	region := "eu-1"
+	labels := map[string]interface{}{
+		"region": region,
+	}
 
 	testSubaccount := &graphql.Tenant{
 		InternalID: internalSubaccount,
 		Type:       "subaccount",
+		Labels:     labels,
 	}
 
 	testAccount := &graphql.Tenant{
 		ID:         internalSubaccount,
 		InternalID: "externalAccount",
 		Type:       "account",
+		Labels:     labels,
 	}
 
 	testCases := []struct {
@@ -116,6 +123,18 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ExpectedErr:      tenantKeyNotFoundErr,
 		},
 		{
+			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
+			DirectorClient: func() *automock.DirectorClient {
+				client := &automock.DirectorClient{}
+				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testSubaccount, nil).Once()
+				return client
+			},
+			ReqDataInput:       reqData,
+			AuthDetailsInput:   authDetails,
+			ExpectedInternalID: internalSubaccount,
+			ExpectedErr:        nil,
+		},
+		{
 			Name: "Error when consumer don't have access",
 			DirectorClient: func() *automock.DirectorClient {
 				client := &automock.DirectorClient{}
@@ -143,6 +162,9 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
 				require.Equal(t, consumerTenantID, objectCtx.TenantContext.ExternalTenantID)
 				require.Equal(t, "", objectCtx.Scopes)
+				if objectCtx.TenantID != "" {
+					require.Equal(t, region, objectCtx.Region)
+				}
 			} else {
 				require.Error(t, err)
 				require.Contains(t, strings.ToLower(err.Error()), strings.ToLower(testCase.ExpectedErr.Error()))

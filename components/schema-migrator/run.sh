@@ -104,22 +104,6 @@ fi
 
 set -e
 
-if [[ -f seeds/dump.sql ]] && [[ "${DIRECTION}" == "up" ]]; then
-    echo "Will reuse existing dump in seeds/dump.sql"
-    PGPASSWORD="${DB_PASSWORD}" psql --username="${DB_USER}" --host="${DB_HOST}" --port="${DB_PORT}" --dbname="${DB_NAME}" --single-transaction -f seeds/dump.sql --set ON_ERROR_STOP=on --set "${SSL_OPTION}"
-
-    REMOTE_MIGRATION_VERSION=$(PGPASSWORD="${DB_PASSWORD}" psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
-    LOCAL_MIGRATION_VERSION=$(echo $(ls migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')
-
-    if [[ ${REMOTE_MIGRATION_VERSION} = ${LOCAL_MIGRATION_VERSION} ]]; then
-        echo -e "${GREEN}Both remote and local migrations are at the same version.${NC}"
-    else
-        echo -e "${RED}Remote and local migrations are at different versions.${NC}"
-        echo -e "${YELLOW}REMOTE: $REMOTE_MIGRATION_VERSION${NC}"
-        echo -e "${YELLOW}LOCAL: $LOCAL_MIGRATION_VERSION${NC}"
-    fi
-fi
-
 CONNECTION_STRING="postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME_SSL"
 function currentVersion {
   echo $(migrate -path ${MIGRATION_STORAGE_PATH} -database "$CONNECTION_STRING" version 2>&1)

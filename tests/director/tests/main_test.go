@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -23,20 +25,41 @@ type DirectorConfig struct {
 	HealthUrl                      string `envconfig:"default=https://director.kyma.local/healthz"`
 	WebhookUrl                     string `envconfig:"default=https://kyma-project.io"`
 	InfoUrl                        string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
-	CertIssuer                     string `envconfig:"APP_INFO_CERT_ISSUER"`
-	CertSubject                    string `envconfig:"APP_INFO_CERT_SUBJECT"`
 	DefaultScenarioEnabled         bool   `envconfig:"default=true"`
 	DefaultNormalizationPrefix     string `envconfig:"default=mp-"`
 	GatewayOauth                   string
 	DirectorExternalCertSecuredURL string
-	SkipSSLValidation              bool `envconfig:"default=false"`
+	SkipSSLValidation              bool   `envconfig:"default=false"`
+	ConsumerID                     string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
-	SelfRegLabelKey              string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
-	SelfRegDistinguishLabelKey   string
-	SelfRegDistinguishLabelValue string
-	SelfRegRegion                string
-	ConsumerID                   string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
+	SubscriptionConfig                              subscription.Config
+	TestProviderAccountID                           string
+	TestProviderSubaccountID                        string
+	TestConsumerAccountID                           string
+	TestConsumerSubaccountID                        string
+	TestConsumerTenantID                            string
+	TestProviderSubaccountIDRegion2                 string
+	ExternalServicesMockBaseURL                     string
+	ExternalServicesMockMtlsSecuredURL              string
+	TokenPath                                       string
+	SubscriptionProviderAppNameValue                string
+	ConsumerSubaccountLabelKey                      string
+	SubscriptionLabelKey                            string
+	RuntimeTypeLabelKey                             string
+	ApplicationTypeLabelKey                         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	KymaRuntimeTypeLabelValue                       string
+	ConsumerTokenURL                                string
+	ProviderClientID                                string
+	ProviderClientSecret                            string
+	BasicUsername                                   string
+	BasicPassword                                   string
+	ExternalCertCommonName                          string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
+	CertSvcInstanceTestIntSystemSecretName          string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
+	ExternalCertTestIntSystemOUSubaccount           string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
+	ExternalCertTestIntSystemCommonName             string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
+	ExternalClientCertExpectedIssuerLocalityRegion2 string `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
+	SupportedORDApplicationType                     string `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
 }
 
 type BaseDirectorConfig struct {
@@ -46,6 +69,7 @@ type BaseDirectorConfig struct {
 var (
 	conf                     = &DirectorConfig{}
 	certSecuredGraphQLClient *graphql.Client
+	cc                       certloader.Cache
 )
 
 func TestMain(m *testing.M) {
@@ -56,7 +80,8 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	var err error
+	cc, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}

@@ -1,4 +1,4 @@
-FROM alpine:3.16.0
+FROM alpine:3.16.2
 
 ARG MIGRATE_VER=4.15.2
 
@@ -9,7 +9,7 @@ RUN wget https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_
 RUN mv migrate /usr/local/bin/migrate
 
 # kubectl is supported within one minor version (older or newer) of kube-apiserver
-ENV CLUSTER_VERSION=1.20.14
+ENV CLUSTER_VERSION=1.21.12
 
 RUN apk add --update ca-certificates \
  && apk add -t deps \

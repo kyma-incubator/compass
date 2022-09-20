@@ -45,6 +45,7 @@ const ordDocument = `{
             "label-value-2"
          ]
       }
+	  {{ .additionalProperties }}
    },
    "packages":[
       {
@@ -113,6 +114,7 @@ const ordDocument = `{
             "Banking",
             "Chemicals"
          ]
+		 {{ .additionalProperties }}	 
       }
    ],
    "consumptionBundles":[
@@ -161,6 +163,7 @@ const ordDocument = `{
                "type":"custom"
             }
          ]
+		 {{ .additionalProperties }}
       },
       {
          "title":"BUNDLE TITLE 2",
@@ -205,6 +208,7 @@ const ordDocument = `{
                "url":"/testing/relative"
             }
          ]
+		 {{ .additionalProperties }}
       }
    ],
    "products":[
@@ -230,6 +234,7 @@ const ordDocument = `{
                "With multiple values"
             ]
          }
+		 {{ .additionalProperties }}
       }
    ],
    "apiResources":[
@@ -324,7 +329,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"application/json",
-               "url":"/external-api/spec/flapping",
+               "url":"/external-api/spec/flapping?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -337,7 +342,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"text/yaml",
-               "url":"https://test.com/odata/1.0/catalog",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -350,7 +355,7 @@ const ordDocument = `{
                "type":"edmx",
                "customType":"",
                "mediaType":"application/xml",
-               "url":"https://TEST:443//odata/$metadata",
+               "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -372,6 +377,7 @@ const ordDocument = `{
          ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
+		 {{ .additionalProperties }}
       },
       {
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
@@ -465,7 +471,7 @@ const ordDocument = `{
                "type":"edmx",
                "customType":"",
                "mediaType":"application/xml",
-               "url":"https://TEST:443//odata/$metadata",
+               "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -478,7 +484,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"application/json",
-               "url":"/odata/1.0/catalog.svc/$value?type=json",
+               "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -497,6 +503,7 @@ const ordDocument = `{
             }
          ],
          "version":"1.1.0"
+		 {{ .additionalProperties }}
       },
       {
          "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v3",
@@ -534,7 +541,7 @@ const ordDocument = `{
                "type":"edmx",
                "customType":"",
                "mediaType":"application/xml",
-               "url":"/api/openApi.yaml",
+               "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -547,7 +554,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"text/yaml",
-               "url":"https://test.com/odata/1.0/catalog",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -557,6 +564,7 @@ const ordDocument = `{
                ]
             }
          ]
+		 {{ .additionalProperties }}
       },
       {
          "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v4",
@@ -594,7 +602,7 @@ const ordDocument = `{
                "type":"edmx",
                "customType":"",
                "mediaType":"application/xml",
-               "url":"/api/openApi.yaml",
+               "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -607,7 +615,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"text/yaml",
-               "url":"https://test.com/odata/1.0/catalog",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -617,6 +625,7 @@ const ordDocument = `{
                ]
             }
          ]
+		 {{ .additionalProperties }}
       }
    ],
    "eventResources":[
@@ -693,7 +702,7 @@ const ordDocument = `{
                "type":"asyncapi-v2",
                "customType":"",
                "mediaType":"application/json",
-               "url":"http://localhost:8080/asyncApi2.json",
+               "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -713,6 +722,7 @@ const ordDocument = `{
          ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
+		 {{ .additionalProperties }}
       },
       {
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
@@ -789,7 +799,7 @@ const ordDocument = `{
                "type":"asyncapi-v2",
                "customType":"",
                "mediaType":"application/json",
-               "url":"/api/eventCatalog.json",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -808,6 +818,7 @@ const ordDocument = `{
             }
          ],
          "version":"1.1.0"
+		 {{ .additionalProperties }}
       },
       {
          "ordId":"ns3:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
@@ -832,7 +843,7 @@ const ordDocument = `{
                "type":"asyncapi-v2",
                "customType":"",
                "mediaType":"application/json",
-               "url":"http://localhost:8080/asyncApi3.json",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -842,6 +853,7 @@ const ordDocument = `{
                ]
             }
          ]
+		 {{ .additionalProperties }}
       },
       {
          "ordId":"ns4:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
@@ -866,7 +878,7 @@ const ordDocument = `{
                "type":"asyncapi-v2",
                "customType":"",
                "mediaType":"application/json",
-               "url":"http://localhost:8080/asyncApi4.json",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -876,12 +888,14 @@ const ordDocument = `{
                ]
             }
          ]
+		 {{ .additionalProperties }}
       }
    ],
    "tombstones":[
       {
          "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
          "removalDate":"2020-12-02T14:12:59Z"
+		 {{ .additionalProperties }}
       }
    ],
    "vendors":[
@@ -903,6 +917,8 @@ const ordDocument = `{
                "With multiple values"
             ]
          }
+		 {{ .additionalProperties }}
       }
    ]
+   {{ .additionalEntities }}
 }`

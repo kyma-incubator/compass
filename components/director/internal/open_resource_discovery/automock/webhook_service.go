@@ -16,13 +16,13 @@ type WebhookService struct {
 	mock.Mock
 }
 
-// ListForApplication provides a mock function with given fields: ctx, applicationID
-func (_m *WebhookService) ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
-	ret := _m.Called(ctx, applicationID)
+// ListByWebhookType provides a mock function with given fields: ctx, webhookType
+func (_m *WebhookService) ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
+	ret := _m.Called(ctx, webhookType)
 
 	var r0 []*model.Webhook
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Webhook); ok {
-		r0 = rf(ctx, applicationID)
+	if rf, ok := ret.Get(0).(func(context.Context, model.WebhookType) []*model.Webhook); ok {
+		r0 = rf(ctx, webhookType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Webhook)
@@ -30,31 +30,8 @@ func (_m *WebhookService) ListForApplication(ctx context.Context, applicationID 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, applicationID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListForApplicationWithSelectForUpdate provides a mock function with given fields: ctx, applicationID
-func (_m *WebhookService) ListForApplicationWithSelectForUpdate(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
-	ret := _m.Called(ctx, applicationID)
-
-	var r0 []*model.Webhook
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Webhook); ok {
-		r0 = rf(ctx, applicationID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Webhook)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, applicationID)
+	if rf, ok := ret.Get(1).(func(context.Context, model.WebhookType) error); ok {
+		r1 = rf(ctx, webhookType)
 	} else {
 		r1 = ret.Error(1)
 	}

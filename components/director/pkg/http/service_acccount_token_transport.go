@@ -62,3 +62,16 @@ func (tr *serviceAccountTokenTransport) RoundTrip(r *http.Request) (*http.Respon
 
 	return tr.roundTripper.RoundTrip(r)
 }
+
+// Clone clones the underlying transport
+func (tr *serviceAccountTokenTransport) Clone() HTTPRoundTripper {
+	return &serviceAccountTokenTransport{
+		roundTripper: tr.roundTripper.Clone(),
+		path:         tr.path,
+		headerName:   tr.headerName,
+	}
+}
+
+func (tr *serviceAccountTokenTransport) GetTransport() *http.Transport {
+	return tr.roundTripper.GetTransport()
+}

@@ -60,7 +60,7 @@ func (f *formatter) writeString(s string) {
 	}
 }
 
-func (f *formatter) writeIndent() *formatter {
+func (f *formatter) WriteIndent() *formatter {
 	if f.lineHead {
 		f.writeString(strings.Repeat("\t", f.indent))
 	}
@@ -82,7 +82,7 @@ func (f *formatter) WriteNewline() *formatter {
 // WriteWord missing godoc
 func (f *formatter) WriteWord(word string) *formatter {
 	if f.lineHead {
-		f.writeIndent()
+		f.WriteIndent()
 	}
 	if f.padNext {
 		f.writeString(" ")
@@ -96,7 +96,7 @@ func (f *formatter) WriteWord(word string) *formatter {
 // WriteString missing godoc
 func (f *formatter) WriteString(s string) *formatter {
 	if f.lineHead {
-		f.writeIndent()
+		f.WriteIndent()
 	}
 	if f.padNext {
 		f.writeString(" ")

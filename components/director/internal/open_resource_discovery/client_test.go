@@ -180,7 +180,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				require.NoError(t, err)
 
 				executor := &automock.Executor{}
-				executor.On("Execute", mock.Anything, baseURL+ord.WellKnownEndpoint).Return(&http.Response{
+				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "").Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
@@ -212,7 +212,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			Name: "Well-known config fetch with access strategy fails when access strategy executor returns error",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &automock.Executor{}
-				executor.On("Execute", mock.Anything, baseURL+ord.WellKnownEndpoint).Return(nil, testErr).Once()
+				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "").Return(nil, testErr).Once()
 
 				executorProvider := &automock.ExecutorProvider{}
 				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
@@ -312,6 +312,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 			},
 			ExpectedResult:  ord.Documents{},
+			ExpectedErr:     errors.New("unsupported access strategy"),
 			ExpectedBaseURL: baseURL,
 		},
 		{
@@ -370,10 +371,11 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				executorProviderMock = test.ExecutorProviderFunc()
 			}
 
-			client := ord.NewClient(testHTTPClient, executorProviderMock)
+			clientCfg := ord.NewClientConfig(5)
+			client := ord.NewClient(clientCfg, testHTTPClient, executorProviderMock)
 
 			testApp := fixApplicationPage().Data[0]
-			testWebhook := fixWebhooks()[0]
+			testWebhook := fixWebhooksForApplication()[0]
 
 			testWebhook.Auth = test.Credentials
 

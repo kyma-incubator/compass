@@ -2,19 +2,15 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
-
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/tidwall/gjson"
 )
 
@@ -27,7 +23,7 @@ const (
 // TenantFetcher is used to fectch tenants for creation;
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
-	FetchTenantOnDemand(ctx context.Context, tenantID, parentTenantID string) error
+	SynchronizeTenant(ctx context.Context, parentTenantID, tenantID string) error
 }
 
 // TenantSubscriber is used to apply subscription changes for tenants;
@@ -40,56 +36,45 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
-	RegionalHandlerEndpoint       string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
-	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
-	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-	ParentTenantPathParam         string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
-	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
+	RegionalHandlerEndpoint            string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	DependenciesEndpoint               string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
+	TenantPathParam                    string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	ParentTenantPathParam              string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
+	RegionPathParam                    string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	XsAppNamePathParam                 string `envconfig:"APP_TENANT_FETCHER_XSAPPNAME_PATH,default=xsappname"`
+	OmitDependenciesCallbackParam      string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_NAME"`
+	OmitDependenciesCallbackParamValue string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_VALUE"`
 
-	Features features.Config
-
-	TenantFetcherJobIntervalMins time.Duration `envconfig:"default=5m"`
-	FullResyncInterval           time.Duration `envconfig:"default=12h"`
-	ShouldSyncSubaccounts        bool          `envconfig:"default=false"`
-
-	Kubernetes tenantfetcher.KubeConfig
-	Database   persistence.DatabaseConfig
+	Database persistence.DatabaseConfig
 
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
-	TenantInsertChunkSize int `envconfig:"default=500"`
 	TenantProviderConfig
+
+	MetricsPushEndpoint          string                  `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	TenantDependenciesConfigPath string                  `envconfig:"APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH"`
+	RegionToDependenciesConfig   map[string][]Dependency `envconfig:"-"`
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
 type TenantProviderConfig struct {
-	TenantIDProperty               string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
-	SubaccountTenantIDProperty     string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
-	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
-	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
-	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
-	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
-	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountId"`
-	SubscriptionAppNameProperty    string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY,default=subscriptionAppName"`
+	TenantIDProperty                    string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
+	SubaccountTenantIDProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
+	CustomerIDProperty                  string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
+	SubdomainProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
+	TenantProvider                      string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
+	SubscriptionProviderIDProperty      string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderIdProperty"`
+	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountIdProperty"`
+	ConsumerTenantIDProperty            string `envconfig:"APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY,default=consumerTenantIdProperty"`
+	SubscriptionProviderAppNameProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY,default=subscriptionProviderAppNameProperty"`
 }
 
-// EventsConfig contains configuration for Events API requests
-type EventsConfig struct {
-	AccountsRegion    string   `envconfig:"default=central"`
-	SubaccountRegions []string `envconfig:"default=central"`
-
-	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
-	OAuthConfig tenantfetcher.OAuth2Config
-	APIConfig   tenantfetcher.APIConfig
-	QueryConfig tenantfetcher.QueryConfig
-
-	TenantFieldMapping          tenantfetcher.TenantFieldMapping
-	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
-
-	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+// Dependency contains the xsappname to be used in the dependencies callback
+type Dependency struct {
+	Xsappname string `json:"xsappname"`
 }
 
 type handler struct {
@@ -135,8 +120,7 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
-	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID, parentTenantID)
-	if err != nil {
+	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
@@ -164,9 +148,45 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 
 // Dependencies handler returns all external services where once created in Compass, the tenant should be created as well.
 func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request) {
+	ctx := request.Context()
+
+	vars := mux.Vars(request)
+	region, ok := vars[h.config.RegionPathParam]
+	if !ok {
+		log.C(ctx).Error("Region path parameter is missing from request")
+		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
+	var bytes []byte
+	var err error
+
+	if len(h.config.OmitDependenciesCallbackParam) > 0 && len(h.config.OmitDependenciesCallbackParamValue) > 0 {
+		queryType, ok := request.URL.Query()[h.config.OmitDependenciesCallbackParam]
+		if ok && queryType[0] == h.config.OmitDependenciesCallbackParamValue {
+			bytes = []byte("[]")
+		}
+	}
+	if bytes == nil {
+		dependencies, ok := h.config.RegionToDependenciesConfig[region]
+		if !ok {
+			log.C(ctx).Errorf("Invalid region provided: %s", region)
+			http.Error(writer, fmt.Sprintf("Invalid region provided: %s", region), http.StatusBadRequest)
+			return
+		}
+
+		bytes, err = json.Marshal(dependencies)
+		if err != nil {
+			log.C(ctx).WithError(err).Error("Failed to marshal response body for dependencies request")
+			http.Error(writer, InternalServerError, http.StatusInternalServerError)
+			return
+		}
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
-	if _, err := writer.Write([]byte("{}")); err != nil {
-		log.C(request.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
+	if _, err = writer.Write(bytes); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for dependencies request")
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 }
@@ -208,27 +228,29 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 
 func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSubscriptionRequest, error) {
 	properties, err := getProperties(body, map[string]bool{
-		h.config.TenantIDProperty:               true,
-		h.config.SubaccountTenantIDProperty:     false,
-		h.config.SubdomainProperty:              true,
-		h.config.CustomerIDProperty:             false,
-		h.config.SubscriptionProviderIDProperty: true,
-		h.config.ProviderSubaccountIDProperty:   true,
-		h.config.SubscriptionAppNameProperty:    true,
+		h.config.TenantIDProperty:                    true,
+		h.config.SubaccountTenantIDProperty:          false,
+		h.config.SubdomainProperty:                   true,
+		h.config.CustomerIDProperty:                  false,
+		h.config.SubscriptionProviderIDProperty:      true,
+		h.config.ProviderSubaccountIDProperty:        true,
+		h.config.ConsumerTenantIDProperty:            true,
+		h.config.SubscriptionProviderAppNameProperty: true,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	req := &TenantSubscriptionRequest{
-		AccountTenantID:        properties[h.config.TenantIDProperty],
-		SubaccountTenantID:     properties[h.config.SubaccountTenantIDProperty],
-		CustomerTenantID:       properties[h.config.CustomerIDProperty],
-		Subdomain:              properties[h.config.SubdomainProperty],
-		SubscriptionProviderID: properties[h.config.SubscriptionProviderIDProperty],
-		ProviderSubaccountID:   properties[h.config.ProviderSubaccountIDProperty],
-		SubscriptionAppName:    properties[h.config.SubscriptionAppNameProperty],
-		Region:                 region,
+		AccountTenantID:             properties[h.config.TenantIDProperty],
+		SubaccountTenantID:          properties[h.config.SubaccountTenantIDProperty],
+		CustomerTenantID:            properties[h.config.CustomerIDProperty],
+		Subdomain:                   properties[h.config.SubdomainProperty],
+		SubscriptionProviderID:      properties[h.config.SubscriptionProviderIDProperty],
+		ProviderSubaccountID:        properties[h.config.ProviderSubaccountIDProperty],
+		ConsumerTenantID:            properties[h.config.ConsumerTenantIDProperty],
+		SubscriptionProviderAppName: properties[h.config.SubscriptionProviderAppNameProperty],
+		Region:                      region,
 	}
 
 	if req.AccountTenantID == req.SubaccountTenantID {

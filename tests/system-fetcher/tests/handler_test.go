@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+	"github.com/stretchr/testify/assert"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
@@ -45,7 +45,10 @@ import (
 )
 
 const (
-	mockSystemFormat = `{
+	systemFetcherJobName      = "system-fetcher-test"
+	systemFetcherJobNamespace = "compass-system"
+	systemFetcherCronJobName  = "compass-system-fetcher"
+	mockSystemFormat          = `{
 		"systemNumber": "%d",
 		"displayName": "name%d",
 		"productDescription": "description",
@@ -58,19 +61,7 @@ const (
 		"additionalAttributes": {}
 	}`
 
-	nameLabelKey           = "displayName"
-	namePlaceholder        = "name"
-	displayNamePlaceholder = "display-name"
-)
-
-var additionalSystemLabels = directorSchema.Labels{
-	nameLabelKey: "{{name}}",
-}
-
-func TestSystemFetcherSuccess(t *testing.T) {
-	ctx := context.TODO()
-
-	mockSystems := []byte(`[{
+	defaultMockSystems = `[{
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
@@ -93,36 +84,52 @@ func TestSystemFetcherSuccess(t *testing.T) {
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {}
-	}]`)
+	}]`
 
+	nameLabelKey           = "displayName"
+	namePlaceholder        = "name"
+	displayNamePlaceholder = "display-name"
+)
+
+var additionalSystemLabels = directorSchema.Labels{
+	nameLabelKey: "{{name}}",
+}
+
+func TestSystemFetcherSuccess(t *testing.T) {
+	ctx := context.TODO()
+	mockSystems := []byte(defaultMockSystems)
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
-	jobName := "system-fetcher-test"
-	namespace := "compass-system"
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 	}()
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
 	description := "description"
 	baseUrl := "http://mainurl.com"
@@ -134,8 +141,9 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				BaseURL:               &baseUrl,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
+				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
 		},
 		{
 			Application: directorSchema.Application{
@@ -144,7 +152,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", "", false),
 		},
 	}
 
@@ -157,37 +165,217 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
+	ctx := context.TODO()
+	mockSystems := []byte(defaultMockSystems)
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+	defer cleanupMockSystems(t)
+
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	appTemplateName1 := createAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithoutWebhooks(appTemplateName1, intSys.ID))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	appTemplateName2 := createAppTemplateName("temp2")
+	appTemplateInput2 := fixApplicationTemplateWithoutWebhooks(appTemplateName2, intSys.ID)
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
+	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	}()
+
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+
+	description := "description"
+	baseUrl := "http://mainurl.com"
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:                  "name1",
+				Description:           &description,
+				BaseURL:               &baseUrl,
+				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
+				IntegrationSystemID:   &intSys.ID,
+			},
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+		},
+		{
+			Application: directorSchema.Application{
+				Name:         "name2",
+				Description:  &description,
+				BaseURL:      &baseUrl,
+				SystemNumber: str.Ptr("2"),
+			},
+			Labels: applicationLabels("name2", "", "", false),
+		},
+	}
+
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	defer func() {
+		for _, app := range resp.Data {
+			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
+	require.ElementsMatch(t, expectedApps, actualApps)
+
+	for _, app := range resp.Data {
+		if app.Name == "name1" {
+			assert.Equal(t, 1, len(app.Webhooks))
+			assert.Equal(t, fmt.Sprintf("%s%s", baseUrl, "/.well-known/open-resource-discovery"), str.PtrStrToStr(app.Webhooks[0].URL))
+			assert.Equal(t, "sap:cmp-mtls:v1", str.PtrStrToStr(app.Webhooks[0].Auth.AccessStrategy))
+			assert.Equal(t, "OPEN_RESOURCE_DISCOVERY", app.Webhooks[0].Type.String())
+		} else {
+			assert.Equal(t, 0, len(app.Webhooks))
+		}
+	}
+}
+
+func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
+	ctx := context.TODO()
+	mockSystems := []byte(`[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type1",
+		"prop": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {},
+		"additionalAttributes": {}
+	}]`)
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+	defer cleanupMockSystems(t)
+
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	appTemplateName1 := createAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithoutWebhooks(appTemplateName1, intSys.ID))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	appTemplateName2 := createAppTemplateName("temp2")
+	appTemplateInput2 := fixApplicationTemplateWithoutWebhooks(appTemplateName2, intSys.ID)
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
+	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	}()
+
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+
+	description := "description"
+	baseUrl := ""
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:                  "name1",
+				Description:           &description,
+				BaseURL:               &baseUrl,
+				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
+				IntegrationSystemID:   &intSys.ID,
+			},
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+		},
+		{
+			Application: directorSchema.Application{
+				Name:         "name2",
+				Description:  &description,
+				BaseURL:      &baseUrl,
+				SystemNumber: str.Ptr("2"),
+			},
+			Labels: applicationLabels("name2", "", "", false),
+		},
+	}
+
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	defer func() {
+		for _, app := range resp.Data {
+			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
+	require.ElementsMatch(t, expectedApps, actualApps)
+
+	for _, app := range resp.Data {
+		assert.Equal(t, 0, len(app.Webhooks))
+	}
+}
+
 func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	ctx := context.TODO()
 
 	setMultipleMockSystemsResponses(t, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
-	jobName := "system-fetcher-test"
-	namespace := "compass-system"
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 	}()
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
@@ -215,6 +403,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
 				SystemNumber:          app.SystemNumber,
+				IntegrationSystemID:   app.IntegrationSystemID,
 			},
 			Labels: app.Labels,
 		})
@@ -260,31 +449,35 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetSystemFetcherTenantID())
 	defer cleanupMockSystems(t)
 
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
-	jobName := "system-fetcher-test"
-	namespace := "compass-system"
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 	}()
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
 	description := "description"
 	baseUrl := "http://mainurl.com"
@@ -296,8 +489,9 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				BaseURL:               &baseUrl,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
+				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
 		},
 		{
 			Application: directorSchema.Application{
@@ -306,7 +500,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", "", false),
 		},
 	}
 
@@ -317,18 +511,6 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 		}
 	}()
 	require.ElementsMatch(t, expectedApps, actualApps)
-
-	respSystemFetcherTenant, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetSystemFetcherTenantID())
-	defer func() {
-		for _, app := range respSystemFetcherTenant.Data {
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetSystemFetcherTenantID(), app)
-		}
-	}()
-	require.ElementsMatch(t, expectedApps, actualApps)
-
-	defaultTenantAppIds := retrieveAppIdsFromResponse(respDefaultTenant)
-	systemFetcherTenantAppIds := retrieveAppIdsFromResponse(respSystemFetcherTenant)
-	require.ElementsMatch(t, defaultTenantAppIds, systemFetcherTenantAppIds)
 }
 
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
@@ -373,31 +555,35 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
-	jobName := "system-fetcher-test"
-	namespace := "compass-system"
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 	}()
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
 	description := "description"
 	expectedApps := []directorSchema.ApplicationExt{
@@ -407,8 +593,9 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:           &description,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
+				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
 		},
 		{
 			Application: directorSchema.Application{
@@ -416,7 +603,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:  &description,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", "", false),
 		},
 		{
 			Application: directorSchema.Application{
@@ -424,7 +611,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:  &description,
 				SystemNumber: str.Ptr("3"),
 			},
-			Labels: applicationLabels("name1", false),
+			Labels: applicationLabels("name1", "", "", false),
 		},
 	}
 
@@ -441,6 +628,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
 				SystemNumber:          app.SystemNumber,
+				IntegrationSystemID:   app.IntegrationSystemID,
 			},
 			Labels: app.Labels,
 		})
@@ -495,31 +683,35 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
-	namespace := "compass-system"
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, jobName, systemFetcherJobNamespace)
 	defer func(jobName string) {
-		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
 	}(jobName)
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
@@ -532,23 +724,25 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Name:                  "name1",
 				Description:           &description,
 				ApplicationTemplateID: &template.ID,
+				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
 		},
 		{
 			Application: directorSchema.Application{
 				Name:        "name2",
 				Description: &description,
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", "", false),
 		},
 		{
 			Application: directorSchema.Application{
 				Name:                  "name3",
 				Description:           &description,
 				ApplicationTemplateID: &template2.ID,
+				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name3", true),
+			Labels: applicationLabels("name3", appTemplateName2, intSys.ID, true),
 		},
 	}
 
@@ -559,6 +753,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
+				IntegrationSystemID:   app.IntegrationSystemID,
 			},
 			Labels: app.Labels,
 		})
@@ -624,13 +819,13 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), idToDelete)
 
 	jobName = "system-fetcher-test2"
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, jobName, systemFetcherJobNamespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
 	}()
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
 
 	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
 
@@ -648,7 +843,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Name:        "name2",
 				Description: &description,
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", "", false),
 		},
 	}
 
@@ -659,6 +854,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
 				ApplicationTemplateID: app.ApplicationTemplateID,
+				IntegrationSystemID:   app.IntegrationSystemID,
 			},
 			Labels: app.Labels,
 		})
@@ -678,7 +874,7 @@ func waitForDeleteOperation(ctx context.Context, t *testing.T, appID string) {
 	require.NoError(t, err)
 
 	k8sClient, err := client.NewForConfig(cfg)
-	operationsK8sClient := k8sClient.Operations("compass-system")
+	operationsK8sClient := k8sClient.Operations(systemFetcherJobNamespace)
 	opName := fmt.Sprintf("application-%s", appID)
 
 	require.Eventually(t, func() bool {
@@ -737,6 +933,7 @@ func retrieveAppsForTenant(t *testing.T, ctx context.Context, tenant string) (di
 				BaseURL:               app.Application.BaseURL,
 				ApplicationTemplateID: app.ApplicationTemplateID,
 				SystemNumber:          app.SystemNumber,
+				IntegrationSystemID:   app.IntegrationSystemID,
 			},
 			Labels: app.Labels,
 		})
@@ -766,7 +963,7 @@ func getFixExpectedMockSystems(count int, description string) []directorSchema.A
 				Description:  &description,
 				SystemNumber: str.Ptr(fmt.Sprintf("%d", i)),
 			},
-			Labels: applicationLabels(systemName, false),
+			Labels: applicationLabels(systemName, "", "", false),
 		}
 	}
 	return result
@@ -793,24 +990,25 @@ func cleanupMockSystems(t *testing.T) {
 	log.D().Info("Successfully reset mock systems")
 }
 
-func applicationLabels(name string, fromTemplate bool) directorSchema.Labels {
+func applicationLabels(name, appTemplateName, integrationSystemID string, fromTemplate bool) directorSchema.Labels {
 	labels := directorSchema.Labels{
 		"scenarios":            []interface{}{"DEFAULT"},
 		"managed":              "true",
 		"name":                 fmt.Sprintf("mp-%s", name),
-		"integrationSystemID":  "",
 		"ppmsProductVersionId": "12345",
 		"productId":            "XXX",
+		"integrationSystemID":  integrationSystemID,
 	}
 
 	if fromTemplate {
 		labels[nameLabelKey] = name
+		labels["applicationType"] = appTemplateName
 	}
 
 	return labels
 }
 
-func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput {
+func fixApplicationTemplate(name, intSystemID string) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        name,
 		Description: str.Ptr("template description"),
@@ -822,7 +1020,8 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 				Type: directorSchema.WebhookTypeConfigurationChanged,
 				URL:  ptr.String("http://url.com"),
 			}},
-			HealthCheckURL: ptr.String("http://url.valid"),
+			HealthCheckURL:      ptr.String("http://url.valid"),
+			IntegrationSystemID: &intSystemID,
 		},
 		Placeholders: []*directorSchema.PlaceholderDefinitionInput{
 			{
@@ -835,7 +1034,34 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 		Labels: directorSchema.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
-			tenantfetcher.RegionKey:        cfg.SelfRegRegion,
+		},
+	}
+
+	return appTemplateInput
+}
+
+func fixApplicationTemplateWithoutWebhooks(name, intSystemID string) directorSchema.ApplicationTemplateInput {
+	appTemplateInput := directorSchema.ApplicationTemplateInput{
+		Name:        name,
+		Description: str.Ptr("template description"),
+		ApplicationInput: &directorSchema.ApplicationRegisterInput{
+			Name:                fmt.Sprintf("{{%s}}", namePlaceholder),
+			Description:         ptr.String(fmt.Sprintf("{{%s}}", displayNamePlaceholder)),
+			Labels:              additionalSystemLabels,
+			HealthCheckURL:      ptr.String("http://url.valid"),
+			IntegrationSystemID: &intSystemID,
+		},
+		Placeholders: []*directorSchema.PlaceholderDefinitionInput{
+			{
+				Name: namePlaceholder,
+			},
+			{
+				Name: displayNamePlaceholder,
+			},
+		},
+		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
+		Labels: directorSchema.Labels{
+			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
 		},
 	}
 

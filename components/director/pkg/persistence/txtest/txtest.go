@@ -29,11 +29,27 @@ func TransactionerThatSucceeds(persistTx *automock.PersistenceTx) *automock.Tran
 	return transact
 }
 
+// TransactionerThatSucceedsTwice missing godoc
+func TransactionerThatSucceedsTwice(persistTx *automock.PersistenceTx) *automock.Transactioner {
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Twice()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+	return transact
+}
+
 // TransactionerThatDoesARollback missing godoc
 func TransactionerThatDoesARollback(persistTx *automock.PersistenceTx) *automock.Transactioner {
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Once()
 	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+	return transact
+}
+
+// TransactionerThatDoesARollbackTwice missing godoc
+func TransactionerThatDoesARollbackTwice(persistTx *automock.PersistenceTx) *automock.Transactioner {
+	transact := &automock.Transactioner{}
+	transact.On("Begin").Return(persistTx, nil).Twice()
+	transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
 	return transact
 }
 
@@ -62,6 +78,10 @@ func NewTransactionContextGenerator(potentialError error) *txCtxGenerator {
 // ThatSucceeds missing godoc
 func (g txCtxGenerator) ThatSucceeds() (*automock.PersistenceTx, *automock.Transactioner) {
 	return g.ThatSucceedsMultipleTimes(1)
+}
+
+func (g txCtxGenerator) ThatSucceedsTwice() (*automock.PersistenceTx, *automock.Transactioner) {
+	return g.ThatSucceedsMultipleTimes(2)
 }
 
 // ThatSucceedsMultipleTimes missing godoc

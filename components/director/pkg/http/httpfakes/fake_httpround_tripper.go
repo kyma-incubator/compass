@@ -9,6 +9,26 @@ import (
 )
 
 type FakeHTTPRoundTripper struct {
+	CloneStub        func() http.HTTPRoundTripper
+	cloneMutex       sync.RWMutex
+	cloneArgsForCall []struct {
+	}
+	cloneReturns struct {
+		result1 http.HTTPRoundTripper
+	}
+	cloneReturnsOnCall map[int]struct {
+		result1 http.HTTPRoundTripper
+	}
+	GetTransportStub        func() *httpa.Transport
+	getTransportMutex       sync.RWMutex
+	getTransportArgsForCall []struct {
+	}
+	getTransportReturns struct {
+		result1 *httpa.Transport
+	}
+	getTransportReturnsOnCall map[int]struct {
+		result1 *httpa.Transport
+	}
 	RoundTripStub        func(*httpa.Request) (*httpa.Response, error)
 	roundTripMutex       sync.RWMutex
 	roundTripArgsForCall []struct {
@@ -24,6 +44,112 @@ type FakeHTTPRoundTripper struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeHTTPRoundTripper) Clone() http.HTTPRoundTripper {
+	fake.cloneMutex.Lock()
+	ret, specificReturn := fake.cloneReturnsOnCall[len(fake.cloneArgsForCall)]
+	fake.cloneArgsForCall = append(fake.cloneArgsForCall, struct {
+	}{})
+	stub := fake.CloneStub
+	fakeReturns := fake.cloneReturns
+	fake.recordInvocation("Clone", []interface{}{})
+	fake.cloneMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeHTTPRoundTripper) CloneCallCount() int {
+	fake.cloneMutex.RLock()
+	defer fake.cloneMutex.RUnlock()
+	return len(fake.cloneArgsForCall)
+}
+
+func (fake *FakeHTTPRoundTripper) CloneCalls(stub func() http.HTTPRoundTripper) {
+	fake.cloneMutex.Lock()
+	defer fake.cloneMutex.Unlock()
+	fake.CloneStub = stub
+}
+
+func (fake *FakeHTTPRoundTripper) CloneReturns(result1 http.HTTPRoundTripper) {
+	fake.cloneMutex.Lock()
+	defer fake.cloneMutex.Unlock()
+	fake.CloneStub = nil
+	fake.cloneReturns = struct {
+		result1 http.HTTPRoundTripper
+	}{result1}
+}
+
+func (fake *FakeHTTPRoundTripper) CloneReturnsOnCall(i int, result1 http.HTTPRoundTripper) {
+	fake.cloneMutex.Lock()
+	defer fake.cloneMutex.Unlock()
+	fake.CloneStub = nil
+	if fake.cloneReturnsOnCall == nil {
+		fake.cloneReturnsOnCall = make(map[int]struct {
+			result1 http.HTTPRoundTripper
+		})
+	}
+	fake.cloneReturnsOnCall[i] = struct {
+		result1 http.HTTPRoundTripper
+	}{result1}
+}
+
+func (fake *FakeHTTPRoundTripper) GetTransport() *httpa.Transport {
+	fake.getTransportMutex.Lock()
+	ret, specificReturn := fake.getTransportReturnsOnCall[len(fake.getTransportArgsForCall)]
+	fake.getTransportArgsForCall = append(fake.getTransportArgsForCall, struct {
+	}{})
+	stub := fake.GetTransportStub
+	fakeReturns := fake.getTransportReturns
+	fake.recordInvocation("GetTransport", []interface{}{})
+	fake.getTransportMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeHTTPRoundTripper) GetTransportCallCount() int {
+	fake.getTransportMutex.RLock()
+	defer fake.getTransportMutex.RUnlock()
+	return len(fake.getTransportArgsForCall)
+}
+
+func (fake *FakeHTTPRoundTripper) GetTransportCalls(stub func() *httpa.Transport) {
+	fake.getTransportMutex.Lock()
+	defer fake.getTransportMutex.Unlock()
+	fake.GetTransportStub = stub
+}
+
+func (fake *FakeHTTPRoundTripper) GetTransportReturns(result1 *httpa.Transport) {
+	fake.getTransportMutex.Lock()
+	defer fake.getTransportMutex.Unlock()
+	fake.GetTransportStub = nil
+	fake.getTransportReturns = struct {
+		result1 *httpa.Transport
+	}{result1}
+}
+
+func (fake *FakeHTTPRoundTripper) GetTransportReturnsOnCall(i int, result1 *httpa.Transport) {
+	fake.getTransportMutex.Lock()
+	defer fake.getTransportMutex.Unlock()
+	fake.GetTransportStub = nil
+	if fake.getTransportReturnsOnCall == nil {
+		fake.getTransportReturnsOnCall = make(map[int]struct {
+			result1 *httpa.Transport
+		})
+	}
+	fake.getTransportReturnsOnCall[i] = struct {
+		result1 *httpa.Transport
+	}{result1}
 }
 
 func (fake *FakeHTTPRoundTripper) RoundTrip(arg1 *httpa.Request) (*httpa.Response, error) {
@@ -93,6 +219,10 @@ func (fake *FakeHTTPRoundTripper) RoundTripReturnsOnCall(i int, result1 *httpa.R
 func (fake *FakeHTTPRoundTripper) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.cloneMutex.RLock()
+	defer fake.cloneMutex.RUnlock()
+	fake.getTransportMutex.RLock()
+	defer fake.getTransportMutex.RUnlock()
 	fake.roundTripMutex.RLock()
 	defer fake.roundTripMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

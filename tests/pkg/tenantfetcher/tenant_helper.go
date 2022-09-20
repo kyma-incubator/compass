@@ -31,31 +31,34 @@ import (
 )
 
 const (
-	TenantPathParamValue       = "tenant"
-	RegionPathParamValue       = "eu-1"
-	RegionKey                  = "region"
-	DefaultSubdomain           = "default-subdomain"
-	DefaultSubaccountSubdomain = "default-subaccount-subdomain"
+	TenantPathParamValue        = "tenant"
+	RegionPathParamValue        = "eu-1"
+	RegionKey                   = "region"
+	DefaultSubdomain            = "default-subdomain"
+	DefaultSubaccountSubdomain  = "default-subaccount-subdomain"
+	SubscriptionProviderAppName = "subscriptionProviderAppName"
 )
 
 type Tenant struct {
-	TenantID               string
-	SubaccountID           string
-	CustomerID             string
-	Subdomain              string
-	SubscriptionProviderID string
-	ProviderSubaccountID   string
-	SubscriptionAppName    string
+	TenantID                    string
+	SubaccountID                string
+	CustomerID                  string
+	Subdomain                   string
+	SubscriptionProviderID      string
+	ProviderSubaccountID        string
+	ConsumerTenantID            string
+	SubscriptionProviderAppName string
 }
 
 type TenantIDProperties struct {
-	TenantIDProperty               string
-	SubaccountTenantIDProperty     string
-	CustomerIDProperty             string
-	SubdomainProperty              string
-	SubscriptionProviderIDProperty string
-	ProviderSubaccountIdProperty   string
-	SubscriptionAppNameProperty    string
+	TenantIDProperty                    string
+	SubaccountTenantIDProperty          string
+	CustomerIDProperty                  string
+	SubdomainProperty                   string
+	SubscriptionProviderIDProperty      string
+	ProviderSubaccountIdProperty        string
+	ConsumerTenantIDProperty            string
+	SubscriptionProviderAppNameProperty string
 }
 
 // CreateTenantRequest returns a prepared tenant request with token in the header with the necessary tenant-fetcher claims
@@ -89,8 +92,12 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 		body, err = sjson.Set(body, tenantProperties.ProviderSubaccountIdProperty, tenants.ProviderSubaccountID)
 		require.NoError(t, err)
 	}
-	if len(tenants.SubscriptionAppName) > 0 {
-		body, err = sjson.Set(body, tenantProperties.SubscriptionAppNameProperty, tenants.SubscriptionAppName)
+	if len(tenants.ConsumerTenantID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.ConsumerTenantIDProperty, tenants.ConsumerTenantID)
+		require.NoError(t, err)
+	}
+	if len(tenants.SubscriptionProviderAppName) > 0 {
+		body, err = sjson.Set(body, tenantProperties.SubscriptionProviderAppNameProperty, tenants.SubscriptionProviderAppName)
 		require.NoError(t, err)
 	}
 
@@ -116,6 +123,11 @@ func BuildTenantFetcherRegionalURL(regionalHandlerEndpoint, tenantPathParam, reg
 	regionalEndpoint = strings.Replace(regionalEndpoint, fmt.Sprintf("{%s}", regionPathParam), RegionPathParamValue, 1)
 	tenantFetcherFullRegionalURL := tenantFetcherURL + rootAPI + regionalEndpoint
 	return tenantFetcherFullRegionalURL
+}
+
+func BuildRegionalDependenciesURL(tenantFetcherURL, rootAPI, dependenciesEndpoint, regionPathParam string) string {
+	regionalEndpoint := strings.Replace(dependenciesEndpoint, fmt.Sprintf("{%s}", regionPathParam), RegionPathParamValue, 1)
+	return tenantFetcherURL + rootAPI + regionalEndpoint
 }
 
 func DefaultClaims(externalServicesMockURL string) map[string]interface{} {

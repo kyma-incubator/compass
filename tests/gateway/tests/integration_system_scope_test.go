@@ -66,14 +66,14 @@ func TestIntegrationSystemScenario(t *testing.T) {
 				ProviderName: ptr.String("test"),
 			},
 			Labels: graphql.Labels{
-				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
+				testConfig.AppSelfRegDistinguishLabelKey: testConfig.AppSelfRegDistinguishLabelValue,
 				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
 			},
 			Placeholders: nil,
 			AccessLevel:  "GLOBAL",
 		}
 		appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &appTpl)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTpl)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTpl.ID)
 

@@ -1,4 +1,4 @@
-FROM golang:1.18.2-alpine3.16 as builder
+FROM golang:1.18.5-alpine3.16 as builder
 
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests
 WORKDIR ${BASE_TEST_DIR}
@@ -22,10 +22,9 @@ RUN CGO_ENABLED=0 go test -c ./connectivity-adapter/tests -o connectivity-adapte
     CGO_ENABLED=0 go test -c ./istio/tests -o istio.test && \
     CGO_ENABLED=0 go test -c ./director/bench -o director.bench && \
     CGO_ENABLED=0 go test -c ./ord-service/bench -o ord-service.bench && \
-    CGO_ENABLED=0 go test -c ./tenant-fetcher-job/tests -o tenant-fetcher-job.test && \
     CGO_ENABLED=0 go test -c ./pairing-adapter/tests -o pairing-adapter.test
 
-FROM alpine:3.16.0
+FROM alpine:3.16.2
 
 RUN apk add --no-cache curl
 
@@ -42,7 +41,6 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-fetcher.test .
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher-job.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/istio.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/pairing-adapter.test .
 

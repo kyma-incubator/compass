@@ -83,3 +83,35 @@ func TestConverter_FromEntity(t *testing.T) {
 		})
 	}
 }
+
+func Test_converter_MultipleToGraphQL(t *testing.T) {
+	testCases := []struct {
+		Name               string
+		InputFormations    []*model.Formation
+		ExpectedFormations []*graphql.Formation
+	}{
+		{
+			Name:               "Success",
+			InputFormations:    []*model.Formation{&modelFormation},
+			ExpectedFormations: []*graphql.Formation{&graphqlFormation},
+		},
+		{
+			Name:               "Success when input is nil",
+			InputFormations:    nil,
+			ExpectedFormations: nil,
+		},
+		{
+			Name:               "Success when one of the input formations is nil",
+			InputFormations:    []*model.Formation{nil, &modelFormation},
+			ExpectedFormations: []*graphql.Formation{&graphqlFormation},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			result := converter.MultipleToGraphQL(testCase.InputFormations)
+
+			require.ElementsMatch(t, testCase.ExpectedFormations, result)
+		})
+	}
+}

@@ -13,21 +13,21 @@ spec:
           annotations:
             description: Failure for cis1 tenant fetcher job
               minutes
-          expr: max(delta(compass_tenantfetcher_cis1_job_sync_failure_number[1m])) >= 1
+          expr: max(delta(compass_tenantfetcher_cis1_job_sync_failure_number[5m])) >= 1
           for: 1m
           labels:
             severity: critical
         - alert: CompassTenantFetcherCIS2JobFailure
           annotations:
             description: Failure for cis2 tenant fetcher job
-          expr: max(delta(compass_tenantfetcher_cis2_job_sync_failure_number[1m])) >= 1
+          expr: max(delta(compass_tenantfetcher_cis2_job_sync_failure_number[5m])) >= 1
           for: 1m
           labels:
             severity: critical
         - alert: CompassTenantFetcherCIS2SubaccountsJobFailure
           annotations:
             description: Failure for cis2 subaccounts tenant fetcher job
-          expr: max(delta(compass_tenantfetcher_cis2_subaccounts_job_sync_failure_number[1m])) >= 1
+          expr: max(delta(compass_tenantfetcher_cis2_subaccounts_job_sync_failure_number[5m])) >= 1
           for: 1m
           labels:
             severity: critical
@@ -144,3 +144,12 @@ spec:
             > 0.3
           labels:
             severity: warning
+      {{- if eq .Values.global.portieris.isEnabled true }}
+        - alert: CompassPortierisDeniedImage
+          annotations:
+            description: Portieris has denied image
+          expr: delta(portieris_pod_admission_decision_deny_count[5m]) >= 1
+          for: 0m
+          labels:
+            severity: warning
+      {{- end }}

@@ -4,6 +4,7 @@ aliases:
     - StefanCholakov
     - krasish
     - KirilKabakchiev
+    - SvetlinZarev-SAP
   team-raptor:
     - DimitarPetrov
     - PetarTodorovv
@@ -17,8 +18,8 @@ aliases:
     - dzahariev
     - alextargov
     - kaloyanspiridonov
-    - SvetlinZarev-SAP
     - KirilKabakchiev
+    - dragobt
   technical-writers: # Special value respected by kyma's prow installation.
     - alexandra-simeonova
     - Peteva

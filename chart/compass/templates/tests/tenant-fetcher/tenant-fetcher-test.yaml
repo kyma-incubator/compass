@@ -16,13 +16,18 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         app: {{ .Chart.Name }}-tenant-fetcher-tests-app
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
       containers:
         - name: tenant-fetcher-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./tenant-fetcher.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
@@ -30,6 +35,10 @@ spec:
             limits:
               memory: "1Gi"
           env:
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_NAME
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
@@ -42,12 +51,16 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
             - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
               value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
-            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY
-              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionAppNameProperty }}
+            - name: APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
             - name: APP_TENANT_FETCHER_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_EXTERNAL_SERVICES_MOCK_URL
               value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
+            - name: INTERNAL_DIRECTOR_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -62,7 +75,7 @@ spec:
               value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
-            - name: APP_DEPENDENCIES_ENDPOINT
+            - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.dependenciesEndpoint }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
@@ -120,9 +133,9 @@ spec:
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
       restartPolicy: Never

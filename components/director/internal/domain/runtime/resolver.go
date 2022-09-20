@@ -2,16 +2,17 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-
 	"github.com/google/uuid"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -46,12 +47,14 @@ type RuntimeService interface {
 	Update(ctx context.Context, id string, in model.RuntimeUpdateInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error)
+	GetByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
+	UnsafeExtractModifiableLabels(labels map[string]interface{}) (map[string]interface{}, error)
 }
 
 // ScenarioAssignmentService missing godoc
@@ -107,8 +110,8 @@ type SelfRegisterManager interface {
 // SubscriptionService is responsible for service layer operations for subscribing a tenant to a runtime
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SubscriptionService interface {
-	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
-	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
+	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error)
+	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error)
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
@@ -296,10 +299,15 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		return nil, err
 	}
 
+	if convertedIn.Labels, err = r.runtimeService.UnsafeExtractModifiableLabels(convertedIn.Labels); err != nil {
+		return nil, err
+	}
+
 	id := r.uidService.Generate()
 
 	validate := func() error { return nil }
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id, validate)
+
+	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id, validate)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +337,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				label, ok := in.Labels[selfregmanager.RegionLabel].(string)
+				label, ok := selfRegLabels[selfregmanager.RegionLabel].(string)
 				if !ok {
 					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
@@ -341,7 +349,11 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, labels); err != nil {
+	if err = r.checkProviderRuntimeExistence(ctx, selfRegLabels); err != nil {
+		return nil, err
+	}
+
+	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, selfRegLabels); err != nil {
 		return nil, err
 	}
 
@@ -847,6 +859,34 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 		}
 	}
 
+	return nil
+}
+
+func (r *Resolver) checkProviderRuntimeExistence(ctx context.Context, labels map[string]interface{}) error {
+	distinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+	regionLabelKey := selfregmanager.RegionLabel
+
+	distinguishLabelValue, distinguishLabelExists := labels[distinguishLabelKey]
+	region, regionExists := labels[regionLabelKey]
+
+	if distinguishLabelExists && regionExists {
+		filters := []*labelfilter.LabelFilter{
+			labelfilter.NewForKeyWithQuery(distinguishLabelKey, fmt.Sprintf("\"%s\"", distinguishLabelValue)),
+			labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)),
+		}
+
+		log.C(ctx).Infof("Getting runtime for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+		_, err := r.runtimeService.GetByFilters(ctx, filters)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return nil
+			}
+			return errors.Wrap(err, fmt.Sprintf("failed to get runtime for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+		}
+
+		log.C(ctx).Errorf("Cannot have more than one runtime with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+		return errors.New(fmt.Sprintf("cannot have more than one runtime with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+	}
 	return nil
 }
 

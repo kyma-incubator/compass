@@ -27,13 +27,13 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 			{
 				Name: "Success without credentials",
 				FetchRequest: &graphql.FetchRequestInput{
-					URL: testConfig.ExternalServicesMockBaseURL + "external-api/spec",
+					URL: testConfig.ExternalServicesMockBaseURL + "external-api/spec?format=json",
 				},
 			},
 			{
 				Name: "Success with basic credentials",
 				FetchRequest: &graphql.FetchRequestInput{
-					URL: testConfig.ExternalServicesMockBaseURL + "external-api/secured/basic/spec",
+					URL: testConfig.ExternalServicesMockBaseURL + "external-api/secured/basic/spec?format=json",
 					Auth: &graphql.AuthInput{
 						Credential: &graphql.CredentialDataInput{
 							Basic: &graphql.BasicCredentialDataInput{
@@ -47,7 +47,7 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 			{
 				Name: "Success with oauth",
 				FetchRequest: &graphql.FetchRequestInput{
-					URL: testConfig.ExternalServicesMockBaseURL + "external-api/secured/oauth/spec",
+					URL: testConfig.ExternalServicesMockBaseURL + "external-api/secured/oauth/spec?format=yaml",
 					Auth: &graphql.AuthInput{
 						Credential: &graphql.CredentialDataInput{
 							Oauth: &graphql.OAuthCredentialDataInput{
@@ -57,6 +57,12 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			{
+				Name: "Success when spec server is flapping",
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: testConfig.ExternalServicesMockORDServerUnsecuredURL + "external-api/spec/flapping?format=xml",
 				},
 			},
 		}
@@ -90,6 +96,7 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 				defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenant, bndl.ID)
 				bndlID := bndl.ID
 				assertions.AssertSpecInBundleNotNil(t, bndl)
+				require.NotNil(t, bndl.APIDefinitions.Data[0].Spec.APISpec.Data)
 				spec := *bndl.APIDefinitions.Data[0].Spec.APISpec.Data
 
 				var refetchedSpec graphql.APISpecExt

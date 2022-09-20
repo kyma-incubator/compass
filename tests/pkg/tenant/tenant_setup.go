@@ -17,7 +17,8 @@ const (
 	testProvider      = "Compass Tests"
 	testDefaultTenant = "Test Default"
 
-	deleteLabelDefinitions = `DELETE FROM public.label_definitions WHERE tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE external_tenant IN (?));`
+	deleteLabelDefinitionsQuery = `DELETE FROM public.label_definitions WHERE tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE external_tenant IN (?));`
+	deleteFormationsQuery       = `DELETE FROM public.formations WHERE tenant_id IN (SELECT id FROM public.business_tenant_mappings WHERE external_tenant IN (?));`
 
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
@@ -43,6 +44,7 @@ const (
 	ApplicationsForRuntimeWithHiddenAppsTenantName             = "TestApplicationsForRuntimeWithHiddenApps"
 	TestDeleteApplicationIfInScenario                          = "TestDeleteApplicationIfInScenario"
 	TestProviderSubaccount                                     = "TestProviderSubaccount"
+	TestProviderSubaccountRegion2                              = "TestProviderSubaccountRegion2"
 	TestConsumerSubaccount                                     = "TestConsumerSubaccount"
 	TestIntegrationSystemManagedSubaccount                     = "TestIntegrationSystemManagedSubaccount"
 	TestIntegrationSystemManagedAccount                        = "TestIntegrationSystemManagedAccount"
@@ -195,6 +197,14 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 			Parent:         testDefaultTenant,
 		},
+		TestProviderSubaccountRegion2: {
+			Name:           TestProviderSubaccountRegion2,
+			ExternalTenant: "731b7bc4-5472-41d2-a447-e4c0f45de739",
+			ProviderName:   testProvider,
+			Type:           Subaccount,
+			Status:         Active,
+			Parent:         testDefaultTenant,
+		},
 		TestConsumerSubaccount: {
 			Name:           TestConsumerSubaccount,
 			ExternalTenant: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae",
@@ -282,21 +292,27 @@ func (mgr TestTenantsManager) cleanup(ids []string) {
 		log.Fatal(err)
 	}
 
-	query, args, err := sqlx.In(deleteLabelDefinitions, ids)
+	executeCleanupQuery(tx, deleteLabelDefinitionsQuery, ids)
+	executeCleanupQuery(tx, deleteFormationsQuery, ids)
+
+	if err = tx.Commit(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func executeCleanupQuery(tx persistence.PersistenceTx, query string, ids []string) {
+	q, args, err := sqlx.In(query, ids)
 	if err != nil {
 		log.Fatal(err)
 	}
-	query = sqlx.Rebind(sqlx.BindType("postgres"), query)
+
+	q = sqlx.Rebind(sqlx.BindType("postgres"), q)
 
 	// A tenant is considered initialized if there is any labelDefinitions associated with it.
 	// On first request for a given tenant a labelDefinition for key scenario and value DEFAULT is created.
 	// Therefore, once accessed a tenant is considered initialized. That's the reason we clean up (uninitialize) all the tests tenants here.
 	// There is a test relying on this (testing tenants graphql query).
-	if _, err = tx.ExecContext(context.TODO(), query, args...); err != nil {
-		log.Fatal(err)
-	}
-
-	if err = tx.Commit(); err != nil {
+	if _, err = tx.ExecContext(context.TODO(), q, args...); err != nil {
 		log.Fatal(err)
 	}
 }

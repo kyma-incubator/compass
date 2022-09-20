@@ -80,7 +80,7 @@ func main() {
 		auditlogSvc = &auditlog.NoOpService{}
 	}
 
-	correlationTr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
+	correlationTr := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)))
 	tr := proxy.NewTransport(auditlogSink, auditlogSvc, correlationTr)
 	adapterCfg := proxy.AdapterConfig{
 		MsgBodySizeLimit: cfg.AuditLogMessageBodySizeLimit,
@@ -216,7 +216,7 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 				return nil, nil, errors.Wrap(err, "while loading auditlog basic auth configuration")
 			}
 			baseHttpClient := &http.Client{
-				Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+				Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
 				Timeout:   cfg.ClientTimeout,
 			}
 
@@ -235,7 +235,7 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 
 			ccCfg := fillJWTCredentials(oauthCfg)
 			baseClient := &http.Client{
-				Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+				Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
 				Timeout:   cfg.ClientTimeout,
 			}
 			ctx := context.WithValue(context.Background(), oauth2.HTTPClient, baseClient)
@@ -258,12 +258,12 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 				return nil, nil, errors.Wrap(err, "while loading x509 cert for mTLS")
 			}
 
-			transport := httputil.NewCorrelationIDTransport(&http.Transport{
+			transport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(&http.Transport{
 				TLSClientConfig: &tls.Config{
 					Certificates:       []tls.Certificate{*cert},
 					InsecureSkipVerify: mtlsConfig.SkipSSLValidation,
 				},
-			})
+			}))
 
 			mtlsClient := &http.Client{
 				Transport: transport,

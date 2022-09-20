@@ -16,25 +16,34 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         app: {{ .Chart.Name }}-ord-aggregator-tests-app
     spec:
       serviceAccountName: {{ $.Chart.Name }}-e2e-ord-aggregator
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
       containers:
-        - name: ord-aggregator-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+        - name: {{ .Values.global.ordAggregator.containerName }}-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./ord-aggregator.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
+            - name: ORD_AGGREGATOR_CONTAINER_NAME
+              value: "{{ .Values.global.ordAggregator.containerName }}"
             - name: DIRECTOR_GRAPHQL_OAUTH_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
             - name: EXTERNAL_SERVICES_MOCK_UNSECURED_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/.well-known/open-resource-discovery"
+            - name: EXTERNAL_SERVICES_MOCK_UNSECURED_WITH_ADDITIONAL_CONTENT_URL
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent}}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_ABSOLUTE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/test/fullPath"
             - name: EXTERNAL_SERVICES_MOCK_ORD_CERT_SECURED_URL
@@ -43,6 +52,8 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.basicSecuredPort }}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_OAUTH_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}/.well-known/open-resource-discovery"
+            - name: EXTERNAL_SERVICES_MOCK_UNSECURED_MULTI_TENANT_URL
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}/.well-known/open-resource-discovery"
             - name: GLOBAL_REGISTRY_URL
               value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
             - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
@@ -81,6 +92,53 @@ spec:
               value: "{{ .Values.global.ordAggregator.schedule }}"
             - name: DEFAULT_TEST_TENANT
               value: "{{ (index .Values.global.tenants 9).id }}"
+            - name: APP_SUBSCRIPTION_CONFIG_URL
+              value: {{ .Values.global.tests.subscription.subscriptionURL }}
+            - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.oauthUrlKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientIdKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientSecretKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
+              value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
+            - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+              value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: TOKEN_PATH
+              value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
+            - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+            - name: CONSUMER_SUBACCOUNT_LABEL_KEY
+              value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
+            - name: APP_SUBSCRIPTION_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
+            - name: TEST_PROVIDER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+            - name: TEST_CONSUMER_SUBACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
+            - name: TEST_CONSUMER_TENANT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.ordAggregator.skipPattern }}
       restartPolicy: Never
 ---
 apiVersion: v1
@@ -95,6 +153,59 @@ metadata:
     app.kubernetes.io/name: {{ template "name" . }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-aggregator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["jobs"]
+    resourceNames: ["ord-aggregator-test", "ord-aggregator-test2"]
+    verbs: ["get", "delete"]
+  - apiGroups: ["*"]
+    resources: ["jobs"]
+    resourceNames: []
+    verbs: ["create"]
+  - apiGroups: ["*"]
+    resources: ["cronjobs"]
+    resourceNames: ["{{ .Chart.Name }}-{{ .Values.global.ordAggregator.name }}"]
+    verbs: ["get"]
+  - apiGroups: ["operations.compass"]
+    resources: ["operations"]
+    verbs: ["get"]
+  - apiGroups: ["*"]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-aggregator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-ord-aggregator
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Chart.Name }}-e2e-ord-aggregator
+  apiGroup: rbac.authorization.k8s.io
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

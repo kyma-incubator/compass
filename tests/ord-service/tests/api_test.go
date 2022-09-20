@@ -27,8 +27,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -44,7 +42,6 @@ const (
 	tenantHeader       = "Tenant"
 	scenarioName       = "formation-filtering"
 	scenariosLabel     = "scenarios"
-	selectorKey        = "global_subaccount_id"
 	restAPIProtocol    = "rest"
 	odataV2APIProtocol = "odata-v2"
 )
@@ -55,8 +52,8 @@ func TestORDService(t *testing.T) {
 	defaultTestTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
 	secondaryTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
 
-	tenantFilteringTenant := testConfig.AccountTenantID
-	subTenantID := testConfig.SubaccountTenantID
+	tenantFilteringTenant := conf.AccountTenantID
+	subTenantID := conf.SubaccountTenantID
 
 	tenantAPIProtocolFiltering := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 
@@ -64,6 +61,9 @@ func TestORDService(t *testing.T) {
 	appInput := fixtures.CreateApp("tenant1")
 	appInput2 := fixtures.CreateApp("tenant2")
 	appInputInScenario := fixtures.CreateApp("tenant3-in-scenario")
+	appInputInScenario.Labels = map[string]interface{}{
+		conf.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+	}
 	appInputNotInScenario := fixtures.CreateApp("tenant3-no-scenario")
 	appInputAPIProtocolFiltering := fixtures.CreateApp("tenant4")
 	appInputAPIProtocolFiltering.Bundles = append(appInputAPIProtocolFiltering.Bundles, fixtures.FixBundleWithOnlyOdataAPIs())
@@ -137,22 +137,22 @@ func TestORDService(t *testing.T) {
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
 
-	extIssuerCertHttpClient := createHttpClientWithCert(certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
+	extIssuerCertHttpClient := CreateHttpClientWithCert(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
-		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
+		makeRequestWithStatusExpect(t, unsecuredHttpClient, conf.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
 	})
 
 	t.Run("400 when requests to ORD Service do not have tenant header", func(t *testing.T) {
-		makeRequestWithStatusExpect(t, intSystemHttpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", http.StatusBadRequest)
+		makeRequestWithStatusExpect(t, intSystemHttpClient, conf.ORDServiceURL+"/consumptionBundles?$format=json", http.StatusBadRequest)
 	})
 
 	t.Run("400 when requests to ORD Service have wrong tenant header", func(t *testing.T) {
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, conf.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, conf.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
@@ -163,7 +163,7 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service event specification do not have tenant header", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
@@ -174,44 +174,44 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("400 when requests to ORD Service api specification have wrong tenant header", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, conf.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
 		require.Equal(t, 1, len(specs))
 
 		specURL := specs[0].Get("url").String()
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {" "}}, http.StatusBadRequest, conf.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
-		makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"*/*"}, tenantHeader: {defaultTestTenant}})
+		makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"*/*"}, tenantHeader: {defaultTestTenant}})
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to response type specified by Accept header when it provides a specific type", func(t *testing.T) {
-		makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"application/json"}, tenantHeader: {defaultTestTenant}})
+		makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"application/json"}, tenantHeader: {defaultTestTenant}})
 	})
 
 	t.Run("Requesting Packages returns empty", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/packages?$expand=apis,events&$format=json", testConfig.ORDServiceURL), map[string][]string{tenantHeader: {defaultTestTenant}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/packages?$expand=apis,events&$format=json", conf.ORDServiceURL), map[string][]string{tenantHeader: {defaultTestTenant}})
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 	})
 
 	t.Run("Requesting filtering of Bundles that do not have only ODATA APIs", func(t *testing.T) {
 		escapedFilterValue := urlpkg.PathEscape("apis/any(d:d/apiProtocol ne 'odata-v2')")
 
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=%s&$expand=apis&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=%s&$expand=apis&$format=json", conf.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
 
 		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles)-1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, appInputAPIProtocolFiltering.Bundles[0].Name, gjson.Get(respBody, "value.0.title").String())
@@ -235,7 +235,7 @@ func TestORDService(t *testing.T) {
 	t.Run("Requesting filtering of Bundles that have only ODATA APIs", func(t *testing.T) {
 		escapedFilterValue := urlpkg.PathEscape("apis/all(d:d/apiProtocol eq 'odata-v2')")
 
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=%s&$expand=apis&$format=json", testConfig.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/consumptionBundles?$filter=%s&$expand=apis&$format=json", conf.ORDServiceURL, escapedFilterValue), map[string][]string{tenantHeader: {tenantAPIProtocolFiltering}})
 
 		require.Equal(t, len(appInputAPIProtocolFiltering.Bundles)-1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, appInputAPIProtocolFiltering.Bundles[1].Name, gjson.Get(respBody, "value.0.title").String())
@@ -258,7 +258,7 @@ func TestORDService(t *testing.T) {
 
 	for _, resource := range []string{"vendors", "tombstones", "products"} { // This tests assert integrity between ORD Service JPA model and our Database model
 		t.Run(fmt.Sprintf("Requesting %s", resource), func(t *testing.T) {
-			respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/%s?$format=json", testConfig.ORDServiceURL, resource), map[string][]string{tenantHeader: {defaultTestTenant}})
+			respBody := makeRequestWithHeaders(t, intSystemHttpClient, fmt.Sprintf("%s/%s?$format=json", conf.ORDServiceURL, resource), map[string][]string{tenantHeader: {defaultTestTenant}})
 			require.True(t, gjson.Get(respBody, "value").Exists())
 		})
 	}
@@ -270,16 +270,16 @@ func TestORDService(t *testing.T) {
 	// create automatic scenario assigment for subTenant
 	formationInput := directorSchema.FormationInput{Name: scenarioName}
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subTenantID, tenantFilteringTenant)
-	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subTenantID, tenantFilteringTenant)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subTenantID, tenantFilteringTenant)
 
 	// assert no system instances are visible without formation
-	respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {subTenantID}})
+	respBody := makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {subTenantID}})
 	require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 
 	// assign application to scenario
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(appInScenario.ID, scenariosLabel, []string{scenarioName})
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantFilteringTenant, appLabelRequest, nil))
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInScenario.ID, testConfig.DefaultScenarioEnabled)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInScenario.ID, conf.DefaultScenarioEnabled)
 
 	for _, testData := range []struct {
 		msg       string
@@ -297,7 +297,7 @@ func TestORDService(t *testing.T) {
 			apisMap:   apisMap,
 			eventsMap: eventsMap,
 			client:    intSystemHttpClient,
-			url:       testConfig.ORDServiceURL,
+			url:       conf.ORDServiceURL,
 		},
 		{
 			msg:       secondaryTenant + " as integration system",
@@ -306,7 +306,7 @@ func TestORDService(t *testing.T) {
 			apisMap:   apisMap2,
 			eventsMap: eventsMap2,
 			client:    intSystemHttpClient,
-			url:       testConfig.ORDServiceURL,
+			url:       conf.ORDServiceURL,
 		},
 		{
 			msg:       subTenantID + " as integration system",
@@ -315,7 +315,7 @@ func TestORDService(t *testing.T) {
 			apisMap:   apisMapInScenario,
 			eventsMap: eventsMapInScenario,
 			client:    intSystemHttpClient,
-			url:       testConfig.ORDServiceURL,
+			url:       conf.ORDServiceURL,
 		},
 		{
 			msg:       subTenantID + " as Runtime using externally issued certificate",
@@ -324,7 +324,7 @@ func TestORDService(t *testing.T) {
 			apisMap:   apisMapInScenario,
 			eventsMap: eventsMapInScenario,
 			client:    extIssuerCertHttpClient,
-			url:       testConfig.ORDExternalCertSecuredServiceURL,
+			url:       conf.ORDExternalCertSecuredServiceURL,
 		},
 	} {
 
@@ -415,7 +415,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/api/%s/specification", apiID)
-				require.Contains(t, specURL, testConfig.ORDServiceStaticPrefix+specPath)
+				require.Contains(t, specURL, conf.ORDServiceStaticPrefix+specPath)
 
 				respBody := makeRequestWithHeaders(t, testData.client, specURL, testData.headers)
 
@@ -481,7 +481,7 @@ func TestORDService(t *testing.T) {
 
 				specURL := specs[0].Get("url").String()
 				specPath := fmt.Sprintf("/event/%s/specification", eventID)
-				require.Contains(t, specURL, testConfig.ORDServiceStaticPrefix+specPath)
+				require.Contains(t, specURL, conf.ORDServiceStaticPrefix+specPath)
 
 				respBody := makeRequestWithHeaders(t, testData.client, specURL, testData.headers)
 
@@ -648,7 +648,7 @@ func TestORDService(t *testing.T) {
 	}
 
 	t.Run("404 when request to ORD Service for api spec have another tenant header value", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/apis?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
@@ -656,12 +656,12 @@ func TestORDService(t *testing.T) {
 
 		specURL := specs[0].Get("url").String()
 
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {secondaryTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {defaultTestTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {secondaryTenant}}, http.StatusNotFound, conf.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {defaultTestTenant}}, http.StatusOK, conf.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("404 when request to ORD Service for event spec have another tenant header value", func(t *testing.T) {
-		respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
+		respBody := makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}})
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))
 
 		specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
@@ -669,12 +669,12 @@ func TestORDService(t *testing.T) {
 
 		specURL := specs[0].Get("url").String()
 
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {secondaryTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
-		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {defaultTestTenant}}, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {secondaryTenant}}, http.StatusNotFound, conf.ORDServiceDefaultResponseType)
+		request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, specURL, map[string][]string{tenantHeader: {defaultTestTenant}}, http.StatusOK, conf.ORDServiceDefaultResponseType)
 	})
 
 	t.Run("Errors generate user-friendly message", func(t *testing.T) {
-		respBody := request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, testConfig.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}}, http.StatusNotFound, testConfig.ORDServiceDefaultResponseType)
+		respBody := request.MakeRequestWithHeadersAndStatusExpect(t, intSystemHttpClient, conf.ORDServiceURL+"/test?$format=json", map[string][]string{tenantHeader: {defaultTestTenant}}, http.StatusNotFound, conf.ORDServiceDefaultResponseType)
 
 		require.Contains(t, gjson.Get(respBody, "error.message").String(), "Use odata-debug query parameter with value one of the following formats: json,html,download for more information")
 	})
@@ -682,11 +682,10 @@ func TestORDService(t *testing.T) {
 	t.Run("Additional non-ORD details about system instances are exposed", func(t *testing.T) {
 		expectedProductType := fmt.Sprintf("SAP %s", "productType")
 		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
-		appTmplInput.Labels[testConfig.SelfRegDistinguishLabelKey] = []interface{}{testConfig.SelfRegDistinguishLabelValue}
-		appTmplInput.Labels[tenantfetcher.RegionKey] = testConfig.SelfRegRegion
+		appTmplInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &appTmpl)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmpl)
 		require.NoError(t, err)
 
 		appFromTmpl := directorSchema.ApplicationFromTemplateInput{
@@ -712,7 +711,7 @@ func TestORDService(t *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &outputApp)
 		require.NoError(t, err)
 
-		getSystemInstanceURL := fmt.Sprintf("%s/systemInstances(%s)?$format=json", testConfig.ORDServiceURL, outputApp.ID)
+		getSystemInstanceURL := fmt.Sprintf("%s/systemInstances(%s)?$format=json", conf.ORDServiceURL, outputApp.ID)
 
 		respBody := makeRequestWithHeaders(t, intSystemHttpClient, getSystemInstanceURL, map[string][]string{tenantHeader: {defaultTestTenant}})
 
@@ -730,15 +729,15 @@ func TestORDService(t *testing.T) {
 }
 
 func makeRequestWithHeaders(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string) string {
-	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, testConfig.ORDServiceDefaultResponseType)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
 }
 
 func makeRequestWithStatusExpect(t require.TestingT, httpClient *http.Client, url string, expectedHTTPStatus int) string {
-	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, testConfig.ORDServiceDefaultResponseType)
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, conf.ORDServiceDefaultResponseType)
 }
 
-// createHttpClientWithCert returns http client configured with provided client certificate and key
-func createHttpClientWithCert(clientKey crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
+// CreateHttpClientWithCert returns http client configured with provided client certificate and key
+func CreateHttpClientWithCert(clientKey crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
 	return &http.Client{
 		Timeout: 20 * time.Second,
 		Transport: &http.Transport{

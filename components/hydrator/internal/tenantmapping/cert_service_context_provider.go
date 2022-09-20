@@ -41,13 +41,13 @@ type certServiceContextProvider struct {
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
 // There we should only convert the tenant identifier from external to internal.
 func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	externalTenantID := authDetails.AuthID
-
 	consumerType := reqData.ConsumerType()
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumerType,
 	})
 	ctx = log.ContextWithLogger(ctx, logger)
+
+	externalTenantID := authDetails.AuthID
 
 	scopes, err := p.directorScopes(consumerType)
 	if err != nil {
@@ -56,7 +56,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
-	tenantMapping, err := p.directorClient.GetTenantByExternalID(ctx, externalTenantID)
+	tenantMapping, region, err := getTenantWithRegion(ctx, p.directorClient, externalTenantID)
 	if err != nil {
 		if directorErrors.IsGQLNotFoundError(err) {
 			// tenant not in DB yet, might be because we have not imported all subaccounts yet
@@ -66,6 +66,8 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
+
+	authDetails.Region = region
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), p.tenantKeys, scopes, mergeWithOtherScopes,
 		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider)

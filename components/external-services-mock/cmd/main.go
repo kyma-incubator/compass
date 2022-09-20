@@ -12,6 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
 
 	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
@@ -52,10 +55,11 @@ type config struct {
 	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	ORDServers    ORDServers
-	SelfRegConfig selfreg.Config
-	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
-	TrustedTenant string `envconfig:"APP_TRUSTED_TENANT"`
+	DestinationServiceConfig DestinationServiceConfig
+	ORDServers               ORDServers
+	SelfRegConfig            selfreg.Config
+	DefaultTenant            string `envconfig:"APP_DEFAULT_TENANT"`
+	TrustedTenant            string `envconfig:"APP_TRUSTED_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
@@ -64,18 +68,26 @@ type config struct {
 	CAKey  string `envconfig:"APP_CA_KEY"`
 }
 
+// DestinationServiceConfig configuration for destination service endpoints
+type DestinationServiceConfig struct {
+	TenantDestinationsEndpoint string `envconfig:"APP_DESTINATION_TENANT_ENDPOINT,default=/destination-configuration/v1/subaccountDestinations"`
+	SensitiveDataEndpoint      string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
+}
+
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort                    int `envconfig:"default=8082"`
-	UnsecuredPort               int `envconfig:"default=8083"`
-	BasicPort                   int `envconfig:"default=8084"`
-	OauthPort                   int `envconfig:"default=8085"`
-	GlobalRegistryCertPort      int `envconfig:"default=8086"`
-	GlobalRegistryUnsecuredPort int `envconfig:"default=8087"`
-	CertSecuredBaseURL          string
-	CertSecuredGlobalBaseURL    string
+	CertPort                           int `envconfig:"default=8082"`
+	UnsecuredPort                      int `envconfig:"default=8083"`
+	BasicPort                          int `envconfig:"default=8084"`
+	OauthPort                          int `envconfig:"default=8085"`
+	GlobalRegistryCertPort             int `envconfig:"default=8086"`
+	GlobalRegistryUnsecuredPort        int `envconfig:"default=8087"`
+	UnsecuredWithAdditionalContentPort int `envconfig:"default=8088"`
+	UnsecuredMultiTenantPort           int `envconfig:"default=8089"`
+	CertSecuredBaseURL                 string
+	CertSecuredGlobalBaseURL           string
 }
 
 type OAuthConfig struct {
@@ -90,7 +102,7 @@ type BasicCredentialsConfig struct {
 	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
-func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, iss string, scopes []string, extAttributes map[string]interface{}) oauth.ClaimsGetterFunc {
+func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, userNameClaim, iss string, scopes []string, extAttributes map[string]interface{}) oauth.ClaimsGetterFunc {
 	return func() map[string]interface{} {
 		return map[string]interface{}{
 			uniqueAttrKey: uniqueAttrValue,
@@ -99,8 +111,9 @@ func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, is
 			"client_id":   clientID,
 			"tenant":      tenantID,
 			"identity":    identity,
+			"user_name":   userNameClaim,
 			"iss":         iss,
-			"exp":         time.Now().Unix() + int64(time.Minute.Seconds()),
+			"exp":         time.Now().Unix() + int64(time.Minute.Seconds()*10),
 		}
 	}
 }
@@ -114,9 +127,9 @@ func main() {
 
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
-		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{}),
-		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
+		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -128,7 +141,7 @@ func main() {
 	wg.Add(2)
 
 	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 2 * time.Minute,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
@@ -196,6 +209,16 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	configChangeRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
+	// Destination Service handler
+	destinationHandler := destinationfetcher.NewHandler()
+	tenantDestinationEndpoint := cfg.DestinationServiceConfig.TenantDestinationsEndpoint
+	sensitiveDataEndpoint := cfg.DestinationServiceConfig.SensitiveDataEndpoint + "/{name}"
+	router.HandleFunc(tenantDestinationEndpoint,
+		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
+	router.HandleFunc(tenantDestinationEndpoint, destinationHandler.PostDestination).Methods(http.MethodPost)
+	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
+	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
+
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
@@ -253,7 +276,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 
 	// non-isolated and unsecured ORD handlers. NOTE: Do not host document endpoints on this default server in order to ensure tests separation.
 	// Unsecured config pointing to cert secured document
-	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfigWithDocPath(cfg.ORDServers.CertSecuredBaseURL, "/open-resource-discovery/v1/documents/example2", "sap:cmp-mtls:v1"))
+	router.HandleFunc("/cert", ord_aggregator.HandleFuncOrdConfigWithDocPath(cfg.ORDServers.CertSecuredBaseURL, "/open-resource-discovery/v1/documents/example2", "sap:cmp-mtls:v1", false))
 
 	selfRegisterHandler := selfreg.NewSelfRegisterHandler(cfg.SelfRegConfig)
 	selfRegRouter := router.PathPrefix(cfg.SelfRegConfig.Path).Subrouter()
@@ -281,6 +304,12 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
+	notificationHandler := notification.NewHandler()
+	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback", notificationHandler.GetResponses).Methods(http.MethodGet)
+	router.HandleFunc("/formation-callback/cleanup", notificationHandler.Cleanup).Methods(http.MethodDelete)
+
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),
 		Handler: router,
@@ -292,7 +321,9 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initCertSecuredORDServer(cfg))
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
+	servers = append(servers, initMultiTenantORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
+	servers = append(servers, initUnsecuredORDServerWithAdditionalContent(cfg))
 	servers = append(servers, initSecuredGlobalRegistryORDServer(cfg))
 	servers = append(servers, initUnsecuredGlobalRegistryORDServer(cfg))
 	return servers
@@ -301,7 +332,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 func initCertSecuredORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1"))
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "sap:cmp-mtls:v1", false))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
 	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(cfg.ORDServers.CertSecuredBaseURL, "sap:cmp-mtls:v1"))
@@ -318,8 +349,8 @@ func initCertSecuredORDServer(cfg config) *http.Server {
 func initUnsecuredORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
-	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "/open-resource-discovery/v1/documents/example2", "open"))
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open", false))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "/open-resource-discovery/v1/documents/example2", "open", false))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open"))
 	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open"))
@@ -329,6 +360,46 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredPort),
+		Handler: router,
+	}
+}
+
+func initMultiTenantORDServer(cfg config) *http.Server {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open", true))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredMultiTenantPort), "/open-resource-discovery/v1/documents/example2", "open", true))
+
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredMultiTenantPort), "open"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredMultiTenantPort), "open"))
+
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredMultiTenantPort),
+		Handler: router,
+	}
+}
+
+func initUnsecuredORDServerWithAdditionalContent(cfg config) *http.Server {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open", false))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "/open-resource-discovery/v1/documents/example2", "open", false))
+
+	testProperties := `"testProperty1": "testValue1", "testProperty2": "testValue2", "testProperty3": "testValue3"`
+	additionalTestEntity := fmt.Sprintf(`,"testEntity": { %s }`, testProperties)
+	additionalTestProperties := fmt.Sprintf(`,%s`, testProperties)
+
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocumentWithAdditionalContent(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "open", additionalTestEntity, additionalTestProperties))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocumentWithAdditionalContent(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "open", additionalTestEntity, additionalTestProperties))
+
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredWithAdditionalContentPort),
 		Handler: router,
 	}
 }
@@ -360,7 +431,7 @@ func initBasicSecuredORDServer(cfg config) *http.Server {
 
 	configRouter := router.PathPrefix("/.well-known").Subrouter()
 	configRouter.Use(basicAuthMiddleware(cfg.Username, cfg.Password))
-	configRouter.HandleFunc("/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
+	configRouter.HandleFunc("/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open", false))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.BasicPort), "open"))
 
@@ -378,7 +449,7 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	configRouter := router.PathPrefix("/.well-known").Subrouter()
 	configRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
-	configRouter.HandleFunc("/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
+	configRouter.HandleFunc("/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open", false))
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.OauthPort), "open"))
 

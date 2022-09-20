@@ -21,11 +21,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
@@ -39,33 +41,11 @@ var (
 	certSecuredGraphQLClient *graphql.Client
 )
 
-type TenantConfig struct {
-	TenantFetcherURL             string
-	RootAPI                      string
-	RegionalHandlerEndpoint      string
-	TenantPathParam              string
-	RegionPathParam              string
-	Region                       string
-	TenantFetcherFullRegionalURL string `envconfig:"-"`
-}
-
-type SubscriptionConfig struct {
-	URL                                string
-	TokenURL                           string
-	ClientID                           string
-	ClientSecret                       string
-	ProviderLabelKey                   string
-	ProviderID                         string
-	SelfRegisterLabelKey               string
-	SelfRegisterLabelValuePrefix       string
-	PropagatedProviderSubaccountHeader string
-}
-
 type config struct {
-	TenantConfig
-	CertLoaderConfig certloader.Config
+	TFConfig           subscription.TenantFetcherConfig
+	CertLoaderConfig   certloader.Config
+	SubscriptionConfig subscription.Config
 	certprovider.ExternalCertProviderConfig
-	SubscriptionConfig
 	ExternalServicesMockBaseURL      string
 	DirectorExternalCertSecuredURL   string
 	ORDServiceURL                    string
@@ -86,17 +66,23 @@ type config struct {
 	TestProviderSubaccountID         string
 	TestConsumerSubaccountID         string
 	TestConsumerTenantID             string
-	SelfRegDistinguishLabelKey       string
-	SelfRegDistinguishLabelValue     string
-	SelfRegRegion                    string
+	ApplicationTypeLabelKey          string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	DestinationAPIConfig             clients.DestinationServiceAPIConfig
+	DestinationsConfig               cfg.DestinationsConfig
+	DestinationConsumerSubdomain     string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 }
 
-var testConfig config
+var conf config
 
 func TestMain(m *testing.M) {
-	err := envconfig.Init(&testConfig)
+	err := envconfig.Init(&conf)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
+	}
+
+	err = conf.DestinationsConfig.MapInstanceConfigs()
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while loading destination instances config"))
 	}
 
 	tenant.TestTenants.Init()
@@ -104,7 +90,7 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	certCache, err = certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	certCache, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
@@ -112,9 +98,9 @@ func TestMain(m *testing.M) {
 	if err := util.WaitForCache(certCache); err != nil {
 		log.D().Fatal(err)
 	}
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
 
-	testConfig.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
+	conf.TFConfig.FullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(conf.TFConfig.RegionalHandlerEndpoint, conf.TFConfig.TenantPathParam, conf.TFConfig.RegionPathParam, conf.TFConfig.URL, conf.TFConfig.RootAPI)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

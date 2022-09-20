@@ -1,0 +1,4 @@
+apiVersion: v1
+description: DB Dump
+name: dbdump
+version: 0.1.0

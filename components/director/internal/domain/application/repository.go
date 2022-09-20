@@ -42,6 +42,7 @@ type pgRepository struct {
 	globalGetter          repo.SingleGetterGlobal
 	globalDeleter         repo.DeleterGlobal
 	lister                repo.Lister
+	listerGlobal          repo.ListerGlobal
 	deleter               repo.Deleter
 	pageableQuerier       repo.PageableQuerier
 	globalPageableQuerier repo.PageableQuerierGlobal
@@ -62,6 +63,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
 		deleter:               repo.NewDeleter(applicationTable),
 		lister:                repo.NewLister(applicationTable, applicationColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.Application, applicationTable, applicationColumns),
 		pageableQuerier:       repo.NewPageableQuerier(applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(applicationTable, applicationColumns),
@@ -235,6 +237,27 @@ func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filte
 	return r.multipleFromEntities(entities)
 }
 
+// ListAllByApplicationTemplateID retrieves all applications which have the given app template id
+func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
+	var appsCollection EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("app_template_id", applicationTemplateID),
+	}
+	if err := r.listerGlobal.ListGlobal(ctx, &appsCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(appsCollection))
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+
+	return items, nil
+}
+
 // List missing godoc
 func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
@@ -346,6 +369,91 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		Data:       items,
 		TotalCount: totalCount,
 		PageInfo:   page}, nil
+}
+
+// ListByScenariosNoPaging lists all applications that are in any of the given scenarios
+func (r *pgRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
+	tenantUUID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
+	}
+
+	var entities EntityCollection
+
+	// Scenarios query part
+	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+	}
+
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	var conditions repo.Conditions
+	if scenariosSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
+	}
+
+	if err = r.lister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(entities))
+
+	for _, appEnt := range entities {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+
+	return items, nil
+}
+
+// ListByScenariosAndIDs lists all apps with given IDs that are in any of the given scenarios
+func (r *pgRepository) ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error) {
+	if len(scenarios) == 0 || len(ids) == 0 {
+		return nil, nil
+	}
+	tenantUUID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
+	}
+
+	var entities EntityCollection
+
+	// Scenarios query part
+	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+	}
+
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	var conditions repo.Conditions
+	if scenariosSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
+	}
+
+	conditions = append(conditions, repo.NewInConditionForStringValues("id", ids))
+
+	if err := r.lister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(entities))
+
+	for _, appEnt := range entities {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+
+	return items, nil
 }
 
 // Create missing godoc

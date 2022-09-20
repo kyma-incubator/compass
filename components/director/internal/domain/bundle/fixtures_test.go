@@ -207,11 +207,17 @@ func fixBundleModelWithID(id, name, desc string) *model.Bundle {
 
 func fixGQLBundle(id, name, desc string) *graphql.Bundle {
 	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
+	var correlationIDsAsSlice []string
+	err := json.Unmarshal([]byte(correlationIDs), &correlationIDsAsSlice)
+	if err != nil {
+		panic(err)
+	}
 	return &graphql.Bundle{
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: &schema,
 		DefaultInstanceAuth:            fixGQLAuth(),
+		CorrelationIDs:                 correlationIDsAsSlice,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -385,7 +391,7 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 		Valid:  true,
 	}
 	authSQL := sql.NullString{
-		String: `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null},"AccessStrategy":null,"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}},"OneTimeToken":null,"CertCommonName":""}`,
+		String: `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null,"CertificateOAuth":null},"AccessStrategy":null,"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null,"CertificateOAuth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}},"OneTimeToken":null,"CertCommonName":""}`,
 		Valid:  true,
 	}
 
@@ -430,7 +436,7 @@ func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Va
 }
 
 func fixDefaultAuth() string {
-	return `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null},"AccessStrategy":null,"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}},"OneTimeToken":null,"CertCommonName":""}`
+	return `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null,"CertificateOAuth":null},"AccessStrategy":null,"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null,"CertificateOAuth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}},"OneTimeToken":null,"CertCommonName":""}`
 }
 
 func inputSchemaString() string {

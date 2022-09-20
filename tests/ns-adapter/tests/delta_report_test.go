@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const appTemplateName = "SAP S/4HANA On-Premise"
+
 type System struct {
 	Protocol     string `json:"protocol"`
 	Host         string `json:"host"`
@@ -287,7 +289,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Register application
 		appFromTmpl := createApplicationFromTemplateInput(
-			"on-promise-system-1", "S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
+			"on-promise-system-1", appTemplateName, "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
 			"nonSAPsys", "127.0.0.1:3000", "mail", "", "reachable")
 		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 		require.NoError(t, err)
@@ -336,7 +338,7 @@ func TestDeltaReport(stdT *testing.T) {
 
 		// Register application
 		appFromTmpl := createApplicationFromTemplateInput(
-			"on-promise-system-1", "S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
+			"on-promise-system-1", appTemplateName, "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
 			"nonSAPsys", "127.0.0.1:3000", "mail", "", "reachable")
 		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 		require.NoError(t, err)
@@ -571,7 +573,7 @@ func createApplicationFromTemplateInput(name, templateName, description, subacco
 }
 
 func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, systemProtocol, description string, label map[string]interface{}, systemStatus string) {
-	require.Equal(t, appType, app.Labels["applicationType"])
+	require.Equal(t, appType, app.Labels["systemType"])
 	require.Equal(t, systemProtocol, app.Labels["systemProtocol"])
 	require.Equal(t, description, *app.Description)
 	require.Equal(t, label, app.Labels["scc"])

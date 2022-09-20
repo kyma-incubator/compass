@@ -21,14 +21,18 @@ const (
 	// User missing godoc
 	User            ConsumerType = "Static User"
 	TechnicalClient ConsumerType = "TechnicalClient"
+	// SuperAdmin is a consumer type that is used only in our tests
+	SuperAdmin ConsumerType = "Super Admin"
 )
 
 // Consumer missing godoc
 type Consumer struct {
-	ConsumerID   string `json:"ConsumerID"`
-	ConsumerType `json:"ConsumerType"`
-	Flow         oathkeeper.AuthFlow `json:"Flow"`
-	OnBehalfOf   string              `json:"onBehalfOf"`
+	ConsumerID    string `json:"ConsumerID"`
+	ConsumerType  `json:"ConsumerType"`
+	Flow          oathkeeper.AuthFlow `json:"Flow"`
+	OnBehalfOf    string              `json:"onBehalfOf"`
+	Region        string              `json:"region"`
+	TokenClientID string              `json:"tokenClientID"`
 }
 
 // MapSystemAuthToConsumerType missing godoc
@@ -44,6 +48,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return IntegrationSystem, nil
 	case model.TechnicalClientReference:
 		return TechnicalClient, nil
+	case model.SuperAdminReference:
+		return SuperAdmin, nil
 	}
 	return "", apperrors.NewInternalError("unknown reference object type")
 }

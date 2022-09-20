@@ -37,20 +37,20 @@ func (_m *SubscriptionService) DetermineSubscriptionFlow(ctx context.Context, pr
 	return r0, r1
 }
 
-// SubscribeTenantToApplication provides a mock function with given fields: ctx, subaccountTenantID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName
-func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context, subaccountTenantID string, subscribedSubaccountID string, providerSubaccountID string, region string, subscribedAppName string) (bool, error) {
-	ret := _m.Called(ctx, subaccountTenantID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName)
+// SubscribeTenantToApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName
+func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context, providerID string, subaccountTenantID string, consumerTenantID string, region string, subscribedAppName string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName)
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) bool); ok {
-		r0 = rf(ctx, subaccountTenantID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName)
+		r0 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, subaccountTenantID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName)
+		r1 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -58,20 +58,20 @@ func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context,
 	return r0, r1
 }
 
-// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, region
-func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
-	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName
+func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) bool); ok {
-		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) bool); ok {
+		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
-		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string) error); ok {
+		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -79,20 +79,20 @@ func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, pro
 	return r0, r1
 }
 
-// UnsubscribeTenantFromApplication provides a mock function with given fields: ctx, subaccountTenantID, providerSubaccountID, region
-func (_m *SubscriptionService) UnsubscribeTenantFromApplication(ctx context.Context, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
-	ret := _m.Called(ctx, subaccountTenantID, providerSubaccountID, region)
+// UnsubscribeTenantFromApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, region
+func (_m *SubscriptionService) UnsubscribeTenantFromApplication(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, region)
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) bool); ok {
-		r0 = rf(ctx, subaccountTenantID, providerSubaccountID, region)
+		r0 = rf(ctx, providerID, subaccountTenantID, region)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, subaccountTenantID, providerSubaccountID, region)
+		r1 = rf(ctx, providerID, subaccountTenantID, region)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -100,20 +100,20 @@ func (_m *SubscriptionService) UnsubscribeTenantFromApplication(ctx context.Cont
 	return r0, r1
 }
 
-// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, region
-func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
-	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region
+func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) bool); ok {
-		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) bool); ok {
+		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
-		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string) error); ok {
+		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
 	} else {
 		r1 = ret.Error(1)
 	}

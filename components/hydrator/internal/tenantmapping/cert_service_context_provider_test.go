@@ -25,11 +25,12 @@ import (
 )
 
 func TestCertServiceContextProvider(t *testing.T) {
+	emptyCtx := context.TODO()
+	tenantID := uuid.New().String()
+
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
 
-	emptyCtx := context.TODO()
-	tenantID := uuid.New().String()
 	authDetails := oathkeeper.AuthDetails{AuthID: tenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
 	scopes := []string{"runtime:read", "runtime:write", "tenant:read"}
@@ -51,6 +52,9 @@ func TestCertServiceContextProvider(t *testing.T) {
 		InternalID: internalSubaccount,
 		Name:       str.Ptr("testSubaccount"),
 		Type:       "subaccount",
+		Labels: map[string]interface{}{
+			"region": "eu-1",
+		},
 	}
 
 	testCases := []struct {
@@ -120,6 +124,25 @@ func TestCertServiceContextProvider(t *testing.T) {
 		},
 		{
 			Name: "Success when internal consumer ID is provided",
+			DirectorClient: func() *automock.DirectorClient {
+				client := &automock.DirectorClient{}
+				client.On("GetTenantByExternalID", mock.Anything, tenantID).Return(testSubaccount, nil).Once()
+				return client
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:       reqDataWithInternalConsumerID,
+			AuthDetailsInput:   authDetails,
+			ExpectedScopes:     scopesString,
+			ExpectedInternalID: internalSubaccount,
+			ExpectedConsumerID: internalConsumerID,
+			ExpectedErr:        nil,
+		},
+		{
+			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
 			DirectorClient: func() *automock.DirectorClient {
 				client := &automock.DirectorClient{}
 				client.On("GetTenantByExternalID", mock.Anything, tenantID).Return(testSubaccount, nil).Once()

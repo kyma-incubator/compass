@@ -18,6 +18,11 @@ query {
                 username
                 password
               }
+              ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
+                url
+              }
               ... on OAuthCredentialData {
                 clientId
                 clientSecret
@@ -45,6 +50,11 @@ query {
                   ... on OAuthCredentialData {
                     clientId
                     clientSecret
+                    url
+                  }
+                  ... on CertificateOAuthCredentialData {
+                    clientId
+                    certificate
                     url
                   }
                 }

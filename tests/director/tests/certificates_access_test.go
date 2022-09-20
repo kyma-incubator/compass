@@ -3,7 +3,10 @@ package tests
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
@@ -18,7 +21,22 @@ import (
 func TestIntegrationSystemAccess(t *testing.T) {
 	// Build graphql director client configured with certificate
 	ctx := context.Background()
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+
+	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestIntSystemOUSubaccount, conf.ExternalCertCommonName, conf.ExternalCertTestIntSystemCommonName)
+
+	// We need an externally issued cert with a subject that is not part of the access level mappings
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestIntSystemSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+	}
+
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 
 	testCases := []struct {
@@ -82,14 +100,15 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 			name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
 			appTemplateName := createAppTemplateName(name)
-			appTmplInput := fixAppTemplateInput(appTemplateName)
+			appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
-			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, &at)
+			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, at)
 			if test.expectErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 				require.NotEmpty(t, at.ID)
+				require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, at.Labels[tenantfetcher.RegionKey])
 			}
 		})
 	}

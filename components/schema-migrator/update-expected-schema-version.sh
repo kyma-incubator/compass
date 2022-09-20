@@ -36,7 +36,7 @@ do
     esac
 done
 
-LATEST_SCHEMA=$(ls -lr migrations/${MIGRATION_PATH} | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
+LATEST_SCHEMA=$(ls migrations/${MIGRATION_PATH} | tail -n 1 | grep -o -E '^[0-9]+' | sed -e 's/^0\+//')
 
 kubectl get -n compass-system configmap ${CONFIGMAP_NAME} -o json | \
 jq --arg e "$LATEST_SCHEMA"  '.data.schemaVersion = $e'  > temp_configmap.json

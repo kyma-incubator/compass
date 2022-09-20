@@ -21,7 +21,7 @@ spec:
         name: monitoring-alertmanager
         namespace: kyma-system
         pathPrefix: /
-        port: web
+        port: http-web
         scheme: https
         tlsConfig:
           caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
@@ -100,51 +100,6 @@ function patchDeploymentsToInjectSidecar() {
 }
 
 function enableNodeExporterMTLS() {
-  # Note: The two CRDs described in the two variables below are left as they are with all their properties
-  # since it's risky to omit some properties due to different strategic merge patch strategies.
-  # https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/#notes-on-the-strategic-merge-patch
-
-  monitor=$(cat <<"EOF"
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  annotations:
-    meta.helm.sh/release-name: monitoring
-    meta.helm.sh/release-namespace: kyma-system
-  labels:
-    app: monitoring-node-exporter
-    app.kubernetes.io/instance: monitoring
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: monitoring
-    chart: monitoring-1.0.0
-    helm.sh/chart: monitoring-1.0.0
-    release: monitoring
-  name: monitoring-node-exporter
-  namespace: kyma-system
-spec:
-  endpoints:
-  - metricRelabelings:
-    - action: keep
-      regex: ^(go_goroutines|go_memstats_alloc_bytes|go_memstats_heap_alloc_bytes|go_memstats_heap_inuse_bytes|go_memstats_heap_sys_bytes|go_memstats_stack_inuse_bytes|node_.*|process_cpu_seconds_total|process_max_fds|process_open_fds|process_resident_memory_bytes|process_start_time_seconds|process_virtual_memory_bytes)$
-      sourceLabels:
-      - __name__
-    port: metrics
-    scheme: https
-    tlsConfig:
-      caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
-      certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
-      keyFile: /etc/prometheus/secrets/istio.default/key.pem
-      insecureSkipVerify: true
-  jobLabel: jobLabel
-  selector:
-    matchLabels:
-      app: prometheus-node-exporter
-      release: monitoring
-
-EOF
-  )
-  echo "$monitor" > monitor.yaml
-
   # The patches around the DaemonSet involve an addition of two init containers that together setup certificates
   # for the node-exporter application to use. There are also two new mounts - a shared directory (node-certs)
   # and the Istio CA secret (istio-certs).
@@ -295,68 +250,50 @@ EOF
 
   kubectl get secret istio-ca-secret --namespace=istio-system -o yaml | grep -v '^\s*namespace:\s' | kubectl replace --force --namespace=kyma-system -f -
 
-  kubectl apply -f monitor.yaml
   kubectl apply -f daemonset.yaml
 
-  rm monitor.yaml
   rm daemonset.yaml
 } 
 
 function patchKymaServiceMonitorsForMTLS() {
   kymaSvcMonitors=(
     istio-component-monitor
-    kiali
-    logging-fluent-bit
-    logging-loki
     monitoring-alertmanager
-    monitoring-apiserver
-    monitoring-grafana
     monitoring-kube-state-metrics
-    monitoring-kubelet
-    monitoring-node-exporter
     monitoring-operator
     monitoring-prometheus
     monitoring-prometheus-istio-server-server
-    ory-hydra-maester
-    ory-oathkeeper-maester
-    tracing-jaeger
-    tracing-jaeger-operator
+    monitoring-prometheus-node-exporter
+    monitoring-prometheus-pushgateway
     tracing-metrics
+    ory-oathkeeper-maester
   )
 
   crd="servicemonitors.monitoring.coreos.com"
   namespace="kyma-system"
-  patchContent=$(cat <<"EOF"
-    scheme: https
-    tlsConfig:
-      caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
-      certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
-      keyFile: /etc/prometheus/secrets/istio.default/key.pem
-      insecureSkipVerify: true
-EOF
-  )
-
-  echo "$patchContent" > tmp_patch_content.yaml
+  scheme="https"
+  tlsConfig='{
+    "caFile": "/etc/prometheus/secrets/istio.default/root-cert.pem",
+    "certFile": "/etc/prometheus/secrets/istio.default/cert-chain.pem",
+    "keyFile": "/etc/prometheus/secrets/istio.default/key.pem",
+    "insecureSkipVerify": true
+  }'
 
   for sm in "${kymaSvcMonitors[@]}"; do
     if kubectl get ${crd} -n ${namespace} "${sm}" > /dev/null; then
-      kubectl get ${crd} -n ${namespace} "${sm}" -o yaml > "${sm}.yaml"
+      kubectl get ${crd} -n ${namespace} "${sm}" -o json > "${sm}.json"
 
-      if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' -e '/ port:/r tmp_patch_content.yaml' "${sm}.yaml"
-        sed -i '' -e '/ path:/r tmp_patch_content.yaml' "${sm}.yaml"
-      else # assume Linux otherwise
-        sed -i '/ port:/r tmp_patch_content.yaml' "${sm}.yaml"
-        sed -i '/ path:/r tmp_patch_content.yaml' "${sm}.yaml"
-      fi
+      cp "${sm}.json" tmp.json
+      jq --arg newSchema "$scheme" '.spec.endpoints[].scheme = $newSchema' tmp.json > "${sm}.json"
+      cp "${sm}.json" tmp.json
+      jq --argjson newTlsConfig "$tlsConfig" '.spec.endpoints[].tlsConfig = $newTlsConfig' tmp.json > "${sm}.json"
+      rm tmp.json
 
-      kubectl apply -f "${sm}.yaml" || true
+      kubectl apply -f "${sm}.json" || true
 
-      rm "${sm}.yaml"
+      rm "${sm}.json"
     fi
   done
-
-  rm tmp_patch_content.yaml
 }
 
 function removeKymaPeerAuthsForPrometheus() {
@@ -378,4 +315,3 @@ function removeKymaPeerAuthsForPrometheus() {
     kubectl delete ${crd} -n ${namespace} "${pa}" || true
   done
 }
-

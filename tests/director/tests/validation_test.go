@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -448,7 +450,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	ctx := context.Background()
 
 	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
-	invalidInput := fixAppTemplateInput("")
+	invalidInput := fixAppTemplateInputWithDefaultDistinguishLabel("")
 	invalidInput.Placeholders = []*graphql.PlaceholderDefinitionInput{}
 	invalidInput.ApplicationInput = &appCreateInput
 	invalidInput.AccessLevel = graphql.ApplicationTemplateAccessLevelGlobal
@@ -472,12 +474,13 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appTemplateName := createAppTemplateName("validation-test-app-tpl")
-	input := fixAppTemplateInput(appTemplateName)
+	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTpl)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTpl.ID)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTpl.Labels[tenantfetcher.RegionKey])
 
 	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
@@ -506,12 +509,13 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appTemplateName := createAppTemplateName("validation-app")
-	input := fixAppTemplateInput(appTemplateName)
+	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &tmpl)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, tmpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, tmpl.ID)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, tmpl.Labels[tenantfetcher.RegionKey])
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{}
 	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)

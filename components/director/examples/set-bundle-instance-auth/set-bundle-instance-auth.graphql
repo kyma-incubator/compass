@@ -19,6 +19,11 @@ mutation {
           username
           password
         }
+        ... on CertificateOAuthCredentialData {
+          clientId
+          certificate
+          url
+        }
         ... on OAuthCredentialData {
           clientId
           clientSecret
@@ -46,6 +51,11 @@ mutation {
             ... on OAuthCredentialData {
               clientId
               clientSecret
+              url
+            }
+            ... on CertificateOAuthCredentialData {
+              clientId
+              certificate
               url
             }
           }

@@ -23,6 +23,10 @@ spec:
         control-plane: controller-manager
     spec:
       serviceAccountName: {{ template "fullname" . }}
+      {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+      {{ end }}
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:8443
@@ -49,6 +53,10 @@ spec:
             value: "{{ .Values.http.client.skipSSLValidation }}"
           - name: EXTERNAL_CLIENT_CERT_SECRET
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+          - name: EXTERNAL_CLIENT_CERT_KEY
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+          - name: EXTERNAL_CLIENT_KEY_KEY
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
         name: {{ .Chart.Name }}
         ports:

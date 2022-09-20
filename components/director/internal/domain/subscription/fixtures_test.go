@@ -3,7 +3,10 @@ package subscription_test
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -108,9 +111,26 @@ func fixModelApplicationCreateInputWithLabels(name, subscribedSubaccountID strin
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
+		LocalTenantID:  str.Ptr(consumerTenantID),
 		Labels: map[string]interface{}{
 			"managed":                          "false",
 			scenarioassignment.SubaccountIDKey: subscribedSubaccountID,
 		},
 	}
+}
+
+func unusedLabelSvc() *automock.LabelService {
+	return &automock.LabelService{}
+}
+
+func unusedRuntimeSvc() *automock.RuntimeService {
+	return &automock.RuntimeService{}
+}
+
+func unusedRuntimeContextSvc() *automock.RuntimeCtxService {
+	return &automock.RuntimeCtxService{}
+}
+
+func unusedUUIDSvc() *automock.UidService {
+	return &automock.UidService{}
 }

@@ -21,6 +21,10 @@ spec:
             cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-system-fetcher
+        {{ if eq .Values.global.portieris.isEnabled true }}
+          imagePullSecrets:
+          - name: {{ .Values.global.portieris.imagePullSecretName }}
+        {{ end }}
           containers:
             - name: {{ .Values.global.systemFetcher.containerName }}
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -28,6 +32,9 @@ spec:
               volumeMounts:
                 - name: director-config
                   mountPath: /config
+                - name: system-fetcher-config
+                  mountPath: /data/templates/app-templates.json
+                  subPath: app-templates.json
               env:
                 - name: APP_DIRECTOR_GRAPHQL_URL
                   value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
@@ -37,6 +44,8 @@ spec:
                   value: "{{ .Values.global.systemFetcher.directorRequestTimeout }}"
                 - name: APP_ENABLE_SYSTEM_DELETION
                   value: "{{ .Values.global.systemFetcher.enableSystemDeletion }}"
+                - name: APP_OPERATIONAL_MODE
+                  value: {{ .Values.global.systemFetcher.operationalMode }}
                 - name: APP_SYSTEM_INFORMATION_PARALLELLISM
                   value: "{{ .Values.global.systemFetcher.fetchParallellism }}"
                 - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
@@ -126,7 +135,9 @@ spec:
                 - name: APP_EXTERNAL_CLIENT_KEY_KEY
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-                  value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+                  value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+                - name: APP_ORD_WEBHOOK_MAPPINGS
+                  value: {{ .Values.global.director.ordWebhookMappings | quote }}
               command:
                 - "/bin/sh"
               args:
@@ -147,6 +158,9 @@ spec:
             - name: director-config
               configMap:
                 name: compass-director-config
+            - name: system-fetcher-config
+              configMap:
+                name: {{ .Chart.Name }}-system-fetcher-templates-config
 {{- if and (eq .Values.global.systemFetcher.enabled true) (eq .Values.global.systemFetcher.manageSecrets true) }}
 ---
 apiVersion: v1

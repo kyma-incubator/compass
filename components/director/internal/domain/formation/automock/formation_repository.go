@@ -45,6 +45,75 @@ func (_m *FormationRepository) DeleteByName(ctx context.Context, tenantID string
 	return r0
 }
 
+// Get provides a mock function with given fields: ctx, id, tenantID
+func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID string) (*model.Formation, error) {
+	ret := _m.Called(ctx, id, tenantID)
+
+	var r0 *model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Formation); ok {
+		r0 = rf(ctx, id, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Formation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, id, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByName provides a mock function with given fields: ctx, name, tenantID
+func (_m *FormationRepository) GetByName(ctx context.Context, name string, tenantID string) (*model.Formation, error) {
+	ret := _m.Called(ctx, name, tenantID)
+
+	var r0 *model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Formation); ok {
+		r0 = rf(ctx, name, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Formation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, name, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// List provides a mock function with given fields: ctx, tenant, pageSize, cursor
+func (_m *FormationRepository) List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error) {
+	ret := _m.Called(ctx, tenant, pageSize, cursor)
+
+	var r0 *model.FormationPage
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.FormationPage); ok {
+		r0 = rf(ctx, tenant, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
+		r1 = rf(ctx, tenant, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewFormationRepository creates a new instance of FormationRepository. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
 func NewFormationRepository(t testing.TB) *FormationRepository {
 	mock := &FormationRepository{}

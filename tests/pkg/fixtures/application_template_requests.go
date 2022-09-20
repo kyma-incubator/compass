@@ -66,6 +66,15 @@ func FixApplicationTemplateWithWebhook(name string) graphql.ApplicationTemplateI
 	return appTemplate
 }
 
+func FixApplicationTemplateWithORDWebhook(name, webhookURL string) graphql.ApplicationTemplateInput {
+	appTemplate := FixApplicationTemplate(name)
+	appTemplate.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeOpenResourceDiscovery,
+		URL:  ptr.String(webhookURL),
+	}}
+	return appTemplate
+}
+
 func FixCreateApplicationTemplateRequest(applicationTemplateInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

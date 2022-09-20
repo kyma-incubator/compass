@@ -19,12 +19,13 @@ import (
 )
 
 type regionalTenantCreationRequest struct {
-	SubaccountID           string `json:"subaccountTenantId"`
-	TenantID               string `json:"tenantId"`
-	Subdomain              string `json:"subdomain"`
-	SubscriptionProviderID string `json:"subscriptionProviderId"`
-	ProviderSubaccountID   string `json:"providerSubaccountId"`
-	SubscriptionAppName    string `json:"subscriptionAppName"`
+	SubaccountID                string `json:"subaccountTenantId"`
+	TenantID                    string `json:"tenantId"`
+	Subdomain                   string `json:"subdomain"`
+	SubscriptionProviderID      string `json:"subscriptionProviderId"`
+	ProviderSubaccountID        string `json:"providerSubaccountId"`
+	ConsumerTenantID            string `json:"consumerTenantID"`
+	SubscriptionProviderAppName string `json:"subscriptionProviderAppName"`
 }
 
 type errReader int
@@ -41,100 +42,120 @@ func TestService_SubscriptionFlows(t *testing.T) {
 	txtest.CtxWithDBMatcher()
 
 	validRequestBody, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:           subaccountTenantExtID,
-		TenantID:               tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
-		SubscriptionAppName:    subscriptionAppName,
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingParent, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:           subaccountTenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
-		SubscriptionAppName:    subscriptionAppName,
+		SubaccountID:                subaccountTenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingTenantSubdomain, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:           subaccountTenantExtID,
-		TenantID:               tenantExtID,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
-		SubscriptionAppName:    subscriptionAppName,
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingSubscriptionConsumerID, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:         subaccountTenantExtID,
-		TenantID:             tenantExtID,
-		Subdomain:            regionalTenantSubdomain,
-		ProviderSubaccountID: providerSubaccountID,
-		SubscriptionAppName:  subscriptionAppName,
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMatchingAccountAndSubaccountIDs, err := json.Marshal(regionalTenantCreationRequest{
-		TenantID:               tenantExtID,
-		SubaccountID:           tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
-		SubscriptionAppName:    subscriptionAppName,
+		TenantID:                    tenantExtID,
+		SubaccountID:                tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingProviderSubaccountID, err := json.Marshal(regionalTenantCreationRequest{
-		TenantID:               tenantExtID,
-		SubaccountID:           tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		SubscriptionProviderID: subscriptionProviderID,
-		SubscriptionAppName:    subscriptionAppName,
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
-	bodyWithMissingSubscriptionAppName, err := json.Marshal(regionalTenantCreationRequest{
+	bodyWithMissingConsumerTenantID, err := json.Marshal(regionalTenantCreationRequest{
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
+	})
+	assert.NoError(t, err)
+
+	bodyWithMissingSubscriptionProviderAppName, err := json.Marshal(regionalTenantCreationRequest{
 		SubaccountID:           subaccountTenantExtID,
 		TenantID:               tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
 		ProviderSubaccountID:   providerSubaccountID,
+		ConsumerTenantID:       consumerTenantID,
 	})
 	assert.NoError(t, err)
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
 		RegionPathParam: "region",
 		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
-			TenantProvider:                 testProviderName,
-			TenantIDProperty:               tenantProviderTenantIDProperty,
-			SubaccountTenantIDProperty:     tenantProviderSubaccountTenantIDProperty,
-			CustomerIDProperty:             tenantProviderCustomerIDProperty,
-			SubdomainProperty:              tenantProviderSubdomainProperty,
-			SubscriptionProviderIDProperty: subscriptionProviderIDProperty,
-			ProviderSubaccountIDProperty:   providerSubaccountIDProperty,
-			SubscriptionAppNameProperty:    subscriptionAppNameProperty,
+			TenantProvider:                      testProviderName,
+			TenantIDProperty:                    tenantProviderTenantIDProperty,
+			SubaccountTenantIDProperty:          tenantProviderSubaccountTenantIDProperty,
+			CustomerIDProperty:                  tenantProviderCustomerIDProperty,
+			SubdomainProperty:                   tenantProviderSubdomainProperty,
+			SubscriptionProviderIDProperty:      subscriptionProviderIDProperty,
+			ProviderSubaccountIDProperty:        providerSubaccountIDProperty,
+			ConsumerTenantIDProperty:            consumerTenantIDProperty,
+			SubscriptionProviderAppNameProperty: subscriptionProviderAppNameProperty,
 		},
 	}
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
-		SubaccountTenantID:     subaccountTenantExtID,
-		AccountTenantID:        tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		Region:                 region,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
-		SubscriptionAppName:    subscriptionAppName,
+		SubaccountTenantID:          subaccountTenantExtID,
+		AccountTenantID:             tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		Region:                      region,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	}
 	regionalTenantWithMatchingParentID := tenantfetchersvc.TenantSubscriptionRequest{
-		SubaccountTenantID:     "",
-		AccountTenantID:        tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		Region:                 region,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
-		SubscriptionAppName:    subscriptionAppName,
+		SubaccountTenantID:          "",
+		AccountTenantID:             tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		Region:                      region,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	}
 
 	// Subscribe flow
@@ -203,12 +224,20 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", providerSubaccountIDProperty),
 		},
 		{
-			Name:                "Returns error when subscriptionAppNameProperty is not found in body",
+			Name:                "Returns error when consumerTenantIDProperty is not found in body",
 			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
-			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionAppName)),
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingConsumerTenantID)),
 			Region:              region,
 			ExpectedStatusCode:  http.StatusBadRequest,
-			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionAppNameProperty),
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", consumerTenantIDProperty),
+		},
+		{
+			Name:                "Returns error when subscriptionProviderAppNameProperty is not found in body",
+			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionProviderAppName)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionProviderAppNameProperty),
 		},
 		{
 			Name:                "Returns error when request body doesn't contain tenant subdomain",
@@ -308,6 +337,124 @@ func TestService_SubscriptionFlows(t *testing.T) {
 	})
 }
 
+func TestService_Dependencies(t *testing.T) {
+	const (
+		regionPathVar  = "region"
+		missingRegion  = "eu-2"
+		existingRegion = "eu-1"
+		xsappname      = "xsappname"
+	)
+	target := fmt.Sprintf("/v1/regional/:%s/dependencies", regionPathVar)
+
+	subscriberSvc := &automock.TenantSubscriber{}
+
+	validHandlerConfig := tenantfetchersvc.HandlerConfig{
+		RegionPathParam: "region",
+		RegionToDependenciesConfig: map[string][]tenantfetchersvc.Dependency{
+			existingRegion: []tenantfetchersvc.Dependency{
+				tenantfetchersvc.Dependency{Xsappname: xsappname},
+			},
+		},
+		OmitDependenciesCallbackParam:      "omit",
+		OmitDependenciesCallbackParamValue: "true",
+	}
+
+	validResponse := fmt.Sprintf("[{\"xsappname\":\"%s\"}]", xsappname)
+	validOmitParam := fmt.Sprintf("?%s=%s", validHandlerConfig.OmitDependenciesCallbackParam, validHandlerConfig.OmitDependenciesCallbackParamValue)
+	invalidOmitParam := fmt.Sprintf("?%s=%s-invalid", validHandlerConfig.OmitDependenciesCallbackParam, validHandlerConfig.OmitDependenciesCallbackParamValue)
+
+	testCases := []struct {
+		Name                  string
+		Request               *http.Request
+		PathParams            map[string]string
+		ExpectedErrorOutput   string
+		ExpectedStatusCode    int
+		ExpectedSuccessOutput string
+	}{
+		{
+			Name:                "Failure when region path param is missing",
+			Request:             httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams:          map[string]string{},
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "Region path parameter is missing from request",
+		},
+		{
+			Name:                "Failure when region path param is missing and omit is enabled",
+			Request:             httptest.NewRequest(http.MethodGet, target+validOmitParam, nil),
+			PathParams:          map[string]string{},
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "Region path parameter is missing from request",
+		},
+		{
+			Name:    "Failure when region is invalid",
+			Request: httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams: map[string]string{
+				regionPathVar: missingRegion,
+			},
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("Invalid region provided: %s", missingRegion),
+		},
+		{
+			Name:    "Success when existing region is provided",
+			Request: httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams: map[string]string{
+				regionPathVar: existingRegion,
+			},
+			ExpectedStatusCode:    http.StatusOK,
+			ExpectedSuccessOutput: validResponse,
+		},
+		{
+			Name:    "Empty dependencies list when existing region is provided and omit param matches",
+			Request: httptest.NewRequest(http.MethodGet, target+validOmitParam, nil),
+			PathParams: map[string]string{
+				regionPathVar: existingRegion,
+			},
+			ExpectedStatusCode:    http.StatusOK,
+			ExpectedSuccessOutput: "[]",
+		},
+		{
+			Name:    "Dependencies list when existing region is provided and omit param does not match",
+			Request: httptest.NewRequest(http.MethodGet, target+invalidOmitParam, nil),
+			PathParams: map[string]string{
+				regionPathVar: existingRegion,
+			},
+			ExpectedStatusCode:    http.StatusOK,
+			ExpectedSuccessOutput: validResponse,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			defer mock.AssertExpectationsForObjects(t, subscriberSvc)
+
+			handler := tenantfetchersvc.NewTenantsHTTPHandler(subscriberSvc, validHandlerConfig)
+			req := testCase.Request
+			req = mux.SetURLVars(req, testCase.PathParams)
+
+			w := httptest.NewRecorder()
+
+			// WHEN
+			handler.Dependencies(w, req)
+
+			// THEN
+			resp := w.Result()
+			body, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				assert.Contains(t, string(body), testCase.ExpectedErrorOutput)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if testCase.ExpectedSuccessOutput != "" {
+				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))
+			}
+
+			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
+		})
+	}
+}
 func TestService_FetchTenantOnDemand(t *testing.T) {
 	const (
 		parentIDPathVar = "tenantId"
@@ -340,7 +487,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 			},
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchTenantOnDemand", mock.Anything, tenantID, parentID).Return(nil)
+				svc.On("SynchronizeTenant", mock.Anything, parentID, tenantID).Return(nil)
 				return svc
 			},
 			ExpectedStatusCode: http.StatusOK,
@@ -376,7 +523,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 			},
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchTenantOnDemand", mock.Anything, tenantID, parentID).Return(errors.New("error"))
+				svc.On("SynchronizeTenant", mock.Anything, parentID, tenantID).Return(errors.New("error"))
 				return svc
 			},
 			ExpectedStatusCode: http.StatusInternalServerError,

@@ -63,7 +63,8 @@ type Config struct {
 	DirectorRequestTimeout    time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
 	DirectorSkipSSLValidation bool          `envconfig:"default=false,APP_DIRECTOR_SKIP_SSL_VALIDATION"`
 
-	EnableSystemDeletion bool `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
+	EnableSystemDeletion bool   `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
+	OperationalMode      string `envconfig:"APP_OPERATIONAL_MODE"`
 }
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
@@ -273,6 +274,10 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 	input, err := s.appRegisterInput(ctx, sc)
 	if err != nil {
 		return nil, err
+	}
+
+	if sc.ProductID == "S4_PC" { // temporary, will be removed in favor of a better abstraction with evolved application template input configurations
+		input.LocalTenantID = input.SystemNumber
 	}
 
 	return &model.ApplicationRegisterInputWithTemplate{
