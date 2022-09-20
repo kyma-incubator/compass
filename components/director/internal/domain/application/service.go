@@ -144,10 +144,10 @@ type service struct {
 	intSystemRepo IntegrationSystemRepository
 
 	labelService     LabelService
-	uidService         UIDService
-	bndlService        BundleService
-	timestampGen       timestamp.Generator
-	formationService   FormationService
+	uidService       UIDService
+	bndlService      BundleService
+	timestampGen     timestamp.Generator
+	formationService FormationService
 
 	selfRegisterDistinguishLabelKey string
 
