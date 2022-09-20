@@ -1,10 +1,11 @@
-package tenantfetchersvc_test
+package resync_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
 
 	"github.com/stretchr/testify/require"
 
@@ -15,12 +16,18 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-func fixTenantEventsResponse(events []byte, total, pages int) tenantfetchersvc.TenantEventsResponse {
-	return tenantfetchersvc.TenantEventsResponse(fmt.Sprintf(`{
+func fixTenantEventsResponse(events []byte, total, pages int, fieldMapping resync.TenantFieldMapping, mvSAFieldMapping resync.MovedSubaccountsFieldMapping, provider string) *resync.EventsPage {
+	response := fmt.Sprintf(`{
 		"events":       %s,
 		"total": %d,
 		"pages":   %d,
-	}`, string(events), total, pages))
+	}`, string(events), total, pages)
+	return &resync.EventsPage{
+		FieldMapping:                 fieldMapping,
+		MovedSubaccountsFieldMapping: mvSAFieldMapping,
+		ProviderName:                 provider,
+		Payload:                      []byte(response),
+	}
 }
 
 func fixEvent(t require.TestingT, eventType, ga string, fields map[string]string) []byte {
@@ -40,9 +47,9 @@ func wrapIntoEventPageJSON(eventData, eventType, ga string) []byte {
 	}`, fixID(), eventType, ga, eventData))
 }
 
-func fixBusinessTenantMappingInput(name, externalTenant, provider, subdomain, region, parent string, tenantType tenant.Type) model.BusinessTenantMappingInput {
+func fixBusinessTenantMappingInput(externalTenant, provider, subdomain, region, parent string, tenantType tenant.Type) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
-		Name:           name,
+		Name:           externalTenant,
 		ExternalTenant: externalTenant,
 		Provider:       provider,
 		Subdomain:      subdomain,
@@ -54,4 +61,8 @@ func fixBusinessTenantMappingInput(name, externalTenant, provider, subdomain, re
 
 func fixID() string {
 	return uuid.New().String()
+}
+
+func eventsToJSONArray(events ...[]byte) []byte {
+	return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
 }
