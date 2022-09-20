@@ -67,6 +67,7 @@ type config struct {
 	TestConsumerSubaccountID         string
 	TestConsumerTenantID             string
 	ApplicationTypeLabelKey          string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	SaaSAppNameLabelKey              string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
 	DestinationAPIConfig             clients.DestinationServiceAPIConfig
 	DestinationsConfig               cfg.DestinationsConfig
 	DestinationConsumerSubdomain     string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
