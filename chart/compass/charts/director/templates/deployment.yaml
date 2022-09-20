@@ -262,9 +262,11 @@ spec:
           volumeMounts:
             - name: self-reg-secret-volume
               mountPath: {{ .Values.global.director.selfRegister.secrets.instancesCreds.path }}
+              subPath: {{ .Values.global.director.selfRegister.secrets.instancesCreds.key }}
               readOnly: true
             - name: self-reg-app-names-volume
               mountPath: {{ .Values.global.director.selfRegister.secrets.saasAppNameCfg.path }}
+              subPath: {{ .Values.global.director.selfRegister.secrets.saasAppNameCfg.key }}
               readOnly: true
             - mountPath: /config
               name: director-config
