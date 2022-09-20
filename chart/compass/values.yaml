@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2625"
+      version: "PR-2639"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -873,6 +873,7 @@ global:
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
+      supportedOrdApplicationType: "SAP temp1"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
       region: "eu-1"
