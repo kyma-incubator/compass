@@ -236,6 +236,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: password
+            - name: APP_SUPPORTED_ORD_APPLICATION_TYPE
+              value: {{ .Values.global.tests.director.supportedOrdApplicationType }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"

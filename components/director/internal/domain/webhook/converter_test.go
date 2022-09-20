@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -32,7 +33,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixApplicationModelWebhook("1", "foo", "", "bar"),
+			Input:    fixApplicationModelWebhook("1", "foo", "", "bar", time.Time{}),
 			Expected: fixGQLWebhook("1", "foo", "bar"),
 		},
 		{
@@ -69,8 +70,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 func TestConverter_MultipleToGraphQL(t *testing.T) {
 	// GIVEN
 	input := []*model.Webhook{
-		fixApplicationModelWebhook("1", "foo", "", "baz"),
-		fixApplicationModelWebhook("2", "bar", "", "bez"),
+		fixApplicationModelWebhook("1", "foo", "", "baz", time.Time{}),
+		fixApplicationModelWebhook("2", "bar", "", "bez", time.Time{}),
 		{},
 		nil,
 	}

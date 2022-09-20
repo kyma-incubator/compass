@@ -111,7 +111,7 @@ func (s *service) ListForRuntime(ctx context.Context, runtimeID string) ([]*mode
 	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, runtimeID, model.RuntimeWebhookReference)
 }
 
-// Create missing godoc
+// Create creates a model.Webhook with generated ID and CreatedAt properties. Returns the ID of the webhook.
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if apperrors.IsTenantRequired(err) {
@@ -120,6 +120,7 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 		return "", err
 	}
 	id := s.uidSvc.Generate()
+
 	webhook := in.ToWebhook(id, owningResourceID, objectType)
 
 	if err = s.webhookRepo.Create(ctx, tnt, webhook); err != nil {
