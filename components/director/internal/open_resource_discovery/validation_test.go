@@ -3198,7 +3198,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 		},
 		{
-			Name: "Valid missing `Extensible` field when `policyLevel` is sap for API",
+			Name: "Missing `Extensible` field when `policyLevel` is sap for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
@@ -3207,7 +3207,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Valid missing `Extensible` field when `policyLevel` is sap partner for API",
+			Name: "Missing `Extensible` field when `policyLevel` is sap partner for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
@@ -4572,7 +4572,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `Extensible` field when `policyLevel` is sap",
+			Name: "Valid missing `Extensible` field when `policyLevel` is sap",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = nil
@@ -4583,7 +4583,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			ExpectedToBeValid: true,
 		},
 		{
-			Name: "Missing `Extensible` field when `policyLevel` is sap partner",
+			Name: "Valid missing `Extensible` field when `policyLevel` is sap partner",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = nil
