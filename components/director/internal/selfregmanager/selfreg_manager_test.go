@@ -27,7 +27,11 @@ const (
 	testUUID                        = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testRegion                      = "test-region"
 	fakeRegion                      = "fake-region"
+	missingSaaSAppRegion            = "missing-saas-app-region"
+	emptySaaSAppRegion              = "empty-saas-app-region"
 	consumerID                      = "test-consumer-id"
+	testSaaSAppName                 = "testSaaSAppName-1"
+	secondTestSaaSAppName           = "testSaaSAppName-2"
 )
 
 var (
@@ -36,11 +40,13 @@ var (
 		SelfRegisterLabelKey:            "test-label-key",
 		SelfRegisterLabelValuePrefix:    "test-prefix",
 		SelfRegisterResponseKey:         selfregmngrtest.ResponseLabelKey,
+		SaaSAppNameLabelKey:             "test-CMPSaaSAppName",
 		SelfRegisterPath:                "test-path",
 		SelfRegisterNameQueryParam:      "testNameQuery",
 		SelfRegisterTenantQueryParam:    "testTenantQuery",
 		SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
 		SelfRegisterSecretPath:          "testdata/TestSelfRegisterManager_PrepareRuntimeForSelfRegistration.golden",
+		SelfRegSaaSAppSecretPath:        "testdata/TestSelfRegisterManager_SaaSAppName.golden",
 		InstanceClientIDPath:            "clientId",
 		InstanceClientSecretPath:        "clientSecret",
 		InstanceURLPath:                 "url",
@@ -64,8 +70,29 @@ var (
 				Cert:         "cert2",
 				Key:          "key2",
 			},
+			"missing-saas-app-region": {
+				ClientID:     "client_id",
+				ClientSecret: "client_secret",
+				URL:          "https://test-url-second.com",
+				TokenURL:     "https://test-token-url-second.com",
+				Cert:         "cert",
+				Key:          "key",
+			},
+			"empty-saas-app-region": {
+				ClientID:     "client_id",
+				ClientSecret: "client_secret",
+				URL:          "https://test-url-second.com",
+				TokenURL:     "https://test-token-url-second.com",
+				Cert:         "cert",
+				Key:          "key",
+			},
 		},
-
+		SaaSAppNamePath: "localSaaSAppNamePath",
+		RegionToSaaSAppName: map[string]string{
+			"test-region":           testSaaSAppName,
+			"second-region":         secondTestSaaSAppName,
+			"empty-saas-app-region": "",
+		},
 		ClientTimeout: 5 * time.Second,
 	}
 
@@ -90,6 +117,18 @@ var (
 		ConsumerID: consumerID,
 		Flow:       oathkeeper.CertificateFlow,
 		Region:     fakeRegion,
+	}
+
+	certConsumerWithMissingSaaSAppRegion = consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+		Region:     missingSaaSAppRegion,
+	}
+
+	certConsumerWithEmptySaaSAppRegion = consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+		Region:     emptySaaSAppRegion,
 	}
 )
 
@@ -166,6 +205,8 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
 	ctxWithCertConsumerWithoutRegion := consumer.SaveToContext(context.TODO(), certConsumerWithoutRegion)
 	ctxWithCertConsumerWithFakeRegion := consumer.SaveToContext(context.TODO(), certConsumerWithFakeRegion)
+	ctxWithCertConsumerWithMissingSaaSAppRegion := consumer.SaveToContext(context.TODO(), certConsumerWithMissingSaaSAppRegion)
+	ctxWithCertConsumerWithEmptySaaSAppRegion := consumer.SaveToContext(context.TODO(), certConsumerWithEmptySaaSAppRegion)
 
 	testCases := []struct {
 		Name           string
@@ -335,6 +376,30 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ExpectedErr:    errors.New("received unexpected status"),
 			ExpectedOutput: nil,
 		},
+		{
+			Name:           "Error when SaaS application name is not found for a given region",
+			Config:         testConfig,
+			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
+			Region:         missingSaaSAppRegion,
+			InputLabels:    fixLblWithoutRegion(),
+			Context:        ctxWithCertConsumerWithMissingSaaSAppRegion,
+			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
+			ExpectedErr:    errors.New(fmt.Sprintf("missing SaaS application name for region: \"%s\"", missingSaaSAppRegion)),
+			ExpectedOutput: nil,
+		},
+		{
+			Name:           "Error when SaaS application name is empty",
+			Config:         testConfig,
+			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
+			Region:         emptySaaSAppRegion,
+			InputLabels:    fixLblWithoutRegion(),
+			Context:        ctxWithCertConsumerWithEmptySaaSAppRegion,
+			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
+			ExpectedErr:    errors.New(fmt.Sprintf("SaaS application name for region: \"%s\" could not be empty", emptySaaSAppRegion)),
+			ExpectedOutput: nil,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -485,6 +550,7 @@ func fixLblInputAfterPrep() map[string]interface{} {
 		testConfig.SelfRegisterLabelKey: selfregmngrtest.ResponseLabelValue,
 		selfregmanager.RegionLabel:      testRegion,
 		selfRegisterDistinguishLabelKey: distinguishLblVal,
+		testConfig.SaaSAppNameLabelKey:  testSaaSAppName,
 	}
 }
 
@@ -494,6 +560,7 @@ func fixLblInputAfterPrepWithSubaccount() map[string]interface{} {
 		scenarioassignment.SubaccountIDKey: consumerID,
 		selfregmanager.RegionLabel:         testRegion,
 		selfRegisterDistinguishLabelKey:    distinguishLblVal,
+		testConfig.SaaSAppNameLabelKey:     testSaaSAppName,
 	}
 }
 

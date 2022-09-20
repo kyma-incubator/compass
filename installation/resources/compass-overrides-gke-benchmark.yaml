@@ -25,6 +25,8 @@ global:
     enabled: true
     oauthSecret:
       manage: true
+    saasAppNamesSecret:
+      manage: true
     regionInstancesCredentials:
       manage: true
     tenantDependenciesConfig:

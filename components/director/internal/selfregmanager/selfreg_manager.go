@@ -49,8 +49,8 @@ type selfRegisterManager struct {
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
 func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
-	if err := cfg.MapInstanceConfigs(); err != nil {
-		return nil, errors.Wrap(err, "while creating self register manager")
+	if err := cfg.PrepareConfiguration(); err != nil {
+		return nil, errors.Wrap(err, "while preparing self register manager configuration")
 	}
 	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
 }
@@ -97,15 +97,16 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 			return nil, errors.Errorf("providing %q label and value is forbidden", RegionLabel)
 		}
 
-		if consumerInfo.Region == "" {
+		region := consumerInfo.Region
+		if region == "" {
 			return nil, errors.Errorf("missing %s value in consumer context", RegionLabel)
 		}
 
-		labels[RegionLabel] = consumerInfo.Region
+		labels[RegionLabel] = region
 
-		instanceConfig, exists := s.cfg.RegionToInstanceConfig[consumerInfo.Region]
+		instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
 		if !exists {
-			return nil, errors.Errorf("missing configuration for region: %s", consumerInfo.Region)
+			return nil, errors.Errorf("missing configuration for region: %s", region)
 		}
 
 		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig.URL)
@@ -113,7 +114,7 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 			return nil, err
 		}
 
-		caller, err := s.callerProvider.GetCaller(s.cfg, consumerInfo.Region)
+		caller, err := s.callerProvider.GetCaller(s.cfg, region)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting caller")
 		}
@@ -135,6 +136,17 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
 		labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
+
+		saasAppName, exists := s.cfg.RegionToSaaSAppName[region]
+		if !exists {
+			return nil, errors.Errorf("missing SaaS application name for region: %q", region)
+		}
+
+		if saasAppName == "" {
+			return nil, errors.Errorf("SaaS application name for region: %q could not be empty", region)
+		}
+
+		labels[s.cfg.SaaSAppNameLabelKey] = saasAppName
 
 		if resourceType == resource.ApplicationTemplate {
 			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
