@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: monitoring
+  name: {{ template "fullname" . }}-rules
+  namespace: kyma-system
+spec:
+  groups:
+    - name: {{ template "fullname" . }}-rules
+      rules:
+        {{- range $tenantFetcher, $config := .Values.global.tenantFetchers }}
+        - alert: CompassTenantResync{{ $tenantFetcher }}JobFailure
+          annotations:
+            description: Failure for {{ $tenantFetcher }} tenant resync job
+          expr: max(delta(compass_tenantfetcher_{{ $tenantFetcher }}_job_sync_failure_number[{{ $config.job.interval }}])) >= 1
+          for: 1s
+          labels:
+            severity: critical
+        {{- end }}

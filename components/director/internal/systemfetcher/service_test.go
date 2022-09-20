@@ -29,15 +29,7 @@ func TestSyncSystems(t *testing.T) {
 		}
 		return svc
 	}
-	systemfetcher.Mappings = []systemfetcher.TemplateMapping{
-		{
-			Name:        "type1",
-			ID:          "type1",
-			SourceKey:   []string{"productId"},
-			SourceValue: []string{"TEST"},
-			OrdReady:    true,
-		},
-	}
+
 	type testCase struct {
 		name                     string
 		mockTransactioner        func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
@@ -77,7 +69,7 @@ func TestSyncSystems(t *testing.T) {
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
-				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationRegisterInput"), mock.Anything).Return(nil).Once()
+				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
