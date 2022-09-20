@@ -174,7 +174,7 @@ func (r *repository) ListByApplicationIDWithSelectForUpdate(ctx context.Context,
 	return convertToWebhooks(entities, r)
 }
 
-// ListByWebhookType retrieves all webhooks which have the given webhook type om a descending order
+// ListByWebhookType retrieves all webhooks which have the given webhook type in descending order
 func (r *repository) ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
 	var entities Collection
 
