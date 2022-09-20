@@ -385,7 +385,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Context:        ctxWithCertConsumerWithMissingSaaSAppRegion,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
-			ExpectedErr:    errors.New(fmt.Sprintf("missing SaaS application name for region: \"%s\"", missingSaaSAppRegion)),
+			ExpectedErr:    fmt.Errorf("missing SaaS application name for region: \"%s\"", missingSaaSAppRegion),
 			ExpectedOutput: nil,
 		},
 		{
@@ -397,7 +397,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Context:        ctxWithCertConsumerWithEmptySaaSAppRegion,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
-			ExpectedErr:    errors.New(fmt.Sprintf("SaaS application name for region: \"%s\" could not be empty", emptySaaSAppRegion)),
+			ExpectedErr:    fmt.Errorf("SaaS application name for region: \"%s\" could not be empty", emptySaaSAppRegion),
 			ExpectedOutput: nil,
 		},
 	}
