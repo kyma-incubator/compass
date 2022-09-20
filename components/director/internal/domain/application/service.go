@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+
 	"github.com/imdario/mergo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -34,13 +36,16 @@ import (
 )
 
 const (
-	intSysKey            = "integrationSystemID"
-	nameKey              = "name"
-	sccLabelKey          = "scc"
-	managedKey           = "managed"
-	subaccountKey        = "Subaccount"
-	locationIDKey        = "LocationID"
-	urlSuffixToBeTrimmed = "/"
+	intSysKey                    = "integrationSystemID"
+	nameKey                      = "name"
+	sccLabelKey                  = "scc"
+	managedKey                   = "managed"
+	subaccountKey                = "Subaccount"
+	locationIDKey                = "LocationID"
+	urlSuffixToBeTrimmed         = "/"
+	applicationTypeLabelKey      = "applicationType"
+	ppmsProductVersionIDLabelKey = "ppmsProductVersionId"
+	urlSubdomainSeparator        = "."
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
@@ -108,11 +113,12 @@ type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-// LabelUpsertService missing godoc
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type LabelUpsertService interface {
+// LabelService missing godoc
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type LabelService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
 // ScenariosService missing godoc
@@ -144,18 +150,20 @@ type service struct {
 	runtimeRepo   RuntimeRepository
 	intSystemRepo IntegrationSystemRepository
 
-	labelUpsertService LabelUpsertService
-	scenariosService   ScenariosService
-	uidService         UIDService
-	bndlService        BundleService
-	timestampGen       timestamp.Generator
-	formationService   FormationService
+	labelService     LabelService
+	scenariosService ScenariosService
+	uidService       UIDService
+	bndlService      BundleService
+	timestampGen     timestamp.Generator
+	formationService FormationService
 
 	selfRegisterDistinguishLabelKey string
+
+	ordWebhookMapping []ORDWebhookMapping
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelService LabelService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string, ordWebhookMapping []ORDWebhookMapping) *service {
 	return &service{
 		appNameNormalizer:               appNameNormalizer,
 		appHideCfgProvider:              appHideCfgProvider,
@@ -164,13 +172,14 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		runtimeRepo:                     runtimeRepo,
 		labelRepo:                       labelRepo,
 		intSystemRepo:                   intSystemRepo,
-		labelUpsertService:              labelUpsertService,
+		labelService:                    labelService,
 		scenariosService:                scenariosService,
 		bndlService:                     bndlService,
 		uidService:                      uidService,
 		timestampGen:                    timestamp.DefaultGenerator,
 		formationService:                formationService,
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
+		ordWebhookMapping:               ordWebhookMapping,
 	}
 }
 
@@ -524,6 +533,41 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 		return errors.Wrap(err, "while setting application name label")
 	}
 	log.C(ctx).Debugf("Successfully set Label for Application with id %s", app.ID)
+
+	appTypeLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, applicationTypeLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return errors.Wrapf(err, "while getting label %q for %s with id %q", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		}
+
+		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		return nil
+	}
+
+	ppmsProductVersionIDLbl, err := s.labelService.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, app.ID, ppmsProductVersionIDLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return errors.Wrapf(err, "while getting label %q for %q with id %q", ppmsProductVersionIDLabelKey, model.ApplicationLabelableObject, app.ID)
+		}
+	}
+
+	ppmsProductVersionID := ""
+	if ppmsProductVersionIDLbl != nil && ppmsProductVersionIDLbl.Value != nil {
+		if ppmsProductVersionIDValue, ok := ppmsProductVersionIDLbl.Value.(string); ok {
+			ppmsProductVersionID = ppmsProductVersionIDValue
+		}
+	}
+
+	ordWebhook := s.prepareORDWebhook(ctx, str.PtrStrToStr(in.BaseURL), appTypeLbl.Value.(string), ppmsProductVersionID)
+	if ordWebhook == nil {
+		log.C(ctx).Infof("Skipping ORD Webhook creation for app with id %q.", app.ID)
+		return nil
+	}
+
+	if err = s.createWebhooksIfNotExist(ctx, app.ID, appTenant, []*model.WebhookInput{ordWebhook}); err != nil {
+		return errors.Wrapf(err, "while processing webhooks for application with id %q", app.ID)
+	}
+
 	return nil
 }
 
@@ -682,7 +726,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return s.setScenarioLabel(ctx, appTenant, labelInput)
 	}
 
-	err = s.labelUpsertService.UpsertLabel(ctx, appTenant, labelInput)
+	err = s.labelService.UpsertLabel(ctx, appTenant, labelInput)
 	if err != nil {
 		return errors.Wrapf(err, "while creating label for Application")
 	}
@@ -861,7 +905,7 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, err
 	}
 
-	if err := s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, destID, destAppLabelsMerged); err != nil {
+	if err := s.labelService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, destID, destAppLabelsMerged); err != nil {
 		return nil, err
 	}
 
@@ -1041,7 +1085,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 		delete(in.Labels, model.ScenariosKey)
 	}
 
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	err = s.labelService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
@@ -1249,10 +1293,37 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 	in.Labels[nameKey] = s.appNameNormalizer.Normalize(app.Name)
 
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
+	err = s.labelService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
+
+	appTypeLbl, ok := in.Labels[applicationTypeLabelKey]
+	if !ok {
+		log.C(ctx).Infof("Label %q is missing for %s with id %q. Skipping ord webhook creation", applicationTypeLabelKey, model.ApplicationLabelableObject, app.ID)
+		return nil
+	}
+
+	ppmsProductVersionID := ""
+
+	ppmsProductVersionIDLbl, ok := in.Labels[ppmsProductVersionIDLabelKey]
+	if ppmsProductVersionIDLbl != nil && ok {
+		if ppmsProductVersionIDValue, ok := ppmsProductVersionIDLbl.(string); ok {
+			ppmsProductVersionID = ppmsProductVersionIDValue
+		}
+	}
+
+	ordWebhook := s.prepareORDWebhook(ctx, str.PtrStrToStr(in.BaseURL), appTypeLbl.(string), ppmsProductVersionID)
+	if ordWebhook == nil {
+		log.C(ctx).Infof("Skipping ORD Webhook creation for app with id %q.", app.ID)
+		return nil
+	}
+
+	if in.Webhooks == nil {
+		in.Webhooks = []*model.WebhookInput{}
+	}
+
+	in.Webhooks = append(in.Webhooks, ordWebhook)
 
 	if err = s.createWebhooksIfNotExist(ctx, app.ID, appTenant, in.Webhooks); err != nil {
 		return errors.Wrapf(err, "while processing webhooks for application with id %q", app.ID)
@@ -1354,6 +1425,85 @@ func (s *service) unassignFormations(ctx context.Context, appTenant, objectID st
 		}
 	}
 	return nil
+}
+
+func (s *service) getMappingORDConfiguration(applicationType string) (ORDWebhookMapping, bool) {
+	for _, wm := range s.ordWebhookMapping {
+		if wm.Type == applicationType {
+			return wm, true
+		}
+	}
+	return ORDWebhookMapping{}, false
+}
+
+func (s *service) prepareORDWebhook(ctx context.Context, baseURL, applicationType, ppmsProductVersionID string) *model.WebhookInput {
+	if baseURL == "" {
+		log.C(ctx).Infof("No baseURL found in input. Will not create a webhook")
+		return nil
+	}
+
+	mappingCfg, ok := s.getMappingORDConfiguration(applicationType)
+	if !ok {
+		log.C(ctx).Infof("Missing ord configuration for application type %q", applicationType)
+		return nil
+	}
+
+	if ppmsProductVersionID != "" && !isPpmsProductVersionPresentInConfig(ppmsProductVersionID, mappingCfg) {
+		log.C(ctx).Infof("Product with ppms ID %q is not supported", ppmsProductVersionID)
+		return nil
+	}
+
+	webhookInput, err := createORDWebhookInput(baseURL, mappingCfg.SubdomainSuffix, mappingCfg.OrdURLPath)
+	if err != nil {
+		log.C(ctx).Infof("Creating ORD Webhook failed with error: %v", err)
+		return nil
+	}
+
+	return webhookInput
+}
+
+func isPpmsProductVersionPresentInConfig(ppmsProductVersionID string, mappingCfg ORDWebhookMapping) bool {
+	for _, productVersion := range mappingCfg.PpmsProductVersions {
+		if productVersion == ppmsProductVersionID {
+			return true
+		}
+	}
+
+	return false
+}
+
+func buildWebhookURL(suffix string, ordPath string, baseURL *string) (string, error) {
+	url, err := url.Parse(*baseURL)
+	if err != nil {
+		return "", err
+	}
+
+	hostParts := strings.Split(url.Host, urlSubdomainSeparator)
+
+	if !strings.HasSuffix(hostParts[0], suffix) {
+		hostParts[0] = fmt.Sprintf("%s%s", hostParts[0], suffix)
+	}
+
+	url.Host = strings.Join(hostParts, urlSubdomainSeparator)
+
+	urlStr := strings.TrimSuffix(url.String(), urlSuffixToBeTrimmed)
+
+	return fmt.Sprintf("%s%s", urlStr, ordPath), nil
+}
+
+func createORDWebhookInput(baseURL, suffix, ordPath string) (*model.WebhookInput, error) {
+	webhookURL, err := buildWebhookURL(suffix, ordPath, &baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.WebhookInput{
+		Type: model.WebhookTypeOpenResourceDiscovery,
+		URL:  str.Ptr(webhookURL),
+		Auth: &model.AuthInput{
+			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
+		},
+	}, nil
 }
 
 func createMapFromFormationsSlice(formations []string) map[string]struct{} {

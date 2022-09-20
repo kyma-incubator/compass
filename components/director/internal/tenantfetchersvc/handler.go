@@ -8,12 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/tidwall/gjson"
 )
 
@@ -26,7 +23,7 @@ const (
 // TenantFetcher is used to fectch tenants for creation;
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
-	FetchTenantOnDemand(ctx context.Context, tenantID, parentTenantID string) error
+	SynchronizeTenant(ctx context.Context, parentTenantID, tenantID string) error
 }
 
 // TenantSubscriber is used to apply subscription changes for tenants;
@@ -49,22 +46,15 @@ type HandlerConfig struct {
 	OmitDependenciesCallbackParam      string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_NAME"`
 	OmitDependenciesCallbackParamValue string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_VALUE"`
 
-	Features features.Config
-
-	TenantFetcherJobIntervalMins time.Duration `envconfig:"default=5m"`
-	FullResyncInterval           time.Duration `envconfig:"default=12h"`
-	ShouldSyncSubaccounts        bool          `envconfig:"default=false"`
-
-	Kubernetes KubeConfig
-	Database   persistence.DatabaseConfig
+	Database persistence.DatabaseConfig
 
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
-	TenantInsertChunkSize int `envconfig:"default=500"`
 	TenantProviderConfig
 
+	MetricsPushEndpoint          string                  `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	TenantDependenciesConfigPath string                  `envconfig:"APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH"`
 	RegionToDependenciesConfig   map[string][]Dependency `envconfig:"-"`
 }
@@ -85,22 +75,6 @@ type TenantProviderConfig struct {
 // Dependency contains the xsappname to be used in the dependencies callback
 type Dependency struct {
 	Xsappname string `json:"xsappname"`
-}
-
-// EventsConfig contains configuration for Events API requests
-type EventsConfig struct {
-	AccountsRegion    string            `envconfig:"default=central"`
-	SubaccountRegions map[string]string `envconfig:"optional"`
-
-	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
-	OAuthConfig OAuth2Config
-	APIConfig   APIConfig
-	QueryConfig QueryConfig
-
-	TenantFieldMapping          TenantFieldMapping
-	MovedSubaccountFieldMapping MovedSubaccountsFieldMapping
-
-	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 }
 
 type handler struct {
@@ -146,8 +120,7 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
-	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID, parentTenantID)
-	if err != nil {
+	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
