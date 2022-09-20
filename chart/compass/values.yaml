@@ -143,7 +143,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2594"
+      version: "PR-2637"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -275,6 +275,7 @@ global:
     applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
+    ordWebhookMappings: '[]'
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     mtlsTokenPath: "/cert/token"
@@ -881,6 +882,7 @@ global:
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
+      supportedOrdApplicationType: "SAP temp1"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
       region: "eu-1"
