@@ -41,6 +41,7 @@ type SelfRegConfig struct {
 	RegionToSaaSAppName map[string]string `envconfig:"-"`
 }
 
+// PrepareConfiguration take cares to build the self register configuration
 func (c *SelfRegConfig) PrepareConfiguration() error {
 	if err := c.MapInstanceConfigs(); err != nil {
 		return errors.Wrap(err, "while building region instances credentials")
