@@ -99,7 +99,7 @@ func (c *SelfRegConfig) MapSaasAppNameToRegion() error {
 		return err
 	}
 
-	c.RegionToSaaSAppName = make(map[string]string)
+	c.RegionToSaaSAppName = make(map[string]string, len(m))
 	for r, config := range m {
 		appName := gjson.Get(config.String(), c.SaaSAppNamePath).String()
 		c.RegionToSaaSAppName[r] = appName
