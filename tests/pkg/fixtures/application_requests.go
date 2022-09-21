@@ -53,8 +53,8 @@ func FixSampleApplicationRegisterInputWithAppType(placeholder, appTypeKey, appTy
 }
 
 func FixSampleApplicationRegisterInputWithAppTypeAndScenarios(placeholder, appTypeKey, appTypeValue, scenariosLabelKey string, scenariosLabelVal []string) graphql.ApplicationRegisterInput {
-	applicationInput := FixSampleApplicationRegisterInputWithAppType(placeholder, appTypeKey, appTypeValue)
-	applicationInput.Labels = graphql.Labels{scenariosLabelKey: scenariosLabelVal}
+	applicationInput := FixSampleApplicationRegisterInput(placeholder)
+	applicationInput.Labels = graphql.Labels{appTypeKey: appTypeValue, scenariosLabelKey: scenariosLabelVal}
 	return applicationInput
 }
 
