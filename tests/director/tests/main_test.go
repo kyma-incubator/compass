@@ -47,6 +47,7 @@ type DirectorConfig struct {
 	RuntimeTypeLabelKey                             string
 	ApplicationTypeLabelKey                         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	KymaRuntimeTypeLabelValue                       string
+	SaaSAppNameLabelKey                             string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
 	ConsumerTokenURL                                string
 	ProviderClientID                                string
 	ProviderClientSecret                            string

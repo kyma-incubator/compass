@@ -191,6 +191,10 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
+		saasAppLbl, ok := providerRuntime.Labels[conf.SaaSAppNameLabelKey].(string)
+		require.True(t, ok)
+		require.NotEmpty(t, saasAppLbl)
+
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
 			Transport: &http.Transport{

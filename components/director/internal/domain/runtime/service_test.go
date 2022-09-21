@@ -30,7 +30,7 @@ import (
 var (
 	labelsWithNormalization   = map[string]interface{}{runtime.IsNormalizedLabel: "true"}
 	protectedLabelPattern     = ".*_defaultEventing$|^consumer_subaccount_ids$"
-	immutableLabelPattern     = "^xsappnameCMPClone$|^runtimeType$"
+	immutableLabelPattern     = "^xsappnameCMPClone$|^runtimeType$|^CMPSaaSAppName$"
 	runtimeTypeLabelKey       = "runtimeType"
 	kymaRuntimeTypeLabelValue = "kyma"
 	testUUID                  = "b3ea1977-582e-4d61-ae12-b3a837a3858e"

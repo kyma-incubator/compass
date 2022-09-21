@@ -1,0 +1,11 @@
+{
+  "test-region": {
+    "localSaaSAppNamePath": "testSaaSAppName-1"
+  },
+  "second-region": {
+    "localSaaSAppNamePath": "testSaaSAppName-2"
+  },
+  "empty-saas-app-region": {
+    "localSaaSAppNamePath": ""
+  }
+}
