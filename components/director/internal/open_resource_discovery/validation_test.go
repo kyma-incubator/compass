@@ -19,7 +19,7 @@ const (
 	invalidOpenResourceDiscovery  = "invalidOpenResourceDiscovery"
 	invalidURL                    = "invalidURL"
 	invalidOrdID                  = "invalidOrdId"
-	invalidShortDescriptionLength = 257 // max allowed: 256
+	invalidShortDescriptionLength = 2049 // max allowed: 2048
 	maxDescriptionLength          = 5000
 	invalidVersion                = "invalidVersion"
 	invalidPolicyLevel            = "invalidPolicyLevel"
@@ -2789,13 +2789,15 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for API",
+			Name: "Valid missing `successors` field when `releaseStatus` field has value `deprecated` for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
+				doc.APIResources[0].SunsetDate = str.Ptr("2020-04-29")
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid `successors` field for API",
 			DocumentProvider: func() []*ord.Document {
@@ -3623,13 +3625,14 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `title` field for Event",
+			Name: "Valid missing `title` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Name = ""
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing `shortDescription` field for Event",
 			DocumentProvider: func() []*ord.Document {
@@ -4025,13 +4028,14 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
-			Name: "Missing `resourceDefinitions` field for Event",
+			Name: "Valid missing `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions = nil
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing field `type` of `resourceDefinitions` field for Event",
 			DocumentProvider: func() []*ord.Document {
@@ -4568,7 +4572,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `Extensible` field when `policyLevel` is sap",
+			Name: "Valid missing `Extensible` field when `policyLevel` is sap",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = nil
@@ -4576,9 +4580,10 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		},
 		{
-			Name: "Missing `Extensible` field when `policyLevel` is sap partner",
+			Name: "Valid missing `Extensible` field when `policyLevel` is sap partner",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = nil
@@ -4587,6 +4592,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		},
 		{
 			Name: "Invalid `Extensible` field due to empty json object",
