@@ -29,7 +29,7 @@ func TestPrepareMTLSClient(t *testing.T) {
 		ts          = httptest.NewUnstartedServer(testServerHandlerFunc(t))
 	)
 
-	mockedCache.On("Get").Return(testCert, nil).Once()
+	mockedCache.On("Get").Return([]*tls.Certificate{testCert}, nil).Once()
 	ts.TLS = &tls.Config{
 		ClientAuth: tls.RequestClientCert,
 	}
