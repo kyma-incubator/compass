@@ -562,7 +562,7 @@ func TestUpdateApplication(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		appInput := fixtures.FixSampleApplicationRegisterInputWithAppType("before", conf.SupportedORDApplicationType, "SAP unsupported")
+		appInput := fixtures.FixSampleApplicationRegisterInputWithAppType("before", "applicationType", "SAP unsupported")
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
