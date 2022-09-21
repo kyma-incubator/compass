@@ -535,6 +535,11 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		//THEN
 		require.NotEmpty(t, actualRuntime.ID)
 		runtimeInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
+
+		saasAppLbl, ok := actualRuntime.Labels[conf.SaaSAppNameLabelKey].(string)
+		require.True(t, ok)
+		require.NotEmpty(t, saasAppLbl)
+
 		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 		t.Log("Successfully set regular runtime label using certificate")
@@ -568,7 +573,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assert.Len(t, actualRuntime.Labels, 5) // three labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
+		assert.Len(t, actualRuntime.Labels, 6) // two labels from the different runtime inputs plus four additional during runtime registration - isNormalized and three "self register" labels - region, "self register" label and SaaS app name label
 
 		t.Log("Successfully update runtime with certificate")
 		//GIVEN
@@ -591,7 +596,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		require.Equal(t, runtimeUpdateInput.Name, actualRuntime.Name)
 		require.Equal(t, *runtimeUpdateInput.Description, *actualRuntime.Description)
 		require.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
-		require.Equal(t, 4, len(actualRuntime.Labels)) // two labels from the runtime input, one additional label, added during runtime update(isNormalized) plus the self-reg label
+		require.Len(t, actualRuntime.Labels, 5) // two labels from the runtime input, one additional label, added during runtime update(isNormalized) plus the two "self register" labels
 
 		t.Log("Successfully delete runtime using certificate")
 		// WHEN
@@ -798,53 +803,65 @@ func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
 
 func TestRuntimeTypeImmutability(t *testing.T) {
 	ctx := context.Background()
+	testRuntimeType := "testRuntimeTypeValue"
+	testSaaSAppName := "testSaaSAppNameValue"
 
 	// Runtime with runtimeType label
 	runtimeInput := graphql.RuntimeRegisterInput{
-		Name:        "runtime",
+		Name:        "immutable-runtime",
 		Description: ptr.String("runtime-description"),
-		Labels:      graphql.Labels{conf.RuntimeTypeLabelKey: "test-type", tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+		Labels:      graphql.Labels{conf.RuntimeTypeLabelKey: testRuntimeType, conf.SaaSAppNameLabelKey: testSaaSAppName, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
 	}
 
-	t.Logf("Registering runtime with labels %q and %q...", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey)
+	t.Logf("Registering runtime with the following labels: %q:%q, %q:%q and %q:%q", conf.RuntimeTypeLabelKey, testRuntimeType, conf.SaaSAppNameLabelKey, testSaaSAppName, tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion)
 	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
+
 	require.Equal(t, len(runtime.Labels), 2)
 	strLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
 	require.True(t, ok)
 	require.Equal(t, strLbl, conf.SubscriptionConfig.SelfRegRegion)
+
 	strLbl, ok = runtime.Labels[IsNormalizedLabel].(string)
 	require.True(t, ok)
 	require.Equal(t, strLbl, "true")
-	require.NotContains(t, runtime.Labels, conf.RuntimeTypeLabelKey)
 
-	// Update runtime with runtimeType label
+	// check immutable labels are not added
+	require.NotContains(t, runtime.Labels, conf.RuntimeTypeLabelKey)
+	require.NotContains(t, runtime.Labels, conf.SaaSAppNameLabelKey)
+
+	// Update runtime with immutable labels
 	updateRuntimeInput := graphql.RuntimeUpdateInput{
-		Name:        "updated-runtime",
-		Description: ptr.String("updated-runtime-description"),
-		Labels:      graphql.Labels{conf.RuntimeTypeLabelKey: "updated-test-type", tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+		Name:        "immutable-runtime-labels-updated",
+		Description: ptr.String("immutable-runtime-labels-description"),
+		Labels:      graphql.Labels{conf.RuntimeTypeLabelKey: testRuntimeType, conf.SaaSAppNameLabelKey: testSaaSAppName, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
 	}
 	runtimeUpdateInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(updateRuntimeInput)
 	require.NoError(t, err)
 
 	updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(runtime.ID, runtimeUpdateInGQL)
-	t.Logf("Updating runtime with labels %q and %q...", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey)
+	t.Logf("Updating runtime with the following labels: %q:%q, %q:%q and %q:%q", conf.RuntimeTypeLabelKey, testRuntimeType, conf.SaaSAppNameLabelKey, testSaaSAppName, tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion)
 	updatedRuntime := graphql.RuntimeExt{}
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateRuntimeReq, &updatedRuntime)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &updatedRuntime)
 
 	require.NoError(t, err)
-	require.Equal(t, "updated-runtime", updatedRuntime.Name)
-	require.Equal(t, "updated-runtime-description", *updatedRuntime.Description)
+	require.Equal(t, "immutable-runtime-labels-updated", updatedRuntime.Name)
+	require.Equal(t, "immutable-runtime-labels-description", *updatedRuntime.Description)
+
 	require.Equal(t, len(updatedRuntime.Labels), 2)
 	strLbl, ok = updatedRuntime.Labels[tenantfetcher.RegionKey].(string)
 	require.True(t, ok)
 	require.Equal(t, strLbl, conf.SubscriptionConfig.SelfRegRegion)
+
 	strLbl, ok = runtime.Labels[IsNormalizedLabel].(string)
 	require.True(t, ok)
 	require.Equal(t, strLbl, "true")
+
+	// check immutable labels are not added during update operation
 	require.NotContains(t, updatedRuntime.Labels, conf.RuntimeTypeLabelKey)
+	require.NotContains(t, updatedRuntime.Labels, conf.SaaSAppNameLabelKey)
 }
 
 func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {

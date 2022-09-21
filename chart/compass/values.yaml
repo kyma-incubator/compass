@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2642"
+      version: "PR-2640"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -235,10 +235,15 @@ global:
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
-      secret:
-        name: "region-instances-credentials"
-        key: "keyConfig"
-        path: "/tmp"
+      secrets:
+        instancesCreds:
+          name: "region-instances-credentials"
+          key: "keyConfig"
+          path: "/tmp"
+        saasAppNameCfg:
+          name: "saas-app-names"
+          key: "appNameConfig"
+          path: "/tmp/appNameConfig"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
       urlPath: "url"
@@ -262,6 +267,8 @@ global:
       nameQueryParam: "name"
       tenantQueryParam: "tenant"
       requestBodyPattern: '{"key": "%s"}'
+      saasAppNameLabelKey: "CMPSaaSAppName"
+      saasAppNamePath: "localSaaSAppNamePath"
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
@@ -842,6 +849,8 @@ global:
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    saasAppNamesSecret:
+      manage: false
     regionInstancesCredentials:
       manage: false
     oauthSecret:

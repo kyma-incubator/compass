@@ -89,6 +89,10 @@ func TestSelfRegisterFlow(t *testing.T) {
 	require.True(t, ok)
 	require.Contains(t, strLbl, runtime.ID)
 
+	saasAppLbl, ok := runtime.Labels[conf.SaaSAppNameLabelKey].(string)
+	require.True(t, ok)
+	require.NotEmpty(t, saasAppLbl)
+
 	regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
 	require.True(t, ok)
 	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
@@ -152,6 +156,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
 		require.True(t, ok)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
+
+		saasAppLbl, ok := runtime.Labels[conf.SaaSAppNameLabelKey].(string)
+		require.True(t, ok)
+		require.NotEmpty(t, saasAppLbl)
 
 		// Register application
 		const applicationType = "SAP Cloud for Customer"
@@ -371,6 +379,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
 		require.True(t, ok)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
+
+		saasAppLbl, ok := runtime.Labels[conf.SaaSAppNameLabelKey].(string)
+		require.True(t, ok)
+		require.NotEmpty(t, saasAppLbl)
 
 		// Register application
 		const applicationType = "SAP Cloud for Customer"

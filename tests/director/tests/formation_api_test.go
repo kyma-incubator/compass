@@ -639,6 +639,10 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			require.True(t, ok)
 			require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+providerRuntime.ID)
 
+			saasAppLbl, ok := providerRuntime.Labels[conf.SaaSAppNameLabelKey].(string)
+			require.True(t, ok)
+			require.NotEmpty(t, saasAppLbl)
+
 			httpClient := &http.Client{
 				Timeout: 10 * time.Second,
 				Transport: &http.Transport{
@@ -717,6 +721,10 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			selfRegLabelValue, ok := providerRuntime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 			require.True(t, ok)
 			require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+providerRuntime.ID)
+
+			saasAppLbl, ok := providerRuntime.Labels[conf.SaaSAppNameLabelKey].(string)
+			require.True(t, ok)
+			require.NotEmpty(t, saasAppLbl)
 
 			httpClient := &http.Client{
 				Timeout: 10 * time.Second,
@@ -828,6 +836,10 @@ func TestFormationNotifications(stdT *testing.T) {
 		selfRegLabelValue, ok := providerRuntime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
 		require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+providerRuntime.ID)
+
+		saasAppLbl, ok := providerRuntime.Labels[conf.SaaSAppNameLabelKey].(string)
+		require.True(t, ok)
+		require.NotEmpty(t, saasAppLbl)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
