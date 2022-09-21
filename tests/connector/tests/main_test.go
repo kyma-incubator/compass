@@ -57,12 +57,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	clientKey = key
-	directorClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.Tenant, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
+	directorClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.Tenant, cc.Get()[0].PrivateKey, cc.Get()[0].Certificate, cfg.SkipSSLValidation)
 	if err != nil {
 		log.D().Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
 	}
-	directorAppsForRuntimeClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.AppsForRuntimeTenant, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
+	directorAppsForRuntimeClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.AppsForRuntimeTenant, cc.Get()[0].PrivateKey, cc.Get()[0].Certificate, cfg.SkipSSLValidation)
 	if err != nil {
 		log.D().Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
