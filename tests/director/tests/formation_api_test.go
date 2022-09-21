@@ -1009,8 +1009,8 @@ func TestFormationNotifications(stdT *testing.T) {
 				TLSClientConfig: &tls.Config{
 					Certificates: []tls.Certificate{
 						{
-							Certificate: cc.Get().Certificate,
-							PrivateKey:  cc.Get().PrivateKey,
+							Certificate: cc.Get()[0].Certificate,
+							PrivateKey:  cc.Get()[0].PrivateKey,
 						},
 					},
 					ClientAuth:         tls.RequireAndVerifyClientCert,
@@ -1295,8 +1295,8 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 			TLSClientConfig: &tls.Config{
 				Certificates: []tls.Certificate{
 					{
-						Certificate: cc.Get().Certificate,
-						PrivateKey:  cc.Get().PrivateKey,
+						Certificate: cc.Get()[0].Certificate,
+						PrivateKey:  cc.Get()[0].PrivateKey,
 					},
 				},
 				ClientAuth:         tls.RequireAndVerifyClientCert,
