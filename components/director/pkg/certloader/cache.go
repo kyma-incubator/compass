@@ -7,30 +7,32 @@ import (
 
 // Cache returns a client certificate stored in-memory
 type Cache interface {
-	Get() *tls.Certificate
+	Get() []*tls.Certificate
 }
 
 type certificateCache struct {
-	tlsCert *tls.Certificate
-	mutex   sync.RWMutex
+	tlsCerts []*tls.Certificate
+	mutex    sync.RWMutex
 }
 
 // NewCertificateCache is responsible for in-memory managing of a TLS certificate
 func NewCertificateCache() *certificateCache {
-	return &certificateCache{}
+	return &certificateCache{
+		tlsCerts: make([]*tls.Certificate, 2),
+	}
 }
 
-// Get returns a parsed TLS certificate
-func (cc *certificateCache) Get() *tls.Certificate {
+// Get returns an array of parsed TLS certificates
+func (cc *certificateCache) Get() []*tls.Certificate {
 	cc.mutex.RLock()
 	defer cc.mutex.RUnlock()
 
-	return cc.tlsCert
+	return cc.tlsCerts
 }
 
-func (cc *certificateCache) put(tlsCert *tls.Certificate) {
+func (cc *certificateCache) put(idx int, tlsCert *tls.Certificate) {
 	cc.mutex.Lock()
 	defer cc.mutex.Unlock()
 
-	cc.tlsCert = tlsCert
+	cc.tlsCerts[idx] = tlsCert
 }

@@ -34,8 +34,8 @@ func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProvider
 
 // Execute performs the access strategy's specific execution logic
 func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string) (*http.Response, error) {
-	clientCert := as.certCache.Get()
-	if clientCert == nil {
+	clientCerts := as.certCache.Get()
+	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
 	}
 
@@ -51,7 +51,11 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		}
 	}
 
-	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCert}
+	if len(clientCerts) != 2 {
+		return nil, errors.New("There must be exactly 2 certificates in the cert cache")
+	}
+
+	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[0]}
 
 	client := &http.Client{
 		Timeout:   baseClient.Timeout,
@@ -74,5 +78,11 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		req.Header.Set(tenantHeader, tnt)
 	}
 
-	return client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil && resp.StatusCode == http.StatusBadGateway {
+		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[1]}
+		client.Transport = tr
+		return client.Do(req)
+	}
+	return resp, err
 }

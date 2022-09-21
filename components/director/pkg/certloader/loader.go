@@ -34,19 +34,19 @@ type Manager interface {
 type certificateLoader struct {
 	config            Config
 	certCache         *certificateCache
-	secretManager     Manager
-	secretName        string
+	secretManagers    []Manager
+	secretNames       []string
 	reconnectInterval time.Duration
 }
 
 // NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificateLoader(config Config, certCache *certificateCache, secretManager Manager, secretName string, reconnectInterval time.Duration) Loader {
+func NewCertificateLoader(config Config, certCache *certificateCache, secretManagers []Manager, secretNames []string, reconnectInterval time.Duration) Loader {
 	return &certificateLoader{
 		config:            config,
 		certCache:         certCache,
-		secretManager:     secretManager,
-		secretName:        secretName,
+		secretManagers:    secretManagers,
+		secretNames:       secretNames,
 		reconnectInterval: reconnectInterval,
 	}
 }
@@ -57,6 +57,12 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error
 	if err != nil {
 		return nil, err
 	}
+
+	parsedExtSvcCertSecret, err := namespacedname.Parse(certLoaderConfig.ExtSvcClientCertSecret)
+	if err != nil {
+		return nil, err
+	}
+
 	kubeConfig := kubernetes.Config{}
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
 	if err != nil {
@@ -64,7 +70,9 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error
 	}
 
 	certCache := NewCertificateCache()
-	certLoader := NewCertificateLoader(certLoaderConfig, certCache, k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), parsedCertSecret.Name, time.Second)
+	secretManagers := []Manager{k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace)}
+	secretNames := []string{parsedCertSecret.Name, parsedExtSvcCertSecret.Name}
+	certLoader := NewCertificateLoader(certLoaderConfig, certCache, secretManagers, secretNames, time.Second)
 	go certLoader.Run(ctx)
 
 	return certCache, nil
@@ -87,27 +95,29 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 			return
 		default:
 		}
-		log.C(ctx).Info("Starting certificate watcher for secret changes...")
-		watcher, err := cl.secretManager.Watch(ctx, metav1.ListOptions{
-			FieldSelector: "metadata.name=" + cl.secretName,
-			Watch:         true,
-		})
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again... %v", cl.reconnectInterval.String(), err)
+		log.C(ctx).Info("Starting certificate watchers for secret changes...")
+		for idx, manager := range cl.secretManagers {
+			watcher, err := manager.Watch(ctx, metav1.ListOptions{
+				FieldSelector: "metadata.name=" + cl.secretNames[idx],
+				Watch:         true,
+			})
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again... %v", cl.reconnectInterval.String(), err)
+				time.Sleep(cl.reconnectInterval)
+				continue
+			}
+			log.C(ctx).Info("Waiting for certificate secret events...")
+
+			cl.processEvents(ctx, watcher.ResultChan(), idx)
+
+			// Cleanup any allocated resources
+			watcher.Stop()
 			time.Sleep(cl.reconnectInterval)
-			continue
 		}
-		log.C(ctx).Info("Waiting for certificate secret events...")
-
-		cl.processEvents(ctx, watcher.ResultChan())
-
-		// Cleanup any allocated resources
-		watcher.Stop()
-		time.Sleep(cl.reconnectInterval)
 	}
 }
 
-func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event) {
+func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event, idx int) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -130,10 +140,10 @@ func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan wa
 				if err != nil {
 					log.C(ctx).WithError(err).Error("Fail during certificate parsing")
 				}
-				cl.certCache.put(tlsCert)
+				cl.certCache.put(idx, tlsCert)
 			case watch.Deleted:
 				log.C(ctx).Info("Removing certificate secret data from cache...")
-				cl.certCache.put(nil)
+				cl.certCache.put(idx, nil)
 			case watch.Error:
 				log.C(ctx).Error("Error event is received, stop certificate secret watcher and try again...")
 				return
