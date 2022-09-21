@@ -3,6 +3,7 @@ package webhook_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -21,7 +22,6 @@ import (
 func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
-
 	modelInput := fixModelWebhookInput("foo")
 
 	webhookModel := mock.MatchedBy(func(webhook *model.Webhook) bool {
@@ -106,8 +106,7 @@ func TestService_Create(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
 			}
 
-			repo.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, repo, uidSvc)
 		})
 	}
 
@@ -126,7 +125,7 @@ func TestService_Get(t *testing.T) {
 	id := "foo"
 	url := "bar"
 
-	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url)
+	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
@@ -185,8 +184,8 @@ func TestService_ListForApplication(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	modelWebhooks := []*model.Webhook{
-		fixApplicationModelWebhook("1", "foo", givenTenant(), "Foo"),
-		fixApplicationModelWebhook("2", "bar", givenTenant(), "Bar"),
+		fixApplicationModelWebhook("1", "foo", givenTenant(), "Foo", time.Time{}),
+		fixApplicationModelWebhook("2", "bar", givenTenant(), "Bar", time.Time{}),
 	}
 	applicationID := "foo"
 
@@ -398,8 +397,8 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 	}
 
 	appModelWebhooks := []*model.Webhook{
-		fixApplicationModelWebhookWithType("app-webhook-1", "app-1", givenTenant(), "test-url-1.com", model.WebhookTypeRegisterApplication),
-		fixApplicationModelWebhookWithType("app-webhook-2", "app-1", givenTenant(), "test-url-2.com", model.WebhookTypeDeleteApplication),
+		fixApplicationModelWebhookWithType("app-webhook-1", "app-1", givenTenant(), "test-url-1.com", model.WebhookTypeRegisterApplication, time.Time{}),
+		fixApplicationModelWebhookWithType("app-webhook-2", "app-1", givenTenant(), "test-url-2.com", model.WebhookTypeDeleteApplication, time.Time{}),
 	}
 	appTemplateModelWebhooks := []*model.Webhook{
 		fixApplicationTemplateModelWebhookWithType("app-template-webhook-1", "app-template-1", "test-url-1.com", model.WebhookTypeRegisterApplication),
@@ -573,7 +572,7 @@ func TestService_Update(t *testing.T) {
 		return webhook.URL == modelInput.URL
 	})
 
-	applicationWebhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url)
+	applicationWebhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
 	applicationTemplateWebhookModel := fixApplicationTemplateModelWebhook("1", id, url)
 	noIDWebhookModel := &model.Webhook{}
 	*noIDWebhookModel = *applicationWebhookModel
@@ -683,7 +682,7 @@ func TestService_Delete(t *testing.T) {
 	id := "foo"
 	url := "bar"
 
-	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url)
+	webhookModel := fixApplicationModelWebhook("1", id, givenTenant(), url, time.Time{})
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())

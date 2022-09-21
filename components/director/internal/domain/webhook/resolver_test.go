@@ -3,6 +3,7 @@ package webhook_test
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -32,7 +33,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 	modelWebhookInput := fixModelWebhookInput("foo")
 
 	gqlWebhook := fixGQLWebhook(id, "", "")
-	modelWebhook := fixApplicationModelWebhook(id, givenAppID, givenTenant(), "foo")
+	modelWebhook := fixApplicationModelWebhook(id, givenAppID, givenTenant(), "foo", time.Time{})
 
 	testCases := []struct {
 		Name                 string
@@ -351,7 +352,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 	gqlWebhookInput := fixGQLWebhookInput("foo")
 	modelWebhookInput := fixModelWebhookInput("foo")
 	gqlWebhook := fixGQLWebhook(givenWebhookID, "", "")
-	modelWebhook := fixApplicationModelWebhook(givenWebhookID, applicationID, givenTenant(), "foo")
+	modelWebhook := fixApplicationModelWebhook(givenWebhookID, applicationID, givenTenant(), "foo", time.Time{})
 
 	testCases := []struct {
 		Name            string
@@ -504,7 +505,7 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 	givenWebhookID := "bar"
 
 	gqlWebhook := fixGQLWebhook(givenWebhookID, "", "")
-	modelWebhook := fixApplicationModelWebhook(givenWebhookID, applicationID, givenTenant(), "foo")
+	modelWebhook := fixApplicationModelWebhook(givenWebhookID, applicationID, givenTenant(), "foo", time.Time{})
 
 	testCases := []struct {
 		Name            string

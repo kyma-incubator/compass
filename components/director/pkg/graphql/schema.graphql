@@ -1271,6 +1271,7 @@ type Webhook {
 	headerTemplate: String
 	outputTemplate: String
 	statusTemplate: String
+	createdAt: Timestamp
 }
 
 type Query {

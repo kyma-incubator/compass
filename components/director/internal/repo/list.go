@@ -78,6 +78,16 @@ func NewListerWithOrderBy(tableName string, selectedColumns []string, orderByPar
 	}
 }
 
+// NewListerGlobalWithOrderBy is a constructor for ListerGlobal about global entities with additional order by clause.
+func NewListerGlobalWithOrderBy(resourceType resource.Type, tableName string, selectedColumns []string, orderByParams OrderByParams) ListerGlobal {
+	return &universalLister{
+		resourceType:    resourceType,
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+		orderByParams:   orderByParams,
+	}
+}
+
 // NewListerGlobal is a constructor for ListerGlobal about global entities.
 func NewListerGlobal(resourceType resource.Type, tableName string, selectedColumns []string) ListerGlobal {
 	return &universalLister{
