@@ -49,6 +49,9 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+echo "Wait for helm stable status"
+wait_for_helm_stable_state "compass" "compass-system" 
+
 echo "Install Compass"
 CRDS_FOLDER="${CURRENT_DIR}/../resources/crds"
 kubectl apply -f "${CRDS_FOLDER}"

@@ -6,9 +6,14 @@
 
 set -o errexit
 
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
+source $SCRIPTS_DIR/utils.sh
+
 TIMEOUT=30m0s
 
-echo "Uninstall Compass"
-helm uninstall --wait --debug --timeout "${TIMEOUT}" --namespace compass-system compass
+echo "Wait for helm stable status"
+wait_for_helm_stable_state "compass" "compass-system" 
 
-# TODO check if DOWN migrations are also executed
+echo "Uninstall Compass"
+helm uninstall --wait --debug --timeout "${TIMEOUT}" --namespace compass-system compass || true

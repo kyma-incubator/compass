@@ -50,6 +50,9 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+echo "Wait for helm stable status"
+wait_for_helm_stable_state "localdb" "compass-system" 
+
 echo "Install DB"
 helm upgrade --install --wait --debug --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system localdb "${DB_CHARTS}"
 
