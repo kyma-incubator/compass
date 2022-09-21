@@ -124,7 +124,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 		// then
 		assert.Eventually(t, func() bool {
 			tlsCert := cache.Get()
-			require.Nil(t, tlsCert)
+			require.Nil(t, tlsCert[0])
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
 		cancel()
@@ -152,7 +152,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 
 		assert.Eventually(t, func() bool {
 			tlsCert := cache.Get()
-			require.NotNil(t, tlsCert)
+			require.NotNil(t, tlsCert[0])
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
 
@@ -163,7 +163,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 		// then
 		assert.Eventually(t, func() bool {
 			tlsCert := cache.Get()
-			require.Nil(t, tlsCert)
+			require.Nil(t, tlsCert[0])
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
 		cancel()
