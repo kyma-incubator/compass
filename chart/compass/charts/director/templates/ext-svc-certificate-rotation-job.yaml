@@ -4,7 +4,7 @@ metadata:
   name: "{{ $.Chart.Name }}-ext-svc-external-certificate-rotation-job"
   namespace: {{ $.Release.Namespace }}
 spec:
-  schedule: "{{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.schedule }}"
+  schedule: "{{ .Values.global.extSvcCertConfiguration.rotationCronjob.schedule }}"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 5
   failedJobsHistoryLimit: 5
@@ -12,19 +12,19 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        cronjob: {{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.name }}
+        cronjob: {{ .Values.global.extSvcCertConfiguration.rotationCronjob.name }}
     spec:
       template:
         metadata:
           labels:
-            cronjob: {{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.name }}
+            cronjob: {{ .Values.global.extSvcCertConfiguration.rotationCronjob.name }}
           annotations:
             cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
-          serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.name }}
+          serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.rotationCronjob.name }}
           restartPolicy: Never
           containers:
-            - name: {{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.containerName }}
+            - name: {{ .Values.global.extSvcCertConfiguration.rotationCronjob.containerName }}
               image: bitnami/kubectl:1.22.4
               imagePullPolicy: IfNotPresent
               command:
@@ -148,54 +148,54 @@ spec:
                 - name: CERT_SVC_CSR_ENDPOINT
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.csrEndpointKey }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.csrEndpointKey }}
                 - name: CERT_SVC_API_PATH
-                  value: {{ .Values.global.extSvcExternalCertConfiguration.certSvcApiPath }}
+                  value: {{ .Values.global.extSvcCertConfiguration.certSvcApiPath }}
                 - name: CERT_SUBJECT_PATTERN
-                  value: {{ printf .Values.global.extSvcExternalCertConfiguration.subjectPattern .Values.global.extSvcExternalCertConfiguration.ouCertSubaccountID .Values.global.extSvcExternalCertConfiguration.locality .Values.global.extSvcExternalCertConfiguration.commonName }}
+                  value: {{ printf .Values.global.extSvcCertConfiguration.subjectPattern .Values.global.extSvcCertConfiguration.ouCertSubaccountID .Values.global.extSvcCertConfiguration.locality .Values.global.extSvcCertConfiguration.commonName }}
                 - name: EXPECTED_ISSUER_LOCALITY
-                  value: {{ .Values.global.extSvcExternalCertConfiguration.issuerLocality }}
+                  value: {{ .Values.global.extSvcCertConfiguration.issuerLocality }}
                 - name: CERT_VALIDITY
-                  value: {{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.certValidity | quote }}
+                  value: {{ .Values.global.extSvcCertConfiguration.rotationCronjob.certValidity | quote }}
                 - name: CLIENT_CERT_RETRY_ATTEMPTS
-                  value: {{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.clientCertRetryAttempts | quote }}
+                  value: {{ .Values.global.extSvcCertConfiguration.rotationCronjob.clientCertRetryAttempts | quote }}
                 - name: CLIENT_CERT_SECRET_NAME
-                  value: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalClientCertSecret.name }}
+                  value: {{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.name }}
                 - name: CLIENT_CERT_CERT_KEY
-                  value:  {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalClientCertSecret.certKey }}
+                  value:  {{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.certKey }}
                 - name: CLIENT_CERT_KEY_KEY
-                  value:  {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalClientCertSecret.keyKey }}
+                  value:  {{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.keyKey }}
                 - name: CERT_SVC_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.clientIdKey }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.clientIdKey }}
                 - name: CERT_SVC_OAUTH_URL
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.oauthUrlKey }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.oauthUrlKey }}
                 - name: CERT_SVC_TOKEN_PATH
-                  value: {{ .Values.global.extSvcExternalCertConfiguration.tokenPath }}
+                  value: {{ .Values.global.extSvcCertConfiguration.tokenPath }}
                 - name: CERT_SVC_OAUTH_CLIENT_CERT
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.clientCert }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.clientCert }}
                 - name: CERT_SVC_OAUTH_CLIENT_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
                 - name: SKIP_SSL_VALIDATION_FLAG
-                  value: {{ .Values.global.extSvcExternalCertConfiguration.secrets.externalCertSvcSecret.skipSSLValidationFlag }}
+                  value: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.skipSSLValidationFlag }}
 
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.name }}
+  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -208,7 +208,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.name }}
+  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -225,7 +225,7 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.name }}
+  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.rotationCronjob.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -236,17 +236,17 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: {{ $.Chart.Name }}-{{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.name }}
+    name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.rotationCronjob.name }}
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcExternalCertConfiguration.rotationCronjob.name }}
+  name: {{ $.Chart.Name }}-{{ .Values.global.extSvcCertConfiguration.rotationCronjob.name }}
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: director-{{ .Values.global.extSvcExternalCertConfiguration.secrets.externalClientCertSecret.name }}
+  name: director-{{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -258,5 +258,5 @@ metadata:
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
-    resourceNames: ["{{ .Values.global.extSvcExternalCertConfiguration.secrets.externalClientCertSecret.name }}"]
+    resourceNames: ["{{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.name }}"]
     verbs: ["watch"]

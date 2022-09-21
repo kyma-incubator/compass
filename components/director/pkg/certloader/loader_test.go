@@ -317,7 +317,7 @@ func preparation(ctx context.Context, number int, config Config) (Cache, *testWa
 	}
 	secretManagerMock := &automock.Manager{}
 	secretManagerMock.On("Watch", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(watcher, nil).Times(number)
-	loader := NewCertificateLoader(config, cache, secretManagerMock, secretName, time.Millisecond)
+	loader := NewCertificateLoader(config, cache, []Manager{secretManagerMock}, []string{secretName}, time.Millisecond)
 	go loader.Run(ctx)
 
 	return cache, watcher, secretManagerMock

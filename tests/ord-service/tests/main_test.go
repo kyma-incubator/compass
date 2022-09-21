@@ -98,7 +98,7 @@ func TestMain(m *testing.M) {
 	if err := util.WaitForCache(certCache); err != nil {
 		log.D().Fatal(err)
 	}
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get()[0].PrivateKey, certCache.Get()[0].Certificate, conf.SkipSSLValidation)
 
 	conf.TFConfig.FullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(conf.TFConfig.RegionalHandlerEndpoint, conf.TFConfig.TenantPathParam, conf.TFConfig.RegionPathParam, conf.TFConfig.URL, conf.TFConfig.RootAPI)
 
