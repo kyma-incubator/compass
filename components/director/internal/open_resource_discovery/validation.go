@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
@@ -680,15 +682,16 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 		return nil
 	}
 
-	_, ok := value.([]*model.EventResourceDefinition)
+	eventResourceDef, ok := value.([]*model.EventResourceDefinition)
 	if !ok {
 		return errors.New("error while casting to EventResourceDefinition")
 	}
 
 	// soften validation temporarily
-	// if len(eventResourceDef) == 0 {
-	//	return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
-	// }
+	if len(eventResourceDef) == 0 {
+		log.DefaultLogger().Errorf("when event resource visibility is public or internal, resource definitions must be provided for event with ID: %s", *event.OrdID)
+		//	return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
+	}
 
 	return nil
 }
