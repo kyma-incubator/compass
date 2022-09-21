@@ -37,7 +37,7 @@ func TestPrepareMTLSClient(t *testing.T) {
 	ts.StartTLS()
 	defer ts.Close()
 
-	mtlsClient := utils.PrepareMTLSClient(cfg, mockedCache)
+	mtlsClient := utils.PrepareMtlsClient(cfg, mockedCache)
 
 	resp, err := mtlsClient.Get(ts.URL)
 	require.NoError(t, err)
