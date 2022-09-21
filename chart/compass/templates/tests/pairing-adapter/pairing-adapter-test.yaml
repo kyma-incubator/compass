@@ -83,11 +83,11 @@ spec:
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+              value: "{{ $.Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ $.Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
             - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
+              value: "{{ $.Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
             - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
+              value: "{{ $.Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: APP_IS_LOCAL_ENV
               value: {{ $.Values.global.isLocalEnv | quote }}
             - name: APP_TEMPLATE_NAME
