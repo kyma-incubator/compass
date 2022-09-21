@@ -22,7 +22,6 @@ import (
 )
 
 // RuntimeService is used to interact with runtimes.
-//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	GetLabel(context.Context, string, string) (*model.Label, error)
@@ -30,28 +29,24 @@ type RuntimeService interface {
 }
 
 // RuntimeCtxService is used to interact with runtime contexts.
-//
 //go:generate mockery --name=RuntimeCtxService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeCtxService interface {
 	ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
 }
 
 // ApplicationTemplateService is used to interact with application templates.
-//
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 }
 
 // ApplicationService is used to interact with runtime contexts.
-//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	ListAll(ctx context.Context) ([]*model.Application, error)
 }
 
 // IntegrationSystemService is used to check if integration system with a given ID exists.
-//
 //go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemService interface {
 	Exists(context.Context, string) (bool, error)
