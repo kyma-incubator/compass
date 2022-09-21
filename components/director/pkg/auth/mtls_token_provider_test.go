@@ -62,7 +62,7 @@ type MtlsTokenAuthorizationProviderTestSuite struct {
 
 func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_DefaultMtlsClientCreator() {
 	cache := &automock.CertificateCache{}
-	cache.On("Get").Return(&tls.Certificate{}, nil).Once()
+	cache.On("Get").Return([]*tls.Certificate{&tls.Certificate{}}, nil).Once()
 	defer cache.AssertExpectations(suite.T())
 
 	client := auth.DefaultMtlsClientCreator(cache, true, time.Second)
