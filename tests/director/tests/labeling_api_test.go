@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -94,8 +93,6 @@ func TestCreateScenariosLabel(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getLabelDefinition, &ld)
 	require.NoError(t, err)
 
-	t.Log("Check if app was labeled with scenarios=default")
-
 	getApp := fixtures.FixGetApplicationRequest(app.ID)
 	actualApp := graphql.ApplicationExt{}
 	// WHEN
@@ -104,18 +101,6 @@ func TestCreateScenariosLabel(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp)
-	if conf.DefaultScenarioEnabled {
-		assert.Contains(t, actualApp.Labels, labelKey)
-		scenariosLabel, ok := actualApp.Labels[labelKey].([]interface{})
-		require.True(t, ok)
-
-		var scenariosEnum []string
-		for _, v := range scenariosLabel {
-			scenariosEnum = append(scenariosEnum, v.(string))
-		}
-
-		assert.Contains(t, scenariosEnum, "DEFAULT")
-	}
 }
 
 func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
@@ -127,19 +112,20 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	t.Log("Create application")
 	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
 	labelKey := "scenarios"
-	defaultValue := conf.DefaultScenario
 	additionalValue := "ADDITIONAL"
+
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	t.Logf("Update Label Definition scenarios enum with additional value %s", additionalValue)
 
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
-			"enum": []string{defaultValue, additionalValue},
+			"enum": []string{testScenario, additionalValue},
 			"type": "string",
 		},
 		"type":        "array",
@@ -147,10 +133,9 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 		"uniqueItems": true,
 	}
 
-	var schema interface{} = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
-		Schema: json.MarshalJSONSchema(t, schema),
+		Schema: json.MarshalJSONSchema(t, jsonSchema),
 	}
 
 	ldInputGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(ldInput)
@@ -162,15 +147,14 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
 
 	require.NoError(t, err)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, additionalValue)
 
 	scenarios := []string{additionalValue}
-	if conf.DefaultScenarioEnabled {
-		scenarios = []string{defaultValue, additionalValue}
-	}
-	var labelValue interface{} = scenarios
 
 	t.Logf("Set scenario label value %s on application", additionalValue)
-	fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, app.ID, labelKey, labelValue)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: additionalValue}, app.ID, tenantId)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: additionalValue}, app.ID, tenantId)
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixtures.FixGetApplicationRequest(app.ID)
@@ -187,55 +171,6 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 		actualScenariosEnum = append(actualScenariosEnum, v.(string))
 	}
 	assert.Equal(t, scenarios, actualScenariosEnum)
-}
-
-func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
-
-	t.Log("Create application")
-	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), tenantId)
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
-	require.NoError(t, err)
-	require.NotEmpty(t, app.ID)
-
-	labelKey := "scenarios"
-	defaultValue := conf.DefaultScenario
-
-	t.Log("Try to update Label Definition with scenarios enum without DEFAULT value")
-
-	jsonSchema := map[string]interface{}{
-		"items": map[string]interface{}{
-			"enum": []string{"NOTDEFAULT"},
-			"type": "string",
-		},
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-	}
-
-	var schema interface{} = jsonSchema
-	ldInput := graphql.LabelDefinitionInput{
-		Key:    labelKey,
-		Schema: json.MarshalJSONSchema(t, schema),
-	}
-
-	ldInputGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(ldInput)
-	require.NoError(t, err)
-
-	updateLabelDefinitionRequest := fixtures.FixUpdateLabelDefinitionRequest(ldInputGQL)
-	labelDefinition := graphql.LabelDefinition{}
-
-	// WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
-	errMsg := fmt.Sprintf(`rule.validSchema=while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s"`, labelKey, defaultValue)
-
-	// THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), errMsg)
 }
 
 func TestSearchApplicationsByLabels(t *testing.T) {
@@ -406,14 +341,14 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
-	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
-	defer tenant.TestTenants.CleanupTenant(tenantID)
-
 	ctx := context.TODO()
+	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
+
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
-			"enum": []string{"DEFAULT", "test"},
+			"enum": []string{testScenario},
 			"type": "string",
 		},
 		"type":        "array",
@@ -433,7 +368,11 @@ func TestListLabelDefinitions(t *testing.T) {
 	saveExample(t, createRequest.Query(), "create label definition")
 
 	output := graphql.LabelDefinition{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output)
+	if err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output); err != nil {
+		// The Label Definition already exists
+		updateRequest := fixtures.FixUpdateLabelDefinitionRequest(in)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, updateRequest, &output)
+	}
 	require.NoError(t, err)
 
 	firstLabelDefinition := &output
@@ -454,15 +393,18 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.DeleteLastScenarioForApplicationTenantName)
 	name := "deleting-last-scenario-for-app-fail"
-	scenarios := []string{conf.DefaultScenario, "Christmas", "New Year"}
+	scenarios := []string{"Christmas", "New Year"}
 
-	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{conf.DefaultScenario})
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[0])
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[0])
+
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[1])
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[1])
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
 		Labels: graphql.Labels{
-			ScenariosLabel:               []string{"Christmas", "New Year"},
+			ScenariosLabel:               scenarios,
 			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 	}
@@ -471,10 +413,10 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 	//WHEN
-	appLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{"Christmas"})
+	appLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{scenarios[0]})
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, appLabelRequest, nil))
 
 	//remove last label
@@ -483,23 +425,5 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `Object not found [object=formations]`)
-}
-
-func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	tenantID := tenant.TestTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
-	getLabelDefinitionRequest := fixtures.FixLabelDefinitionRequest(ScenariosLabel)
-	labelDefinition := graphql.LabelDefinition{}
-
-	// WHEN
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, getLabelDefinitionRequest, &labelDefinition)
-
-	// THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, labelDefinition)
-	assert.Equal(t, ScenariosLabel, labelDefinition.Key)
-	assert.NotEmpty(t, labelDefinition.Schema)
+	assert.Contains(t, err.Error(), `graphql: Object not found [object=formations]`)
 }

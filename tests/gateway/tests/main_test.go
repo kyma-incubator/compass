@@ -25,6 +25,9 @@ type config struct {
 	AppSelfRegDistinguishLabelKey   string
 	AppSelfRegDistinguishLabelValue string
 	AppSelfRegRegion                string
+	ApplicationTypeLabelKey         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+
+	GatewayOauth string `envconfig:"APP_GATEWAY_OAUTH"`
 
 	DirectorURL string `envconfig:"-"`
 }

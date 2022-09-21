@@ -88,8 +88,6 @@ spec:
               value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
               value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
-            - name: APP_DEFAULT_SCENARIO_ENABLED
-              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_LOG_FORMAT
               value: {{.Values.global.log.format | quote }}
             - name: APP_ADDRESS

@@ -162,8 +162,6 @@ spec:
               value: {{ .Values.global.pairingAdapter.configMap.key }}
             - name: APP_PAIRING_ADAPTER_WATCHER_ID
               value: {{ .Values.global.pairingAdapter.watcherCorrelationID }}
-            - name: APP_DEFAULT_SCENARIO_ENABLED
-              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_HEALTH_CONFIG_INDICATORS
               value: {{ .Values.health.indicators | quote }}
             - name: APP_SCHEMA_MIGRATION_VERSION

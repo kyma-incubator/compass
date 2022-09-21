@@ -35,25 +35,31 @@ const unassignFormationCategory = "unassign formation"
 
 func TestGetFormation(t *testing.T) {
 	ctx := context.Background()
-	formationName := "formation1"
 
-	t.Logf("Should create formation: %q", formationName)
-	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	t.Logf("Should create formation: %q", testScenario)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
 
-	t.Logf("Should get formation %q by id %q", formationName, formation.ID)
+	var formation graphql.Formation
+	createReq := fixtures.FixCreateFormationRequest(testScenario)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, testScenario, formation.Name)
+
+	saveExample(t, createReq.Query(), "create formation")
+
+	t.Logf("Should get formation %q by id %q", testScenario, formation.ID)
 	var gotFormation graphql.Formation
 	getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
 	saveExample(t, getFormationReq.Query(), "query formation")
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
 	require.NoError(t, err)
 	require.Equal(t, formation, gotFormation)
 
-	t.Logf("Should delete formation %q", formationName)
-	deleteFormation := fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	t.Logf("Should delete formation %q", testScenario)
+	deleteFormation := fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
 	assert.Equal(t, formation, *deleteFormation)
 
-	t.Logf("Should NOT get formation %q by id %q because it is already deleted", formationName, formation.ID)
+	t.Logf("Should NOT get formation %q by id %q because it is already deleted", testScenario, formation.ID)
 	var nonexistentFormation *graphql.Formation
 	getNonexistentFormationReq := fixtures.FixGetFormationRequest(formation.ID)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getNonexistentFormationReq, nonexistentFormation)
@@ -62,11 +68,6 @@ func TestGetFormation(t *testing.T) {
 }
 
 func TestListFormations(t *testing.T) {
-	// Pre-cleanup because the formations table may be dirty by previous tests in the director,
-	// which delete their created formations after the end of all director tests.
-	tenantID := tenant.TestTenants.GetDefaultTenantID()
-	tenant.TestTenants.CleanupTenant(tenantID)
-
 	ctx := context.Background()
 
 	firstFormationName := "formation1"
@@ -105,8 +106,6 @@ func TestListFormations(t *testing.T) {
 func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	labelKey := "scenarios"
-	defaultValue := conf.DefaultScenario
 	newFormation := "ADDITIONAL"
 	unusedFormationName := "UNUSED"
 
@@ -132,8 +131,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
 
-	saveExample(t, createReq.Query(), "create formation")
-
 	nonExistingFormation := "nonExistingFormation"
 	t.Logf("Shoud not assign application to formation %s, as it is not in the label definition", nonExistingFormation)
 	failAssignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), nonExistingFormation)
@@ -157,13 +154,10 @@ func TestApplicationFormationFlow(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &app)
 	require.NoError(t, err)
 
-	scenariosLabel, ok := app.Labels[labelKey].([]interface{})
+	scenariosLabel, ok := app.Labels[ScenariosLabel].([]interface{})
 	require.True(t, ok)
 
 	formations := []string{newFormation}
-	if conf.DefaultScenarioEnabled {
-		formations = []string{defaultValue, newFormation}
-	}
 
 	var actualScenariosEnum []string
 	for _, v := range scenariosLabel {
@@ -187,14 +181,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 
 	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign application from formation")
 
-	if conf.DefaultScenarioEnabled {
-		unassignDefaultReq := fixtures.FixUnassignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), defaultValue)
-		var unassignDefaultFormation graphql.Formation
-		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignDefaultReq, &unassignDefaultFormation)
-		require.NoError(t, err)
-		require.Equal(t, defaultValue, unassignDefaultFormation.Name)
-	}
-
 	t.Log("Should be able to delete formation after application is unassigned")
 	deleteRequest = fixtures.FixDeleteFormationRequest(newFormation)
 	var deleteFormation graphql.Formation
@@ -215,7 +201,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 func TestRuntimeFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	labelKey := "scenarios"
 	newFormation := "ADDITIONAL"
 	asaFormation := "ASA"
 	unusedFormationName := "UNUSED"
@@ -286,7 +271,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	saveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
-	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, labelKey, []string{asaFormation, newFormation})
+	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
 
 	t.Logf("Assign runtime to formation %s which was already assigned by ASA should fail with conflict", asaFormation)
 	assignReq = fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
@@ -295,7 +280,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.Contains(t, err.Error(), "Object is not unique")
 
 	t.Log("Check if the formation label value is still assigned")
-	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, labelKey, []string{asaFormation, newFormation})
+	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
 
 	t.Logf("Try to unassign runtime from formation %q which was assigned by ASA", asaFormation)
 	unassignReq := fixtures.FixUnassignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
@@ -305,7 +290,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.Equal(t, asaFormation, unassignFormation.Name)
 
 	t.Log("Check that the formation label value is still assigned")
-	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, labelKey, []string{asaFormation, newFormation})
+	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
 
 	t.Log("Should not delete formation while runtime is assigned")
 	deleteRequest := fixtures.FixDeleteFormationRequest(newFormation)
@@ -323,7 +308,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime from formation")
 
 	t.Log("Check that the formation label value is unassigned")
-	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, labelKey, []string{asaFormation})
+	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation})
 
 	t.Log("Should be able to delete formation after runtime is unassigned")
 	deleteRequest = fixtures.FixDeleteFormationRequest(newFormation)
@@ -343,7 +328,6 @@ func TestRuntimeFormationFlow(t *testing.T) {
 func TestRuntimeContextFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	labelKey := "scenarios"
 	newFormation := "ADDITIONAL"
 	asaFormation := "ASA"
 	asaFormation2 := "ASA2"
@@ -393,7 +377,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtimeContext.ID)
 
 	t.Log("RuntimeContext should be assigned to formation coming from ASA")
-	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation})
+	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation})
 
 	t.Logf("Should create formation: %s", asaFormation2)
 	createAsaFormationReq2 := fixtures.FixCreateFormationRequest(asaFormation2)
@@ -417,7 +401,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2.Name, subaccountID, tenantId)
 
 	t.Log("RuntimeContext should be assigned to the new formation coming from ASA as well")
-	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2})
+	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2})
 
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation
@@ -444,7 +428,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	saveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime context to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
-	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2, newFormation})
+	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2, newFormation})
 
 	t.Logf("Assign runtime context to formation %s which was already assigned by ASA should fail with conflict", asaFormation)
 	assignReq = fixtures.FixAssignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", asaFormation)
@@ -453,7 +437,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	require.Contains(t, err.Error(), "Object is not unique")
 
 	t.Log("Check if the formation label value is still assigned")
-	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2, newFormation})
+	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2, newFormation})
 
 	t.Logf("Try to unassign runtime context from formation %q which was assigned by ASA", asaFormation)
 	unassignReq := fixtures.FixUnassignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", asaFormation)
@@ -463,7 +447,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	require.Equal(t, asaFormation, unassignFormation.Name)
 
 	t.Log("Check that the formation label value is still assigned")
-	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2, newFormation})
+	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2, newFormation})
 
 	t.Log("Should not delete formation while runtime context is assigned")
 	deleteRequest := fixtures.FixDeleteFormationRequest(newFormation)
@@ -481,7 +465,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime context from formation")
 
 	t.Log("Check that the formation label value is unassigned")
-	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2})
+	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2})
 
 	t.Log("Should be able to delete formation after runtime is unassigned")
 	deleteRequest = fixtures.FixDeleteFormationRequest(newFormation)
@@ -503,18 +487,12 @@ func TestTenantFormationFlow(t *testing.T) {
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 	ctx := context.Background()
-	defaultValue := conf.DefaultScenario
 	assignment := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: firstFormation,
 		Selector: &graphql.LabelSelectorInput{
 			Key:   "global_subaccount_id",
 			Value: subaccountID,
 		},
-	}
-
-	expectedFormations := []string{firstFormation, secondFormation}
-	if conf.DefaultScenarioEnabled {
-		expectedFormations = append(expectedFormations, defaultValue)
 	}
 
 	t.Logf("Should create formation: %s", firstFormation)
@@ -600,12 +578,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 		// Create kyma formation
 		kymaFormationName := "kyma-formation-name"
-		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName, &kymaFormationTmplName)
+		fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName, &kymaFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName)
 
 		// Create provider formation
 		providerFormationName := "provider-formation-name"
-		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
+		fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 
 		t.Run("Create Automatic Scenario Assignment BEFORE runtime creation", func(t *testing.T) {
@@ -899,7 +877,7 @@ func TestFormationNotifications(stdT *testing.T) {
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
-		formation := fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 
 		t.Log("Create integration system")
@@ -1124,7 +1102,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 
 	formationName := "app-to-app-formation-name"
 	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
-	formation := fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
+	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
 
 	t.Log("Create integration system")
@@ -1244,16 +1222,6 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.NotEmpty(t, app1.ID)
 	t.Logf("app1 ID: %q", app1.ID)
 
-	if conf.DefaultScenarioEnabled {
-		// TODO: Delete this after removing DefaultScenario
-		t.Logf("Unassign Application 1 from formation %s", conf.DefaultScenario)
-		unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), conf.DefaultScenario)
-		var unassignFormation graphql.Formation
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
-		require.NoError(t, err)
-		require.Equal(t, conf.DefaultScenario, unassignFormation.Name)
-	}
-
 	appFromTmplSrc2 := graphql.ApplicationFromTemplateInput{
 		TemplateName: applicationType2, Values: []*graphql.TemplateValueInput{
 			{
@@ -1277,16 +1245,6 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, app2.ID)
 	t.Logf("app2 ID: %q", app2.ID)
-
-	if conf.DefaultScenarioEnabled {
-		// TODO: Delete this after removing DefaultScenario
-		t.Logf("Unassign Application 2 from formation %s", conf.DefaultScenario)
-		unassignReq := fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), conf.DefaultScenario)
-		var unassignFormation graphql.Formation
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
-		require.NoError(t, err)
-		require.Equal(t, conf.DefaultScenario, unassignFormation.Name)
-	}
 
 	t.Logf("Assign application 1 to formation %s", formationName)
 	assignReq := fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -1464,13 +1422,13 @@ func assertFormationNotification(t *testing.T, notification gjson.Result, op str
 
 func validateRuntimesScenariosLabels(t *testing.T, ctx context.Context, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntimeID, providerRuntimeID string) {
 	t.Log("Assert kyma runtime HAS only kyma scenarios label")
-	checkRuntimeFormationLabelsExists(t, ctx, subscriptionConsumerAccountID, kymaRuntimeID, "scenarios", []string{kymaFormationName})
+	checkRuntimeFormationLabelsExists(t, ctx, subscriptionConsumerAccountID, kymaRuntimeID, ScenariosLabel, []string{kymaFormationName})
 
 	t.Log("Assert provider runtime is NOT part of any scenarios")
 	checkRuntimeFormationLabelIsMissing(t, ctx, subscriptionConsumerAccountID, providerRuntimeID)
 
 	t.Log("Assert runtime context of the provider runtime HAS only provider scenarios label")
-	checkRuntimeContextFormationLabelsForRuntime(t, ctx, subscriptionConsumerAccountID, providerRuntimeID, "scenarios", []string{providerFormationName})
+	checkRuntimeContextFormationLabelsForRuntime(t, ctx, subscriptionConsumerAccountID, providerRuntimeID, ScenariosLabel, []string{providerFormationName})
 }
 
 func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
@@ -1582,7 +1540,7 @@ func checkRuntimeFormationLabelIsMissing(t *testing.T, ctx context.Context, tena
 	require.NoError(t, err)
 	require.Equal(t, rtmID, rtm.ID)
 
-	scenariosLabel, hasScenario := rtm.Labels["scenarios"].([]interface{})
+	scenariosLabel, hasScenario := rtm.Labels[ScenariosLabel].([]interface{})
 	require.False(t, hasScenario)
 	require.Empty(t, scenariosLabel)
 }

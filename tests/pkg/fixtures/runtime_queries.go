@@ -173,3 +173,31 @@ func RegisterKymaRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Clie
 
 	return kymaRuntime
 }
+
+func RegisterKymaRuntimeBench(b *testing.B, ctx context.Context, gqlClient *gcli.Client, tenantID string, runtimeInput graphql.RuntimeRegisterInput, oauthPath string) graphql.RuntimeExt {
+	intSysName := "runtime-integration-system"
+
+	b.Logf("Creating integration system with name: %q", intSysName)
+	intSys, err := RegisterIntegrationSystem(b, ctx, gqlClient, tenantID, intSysName)
+	defer CleanupIntegrationSystem(b, ctx, gqlClient, tenantID, intSys)
+	require.NoError(b, err)
+	require.NotEmpty(b, intSys.ID)
+
+	intSysAuth := RequestClientCredentialsForIntegrationSystem(b, ctx, gqlClient, tenantID, intSys.ID)
+	require.NotEmpty(b, intSysAuth)
+	defer DeleteSystemAuthForIntegrationSystem(b, ctx, gqlClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(b, ok)
+
+	b.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessTokenBench(b, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, oauthPath)
+
+	b.Logf("Registering runtime with name %q with integration system credentials...", runtimeInput.Name)
+	kymaRuntime, err := RegisterRuntimeFromInputWithinTenant(b, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
+	require.NoError(b, err)
+	require.NotEmpty(b, kymaRuntime.ID)
+
+	return kymaRuntime
+}

@@ -11,14 +11,13 @@ import (
 )
 
 const (
-	ScenariosLabel  = "scenarios"
-	TestScenario    = "test-scenario"
-	DefaultScenario = "DEFAULT"
+	ScenariosLabel = "scenarios"
+	TestScenario   = "test-scenario"
 )
 
 func TestAppsForRuntimeWithCertificates(t *testing.T) {
-	scenarios := []string{DefaultScenario, TestScenario}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, scenarios)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, TestScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, TestScenario)
 
 	appIdToCommonName := make(map[string]string)
 
@@ -28,7 +27,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: "SAP Cloud for Customer"},
 	})
 	defer func() {
-		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, firstApp.ID, true)
+		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, firstApp.ID)
 		fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &firstApp)
 	}()
 	require.NoError(t, err)
@@ -65,7 +64,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: "SAP Cloud for Customer"},
 	})
 	defer func() {
-		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, secondApp.ID, true)
+		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, secondApp.ID)
 		fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &secondApp)
 	}()
 	require.NoError(t, err)

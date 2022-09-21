@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	validScenario, _      = json.Marshal(model.ScenariosSchema)
+	validScenario, _      = json.Marshal(model.NewScenariosSchema([]string{"test-scenario"}))
 	validSchema           = graphql.JSONSchema(validScenario)
 	invalidScenarioSchema = graphql.JSONSchema(`{"type": "string"}`)
 	invalidSchema         = graphql.JSONSchema(`{invalid`)
@@ -104,22 +104,6 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 						"type": "string",
 						"enum": ["DEFAULT", "Abcdefghijklmnopqrstuvwxyz1234567890Abcdefghijklmnopqrstuvwxyz1234567890Abcdefghijklmnopqrstuvwxyz1234567890Abcdefghijklmnopqrstuvwxyz1234567890"]
 					}	
-				}`),
-			},
-			ExpectedValid: false,
-		},
-		{
-			Name: "Invalid - scenarios schema without DEFAULT enum value",
-			Value: graphql.LabelDefinitionInput{
-				Key: model.ScenariosKey,
-				Schema: jsonSchemaPtr(`{
-					"type":        "array",
-					"minItems":    1,
-					"uniqueItems": true,
-					"items": {
-						"type": "string",
-						"enum": ["Abc"]
-					}
 				}`),
 			},
 			ExpectedValid: false,
@@ -235,7 +219,7 @@ func jsonSchemaPtr(schema string) *graphql.JSONSchema {
 }
 
 func fixScenariosSchema(t *testing.T) *graphql.JSONSchema {
-	marshalled, err := json.Marshal(model.ScenariosSchema)
+	marshalled, err := json.Marshal(model.NewScenariosSchema([]string{"test-scenario"}))
 	require.NoError(t, err)
 	return jsonSchemaPtr(string(marshalled))
 }
