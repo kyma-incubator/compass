@@ -54,11 +54,11 @@ func NewInfoHandler(ctx context.Context, c Config, certCache certloader.Cache) f
 
 func prepareResponseData(c Config, certCache certloader.Cache) (responseData, error) {
 	clientCert := certCache.Get()
-	if clientCert == nil || len(clientCert.Certificate) == 0 {
+	if clientCert == nil || len(clientCert[0].Certificate) == 0 {
 		return responseData{}, errors.New("did not find client certificate in the cache")
 	}
 
-	parsedClientCert, err := x509.ParseCertificate(clientCert.Certificate[0])
+	parsedClientCert, err := x509.ParseCertificate(clientCert[0].Certificate[0])
 	if err != nil {
 		return responseData{}, errors.New("error while parsing client certificate")
 	}

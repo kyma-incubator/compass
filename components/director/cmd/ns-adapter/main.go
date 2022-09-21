@@ -91,6 +91,7 @@ func main() {
 
 	securedHTTPClient := httputildirector.PrepareHTTPClient(conf.ClientTimeout)
 	mtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache)
+	extSvcMtlsHTTPClient := httputildirector.PrepareExtSvcMTLSClient(conf.ClientTimeout, certCache)
 
 	uidSvc := uid.NewService()
 
@@ -146,7 +147,7 @@ func main() {
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
 
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)

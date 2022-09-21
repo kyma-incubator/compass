@@ -117,8 +117,9 @@ func main() {
 	httpClient := &http.Client{Timeout: cfg.ClientTimeout}
 	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache)
+	extSvcMtlsClient := pkgAuth.PrepareExtSvcMTLSClient(cfg.ClientTimeout, certCache)
 
-	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache)
+	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
 	}
@@ -133,7 +134,7 @@ func main() {
 	}
 }
 
-func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed while unmarshalling ord webhook mappings")
@@ -195,7 +196,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)

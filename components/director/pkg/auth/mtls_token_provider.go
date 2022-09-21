@@ -37,7 +37,7 @@ import (
 // CertificateCache missing godoc
 //go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertificateCache interface {
-	Get() *tls.Certificate
+	Get() []*tls.Certificate
 }
 
 // MtlsClientCreator is a constructor function for http.Clients
@@ -49,7 +49,7 @@ func DefaultMtlsClientCreator(cc CertificateCache, skipSSLValidation bool, timeo
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: skipSSLValidation,
 			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-				return cc.Get(), nil
+				return cc.Get()[0], nil
 			},
 		},
 	}))

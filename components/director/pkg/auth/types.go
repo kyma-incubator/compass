@@ -65,7 +65,7 @@ type OAuthCredentials struct {
 }
 
 type certCache struct {
-	cert *tls.Certificate
+	cert []*tls.Certificate
 }
 
 // OAuthMtlsCredentials implements the Credentials interface for the OAuth flow with Mtls
@@ -86,7 +86,7 @@ func NewOAuthMtlsCredentials(clientID, certificate, key, tokenURL, oauthTokenPat
 	return &OAuthMtlsCredentials{
 		ClientID: clientID,
 		CertCache: &certCache{
-			cert: mtlsCert,
+			cert: []*tls.Certificate{mtlsCert},
 		},
 		TokenURL: tokenURL + oauthTokenPath,
 	}, nil
@@ -112,7 +112,7 @@ func (oc *OAuthCredentials) Type() CredentialType {
 	return OAuthCredentialType
 }
 
-func (cc *certCache) Get() *tls.Certificate {
+func (cc *certCache) Get() []*tls.Certificate {
 	return cc.cert
 }
 

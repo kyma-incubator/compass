@@ -195,10 +195,10 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.Respo
 func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook graphql.Webhook) (*http.Response, error) {
 	if webhook.Auth != nil {
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
-			if resp, err := c.mtlsClient.Do(req); err != nil && resp.StatusCode == http.StatusBadGateway { //not sure about the status code
-				return resp, err
-			} else {
+			if resp, err := c.mtlsClient.Do(req); err != nil {
 				return c.extSvcMtlsClient.Do(req)
+			} else {
+				return resp, err
 			}
 		} else if webhook.Auth.Credential != nil {
 			ctx = saveToContext(ctx, webhook.Auth.Credential)

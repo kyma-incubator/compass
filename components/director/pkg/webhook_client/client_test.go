@@ -56,7 +56,7 @@ func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{},
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -73,7 +73,7 @@ func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{},
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -94,7 +94,7 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -116,7 +116,7 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -139,7 +139,7 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 	var ctx context.Context
 
 	_, err := client.Do(ctx, webhookReq)
@@ -164,7 +164,7 @@ func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -189,7 +189,7 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{err: errors.New(mockedError)},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -221,7 +221,7 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 				StatusCode: http.StatusAccepted,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -254,7 +254,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 				StatusCode: http.StatusAccepted,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -290,7 +290,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 				StatusCode: http.StatusAccepted,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -325,7 +325,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 				StatusCode: http.StatusNotFound,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -359,7 +359,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 				StatusCode: http.StatusInternalServerError,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -407,7 +407,7 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 				require.Equal(t, password, basicCreds.Password)
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -456,7 +456,7 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 				require.Equal(t, tokenURL, oAuthCredentials.TokenURL)
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -493,7 +493,7 @@ func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 		},
 	}
 
-	client := webhookclient.NewClient(nil, mtlsClient)
+	client := webhookclient.NewClient(nil, mtlsClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -541,7 +541,7 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 				require.True(t, correlationIDAttached)
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -560,7 +560,7 @@ func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T
 		},
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -582,7 +582,7 @@ func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 	var ctx context.Context
 
 	_, err := client.Poll(ctx, webhookReq)
@@ -607,7 +607,7 @@ func TestClient_Poll_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -631,7 +631,7 @@ func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{err: errors.New(mockedError)},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -659,7 +659,7 @@ func TestClient_Poll_WhenParseStatusTemplateFails_ShouldReturnError(t *testing.T
 		Transport: mockedTransport{
 			resp: &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -690,7 +690,7 @@ func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *t
 				StatusCode: http.StatusOK,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -722,7 +722,7 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 				StatusCode: http.StatusInternalServerError,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -768,7 +768,7 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 				require.Equal(t, password, basicCreds.Password)
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -815,7 +815,7 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 				require.Equal(t, tokenURL, oAuthCredentials.TokenURL)
 			},
 		},
-	}, nil)
+	}, nil, nil)
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.NoError(t, err)
@@ -855,7 +855,7 @@ func TestClient_Poll_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) 
 		},
 	}
 
-	client := webhookclient.NewClient(nil, mtlsClient)
+	client := webhookclient.NewClient(nil, mtlsClient, nil)
 
 	_, err := client.Poll(context.Background(), pollRequest)
 
@@ -886,7 +886,7 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsNullErrorField_Sho
 				StatusCode: http.StatusOK,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.NoError(t, err)
@@ -915,7 +915,7 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsEmptyErrorField_Sh
 				StatusCode: http.StatusOK,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.NoError(t, err)
@@ -959,7 +959,7 @@ func TestClient_Poll_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 				require.True(t, correlationIDAttached)
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
