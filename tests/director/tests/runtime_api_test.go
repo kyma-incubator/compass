@@ -535,6 +535,11 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		//THEN
 		require.NotEmpty(t, actualRuntime.ID)
 		runtimeInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
+
+		saasAppLbl, ok := actualRuntime.Labels[conf.SaaSAppNameLabelKey].(string)
+		require.True(t, ok)
+		require.NotEmpty(t, saasAppLbl)
+
 		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 		t.Log("Successfully set regular runtime label using certificate")
@@ -568,7 +573,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assert.Len(t, actualRuntime.Labels, 5) // three labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
+		assert.Len(t, actualRuntime.Labels, 6) // two labels from the different runtime inputs plus four additional during runtime registration - isNormalized and three "self register" labels - region, "self register" label and SaaS app name label
 
 		t.Log("Successfully update runtime with certificate")
 		//GIVEN
@@ -591,7 +596,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		require.Equal(t, runtimeUpdateInput.Name, actualRuntime.Name)
 		require.Equal(t, *runtimeUpdateInput.Description, *actualRuntime.Description)
 		require.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
-		require.Equal(t, 4, len(actualRuntime.Labels)) // two labels from the runtime input, one additional label, added during runtime update(isNormalized) plus the self-reg label
+		require.Len(t, actualRuntime.Labels, 5) // two labels from the runtime input, one additional label, added during runtime update(isNormalized) plus the two "self register" labels
 
 		t.Log("Successfully delete runtime using certificate")
 		// WHEN

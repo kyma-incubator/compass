@@ -560,7 +560,6 @@ func fixLblInputAfterPrepWithSubaccount() map[string]interface{} {
 		scenarioassignment.SubaccountIDKey: consumerID,
 		selfregmanager.RegionLabel:         testRegion,
 		selfRegisterDistinguishLabelKey:    distinguishLblVal,
-		testConfig.SaaSAppNameLabelKey:     testSaaSAppName,
 	}
 }
 

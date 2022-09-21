@@ -137,16 +137,18 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
 		labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
 
-		saasAppName, exists := s.cfg.RegionToSaaSAppName[region]
-		if !exists {
-			return nil, errors.Errorf("missing SaaS application name for region: %q", region)
-		}
+		if resourceType == resource.Runtime {
+			saasAppName, exists := s.cfg.RegionToSaaSAppName[region]
+			if !exists {
+				return nil, errors.Errorf("missing SaaS application name for region: %q", region)
+			}
 
-		if saasAppName == "" {
-			return nil, errors.Errorf("SaaS application name for region: %q could not be empty", region)
-		}
+			if saasAppName == "" {
+				return nil, errors.Errorf("SaaS application name for region: %q could not be empty", region)
+			}
 
-		labels[s.cfg.SaaSAppNameLabelKey] = saasAppName
+			labels[s.cfg.SaaSAppNameLabelKey] = saasAppName
+		}
 
 		if resourceType == resource.ApplicationTemplate {
 			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
