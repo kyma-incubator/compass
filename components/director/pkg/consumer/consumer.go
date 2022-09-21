@@ -19,10 +19,11 @@ const (
 	// IntegrationSystem missing godoc
 	IntegrationSystem ConsumerType = "Integration System"
 	// User missing godoc
-	User            ConsumerType = "Static User"
-	TechnicalClient ConsumerType = "TechnicalClient"
+	User ConsumerType = "Static User"
 	// SuperAdmin is a consumer type that is used only in our tests
 	SuperAdmin ConsumerType = "Super Admin"
+	// TechnicalClient is a consumer type that is used by Atom
+	TechnicalClient ConsumerType = "Technical Client"
 )
 
 // Consumer missing godoc
