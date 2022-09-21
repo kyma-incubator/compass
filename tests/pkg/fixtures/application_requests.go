@@ -46,6 +46,18 @@ func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRe
 	}
 }
 
+func FixSampleApplicationRegisterInputWithAppType(placeholder, appTypeKey, appTypeValue string) graphql.ApplicationRegisterInput {
+	applicationInput := FixSampleApplicationRegisterInput(placeholder)
+	applicationInput.Labels = graphql.Labels{appTypeKey: appTypeValue}
+	return applicationInput
+}
+
+func FixSampleApplicationRegisterInputWithAppTypeAndScenarios(placeholder, appTypeKey, appTypeValue, scenariosLabelKey string, scenariosLabelVal []string) graphql.ApplicationRegisterInput {
+	applicationInput := FixSampleApplicationRegisterInputWithAppType(placeholder, appTypeKey, appTypeValue)
+	applicationInput.Labels = graphql.Labels{scenariosLabelKey: scenariosLabelVal}
+	return applicationInput
+}
+
 func FixSampleApplicationRegisterInputWithWebhooks(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,

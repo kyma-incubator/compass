@@ -33,8 +33,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	runtime2EventingURL := "https://eventing.runtime2.local"
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInput(appName)
-	applicationInput.Labels = graphql.Labels{conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
@@ -106,8 +105,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInput(appName)
-	applicationInput.Labels = graphql.Labels{conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
@@ -197,8 +195,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	runtime2EventingURL := fmt.Sprintf(runtimeEventURLFormat, runtime2Eventing)
 
 	appName := "app-test-eventing"
-	applicationInput := fixtures.FixSampleApplicationRegisterInput(appName)
-	applicationInput.Labels = graphql.Labels{conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+	applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppType(appName, conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, applicationInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)

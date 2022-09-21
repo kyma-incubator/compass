@@ -504,8 +504,7 @@ func TestUpdateApplication(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		appInput := fixtures.FixSampleApplicationRegisterInput("before")
-		appInput.Labels["applicationType"] = conf.SupportedORDApplicationType
+		appInput := fixtures.FixSampleApplicationRegisterInputWithAppType("before", conf.ApplicationTypeLabelKey, conf.SupportedORDApplicationType)
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
@@ -535,8 +534,7 @@ func TestUpdateApplication(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		appInput := fixtures.FixSampleApplicationRegisterInput("before")
-		appInput.Labels["applicationType"] = conf.SupportedORDApplicationType
+		appInput := fixtures.FixSampleApplicationRegisterInputWithAppType("before", conf.ApplicationTypeLabelKey, conf.SupportedORDApplicationType)
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
@@ -564,8 +562,7 @@ func TestUpdateApplication(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		appInput := fixtures.FixSampleApplicationRegisterInput("before")
-		appInput.Labels["applicationType"] = "SAP unsupported"
+		appInput := fixtures.FixSampleApplicationRegisterInputWithAppType("before", conf.SupportedORDApplicationType, "SAP unsupported")
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
@@ -728,8 +725,7 @@ func TestDeleteApplication(t *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: []string{testScenario}, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -765,8 +761,7 @@ func TestDeleteApplication(t *testing.T) {
 		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: []string{testScenario}, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -824,8 +819,7 @@ func TestUnpairApplication(t *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: []string{testScenario}, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -864,8 +858,7 @@ func TestUnpairApplication(t *testing.T) {
 		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: []string{testScenario}, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 

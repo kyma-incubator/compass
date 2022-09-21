@@ -376,11 +376,7 @@ func TestService_Create(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return svc
-			},
+			LabelServiceFn:  UnusedLabelService,
 			BundleServiceFn: UnusedBundleService,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -506,7 +502,6 @@ func TestService_Create(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithScenarios).Return(nil).Once()
-				svc.On("UpsertLabel", ctx, tnt, labelsWithScenarios).Return(nil).Once()
 				return svc
 			},
 			BundleServiceFn: UnusedBundleService,
@@ -550,12 +545,7 @@ func TestService_Create(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			appRepo.AssertExpectations(t)
-			intSysRepo.AssertExpectations(t)
-			webhookRepo.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
-			bndlSvc.AssertExpectations(t)
-			formationSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, appRepo, webhookRepo, labelSvc, uidSvc, intSysRepo, bndlSvc, formationSvc)
 		})
 	}
 
@@ -615,13 +605,6 @@ func TestService_CreateFromTemplate(t *testing.T) {
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-	labelScenarios := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []interface{}{testScenario},
-		ObjectID:   id,
-		ObjectType: model.ApplicationLabelableObject,
-	}
 
 	testCases := []struct {
 		Name               string
@@ -852,7 +835,6 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
-				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
 			BundleServiceFn: UnusedBundleService,
@@ -880,11 +862,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return svc
-			},
+			LabelServiceFn:  UnusedLabelService,
 			BundleServiceFn: UnusedBundleService,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -1023,7 +1001,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, appRepo, intSysRepo, uidSvc, bndlSvc, formationSvc)
+			mock.AssertExpectationsForObjects(t, appRepo, intSysRepo, uidSvc, bndlSvc, formationSvc, webhookRepo, labelSvc)
 		})
 	}
 
@@ -1110,13 +1088,6 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
-	labelScenarios := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []interface{}{testScenario},
-		ObjectID:   id,
-		ObjectType: model.ApplicationLabelableObject,
-	}
-
 	ordWebhookMapping := []application.ORDWebhookMapping{
 		{
 			Type: "test-app",
@@ -1188,7 +1159,6 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
-				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1212,7 +1182,6 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
-				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1293,7 +1262,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			ExpectedErr:       testErr,
 		},
 		{
-			Name:              "Returns error when application creation failed",
+			Name:              "Returns error when application upsert failed",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -1305,11 +1274,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return svc
-			},
+			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
@@ -1495,10 +1460,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			appRepo.AssertExpectations(t)
-			intSysRepo.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
-			webhookRepo.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, uidSvc, intSysRepo, webhookRepo)
 		})
 
 		t.Run(testCase.Name+"_TrustedUpsert", func(t *testing.T) {
@@ -1522,9 +1484,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			appRepo.AssertExpectations(t)
-			intSysRepo.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, uidSvc, intSysRepo, webhookRepo)
 		})
 	}
 
@@ -1591,13 +1551,6 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
-	labelScenarios := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []interface{}{testScenario},
-		ObjectID:   id,
-		ObjectType: model.ApplicationLabelableObject,
-	}
-
 	testCases := []struct {
 		Name              string
 		AppNameNormalizer normalizer.Normalizator
@@ -1659,7 +1612,6 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
-				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1683,7 +1635,6 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
-				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -1777,7 +1728,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name:              "Returns error when application creation failed",
+			Name:              "Returns error when application trusted upsert failed",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -1789,11 +1740,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return svc
-			},
+			LabelServiceFn: UnusedLabelService,
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id).Once()
@@ -1861,10 +1808,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 				require.Nil(t, err)
 			}
 
-			appRepo.AssertExpectations(t)
-			intSysRepo.AssertExpectations(t)
-			uidSvc.AssertExpectations(t)
-			webhookRepo.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, appRepo, labelSvc, uidSvc, intSysRepo, webhookRepo)
 		})
 	}
 
@@ -2891,9 +2835,7 @@ func TestService_Unpair(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			appRepo.AssertExpectations(t)
-			labelRepo.AssertExpectations(t)
-			runtimeRepo.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, appRepo, labelRepo, runtimeRepo)
 		})
 	}
 }
@@ -3416,10 +3358,7 @@ func TestService_Merge(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			appRepo.AssertExpectations(t)
-			runtimeRepo.AssertExpectations(t)
-			labelRepo.AssertExpectations(t)
-			labelUpserSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, appRepo, runtimeRepo, labelRepo, labelUpserSvc)
 		})
 
 		srcAppLabels = fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "true")
@@ -4023,10 +3962,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				require.NoError(t, err)
 			}
 			assert.Equal(t, testCase.ExpectedResult, results)
-			runtimeRepository.AssertExpectations(t)
-			labelRepository.AssertExpectations(t)
-			appRepository.AssertExpectations(t)
-			cfgProvider.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, runtimeRepository, labelRepository, appRepository, cfgProvider)
 		})
 	}
 }
@@ -4604,9 +4540,7 @@ func TestService_SetLabel(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			repo.AssertExpectations(t)
-			labelSvc.AssertExpectations(t)
-			formationSvc.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, repo, labelRepo, labelSvc, formationSvc)
 		})
 	}
 }
