@@ -45,9 +45,9 @@ func GetUUIDOrganizationalUnit(subject string) string {
 }
 
 // GetRemainingOrganizationalUnit returns the OU that is remaining after matching previously expected ones based on a given pattern
-func GetRemainingOrganizationalUnit(organizationalUnitPattern string) func(string) string {
+func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPattern string) func(string) string {
 	return func(subject string) string {
-		orgUnitRegex := regexp.MustCompile(organizationalUnitPattern)
+		orgUnitRegex := regexp.MustCompile(organizationalUnitPattern + "|" + ouRegionPattern)
 		orgUnits := GetAllOrganizationalUnits(subject)
 
 		remainingOrgUnit := ""

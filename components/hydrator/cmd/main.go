@@ -269,7 +269,7 @@ func getCertificateResolverHandler(ctx context.Context, cfg config) (certresolve
 		time.Second,
 	)
 
-	subjectProcessor, err := subject.NewProcessor(cfg.SubjectConsumerMappingConfig, cfg.ExternalIssuerSubject.OrganizationalUnitPattern)
+	subjectProcessor, err := subject.NewProcessor(cfg.SubjectConsumerMappingConfig, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
 	if err != nil {
 		return nil, nil, err
 	}
