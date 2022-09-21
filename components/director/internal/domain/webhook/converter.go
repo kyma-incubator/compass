@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -80,6 +81,7 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		HeaderTemplate:        in.HeaderTemplate,
 		OutputTemplate:        in.OutputTemplate,
 		StatusTemplate:        in.StatusTemplate,
+		CreatedAt:             timePtrToTimestampPtr(in.CreatedAt),
 	}, nil
 }
 
@@ -199,6 +201,7 @@ func (c *converter) ToEntity(in *model.Webhook) (*Entity, error) {
 		HeaderTemplate:        repo.NewNullableString(in.HeaderTemplate),
 		OutputTemplate:        repo.NewNullableString(in.OutputTemplate),
 		StatusTemplate:        repo.NewNullableString(in.StatusTemplate),
+		CreatedAt:             in.CreatedAt,
 	}, nil
 }
 
@@ -253,6 +256,7 @@ func (c *converter) FromEntity(in *Entity) (*model.Webhook, error) {
 		HeaderTemplate:   repo.StringPtrFromNullableString(in.HeaderTemplate),
 		OutputTemplate:   repo.StringPtrFromNullableString(in.OutputTemplate),
 		StatusTemplate:   repo.StringPtrFromNullableString(in.StatusTemplate),
+		CreatedAt:        in.CreatedAt,
 	}, nil
 }
 
@@ -296,4 +300,13 @@ func (c *converter) objectReferenceFromEntity(in Entity) (string, model.WebhookR
 	}
 
 	return "", "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)
+}
+
+func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
+	if time == nil {
+		return nil
+	}
+
+	t := graphql.Timestamp(*time)
+	return &t
 }

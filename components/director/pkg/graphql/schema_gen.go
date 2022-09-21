@@ -615,6 +615,7 @@ type ComplexityRoot struct {
 		ApplicationTemplateID func(childComplexity int) int
 		Auth                  func(childComplexity int) int
 		CorrelationIDKey      func(childComplexity int) int
+		CreatedAt             func(childComplexity int) int
 		HeaderTemplate        func(childComplexity int) int
 		ID                    func(childComplexity int) int
 		InputTemplate         func(childComplexity int) int
@@ -4043,6 +4044,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Webhook.CorrelationIDKey(childComplexity), true
 
+	case "Webhook.createdAt":
+		if e.complexity.Webhook.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Webhook.CreatedAt(childComplexity), true
+
 	case "Webhook.headerTemplate":
 		if e.complexity.Webhook.HeaderTemplate == nil {
 			break
@@ -5471,6 +5479,7 @@ type Webhook {
 	headerTemplate: String
 	outputTemplate: String
 	statusTemplate: String
+	createdAt: Timestamp
 }
 
 type Query {
@@ -25187,6 +25196,37 @@ func (ec *executionContext) _Webhook_statusTemplate(ctx context.Context, field g
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Webhook_createdAt(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31348,6 +31388,8 @@ func (ec *executionContext) _Webhook(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Webhook_outputTemplate(ctx, field, obj)
 		case "statusTemplate":
 			out.Values[i] = ec._Webhook_statusTemplate(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._Webhook_createdAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

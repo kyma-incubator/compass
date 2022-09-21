@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -20,7 +21,7 @@ const (
 )
 
 var (
-	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
+	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at"}
 	updatableColumns       = []string{"type", "url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	missingInputModelError = apperrors.NewInternalError("model has to be provided")
 )
@@ -33,17 +34,18 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	singleGetter       repo.SingleGetter
-	singleGetterGlobal repo.SingleGetterGlobal
-	webhookUpdater     repo.Updater
-	updaterGlobal      repo.UpdaterGlobal
-	creator            repo.Creator
-	globalCreator      repo.CreatorGlobal
-	deleterGlobal      repo.DeleterGlobal
-	deleter            repo.Deleter
-	lister             repo.Lister
-	listerGlobal       repo.ListerGlobal
-	conv               EntityConverter
+	singleGetter                   repo.SingleGetter
+	singleGetterGlobal             repo.SingleGetterGlobal
+	webhookUpdater                 repo.Updater
+	updaterGlobal                  repo.UpdaterGlobal
+	creator                        repo.Creator
+	globalCreator                  repo.CreatorGlobal
+	deleterGlobal                  repo.DeleterGlobal
+	deleter                        repo.Deleter
+	lister                         repo.Lister
+	listerGlobal                   repo.ListerGlobal
+	listerGlobalOrderedByCreatedAt repo.ListerGlobal
+	conv                           EntityConverter
 }
 
 // NewRepository missing godoc
@@ -59,7 +61,13 @@ func NewRepository(conv EntityConverter) *repository {
 		deleter:            repo.NewDeleter(tableName),
 		lister:             repo.NewLister(tableName, webhookColumns),
 		listerGlobal:       repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
-		conv:               conv,
+		listerGlobalOrderedByCreatedAt: repo.NewListerGlobalWithOrderBy(resource.Webhook, tableName, webhookColumns, repo.OrderByParams{
+			{
+				Field: "created_at",
+				Dir:   repo.DescOrderBy,
+			},
+		}),
+		conv: conv,
 	}
 }
 
@@ -166,7 +174,7 @@ func (r *repository) ListByApplicationIDWithSelectForUpdate(ctx context.Context,
 	return convertToWebhooks(entities, r)
 }
 
-// ListByWebhookType retrieves all webhooks which have the given webhook type
+// ListByWebhookType retrieves all webhooks which have the given webhook type in descending order
 func (r *repository) ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
 	var entities Collection
 
@@ -174,7 +182,7 @@ func (r *repository) ListByWebhookType(ctx context.Context, webhookType model.We
 		repo.NewEqualCondition("type", webhookType),
 	}
 
-	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
+	if err := r.listerGlobalOrderedByCreatedAt.ListGlobal(ctx, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -204,6 +212,11 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Webh
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrap(err, "while converting model to entity")
+	}
+
+	if entity.CreatedAt == nil || entity.CreatedAt.IsZero() {
+		now := time.Now()
+		entity.CreatedAt = &now
 	}
 
 	log.C(ctx).Debugf("Persisting Webhook entity with type %s and id %s for %s to db", item.Type, item.ID, item.ObjectType)

@@ -111,15 +111,15 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2575"
+      version: "PR-2642"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2575"
+      version: "PR-2642"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2572"
+      version: "PR-2642"
       name: compass-pairing-adapter
     director:
       dir:
@@ -127,15 +127,15 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2596"
+      version: "PR-2642"
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2575"
+      version: "PR-2642"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2575"
+      version: "PR-2642"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -143,11 +143,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2637"
+      version: "PR-2632"
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2575"
+      version: "PR-2642"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -156,7 +156,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2630"
+      version: "PR-2642"
       name: compass-external-services-mock
     console:
       dir:
