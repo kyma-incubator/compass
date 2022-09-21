@@ -15,6 +15,7 @@ import (
 type CertificateCache interface {
 	Get() []*tls.Certificate
 }
+
 // PrepareMtlsClient creates a MTLS secured http client with given certificate cache
 func PrepareMtlsClient(cfg *httpbroker.Config, cache CertificateCache) *http.Client {
 	return prepareClient(cfg, cache, 0)
