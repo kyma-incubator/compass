@@ -70,8 +70,7 @@ type config struct {
 	DestinationAPIConfig             clients.DestinationServiceAPIConfig
 	DestinationsConfig               cfg.DestinationsConfig
 	DestinationConsumerSubdomain     string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-
+	ExternalClientCertSecretName     string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var conf config

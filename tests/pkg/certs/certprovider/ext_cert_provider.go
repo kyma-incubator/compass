@@ -28,7 +28,7 @@ type ExternalCertProviderConfig struct {
 	ExternalClientCertCertKey                string  `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
 	ExternalClientCertKeyKey                 string  `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
 	ExternalClientCertExpectedIssuerLocality *string `envconfig:"-"`
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName             string  `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 func NewExternalCertFromConfig(t *testing.T, ctx context.Context, testConfig ExternalCertProviderConfig) (*rsa.PrivateKey, [][]byte) {

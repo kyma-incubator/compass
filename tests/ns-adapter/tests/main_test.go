@@ -50,9 +50,9 @@ type config struct {
 	X509Config                     oauth.X509Config
 	CertLoaderConfig               certloader.Config
 	DirectorExternalCertSecuredURL string
-	SkipSSLValidation              bool `envconfig:"default=false"`
-	UseClone                       bool `envconfig:"default=false,USE_CLONE"`
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	SkipSSLValidation              bool   `envconfig:"default=false"`
+	UseClone                       bool   `envconfig:"default=false,USE_CLONE"`
+	ExternalClientCertSecretName   string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var (
