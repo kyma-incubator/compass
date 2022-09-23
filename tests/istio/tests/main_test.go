@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get()[0].PrivateKey, certCache.Get()[0].Certificate, conf.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get()[conf.ExternalClientCertSecretName].PrivateKey, certCache.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

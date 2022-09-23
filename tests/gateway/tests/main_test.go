@@ -30,6 +30,8 @@ type config struct {
 	GatewayOauth string `envconfig:"APP_GATEWAY_OAUTH"`
 
 	DirectorURL string `envconfig:"-"`
+
+	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var (
@@ -55,7 +57,7 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get()[0].PrivateKey, cc.Get()[0].Certificate, testConfig.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get()[testConfig.ExternalClientCertSecretName].PrivateKey, cc.Get()[testConfig.ExternalClientCertSecretName].Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

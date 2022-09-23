@@ -25,6 +25,7 @@ type config struct {
 	ORDServiceDefaultResponseType  string
 	SkipSSLValidation              bool
 	CertLoaderConfig               certloader.Config
+	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var testConfig config
@@ -47,7 +48,7 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get()[0].PrivateKey, cc.Get()[0].Certificate, testConfig.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get()[testConfig.ExternalClientCertSecretName].PrivateKey, cc.Get()[testConfig.ExternalClientCertSecretName].Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

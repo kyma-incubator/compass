@@ -18,4 +18,6 @@ type ConnectorTestConfig struct {
 	ApplicationTypeLabelKey      string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 
 	CertLoaderConfig certloader.Config
+
+	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }

@@ -69,7 +69,7 @@ func infoEndpoint() string {
 }
 
 func getExpectedFields(t *testing.T) (string, string) {
-	clientCert := cc.Get()[0]
+	clientCert := cc.Get()[conf.ExternalClientCertSecretName]
 	require.NotNil(t, clientCert)
 	require.NotEmpty(t, clientCert.Certificate)
 

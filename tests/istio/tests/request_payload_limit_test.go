@@ -35,7 +35,7 @@ func TestCallingCompassGateways(t *testing.T) {
 		}
 	)
 
-	authorizedClient := gql.NewCertAuthorizedHTTPClient(certCache.Get()[0].PrivateKey, certCache.Get()[0].Certificate, conf.SkipSSLValidation)
+	authorizedClient := gql.NewCertAuthorizedHTTPClient(certCache.Get()[conf.ExternalClientCertSecretName].PrivateKey, certCache.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)
 
 	logrus.Infof("Registering runtime with name: %s, within tenant: %s", runtimeInput.Name, tenant)
 

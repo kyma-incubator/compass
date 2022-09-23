@@ -26,6 +26,8 @@ type Config struct {
 	SelfRegDistinguishLabelKey   string
 	SelfRegDistinguishLabelValue string
 	SelfRegRegion                string
+	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+
 }
 
 var (
@@ -51,7 +53,7 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get()[0].PrivateKey, cc.Get()[0].Certificate, cfg.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get()[cfg.ExternalClientCertSecretName].PrivateKey, cc.Get()[cfg.ExternalClientCertSecretName].Certificate, cfg.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
