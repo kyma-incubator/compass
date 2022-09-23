@@ -119,11 +119,11 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2642"
+      version: "PR-2643"
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2617"
+      version: "PR-2643"
       name: compass-director
     hydrator:
       dir:
@@ -135,7 +135,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2642"
+      version: "PR-2643"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2617"
+      version: "PR-2643"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
