@@ -2,18 +2,19 @@ package cert_test
 
 import (
 	"encoding/base64"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSubjectExtraction(t *testing.T) {
 	for _, testCase := range []struct {
 		subject                string
 		orgUnitPattern         string
+		orgRegionPattern       string
 		country                string
 		locality               string
 		province               string
@@ -27,7 +28,8 @@ func TestSubjectExtraction(t *testing.T) {
 	}{
 		{
 			subject:                "CN=application,OU=OrgUnit1,OU=OrgUnit2,OU=123e4567-e89b-12d3-a456-426614174001,O=Org,L=Waldorf,ST=Waldorf,C=DE",
-			orgUnitPattern:         "OrgUnit1|OrgUnit2",
+			orgUnitPattern:         "OrgUnit1",
+			orgRegionPattern:       "OrgUnit2",
 			country:                "DE",
 			locality:               "Waldorf",
 			province:               "Waldorf",
@@ -40,7 +42,7 @@ func TestSubjectExtraction(t *testing.T) {
 			possibleOrgUnitMatches: 2,
 		},
 		{
-			subject:                "CN=application,OU=OrgUnit1+OU=123e4567-e89b-12d3-a456-426614174001,O=Org,L=Waldorf,ST=Waldorf,C=DE",
+			subject:                "CN=application,OU=OrgUnit1,OU=123e4567-e89b-12d3-a456-426614174001,O=Org,L=Waldorf,ST=Waldorf,C=DE",
 			orgUnitPattern:         "OrgUnit1",
 			country:                "DE",
 			locality:               "Waldorf",
@@ -55,7 +57,8 @@ func TestSubjectExtraction(t *testing.T) {
 		},
 		{
 			subject:                "CN=application,OU=OrgUnit1,OU=OrgUnit2,OU=RemainingOrgUnit,O=Org,L=Waldorf,ST=Waldorf,C=DE",
-			orgUnitPattern:         "OrgUnit1|OrgUnit2",
+			orgUnitPattern:         "OrgUnit1",
+			orgRegionPattern:       "OrgUnit2",
 			country:                "DE",
 			locality:               "Waldorf",
 			province:               "Waldorf",
@@ -92,18 +95,28 @@ func TestSubjectExtraction(t *testing.T) {
 		},
 	} {
 		t.Run("should extract subject values", func(t *testing.T) {
-			assert.Equal(t, testCase.country, cert.GetCountry(testCase.subject))
-			assert.Equal(t, testCase.locality, cert.GetLocality(testCase.subject))
-			assert.Equal(t, testCase.province, cert.GetProvince(testCase.subject))
-			assert.Equal(t, testCase.org, cert.GetOrganization(testCase.subject))
-			assert.Equal(t, testCase.orgUnit, cert.GetOrganizationalUnit(testCase.subject))
-			assert.Equal(t, testCase.orgUnits, cert.GetAllOrganizationalUnits(testCase.subject))
-			assert.Equal(t, testCase.uuidOrgUnit, cert.GetUUIDOrganizationalUnit(testCase.subject))
-			assert.Equal(t, testCase.remainingOrgUnit, cert.GetRemainingOrganizationalUnit(testCase.orgUnitPattern)(testCase.subject))
-			assert.Equal(t, testCase.commonName, cert.GetCommonName(testCase.subject))
-			assert.Equal(t, testCase.possibleOrgUnitMatches, cert.GetPossibleRegexTopLevelMatches(testCase.orgUnitPattern))
+			require.Equal(t, testCase.locality, cert.GetLocality(testCase.subject))
+			require.Equal(t, testCase.country, cert.GetCountry(testCase.subject))
+			require.Equal(t, testCase.province, cert.GetProvince(testCase.subject))
+			require.Equal(t, testCase.org, cert.GetOrganization(testCase.subject))
+			require.Equal(t, testCase.orgUnit, cert.GetOrganizationalUnit(testCase.subject))
+			require.Equal(t, testCase.orgUnits, cert.GetAllOrganizationalUnits(testCase.subject))
+			require.Equal(t, testCase.uuidOrgUnit, cert.GetUUIDOrganizationalUnit(testCase.subject))
+			require.Equal(t, testCase.remainingOrgUnit, cert.GetRemainingOrganizationalUnit(testCase.orgUnitPattern, testCase.orgRegionPattern)(testCase.subject))
+			require.Equal(t, testCase.commonName, cert.GetCommonName(testCase.subject))
+			require.Equal(t, testCase.possibleOrgUnitMatches, cert.GetPossibleRegexTopLevelMatches(constructRegex(testCase.orgUnitPattern, testCase.orgRegionPattern)))
 		})
 	}
+}
+
+func constructRegex(patterns ...string) string {
+	nonEmptyStr := make([]string, 0)
+	for _, pattern := range patterns {
+		if len(pattern) > 0 {
+			nonEmptyStr = append(nonEmptyStr, pattern)
+		}
+	}
+	return strings.Join(nonEmptyStr, "|")
 }
 
 func TestParseCertificate(t *testing.T) {

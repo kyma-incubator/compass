@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"regexp"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/util"
 
@@ -47,7 +48,8 @@ func GetUUIDOrganizationalUnit(subject string) string {
 // GetRemainingOrganizationalUnit returns the OU that is remaining after matching previously expected ones based on a given pattern
 func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPattern string) func(string) string {
 	return func(subject string) string {
-		orgUnitRegex := regexp.MustCompile(organizationalUnitPattern + "|" + ouRegionPattern)
+		regex := constructRegex(organizationalUnitPattern, ouRegionPattern)
+		orgUnitRegex := regexp.MustCompile(regex)
 		orgUnits := GetAllOrganizationalUnits(subject)
 
 		remainingOrgUnit := ""
@@ -60,7 +62,7 @@ func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPa
 			}
 		}
 
-		expectedOrgUnits := GetPossibleRegexTopLevelMatches(organizationalUnitPattern)
+		expectedOrgUnits := GetPossibleRegexTopLevelMatches(regex)
 		singleRemainingOrgUnitExists := len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
 		if !singleRemainingOrgUnitExists {
 			return ""
@@ -68,6 +70,16 @@ func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPa
 
 		return remainingOrgUnit
 	}
+}
+
+func constructRegex(patterns ...string) string {
+	nonEmptyStr := make([]string, 0)
+	for _, pattern := range patterns {
+		if len(pattern) > 0 {
+			nonEmptyStr = append(nonEmptyStr, pattern)
+		}
+	}
+	return strings.Join(nonEmptyStr, "|")
 }
 
 // GetAllOrganizationalUnits returns all OU parts of the subject
