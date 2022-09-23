@@ -246,7 +246,7 @@ spec:
             - name: APP_EXT_SVC_CLIENT_KEY_KEY
               value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: APP_EXT_SVC_CLIENT_CERT_SECRET_NAME
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertConfiguration.name }}"
+              value: "{{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_FETCH_TENANT_URL
               value: {{ tpl .Values.global.director.fetchTenantEndpoint $ | quote }}
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
