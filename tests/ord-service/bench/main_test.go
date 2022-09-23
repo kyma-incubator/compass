@@ -36,7 +36,6 @@ func TestMain(m *testing.M) {
 	}
 
 	tenant.TestTenants.Init()
-	defer tenant.TestTenants.Cleanup()
 
 	ctx := context.Background()
 	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)

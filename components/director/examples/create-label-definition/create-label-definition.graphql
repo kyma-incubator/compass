@@ -3,7 +3,7 @@ mutation {
   result: createLabelDefinition(
     in: {
       key: "scenarios"
-      schema: "{\"items\":{\"enum\":[\"DEFAULT\",\"test\"],\"type\":\"string\"},\"minItems\":1,\"type\":\"array\",\"uniqueItems\":true}"
+      schema: "{\"items\":{\"enum\":[\"test-scenario\"],\"type\":\"string\"},\"minItems\":1,\"type\":\"array\",\"uniqueItems\":true}"
     }
   ) {
     key

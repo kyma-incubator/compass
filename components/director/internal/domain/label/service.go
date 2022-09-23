@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
@@ -130,28 +129,9 @@ func (s *labelService) validateLabel(ctx context.Context, tenant string, labelIn
 		return nil
 	}
 
-	var labelDef *model.LabelDefinition
 	labelDef, err := s.labelDefinitionRepo.GetByKey(ctx, tenant, labelInput.Key)
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		return errors.Wrapf(err, "while reading LabelDefinition for key '%s'", labelInput.Key)
-	}
-
-	if labelDef == nil {
-		schema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
-		if err != nil {
-			return errors.Wrapf(err, "while creaing new schema for key %s", model.ScenariosKey)
-		}
-		labelDef = &model.LabelDefinition{
-			ID:      s.uidService.Generate(),
-			Tenant:  tenant,
-			Key:     model.ScenariosKey,
-			Schema:  &schema,
-			Version: 0,
-		}
-		if err = s.labelDefinitionRepo.Create(ctx, *labelDef); err != nil {
-			return errors.Wrap(err, "while creating LabelDefinition for scenarios")
-		}
-		log.C(ctx).Debugf("Successfully created LabelDefinition with id %s and key %s for Label with key %s", labelDef.ID, labelDef.Key, labelInput.Key)
+	if err != nil {
+		return errors.Wrapf(err, "while getting LabelDefinition for key '%s'", labelInput.Key)
 	}
 
 	if err := s.validateLabelInputValue(labelInput, labelDef); err != nil {

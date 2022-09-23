@@ -748,8 +748,8 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	// Add the subaccount to formation
 	scenarioName := "testMoveSubaccountScenario"
 
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, []string{"DEFAULT", scenarioName})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, []string{"DEFAULT"})
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, scenarioName)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, scenarioName)
 
 	formationInput := graphql.FormationInput{Name: scenarioName}
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)

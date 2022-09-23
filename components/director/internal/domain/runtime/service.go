@@ -57,12 +57,6 @@ type labelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-//go:generate mockery --exported --name=scenariosService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type scenariosService interface {
-	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
-}
-
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -81,7 +75,6 @@ type service struct {
 
 	labelUpsertService    labelUpsertService
 	uidService            uidService
-	scenariosService      scenariosService
 	formationService      formationService
 	tenantSvc             tenantService
 	webhookService        WebhookService
@@ -96,7 +89,6 @@ type service struct {
 // NewService missing godoc
 func NewService(repo runtimeRepository,
 	labelRepo labelRepository,
-	scenariosService scenariosService,
 	labelUpsertService labelUpsertService,
 	uidService uidService,
 	formationService formationService,
@@ -107,7 +99,6 @@ func NewService(repo runtimeRepository,
 	return &service{
 		repo:                      repo,
 		labelRepo:                 labelRepo,
-		scenariosService:          scenariosService,
 		labelUpsertService:        labelUpsertService,
 		uidService:                uidService,
 		formationService:          formationService,
@@ -261,8 +252,6 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	if err = s.repo.Create(ctx, rtmTenant, rtm); err != nil {
 		return errors.Wrapf(err, "while creating Runtime")
 	}
-
-	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
 
 	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
 		if in.Labels == nil {

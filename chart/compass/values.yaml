@@ -160,11 +160,11 @@ global:
       name: compass-external-services-mock
     console:
       dir:
-      version: "PR-71"
+      version: "PR-69"
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2640"
+      version: "PR-2617"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -290,7 +290,6 @@ global:
       clientKeyKey: client-key
   log:
     format: "kibana"
-  enableCompassDefaultScenarioAssignment: true
   tenantConfig:
     useDefaultTenants: true
     dbPool:

@@ -80,14 +80,6 @@ func TestServiceAssignFormation(t *testing.T) {
 		Version:    0,
 	}
 
-	applicationLblInputInDefaultScenario := model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []string{model.DefaultScenario},
-		ObjectID:   ApplicationID,
-		ObjectType: model.ApplicationLabelableObject,
-		Version:    0,
-	}
-
 	runtimeLblNoFormations := &model.Label{
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
@@ -338,41 +330,6 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "success for application with default formation",
-			UIDServiceFn: func() *automock.UuidService {
-				uidService := &automock.UuidService{}
-				uidService.On("Generate").Return(fixUUID())
-				return uidService
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationLblInputInDefaultScenario).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &applicationLblInputInDefaultScenario).Return(nil)
-				return labelService
-			},
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, ApplicationID).Return(&model.Application{}, nil).Twice()
-				return repo
-			},
-			LabelRepoFN: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID).Return(nil, nil).Twice()
-				return repo
-			},
-			WebhookRepoFN: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return(nil, nil)
-				return repo
-			},
-			ObjectType:         graphql.FormationObjectTypeApplication,
-			ObjectID:           ApplicationID,
-			InputFormation:     defaultFormation,
-			ExpectedFormation:  &defaultFormation,
-			ExpectedErrMessage: "",
-		},
-		{
 			Name: "success for runtime if label does not exist",
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
@@ -519,7 +476,6 @@ func TestServiceAssignFormation(t *testing.T) {
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefSvc := &automock.LabelDefService{}
 
-				labelDefSvc.On("EnsureScenariosLabelDefinitionExists", ctx, Tnt).Return(nil)
 				labelDefSvc.On("GetAvailableScenarios", ctx, Tnt).Return([]string{testFormationName}, nil)
 
 				return labelDefSvc
@@ -980,7 +936,6 @@ func TestServiceAssignFormation(t *testing.T) {
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefSvc := &automock.LabelDefService{}
 
-				labelDefSvc.On("EnsureScenariosLabelDefinitionExists", ctx, Tnt).Return(nil)
 				labelDefSvc.On("GetAvailableScenarios", ctx, Tnt).Return([]string{testFormationName}, nil)
 
 				return labelDefSvc

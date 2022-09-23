@@ -52,7 +52,6 @@ type config struct {
 	ORDExternalCertSecuredServiceURL string
 	ORDServiceStaticPrefix           string
 	ORDServiceDefaultResponseType    string
-	DefaultScenarioEnabled           bool `envconfig:"default=true"`
 	ConsumerTokenURL                 string
 	TokenPath                        string
 	ProviderClientID                 string
@@ -87,7 +86,6 @@ func TestMain(m *testing.M) {
 	}
 
 	tenant.TestTenants.Init()
-	defer tenant.TestTenants.Cleanup()
 
 	ctx := context.Background()
 

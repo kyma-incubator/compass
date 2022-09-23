@@ -168,9 +168,17 @@ echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
 echo "Compass smoke test - start!"
 
+echo "Create Formation 'test-scenario'..."
+COMPASS_GQL_URL="${COMPASS_URL}/graphql"
+CREATE_FORMATION_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/create-formation/create-formation.graphql"
+CREATE_FORMATION_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${CREATE_FORMATION_FILE_LOCATION}")"
+echo "Result from formation creation request:"
+echo "---------------------------------"
+echo "${CREATE_FORMATION_RESULT}"
+echo "---------------------------------"
+
 echo "Register applicaiton ..."
 REG_APP_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/register-application/register-application-with-bundles.graphql"
-COMPASS_GQL_URL="${COMPASS_URL}/graphql"
 CREATE_APP_IN_COMPASS_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${REG_APP_FILE_LOCATION}")"
 
 echo "Result from app creation request:"

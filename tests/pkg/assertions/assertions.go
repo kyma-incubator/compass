@@ -246,17 +246,17 @@ func AssertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 	}
 }
 
-func AssertRuntime(t *testing.T, in graphql.RuntimeRegisterInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
+func AssertRuntime(t *testing.T, in graphql.RuntimeRegisterInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
 	AssertWebhooks(t, in.Webhooks, actualRuntime.Webhooks)
-	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels)
 }
 
-func AssertUpdatedRuntime(t *testing.T, in graphql.RuntimeUpdateInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
+func AssertUpdatedRuntime(t *testing.T, in graphql.RuntimeUpdateInput, actualRuntime graphql.RuntimeExt) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
-	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels)
 }
 
 func AssertRuntimePageContainOnlyIDs(t *testing.T, page graphql.RuntimePageExt, ids ...string) {
@@ -267,24 +267,15 @@ func AssertRuntimePageContainOnlyIDs(t *testing.T, page graphql.RuntimePageExt, 
 	}
 }
 
-func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels, defaultScenarioEnabled, isSubaccountTenant bool) {
+func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels) {
 	const (
-		scenariosKey    = "scenarios"
 		isNormalizedKey = "isNormalized"
 	)
 
 	if inLabels == nil {
-		if defaultScenarioEnabled {
-			AssertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
-		}
 		AssertLabel(t, actualLabels, isNormalizedKey, "true")
 		assert.Equal(t, 2, len(actualLabels))
 		return
-	}
-
-	_, inHasScenarios := (*inLabels)[scenariosKey]
-	if !inHasScenarios && defaultScenarioEnabled && !isSubaccountTenant {
-		AssertLabel(t, actualLabels, scenariosKey, []interface{}{"DEFAULT"})
 	}
 
 	_, inHasShouldNomalizeKey := (*inLabels)[isNormalizedKey]

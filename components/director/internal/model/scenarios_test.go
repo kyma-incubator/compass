@@ -13,7 +13,7 @@ func Test_SchemaForSchema(t *testing.T) {
 	validator, err := jsonschema.NewValidatorFromRawSchema(model.SchemaForScenariosSchema)
 	require.NoError(t, err)
 	// WHEN
-	result, err := validator.ValidateRaw(model.ScenariosSchema)
+	result, err := validator.ValidateRaw(model.NewScenariosSchema([]string{"test-scenario"}))
 	// THEN
 	require.NoError(t, err)
 	require.True(t, result.Valid)
