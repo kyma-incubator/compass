@@ -16,15 +16,15 @@ type CertificateCache struct {
 }
 
 // Get provides a mock function with given fields:
-func (_m *CertificateCache) Get() []*tls.Certificate {
+func (_m *CertificateCache) Get() map[string]*tls.Certificate {
 	ret := _m.Called()
 
-	var r0 []*tls.Certificate
-	if rf, ok := ret.Get(0).(func() []*tls.Certificate); ok {
+	var r0 map[string]*tls.Certificate
+	if rf, ok := ret.Get(0).(func() map[string]*tls.Certificate); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*tls.Certificate)
+			r0 = ret.Get(0).(map[string]*tls.Certificate)
 		}
 	}
 
