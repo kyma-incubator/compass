@@ -50,6 +50,6 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 		ORDServiceURL:               cfg.ORDServiceURL,
 		ClientKey:                   clientKey,
 		ConnectorTokenSecuredClient: clients.NewTokenSecuredClient(cfg.ConnectorURL),
-		CertSecuredGraphQLClient:    gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get()[0].PrivateKey, cc.Get()[0].Certificate, cfg.SkipSSLValidation),
+		CertSecuredGraphQLClient:    gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get()[cfg.ExternalClientCertSecretName].PrivateKey, cc.Get()[cfg.ExternalClientCertSecretName].Certificate, cfg.SkipSSLValidation),
 	}, nil
 }
