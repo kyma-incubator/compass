@@ -44,7 +44,6 @@ type ModelConverter interface {
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
-	GetWithoutCreating(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
 }
 
@@ -74,7 +73,7 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if _, err = r.srv.GetWithoutCreating(ctx, tnt, ld.Key); err == nil {
+	if _, err = r.srv.Get(ctx, tnt, ld.Key); err == nil {
 		return nil, apperrors.NewNotUniqueError(resource.LabelDefinition)
 	} else if !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrap(err, "while getting label definition")

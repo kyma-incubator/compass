@@ -264,8 +264,8 @@ func TestORDService(t *testing.T) {
 	}
 
 	// create label definition
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, []string{"DEFAULT", scenarioName})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, []string{"DEFAULT"})
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
 
 	// create automatic scenario assigment for subTenant
 	formationInput := directorSchema.FormationInput{Name: scenarioName}
@@ -279,7 +279,7 @@ func TestORDService(t *testing.T) {
 	// assign application to scenario
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(appInScenario.ID, scenariosLabel, []string{scenarioName})
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantFilteringTenant, appLabelRequest, nil))
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInScenario.ID, conf.DefaultScenarioEnabled)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInScenario.ID)
 
 	for _, testData := range []struct {
 		msg       string

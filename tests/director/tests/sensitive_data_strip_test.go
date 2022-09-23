@@ -90,18 +90,17 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, intSysOauthCredentialData.ClientID)
 	intSystemOAuthGraphQLClient := gqlClient(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 
-	t.Log(fmt.Sprintf("assign runtime and app to scenario: %s", "'test-scenario'"))
-	scenarios := []string{conf.DefaultScenario, "test-scenario"}
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios[:1])
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios)
+	t.Log(fmt.Sprintf("assign runtime and app to scenario: %q", testScenario))
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	t.Log(fmt.Sprintf("Setting application scenarios label: %s", ScenariosLabel))
-	defer fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, app.ID, ScenariosLabel, scenarios[:1])
-	fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, app.ID, ScenariosLabel, scenarios[1:])
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, app.ID, tenantId)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, app.ID, tenantId)
 
 	t.Log(fmt.Sprintf("Setting runtime scenarios label: %s", ScenariosLabel))
-	defer fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
-	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
+	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
 
 	t.Log(fmt.Sprintf("Creating bundle instance auths %q with bundle with APIDefinition and ", appName))
 	instanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)

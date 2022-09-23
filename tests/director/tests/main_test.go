@@ -20,12 +20,10 @@ import (
 )
 
 type DirectorConfig struct {
-	BaseDirectorConfig
 	DirectorUrl                    string
 	HealthUrl                      string `envconfig:"default=https://director.kyma.local/healthz"`
 	WebhookUrl                     string `envconfig:"default=https://kyma-project.io"`
 	InfoUrl                        string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
-	DefaultScenarioEnabled         bool   `envconfig:"default=true"`
 	DefaultNormalizationPrefix     string `envconfig:"default=mp-"`
 	GatewayOauth                   string
 	DirectorExternalCertSecuredURL string
@@ -49,6 +47,7 @@ type DirectorConfig struct {
 	RuntimeTypeLabelKey                             string
 	ApplicationTypeLabelKey                         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	KymaRuntimeTypeLabelValue                       string
+	SaaSAppNameLabelKey                             string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
 	ConsumerTokenURL                                string
 	ProviderClientID                                string
 	ProviderClientSecret                            string
@@ -62,10 +61,6 @@ type DirectorConfig struct {
 	SupportedORDApplicationType                     string `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
 }
 
-type BaseDirectorConfig struct {
-	DefaultScenario string `envconfig:"default=DEFAULT"`
-}
-
 var (
 	conf                     = &DirectorConfig{}
 	certSecuredGraphQLClient *graphql.Client
@@ -74,7 +69,6 @@ var (
 
 func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
-	defer tenant.TestTenants.Cleanup()
 
 	config.ReadConfig(conf)
 

@@ -52,6 +52,10 @@ spec:
               value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
             - name: APP_EXT_SVC_CLIENT_KEY_KEY
               value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

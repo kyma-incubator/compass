@@ -46,6 +46,21 @@ func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRe
 	}
 }
 
+func FixSampleApplicationRegisterInputWithAppType(name, placeholder, appTypeKey, appTypeValue string) graphql.ApplicationRegisterInput {
+	applicationInput := FixSampleApplicationRegisterInputWithName(placeholder, name)
+	if len(placeholder) == 0 {
+		applicationInput.Labels = graphql.Labels{}
+	}
+	applicationInput.Labels[appTypeKey] = appTypeValue
+	return applicationInput
+}
+
+func FixSampleApplicationRegisterInputWithAppTypeAndScenarios(name, placeholder, appTypeKey, appTypeValue, scenariosLabelKey string, scenariosLabelVal []string) graphql.ApplicationRegisterInput {
+	applicationInput := FixSampleApplicationRegisterInputWithAppType(name, placeholder, appTypeKey, appTypeValue)
+	applicationInput.Labels[scenariosLabelKey] = scenariosLabelVal
+	return applicationInput
+}
+
 func FixSampleApplicationRegisterInputWithWebhooks(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
@@ -137,9 +152,6 @@ func FixApplicationRegisterInputWithBundles(t require.TestingT) graphql.Applicat
 		ProviderName: ptr.String("compass"),
 		Bundles: []*graphql.BundleCreateInput{
 			&bndl1, &bndl2,
-		},
-		Labels: graphql.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
 		},
 	}
 }
@@ -338,14 +350,14 @@ func FixDeleteDefaultEventingForApplication(appID string) *gcli.Request {
 }
 
 // TODO: Delete after bundles are adopted
-func FixRegisterApplicationWithPackagesRequest(name string) *gcli.Request {
+func FixRegisterApplicationWithPackagesRequest(name, applicationTypeLabelKey, applicationTypeValue string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			  result: registerApplication(
 				in: {
 				  name: "%s"
 				  providerName: "compass"
-				  labels: { scenarios: ["DEFAULT"] }
+				  labels: { scenarios: ["test-scenario"], %s: %q }
 				  packages: [
 					{
 					  name: "foo"
@@ -959,7 +971,7 @@ func FixRegisterApplicationWithPackagesRequest(name string) *gcli.Request {
 				}
 			  }
 			}
-		`, name))
+		`, name, applicationTypeLabelKey, applicationTypeValue))
 }
 
 // TODO: Delete after bundles are adopted
