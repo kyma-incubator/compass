@@ -29,6 +29,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	externalClientCertSecretName = "resource-name1"
+	extSvcClientCertSecretName = "resource-name2"
+)
+
 type RoundTripFunc func(req *http.Request) *http.Response
 
 func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -339,7 +344,7 @@ func TestService_HandleSpec(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			certCache := certloader.NewCertificateCache()
-			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache)
+			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName)
 			if testCase.ExecutorProviderFunc != nil {
 				executorProviderMock = testCase.ExecutorProviderFunc()
 			}
@@ -379,7 +384,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 			StatusCode: http.StatusOK,
 			Body:       ioutil.NopCloser(bytes.NewBufferString("spec")),
 		}
-	}), accessstrategy.NewDefaultExecutorProvider(certCache))
+	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{
@@ -424,7 +429,7 @@ func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T)
 			StatusCode: http.StatusOK,
 			Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
 		}
-	}), accessstrategy.NewDefaultExecutorProvider(certCache), retry.NewHTTPExecutor(retryConfig))
+	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName), retry.NewHTTPExecutor(retryConfig))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{
@@ -461,7 +466,7 @@ func TestService_HandleSpec_FailsAfterRetryMechanismIsExhausted(t *testing.T) {
 		}()
 
 		return &http.Response{StatusCode: http.StatusInternalServerError}
-	}), accessstrategy.NewDefaultExecutorProvider(certCache), retry.NewHTTPExecutor(retryConfig))
+	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName), retry.NewHTTPExecutor(retryConfig))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{

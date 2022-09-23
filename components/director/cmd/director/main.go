@@ -164,6 +164,9 @@ type config struct {
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+
+	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExtSvcClientCertSecretName   string `envconfig:"EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 }
 
 func main() {
@@ -244,11 +247,11 @@ func main() {
 	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
-	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExternalClientCertSecretName)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
-	mtlsHTTPClient := authpkg.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, 0)
-	extSvcMtlsHTTPClient := authpkg.PrepareExtSvcMTLSClient(cfg.ClientTimeout, certCache)
+	mtlsHTTPClient := authpkg.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, cfg.ExternalClientCertSecretName)
+	extSvcMtlsHTTPClient := authpkg.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 	rootResolver, err := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},
 		transact,
@@ -764,7 +767,7 @@ func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTT
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	specRepo := spec.NewRepository(specConverter)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, securedHTTPClient, accessstrategy.NewDefaultExecutorProvider(certCache))
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, securedHTTPClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceConv := bundlereferences.NewConverter()
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)

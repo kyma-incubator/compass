@@ -50,6 +50,7 @@ var oauthCfg = oauth.Config{
 	TokenPath:             "/cert/token",
 	ScopesClaim:           []string{"my-scope"},
 	TenantHeaderName:      "x-tenant",
+	ExternalClientCertSecretName: "resource-name",
 }
 
 func TestMtlsTokenAuthorizationProviderTestSuite(t *testing.T) {
@@ -62,10 +63,10 @@ type MtlsTokenAuthorizationProviderTestSuite struct {
 
 func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_DefaultMtlsClientCreator() {
 	cache := &automock.CertificateCache{}
-	cache.On("Get").Return([]*tls.Certificate{&tls.Certificate{}}, nil).Once()
+	cache.On("Get").Return(map[string]*tls.Certificate{"resource-name": &tls.Certificate{}}, nil).Once()
 	defer cache.AssertExpectations(suite.T())
 
-	client := auth.DefaultMtlsClientCreator(cache, true, time.Second)
+	client := auth.DefaultMtlsClientCreator(cache, true, time.Second, "resource-name")
 
 	ts := httptest.NewUnstartedServer(testServerHandlerFunc(suite.T()))
 	ts.TLS = &tls.Config{
@@ -167,7 +168,7 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 }
 
 func getFakeCreator(oauthCfg oauth.Config, suite suite.Suite, shouldFail bool) auth.MtlsClientCreator {
-	return func(_ auth.CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client {
+	return func(_ auth.CertificateCache, skipSSLValidation bool, timeout time.Duration, secretName string) *http.Client {
 		return &http.Client{
 			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 				suite.Require().Equal(req.URL.Host, oauthCfg.TokenBaseURL)

@@ -49,7 +49,9 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 		ExternalClientCertSecret:  "namespace/resource-name",
 		ExternalClientCertCertKey: "tls.crt",
 		ExternalClientCertKeyKey:  "tls.key",
-	}
+		ExtSvcClientCertSecret:    "namespace/resource-name",
+		ExtSvcClientCertCertKey:   "tls.crt",
+		ExtSvcClientCertKeyKey:    "tls.key"}
 
 	t.Run("should insert secret data on add event", func(t *testing.T) {
 		// given
@@ -124,7 +126,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 		// then
 		assert.Eventually(t, func() bool {
 			tlsCert := cache.Get()
-			require.Nil(t, tlsCert[0])
+			require.Nil(t, tlsCert["resource-name"])
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
 		cancel()
@@ -152,7 +154,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 
 		assert.Eventually(t, func() bool {
 			tlsCert := cache.Get()
-			require.NotNil(t, tlsCert[0])
+			require.NotNil(t, tlsCert)
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
 
@@ -163,7 +165,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 		// then
 		assert.Eventually(t, func() bool {
 			tlsCert := cache.Get()
-			require.Nil(t, tlsCert[0])
+			require.Nil(t, tlsCert["resource-name"])
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
 		cancel()

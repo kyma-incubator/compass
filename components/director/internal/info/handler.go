@@ -22,8 +22,9 @@ const (
 
 // Config contains the data that should be exported on the info endpoint
 type Config struct {
-	APIEndpoint string `envconfig:"APP_INFO_API_ENDPOINT,default=/v1/info" json:"-"`
-	RootCA      string `envconfig:"APP_INFO_ROOT_CA"`
+	APIEndpoint                  string `envconfig:"APP_INFO_API_ENDPOINT,default=/v1/info" json:"-"`
+	RootCA                       string `envconfig:"APP_INFO_ROOT_CA"`
+	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 type responseData struct {
@@ -53,7 +54,7 @@ func NewInfoHandler(ctx context.Context, c Config, certCache certloader.Cache) f
 }
 
 func prepareResponseData(c Config, certCache certloader.Cache) (responseData, error) {
-	clientCert := certCache.Get()[0]
+	clientCert := certCache.Get()[c.ExternalClientCertSecretName]
 	if clientCert == nil || len(clientCert.Certificate) == 0 {
 		return responseData{}, errors.New("did not find client certificate in the cache")
 	}

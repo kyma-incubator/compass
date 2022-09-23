@@ -20,15 +20,19 @@ type HTTPRoundTripper interface {
 const tenantHeader = "tenant"
 
 type cmpMTLSAccessStrategyExecutor struct {
-	certCache          certloader.Cache
-	tenantProviderFunc func(ctx context.Context) (string, error)
+	certCache                    certloader.Cache
+	tenantProviderFunc           func(ctx context.Context) (string, error)
+	externalClientCertSecretName string
+	extSvcClientCertSecretName   string
 }
 
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
-func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *cmpMTLSAccessStrategyExecutor {
+func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
-		certCache:          certCache,
-		tenantProviderFunc: tenantProviderFunc,
+		certCache:                    certCache,
+		tenantProviderFunc:           tenantProviderFunc,
+		externalClientCertSecretName: externalClientCertSecretName,
+		extSvcClientCertSecretName:   extSvcClientCertSecretName,
 	}
 }
 
@@ -55,7 +59,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, errors.New("There must be exactly 2 certificates in the cert cache")
 	}
 
-	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[0]}
+	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
 
 	client := &http.Client{
 		Timeout:   baseClient.Timeout,
@@ -80,7 +84,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 
 	resp, err := client.Do(req)
 	if err != nil && resp.StatusCode == http.StatusBadGateway {
-		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[1]}
+		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
 		client.Transport = tr
 		return client.Do(req)
 	}

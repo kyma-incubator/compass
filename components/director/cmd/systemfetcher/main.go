@@ -76,6 +76,9 @@ type config struct {
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+
+	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExtSvcClientCertSecretName   string `envconfig:"EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 }
 
 type appTemplateConfig struct {
@@ -116,8 +119,8 @@ func main() {
 
 	httpClient := &http.Client{Timeout: cfg.ClientTimeout}
 	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
-	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache)
-	extSvcMtlsClient := pkgAuth.PrepareExtSvcMTLSClient(cfg.ClientTimeout, certCache)
+	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
+	extSvcMtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
 	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache)
 	if err != nil {
@@ -187,7 +190,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache))
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)

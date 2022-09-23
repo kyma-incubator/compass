@@ -9,22 +9,17 @@ import (
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 )
 
-// PrepareExtSvcMTLSClient creates an ext svc mtls secured http client with given timeout and cert cache
-func PrepareExtSvcMTLSClient(timeout time.Duration, cache certloader.Cache) *http.Client {
-	return PrepareMTLSClientWithSSLValidation(timeout, cache, false, 1)
-}
-
 // PrepareMTLSClient creates a mtls secured http client with given timeout and cert cache
-func PrepareMTLSClient(timeout time.Duration, cache certloader.Cache) *http.Client {
-	return PrepareMTLSClientWithSSLValidation(timeout, cache, false, 0)
+func PrepareMTLSClient(timeout time.Duration, cache certloader.Cache, secretName string) *http.Client {
+	return PrepareMTLSClientWithSSLValidation(timeout, cache, false, secretName)
 }
 
 // PrepareMTLSClientWithSSLValidation creates a mtls secured http client with given timeout, SSL validation and cert cache
-func PrepareMTLSClientWithSSLValidation(timeout time.Duration, cache certloader.Cache, skipSSLValidation bool, idx int) *http.Client {
+func PrepareMTLSClientWithSSLValidation(timeout time.Duration, cache certloader.Cache, skipSSLValidation bool, secretName string) *http.Client {
 	basicTransport := http.DefaultTransport.(*http.Transport).Clone()
 	basicTransport.TLSClientConfig.InsecureSkipVerify = skipSSLValidation
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-		return cache.Get()[idx], nil
+		return cache.Get()[secretName], nil
 	}
 	roundTripper := httputil.NewHTTPTransportWrapper(basicTransport)
 	httpTransport := httputil.NewCorrelationIDTransport(roundTripper)

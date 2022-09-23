@@ -82,6 +82,9 @@ type config struct {
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+
+	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExtSvcClientCertSecretName   string `envconfig:"EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 }
 
 func main() {
@@ -118,11 +121,11 @@ func main() {
 	}
 
 	securedHTTPClient := httputil.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
-	mtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache)
-	extSvcMtlsClient := httputil.PrepareExtSvcMTLSClient(cfg.ClientTimeout, certCache)
+	mtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
+	extSvcMtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider)
-	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache)
+	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
 	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, accessStrategyExecutorProviderWithTenant, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor, ordWebhookMapping)

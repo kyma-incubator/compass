@@ -72,6 +72,7 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error
 	certCache := NewCertificateCache()
 	secretManagers := []Manager{k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace)}
 	secretNames := []string{parsedCertSecret.Name, parsedExtSvcCertSecret.Name}
+
 	certLoader := NewCertificateLoader(certLoaderConfig, certCache, secretManagers, secretNames, time.Second)
 	go certLoader.Run(ctx)
 
@@ -108,7 +109,7 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 			}
 			log.C(ctx).Info("Waiting for certificate secret events...")
 
-			cl.processEvents(ctx, watcher.ResultChan(), idx)
+			cl.processEvents(ctx, watcher.ResultChan(), cl.secretNames[idx])
 
 			// Cleanup any allocated resources
 			watcher.Stop()
@@ -117,7 +118,7 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 	}
 }
 
-func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event, idx int) {
+func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -140,10 +141,10 @@ func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan wa
 				if err != nil {
 					log.C(ctx).WithError(err).Error("Fail during certificate parsing")
 				}
-				cl.certCache.put(idx, tlsCert)
+				cl.certCache.put(secretName, tlsCert)
 			case watch.Deleted:
 				log.C(ctx).Info("Removing certificate secret data from cache...")
-				cl.certCache.put(idx, nil)
+				cl.certCache.put(secretName, nil)
 			case watch.Error:
 				log.C(ctx).Error("Error event is received, stop certificate secret watcher and try again...")
 				return
