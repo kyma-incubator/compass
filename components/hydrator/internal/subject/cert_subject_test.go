@@ -80,21 +80,21 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 	})
 	t.Run("Success when internal consumer id is not provided", func(t *testing.T) {
 		config := fmt.Sprintf(configTpl, validConsumer, validAccessLvl, validSubject, "")
-		p, err := subject.NewProcessor(config, "Compass Clients", "Region")
+		p, err := subject.NewProcessor(config, "Compass Clients", "")
 		require.NoError(t, err)
 
 		res := p.AuthIDFromSubjectFunc()(validSubject)
 		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
 	})
 	t.Run("Success getting authID from mapping", func(t *testing.T) {
-		p, err := subject.NewProcessor("[]", "Compass Clients", "Region")
+		p, err := subject.NewProcessor("[]", "Compass Clients", "")
 		require.NoError(t, err)
 
 		res := p.AuthIDFromSubjectFunc()(validSubject)
 		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
 	})
 	t.Run("Success getting authID from OUs", func(t *testing.T) {
-		p, err := subject.NewProcessor(fmt.Sprintf(configTpl, validConsumer, validAccessLvl, "OU=Random OU", validInternalConsumerID), "Compass Clients", "Region")
+		p, err := subject.NewProcessor(fmt.Sprintf(configTpl, validConsumer, validAccessLvl, "OU=Random OU", validInternalConsumerID), "Compass Clients", "")
 		require.NoError(t, err)
 
 		res := p.AuthIDFromSubjectFunc()(validSubject)
