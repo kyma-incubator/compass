@@ -118,7 +118,7 @@ function cleanup() {
 trap cleanup EXIT
 
 echo -e "${GREEN}Creating k3d cluster...${NC}"
-curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.0 bash
+curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.2 bash
 k3d cluster create k3d-cluster --api-port 6550 --servers 1 --port 443:443@loadbalancer --image rancher/k3s:v1.22.4-k3s1 --kubeconfig-update-default --wait
 
 if [[ ${REUSE_DB} = true ]]; then
