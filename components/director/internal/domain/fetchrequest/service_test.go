@@ -31,7 +31,7 @@ import (
 
 const (
 	externalClientCertSecretName = "resource-name1"
-	extSvcClientCertSecretName = "resource-name2"
+	extSvcClientCertSecretName   = "resource-name2"
 )
 
 type RoundTripFunc func(req *http.Request) *http.Response

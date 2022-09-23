@@ -16,16 +16,16 @@ import (
 
 func TestCallerProvider_GetCaller(t *testing.T) {
 	var (
-		firstRegion        = "eu-1"
-		firstClientID      = "client-id"
-		firstClientSecret  = "client-secret"
-		firstTokenURL      = "token-url"
-		secondRegion       = "eu-2"
-		secondClientID     = "client-id-2"
-		secondClientSecret = "client-secret-2"
-		secondTokenURL     = "token-url-2"
-		tokenPath          = "/oauth/token"
-		timeout            = 15 * time.Second
+		firstRegion                  = "eu-1"
+		firstClientID                = "client-id"
+		firstClientSecret            = "client-secret"
+		firstTokenURL                = "token-url"
+		secondRegion                 = "eu-2"
+		secondClientID               = "client-id-2"
+		secondClientSecret           = "client-secret-2"
+		secondTokenURL               = "token-url-2"
+		tokenPath                    = "/oauth/token"
+		timeout                      = 15 * time.Second
 		externalClientCertSecretName = "resource-name"
 	)
 

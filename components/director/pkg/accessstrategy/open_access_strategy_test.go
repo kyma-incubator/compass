@@ -14,7 +14,7 @@ import (
 
 const (
 	externalClientCertSecretName = "resource-name1"
-	extSvcClientCertSecretName = "resource-name2"
+	extSvcClientCertSecretName   = "resource-name2"
 )
 
 func TestOpenAccessStrategy(t *testing.T) {

@@ -64,7 +64,7 @@ const (
 	partners                  = `["microsoft:vendor:Microsoft:"]`
 
 	externalClientCertSecretName = "resource-name1"
-	extSvcClientCertSecretName = "resource-name2"
+	extSvcClientCertSecretName   = "resource-name2"
 )
 
 var (
