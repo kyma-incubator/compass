@@ -62,12 +62,6 @@ func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPa
 			}
 		}
 
-		expectedOrgUnits := GetPossibleRegexTopLevelMatches(regex)
-		singleRemainingOrgUnitExists := len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
-		if !singleRemainingOrgUnitExists {
-			return ""
-		}
-
 		return remainingOrgUnit
 	}
 }
