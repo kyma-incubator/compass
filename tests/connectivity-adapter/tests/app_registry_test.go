@@ -17,7 +17,10 @@
 package tests
 
 import (
+	"context"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -28,13 +31,19 @@ import (
 )
 
 func TestAppRegistry(t *testing.T) {
+	ctx := context.Background()
+
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, testScenario)
+
 	appInput := directorSchema.ApplicationRegisterInput{
 		Name:           TestApp,
 		ProviderName:   ptr.String("provider name"),
 		Description:    ptr.String("my application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios":                        []interface{}{testScenario},
+			testConfig.ApplicationTypeLabelKey: "SAP Cloud for Customer",
 		},
 	}
 
@@ -48,14 +57,12 @@ func TestAppRegistry(t *testing.T) {
 	}()
 	require.NoError(t, err)
 
-	runtimeID, err := directorClient.CreateRuntime(runtimeInput)
-	defer func() {
-		err = directorClient.CleanupRuntime(runtimeID)
-		require.NoError(t, err)
-	}()
+	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, runtimeInput, testConfig.GatewayOauth)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, &runtime)
+
 	require.NoError(t, err)
 
-	err = directorClient.SetDefaultEventing(runtimeID, appID, testConfig.EventsBaseURL)
+	err = directorClient.SetDefaultEventing(runtime.ID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)
 
 	t.Run("App Registry Service flow for Application", func(t *testing.T) {
@@ -152,7 +159,7 @@ func fixRuntimeInput(descr string) directorSchema.RuntimeRegisterInput {
 		Name:        TestRuntime,
 		Description: &descr,
 		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{testScenario},
 		},
 	}
 }

@@ -244,23 +244,12 @@ func GenerateOneTimeTokenForApplicationWithSuggestedToken(t require.TestingT, ct
 	return oneTimeToken
 }
 
-func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string, defaultScenarioEnabled bool) {
+func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string) {
 	labelKey := "scenarios"
-	if defaultScenarioEnabled {
-		defaultValue := "DEFAULT"
 
-		scenarios := []string{defaultValue}
-		var labelValue interface{} = scenarios
-
-		setLabelRequest := FixSetApplicationLabelRequest(applicationID, labelKey, labelValue)
-		label := graphql.Label{}
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, setLabelRequest, &label)
+	deleteLabelRequest := FixDeleteApplicationLabelRequest(applicationID, labelKey)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteLabelRequest, nil)
+	if err != nil && !strings.Contains(err.Error(), "Object not found") {
 		require.NoError(t, err)
-	} else {
-		deleteLabelRequest := FixDeleteApplicationLabelRequest(applicationID, labelKey)
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteLabelRequest, nil)
-		if err != nil && !strings.Contains(err.Error(), "Object not found") {
-			require.NoError(t, err)
-		}
 	}
 }

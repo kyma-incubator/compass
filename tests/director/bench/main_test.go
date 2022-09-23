@@ -18,9 +18,10 @@ import (
 )
 
 type config struct {
-	DefaultScenario                string `envconfig:"default=DEFAULT"`
 	DirectorExternalCertSecuredURL string
-	SkipSSLValidation              bool `envconfig:"default=false"`
+	SkipSSLValidation              bool   `envconfig:"default=false"`
+	ApplicationTypeLabelKey        string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
 	CertLoaderConfig               certloader.Config
 }
 
@@ -36,7 +37,6 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 	tenant.TestTenants.Init()
-	defer tenant.TestTenants.Cleanup()
 
 	cfg.ReadConfig(&conf)
 	ctx := context.Background()

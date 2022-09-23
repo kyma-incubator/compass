@@ -95,6 +95,41 @@ func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	return &hydraToken, nil
 }
 
+func FetchHydraAccessTokenBench(b *testing.B, encodedCredentials string, tokenURL string, scopes string) (*HydraToken, error) {
+	form := url.Values{}
+	form.Set(grantTypeFieldName, credentialsGrantType)
+	form.Set(scopeKey, scopes)
+
+	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
+	require.NoError(b, err)
+
+	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
+	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", encodedCredentials))
+
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{
+		Transport: transport,
+	}
+	resp, err := client.Do(req)
+	require.NoError(b, err)
+	defer HttpRequestBodyCloserBench(b, resp)
+
+	token, err := ioutil.ReadAll(resp.Body)
+	require.NoError(b, err)
+
+	hydraToken := HydraToken{}
+	err = json.Unmarshal(token, &hydraToken)
+	require.NoError(b, err)
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(fmt.Sprintf("response status code is %d", resp.StatusCode))
+	}
+	return &hydraToken, nil
+}
+
 func GetAccessToken(t *testing.T, oauthCredentialData *graphql.OAuthCredentialData, scopes string) string {
 	oauthCredentials := fmt.Sprintf("%s:%s", oauthCredentialData.ClientID, oauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
@@ -103,9 +138,22 @@ func GetAccessToken(t *testing.T, oauthCredentialData *graphql.OAuthCredentialDa
 	return hydraToken.AccessToken
 }
 
+func GetAccessTokenBench(b *testing.B, oauthCredentialData *graphql.OAuthCredentialData, scopes string) string {
+	oauthCredentials := fmt.Sprintf("%s:%s", oauthCredentialData.ClientID, oauthCredentialData.ClientSecret)
+	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
+	hydraToken, err := FetchHydraAccessTokenBench(b, encodedCredentials, oauthCredentialData.URL, scopes)
+	require.NoError(b, err)
+	return hydraToken.AccessToken
+}
+
 func HttpRequestBodyCloser(t *testing.T, resp *http.Response) {
 	err := resp.Body.Close()
 	require.NoError(t, err)
+}
+
+func HttpRequestBodyCloserBench(b *testing.B, resp *http.Response) {
+	err := resp.Body.Close()
+	require.NoError(b, err)
 }
 
 func GetClientCredentialsToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecret, staticMappingClaimsKey string) string {

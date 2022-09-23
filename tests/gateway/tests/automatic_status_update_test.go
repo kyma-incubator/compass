@@ -17,9 +17,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var testScenario = "test-scenario"
+
 func TestAutomaticStatusUpdate(t *testing.T) {
 
 	ctx := context.Background()
+
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, testScenario)
 
 	t.Run("Test status update as static user", func(t *testing.T) {
 
@@ -96,7 +101,8 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		appInput := graphql.ApplicationRegisterInput{
 			Name: "test-app",
 			Labels: graphql.Labels{
-				"scenarios": []interface{}{"DEFAULT"},
+				"scenarios":                        []interface{}{testScenario},
+				testConfig.ApplicationTypeLabelKey: "SAP Cloud for Customer",
 			},
 			StatusCondition: &status,
 		}
@@ -135,16 +141,14 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test-runtime",
 			Labels: graphql.Labels{
-				"scenarios": []interface{}{"DEFAULT"},
+				"scenarios": []interface{}{testScenario},
 			},
 			StatusCondition: &status,
 		}
 
 		t.Log("Register Runtime via Certificate Secured Client")
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
+		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, runtimeInput, testConfig.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
-		require.NoError(t, err)
-		require.NotEmpty(t, runtime.ID)
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
 
 		t.Log("Request Client Credentials for Runtime")
@@ -164,7 +168,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		assert.Equal(t, graphql.RuntimeStatusConditionFailed, runtime.Status.Condition)
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &actualRuntime)
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &actualRuntime)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")

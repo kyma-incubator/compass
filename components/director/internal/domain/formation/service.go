@@ -91,7 +91,6 @@ type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
 	ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
-	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error
 	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
@@ -389,25 +388,22 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 }
 
 func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
-	// TODO Remove default scenario check after removing default scenario
-	if formation.Name != model.DefaultScenario {
-		switch objectType {
-		case graphql.FormationObjectTypeApplication:
-			if err := s.isValidApplicationType(ctx, tnt, objectID, formation); err != nil {
-				return errors.Wrapf(err, "while validating application type for application %q", objectID)
-			}
-		case graphql.FormationObjectTypeRuntime:
-			if err := s.isValidRuntimeType(ctx, tnt, objectID, formation); err != nil {
-				return errors.Wrapf(err, "while validating runtime type")
-			}
-		case graphql.FormationObjectTypeRuntimeContext:
-			runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
-			if err != nil {
-				return errors.Wrapf(err, "while getting runtime context")
-			}
-			if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation); err != nil {
-				return errors.Wrapf(err, "while validating runtime type of runtime")
-			}
+	switch objectType {
+	case graphql.FormationObjectTypeApplication:
+		if err := s.isValidApplicationType(ctx, tnt, objectID, formation); err != nil {
+			return errors.Wrapf(err, "while validating application type for application %q", objectID)
+		}
+	case graphql.FormationObjectTypeRuntime:
+		if err := s.isValidRuntimeType(ctx, tnt, objectID, formation); err != nil {
+			return errors.Wrapf(err, "while validating runtime type")
+		}
+	case graphql.FormationObjectTypeRuntimeContext:
+		runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting runtime context")
+		}
+		if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation); err != nil {
+			return errors.Wrapf(err, "while validating runtime type of runtime")
 		}
 	}
 	return nil
@@ -1438,10 +1434,6 @@ func (s *service) validateThatScenarioExists(ctx context.Context, in model.Autom
 }
 
 func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
-	if err := s.labelDefService.EnsureScenariosLabelDefinitionExists(ctx, tenantID); err != nil {
-		return nil, errors.Wrap(err, "while ensuring that `scenarios` label definition exist")
-	}
-
 	out, err := s.labelDefService.GetAvailableScenarios(ctx, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting available scenarios")
@@ -1472,12 +1464,6 @@ func (s *service) createFormation(ctx context.Context, tenant, templateName, for
 }
 
 func (s *service) getFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
-	// TODO:: Workaround for the DEFAULT scenario, because it is not in the 'formations' table, and getting it will fail.
-	// Soon this label will be removed and then we can get rid of this check.
-	if formationName == model.DefaultScenario {
-		return &model.Formation{Name: model.DefaultScenario}, nil
-	}
-
 	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)

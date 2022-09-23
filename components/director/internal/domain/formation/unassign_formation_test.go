@@ -72,24 +72,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		Version:    0,
 	}
 
-	applicationLblInputWithDefaultScenario := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []string{model.DefaultScenario},
-		ObjectID:   ApplicationID,
-		ObjectType: model.ApplicationLabelableObject,
-		Version:    0,
-	}
-
-	applicationLblWithDefaultScenario := &model.Label{
-		ID:         "123",
-		Tenant:     str.Ptr(Tnt),
-		Key:        model.ScenariosKey,
-		Value:      []interface{}{testFormationName, model.DefaultScenario},
-		ObjectID:   ApplicationID,
-		ObjectType: model.ApplicationLabelableObject,
-		Version:    0,
-	}
-
 	runtimeLblSingleFormation := &model.Label{
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
@@ -281,42 +263,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "success for application when the formation is default",
-			LabelServiceFn: func() *automock.LabelService {
-				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInputWithDefaultScenario).Return(applicationLblWithDefaultScenario, nil)
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
-					Key:        model.ScenariosKey,
-					Value:      []string{testFormationName},
-					ObjectID:   ApplicationID,
-					ObjectType: model.ApplicationLabelableObject,
-					Version:    0,
-				}).Return(nil)
-				return labelService
-			},
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, ApplicationID).Return(&model.Application{}, nil).Twice()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID).Return(nil, nil).Twice()
-				return repo
-			},
-			WebhookRepoFN: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return(nil, nil)
-				return repo
-			},
-			ObjectType:         graphql.FormationObjectTypeApplication,
-			ObjectID:           ApplicationID,
-			InputFormation:     defaultFormation,
-			ExpectedFormation:  &defaultFormation,
 			ExpectedErrMessage: "",
 		},
 		{
