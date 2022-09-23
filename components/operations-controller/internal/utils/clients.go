@@ -13,24 +13,14 @@ import (
 //dynamically reloaded when its Get method is called
 //go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertificateCache interface {
-	Get() []*tls.Certificate
+	Get() map[string]*tls.Certificate
 }
 
-// PrepareMtlsClient creates a MTLS secured http client with given certificate cache
-func PrepareMtlsClient(cfg *httpbroker.Config, cache CertificateCache) *http.Client {
-	return prepareClient(cfg, cache, 0)
-}
-
-// PrepareExtSvcMtlsClient creates an ext svc MTLS secured http client with given certificate cache
-func PrepareExtSvcMtlsClient(cfg *httpbroker.Config, cache CertificateCache) *http.Client {
-	return prepareClient(cfg, cache, 1)
-}
-
-// prepareClient creates a secured http client with given certificate cache
-func prepareClient(cfg *httpbroker.Config, cache CertificateCache, idx int) *http.Client {
+// PrepareMtlsClient creates a secured MTLS http client with given certificate cache
+func PrepareMtlsClient(cfg *httpbroker.Config, cache CertificateCache, secretName string) *http.Client {
 	basicTransport := httpbroker.NewHTTPTransport(cfg)
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-		return cache.Get()[idx], nil
+		return cache.Get()[secretName], nil
 	}
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(basicTransport))
 

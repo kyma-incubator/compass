@@ -20,6 +20,7 @@ import (
 )
 
 const testServerResponse = "Hello, client"
+const externalClientCertSecretName = "resource-name"
 
 func TestPrepareMTLSClient(t *testing.T) {
 	var (
@@ -29,7 +30,7 @@ func TestPrepareMTLSClient(t *testing.T) {
 		ts          = httptest.NewUnstartedServer(testServerHandlerFunc(t))
 	)
 
-	mockedCache.On("Get").Return([]*tls.Certificate{testCert}, nil).Once()
+	mockedCache.On("Get").Return(map[string]*tls.Certificate{externalClientCertSecretName: testCert}, nil).Once()
 	ts.TLS = &tls.Config{
 		ClientAuth: tls.RequestClientCert,
 	}
@@ -37,7 +38,7 @@ func TestPrepareMTLSClient(t *testing.T) {
 	ts.StartTLS()
 	defer ts.Close()
 
-	mtlsClient := utils.PrepareMtlsClient(cfg, mockedCache)
+	mtlsClient := utils.PrepareMtlsClient(cfg, mockedCache, externalClientCertSecretName)
 
 	resp, err := mtlsClient.Get(ts.URL)
 	require.NoError(t, err)
