@@ -60,7 +60,7 @@ spec:
           - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
           - name: APP_EXT_SVC_CLIENT_CERT_SECRET_NAME
-            value: "{{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.name }}"
+            value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.connector.dir }}compass-operations-controller:{{ .Values.global.images.operations_controller.version }}
         name: {{ .Chart.Name }}
         ports:
