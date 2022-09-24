@@ -157,8 +157,6 @@ spec:
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
-            - name: APP_DEFAULT_SCENARIO_ENABLED
-              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
@@ -209,6 +207,8 @@ spec:
               value: {{ .Values.global.tests.ordService.skipPattern }}
             - name: APP_APPLICATION_TYPE_LABEL_KEY
               value: {{ .Values.global.director.applicationTypeLabelKey }}
+            - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}

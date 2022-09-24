@@ -111,7 +111,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2575"
+      version: "PR-2642"
       name: compass-connector
     connectivity_adapter:
       dir:
@@ -119,7 +119,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2572"
+      version: "PR-2642"
       name: compass-pairing-adapter
     director:
       dir:
@@ -135,7 +135,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2575"
+      version: "PR-2642"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -143,7 +143,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2632"
+      version: "PR-2641"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -156,15 +156,15 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2630"
+      version: "PR-2642"
       name: compass-external-services-mock
     console:
       dir:
-      version: "PR-71"
+      version: "PR-69"
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2632"
+      version: "PR-2617"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -235,10 +235,15 @@ global:
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
-      secret:
-        name: "region-instances-credentials"
-        key: "keyConfig"
-        path: "/tmp"
+      secrets:
+        instancesCreds:
+          name: "region-instances-credentials"
+          key: "keyConfig"
+          path: "/tmp"
+        saasAppNameCfg:
+          name: "saas-app-names"
+          key: "appNameConfig"
+          path: "/tmp/appNameConfig"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
       urlPath: "url"
@@ -262,6 +267,8 @@ global:
       nameQueryParam: "name"
       tenantQueryParam: "tenant"
       requestBodyPattern: '{"key": "%s"}'
+      saasAppNameLabelKey: "CMPSaaSAppName"
+      saasAppNamePath: "localSaaSAppNamePath"
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
@@ -283,7 +290,6 @@ global:
       clientKeyKey: client-key
   log:
     format: "kibana"
-  enableCompassDefaultScenarioAssignment: true
   tenantConfig:
     useDefaultTenants: true
     dbPool:
@@ -842,6 +848,8 @@ global:
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    saasAppNamesSecret:
+      manage: false
     regionInstancesCredentials:
       manage: false
     oauthSecret:

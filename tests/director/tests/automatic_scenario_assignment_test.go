@@ -38,8 +38,11 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	require.NoError(t, err)
 
 	// setup available scenarios
-	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT", testScenarioA, testScenarioB})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT"})
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenarioA)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenarioA)
+
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenarioB)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenarioB)
 
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation1, subaccount, tenantID)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation1.Name, subaccount, tenantID)
@@ -89,10 +92,12 @@ func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 	prodScenario := "PRODUCTION"
 	devScenario := "DEVELOPMENT"
 	manualScenario := "MANUAL"
-	defaultScenario := "DEFAULT"
+	scenarios := []string{prodScenario, devScenario, manualScenario}
 
-	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{prodScenario, manualScenario, devScenario, defaultScenario})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT"})
+	for _, scenario := range scenarios {
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
+	}
 
 	rtm0 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime0"), conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &rtm0)
@@ -108,10 +113,7 @@ func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 		expectedScenarios := map[string][]interface{}{
 			rtm0.ID: {prodScenario},
 			rtm1.ID: {prodScenario},
-			rtm2.ID: {defaultScenario},
-		}
-		if !conf.DefaultScenarioEnabled {
-			expectedScenarios[rtm2.ID] = []interface{}{}
+			rtm2.ID: {},
 		}
 
 		//WHEN
@@ -130,10 +132,7 @@ func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 		scenarios := map[string][]interface{}{
 			rtm0.ID: {prodScenario},
 			rtm1.ID: {prodScenario},
-			rtm2.ID: {defaultScenario},
-		}
-		if !conf.DefaultScenarioEnabled {
-			scenarios[rtm2.ID] = []interface{}{}
+			rtm2.ID: {},
 		}
 
 		//WHEN
@@ -145,10 +144,7 @@ func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 		expectedScenarios := map[string][]interface{}{
 			rtm0.ID: {},
 			rtm1.ID: {},
-			rtm2.ID: {defaultScenario},
-		}
-		if !conf.DefaultScenarioEnabled {
-			expectedScenarios[rtm2.ID] = []interface{}{}
+			rtm2.ID: {},
 		}
 
 		//WHEN
@@ -172,8 +168,8 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
-	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{scenario, "DEFAULT"})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT"})
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
 
 	formation := graphql.FormationInput{Name: scenario}
 

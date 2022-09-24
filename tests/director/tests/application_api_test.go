@@ -33,11 +33,15 @@ const (
 	updateWebhookCategory       = "update webhook"
 	managedLabel                = "managed"
 	sccLabel                    = "scc"
+	testScenario                = "test-scenario"
 )
 
 func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+	fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, testScenario)
 
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
@@ -45,8 +49,9 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			"group":     []interface{}{"production", "experimental"},
-			"scenarios": []interface{}{conf.DefaultScenario},
+			"group":                      []interface{}{"production", "experimental"},
+			ScenariosLabel:               []interface{}{testScenario},
+			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -163,6 +168,9 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
 
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+	fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+
 	// SECOND APP WITH SAME APP NAME WHEN NORMALIZED
 	inSecond := graphql.ApplicationRegisterInput{
 		Name:           "app!wordpress",
@@ -170,8 +178,8 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			"group":     []interface{}{"production", "experimental"},
-			"scenarios": []interface{}{conf.DefaultScenario},
+			"group":        []interface{}{"production", "experimental"},
+			ScenariosLabel: []interface{}{testScenario},
 		},
 	}
 	appSecondInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inSecond)
@@ -205,8 +213,8 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			"group":     []interface{}{"production", "experimental"},
-			"scenarios": []interface{}{conf.DefaultScenario},
+			"group":        []interface{}{"production", "experimental"},
+			ScenariosLabel: []interface{}{testScenario},
 		},
 	}
 	appFourthInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inFourth)
@@ -236,6 +244,10 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+	fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+
 	statusCond := graphql.ApplicationStatusConditionConnected
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
@@ -243,8 +255,9 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			"group":     []interface{}{"production", "experimental"},
-			"scenarios": []interface{}{conf.DefaultScenario},
+			"group":                      []interface{}{"production", "experimental"},
+			ScenariosLabel:               []interface{}{testScenario},
+			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 		StatusCondition: &statusCond,
 	}
@@ -273,6 +286,9 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	ctx := context.Background()
 	url := "http://mywordpress.com/webhooks1"
 
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+	fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+
 	in := graphql.ApplicationRegisterInput{
 		Name:         "wordpress",
 		ProviderName: ptr.String("compass"),
@@ -284,7 +300,8 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 			},
 		},
 		Labels: graphql.Labels{
-			"scenarios": []interface{}{conf.DefaultScenario},
+			ScenariosLabel:               []interface{}{testScenario},
+			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 	}
 
@@ -308,9 +325,16 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	in := fixtures.FixApplicationRegisterInputWithBundles(t)
+	in.Labels = graphql.Labels{
+		"scenarios":                  []interface{}{testScenario},
+		conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
+	}
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 	actualApp := graphql.ApplicationExt{}
+
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+	fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, testScenario)
 
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
@@ -330,6 +354,9 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 	ctx := context.Background()
 	expectedAppName := "create-app-with-packages"
 
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+	fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+
 	type ApplicationWithPackagesExt struct {
 		graphql.Application
 		Labels                graphql.Labels                           `json:"labels"`
@@ -342,7 +369,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 	t.Run("Register Application with Packages should succeed", func(t *testing.T) {
 		var actualApp ApplicationWithPackagesExt
-		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName)
+		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName, conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
 		err := testctx.Tc.NewOperation(ctx).Run(request, certSecuredGraphQLClient, &actualApp)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &graphql.ApplicationExt{Application: actualApp.Application})
 		require.NoError(t, err)
@@ -368,11 +395,9 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 		tenantID := tenant.TestTenants.GetDefaultTenantID()
 		runtimeInput := fixRuntimeInput("test-runtime")
-		runtimeInput.Labels[ScenariosLabel] = []string{conf.DefaultScenario}
+		runtimeInput.Labels[ScenariosLabel] = []string{testScenario}
 		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
-		require.NoError(t, err)
-		require.NotEmpty(t, runtime.ID)
 
 		t.Run("Get ApplicationForRuntime with Package should succeed", func(t *testing.T) {
 			applicationPage := struct {
@@ -479,8 +504,7 @@ func TestUpdateApplication(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		appInput := fixtures.FixSampleApplicationRegisterInput("before")
-		appInput.Labels["applicationType"] = conf.SupportedORDApplicationType
+		appInput := fixtures.FixSampleApplicationRegisterInputWithAppType("before", "before", conf.ApplicationTypeLabelKey, conf.SupportedORDApplicationType)
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
@@ -510,8 +534,7 @@ func TestUpdateApplication(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		appInput := fixtures.FixSampleApplicationRegisterInput("before")
-		appInput.Labels["applicationType"] = conf.SupportedORDApplicationType
+		appInput := fixtures.FixSampleApplicationRegisterInputWithAppType("before", "before", conf.ApplicationTypeLabelKey, conf.SupportedORDApplicationType)
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
@@ -539,8 +562,7 @@ func TestUpdateApplication(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		appInput := fixtures.FixSampleApplicationRegisterInput("before")
-		appInput.Labels["applicationType"] = "SAP unsupported"
+		appInput := fixtures.FixSampleApplicationRegisterInputWithAppType("before", "before", "applicationType", "SAP unsupported")
 		actualApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 		require.NoError(t, err)
@@ -700,13 +722,10 @@ func TestDeleteApplication(t *testing.T) {
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
-		scenarios := []string{conf.DefaultScenario, "test-scenario"}
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-		fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{conf.DefaultScenario})
-
-		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -734,19 +753,15 @@ func TestDeleteApplication(t *testing.T) {
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+
 		runtimeInput := fixRuntimeInput("one-runtime")
-		defaultValue := conf.DefaultScenario
-		scenarios := []string{defaultValue, "test-scenario"}
-
-		fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{defaultValue})
-
-		runtimeInput.Labels[ScenariosLabel] = scenarios
+		runtimeInput.Labels[ScenariosLabel] = []string{testScenario}
 		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -758,7 +773,7 @@ func TestDeleteApplication(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 		//WHEN
 		req := fixtures.FixUnregisterApplicationRequest(application.ID)
@@ -801,14 +816,10 @@ func TestUnpairApplication(t *testing.T) {
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
-		defaultValue := conf.DefaultScenario
-		scenarios := []string{defaultValue, "test-scenario"}
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-		fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{defaultValue})
-
-		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -820,7 +831,7 @@ func TestUnpairApplication(t *testing.T) {
 		require.NotEmpty(t, application.ID)
 		defer func() {
 			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-			defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
+			defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 		}()
 
 		//WHEN
@@ -839,18 +850,15 @@ func TestUnpairApplication(t *testing.T) {
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
 		runtimeInput := fixRuntimeInput("one-runtime")
-		defaultValue := conf.DefaultScenario
-		scenarios := []string{defaultValue, "test-scenario"}
 
-		fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{defaultValue})
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
-		runtimeInput.Labels[ScenariosLabel] = scenarios
+		runtimeInput.Labels[ScenariosLabel] = []string{testScenario}
 		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 
-		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
-		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
+		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
 
@@ -861,7 +869,7 @@ func TestUnpairApplication(t *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
 		defer func() {
 			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-			defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
+			defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 		}()
 
 		require.NoError(t, err)
@@ -1131,23 +1139,24 @@ func TestQuerySpecificApplication(t *testing.T) {
 	accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
-	scenarios := []string{"test-scenario", "test-scenario-2"}
-	defaultScenarios := []string{conf.DefaultScenario}
-	// update label definitions
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, append([]string{conf.DefaultScenario}, scenarios...))
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, defaultScenarios)
+	testScenarioSecond := "test-scenario-2"
+	scenarios := []string{testScenario, testScenarioSecond}
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+	fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, testScenario)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenarioSecond)
+	fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, testScenarioSecond)
 
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)
 
 	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
 		// set application scenarios label
 		fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, ScenariosLabel, scenarios[1:])
-		defer fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, "scenarios")
+		defer fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, ScenariosLabel)
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
 		defer func() {
-			deleteLabelRequest := fixtures.FixDeleteRuntimeLabel(runtime.ID, "scenarios")
+			deleteLabelRequest := fixtures.FixDeleteRuntimeLabel(runtime.ID, ScenariosLabel)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteLabelRequest, nil)
 			require.NoError(t, err)
 		}()
@@ -1166,12 +1175,12 @@ func TestQuerySpecificApplication(t *testing.T) {
 	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
 		// set application scenarios label
 		fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, ScenariosLabel, scenarios[:1])
-		defer fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, "scenarios")
+		defer fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, ScenariosLabel)
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
 		defer func() {
-			deleteLabelRequest := fixtures.FixDeleteRuntimeLabel(runtime.ID, "scenarios")
+			deleteLabelRequest := fixtures.FixDeleteRuntimeLabel(runtime.ID, ScenariosLabel)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteLabelRequest, nil)
 			require.NoError(t, err)
 		}()
@@ -1194,12 +1203,15 @@ func TestApplicationsForRuntime(t *testing.T) {
 	otherTenant := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
 	tenantUnnormalizedApplications := []*graphql.Application{}
 	tenantNormalizedApplications := []*graphql.Application{}
-	scenarios := []string{conf.DefaultScenario, "black-friday-campaign", "christmas-campaign", "summer-campaign"}
+	scenarios := []string{"black-friday-campaign", "christmas-campaign", "summer-campaign"}
 
-	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{conf.DefaultScenario})
-	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, otherTenant, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, otherTenant, []string{conf.DefaultScenario})
+	for _, scenario := range scenarios {
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
+
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, otherTenant, scenario)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, otherTenant, scenario)
+	}
 
 	applications := []struct {
 		ApplicationName string
@@ -1211,40 +1223,26 @@ func TestApplicationsForRuntime(t *testing.T) {
 			Tenant:          tenantID,
 			ApplicationName: "second",
 			WithinTenant:    true,
-			Scenarios:       []string{"black-friday-campaign"},
+			Scenarios:       scenarios[:1],
 		},
 		{
 			Tenant:          tenantID,
 			ApplicationName: "third",
 			WithinTenant:    true,
-			Scenarios:       []string{"black-friday-campaign", "christmas-campaign", "summer-campaign"},
+			Scenarios:       scenarios,
 		},
 		{
 			Tenant:          tenantID,
 			ApplicationName: "allscenarios",
 			WithinTenant:    true,
-			Scenarios:       []string{"black-friday-campaign", "christmas-campaign", "summer-campaign"},
+			Scenarios:       scenarios,
 		},
 		{
 			Tenant:          otherTenant,
 			ApplicationName: "test",
 			WithinTenant:    false,
-			Scenarios:       []string{"black-friday-campaign"},
+			Scenarios:       scenarios[:1],
 		},
-	}
-
-	if conf.DefaultScenarioEnabled {
-		applications = append(applications, struct {
-			ApplicationName string
-			Tenant          string
-			WithinTenant    bool
-			Scenarios       []string
-		}{
-			Tenant:          tenantID,
-			ApplicationName: "first",
-			WithinTenant:    true,
-			Scenarios:       []string{conf.DefaultScenario},
-		})
 	}
 
 	for _, testApp := range applications {
@@ -1258,7 +1256,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testApp.Tenant, createApplicationReq, &application)
 		defer func(applicationID, tenant string) {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant, applicationID, conf.DefaultScenarioEnabled)
+			fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant, applicationID)
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant, &graphql.ApplicationExt{Application: application})
 		}(application.ID, testApp.Tenant)
 
@@ -1371,11 +1369,10 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	expectedApplications := []*graphql.Application{}
 	expectedNormalizedApplications := []*graphql.Application{}
 
-	defaultValue := conf.DefaultScenario
-	scenarios := []string{defaultValue, "test-scenario"}
+	scenarios := []string{testScenario}
 
-	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{defaultValue})
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[0])
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios[0])
 
 	applications := []struct {
 		ApplicationName string
@@ -1384,26 +1381,14 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	}{
 		{
 			ApplicationName: "second",
-			Scenarios:       []string{"test-scenario"},
+			Scenarios:       scenarios,
 			Hidden:          false,
 		},
 		{
 			ApplicationName: "third",
-			Scenarios:       []string{"test-scenario"},
+			Scenarios:       scenarios,
 			Hidden:          true,
 		},
-	}
-
-	if conf.DefaultScenarioEnabled {
-		applications = append(applications, struct {
-			ApplicationName string
-			Scenarios       []string
-			Hidden          bool
-		}{
-			ApplicationName: "first",
-			Scenarios:       []string{defaultValue},
-			Hidden:          false,
-		})
 	}
 
 	applicationHideSelectorKey := "applicationHideSelectorKey"
@@ -1425,7 +1410,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 		defer func(applicationID string) {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, applicationID, conf.DefaultScenarioEnabled)
+			fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, applicationID)
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &graphql.ApplicationExt{Application: application})
 		}(application.ID)
 
@@ -1527,8 +1512,8 @@ func TestDeleteApplicationWithNoScenarios(t *testing.T) {
 
 	fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, actualApp.ID, "integrationSystemID")
 	fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, actualApp.ID, "name")
-	if _, found := app.Labels["scenarios"]; found {
-		fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, actualApp.ID, "scenarios")
+	if _, found := app.Labels[ScenariosLabel]; found {
+		fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, actualApp.ID, ScenariosLabel)
 	}
 }
 
@@ -1537,11 +1522,10 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	defaultScenarios := []string{conf.DefaultScenario}
-	scenarios := []string{conf.DefaultScenario, "test"}
+	scenarios := []string{testScenario}
 
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, defaultScenarios)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios[0])
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios[0])
 
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
@@ -1549,7 +1533,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 		Description:    ptr.String("my first wordpress application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
-			"scenarios":                  scenarios,
+			ScenariosLabel:               scenarios,
 			conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer"),
 		},
 	}
@@ -1573,9 +1557,9 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "The operation is not allowed [reason=System wordpress is still used and cannot be deleted. Unassign the system from the following formations first: test. Then, unassign the system from the following runtimes, too: test-runtime")
+	assert.Contains(t, err.Error(), fmt.Sprintf("The operation is not allowed [reason=System wordpress is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: test-runtime", testScenario))
 
-	request = fixtures.FixDeleteRuntimeLabel(runtime.ID, "scenarios")
+	request = fixtures.FixDeleteRuntimeLabel(runtime.ID, ScenariosLabel)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
 	require.NoError(t, err)
 

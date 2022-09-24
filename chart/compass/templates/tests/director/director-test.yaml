@@ -75,8 +75,6 @@ spec:
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
             - name: APP_WEBHOOK_URL
               value: "https://kyma-project.io"
-            - name: APP_DEFAULT_SCENARIO_ENABLED
-              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_DEFAULT_SCENARIO
               value: "DEFAULT"
             - name: APP_DEFAULT_NORMALIZATION_PREFIX
@@ -127,6 +125,8 @@ spec:
               value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
             - name: APP_APPLICATION_TYPE_LABEL_KEY
               value: {{ .Values.global.director.applicationTypeLabelKey }}
+            - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
             - name: APP_SUBSCRIPTION_CONFIG_URL
               value: {{ .Values.global.tests.subscription.subscriptionURL }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL

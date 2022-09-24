@@ -71,6 +71,20 @@ func CreateScenariosLabelDefinitionWithinTenant(t require.TestingT, ctx context.
 	return CreateLabelDefinitionWithinTenant(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
 }
 
+func CreateScenariosLabelDefinitionWithinTenantError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, scenarios []string) (*graphql.LabelDefinition, error) {
+	jsonSchema := map[string]interface{}{
+		"items": map[string]interface{}{
+			"enum": scenarios,
+			"type": "string",
+		},
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+	}
+
+	return CreateLabelDefinitionWithinTenantError(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
+}
+
 func UpdateLabelDefinitionWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, key string, schema interface{}, tenantID string) *graphql.LabelDefinition {
 	input := graphql.LabelDefinitionInput{
 		Key:    key,

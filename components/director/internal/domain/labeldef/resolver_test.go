@@ -25,8 +25,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	testScenario  = "test-scenario"
+	testScenarios = []string{testScenario}
+)
+
 func TestCreateLabelDefinition(t *testing.T) {
-	scenariosSchema := model.ScenariosSchema
+	scenariosSchema := model.NewScenariosSchema(testScenarios)
 	var scenarioSchemaInt interface{} = scenariosSchema
 
 	labelDefInput := graphql.LabelDefinitionInput{
@@ -58,11 +63,11 @@ func TestCreateLabelDefinition(t *testing.T) {
 		}, nil)
 
 		defer mockService.AssertExpectations(t)
-		mockService.On("GetWithoutCreating",
+		mockService.On("Get",
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, model.DefaultTemplateName).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testScenario}, model.DefaultTemplateName).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
@@ -92,11 +97,11 @@ func TestCreateLabelDefinition(t *testing.T) {
 
 		mockFormationsService := &automock.FormationService{}
 		defer mockFormationsService.AssertExpectations(t)
-		mockService.On("GetWithoutCreating",
+		mockService.On("Get",
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, model.DefaultTemplateName).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testScenario}, model.DefaultTemplateName).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
@@ -136,7 +141,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("GetWithoutCreating",
+		mockService.On("Get",
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, errors.New("db error")).Once()
 
@@ -170,18 +175,18 @@ func TestCreateLabelDefinition(t *testing.T) {
 		}, nil)
 
 		defer mockService.AssertExpectations(t)
-		mockService.On("GetWithoutCreating",
+		mockService.On("Get",
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, model.DefaultTemplateName).Return(nil, notFoundError)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testScenario}, model.DefaultTemplateName).Return(nil, notFoundError)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		require.Error(t, err)
-		require.EqualError(t, err, fmt.Sprintf("while creating formation with name %s: %s", "DEFAULT", notFoundError.Error()))
+		require.EqualError(t, err, fmt.Sprintf("while creating formation with name %s: %s", testScenario, notFoundError.Error()))
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 	})
@@ -204,11 +209,11 @@ func TestCreateLabelDefinition(t *testing.T) {
 		}, nil)
 
 		defer mockService.AssertExpectations(t)
-		mockService.On("GetWithoutCreating",
+		mockService.On("Get",
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, model.DefaultTemplateName).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testScenario}, model.DefaultTemplateName).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
@@ -254,7 +259,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("GetWithoutCreating",
+		mockService.On("Get",
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(&storedModel, nil).Once()
 
@@ -310,11 +315,11 @@ func TestCreateLabelDefinition(t *testing.T) {
 		}, nil)
 
 		defer mockService.AssertExpectations(t)
-		mockService.On("GetWithoutCreating",
+		mockService.On("Get",
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, model.DefaultTemplateName).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testScenario}, model.DefaultTemplateName).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
@@ -654,9 +659,9 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 func TestUpdateLabelDefinition(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tenant"
-	desiredSchema := getScenarioSchemaWithFormations([]string{"DEFAULT", "additional-1"})
+	desiredSchema := getScenarioSchemaWithFormations([]string{testScenario, "additional-1"})
 	var desiredSchemaInt interface{} = desiredSchema
-	initialSchema := getScenarioSchemaWithFormations([]string{"DEFAULT", "initial-1"})
+	initialSchema := getScenarioSchemaWithFormations([]string{testScenario, "initial-1"})
 	var initialSchemaInt interface{} = initialSchema
 
 	gqlLabelDefinitionInput := graphql.LabelDefinitionInput{

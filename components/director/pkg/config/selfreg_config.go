@@ -14,11 +14,13 @@ type SelfRegConfig struct {
 	SelfRegisterLabelKey            string `envconfig:"APP_SELF_REGISTER_LABEL_KEY,optional"`
 	SelfRegisterLabelValuePrefix    string `envconfig:"APP_SELF_REGISTER_LABEL_VALUE_PREFIX,optional"`
 	SelfRegisterResponseKey         string `envconfig:"APP_SELF_REGISTER_RESPONSE_KEY,optional"`
+	SaaSAppNameLabelKey             string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,optional"`
 	SelfRegisterPath                string `envconfig:"APP_SELF_REGISTER_PATH,optional"`
 	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM,optional"`
 	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
 	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
 	SelfRegisterSecretPath          string `envconfig:"APP_SELF_REGISTER_SECRET_PATH"`
+	SelfRegSaaSAppSecretPath        string `envconfig:"APP_SELF_REGISTER_SAAS_APP_SECRET_PATH"`
 
 	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
 	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
@@ -34,6 +36,22 @@ type SelfRegConfig struct {
 	InstanceCertPath         string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH"`
 	InstanceKeyPath          string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH"`
 	RegionToInstanceConfig   map[string]InstanceConfig `envconfig:"-"`
+
+	SaaSAppNamePath     string            `envconfig:"APP_SELF_REGISTER_SAAS_APP_NAME_PATH"`
+	RegionToSaaSAppName map[string]string `envconfig:"-"`
+}
+
+// PrepareConfiguration take cares to build the self register configuration
+func (c *SelfRegConfig) PrepareConfiguration() error {
+	if err := c.MapInstanceConfigs(); err != nil {
+		return errors.Wrap(err, "while building region instances credentials")
+	}
+
+	if err := c.MapSaasAppNameToRegion(); err != nil {
+		return errors.Wrap(err, "while building SaaS application names map")
+	}
+
+	return nil
 }
 
 // MapInstanceConfigs parses the InstanceConfigs json string to map with key: region name and value: InstanceConfig for the instance in the region
@@ -64,6 +82,27 @@ func (c *SelfRegConfig) MapInstanceConfigs() error {
 		}
 
 		c.RegionToInstanceConfig[region] = i
+	}
+
+	return nil
+}
+
+// MapSaasAppNameToRegion parses json configuration to a map with key: region and value SaaS application name
+func (c *SelfRegConfig) MapSaasAppNameToRegion() error {
+	secretData, err := ReadConfigFile(c.SelfRegSaaSAppSecretPath)
+	if err != nil {
+		return errors.Wrapf(err, "while getting SaaS application names secret")
+	}
+
+	m, err := ParseConfigToJSONMap(secretData)
+	if err != nil {
+		return err
+	}
+
+	c.RegionToSaaSAppName = make(map[string]string, len(m))
+	for r, config := range m {
+		appName := gjson.Get(config.String(), c.SaaSAppNamePath).String()
+		c.RegionToSaaSAppName[r] = appName
 	}
 
 	return nil

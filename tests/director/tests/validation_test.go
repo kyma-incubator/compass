@@ -138,8 +138,9 @@ func TestUpdateLabelDefinition_Validation(t *testing.T) {
 
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 
-	_ = fixtures.CreateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT", "test"})
-	defer tenant.TestTenants.CleanupTenant(tenantID)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
+
 	invalidInput := graphql.LabelDefinitionInput{
 		Key: "",
 	}

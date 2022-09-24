@@ -36,9 +36,8 @@ var (
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
 	}
-	defaultFormation = model.Formation{
-		Name: model.DefaultScenario,
-	}
+	testScenario = "test-scenario"
+
 	formationTemplate = model.FormationTemplate{
 		ID:          FormationTemplateID,
 		Name:        "formation-template",
@@ -86,10 +85,6 @@ func unusedLabelRepo() *automock.LabelRepository {
 
 func unusedASAService() *automock.AutomaticFormationAssignmentService {
 	return &automock.AutomaticFormationAssignmentService{}
-}
-
-func unusedLabelDefServiceFn() *automock.LabelDefService {
-	return &automock.LabelDefService{}
 }
 
 func unusedASARepo() *automock.AutomaticFormationAssignmentRepository {
@@ -173,7 +168,6 @@ func fixError() error {
 
 func mockScenarioDefServiceThatReturns(scenarios []string) *automock.LabelDefService {
 	mockScenarioDefSvc := &automock.LabelDefService{}
-	mockScenarioDefSvc.On("EnsureScenariosLabelDefinitionExists", mock.Anything, tenantID.String()).Return(nil)
 	mockScenarioDefSvc.On("GetAvailableScenarios", mock.Anything, tenantID.String()).Return(scenarios, nil)
 	return mockScenarioDefSvc
 }
@@ -186,20 +180,12 @@ func fixColumns() []string {
 	return []string{"id", "tenant_id", "formation_template_id", "name"}
 }
 
-func fixDefaultScenariosLabelDefinition(tenantID string, schema interface{}) model.LabelDefinition {
+func fixScenariosLabelDefinition(tenantID string, schema interface{}) model.LabelDefinition {
 	return model.LabelDefinition{
 		Key:     model.ScenariosKey,
 		Tenant:  tenantID,
 		Schema:  &schema,
 		Version: 1,
-	}
-}
-
-func fixAutomaticScenarioAssigment(selectorScenario string) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
-		ScenarioName:   selectorScenario,
-		Tenant:         tenantID.String(),
-		TargetTenantID: TargetTenantID,
 	}
 }
 

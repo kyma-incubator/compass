@@ -3,25 +3,9 @@ package model
 const (
 	// ScenariosKey is scenarios label key
 	ScenariosKey = "scenarios"
-	// DefaultScenario is default value for scenarios label
-	DefaultScenario = "DEFAULT"
 )
 
 var (
-	// ScenariosDefaultValue missing godoc
-	ScenariosDefaultValue = []interface{}{DefaultScenario}
-	// ScenariosSchema missing godoc
-	ScenariosSchema = map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type":      "string",
-			"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
-			"enum":      []string{"DEFAULT"},
-			"maxLength": 128,
-		},
-	}
 	// SchemaForScenariosSchema is used to validate ScenariosSchema (allows only modifications to enum field)
 	SchemaForScenariosSchema = map[string]interface{}{
 		"type":                 "object",
@@ -58,9 +42,7 @@ var (
 							"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
 							"maxLength": 128,
 						},
-						"contains": map[string]interface{}{
-							"const": "DEFAULT",
-						},
+						"contains": map[string]interface{}{},
 					},
 				},
 			},
@@ -68,8 +50,8 @@ var (
 	}
 )
 
-// NewScenariosSchema returns new default scenario schema
-func NewScenariosSchema() map[string]interface{} {
+// NewScenariosSchema returns new scenario schema for given scenarios
+func NewScenariosSchema(scenarios []string) map[string]interface{} {
 	return map[string]interface{}{
 		"type":        "array",
 		"minItems":    1,
@@ -77,7 +59,7 @@ func NewScenariosSchema() map[string]interface{} {
 		"items": map[string]interface{}{
 			"type":      "string",
 			"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
-			"enum":      []string{"DEFAULT"},
+			"enum":      scenarios,
 			"maxLength": 128,
 		},
 	}

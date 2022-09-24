@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
@@ -178,7 +180,7 @@ var shortDescriptionRules = []validation.Rule{
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.NilOrNotEmpty, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.Length(1, 2048), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 // ValidateSystemInstanceInput validates the given SystemInstance
@@ -322,7 +324,8 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
-		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
+		// validation is softened temporarily
+		validation.Field(&api.Successors, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
 		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
@@ -401,9 +404,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.DefaultConsumptionBundle, validation.Match(regexp.MustCompile(BundleOrdIDRegex)), validation.By(func(value interface{}) error {
 			return validateDefaultConsumptionBundle(value, event.PartOfConsumptionBundles)
 		})),
-		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
-			return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
-		})),
+		validation.Field(&event.Extensible, validation.By(validateExtensibleFieldForEvent)),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -686,8 +687,10 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 		return errors.New("error while casting to EventResourceDefinition")
 	}
 
+	// soften validation temporarily
 	if len(eventResourceDef) == 0 {
-		return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
+		log.DefaultLogger().Errorf("when event resource visibility is public or internal, resource definitions must be provided for event with ID: %s", *event.OrdID)
+		//	return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
 	}
 
 	return nil
@@ -1165,6 +1168,16 @@ func validateExtensibleField(value interface{}, ordPackageID *string, packagePol
 		return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
 	}
 
+	return validateJSONObjects(value, map[string][]validation.Rule{
+		"supported": {
+			validation.Required,
+			validation.In("no", "manual", "automatic"),
+		},
+		"description": {},
+	}, validateExtensibleInnerFields)
+}
+
+func validateExtensibleFieldForEvent(value interface{}) error {
 	return validateJSONObjects(value, map[string][]validation.Rule{
 		"supported": {
 			validation.Required,

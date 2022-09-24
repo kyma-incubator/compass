@@ -162,8 +162,6 @@ spec:
               value: {{ .Values.global.pairingAdapter.configMap.key }}
             - name: APP_PAIRING_ADAPTER_WATCHER_ID
               value: {{ .Values.global.pairingAdapter.watcherCorrelationID }}
-            - name: APP_DEFAULT_SCENARIO_ENABLED
-              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_HEALTH_CONFIG_INDICATORS
               value: {{ .Values.health.indicators | quote }}
             - name: APP_SCHEMA_MIGRATION_VERSION
@@ -208,11 +206,15 @@ spec:
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: APP_SELF_REGISTER_LABEL_KEY_PATTERN
-              value: "^{{ .Values.global.director.selfRegister.label }}$|^{{ .Values.global.director.runtimeTypeLabelKey }}$"
+              value: "^{{ .Values.global.director.selfRegister.label }}$|^{{ .Values.global.director.runtimeTypeLabelKey }}$|^{{ .Values.global.director.selfRegister.saasAppNameLabelKey }}$"
             - name: APP_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SELF_REGISTER_RESPONSE_KEY
               value: {{ .Values.global.director.selfRegister.responseKey }}
+            - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
+            - name: APP_SELF_REGISTER_SAAS_APP_NAME_PATH
+              value: {{ .Values.global.director.selfRegister.saasAppNamePath }}
             - name: APP_SELF_REGISTER_PATH
               value: {{ .Values.global.director.selfRegister.path }}
             - name: APP_SELF_REGISTER_NAME_QUERY_PARAM
@@ -222,7 +224,9 @@ spec:
             - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
             - name: APP_SELF_REGISTER_SECRET_PATH
-              value: "{{ .Values.global.director.selfRegister.secret.path }}/{{ .Values.global.director.selfRegister.secret.key }}"
+              value: "{{ .Values.global.director.selfRegister.secrets.instancesCreds.path }}/{{ .Values.global.director.selfRegister.secrets.instancesCreds.key }}"
+            - name: APP_SELF_REGISTER_SAAS_APP_SECRET_PATH
+              value: "{{ .Values.global.director.selfRegister.secrets.saasAppNameCfg.path }}/{{ .Values.global.director.selfRegister.secrets.saasAppNameCfg.key }}"
             - name: APP_SELF_REGISTER_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.http.client.skipSSLValidation }}"
             - name: APP_SELF_REGISTER_OAUTH_MODE
@@ -255,7 +259,10 @@ spec:
             periodSeconds: {{.Values.readinessProbe.periodSeconds }}
           volumeMounts:
             - name: self-reg-secret-volume
-              mountPath: {{ .Values.global.director.selfRegister.secret.path }}
+              mountPath: {{ .Values.global.director.selfRegister.secrets.instancesCreds.path }}
+              readOnly: true
+            - name: self-reg-app-names-volume
+              mountPath: {{ .Values.global.director.selfRegister.secrets.saasAppNameCfg.path }}
               readOnly: true
             - mountPath: /config
               name: director-config
@@ -276,7 +283,10 @@ spec:
       volumes:
         - name: self-reg-secret-volume
           secret:
-            secretName: {{ .Values.global.director.selfRegister.secret.name }}
+            secretName: {{ .Values.global.director.selfRegister.secrets.instancesCreds.name }}
+        - name: self-reg-app-names-volume
+          secret:
+            secretName: {{ .Values.global.director.selfRegister.secrets.saasAppNameCfg.name }}
         - name: director-config
           configMap:
             name: {{ template "fullname" . }}-config

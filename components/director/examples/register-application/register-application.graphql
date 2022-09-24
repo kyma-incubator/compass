@@ -5,7 +5,11 @@ mutation {
       name: "wordpress"
       providerName: "provider name"
       description: "my first wordpress application"
-      labels: { group: ["production", "experimental"], scenarios: ["DEFAULT"] }
+      labels: {
+        applicationType: "SAP Cloud for Customer"
+        group: ["production", "experimental"]
+        scenarios: ["test-scenario"]
+      }
       healthCheckURL: "http://mywordpress.com/health"
     }
   ) {
