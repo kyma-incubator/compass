@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSubjectExtraction(t *testing.T) {
@@ -95,16 +95,16 @@ func TestSubjectExtraction(t *testing.T) {
 		},
 	} {
 		t.Run("should extract subject values", func(t *testing.T) {
-			require.Equal(t, testCase.locality, cert.GetLocality(testCase.subject))
-			require.Equal(t, testCase.country, cert.GetCountry(testCase.subject))
-			require.Equal(t, testCase.province, cert.GetProvince(testCase.subject))
-			require.Equal(t, testCase.org, cert.GetOrganization(testCase.subject))
-			require.Equal(t, testCase.orgUnit, cert.GetOrganizationalUnit(testCase.subject))
-			require.Equal(t, testCase.orgUnits, cert.GetAllOrganizationalUnits(testCase.subject))
-			require.Equal(t, testCase.uuidOrgUnit, cert.GetUUIDOrganizationalUnit(testCase.subject))
-			require.Equal(t, testCase.remainingOrgUnit, cert.GetRemainingOrganizationalUnit(testCase.orgUnitPattern, testCase.orgRegionPattern)(testCase.subject))
-			require.Equal(t, testCase.commonName, cert.GetCommonName(testCase.subject))
-			require.Equal(t, testCase.possibleOrgUnitMatches, cert.GetPossibleRegexTopLevelMatches(constructRegex(testCase.orgUnitPattern, testCase.orgRegionPattern)))
+			assert.Equal(t, testCase.country, cert.GetCountry(testCase.subject))
+			assert.Equal(t, testCase.locality, cert.GetLocality(testCase.subject))
+			assert.Equal(t, testCase.province, cert.GetProvince(testCase.subject))
+			assert.Equal(t, testCase.org, cert.GetOrganization(testCase.subject))
+			assert.Equal(t, testCase.orgUnit, cert.GetOrganizationalUnit(testCase.subject))
+			assert.Equal(t, testCase.orgUnits, cert.GetAllOrganizationalUnits(testCase.subject))
+			assert.Equal(t, testCase.uuidOrgUnit, cert.GetUUIDOrganizationalUnit(testCase.subject))
+			assert.Equal(t, testCase.remainingOrgUnit, cert.GetRemainingOrganizationalUnit(testCase.orgUnitPattern, testCase.orgRegionPattern)(testCase.subject))
+			assert.Equal(t, testCase.commonName, cert.GetCommonName(testCase.subject))
+			assert.Equal(t, testCase.possibleOrgUnitMatches, cert.GetPossibleRegexTopLevelMatches(constructRegex(testCase.orgUnitPattern, testCase.orgRegionPattern)))
 		})
 	}
 }

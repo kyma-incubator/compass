@@ -27,6 +27,8 @@ require (
 	k8s.io/client-go v0.20.2
 )
 
+require github.com/grantae/certinfo v0.0.0-20170412194111-59d56a35515b // indirect
+
 require (
 	github.com/99designs/gqlgen v0.11.3 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect

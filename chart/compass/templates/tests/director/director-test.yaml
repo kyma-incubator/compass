@@ -103,6 +103,8 @@ spec:
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_ATOM_EXTERNAL_CERT_SUBJECT
+              value: {{ printf .Values.global.externalCertConfiguration.technicalClientSubjectPattern .Values.global.tests.subscription.tenants.consumerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CERT_COMMON_NAME

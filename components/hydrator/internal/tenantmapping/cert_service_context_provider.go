@@ -63,7 +63,6 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
 			if consumer.ConsumerType(consumerType) == consumer.TechnicalClient {
-				log.D().Info("")
 				return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, scopes, mergeWithOtherScopes, "", "", authDetails.AuthID, authDetails.AuthFlow, consumer.TechnicalClient, tenantmapping.CertServiceObjectContextProvider), nil
 			}
 			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, scopes, mergeWithOtherScopes, "", "", authDetails.AuthID, authDetails.AuthFlow, consumer.ExternalCertificate, tenantmapping.CertServiceObjectContextProvider), nil

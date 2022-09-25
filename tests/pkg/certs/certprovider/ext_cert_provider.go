@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
@@ -15,19 +17,29 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// ProviderType missing godoc
+type ProviderType int
+
+const (
+	CertificateService ProviderType = iota
+	Atom
+)
+
 type ExternalCertProviderConfig struct {
-	ExternalClientCertTestSecretName         string  `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
-	ExternalClientCertTestSecretNamespace    string  `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
-	CertSvcInstanceTestSecretName            string  `envconfig:"CERT_SVC_INSTANCE_TEST_SECRET_NAME"`
-	CertSvcInstanceTestRegion2SecretName     string  `envconfig:"CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME"`
-	ExternalCertCronjobContainerName         string  `envconfig:"EXTERNAL_CERT_CRONJOB_CONTAINER_NAME"`
-	ExternalCertTestJobName                  string  `envconfig:"EXTERNAL_CERT_TEST_JOB_NAME"`
-	TestExternalCertSubject                  string  `envconfig:"TEST_EXTERNAL_CERT_SUBJECT"`
-	TestExternalCertSubjectRegion2           string  `envconfig:"TEST_EXTERNAL_CERT_SUBJECT_REGION2"`
-	TestExternalCertCN                       string  `envconfig:"TEST_EXTERNAL_CERT_CN"`
-	ExternalClientCertCertKey                string  `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
-	ExternalClientCertKeyKey                 string  `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
-	ExternalClientCertExpectedIssuerLocality *string `envconfig:"-"`
+	ExternalClientCertTestSecretName         string       `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
+	ExternalClientCertTestSecretNamespace    string       `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
+	CertSvcInstanceTestSecretName            string       `envconfig:"CERT_SVC_INSTANCE_TEST_SECRET_NAME"`
+	CertSvcInstanceTestRegion2SecretName     string       `envconfig:"CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME"`
+	ExternalCertCronjobContainerName         string       `envconfig:"EXTERNAL_CERT_CRONJOB_CONTAINER_NAME"`
+	ExternalCertTestJobName                  string       `envconfig:"EXTERNAL_CERT_TEST_JOB_NAME"`
+	TestExternalCertSubject                  string       `envconfig:"TEST_EXTERNAL_CERT_SUBJECT"`
+	TestAtomExternalCertSubject              string       `envconfig:"TEST_ATOM_EXTERNAL_CERT_SUBJECT"`
+	TestExternalCertSubjectRegion2           string       `envconfig:"TEST_EXTERNAL_CERT_SUBJECT_REGION2"`
+	TestExternalCertCN                       string       `envconfig:"TEST_EXTERNAL_CERT_CN"`
+	ExternalClientCertCertKey                string       `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
+	ExternalClientCertKeyKey                 string       `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
+	ExternalClientCertExpectedIssuerLocality *string      `envconfig:"-"`
+	ExternalCertProvider                     ProviderType `envconfig:"-"`
 }
 
 func NewExternalCertFromConfig(t *testing.T, ctx context.Context, testConfig ExternalCertProviderConfig) (*rsa.PrivateKey, [][]byte) {
@@ -73,7 +85,14 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 					env.Value = testConfig.ExternalClientCertTestSecretName
 				}
 				if env.Name == "CERT_SUBJECT_PATTERN" {
-					env.Value = testConfig.TestExternalCertSubject
+					switch testConfig.ExternalCertProvider {
+					case Atom:
+						env.Value = testConfig.TestAtomExternalCertSubject
+					case CertificateService:
+						env.Value = testConfig.TestExternalCertSubject
+					default:
+						log.C(ctx).Error("Certificate subject was set")
+					}
 				}
 				if env.Name == "CERT_SVC_CSR_ENDPOINT" || env.Name == "CERT_SVC_CLIENT_ID" || env.Name == "CERT_SVC_OAUTH_URL" || env.Name == "CERT_SVC_OAUTH_CLIENT_CERT" || env.Name == "CERT_SVC_OAUTH_CLIENT_KEY" {
 					if testConfig.CertSvcInstanceTestSecretName != "" {

@@ -34,6 +34,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
 		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
 	}
 
 	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
