@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/go-logr/logr v0.4.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220923074454-9410ae7bda0d
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220725083431-c2155c720423
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220923081755-73658007a303
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220926151757-7d01ecee0c1d
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
