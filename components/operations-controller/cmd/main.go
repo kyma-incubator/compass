@@ -128,8 +128,8 @@ func main() {
 	})
 	fatalOnError(errors.Wrapf(err, "Failed to initialize certificate loader"))
 
-	httpMTLSClient := utils.PrepareMtlsClient(cfg.HttpClient, certCache, cfg.ExternalClientCertSecretName)
-	httpExtSvcMtlsCluent := utils.PrepareMtlsClient(cfg.HttpClient, certCache, cfg.ExtSvcClientCertSecretName)
+	httpMTLSClient := utils.PrepareMtlsClient(cfg.HttpClient, certCache, cfg.ExternalClient.CertSecretName)
+	httpExtSvcMtlsCluent := utils.PrepareMtlsClient(cfg.HttpClient, certCache, cfg.ExtSvcClient.CertSecretName)
 
 	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, internalGatewayHTTPClient)
 	fatalOnError(err)
