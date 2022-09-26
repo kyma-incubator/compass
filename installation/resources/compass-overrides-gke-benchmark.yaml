@@ -21,7 +21,7 @@ global:
     secrets:
       externalCertSvcSecret:
         manage: true
-  extSvclCertConfiguration:
+  extSvcCertConfiguration:
     secrets:
       extSvcCertSvcSecret:
         manage: true
