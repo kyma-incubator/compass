@@ -148,8 +148,8 @@ spec:
                 - name: CERT_SVC_CSR_ENDPOINT
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.csrEndpointKey }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.csrEndpointKey }}
                 - name: CERT_SVC_API_PATH
                   value: {{ .Values.global.extSvcCertConfiguration.certSvcApiPath }}
                 - name: CERT_SUBJECT_PATTERN
@@ -161,35 +161,35 @@ spec:
                 - name: CLIENT_CERT_RETRY_ATTEMPTS
                   value: {{ .Values.global.extSvcCertConfiguration.rotationCronjob.clientCertRetryAttempts | quote }}
                 - name: CLIENT_CERT_SECRET_NAME
-                  value: {{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.name }}
+                  value: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}
                 - name: CLIENT_CERT_CERT_KEY
-                  value:  {{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.certKey }}
+                  value:  {{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}
                 - name: CLIENT_CERT_KEY_KEY
-                  value:  {{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.keyKey }}
+                  value:  {{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}
                 - name: CERT_SVC_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.clientIdKey }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.clientIdKey }}
                 - name: CERT_SVC_OAUTH_URL
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.oauthUrlKey }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.oauthUrlKey }}
                 - name: CERT_SVC_TOKEN_PATH
                   value: {{ .Values.global.extSvcCertConfiguration.tokenPath }}
                 - name: CERT_SVC_OAUTH_CLIENT_CERT
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.clientCert }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.clientCert }}
                 - name: CERT_SVC_OAUTH_CLIENT_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.name }}
-                      key: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.clientKey }}
+                      name: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.name }}
+                      key: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.clientKey }}
                 - name: SKIP_SSL_VALIDATION_FLAG
-                  value: {{ .Values.global.extSvcCertConfiguration.secrets.externalCertSvcSecret.skipSSLValidationFlag }}
+                  value: {{ .Values.global.extSvcCertConfiguration.secrets.extSvcCertSvcSecret.skipSSLValidationFlag }}
 
 ---
 apiVersion: v1
@@ -246,7 +246,7 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: director-{{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.name }}
+  name: director-{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -258,5 +258,5 @@ metadata:
 rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
-    resourceNames: ["{{ .Values.global.extSvcCertConfiguration.secrets.externalClientCertSecret.name }}"]
+    resourceNames: ["{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"]
     verbs: ["watch"]
