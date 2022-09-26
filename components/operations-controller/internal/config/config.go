@@ -45,8 +45,8 @@ type Config struct {
 	Webhook        *webhook.Config       `mapstructure:"webhook"`
 	ExternalClient *ExternalClientConfig `mapstructure:"external_client"`
 
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName   string `envconfig:"EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 }
 
 // AppPFlags adds pflags for the Config structure and adds them in the provided set

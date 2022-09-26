@@ -10,5 +10,5 @@ type IstioConfig struct {
 	SkipSSLValidation              bool   `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
 	DefaultTenant                  string
-	ExternalClientCertSecretName   string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName   string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }

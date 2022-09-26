@@ -32,7 +32,7 @@ type config struct {
 	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
 	CertLoaderConfig               certloader.Config
 
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var (

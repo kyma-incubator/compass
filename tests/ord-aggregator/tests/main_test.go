@@ -60,8 +60,8 @@ type config struct {
 	TestConsumerTenantID                                  string
 	TestProviderSubaccountID                              string
 	TokenPath                                             string
-	ExternalClientCertSecretName                          string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName                            string `envconfig:"EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName                          string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExtSvcClientCertSecretName                            string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 	CertLoaderConfig                                      certloader.Config
 	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation                                     bool          `envconfig:"default=false"`

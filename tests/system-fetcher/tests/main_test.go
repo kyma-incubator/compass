@@ -26,7 +26,7 @@ type Config struct {
 	SelfRegDistinguishLabelKey   string
 	SelfRegDistinguishLabelValue string
 	SelfRegRegion                string
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var (

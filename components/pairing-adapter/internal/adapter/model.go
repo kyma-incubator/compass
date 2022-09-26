@@ -28,7 +28,7 @@ type Configuration struct {
 	ServerTimeout time.Duration `envconfig:"default=30s"`
 	Log           *log.Config
 
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 type Mapping struct {

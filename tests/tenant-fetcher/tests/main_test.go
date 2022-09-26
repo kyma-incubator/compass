@@ -50,7 +50,7 @@ type testConfig struct {
 	SelfRegDistinguishLabelValue     string
 	SelfRegRegion                    string
 	CertLoaderConfig                 certloader.Config
-	ExternalClientCertSecretName     string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName     string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 type TenantProviderConfig struct {

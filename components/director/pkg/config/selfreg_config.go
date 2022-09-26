@@ -40,7 +40,7 @@ type SelfRegConfig struct {
 	SaaSAppNamePath     string            `envconfig:"APP_SELF_REGISTER_SAAS_APP_NAME_PATH"`
 	RegionToSaaSAppName map[string]string `envconfig:"-"`
 
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 // PrepareConfiguration take cares to build the self register configuration

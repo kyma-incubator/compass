@@ -24,7 +24,7 @@ const (
 type Config struct {
 	APIEndpoint                  string `envconfig:"APP_INFO_API_ENDPOINT,default=/v1/info" json:"-"`
 	RootCA                       string `envconfig:"APP_INFO_ROOT_CA"`
-	ExternalClientCertSecretName string `envconfig:"EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 type responseData struct {
