@@ -62,6 +62,7 @@ func DefaultConfig() *Config {
 		Director:       director.DefaultConfig(),
 		Webhook:        webhook.DefaultConfig(),
 		ExternalClient: &ExternalClientConfig{},
+		ExtSvcClient:   &ExtSvcClientConfig{},
 	}
 }
 
