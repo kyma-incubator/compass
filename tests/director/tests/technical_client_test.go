@@ -12,7 +12,6 @@ import (
 )
 
 func TestTechnicalClient(t *testing.T) {
-	// Build graphql director client configured with certificate
 	ctx := context.Background()
 
 	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.TestConsumerSubaccountID, conf.ExternalCertCommonName, "technical-client-test")

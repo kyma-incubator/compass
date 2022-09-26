@@ -91,7 +91,7 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 					case CertificateService:
 						env.Value = testConfig.TestExternalCertSubject
 					default:
-						log.C(ctx).Error("Certificate subject was set")
+						log.C(ctx).Error("Certificate subject was not set")
 					}
 				}
 				if env.Name == "CERT_SVC_CSR_ENDPOINT" || env.Name == "CERT_SVC_CLIENT_ID" || env.Name == "CERT_SVC_OAUTH_URL" || env.Name == "CERT_SVC_OAUTH_CLIENT_CERT" || env.Name == "CERT_SVC_OAUTH_CLIENT_KEY" {

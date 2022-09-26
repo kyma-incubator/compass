@@ -104,12 +104,12 @@ func TestSubjectExtraction(t *testing.T) {
 			assert.Equal(t, testCase.uuidOrgUnit, cert.GetUUIDOrganizationalUnit(testCase.subject))
 			assert.Equal(t, testCase.remainingOrgUnit, cert.GetRemainingOrganizationalUnit(testCase.orgUnitPattern, testCase.orgRegionPattern)(testCase.subject))
 			assert.Equal(t, testCase.commonName, cert.GetCommonName(testCase.subject))
-			assert.Equal(t, testCase.possibleOrgUnitMatches, cert.GetPossibleRegexTopLevelMatches(constructRegex(testCase.orgUnitPattern, testCase.orgRegionPattern)))
+			assert.Equal(t, testCase.possibleOrgUnitMatches, cert.GetPossibleRegexTopLevelMatches(constructOURegex(testCase.orgUnitPattern, testCase.orgRegionPattern)))
 		})
 	}
 }
 
-func constructRegex(patterns ...string) string {
+func constructOURegex(patterns ...string) string {
 	nonEmptyStr := make([]string, 0)
 	for _, pattern := range patterns {
 		if len(pattern) > 0 {

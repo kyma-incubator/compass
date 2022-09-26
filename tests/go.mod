@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/director v0.0.0-20220915120526-33fe29169315
@@ -27,8 +26,6 @@ require (
 	k8s.io/client-go v0.20.2
 )
 
-require github.com/grantae/certinfo v0.0.0-20170412194111-59d56a35515b // indirect
-
 require (
 	github.com/99designs/gqlgen v0.11.3 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
@@ -49,6 +46,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
+	github.com/jmoiron/sqlx v1.3.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 // indirect
