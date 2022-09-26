@@ -126,9 +126,9 @@ func main() {
 		ExternalClientCertCertKey: cfg.ExternalClient.CertKey,
 		ExternalClientCertKeyKey:  cfg.ExternalClient.KeyKey,
 
-		ExtSvcClientCertSecret: cfg.ExtSvcClient.CertSecret,
+		ExtSvcClientCertSecret:  cfg.ExtSvcClient.CertSecret,
 		ExtSvcClientCertCertKey: cfg.ExtSvcClient.CertKey,
-		ExtSvcClientCertKeyKey: cfg.ExtSvcClient.KeyKey,
+		ExtSvcClientCertKeyKey:  cfg.ExtSvcClient.KeyKey,
 	})
 	fatalOnError(errors.Wrapf(err, "Failed to initialize certificate loader"))
 
