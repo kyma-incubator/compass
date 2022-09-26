@@ -21,6 +21,10 @@ global:
     secrets:
       externalCertSvcSecret:
         manage: true
+  extSvclCertConfiguration:
+    secrets:
+      extSvcCertSvcSecret:
+        manage: true
   externalServicesMock:
     enabled: true
     oauthSecret:
