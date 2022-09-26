@@ -231,6 +231,7 @@ export APP_EXTERNAL_CLIENT_CERT_KEY="tls.crt"
 export APP_EXTERNAL_CLIENT_KEY_KEY="tls.key"
 export APP_EXTERNAL_CLIENT_CERT_VALUE="certValue" # the default value is not valid but if you want you can override with the desired certificate value
 export APP_EXTERNAL_CLIENT_KEY_VALUE="keyValue" # the default value is not valid but if you want you can override with the desired key value
+export APP_EXTERNAL_CLIENT_CERT_SECRET_NAME=${CLIENT_CERT_SECRET_NAME}
 export APP_EXT_SVC_CLIENT_CERT_SECRET=${CLIENT_CERT_SECRET_NAMESPACE}/${EXT_SVC_CERT_SECRET_NAME}
 export APP_EXT_SVC_CLIENT_CERT_KEY="tls.crt"
 export APP_EXT_SVC_CLIENT_KEY_KEY="tls.key"
