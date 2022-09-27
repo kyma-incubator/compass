@@ -28,6 +28,7 @@ const (
 	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 	mainURLKey                      = "mainUrl"
+	omeProductID                    = "OME"
 )
 
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -130,7 +131,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 
 	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
 	for _, tnt := range allTenants {
-		if tnt.Type == tenantEntity.Account {
+		if tnt.Type == tenantEntity.Account && tnt.ExternalTenant == "efa137fc-1597-4e71-bb6f-356cc05c608c" {
 			tenants = append(tenants, tnt)
 		}
 	}
@@ -279,7 +280,7 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 		return nil, err
 	}
 
-	if sc.ProductID == "S4_PC" { // temporary, will be removed in favor of a better abstraction with evolved application template input configurations
+	if sc.ProductID == "S4_PC" || sc.ProductID == omeProductID { // temporary, will be removed in favor of a better abstraction with evolved application template input configurations
 		input.LocalTenantID = input.SystemNumber
 	}
 
@@ -311,7 +312,7 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 
 	initStatusCond := model.ApplicationStatusConditionInitial
 	baseURL := sc.AdditionalURLs[mainURLKey]
-	return &model.ApplicationRegisterInput{
+	appRegisterInput := &model.ApplicationRegisterInput{
 		Name:            sc.DisplayName,
 		Description:     &sc.ProductDescription,
 		StatusCondition: &initStatusCond,
@@ -323,7 +324,15 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 			"productId":            &sc.ProductID,
 			"ppmsProductVersionId": &sc.PpmsProductVersionID,
 		},
-	}, nil
+	}
+
+	if sc.ProductID == omeProductID {
+		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
+		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterID
+		appRegisterInput.Labels["region"] = &region
+	}
+
+	return appRegisterInput, nil
 }
 
 func createORDWebhookInput(baseURL string) *model.WebhookInput {

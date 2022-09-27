@@ -1,5 +1,7 @@
 package systemfetcher_test
 
+/*
+
 import (
 	"context"
 	"errors"
@@ -671,3 +673,4 @@ func fixAppsInputsWithTemplatesBySystems(systems []systemfetcher.System) []model
 	}
 	return result
 }
+*/
