@@ -8,7 +8,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220923081755-73658007a303
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220927081408-8ecfba185ee5
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220718091245-0570e3e974e0
