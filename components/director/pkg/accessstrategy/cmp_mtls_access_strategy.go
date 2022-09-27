@@ -42,7 +42,6 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
 	}
-
 	tr := &http.Transport{}
 	if baseClient.Transport != nil {
 		switch v := baseClient.Transport.(type) {
@@ -53,10 +52,6 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		default:
 			return nil, errors.New("unsupported transport type")
 		}
-	}
-
-	if len(clientCerts) != 2 {
-		return nil, errors.New("There must be exactly 2 certificates in the cert cache")
 	}
 
 	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
@@ -84,6 +79,9 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 
 	resp, err := client.Do(req)
 	if err != nil {
+		if len(clientCerts) != 2 {
+			return nil, errors.New("There must be exactly 2 certificates in the cert cache")
+		}
 		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
 		client.Transport = tr
 		return client.Do(req)
