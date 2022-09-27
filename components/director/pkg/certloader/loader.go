@@ -3,6 +3,7 @@ package certloader
 import (
 	"context"
 	"crypto/tls"
+	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -97,24 +98,35 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 		default:
 		}
 		log.C(ctx).Info("Starting certificate watchers for secret changes...")
+
+		wg := &sync.WaitGroup{}
 		for idx, manager := range cl.secretManagers {
-			watcher, err := manager.Watch(ctx, metav1.ListOptions{
-				FieldSelector: "metadata.name=" + cl.secretNames[idx],
-				Watch:         true,
-			})
-			if err != nil {
-				log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again... %v", cl.reconnectInterval.String(), err)
+			wg.Add(1)
+
+			go func(manager Manager, idx int) {
+				defer wg.Done()
+
+				watcher, err := manager.Watch(ctx, metav1.ListOptions{
+					FieldSelector: "metadata.name=" + cl.secretNames[idx],
+					Watch:         true,
+				})
+
+				if err != nil {
+					log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again... %v", cl.reconnectInterval.String(), err)
+					time.Sleep(cl.reconnectInterval)
+					return
+				}
+				log.C(ctx).Info("Waiting for certificate secret events...")
+
+				cl.processEvents(ctx, watcher.ResultChan(), cl.secretNames[idx])
+
+				// Cleanup any allocated resources
+				watcher.Stop()
 				time.Sleep(cl.reconnectInterval)
-				continue
-			}
-			log.C(ctx).Info("Waiting for certificate secret events...")
-
-			cl.processEvents(ctx, watcher.ResultChan(), cl.secretNames[idx])
-
-			// Cleanup any allocated resources
-			watcher.Stop()
-			time.Sleep(cl.reconnectInterval)
+			}(manager, idx)
 		}
+
+		wg.Wait()
 	}
 }
 
