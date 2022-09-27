@@ -642,7 +642,6 @@ global:
         manage: false
         name: "cert-svc-secret"
         clientIdKey: client-id
-        clientSecretKey: client-secret
         oauthUrlKey: url
         csrEndpointKey: csr-endpoint
         clientCert: client-cert
