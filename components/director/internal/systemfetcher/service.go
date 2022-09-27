@@ -276,7 +276,7 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 		return nil, err
 	}
 
-	if sc.ProductID == "S4_PC" { // temporary, will be removed in favor of a better abstraction with evolved application template input configurations
+	if sc.ProductID == "S4_PC" || sc.ProductID == "OME" { // temporary, will be removed in favor of a better abstraction with evolved application template input configurations
 		input.LocalTenantID = input.SystemNumber
 	}
 
