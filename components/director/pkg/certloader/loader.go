@@ -165,7 +165,7 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 	extSvcCertChainBytes := secretData[config.ExtSvcClientCertCertKey]
 	extSvcPrivateKeyBytes := secretData[config.ExtSvcClientCertKeyKey]
 
-	if certChainBytes != nil && privateKeyBytes != nil {
+	if extSvcCertChainBytes != nil && extSvcPrivateKeyBytes != nil {
 		return cert.ParseCertificateBytes(extSvcCertChainBytes, extSvcPrivateKeyBytes)
 	}
 

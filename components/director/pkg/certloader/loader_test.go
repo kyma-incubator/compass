@@ -264,41 +264,56 @@ func Test_CertificateParsing(t *testing.T) {
 		Name             string
 		SecretData       map[string][]byte
 		ExpectedErrorMsg string
+		Cfg              Config
 	}{
 		{
 			Name:       "Successfully get certificate from cache",
 			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
+			Cfg:        config,
+		},
+		{
+			Name:       "Successfully get ext svc certificate from cache",
+			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
+			Cfg: Config{
+				ExtSvcClientCertCertKey: "tls.crt",
+				ExtSvcClientCertKeyKey:  "tls.key",
+			},
 		},
 		{
 			Name:             "Error when secret data is empty",
 			SecretData:       map[string][]byte{},
 			ExpectedErrorMsg: "There is no certificate data provided",
+			Cfg:              config,
 		},
 		{
 			Name:             "Error when certificate data is invalid",
 			SecretData:       map[string][]byte{secretCertKey: []byte("invalid"), secretKeyKey: []byte("invalid")},
 			ExpectedErrorMsg: "Error while decoding certificate pem block",
+			Cfg:              config,
 		},
 		{
 			Name:             "Error when parsing certificate",
 			SecretData:       map[string][]byte{secretCertKey: []byte(invalidCert), secretKeyKey: []byte("invalid")},
 			ExpectedErrorMsg: "malformed certificate",
+			Cfg:              config,
 		},
 		{
 			Name:             "Error when private key is invalid",
 			SecretData:       map[string][]byte{secretCertKey: certBytes, secretKeyKey: []byte("invalid")},
 			ExpectedErrorMsg: "Error while decoding private key pem block",
+			Cfg:              config,
 		},
 		{
 			Name:             "Error when parsing private key",
 			SecretData:       map[string][]byte{secretCertKey: certBytes, secretKeyKey: []byte(invalidKey)},
 			ExpectedErrorMsg: "structure error",
+			Cfg:              config,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			tlsCert, err := parseCertificate(ctx, testCase.SecretData, config)
+			tlsCert, err := parseCertificate(ctx, testCase.SecretData, testCase.Cfg)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
