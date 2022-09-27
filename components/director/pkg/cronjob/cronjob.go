@@ -49,25 +49,23 @@ func (r *cronJobRunner) Start(ctx context.Context) {
 		start := time.Now()
 		log.C(ctx).Infof("Starting CronJob %s execution", r.CronJob.Name)
 		r.CronJob.Fn(newCtx)
-		select {
-		case <-newCtx.Done():
-			log.C(ctx).Infof("CronJob %s canceled due to context done", r.CronJob.Name)
+		if newCtx.Err() != nil {
+			log.C(ctx).Infof("CronJob %s stopped due to context done", r.CronJob.Name)
 			return
-		default:
-			jobTime := time.Since(start)
-			log.C(ctx).Infof("CronJob %s executed for %s", r.CronJob.Name, jobTime.String())
-			if jobTime < r.CronJob.SchedulePeriod {
-				waitPeriod := r.CronJob.SchedulePeriod - jobTime
-				log.C(ctx).Infof("Scheduling CronJob %s to run after %s", r.CronJob.Name, waitPeriod.String())
+		}
+		jobTime := time.Since(start)
+		log.C(ctx).Infof("CronJob %s executed for %s", r.CronJob.Name, jobTime.String())
+		if jobTime < r.CronJob.SchedulePeriod {
+			waitPeriod := r.CronJob.SchedulePeriod - jobTime
+			log.C(ctx).Infof("Scheduling CronJob %s to run after %s", r.CronJob.Name, waitPeriod.String())
 
-				select {
-				case <-newCtx.Done():
-					log.C(ctx).Infof("Context of CronJob %s is done. Exiting CronJob loop...", r.CronJob.Name)
-					return
-				case <-time.After(waitPeriod):
-					log.C(ctx).Infof("Waited %s to run next iteration of CronJob %s",
-						waitPeriod.String(), r.CronJob.Name)
-				}
+			select {
+			case <-newCtx.Done():
+				log.C(ctx).Infof("Context of CronJob %s is done. Exiting CronJob loop...", r.CronJob.Name)
+				return
+			case <-time.After(waitPeriod):
+				log.C(ctx).Infof("Waited %s to run next iteration of CronJob %s",
+					waitPeriod.String(), r.CronJob.Name)
 			}
 		}
 	}
