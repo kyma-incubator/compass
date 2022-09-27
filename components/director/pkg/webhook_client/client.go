@@ -107,8 +107,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 	}
 
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
+		if err := resp.Body.Close(); err != nil {
 			log.C(ctx).Error(err, "Failed to close HTTP response body")
 		}
 	}()
@@ -125,6 +124,8 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 		return nil, errors.Wrap(err, "unable to parse response into webhook output template")
 	}
 
+	response.ActualStatusCode = &resp.StatusCode
+
 	if err = checkForGoneStatus(resp, response.GoneStatusCode); err != nil {
 		return response, err
 	}
@@ -136,7 +137,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 		return nil, errors.Errorf("missing location url after executing async webhook: HTTP response status %+v with body %s", resp.Status, responseObject.Body)
 	}
 
-	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
+	return response, checkForErr(resp, response.SuccessStatusCode, response.IncompleteStatusCode, response.Error)
 }
 
 func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.ResponseStatus, error) {
@@ -187,7 +188,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.Respo
 		return nil, errors.Wrap(err, "unable to parse response status into status template")
 	}
 
-	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
+	return response, checkForErr(resp, response.SuccessStatusCode, nil, response.Error)
 }
 
 func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook graphql.Webhook) (*http.Response, error) {
@@ -238,9 +239,9 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 	}, nil
 }
 
-func checkForErr(resp *http.Response, successStatusCode *int, errorMessage *string) error {
+func checkForErr(resp *http.Response, successStatusCode, incompleteStatusCode *int, errorMessage *string) error {
 	var errMsg string
-	if *successStatusCode != resp.StatusCode {
+	if *successStatusCode != resp.StatusCode && (incompleteStatusCode == nil || *incompleteStatusCode != resp.StatusCode) {
 		errMsg += fmt.Sprintf("response success status code was not met - expected %d, got %d; ", *successStatusCode, resp.StatusCode)
 	}
 
