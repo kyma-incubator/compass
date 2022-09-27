@@ -83,7 +83,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	}
 
 	resp, err := client.Do(req)
-	if err != nil && resp.StatusCode == http.StatusBadGateway {
+	if err != nil {
 		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
 		client.Transport = tr
 		return client.Do(req)
