@@ -125,7 +125,7 @@ func main() {
 		return
 	}
 
-	fmt.Println("Starting sync of systems...")
+	log.C(ctx).Infof("Starting sync of systems...")
 	if err = sf.SyncSystems(ctx); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to sync systems"))
 	}
