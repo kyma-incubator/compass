@@ -42,13 +42,13 @@ const (
 )
 
 type Tenant struct {
-	ID             string       `db:"id"`
-	Name           string       `db:"external_name"`
-	ExternalTenant string       `db:"external_tenant"`
-	ProviderName   string       `db:"provider_name"`
-	Type           TenantType   `db:"type"`
-	Parent         string       `db:"parent"`
-	Status         TenantStatus `db:"status"`
+	ID             string
+	Name           string
+	ExternalTenant string
+	ProviderName   string
+	Type           TenantType
+	Parent         string
+	Status         TenantStatus
 }
 
 var TestTenants TestTenantsManager

@@ -50,38 +50,6 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_APPLICATION_TYPE_LABEL_KEY
               value: {{ .Values.global.director.applicationTypeLabelKey }}
-            - name: APP_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-director-username
-            - name: APP_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-director-password
-            - name: APP_DB_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-serviceName
-            - name: APP_DB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-servicePort
-            - name: APP_DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-director-db-name
-            - name: APP_DB_SSL
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-sslMode
-            - name: APP_DEFAULT_SCENARIO
-              value: "DEFAULT"
 ---
 apiVersion: v1
 kind: ServiceAccount
