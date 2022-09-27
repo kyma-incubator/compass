@@ -158,9 +158,16 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 	certChainBytes := secretData[config.ExternalClientCertCertKey]
 	privateKeyBytes := secretData[config.ExternalClientCertKeyKey]
 
-	if certChainBytes == nil || privateKeyBytes == nil {
-		return nil, errors.New("There is no certificate data provided")
+	if certChainBytes != nil && privateKeyBytes != nil {
+		return cert.ParseCertificateBytes(certChainBytes, privateKeyBytes)
 	}
 
-	return cert.ParseCertificateBytes(certChainBytes, privateKeyBytes)
+	extSvcCertChainBytes := secretData[config.ExtSvcClientCertCertKey]
+	extSvcPrivateKeyBytes := secretData[config.ExtSvcClientCertKeyKey]
+
+	if certChainBytes != nil && privateKeyBytes != nil {
+		return cert.ParseCertificateBytes(extSvcCertChainBytes, extSvcPrivateKeyBytes)
+	}
+
+	return nil, errors.New("There is no certificate data provided")
 }
