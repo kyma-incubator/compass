@@ -89,7 +89,7 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 
 	if sc.ProductID == omeProductID {
 		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
-		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterId
+		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterID
 		appRegisterInput.Labels["region"] = &region
 	}
 

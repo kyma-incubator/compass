@@ -310,7 +310,7 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 
 	if sc.ProductID == omeProductID {
 		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
-		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterId
+		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterID
 		appRegisterInput.Labels["region"] = &region
 	}
 
