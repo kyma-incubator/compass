@@ -25,6 +25,7 @@ const (
 	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
 	mainURLKey                      = "mainUrl"
+	omeProductID                    = "OME"
 )
 
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -276,7 +277,7 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 		return nil, err
 	}
 
-	if sc.ProductID == "S4_PC" || sc.ProductID == "OME" { // temporary, will be removed in favor of a better abstraction with evolved application template input configurations
+	if sc.ProductID == "S4_PC" || sc.ProductID == omeProductID { // temporary, will be removed in favor of a better abstraction with evolved application template input configurations
 		input.LocalTenantID = input.SystemNumber
 	}
 
@@ -307,7 +308,7 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		},
 	}
 
-	if sc.ProductID == "OME" {
+	if sc.ProductID == omeProductID {
 		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
 		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterId
 		appRegisterInput.Labels["region"] = &region

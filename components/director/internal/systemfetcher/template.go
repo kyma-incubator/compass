@@ -87,7 +87,7 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 		return nil, errors.Wrapf(err, "while preparing ApplicationRegisterInput model from Application Template with name %s", appTemplate.Name)
 	}
 
-	if sc.ProductID == "OME" {
+	if sc.ProductID == omeProductID {
 		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
 		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterId
 		appRegisterInput.Labels["region"] = &region
