@@ -1,3 +1,4 @@
+# This rotation job and all configurations related to it are temporary!
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
