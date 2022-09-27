@@ -37,6 +37,7 @@ type SystemBase struct {
 	ProductDescription     string               `json:"productDescription"`
 	BaseURL                string               `json:"baseUrl"`
 	InfrastructureProvider string               `json:"infrastructureProvider"`
+	DataCenterId           string               `json:"regionId"`
 	AdditionalURLs         AdditionalURLs       `json:"additionalUrls"`
 	AdditionalAttributes   AdditionalAttributes `json:"additionalAttributes"`
 }

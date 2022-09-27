@@ -2,11 +2,11 @@ package systemfetcher_test
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+/*
 const (
 	testExternal = "external"
 	testProvider = "Compass"
@@ -23,6 +23,7 @@ func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping
 		Status:         tenant.Active,
 	}
 }
+*/
 
 func fixInputValuesForSystem(s systemfetcher.System) model.ApplicationFromTemplateInputValues {
 	return model.ApplicationFromTemplateInputValues{

@@ -293,7 +293,7 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 
 	initStatusCond := model.ApplicationStatusConditionInitial
 	baseURL := sc.AdditionalURLs[mainURLKey]
-	return &model.ApplicationRegisterInput{
+	appRegisterInput := &model.ApplicationRegisterInput{
 		Name:            sc.DisplayName,
 		Description:     &sc.ProductDescription,
 		StatusCondition: &initStatusCond,
@@ -305,5 +305,13 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 			"productId":            &sc.ProductID,
 			"ppmsProductVersionId": &sc.PpmsProductVersionID,
 		},
-	}, nil
+	}
+
+	if sc.ProductID == "OME" {
+		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
+		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterId
+		appRegisterInput.Labels["region"] = &region
+	}
+
+	return appRegisterInput, nil
 }
