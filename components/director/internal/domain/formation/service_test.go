@@ -93,7 +93,7 @@ func TestServiceList(t *testing.T) {
 				formationRepo = testCase.FormationRepoFn()
 			}
 
-			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.List(ctx, testCase.InputPageSize, cursor)
@@ -155,7 +155,7 @@ func TestServiceGet(t *testing.T) {
 			// GIVEN
 			formationRepo := testCase.FormationRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.Get(ctx, testCase.InputID)
@@ -452,7 +452,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationTemplateRepoMock = testCase.FormationTemplateRepoFn()
 			}
 
-			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, formationTemplateRepoMock, nil, uuidSvcMock, lblDefService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, formationTemplateRepoMock, nil, uuidSvcMock, lblDefService, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.CreateFormation(ctx, Tnt, in, testCase.TemplateName)
@@ -662,7 +662,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock = testCase.FormationRepoFn()
 			}
 
-			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, nil, nil, nil, lblDefService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, nil, nil, nil, lblDefService, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.DeleteFormation(ctx, Tnt, testCase.InputFormation)
@@ -1353,7 +1353,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			webhookRepo := testCase.WebhookRepoFN()
 			labelRepo := testCase.LabelRepoFN()
 
-			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil, runtimeType, applicationType)
+			notificationSvc := formation.NewNotificationService(nil, nil, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, nil, nil)
+			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.CreateAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -1374,7 +1375,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 
 	t.Run("returns error on missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(context.TODO(), fixModel(ScenarioName))
@@ -1435,7 +1436,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, formationRepo, formationTemplateRepo)
 
-		svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
@@ -1461,7 +1462,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, formationRepo, formationTemplateRepo)
 
-		svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
@@ -1473,7 +1474,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 	t.Run("return error when input slice is empty", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, []*model.AutomaticScenarioAssignment{})
@@ -1496,7 +1497,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 			},
 		}
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, modelsWithDifferentSelectors)
 
@@ -1513,7 +1514,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, nil, nil, nil, runtimeType, applicationType)
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
 
@@ -1522,7 +1523,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 	})
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 		err := svc.DeleteManyASAForSameTargetTenant(context.TODO(), models)
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -2092,7 +2093,8 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			lblRepo := testCase.LabelRepositoryFn()
 			webhookRepo := testCase.WebhookRepoFN()
 
-			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil, runtimeType, applicationType)
+			notificationSvc := formation.NewNotificationService(nil, nil, runtimeRepo, runtimeContextRepo, lblRepo, webhookRepo, nil, nil)
+			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
 			err := svc.DeleteAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -2111,7 +2113,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 
 	t.Run("returns error on missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(context.TODO(), fixModel(ScenarioName))
@@ -2630,7 +2632,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 			webhookRepo := testCase.WebhookRepositoryFn()
 
-			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil, runtimeType, applicationType)
+			notificationSvc := formation.NewNotificationService(nil, nil, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, nil, nil)
+			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
 			err := svc.EnsureScenarioAssigned(ctx, testCase.InputASA)
@@ -3154,7 +3157,8 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			lblRepo := testCase.LabelRepositoryFn()
 			webhookRepo := testCase.WebhookRepositoryFn()
 
-			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil, runtimeType, applicationType)
+			notificationSvc := formation.NewNotificationService(nil, nil, runtimeRepo, runtimeContextRepo, lblRepo, webhookRepo, nil, nil)
+			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
 			err := svc.RemoveAssignedScenario(ctx, testCase.InputASA)
@@ -3374,7 +3378,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments(t *testing.T) {
 			formationRepo := testCase.FormationRepoFn()
 			formationTemplateRepo := testCase.FormationTemplateRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, runtimeType, applicationType)
 
 			// WHEN
 			actualScenarios, err := svc.MergeScenariosFromInputLabelsAndAssignments(ctx, testCase.InputLabels, runtimeID)
@@ -3759,7 +3763,7 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			formationRepo := testCase.FormationRepoFn()
 			formationTemplateRepo := testCase.FormationTemplateRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, runtimeType, applicationType)
 
 			// WHEN
 			scenarios, err := svc.GetScenariosFromMatchingASAs(ctx, testCase.ObjectID, testCase.ObjectType)
@@ -3805,7 +3809,7 @@ func TestService_GetFormationsForObject(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), labelInput).Return(label, nil).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		formations, err := svc.GetFormationsForObject(ctx, tenantID.String(), model.RuntimeLabelableObject, id)
@@ -3823,7 +3827,7 @@ func TestService_GetFormationsForObject(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), labelInput).Return(nil, errors.New(testErr)).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		formations, err := svc.GetFormationsForObject(ctx, tenantID.String(), model.RuntimeLabelableObject, id)

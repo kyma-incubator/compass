@@ -3867,7 +3867,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelRepo = testCase.LabelRepoFn()
 			}
 
-			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, nil, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, runtimeType, applicationType)
+			notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, nil, runtimeRepo, runtimeContextRepo, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, Tnt, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
