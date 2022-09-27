@@ -183,13 +183,13 @@ func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServic
 
 // FetchTenantDestinationsPage returns a page of destinations
 func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (*DestinationResponse, error) {
-	url := c.apiURL + c.apiConfig.EndpointGetTenantDestinations
-	req, err := c.buildRequest(ctx, url, page)
+	fetchURL := c.apiURL + c.apiConfig.EndpointGetTenantDestinations
+	req, err := c.buildFetchRequest(ctx, fetchURL, page)
 	if err != nil {
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Getting destinations page: %s data from: %s\n", page, url)
+	log.C(ctx).Infof("Getting destinations page: %s data from: %s\n", page, fetchURL)
 
 	res, err := c.sendRequestWithRetry(req)
 	if err != nil {
@@ -221,7 +221,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 	}, nil
 }
 
-func (c *Client) buildRequest(ctx context.Context, url string, page string) (*http.Request, error) {
+func (c *Client) buildFetchRequest(ctx context.Context, url string, page string) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to build request")

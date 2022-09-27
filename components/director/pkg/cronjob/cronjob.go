@@ -47,9 +47,11 @@ func (r *cronJobRunner) Start(ctx context.Context) {
 
 	for {
 		start := time.Now()
+		log.C(ctx).Infof("Starting CronJob %s execution", r.CronJob.Name)
 		r.CronJob.Fn(newCtx)
 		select {
 		case <-newCtx.Done():
+			log.C(ctx).Infof("CronJob %s canceled due to context done", r.CronJob.Name)
 			return
 		default:
 			jobTime := time.Since(start)
@@ -60,8 +62,11 @@ func (r *cronJobRunner) Start(ctx context.Context) {
 
 				select {
 				case <-newCtx.Done():
+					log.C(ctx).Infof("Context of CronJob %s is done. Exiting CronJob loop...", r.CronJob.Name)
 					return
 				case <-time.After(waitPeriod):
+					log.C(ctx).Infof("Waited %s to run next iteration of CronJob %s",
+						waitPeriod.String(), r.CronJob.Name)
 				}
 			}
 		}
@@ -111,6 +116,7 @@ func runLeaderLeaseLoop(ctx context.Context, electionConfig ElectionConfig, job 
 			OnStartedLeading: func(ctx context.Context) {
 				log.C(ctx).Infof("Starting CronJob executor on %s", electionID)
 				runner.Start(ctx)
+				log.C(ctx).Infof("CronJob executor on %s exited", electionID)
 			},
 			OnStoppedLeading: func() {
 				log.C(ctx).Errorf("Instance %s is no longer leader. Stopping CronJob executor", electionID)
@@ -138,6 +144,7 @@ func runCronJobWithElection(ctx context.Context, cfg ElectionConfig, job CronJob
 		}
 		select {
 		case <-ctx.Done():
+			log.C(ctx).Info("Leader lease loop context is done, exiting leader lease loop...")
 			return nil
 		default:
 			log.C(ctx).Error("Leader lease loop ended, re-running...")

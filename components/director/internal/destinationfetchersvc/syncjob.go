@@ -21,6 +21,7 @@ type DestinationSyncer interface {
 type SyncJobConfig struct {
 	ElectionCfg       cronjob.ElectionConfig
 	JobSchedulePeriod time.Duration
+	TenantSyncTimeout time.Duration
 	ParallelTenants   int64
 }
 
@@ -38,6 +39,7 @@ func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, dest
 				log.C(jobCtx).Info("No subscribed tenants found. Skipping sync job")
 				return
 			}
+			log.C(jobCtx).Infof("Found %d subscribed tenants. Starting sync...", len(subscribedTenants))
 			sem := semaphore.NewWeighted(cfg.ParallelTenants)
 			wg := &sync.WaitGroup{}
 			for _, tenantID := range subscribedTenants {
@@ -49,7 +51,7 @@ func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, dest
 						return
 					}
 					defer sem.Release(1)
-					syncTenantDestinations(jobCtx, destinationSyncer, tenantID)
+					syncTenantDestinations(jobCtx, destinationSyncer, tenantID, cfg.TenantSyncTimeout)
 				}(tenantID)
 			}
 			wg.Wait()
@@ -59,8 +61,11 @@ func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, dest
 	return cronjob.RunCronJob(ctx, cfg.ElectionCfg, resyncJob)
 }
 
-func syncTenantDestinations(ctx context.Context, destinationSyncer DestinationSyncer, tenantID string) {
-	err := destinationSyncer.SyncTenantDestinations(ctx, tenantID)
+func syncTenantDestinations(
+	ctx context.Context, destinationSyncer DestinationSyncer, tenantID string, timeout time.Duration) {
+	tenantSyncTimeoutCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	err := destinationSyncer.SyncTenantDestinations(tenantSyncTimeoutCtx, tenantID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Could not resync destinations for tenant %s", tenantID)
 	} else {
