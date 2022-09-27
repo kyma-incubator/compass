@@ -26,33 +26,6 @@ spec:
       - name: {{ .Values.global.portieris.imagePullSecretName }}
     {{ end }}
       containers:
-        {{if eq .Values.global.database.embedded.enabled false}}
-        - name: cloudsql-proxy
-          image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
-          command:
-            - /bin/sh
-          args:
-            - -c
-            - "trap 'exit 0' SIGINT SIGTERM; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -term_timeout=2s"
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "killall cloud_sql_proxy"]
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /healthz/ready
-              port: 15021
-              scheme: HTTP
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          {{- with .Values.global.tests.securityContext }}
-          securityContext:
-{{ toYaml . | indent 12 }}
-          {{- end }}
-          {{end}}
         - name: pairing-adapter-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
@@ -116,36 +89,6 @@ spec:
             - name: APP_LOCAL_ADAPTER_FQDN
               value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
             {{ end }}
-            - name: APP_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-director-username
-            - name: APP_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-director-password
-            - name: APP_DB_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-serviceName
-            - name: APP_DB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-servicePort
-            - name: APP_DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-director-db-name
-            - name: APP_DB_SSL
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-sslMode
 {{ $shouldAdd = false }}
 {{ end }}
 {{- end -}}
@@ -157,10 +100,6 @@ kind: ServiceAccount
 metadata:
   name: {{ $.Chart.Name }}-e2e-pairing-adapter
   namespace: {{ .Values.global.tests.namespace }}
-  {{- if eq .Values.global.database.embedded.enabled false }}
-  annotations:
-    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
-  {{- end }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
