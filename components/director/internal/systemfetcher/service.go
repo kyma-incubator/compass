@@ -127,7 +127,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 
 	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
 	for _, tnt := range allTenants {
-		if tnt.Type == tenantEntity.Account {
+		if tnt.Type == tenantEntity.Account && tnt.ExternalTenant == "efa137fc-1597-4e71-bb6f-356cc05c608c" {
 			tenants = append(tenants, tnt)
 		}
 	}
