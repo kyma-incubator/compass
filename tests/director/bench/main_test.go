@@ -7,14 +7,12 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	cfg "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
 )
 
 type config struct {
@@ -32,11 +30,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	dbCfg := persistence.DatabaseConfig{}
-	err := envconfig.Init(&dbCfg)
-	if err != nil {
-		log.D().Fatal(err)
-	}
 	tenant.TestTenants.Init()
 
 	cfg.ReadConfig(&conf)
