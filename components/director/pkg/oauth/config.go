@@ -19,14 +19,14 @@ const (
 
 // Config is Oauth2 configuration
 type Config struct {
-	ClientID                     string        `envconfig:"APP_OAUTH_CLIENT_ID"`
-	TokenBaseURL                 string        `envconfig:"APP_OAUTH_TOKEN_BASE_URL"`
-	TokenPath                    string        `envconfig:"APP_OAUTH_TOKEN_PATH"`
-	TokenEndpointProtocol        string        `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL"`
-	TenantHeaderName             string        `envconfig:"APP_OAUTH_TENANT_HEADER_NAME"`
-	ScopesClaim                  []string      `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
-	TokenRequestTimeout          time.Duration `envconfig:"APP_OAUTH_TOKEN_REQUEST_TIMEOUT"`
-	SkipSSLValidation            bool          `envconfig:"APP_OAUTH_SKIP_SSL_VALIDATION"`
+	ClientID              string        `envconfig:"APP_OAUTH_CLIENT_ID"`
+	TokenBaseURL          string        `envconfig:"APP_OAUTH_TOKEN_BASE_URL"`
+	TokenPath             string        `envconfig:"APP_OAUTH_TOKEN_PATH"`
+	TokenEndpointProtocol string        `envconfig:"APP_OAUTH_TOKEN_ENDPOINT_PROTOCOL"`
+	TenantHeaderName      string        `envconfig:"APP_OAUTH_TENANT_HEADER_NAME"`
+	ScopesClaim           []string      `envconfig:"APP_OAUTH_SCOPES_CLAIM"`
+	TokenRequestTimeout   time.Duration `envconfig:"APP_OAUTH_TOKEN_REQUEST_TIMEOUT"`
+	SkipSSLValidation     bool          `envconfig:"APP_OAUTH_SKIP_SSL_VALIDATION"`
 }
 
 // X509Config is X509 configuration for getting an OAuth token via mtls

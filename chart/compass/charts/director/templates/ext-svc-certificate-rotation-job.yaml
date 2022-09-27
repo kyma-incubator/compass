@@ -1,7 +1,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: "{{ $.Chart.Name }}-ext-svc-external-certificate-rotation-job"
+  name: "{{ $.Chart.Name }}-ext-svc-certificate-rotation-job"
   namespace: {{ $.Release.Namespace }}
 spec:
   schedule: "{{ .Values.global.extSvcCertConfiguration.rotationCronjob.schedule }}"
