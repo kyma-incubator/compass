@@ -71,7 +71,7 @@ type FormationTemplateRepository interface {
 	GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error)
 }
 
-// NotificationsService represents the notificaiton service for generating and sending notifications
+// NotificationsService represents the notification service for generating and sending notifications
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
 	GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.Request, error)
