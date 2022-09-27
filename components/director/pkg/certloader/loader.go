@@ -155,17 +155,17 @@ func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan wa
 
 func parseCertificate(ctx context.Context, secretData map[string][]byte, config Config) (*tls.Certificate, error) {
 	log.C(ctx).Info("Parsing provided certificate data...")
-	certChainBytes := secretData[config.ExternalClientCertCertKey]
-	privateKeyBytes := secretData[config.ExternalClientCertKeyKey]
+	certChainBytes, existsCertKey := secretData[config.ExternalClientCertCertKey]
+	privateKeyBytes, existsKeyKey := secretData[config.ExternalClientCertKeyKey]
 
-	if certChainBytes != nil && privateKeyBytes != nil {
+	if existsCertKey && existsKeyKey {
 		return cert.ParseCertificateBytes(certChainBytes, privateKeyBytes)
 	}
 
-	extSvcCertChainBytes := secretData[config.ExtSvcClientCertCertKey]
-	extSvcPrivateKeyBytes := secretData[config.ExtSvcClientCertKeyKey]
+	extSvcCertChainBytes, existsExtSvcCertKey := secretData[config.ExtSvcClientCertCertKey]
+	extSvcPrivateKeyBytes, existsExtSvcKeyKey := secretData[config.ExtSvcClientCertKeyKey]
 
-	if extSvcCertChainBytes != nil && extSvcPrivateKeyBytes != nil {
+	if existsExtSvcCertKey && existsExtSvcKeyKey {
 		return cert.ParseCertificateBytes(extSvcCertChainBytes, extSvcPrivateKeyBytes)
 	}
 
