@@ -66,9 +66,9 @@ type mtlsTokenAuthorizationProvider struct {
 }
 
 // NewMtlsTokenAuthorizationProvider constructs an TokenAuthorizationProvider
-func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateCache, creator MtlsClientCreator) *mtlsTokenAuthorizationProvider {
+func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, externalClientCertSecretName string, cache CertificateCache, creator MtlsClientCreator) *mtlsTokenAuthorizationProvider {
 	return &mtlsTokenAuthorizationProvider{
-		httpClient: creator(cache, oauthCfg.SkipSSLValidation, oauthCfg.TokenRequestTimeout, oauthCfg.ExternalClientCertSecretName),
+		httpClient: creator(cache, oauthCfg.SkipSSLValidation, oauthCfg.TokenRequestTimeout, externalClientCertSecretName),
 	}
 }
 

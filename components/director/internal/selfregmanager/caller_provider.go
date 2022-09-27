@@ -38,9 +38,10 @@ func (c *CallerProvider) GetCaller(config config.SelfRegConfig, region string) (
 	}
 
 	callerConfig := securehttp.CallerConfig{
-		Credentials:       credentials,
-		ClientTimeout:     config.ClientTimeout,
-		SkipSSLValidation: config.SkipSSLValidation,
+		Credentials:                  credentials,
+		ClientTimeout:                config.ClientTimeout,
+		SkipSSLValidation:            config.SkipSSLValidation,
+		ExternalClientCertSecretName: config.ExternalClientCertSecretName,
 	}
 	caller, err := securehttp.NewCaller(callerConfig)
 	if err != nil {
