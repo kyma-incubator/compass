@@ -174,7 +174,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	//intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
+	// intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
