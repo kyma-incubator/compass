@@ -43,6 +43,7 @@ type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error)
+	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
@@ -171,6 +172,11 @@ type service struct {
 	formationAssignmentService    formationAssignmentService
 	runtimeTypeLabelKey           string
 	applicationTypeLabelKey       string
+}
+
+type FormationAssignmentRequestMapping struct {
+	Request             *webhookclient.Request
+	FormationAssignment *model.FormationAssignment
 }
 
 // NewService creates formation service
@@ -350,6 +356,37 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID 
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
 	}
 	return nil
+}
+
+func (s *service) matchFormationAssignmentsWithRequests(assignments []*model.FormationAssignment, requests []*webhookclient.Request) []*FormationAssignmentRequestMapping {
+	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
+	for i, assignment := range assignments {
+		mappingObject := &FormationAssignmentRequestMapping{
+			Request:             nil,
+			FormationAssignment: assignments[i],
+		}
+		for j, request := range requests {
+			var objectID string
+			if request.Webhook.RuntimeID != nil {
+				objectID = *request.Webhook.RuntimeID
+			}
+			if request.Webhook.ApplicationID != nil {
+				objectID = *request.Webhook.ApplicationID
+			}
+			if objectID != assignment.Target {
+				continue
+			}
+			participants := request.Object.GetParticipants()
+			for _, id := range participants {
+				if assignment.Source == id {
+					mappingObject.Request = requests[j]
+					break
+				}
+			}
+		}
+		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
+	}
+	return formationAssignmentMapping
 }
 
 func (s *service) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.TemplateInput) (*webhookclient.Request, error) {

@@ -41,3 +41,8 @@ func (rd *ApplicationTenantMappingInput) ParseHeadersTemplate(tmpl *string) (htt
 	var headers http.Header
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
+
+// GetParticipants missing godoc
+func (rd *ApplicationTenantMappingInput) GetParticipants() []string {
+	return []string{rd.SourceApplication.ID, rd.TargetApplication.ID}
+}

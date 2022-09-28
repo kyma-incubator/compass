@@ -63,3 +63,19 @@ func (rd *FormationConfigurationChangeInput) ParseHeadersTemplate(tmpl *string) 
 	var headers http.Header
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
+
+// GetParticipants missing godoc
+func (rd *FormationConfigurationChangeInput) GetParticipants() []string {
+	var participants []string
+	if rd.Application != nil {
+		participants = append(participants, rd.Application.ID)
+	}
+	if rd.Runtime != nil {
+		participants = append(participants, rd.Runtime.ID)
+	}
+	if rd.RuntimeContext != nil {
+		participants = append(participants, rd.RuntimeContext.ID)
+	}
+
+	return participants
+}
