@@ -551,6 +551,7 @@ global:
     lease:
       lockname: destinationlease
     parallelTenants: 10
+    tenantSyncTimeout: "1h"
     authentication:
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
       appDestinationsSyncScope: "destinations:sync"

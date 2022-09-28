@@ -22,7 +22,7 @@ type SyncJobConfig struct {
 	ElectionCfg       cronjob.ElectionConfig
 	JobSchedulePeriod time.Duration
 	TenantSyncTimeout time.Duration
-	ParallelTenants   int64
+	ParallelTenants   int
 }
 
 // StartDestinationFetcherSyncJob starts destination sync job and blocks
@@ -40,9 +40,12 @@ func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, dest
 				return
 			}
 			log.C(jobCtx).Infof("Found %d subscribed tenants. Starting sync...", len(subscribedTenants))
-			sem := semaphore.NewWeighted(cfg.ParallelTenants)
+			sem := semaphore.NewWeighted(int64(cfg.ParallelTenants))
 			wg := &sync.WaitGroup{}
-			for _, tenantID := range subscribedTenants {
+			for idx, tenantID := range subscribedTenants {
+				if idx%cfg.ParallelTenants == 0 {
+					log.C(jobCtx).Infof("%d/%d tenants have been synced", idx, len(subscribedTenants))
+				}
 				wg.Add(1)
 				go func(tenantID string) {
 					defer wg.Done()
