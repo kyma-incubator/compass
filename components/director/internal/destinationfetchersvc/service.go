@@ -100,26 +100,22 @@ func (d *DestinationService) generateClientBySubdomainLabel(ctx context.Context,
 
 	subdomain, ok := subdomainLabel.Value.(string)
 	if !ok {
-		log.C(ctx).Errorf("cannot cast label value as a string")
 		return nil, errors.New("cannot cast label value as a string")
 	}
 
 	region, ok := regionLabel.Value.(string)
 	if !ok {
-		log.C(ctx).Errorf("cannot cast label value as a string")
 		return nil, errors.New("cannot cast label value as a string")
 	}
 
 	instanceConfig, ok := d.DestinationsConfig.RegionToInstanceConfig[region]
 	if !ok {
-		log.C(ctx).Errorf("No destination instance credentials found for region '%s'", region)
-		return nil, errors.New(fmt.Sprintf("No destination instance credentials found for region '%s'", region))
+		return nil, fmt.Errorf("no destination instance credentials found for region '%s'", region)
 	}
 
 	client, err := NewClient(instanceConfig, d.APIConfig, subdomain)
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to create Destination API client")
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create Destination API client")
 	}
 
 	return client, nil
@@ -131,12 +127,12 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 
 	subdomainLabel, err := d.getSubscribedSubdomainLabel(ctx, tenantID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to get subdomain label for tenant '%s'", tenantID)
 	}
 
 	client, err := d.generateClientBySubdomainLabel(ctx, subdomainLabel)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create destinations client for tenant '%s'", tenantID)
 	}
 
 	revision := d.UUIDSvc.Generate()
@@ -144,13 +140,11 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 		return d.mapDestinationsToTenant(ctx, tenantID, revision, destinations)
 	})
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to sync destinations for tenant '%s'", tenantID)
-		return err
+		return errors.Wrapf(err, "failed to sync destinations for tenant '%s'", tenantID)
 	}
 
 	if err := d.deleteMissingDestinations(ctx, revision, *subdomainLabel.Tenant); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to delete missing destinations for tenant '%s'", tenantID)
-		return err
+		return errors.Wrapf(err, "failed to delete missing destinations for tenant '%s'", tenantID)
 	}
 	log.C(ctx).Infof("Finished sync of destinations for tenant '%s'", tenantID)
 

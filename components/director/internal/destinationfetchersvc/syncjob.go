@@ -3,6 +3,7 @@ package destinationfetchersvc
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
@@ -25,6 +26,37 @@ type SyncJobConfig struct {
 	ParallelTenants   int
 }
 
+func syncSubscribedTenantsDestinations(ctx context.Context, subscribedTenants []string, cfg SyncJobConfig,
+	destinationSyncer DestinationSyncer) int {
+	parallelTenantsSemaphore := semaphore.NewWeighted(int64(cfg.ParallelTenants))
+	wg := sync.WaitGroup{}
+	var syncedTenants int32
+	for _, tenantID := range subscribedTenants {
+		wg.Add(1)
+		go func(tenantID string) {
+			defer wg.Done()
+			if err := parallelTenantsSemaphore.Acquire(ctx, 1); err != nil {
+				log.C(ctx).WithError(err).Errorf("Could not acquire semaphore")
+				return
+			}
+			defer parallelTenantsSemaphore.Release(1)
+			err := syncTenantDestinationsWithTimeout(ctx, destinationSyncer, tenantID, cfg.TenantSyncTimeout)
+			if err != nil {
+				log.C(ctx).WithError(err).Error()
+				return
+			}
+			atomic.AddInt32(&syncedTenants, 1)
+			currentlySynced := int(atomic.LoadInt32(&syncedTenants))
+			// Log on each ParallelTenants synced to track progress
+			if currentlySynced%cfg.ParallelTenants == 0 {
+				log.C(ctx).Infof("%d/%d tenants have been synced", currentlySynced, len(subscribedTenants))
+			}
+		}(tenantID)
+	}
+	wg.Wait()
+	return int(syncedTenants)
+}
+
 // StartDestinationFetcherSyncJob starts destination sync job and blocks
 func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, destinationSyncer DestinationSyncer) error {
 	resyncJob := cronjob.CronJob{
@@ -40,39 +72,18 @@ func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, dest
 				return
 			}
 			log.C(jobCtx).Infof("Found %d subscribed tenants. Starting destination sync...", len(subscribedTenants))
-			sem := semaphore.NewWeighted(int64(cfg.ParallelTenants))
-			wg := &sync.WaitGroup{}
-			for idx, tenantID := range subscribedTenants {
-				wg.Add(1)
-				go func(tenantID string, idx int) {
-					defer wg.Done()
-					if err := sem.Acquire(jobCtx, 1); err != nil {
-						log.C(jobCtx).WithError(err).Errorf("Could not acquire semaphor")
-						return
-					}
-					defer sem.Release(1)
-					syncTenantDestinations(jobCtx, destinationSyncer, tenantID, cfg.TenantSyncTimeout)
-					if idx%cfg.ParallelTenants == 0 {
-						log.C(jobCtx).Infof("%d/%d tenants have been synced", idx, len(subscribedTenants))
-					}
-				}(tenantID, idx)
-			}
-			wg.Wait()
-			log.C(jobCtx).Infof("%d tenants have been synced", len(subscribedTenants))
+			syncedTenantsCount := syncSubscribedTenantsDestinations(jobCtx, subscribedTenants, cfg, destinationSyncer)
+			log.C(jobCtx).Infof("Destination sync finished with %d/%d tenants synced",
+				syncedTenantsCount, len(subscribedTenants))
 		},
 		SchedulePeriod: cfg.JobSchedulePeriod,
 	}
 	return cronjob.RunCronJob(ctx, cfg.ElectionCfg, resyncJob)
 }
 
-func syncTenantDestinations(
-	ctx context.Context, destinationSyncer DestinationSyncer, tenantID string, timeout time.Duration) {
+func syncTenantDestinationsWithTimeout(
+	ctx context.Context, destinationSyncer DestinationSyncer, tenantID string, timeout time.Duration) error {
 	tenantSyncTimeoutCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	err := destinationSyncer.SyncTenantDestinations(tenantSyncTimeoutCtx, tenantID)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Could not resync destinations for tenant %s", tenantID)
-	} else {
-		log.C(ctx).WithError(err).Debugf("Resynced destinations for tenant %s", tenantID)
-	}
+	return destinationSyncer.SyncTenantDestinations(tenantSyncTimeoutCtx, tenantID)
 }
