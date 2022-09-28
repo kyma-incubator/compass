@@ -3,8 +3,9 @@ package formation_test
 import (
 	"context"
 	"fmt"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"testing"
+
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
