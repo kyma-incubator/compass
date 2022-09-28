@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"net/http"
 	"os"
 	"strings"
@@ -152,7 +153,11 @@ func main() {
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc)
+
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, formationAssignmentSvc, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 
 	err = registerAppTemplate(ctx, transact, appTemplateSvc)

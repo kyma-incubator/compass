@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"net/http"
 	"net/url"
 	"os"
@@ -650,7 +651,11 @@ func runtimeSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) clai
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter, formationAssignmentSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
 	return runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue)
@@ -695,7 +700,10 @@ func runtimeCtxSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) c
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter, formationAssignmentSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
 	return runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }
@@ -795,7 +803,10 @@ func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client, 
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, formationAssignmentSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
 	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 }

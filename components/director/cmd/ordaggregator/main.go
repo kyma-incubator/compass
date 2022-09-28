@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"net/http"
 	"time"
 
@@ -204,7 +205,10 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, formationAssignmentSvc, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)

@@ -140,6 +140,16 @@ type webhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 }
 
+//go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentService interface {
+	Create(ctx context.Context, in *model.FormationAssignmentInput) (string, error)
+	Get(ctx context.Context, id string) (*model.FormationAssignment, error)
+	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
+	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
+	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
+	Delete(ctx context.Context, id string) error
+}
+
 type service struct {
 	labelDefRepository            labelDefRepository
 	labelRepository               labelRepository
@@ -158,12 +168,13 @@ type service struct {
 	applicationRepository         applicationRepository
 	applicationTemplateRepository applicationTemplateRepository
 	webhookConverter              webhookConverter
+	formationAssignmentService    formationAssignmentService
 	runtimeTypeLabelKey           string
 	applicationTypeLabelKey       string
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookRepository webhookRepository, webhookClient webhookClient, applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, webhookConverter webhookConverter, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookRepository webhookRepository, webhookClient webhookClient, applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, webhookConverter webhookConverter, formationAssignmentService formationAssignmentService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		labelDefRepository:            labelDefRepository,
 		labelRepository:               labelRepository,
@@ -182,6 +193,7 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		applicationRepository:         applicationRepository,
 		applicationTemplateRepository: applicationTemplateRepository,
 		webhookConverter:              webhookConverter,
+		formationAssignmentService:    formationAssignmentService,
 		runtimeTypeLabelKey:           runtimeTypeLabelKey,
 		applicationTypeLabelKey:       applicationTypeLabelKey,
 	}
