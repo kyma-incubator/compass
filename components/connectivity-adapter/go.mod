@@ -23,7 +23,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220104100601-c864205e9ba5
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220928092433-2a4994f8e1bc
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220725081615-3c96f313921b
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
@@ -66,7 +66,7 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
