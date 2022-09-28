@@ -1881,10 +1881,6 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			if testCase.WebhookConverterFN != nil {
 				webhookConverter = testCase.WebhookConverterFN()
 			}
-			webhookClient := unusedWebhookClient()
-			if testCase.WebhookClientFN != nil {
-				webhookClient = testCase.WebhookClientFN()
-			}
 			appTemplateRepo := unusedAppTemplateRepository()
 			if testCase.ApplicationTemplateRepoFN != nil {
 				appTemplateRepo = testCase.ApplicationTemplateRepoFN()
@@ -1894,7 +1890,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				labelRepo = testCase.LabelRepoFN()
 			}
 
-			notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+			notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, nil)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateNotifications(ctx, Tnt, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
@@ -1909,7 +1905,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				require.Nil(t, actual)
 			}
 
-			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, applicationRepo, webhookRepo, webhookConverter, webhookClient, appTemplateRepo, labelRepo)
+			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, applicationRepo, webhookRepo, webhookConverter, appTemplateRepo, labelRepo)
 		})
 	}
 }
