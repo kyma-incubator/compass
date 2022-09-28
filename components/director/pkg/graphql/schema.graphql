@@ -1045,6 +1045,24 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	formationAssignment(id: ID!): FormationAssignment
+	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
+}
+
+type FormationAssignment {
+	id: ID!
+	source: ID!
+	sourceType: String!
+	target: ID!
+	targetType: String!
+	state: String!
+	value: String
+}
+
+type FormationAssignmentPage implements Pageable {
+	data: [FormationAssignment!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type FormationPage implements Pageable {

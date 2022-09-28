@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -66,30 +68,31 @@ var _ graphql.ResolverRoot = &RootResolver{}
 
 // RootResolver missing godoc
 type RootResolver struct {
-	appNameNormalizer  normalizer.Normalizator
-	app                *application.Resolver
-	appTemplate        *apptemplate.Resolver
-	api                *api.Resolver
-	eventAPI           *eventdef.Resolver
-	eventing           *eventing.Resolver
-	doc                *document.Resolver
-	formation          *formation.Resolver
-	runtime            *runtime.Resolver
-	runtimeContext     *runtimectx.Resolver
-	healthCheck        *healthcheck.Resolver
-	webhook            *webhook.Resolver
-	labelDef           *labeldef.Resolver
-	token              *onetimetoken.Resolver
-	systemAuth         *systemauth.Resolver
-	oAuth20            *oauth20.Resolver
-	intSys             *integrationsystem.Resolver
-	viewer             *viewer.Resolver
-	tenant             *tenant.Resolver
-	mpBundle           *bundleutil.Resolver
-	bundleInstanceAuth *bundleinstanceauth.Resolver
-	scenarioAssignment *scenarioassignment.Resolver
-	subscription       *subscription.Resolver
-	formationTemplate  *formationtemplate.Resolver
+	appNameNormalizer   normalizer.Normalizator
+	app                 *application.Resolver
+	appTemplate         *apptemplate.Resolver
+	api                 *api.Resolver
+	eventAPI            *eventdef.Resolver
+	eventing            *eventing.Resolver
+	doc                 *document.Resolver
+	formation           *formation.Resolver
+	formationAssignment *formationassignment.Resolver
+	runtime             *runtime.Resolver
+	runtimeContext      *runtimectx.Resolver
+	healthCheck         *healthcheck.Resolver
+	webhook             *webhook.Resolver
+	labelDef            *labeldef.Resolver
+	token               *onetimetoken.Resolver
+	systemAuth          *systemauth.Resolver
+	oAuth20             *oauth20.Resolver
+	intSys              *integrationsystem.Resolver
+	viewer              *viewer.Resolver
+	tenant              *tenant.Resolver
+	mpBundle            *bundleutil.Resolver
+	bundleInstanceAuth  *bundleinstanceauth.Resolver
+	scenarioAssignment  *scenarioassignment.Resolver
+	subscription        *subscription.Resolver
+	formationTemplate   *formationtemplate.Resolver
 }
 
 // NewRootResolver missing godoc
@@ -148,6 +151,7 @@ func NewRootResolver(
 	formationConv := formation.NewConverter()
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	formationTemplateConverter := formationtemplate.NewConverter()
+	formationAssignmentConv := formationassignment.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -171,6 +175,7 @@ func NewRootResolver(
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 	formationRepo := formation.NewRepository(formationConv)
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -195,6 +200,7 @@ func NewRootResolver(
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, selfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMappings)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue)
@@ -216,7 +222,7 @@ func NewRootResolver(
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
-		formation:          formation.NewResolver(transact, formationSvc, formationConv, tenantOnDemandSvc),
+		formation:          formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc),
 		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc),
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
@@ -276,6 +282,11 @@ func (r *RootResolver) RuntimeContextsDataloader(ids []dataloader.ParamRuntimeCo
 	return r.runtime.RuntimeContextsDataLoader(ids)
 }
 
+// FormationAssignmentsDataLoader missing godoc
+func (r *RootResolver) FormationAssignmentsDataLoader(ids []dataloader.ParamFormation) ([]*graphql.FormationAssignmentPage, []error) {
+	return r.formation.FormationAssignmentsDataLoader(ids)
+}
+
 // Mutation missing godoc
 func (r *RootResolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
@@ -304,6 +315,10 @@ func (r *RootResolver) Runtime() graphql.RuntimeResolver {
 // RuntimeContext missing godoc
 func (r *RootResolver) RuntimeContext() graphql.RuntimeContextResolver {
 	return &runtimeContextResolver{r}
+}
+
+func (r *RootResolver) Formation() graphql.FormationResolver {
+	return &formationResolver{r}
 }
 
 // APISpec missing godoc
@@ -1008,6 +1023,20 @@ type runtimeContextResolver struct {
 // Labels missing godoc
 func (r *runtimeContextResolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (graphql.Labels, error) {
 	return r.runtimeContext.Labels(ctx, obj, key)
+}
+
+type formationResolver struct {
+	*RootResolver
+}
+
+// FormationAssignment missing godoc
+func (r *formationResolver) FormationAssignment(ctx context.Context, obj *graphql.Formation, id string) (*graphql.FormationAssignment, error) {
+	return r.formation.FormationAssignment(ctx, obj, id)
+}
+
+// FormationAssignments missing godoc
+func (r *formationResolver) FormationAssignments(ctx context.Context, obj *graphql.Formation, first *int, after *graphql.PageCursor) (*graphql.FormationAssignmentPage, error) {
+	return r.formation.FormationAssignments(ctx, obj, first, after)
 }
 
 // BundleResolver missing godoc

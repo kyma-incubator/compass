@@ -3,6 +3,8 @@ package formation
 import (
 	"context"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -30,6 +32,19 @@ type Converter interface {
 	MultipleToGraphQL(in []*model.Formation) []*graphql.Formation
 }
 
+// FormationAssignmentService missing godoc
+type FormationAssignmentService interface {
+	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
+	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
+}
+
+// FormationAssignmentConverter missing godoc
+//go:generate mockery --name=FormationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationAssignmentConverter interface {
+	MultipleToGraphQL(in []*model.FormationAssignment) []*graphql.FormationAssignment
+	ToGraphQL(in *model.FormationAssignment) *graphql.FormationAssignment
+}
+
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
@@ -38,19 +53,23 @@ type TenantFetcher interface {
 
 // Resolver is the formation resolver
 type Resolver struct {
-	transact persistence.Transactioner
-	service  Service
-	conv     Converter
-	fetcher  TenantFetcher
+	transact                persistence.Transactioner
+	service                 Service
+	conv                    Converter
+	formationAssignmentSvc  FormationAssignmentService
+	formationAssignmentConv FormationAssignmentConverter
+	fetcher                 TenantFetcher
 }
 
 // NewResolver creates formation resolver
-func NewResolver(transact persistence.Transactioner, service Service, conv Converter, fetcher TenantFetcher) *Resolver {
+func NewResolver(transact persistence.Transactioner, service Service, conv Converter, formationAssignmentSvc FormationAssignmentService, formationAssignmentConv FormationAssignmentConverter, fetcher TenantFetcher) *Resolver {
 	return &Resolver{
-		transact: transact,
-		service:  service,
-		conv:     conv,
-		fetcher:  fetcher,
+		transact:                transact,
+		service:                 service,
+		conv:                    conv,
+		formationAssignmentSvc:  formationAssignmentSvc,
+		formationAssignmentConv: formationAssignmentConv,
+		fetcher:                 fetcher,
 	}
 }
 
@@ -232,4 +251,93 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	}
 
 	return r.conv.ToGraphQL(newFormation), nil
+}
+
+// FormationAssignments retrieves a page of FormationAssignments for the specified Formation
+func (r *Resolver) FormationAssignments(ctx context.Context, obj *graphql.Formation, first *int, after *graphql.PageCursor) (*graphql.FormationAssignmentPage, error) {
+	param := dataloader.ParamFormation{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.FormationFor(ctx).FormationByID.Load(param)
+}
+
+// FormationAssignmentsDataLoader retrieves a page of FormationAssignments for each Formation ID in the keys argument
+func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormation) ([]*graphql.FormationAssignmentPage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Formations found")}
+	}
+
+	ctx := keys[0].Ctx
+	formationIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		formationIDs = append(formationIDs, key.ID)
+	}
+
+	var cursor string
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
+	}
+
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	formationAssignmentPages, err := r.formationAssignmentSvc.ListByFormationIDs(ctx, formationIDs, *keys[0].First, cursor)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	gqlFormationAssignments := make([]*graphql.FormationAssignmentPage, 0, len(formationAssignmentPages))
+	for _, page := range formationAssignmentPages {
+		fas := r.formationAssignmentConv.MultipleToGraphQL(page.Data)
+
+		gqlFormationAssignments = append(gqlFormationAssignments, &graphql.FormationAssignmentPage{Data: fas, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+			HasNextPage: page.PageInfo.HasNextPage,
+		}})
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	return gqlFormationAssignments, nil
+}
+
+// FormationAssignment missing godoc
+func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formation, id string) (*graphql.FormationAssignment, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Formation Assignment cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	runtimeContext, err := r.formationAssignmentSvc.GetForFormation(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.formationAssignmentConv.ToGraphQL(runtimeContext), nil
 }

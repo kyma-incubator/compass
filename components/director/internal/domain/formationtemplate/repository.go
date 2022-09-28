@@ -59,10 +59,10 @@ func (r *repository) Create(ctx context.Context, item *model.FormationTemplate) 
 	log.C(ctx).Debugf("Converting Formation Template with id %s to entity", item.ID)
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
-		return errors.Wrapf(err, "while converting Template Template with ID %s", item.ID)
+		return errors.Wrapf(err, "while converting Formation Template with ID %s", item.ID)
 	}
 
-	log.C(ctx).Debugf("Persisting Template Template entity with id %s to db", item.ID)
+	log.C(ctx).Debugf("Persisting Formation Template entity with id %s to db", item.ID)
 	return r.creator.Create(ctx, entity)
 }
 
@@ -75,7 +75,7 @@ func (r *repository) Get(ctx context.Context, id string) (*model.FormationTempla
 
 	result, err := r.conv.FromEntity(&entity)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Application Template with ID %s", id)
+		return nil, errors.Wrapf(err, "while converting Formation Template with ID %s", id)
 	}
 
 	return result, nil
@@ -91,7 +91,7 @@ func (r *repository) GetByName(ctx context.Context, templateName string) (*model
 
 	result, err := r.conv.FromEntity(&entity)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Application Template with name: %q", templateName)
+		return nil, errors.Wrapf(err, "while converting Formation Template with name: %q", templateName)
 	}
 
 	return result, nil
