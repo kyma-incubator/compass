@@ -66,6 +66,7 @@ type applicationTemplateRepository interface {
 type runtimeContextRepository interface {
 	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
 	ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error)
+	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error)
 }
@@ -356,6 +357,83 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID 
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
 	}
 	return nil
+}
+
+func (s *service) generateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error) {
+	applications, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tnt, []string{formation.Name})
+	if err != nil {
+		return nil, err
+	}
+	runtimes, err := s.runtimeRepo.ListByScenarios(ctx, tnt, []string{formation.Name})
+	if err != nil {
+		return nil, err
+	}
+	runtimeContexts, err := s.runtimeContextRepo.ListByScenarios(ctx, tnt, []string{formation.Name})
+	if err != nil {
+		return nil, err
+	}
+	assignments := make([]*model.FormationAssignment, 0, (len(applications)+len(runtimes))*2)
+	for _, app := range applications {
+		assignments = append(assignments, &model.FormationAssignment{
+			FormationID: formation.ID,
+			TenantID:    tnt,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      app.ID,
+			TargetType:  string(graphql.FormationObjectTypeApplication),
+			Value:       nil,
+		})
+		assignments = append(assignments, &model.FormationAssignment{
+			FormationID: formation.ID,
+			TenantID:    tnt,
+			Source:      app.ID,
+			SourceType:  string(graphql.FormationObjectTypeApplication),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			Value:       nil,
+		})
+	}
+	for _, runtime := range runtimes {
+		assignments = append(assignments, &model.FormationAssignment{
+			FormationID: formation.ID,
+			TenantID:    tnt,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      runtime.ID,
+			TargetType:  string(graphql.FormationObjectTypeRuntime),
+			Value:       nil,
+		})
+		assignments = append(assignments, &model.FormationAssignment{
+			FormationID: formation.ID,
+			TenantID:    tnt,
+			Source:      runtime.ID,
+			SourceType:  string(graphql.FormationObjectTypeRuntime),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			Value:       nil,
+		})
+	}
+	for _, runtimeCtx := range runtimeContexts {
+		assignments = append(assignments, &model.FormationAssignment{
+			FormationID: formation.ID,
+			TenantID:    tnt,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      runtimeCtx.ID,
+			TargetType:  string(graphql.FormationObjectTypeRuntimeContext),
+			Value:       nil,
+		})
+		assignments = append(assignments, &model.FormationAssignment{
+			FormationID: formation.ID,
+			TenantID:    tnt,
+			Source:      runtimeCtx.ID,
+			SourceType:  string(graphql.FormationObjectTypeRuntimeContext),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			Value:       nil,
+		})
+	}
+	return assignments, nil
 }
 
 func (s *service) matchFormationAssignmentsWithRequests(assignments []*model.FormationAssignment, requests []*webhookclient.Request) []*FormationAssignmentRequestMapping {
