@@ -91,6 +91,10 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
 		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterID
 		appRegisterInput.Labels["region"] = &region
+
+		if sc.DisplayName == "" {
+			appRegisterInput.Name = sc.SystemNumber
+		}
 	}
 
 	return &appRegisterInput, nil
