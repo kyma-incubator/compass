@@ -119,8 +119,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ExpectedErrMessage            string
 	}{
 		{
-			Name:         "success for application",
-			UIDServiceFn: unusedUUIDService,
+			Name: "success for application",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil)
@@ -133,12 +132,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				}).Return(nil)
 				return labelService
 			},
-			AsaRepoFN:                     unusedASARepo,
-			AsaServiceFN:                  unusedASAService,
-			RuntimeRepoFN:                 unusedRuntimeRepo,
-			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
-			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
-			NotificationServiceFN:         noActionNotificationsService,
+			NotificationServiceFN: noActionNotificationsService,
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID).Return(nil, nil).Twice()
