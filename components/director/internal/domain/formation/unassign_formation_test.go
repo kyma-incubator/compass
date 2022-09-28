@@ -2,6 +2,7 @@ package formation_test
 
 import (
 	"context"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -93,7 +94,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
-
+	webhookRequest := &webhookclient.Request{
+		Webhook: graphql.Webhook{ID: WebhookID},
+	}
 	asa := model.AutomaticScenarioAssignment{
 		ScenarioName:   testFormationName,
 		Tenant:         Tnt,
@@ -710,6 +713,75 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectType:         "UNKNOWN",
 			InputFormation:     in,
 			ExpectedErrMessage: "unknown formation type",
+		},
+		{
+			Name: "error for application if generating notifications fails",
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{secondTestFormationName},
+					ObjectID:   ApplicationID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID).Return(nil, nil).Twice()
+				return repo
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				return formationRepo
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(nil, testErr)
+				return notificationSvc
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for application if sending notifications fails",
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{secondTestFormationName},
+					ObjectID:   ApplicationID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID).Return(nil, nil).Twice()
+				return repo
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				return formationRepo
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return([]*webhookclient.Request{webhookRequest}, nil)
+				notificationSvc.On("SendNotifications", ctx, []*webhookclient.Request{webhookRequest}).Return(testErr)
+				return notificationSvc
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
 		},
 	}
 
