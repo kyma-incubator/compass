@@ -908,9 +908,6 @@ global:
     externalCertConfiguration:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
       issuerLocalityRegion2: "local"
-    extSvcCertConfiguration:
-      ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
-      issuerLocalityRegion2: "local"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
