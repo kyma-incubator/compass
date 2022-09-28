@@ -330,6 +330,7 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
 		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterID
 		appRegisterInput.Labels["region"] = &region
+		appRegisterInput.Labels["ome-poc"] = true
 
 		if sc.DisplayName == "" {
 			appRegisterInput.Name = sc.SystemNumber

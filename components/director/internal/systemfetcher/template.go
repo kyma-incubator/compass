@@ -91,6 +91,7 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 		region := sc.AdditionalAttributes["systemSCPLandscapeID"]
 		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterID
 		appRegisterInput.Labels["region"] = &region
+		appRegisterInput.Labels["ome-poc"] = true
 
 		if sc.DisplayName == "" {
 			appRegisterInput.Name = sc.SystemNumber
