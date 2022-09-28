@@ -242,7 +242,11 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 func checkForErr(resp *http.Response, successStatusCode, incompleteStatusCode *int, errorMessage *string) error {
 	var errMsg string
 	if *successStatusCode != resp.StatusCode && (incompleteStatusCode == nil || *incompleteStatusCode != resp.StatusCode) {
-		errMsg += fmt.Sprintf("response success status code was not met - expected %d, got %d; ", *successStatusCode, resp.StatusCode)
+		incompleteStatusCodeMsg := ""
+		if incompleteStatusCode != nil {
+			incompleteStatusCodeMsg = fmt.Sprintf(" or incomplete status code '%d'", *incompleteStatusCode)
+		}
+		errMsg += fmt.Sprintf("response success status code was not met - expected success status code '%d'%s, got '%d'", *successStatusCode, incompleteStatusCodeMsg, resp.StatusCode)
 	}
 
 	if errorMessage != nil && *errorMessage != "" {

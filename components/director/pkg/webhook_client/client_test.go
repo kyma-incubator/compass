@@ -392,7 +392,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "response success status code was not met")
+	require.Contains(t, err.Error(), fmt.Sprintf("response success status code was not met - expected success status code '202' or incomplete status code '204', got '%d'", http.StatusInternalServerError))
 	require.Equal(t, http.StatusInternalServerError, *resp.ActualStatusCode)
 }
 
@@ -793,7 +793,7 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "response success status code was not met")
+	require.Contains(t, err.Error(), fmt.Sprintf("response success status code was not met - expected success status code '200', got '%d'", http.StatusInternalServerError))
 }
 
 func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.T) {
