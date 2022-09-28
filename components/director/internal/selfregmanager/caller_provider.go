@@ -28,7 +28,7 @@ func (c *CallerProvider) GetCaller(config config.SelfRegConfig, region string) (
 			TokenURL:     instanceConfig.URL + config.OauthTokenPath,
 		}
 	} else if config.OAuthMode == oauth.Mtls {
-		mtlsCredentials, err := authpkg.NewOAuthMtlsCredentials(instanceConfig.ClientID, instanceConfig.Cert, instanceConfig.Key, instanceConfig.TokenURL, config.OauthTokenPath)
+		mtlsCredentials, err := authpkg.NewOAuthMtlsCredentials(instanceConfig.ClientID, instanceConfig.Cert, instanceConfig.Key, instanceConfig.TokenURL, config.OauthTokenPath, config.ExternalClientCertSecretName)
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating OAuth Mtls credentials")
 		}
@@ -38,9 +38,10 @@ func (c *CallerProvider) GetCaller(config config.SelfRegConfig, region string) (
 	}
 
 	callerConfig := securehttp.CallerConfig{
-		Credentials:       credentials,
-		ClientTimeout:     config.ClientTimeout,
-		SkipSSLValidation: config.SkipSSLValidation,
+		Credentials:                  credentials,
+		ClientTimeout:                config.ClientTimeout,
+		SkipSSLValidation:            config.SkipSSLValidation,
+		ExternalClientCertSecretName: config.ExternalClientCertSecretName,
 	}
 	caller, err := securehttp.NewCaller(callerConfig)
 	if err != nil {

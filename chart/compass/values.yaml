@@ -111,15 +111,15 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2642"
+      version: "PR-2643"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2642"
+      version: "PR-2643"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2642"
+      version: "PR-2643"
       name: compass-pairing-adapter
     director:
       dir:
@@ -131,7 +131,7 @@ global:
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2642"
+      version: "PR-2643"
       name: compass-gateway
     operations_controller:
       dir:
@@ -147,7 +147,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2642"
+      version: "PR-2643"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2617"
+      version: "PR-2643"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -659,6 +659,36 @@ global:
       certValidity: "7"
       clientCertRetryAttempts: "8"
       containerName: "certificate-rotation"
+  extSvcCertConfiguration:
+    issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
+    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
+    ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
+    commonName: "compass"
+    locality: "local"
+    certSvcApiPath: "/cert"
+    tokenPath: "/cert/token"
+    secrets:
+      extSvcCertSvcSecret:
+        manage: false
+        name: "ext-svc-cert-svc-secret"
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
+        csrEndpointKey: csr-endpoint
+        clientCert: client-cert
+        clientKey: client-key
+        skipSSLValidationFlag: "-k"
+      extSvcClientCertSecret:
+        name: "ext-svc-client-certificate"
+        namespace: compass-system
+        certKey: tls.crt
+        keyKey: tls.key
+    rotationCronjob:
+      name: "ext-svc-certificate-rotation"
+      schedule: "*/1 * * * *" # Executes every minute
+      certValidity: "7"
+      clientCertRetryAttempts: "8"
+      containerName: "ext-svc-certificate-rotation"
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
     prefix: /open-resource-discovery-service/v0

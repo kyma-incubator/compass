@@ -1,6 +1,6 @@
 package config
 
-type ExternalClientConfig struct {
+type ExtSvcClientConfig struct {
 	CertSecret     string `mapstructure:"cert_secret"`
 	CertKey        string `mapstructure:"cert_key"`
 	KeyKey         string `mapstructure:"key_key"`

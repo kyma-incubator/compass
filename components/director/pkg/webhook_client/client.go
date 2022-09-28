@@ -41,15 +41,17 @@ import (
 const emptyBody = `{}`
 
 type client struct {
-	httpClient *http.Client
-	mtlsClient *http.Client
+	httpClient       *http.Client
+	mtlsClient       *http.Client
+	extSvcMtlsClient *http.Client
 }
 
 // NewClient creates a new webhook client
-func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
+func NewClient(httpClient *http.Client, mtlsClient, extSvcMtlsClient *http.Client) *client {
 	return &client{
-		httpClient: httpClient,
-		mtlsClient: mtlsClient,
+		httpClient:       httpClient,
+		mtlsClient:       mtlsClient,
+		extSvcMtlsClient: extSvcMtlsClient,
 	}
 }
 
@@ -194,7 +196,11 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.Respo
 func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook graphql.Webhook) (*http.Response, error) {
 	if webhook.Auth != nil {
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
-			return c.mtlsClient.Do(req)
+			if resp, err := c.mtlsClient.Do(req); err != nil {
+				return c.extSvcMtlsClient.Do(req)
+			} else {
+				return resp, err
+			}
 		} else if webhook.Auth.Credential != nil {
 			ctx = saveToContext(ctx, webhook.Auth.Credential)
 			req = req.WithContext(ctx)

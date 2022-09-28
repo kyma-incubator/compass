@@ -7,14 +7,12 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	cfg "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
 )
 
 type config struct {
@@ -23,6 +21,7 @@ type config struct {
 	ApplicationTypeLabelKey        string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
 	CertLoaderConfig               certloader.Config
+	ExternalClientCertSecretName   string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var (
@@ -31,11 +30,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	dbCfg := persistence.DatabaseConfig{}
-	err := envconfig.Init(&dbCfg)
-	if err != nil {
-		log.D().Fatal(err)
-	}
 	tenant.TestTenants.Init()
 
 	cfg.ReadConfig(&conf)
@@ -50,7 +44,7 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, conf.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, cc.Get()[conf.ExternalClientCertSecretName].PrivateKey, cc.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)
 
 	exitVal := m.Run()
 

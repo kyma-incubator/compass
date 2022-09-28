@@ -49,7 +49,9 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 		ExternalClientCertSecret:  "namespace/resource-name",
 		ExternalClientCertCertKey: "tls.crt",
 		ExternalClientCertKeyKey:  "tls.key",
-	}
+		ExtSvcClientCertSecret:    "namespace/resource-name",
+		ExtSvcClientCertCertKey:   "tls.crt",
+		ExtSvcClientCertKeyKey:    "tls.key"}
 
 	t.Run("should insert secret data on add event", func(t *testing.T) {
 		// given
@@ -124,7 +126,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 		// then
 		assert.Eventually(t, func() bool {
 			tlsCert := cache.Get()
-			require.Nil(t, tlsCert)
+			require.Nil(t, tlsCert["resource-name"])
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
 		cancel()
@@ -163,7 +165,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 		// then
 		assert.Eventually(t, func() bool {
 			tlsCert := cache.Get()
-			require.Nil(t, tlsCert)
+			require.Nil(t, tlsCert["resource-name"])
 			return true
 		}, 2*time.Second, 100*time.Millisecond)
 		cancel()
@@ -262,41 +264,56 @@ func Test_CertificateParsing(t *testing.T) {
 		Name             string
 		SecretData       map[string][]byte
 		ExpectedErrorMsg string
+		Cfg              Config
 	}{
 		{
 			Name:       "Successfully get certificate from cache",
 			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
+			Cfg:        config,
+		},
+		{
+			Name:       "Successfully get ext svc certificate from cache",
+			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
+			Cfg: Config{
+				ExtSvcClientCertCertKey: "tls.crt",
+				ExtSvcClientCertKeyKey:  "tls.key",
+			},
 		},
 		{
 			Name:             "Error when secret data is empty",
 			SecretData:       map[string][]byte{},
 			ExpectedErrorMsg: "There is no certificate data provided",
+			Cfg:              config,
 		},
 		{
 			Name:             "Error when certificate data is invalid",
 			SecretData:       map[string][]byte{secretCertKey: []byte("invalid"), secretKeyKey: []byte("invalid")},
 			ExpectedErrorMsg: "Error while decoding certificate pem block",
+			Cfg:              config,
 		},
 		{
 			Name:             "Error when parsing certificate",
 			SecretData:       map[string][]byte{secretCertKey: []byte(invalidCert), secretKeyKey: []byte("invalid")},
 			ExpectedErrorMsg: "malformed certificate",
+			Cfg:              config,
 		},
 		{
 			Name:             "Error when private key is invalid",
 			SecretData:       map[string][]byte{secretCertKey: certBytes, secretKeyKey: []byte("invalid")},
 			ExpectedErrorMsg: "Error while decoding private key pem block",
+			Cfg:              config,
 		},
 		{
 			Name:             "Error when parsing private key",
 			SecretData:       map[string][]byte{secretCertKey: certBytes, secretKeyKey: []byte(invalidKey)},
 			ExpectedErrorMsg: "structure error",
+			Cfg:              config,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			tlsCert, err := parseCertificate(ctx, testCase.SecretData, config)
+			tlsCert, err := parseCertificate(ctx, testCase.SecretData, testCase.Cfg)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -317,7 +334,7 @@ func preparation(ctx context.Context, number int, config Config) (Cache, *testWa
 	}
 	secretManagerMock := &automock.Manager{}
 	secretManagerMock.On("Watch", mock.Anything, mock.AnythingOfType("v1.ListOptions")).Return(watcher, nil).Times(number)
-	loader := NewCertificateLoader(config, cache, secretManagerMock, secretName, time.Millisecond)
+	loader := NewCertificateLoader(config, cache, []Manager{secretManagerMock}, []string{secretName}, time.Millisecond)
 	go loader.Run(ctx)
 
 	return cache, watcher, secretManagerMock

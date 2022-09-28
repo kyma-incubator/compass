@@ -137,7 +137,7 @@ func TestORDService(t *testing.T) {
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
 
-	extIssuerCertHttpClient := CreateHttpClientWithCert(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
+	extIssuerCertHttpClient := CreateHttpClientWithCert(certCache.Get()[conf.ExternalClientCertSecretName].PrivateKey, certCache.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, conf.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
