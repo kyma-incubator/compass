@@ -127,6 +127,8 @@ func (d *DestinationService) generateClientBySubdomainLabel(ctx context.Context,
 
 // SyncTenantDestinations syncs destinations for a given tenant
 func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantID string) error {
+	log.C(ctx).Infof("Starting sync of destinations for tenant '%s'", tenantID)
+
 	subdomainLabel, err := d.getSubscribedSubdomainLabel(ctx, tenantID)
 	if err != nil {
 		return err

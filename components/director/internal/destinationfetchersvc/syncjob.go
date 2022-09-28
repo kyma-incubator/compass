@@ -36,18 +36,15 @@ func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, dest
 				return
 			}
 			if len(subscribedTenants) == 0 {
-				log.C(jobCtx).Info("No subscribed tenants found. Skipping sync job")
+				log.C(jobCtx).Info("No subscribed tenants found. Skipping destination sync job")
 				return
 			}
-			log.C(jobCtx).Infof("Found %d subscribed tenants. Starting sync...", len(subscribedTenants))
+			log.C(jobCtx).Infof("Found %d subscribed tenants. Starting destination sync...", len(subscribedTenants))
 			sem := semaphore.NewWeighted(int64(cfg.ParallelTenants))
 			wg := &sync.WaitGroup{}
 			for idx, tenantID := range subscribedTenants {
-				if idx%cfg.ParallelTenants == 0 {
-					log.C(jobCtx).Infof("%d/%d tenants have been synced", idx, len(subscribedTenants))
-				}
 				wg.Add(1)
-				go func(tenantID string) {
+				go func(tenantID string, idx int) {
 					defer wg.Done()
 					if err := sem.Acquire(jobCtx, 1); err != nil {
 						log.C(jobCtx).WithError(err).Errorf("Could not acquire semaphor")
@@ -55,9 +52,13 @@ func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, dest
 					}
 					defer sem.Release(1)
 					syncTenantDestinations(jobCtx, destinationSyncer, tenantID, cfg.TenantSyncTimeout)
-				}(tenantID)
+					if idx%cfg.ParallelTenants == 0 {
+						log.C(jobCtx).Infof("%d/%d tenants have been synced", idx, len(subscribedTenants))
+					}
+				}(tenantID, idx)
 			}
 			wg.Wait()
+			log.C(jobCtx).Infof("%d tenants have been synced", len(subscribedTenants))
 		},
 		SchedulePeriod: cfg.JobSchedulePeriod,
 	}
