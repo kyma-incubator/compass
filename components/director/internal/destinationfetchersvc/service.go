@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -137,9 +138,8 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 	}
 
 	revision := d.UUIDSvc.Generate()
-	err = d.walkthroughPages(ctx, client, func(destinations []destinationFromService) error {
-		log.C(ctx).Infof("Found %d destinations in tenant '%s'", len(destinations), tenantID)
-		return d.mapDestinationsToTenant(ctx, *subdomainLabel.Tenant, revision, destinations)
+	err = d.walkthroughPages(ctx, client, tenantID, func(destinations []destinationFromService) error {
+		return d.mapDestinationsToTenant(ctx, tenantID, revision, destinations)
 	})
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to sync destinations for tenant '%s'", tenantID)
@@ -150,6 +150,7 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 		log.C(ctx).WithError(err).Errorf("Failed to delete missing destinations for tenant '%s'", tenantID)
 		return err
 	}
+	log.C(ctx).Infof("Finished sync of destinations for tenant '%s'", tenantID)
 
 	return nil
 }
@@ -229,9 +230,10 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 
 type processFunc func([]destinationFromService) error
 
-func (d *DestinationService) walkthroughPages(ctx context.Context, client *Client, process processFunc) error {
+func (d *DestinationService) walkthroughPages(
+	ctx context.Context, client *Client, tenantID string, process processFunc) error {
 	hasMorePages := true
-
+	logPageCount := sync.Once{}
 	for page := 1; hasMorePages; page++ {
 		pageString := strconv.Itoa(page)
 		resp, err := client.FetchTenantDestinationsPage(ctx, pageString)
@@ -244,8 +246,10 @@ func (d *DestinationService) walkthroughPages(ctx context.Context, client *Clien
 		}
 
 		hasMorePages = pageString != resp.pageCount
+		logPageCount.Do(func() {
+			log.C(ctx).Infof("Found %s pages of destinations in tenant '%s'", resp.pageCount, tenantID)
+		})
 	}
-
 	return nil
 }
 

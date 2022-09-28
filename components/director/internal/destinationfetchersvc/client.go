@@ -189,7 +189,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Getting destinations page: %s data from: %s\n", page, fetchURL)
+	log.C(ctx).Debugf("Getting destinations page: %s data from: %s\n", page, fetchURL)
 
 	res, err := c.sendRequestWithRetry(req)
 	if err != nil {
