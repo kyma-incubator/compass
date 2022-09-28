@@ -54,7 +54,7 @@ func main() {
 		transport.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: conf.Auth.SkipSSLVerify,
 			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-				return certCache.Get(), nil
+				return certCache.Get()[conf.ExternalClientCertSecretName], nil
 			},
 		}
 	default:

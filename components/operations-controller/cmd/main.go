@@ -125,10 +125,15 @@ func main() {
 		ExternalClientCertSecret:  cfg.ExternalClient.CertSecret,
 		ExternalClientCertCertKey: cfg.ExternalClient.CertKey,
 		ExternalClientCertKeyKey:  cfg.ExternalClient.KeyKey,
+
+		ExtSvcClientCertSecret:  cfg.ExtSvcClient.CertSecret,
+		ExtSvcClientCertCertKey: cfg.ExtSvcClient.CertKey,
+		ExtSvcClientCertKeyKey:  cfg.ExtSvcClient.KeyKey,
 	})
 	fatalOnError(errors.Wrapf(err, "Failed to initialize certificate loader"))
 
-	httpMTLSClient := utils.PrepareMTLSClient(cfg.HttpClient, certCache)
+	httpMTLSClient := utils.PrepareMtlsClient(cfg.HttpClient, certCache, cfg.ExternalClient.CertSecretName)
+	httpExtSvcMtlsCluent := utils.PrepareMtlsClient(cfg.HttpClient, certCache, cfg.ExtSvcClient.CertSecretName)
 
 	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, internalGatewayHTTPClient)
 	fatalOnError(err)
@@ -139,7 +144,7 @@ func main() {
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		directorClient,
-		webhookclient.NewClient(securedHTTPClient, httpMTLSClient),
+		webhookclient.NewClient(securedHTTPClient, httpMTLSClient, httpExtSvcMtlsCluent),
 		collector)
 
 	if err = controller.SetupWithManager(mgr); err != nil {

@@ -60,6 +60,8 @@ type config struct {
 	TestConsumerTenantID                                  string
 	TestProviderSubaccountID                              string
 	TokenPath                                             string
+	ExternalClientCertSecretName                          string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExtSvcClientCertSecretName                            string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 	CertLoaderConfig                                      certloader.Config
 	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation                                     bool          `envconfig:"default=false"`
@@ -90,7 +92,7 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get()[testConfig.ExternalClientCertSecretName].PrivateKey, certCache.Get()[testConfig.ExternalClientCertSecretName].Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
