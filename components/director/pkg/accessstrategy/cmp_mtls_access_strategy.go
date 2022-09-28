@@ -3,8 +3,9 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
 
@@ -79,7 +80,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	}
 
 	resp, err := client.Do(req)
-	if err != nil || resp.StatusCode >= http.StatusBadRequest{
+	if err != nil || resp.StatusCode >= http.StatusBadRequest {
 		if len(clientCerts) != 2 {
 			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
 		}
