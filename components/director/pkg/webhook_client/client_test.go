@@ -91,7 +91,7 @@ func TestClient_Do_WhenOutputTemplateIsNil_ShouldReturnError(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{},
 	}
 
-	client := webhookclient.NewClient(http.DefaultClient, nil)
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
 	resp, err := client.Do(context.Background(), webhookReq)
 
@@ -421,7 +421,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsIncomplete_ShouldBeSuccessful(
 				StatusCode: http.StatusNoContent,
 			},
 		},
-	}, nil)
+	}, nil, nil)
 
 	resp, err := client.Do(context.Background(), webhookReq)
 
