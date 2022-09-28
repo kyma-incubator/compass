@@ -19,8 +19,9 @@ type CallerConfig struct {
 	Credentials   auth.Credentials
 	ClientTimeout time.Duration
 
-	SkipSSLValidation bool
-	Cache             certloader.Cache
+	SkipSSLValidation            bool
+	Cache                        certloader.Cache
+	ExternalClientCertSecretName string
 }
 
 // Caller can be used to call secured http endpoints with given credentials
@@ -52,7 +53,7 @@ func NewCaller(config CallerConfig) (*Caller, error) {
 		if !ok {
 			return nil, errors.New("failed to cast credentials to mtls oauth credentials type")
 		}
-		c.Provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, credentials.CertCache, auth.DefaultMtlsClientCreator)
+		c.Provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, config.ExternalClientCertSecretName, credentials.CertCache, auth.DefaultMtlsClientCreator)
 	}
 	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(director_http.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)), c.Provider))
 	return c, nil

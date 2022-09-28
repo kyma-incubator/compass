@@ -65,7 +65,7 @@ type OAuthCredentials struct {
 }
 
 type certCache struct {
-	cert *tls.Certificate
+	certs map[string]*tls.Certificate
 }
 
 // OAuthMtlsCredentials implements the Credentials interface for the OAuth flow with Mtls
@@ -78,7 +78,7 @@ type OAuthMtlsCredentials struct {
 }
 
 // NewOAuthMtlsCredentials creates OAuthMtlsCredentials based on the provided credentials and url
-func NewOAuthMtlsCredentials(clientID, certificate, key, tokenURL, oauthTokenPath string) (*OAuthMtlsCredentials, error) {
+func NewOAuthMtlsCredentials(clientID, certificate, key, tokenURL, oauthTokenPath, secretName string) (*OAuthMtlsCredentials, error) {
 	mtlsCert, err := cert.ParseCertificate(certificate, key)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing certificate for self-registration config")
@@ -86,7 +86,7 @@ func NewOAuthMtlsCredentials(clientID, certificate, key, tokenURL, oauthTokenPat
 	return &OAuthMtlsCredentials{
 		ClientID: clientID,
 		CertCache: &certCache{
-			cert: mtlsCert,
+			certs: map[string]*tls.Certificate{secretName: mtlsCert},
 		},
 		TokenURL: tokenURL + oauthTokenPath,
 	}, nil
@@ -112,8 +112,8 @@ func (oc *OAuthCredentials) Type() CredentialType {
 	return OAuthCredentialType
 }
 
-func (cc *certCache) Get() *tls.Certificate {
-	return cc.cert
+func (cc *certCache) Get() map[string]*tls.Certificate {
+	return cc.certs
 }
 
 // Get returns the specified Credentials implementation

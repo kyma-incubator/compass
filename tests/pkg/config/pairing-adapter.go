@@ -23,4 +23,5 @@ type PairingAdapterConfig struct {
 	SelfRegDistinguishLabelValue   string
 	SelfRegRegion                  string
 	SelfRegLabelKey                string
+	ExternalClientCertSecretName   string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
