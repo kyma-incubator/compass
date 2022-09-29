@@ -231,8 +231,7 @@ func (d *DestinationService) walkthroughPages(
 	hasMorePages := true
 	logPageCount := sync.Once{}
 	for page := 1; hasMorePages; page++ {
-		pageString := strconv.Itoa(page)
-		resp, err := client.FetchTenantDestinationsPage(ctx, pageString)
+		resp, err := client.FetchTenantDestinationsPage(ctx, strconv.Itoa(page))
 		if err != nil {
 			return errors.Wrap(err, "failed to fetch destinations page")
 		}
@@ -241,9 +240,9 @@ func (d *DestinationService) walkthroughPages(
 			return errors.Wrap(err, "failed to process destinations page")
 		}
 
-		hasMorePages = pageString != resp.pageCount
+		hasMorePages = page < resp.pageCount
 		logPageCount.Do(func() {
-			log.C(ctx).Infof("Found %s pages of destinations in tenant '%s'", resp.pageCount, tenantID)
+			log.C(ctx).Infof("Found %d pages of destinations in tenant '%s'", resp.pageCount, tenantID)
 		})
 	}
 	return nil

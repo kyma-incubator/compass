@@ -79,7 +79,8 @@ func TestClient_TenantEndpoint(t *testing.T) {
 		_, err := client.FetchTenantDestinationsPage(ctx, noPageCountHeader)
 		// THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to extract header")
+		require.Contains(t, err.Error(), fmt.Sprintf("missing '%s' header from destinations response",
+			apiConfig.PagingCountHeader))
 	})
 
 	t.Run("Fetch should fail with status code 500, but do three attempts", func(t *testing.T) {

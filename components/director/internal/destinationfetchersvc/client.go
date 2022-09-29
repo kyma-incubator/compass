@@ -129,7 +129,7 @@ func (d *destinationFromService) ToModel() (model.DestinationInput, error) {
 // DestinationResponse paged response from destination service
 type DestinationResponse struct {
 	destinations []destinationFromService
-	pageCount    string
+	pageCount    int
 }
 
 // NewClient returns new destination client
@@ -216,17 +216,21 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 
 	destinationsPageCallFullDuration := time.Since(destinationsPageCallStart)
 
-	pageCount := res.Header.Get(c.apiConfig.PagingCountHeader)
-	if pageCount == "" {
-		return nil, errors.Errorf("failed to extract header '%s' from destinations response", c.apiConfig.PagingCountHeader)
+	pageCountString := res.Header.Get(c.apiConfig.PagingCountHeader)
+	if pageCountString == "" {
+		return nil, errors.Errorf("missing '%s' header from destinations response", c.apiConfig.PagingCountHeader)
+	}
+	pageCount, err := strconv.Atoi(pageCountString)
+	if err != nil {
+		return nil, errors.Errorf("invalid header '%s' '%s'", c.apiConfig.PagingCountHeader, pageCountString)
 	}
 
-	logDuration := log.C(ctx).Infof // set to debug before merging
+	logDuration := log.C(ctx).Debugf
 	if destinationsPageCallFullDuration > c.apiConfig.Timeout/2 {
 		logDuration = log.C(ctx).Warnf
 	}
 	logDuration("Getting destinations page %s/%s took %s, %s of which for headers",
-		page, pageCount, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
+		page, pageCountString, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
 
 	return &DestinationResponse{
 		destinations: destinations,
@@ -253,9 +257,9 @@ func (c *Client) buildFetchRequest(ctx context.Context, url string, page string)
 
 // FetchDestinationSensitiveData returns sensitive data of a destination
 func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationName string) ([]byte, error) {
-	url := fmt.Sprintf("%s%s/%s", c.apiURL, c.apiConfig.EndpointFindDestination, destinationName)
-	log.C(ctx).Infof("Getting destination data from: %s \n", url)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	fetchURL := fmt.Sprintf("%s%s/%s", c.apiURL, c.apiConfig.EndpointFindDestination, destinationName)
+	log.C(ctx).Infof("Getting destination data from: %s \n", fetchURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fetchURL, nil)
 	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to build request")
