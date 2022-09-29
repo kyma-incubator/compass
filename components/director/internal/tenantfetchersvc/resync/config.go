@@ -181,12 +181,6 @@ func (j *job) ReadJobConfig() (*JobConfig, error) {
 	}
 
 	j.jobConfig = &jc
-
-	configg, err := json.Marshal(jc)
-	if err != nil {
-		log.D().Error(err)
-	}
-	log.D().Infof("CONFIG IS: %s", string(configg))
 	return j.jobConfig, nil
 }
 
