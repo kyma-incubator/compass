@@ -1018,7 +1018,6 @@ func TestResolver_FormationAssignments(t *testing.T) {
 		require.Error(t, errs[0])
 		require.EqualError(t, errs[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
 	})
-
 }
 
 func contextThatHasTenant(expectedTenant string) interface{} {

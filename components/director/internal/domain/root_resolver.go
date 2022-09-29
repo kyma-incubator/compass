@@ -316,6 +316,7 @@ func (r *RootResolver) RuntimeContext() graphql.RuntimeContextResolver {
 	return &runtimeContextResolver{r}
 }
 
+// Formation missing godoc
 func (r *RootResolver) Formation() graphql.FormationResolver {
 	return &formationResolver{r}
 }

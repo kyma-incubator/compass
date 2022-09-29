@@ -61,11 +61,8 @@ func (r *repository) Create(ctx context.Context, item *model.FormationAssignment
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.C(ctx).Debugf("Converting Formation Assignment with ID: %q to entity", item.ID)
-	entity := r.conv.ToEntity(item)
-
 	log.C(ctx).Debugf("Persisting Formation Assignment entity with ID: %q", item.ID)
-	return r.creator.Create(ctx, entity)
+	return r.creator.Create(ctx, r.conv.ToEntity(item))
 }
 
 // Get queries for a single Formation Assignment matching by a given ID
