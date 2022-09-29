@@ -224,6 +224,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20220927185410-12b2
 github.com/kyma-incubator/compass/components/director v0.0.0-20220927185410-12b2f8199beb/go.mod h1:Gmso4VPdiEI3AQJ1QAsEPQQ0UOib+eYW/+gdQlBBH4U=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220927191329-c47d570be34e h1:WCnnXmSib9uZfayXIeLUjimutIHrrrre+vtLDbhw7Vk=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220927191329-c47d570be34e/go.mod h1:Gmso4VPdiEI3AQJ1QAsEPQQ0UOib+eYW/+gdQlBBH4U=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220929121523-fd7049aec435 h1:fnzDomrxax3lwpYA3YTtJzZUajoXl1U9Bcq4t+qWXXk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220929121523-fd7049aec435/go.mod h1:Gmso4VPdiEI3AQJ1QAsEPQQ0UOib+eYW/+gdQlBBH4U=
 github.com/lib/pq v1.10.4 h1:SO9z7FRPzA03QhHKJrH5BXA6HU1rS4V2nIVrrNC1iYk=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
