@@ -216,16 +216,16 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 
 	destinationsPageCallFullDuration := time.Since(destinationsPageCallStart)
 
-	if destinationsPageCallFullDuration > c.apiConfig.Timeout/2 {
-		log.C(ctx).Warnf("Getting destinations page %s took %s, %s of which for headers",
-			page, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
-	} else {
-		log.C(ctx).Infof("Getting destinations page %s took %s, %s of which for headers",
-			page, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
-	}
 	pageCount := res.Header.Get(c.apiConfig.PagingCountHeader)
 	if pageCount == "" {
 		return nil, errors.Errorf("failed to extract header '%s' from destinations response", c.apiConfig.PagingCountHeader)
+	}
+	if destinationsPageCallFullDuration > c.apiConfig.Timeout/2 {
+		log.C(ctx).Warnf("Getting destinations page %s/%s took %s, %s of which for headers",
+			page, pageCount, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
+	} else {
+		log.C(ctx).Warnf("Getting destinations page %s/%s took %s, %s of which for headers",
+			page, pageCount, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
 	}
 
 	return &DestinationResponse{
@@ -239,8 +239,10 @@ func (c *Client) buildFetchRequest(ctx context.Context, url string, page string)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to build request")
 	}
-
-	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
+	headers := correlation.HeadersForRequest(req)
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
 	query := req.URL.Query()
 	query.Add(c.apiConfig.PagingCountParam, "true")
 	query.Add(c.apiConfig.PagingPageParam, page)
