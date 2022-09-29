@@ -66,6 +66,7 @@ func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPa
 	}
 }
 
+// ConstructOURegex returns regex which is used to determine authID from cert subject
 func ConstructOURegex(patterns ...string) string {
 	nonEmptyStr := make([]string, 0)
 	for _, pattern := range patterns {
