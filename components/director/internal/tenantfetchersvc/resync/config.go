@@ -2,7 +2,6 @@ package resync
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"regexp"
@@ -10,7 +9,6 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
@@ -181,12 +179,6 @@ func (j *job) ReadJobConfig() (*JobConfig, error) {
 	}
 
 	j.jobConfig = &jc
-
-	configg, err := json.Marshal(jc)
-	if err != nil {
-		log.D().Error(err)
-	}
-	log.D().Infof("CONFIG IS: %s", string(configg))
 	return j.jobConfig, nil
 }
 
