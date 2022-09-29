@@ -25,10 +25,9 @@ import (
 )
 
 const (
-	correlationIDPrefix          = "sap.s4:communicationScenario:"
-	s4HANAType                   = "SAP S/4HANA Cloud"
-	s4HANABaseURLSuffix          = "-api"
-	destinationCallTimeThreshold = 5 * time.Second
+	correlationIDPrefix = "sap.s4:communicationScenario:"
+	s4HANAType          = "SAP S/4HANA Cloud"
+	s4HANABaseURLSuffix = "-api"
 )
 
 // DestinationServiceAPIConfig destination service api configuration
@@ -217,7 +216,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 
 	destinationsPageCallFullDuration := time.Since(destinationsPageCallStart)
 
-	if destinationsPageCallFullDuration > destinationCallTimeThreshold {
+	if destinationsPageCallFullDuration > c.apiConfig.Timeout/2 {
 		log.C(ctx).Warnf("Getting destinations page %s took %s, %s of which for headers",
 			page, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
 	} else {
