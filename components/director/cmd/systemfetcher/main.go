@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -73,6 +74,8 @@ type config struct {
 	CertLoaderConfig certloader.Config
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
+
+	TenantsToSync string `envconfig:"APP_TENANTS_TO_SYNC"`
 }
 
 type appTemplateConfig struct {
@@ -126,7 +129,7 @@ func main() {
 	}
 
 	log.C(ctx).Infof("Starting sync of systems...")
-	if err = sf.SyncSystems(ctx); err != nil {
+	if err = sf.SyncSystems(ctx, strings.Split(cfg.TenantsToSync, ",")); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to sync systems"))
 	}
 }
