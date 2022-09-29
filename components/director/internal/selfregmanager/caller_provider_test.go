@@ -16,16 +16,17 @@ import (
 
 func TestCallerProvider_GetCaller(t *testing.T) {
 	var (
-		firstRegion        = "eu-1"
-		firstClientID      = "client-id"
-		firstClientSecret  = "client-secret"
-		firstTokenURL      = "token-url"
-		secondRegion       = "eu-2"
-		secondClientID     = "client-id-2"
-		secondClientSecret = "client-secret-2"
-		secondTokenURL     = "token-url-2"
-		tokenPath          = "/oauth/token"
-		timeout            = 15 * time.Second
+		firstRegion                  = "eu-1"
+		firstClientID                = "client-id"
+		firstClientSecret            = "client-secret"
+		firstTokenURL                = "token-url"
+		secondRegion                 = "eu-2"
+		secondClientID               = "client-id-2"
+		secondClientSecret           = "client-secret-2"
+		secondTokenURL               = "token-url-2"
+		tokenPath                    = "/oauth/token"
+		timeout                      = 15 * time.Second
+		externalClientCertSecretName = "resource-name"
 	)
 
 	const (
@@ -33,7 +34,7 @@ func TestCallerProvider_GetCaller(t *testing.T) {
 		key         = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAuiFt98GUVTDSCHsOlBcblvUB/02uEmsalsG+DKEufzIVrp4D\nCxsAEsIN85Ywkd1Fsl0vwg9+3ibQlf1XtyXqJ6/jwm2zFdJPM3u2JfGGiiQpscHY\np5hSlVscBjxZh1CQMKeBXltDsD64EV+XgHGN1aaw9mWKb6iSKsHLhBz594jYMFCn\nP3wHw9/hm6zBAhoF4Xr6UMOp4ZzzY8nzLCGPQuQ9UGp4lyAethrBpsqI6zAxjPKl\nqhmxL3591wkQgTzuL9th54yLEmyEvPTE26ONJBKylH2BqbAFiZPrwet0+PRJSflA\nfMU8YHqqo2AkaY1lmMAZiKDhj1RxMe/jt3HmVQIDAQABAoIBAH+9xa0N6/FzqhIr\n8ltsaID38cD33QnC++KPYRFl5XViOEM5KrmKdEhragvM/dR92gGJtucmn1lzph/q\nWTLXEJbgPh4ID6pgRf79Xos38bAJFZxrf3e2MKdUei1FaeRWRD9AFqddV100DjvO\nMTnztPX2iujv00zCkl5J1pT7FgrtcYgDPxXQK7dIcHrc9bV9fdTQUnpbVIs/9U7a\n7Qk/eJnEkezbjQCk7+Pgt3ymR29s4vJvyPen3jek0FKhQCxAg6iA5ZOtY+J5AS9e\n3ozZLUEa3b0eOABMw8QnKMtGTmIhLbf9JhISK2Ltsisc/yHHH3KfFE2nayqjvLZf\n5GR62hkCgYEA612EgoRHg4+BSfPfLNG3xsSnM+a98nZOmyxgZ3eNFWpSvi+7MemL\nCJHpwwje412OU1wCc2MtWYvGFY+heL62FxT8+JJLntykZcTQzQoHX3wvaMwopWRi\nJdrv3tEDtSJo9za54kfrNqnVyaxu82r7zgxVbcNiAVR+n7cRXuov288CgYEAynLm\nVI7cIKBOM6U44unkKyIS99Bh57FPjE1QAIsEOiNCWZay4qmzdEboOXjtC95Qyyxn\nTb+MONybwXKkGiLZQZQ2SlgjtEMBDQ+ofk2fK+yHWf4VeLtYWJdBESaAz85xGCCY\nYqlqbFEQd8cl86gTne+emLXp8KrDMuXhbbPvMJsCgYEAgBISAacS9t6GfoQqA0xW\nkNz/EnnTD/UaTst15bci2O1S+tQkK0OmeNJU/eB80AFfabKeTsU/rwMklSTjuz0i\n/ipYgLWyWk47UnknGPsFCgscDQ1SbLTTxz972KWpO83uid6IhT2XGtaNU0D12pRz\nUipZ7fEsCgc9I5FM7XXG9vcCgYBp6xN2ygeBSl2fx6GrlpM5veoOnYeboLjtvsVM\ng28Cu8/K731H+WFaRH7bEtlyjC3ZHrItiznhxgn3e/M/eVwRY2nEG7kSZrv2CWsu\nKY5NfMKT4st5Dwt5zijMwEhEcM3awbL4a4qygPcMs7S3dghNaUCgxQxQTgcyafM3\nYhySYQKBgF7pqQW7ESo1Mp9by+HzJBJsSju5zPBrCZrx8rFAMLCk1uDAIRcUuQtq\n+YwKU8ViemkOHWfN6bePap3/kdVHUxj2xJ6xTAUYHpVOQVMhTw1UmOikiV4FwUo+\nGb5Nk5evWBGhsl2LFqoOqhvFpjftv8+qgRHxmWtj4EoJYWng+hRz\n-----END RSA PRIVATE KEY-----\n"
 	)
 
-	firstCallerCreds, err := auth.NewOAuthMtlsCredentials(firstClientID, certificate, key, firstTokenURL, tokenPath)
+	firstCallerCreds, err := auth.NewOAuthMtlsCredentials(firstClientID, certificate, key, firstTokenURL, tokenPath, externalClientCertSecretName)
 	require.NoError(t, err)
 
 	firstExpectedCallerCfg := securehttp.CallerConfig{
@@ -66,6 +67,7 @@ func TestCallerProvider_GetCaller(t *testing.T) {
 				Cert:         certificate,
 				Key:          key,
 			}},
+		ExternalClientCertSecretName: externalClientCertSecretName,
 	}
 
 	testCases := []struct {

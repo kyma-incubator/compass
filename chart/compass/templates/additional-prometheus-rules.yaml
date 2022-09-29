@@ -9,28 +9,6 @@ spec:
   groups:
     - name: custom-mps-rules
       rules:
-        - alert: CompassTenantFetcherCIS1JobFailure
-          annotations:
-            description: Failure for cis1 tenant fetcher job
-              minutes
-          expr: max(delta(compass_tenantfetcher_cis1_job_sync_failure_number[5m])) >= 1
-          for: 1m
-          labels:
-            severity: critical
-        - alert: CompassTenantFetcherCIS2JobFailure
-          annotations:
-            description: Failure for cis2 tenant fetcher job
-          expr: max(delta(compass_tenantfetcher_cis2_job_sync_failure_number[5m])) >= 1
-          for: 1m
-          labels:
-            severity: critical
-        - alert: CompassTenantFetcherCIS2SubaccountsJobFailure
-          annotations:
-            description: Failure for cis2 subaccounts tenant fetcher job
-          expr: max(delta(compass_tenantfetcher_cis2_subaccounts_job_sync_failure_number[5m])) >= 1
-          for: 1m
-          labels:
-            severity: critical
         - alert: IstioRequests-WorkloadFailures-5xx
           annotations:
             description: From source_workload={{`{{`}} $labels.source_workload {{`}}`}} to destination_workload={{`{{`}}

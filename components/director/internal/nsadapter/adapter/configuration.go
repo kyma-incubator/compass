@@ -34,4 +34,7 @@ type Configuration struct {
 	ApplicationTypeLabelKey         string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+
+	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 }

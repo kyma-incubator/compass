@@ -3,6 +3,8 @@
 package automock
 
 import (
+	testing "testing"
+
 	resync "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -33,4 +35,14 @@ func (_m *EventAPIClient) FetchTenantEventsPage(eventsType resync.EventsType, ad
 	}
 
 	return r0, r1
+}
+
+// NewEventAPIClient creates a new instance of EventAPIClient. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
+func NewEventAPIClient(t testing.TB) *EventAPIClient {
+	mock := &EventAPIClient{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
 }

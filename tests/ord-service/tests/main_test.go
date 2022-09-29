@@ -70,6 +70,7 @@ type config struct {
 	DestinationAPIConfig             clients.DestinationServiceAPIConfig
 	DestinationsConfig               cfg.DestinationsConfig
 	DestinationConsumerSubdomain     string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	ExternalClientCertSecretName     string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var conf config
@@ -97,7 +98,7 @@ func TestMain(m *testing.M) {
 	if err := util.WaitForCache(certCache); err != nil {
 		log.D().Fatal(err)
 	}
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get()[conf.ExternalClientCertSecretName].PrivateKey, certCache.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)
 
 	conf.TFConfig.FullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(conf.TFConfig.RegionalHandlerEndpoint, conf.TFConfig.TenantPathParam, conf.TFConfig.RegionPathParam, conf.TFConfig.URL, conf.TFConfig.RootAPI)
 

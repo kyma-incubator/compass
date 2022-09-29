@@ -3,6 +3,7 @@ package certloader
 import (
 	"context"
 	"crypto/tls"
+	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -34,19 +35,19 @@ type Manager interface {
 type certificateLoader struct {
 	config            Config
 	certCache         *certificateCache
-	secretManager     Manager
-	secretName        string
+	secretManagers    []Manager
+	secretNames       []string
 	reconnectInterval time.Duration
 }
 
 // NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificateLoader(config Config, certCache *certificateCache, secretManager Manager, secretName string, reconnectInterval time.Duration) Loader {
+func NewCertificateLoader(config Config, certCache *certificateCache, secretManagers []Manager, secretNames []string, reconnectInterval time.Duration) Loader {
 	return &certificateLoader{
 		config:            config,
 		certCache:         certCache,
-		secretManager:     secretManager,
-		secretName:        secretName,
+		secretManagers:    secretManagers,
+		secretNames:       secretNames,
 		reconnectInterval: reconnectInterval,
 	}
 }
@@ -57,6 +58,12 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error
 	if err != nil {
 		return nil, err
 	}
+
+	parsedExtSvcCertSecret, err := namespacedname.Parse(certLoaderConfig.ExtSvcClientCertSecret)
+	if err != nil {
+		return nil, err
+	}
+
 	kubeConfig := kubernetes.Config{}
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
 	if err != nil {
@@ -64,7 +71,10 @@ func StartCertLoader(ctx context.Context, certLoaderConfig Config) (Cache, error
 	}
 
 	certCache := NewCertificateCache()
-	certLoader := NewCertificateLoader(certLoaderConfig, certCache, k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), parsedCertSecret.Name, time.Second)
+	secretManagers := []Manager{k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace), k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace)}
+	secretNames := []string{parsedCertSecret.Name, parsedExtSvcCertSecret.Name}
+
+	certLoader := NewCertificateLoader(certLoaderConfig, certCache, secretManagers, secretNames, time.Second)
 	go certLoader.Run(ctx)
 
 	return certCache, nil
@@ -87,27 +97,40 @@ func (cl *certificateLoader) startKubeWatch(ctx context.Context) {
 			return
 		default:
 		}
-		log.C(ctx).Info("Starting certificate watcher for secret changes...")
-		watcher, err := cl.secretManager.Watch(ctx, metav1.ListOptions{
-			FieldSelector: "metadata.name=" + cl.secretName,
-			Watch:         true,
-		})
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again... %v", cl.reconnectInterval.String(), err)
-			time.Sleep(cl.reconnectInterval)
-			continue
+		log.C(ctx).Info("Starting certificate watchers for secret changes...")
+
+		wg := &sync.WaitGroup{}
+		for idx, manager := range cl.secretManagers {
+			wg.Add(1)
+
+			go func(manager Manager, idx int) {
+				defer wg.Done()
+
+				watcher, err := manager.Watch(ctx, metav1.ListOptions{
+					FieldSelector: "metadata.name=" + cl.secretNames[idx],
+					Watch:         true,
+				})
+
+				if err != nil {
+					log.C(ctx).WithError(err).Errorf("Could not initialize watcher. Sleep for %s and try again... %v", cl.reconnectInterval.String(), err)
+					time.Sleep(cl.reconnectInterval)
+					return
+				}
+				log.C(ctx).Info("Waiting for certificate secret events...")
+
+				cl.processEvents(ctx, watcher.ResultChan(), cl.secretNames[idx])
+
+				// Cleanup any allocated resources
+				watcher.Stop()
+				time.Sleep(cl.reconnectInterval)
+			}(manager, idx)
 		}
-		log.C(ctx).Info("Waiting for certificate secret events...")
 
-		cl.processEvents(ctx, watcher.ResultChan())
-
-		// Cleanup any allocated resources
-		watcher.Stop()
-		time.Sleep(cl.reconnectInterval)
+		wg.Wait()
 	}
 }
 
-func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event) {
+func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -130,10 +153,10 @@ func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan wa
 				if err != nil {
 					log.C(ctx).WithError(err).Error("Fail during certificate parsing")
 				}
-				cl.certCache.put(tlsCert)
+				cl.certCache.put(secretName, tlsCert)
 			case watch.Deleted:
 				log.C(ctx).Info("Removing certificate secret data from cache...")
-				cl.certCache.put(nil)
+				cl.certCache.put(secretName, nil)
 			case watch.Error:
 				log.C(ctx).Error("Error event is received, stop certificate secret watcher and try again...")
 				return
@@ -144,12 +167,19 @@ func (cl *certificateLoader) processEvents(ctx context.Context, events <-chan wa
 
 func parseCertificate(ctx context.Context, secretData map[string][]byte, config Config) (*tls.Certificate, error) {
 	log.C(ctx).Info("Parsing provided certificate data...")
-	certChainBytes := secretData[config.ExternalClientCertCertKey]
-	privateKeyBytes := secretData[config.ExternalClientCertKeyKey]
+	certChainBytes, existsCertKey := secretData[config.ExternalClientCertCertKey]
+	privateKeyBytes, existsKeyKey := secretData[config.ExternalClientCertKeyKey]
 
-	if certChainBytes == nil || privateKeyBytes == nil {
-		return nil, errors.New("There is no certificate data provided")
+	if existsCertKey && existsKeyKey {
+		return cert.ParseCertificateBytes(certChainBytes, privateKeyBytes)
 	}
 
-	return cert.ParseCertificateBytes(certChainBytes, privateKeyBytes)
+	extSvcCertChainBytes, existsExtSvcCertKey := secretData[config.ExtSvcClientCertCertKey]
+	extSvcPrivateKeyBytes, existsExtSvcKeyKey := secretData[config.ExtSvcClientCertKeyKey]
+
+	if existsExtSvcCertKey && existsExtSvcKeyKey {
+		return cert.ParseCertificateBytes(extSvcCertChainBytes, extSvcPrivateKeyBytes)
+	}
+
+	return nil, errors.New("There is no certificate data provided")
 }
