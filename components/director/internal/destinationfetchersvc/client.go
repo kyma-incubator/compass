@@ -24,9 +24,10 @@ import (
 )
 
 const (
-	correlationIDPrefix = "sap.s4:communicationScenario:"
-	s4HANAType          = "SAP S/4HANA Cloud"
-	s4HANABaseURLSuffix = "-api"
+	correlationIDPrefix          = "sap.s4:communicationScenario:"
+	s4HANAType                   = "SAP S/4HANA Cloud"
+	s4HANABaseURLSuffix          = "-api"
+	destinationCallTimeThreshold = 5 * time.Second
 )
 
 // DestinationServiceAPIConfig destination service api configuration
@@ -191,6 +192,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 
 	log.C(ctx).Debugf("Getting destinations page: %s data from: %s\n", page, fetchURL)
 
+	destinationsPageCallStart := time.Now()
 	res, err := c.sendRequestWithRetry(req)
 	if err != nil {
 		return nil, err
@@ -205,11 +207,22 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 		return nil, errors.Errorf("received status code %d when trying to fetch destinations", res.StatusCode)
 	}
 
+	destinationsPageCallHeadersDuration := time.Since(destinationsPageCallStart)
+
 	var destinations []destinationFromService
 	if err := json.NewDecoder(res.Body).Decode(&destinations); err != nil {
 		return nil, errors.Wrap(err, "failed to decode response body")
 	}
 
+	destinationsPageCallFullDuration := time.Since(destinationsPageCallStart)
+
+	if destinationsPageCallFullDuration > destinationCallTimeThreshold {
+		log.C(ctx).Warnf("Getting destinations page %s took %s, %s of which for headers",
+			page, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
+	} else {
+		log.C(ctx).Debugf("Getting destinations page %s took %s, %s of which for headers",
+			page, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
+	}
 	pageCount := res.Header.Get(c.apiConfig.PagingCountHeader)
 	if pageCount == "" {
 		return nil, errors.Errorf("failed to extract header '%s' from destinations response", c.apiConfig.PagingCountHeader)
