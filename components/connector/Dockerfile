@@ -9,7 +9,7 @@ RUN go mod download -x
 COPY . ${BASE_APP_DIR}
 
 RUN go build -v -o main ./cmd
-RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
+RUN mkdir /app && mv ./main /app/main
 
 
 

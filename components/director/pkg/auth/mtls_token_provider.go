@@ -37,19 +37,19 @@ import (
 // CertificateCache missing godoc
 //go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertificateCache interface {
-	Get() *tls.Certificate
+	Get() map[string]*tls.Certificate
 }
 
 // MtlsClientCreator is a constructor function for http.Clients
-type MtlsClientCreator func(cache CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client
+type MtlsClientCreator func(cache CertificateCache, skipSSLValidation bool, timeout time.Duration, secretName string) *http.Client
 
 // DefaultMtlsClientCreator is the default http client creator
-func DefaultMtlsClientCreator(cc CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client {
+func DefaultMtlsClientCreator(cc CertificateCache, skipSSLValidation bool, timeout time.Duration, secretName string) *http.Client {
 	httpTransport := httpdirector.NewCorrelationIDTransport(httpdirector.NewHTTPTransportWrapper(&http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: skipSSLValidation,
 			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-				return cc.Get(), nil
+				return cc.Get()[secretName], nil
 			},
 		},
 	}))
@@ -66,9 +66,9 @@ type mtlsTokenAuthorizationProvider struct {
 }
 
 // NewMtlsTokenAuthorizationProvider constructs an TokenAuthorizationProvider
-func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateCache, creator MtlsClientCreator) *mtlsTokenAuthorizationProvider {
+func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, externalClientCertSecretName string, cache CertificateCache, creator MtlsClientCreator) *mtlsTokenAuthorizationProvider {
 	return &mtlsTokenAuthorizationProvider{
-		httpClient: creator(cache, oauthCfg.SkipSSLValidation, oauthCfg.TokenRequestTimeout),
+		httpClient: creator(cache, oauthCfg.SkipSSLValidation, oauthCfg.TokenRequestTimeout, externalClientCertSecretName),
 	}
 }
 

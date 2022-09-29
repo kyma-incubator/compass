@@ -46,4 +46,3 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/pairing-adap
 
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director.bench .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.bench .
-#COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/licenses ./licenses

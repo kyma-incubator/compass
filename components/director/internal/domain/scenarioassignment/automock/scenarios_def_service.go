@@ -15,20 +15,6 @@ type ScenariosDefService struct {
 	mock.Mock
 }
 
-// EnsureScenariosLabelDefinitionExists provides a mock function with given fields: ctx, tenantID
-func (_m *ScenariosDefService) EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error {
-	ret := _m.Called(ctx, tenantID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, tenantID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetAvailableScenarios provides a mock function with given fields: ctx, tenantID
 func (_m *ScenariosDefService) GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
 	ret := _m.Called(ctx, tenantID)
