@@ -220,13 +220,13 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 	if pageCount == "" {
 		return nil, errors.Errorf("failed to extract header '%s' from destinations response", c.apiConfig.PagingCountHeader)
 	}
+
+	logDuration := log.C(ctx).Infof // set to debug before merging
 	if destinationsPageCallFullDuration > c.apiConfig.Timeout/2 {
-		log.C(ctx).Warnf("Getting destinations page %s/%s took %s, %s of which for headers",
-			page, pageCount, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
-	} else {
-		log.C(ctx).Warnf("Getting destinations page %s/%s took %s, %s of which for headers",
-			page, pageCount, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
+		logDuration = log.C(ctx).Warnf
 	}
+	logDuration("Getting destinations page %s/%s took %s, %s of which for headers",
+		page, pageCount, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
 
 	return &DestinationResponse{
 		destinations: destinations,
