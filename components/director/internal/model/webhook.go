@@ -56,8 +56,6 @@ const (
 	WebhookTypeDeleteApplication WebhookType = "UNREGISTER_APPLICATION"
 	// WebhookTypeOpenResourceDiscovery represents a webhook that is called to aggregate ORD information of a system.
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
-	// WebhookTypeUnpairApplication represents a webhook that is called when an application is unpaired.
-	WebhookTypeUnpairApplication WebhookType = "UNPAIR_APPLICATION"
 )
 
 // WebhookMode represents the mode of the webhook.
