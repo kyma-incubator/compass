@@ -220,7 +220,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 		log.C(ctx).Warnf("Getting destinations page %s took %s, %s of which for headers",
 			page, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
 	} else {
-		log.C(ctx).Debugf("Getting destinations page %s took %s, %s of which for headers",
+		log.C(ctx).Infof("Getting destinations page %s took %s, %s of which for headers",
 			page, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
 	}
 	pageCount := res.Header.Get(c.apiConfig.PagingCountHeader)

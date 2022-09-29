@@ -85,5 +85,9 @@ func syncTenantDestinationsWithTimeout(
 	ctx context.Context, destinationSyncer DestinationSyncer, tenantID string, timeout time.Duration) error {
 	tenantSyncTimeoutCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+	start := time.Now()
+	defer func() {
+		log.C(ctx).Warnf("Destinations synced for tenant %s for %s", tenantID, time.Since(start).String())
+	}()
 	return destinationSyncer.SyncTenantDestinations(tenantSyncTimeoutCtx, tenantID)
 }
