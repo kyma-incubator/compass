@@ -35,6 +35,15 @@ type FormationAssignmentPage struct {
 	TotalCount int
 }
 
+type FormationAssignmentState string
+
+const (
+	ReadyAssignmentState         FormationAssignmentState = "READY"
+	ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
+	CreateErrorAssignmentState   FormationAssignmentState = "CREATE_ERROR"
+	DeleteErrorAssignmentState   FormationAssignmentState = "DELETE_ERROR"
+)
+
 // ToModel converts FormationAssignmentInput to FormationAssignment
 func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssignment {
 	if i == nil {
