@@ -177,6 +177,7 @@ type service struct {
 
 type FormationAssignmentRequestMapping struct {
 	Request             *webhookclient.Request
+	Response            *webhookdir.Response
 	FormationAssignment *model.FormationAssignment
 }
 
@@ -315,11 +316,30 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if err != nil {
 			return nil, err
 		}
+		assignments, err := s.generateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, err
+		}
 		requests, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
-		err = s.sendNotifications(ctx, requests)
+		responses, err := s.sendNotifications(ctx, requests)
+		assignmentRequestMapping := s.matchFormationAssignmentsWithRequests(assignments, requests, responses)
+		for _, mappingObject := range assignmentRequestMapping {
+			_, err = s.formationAssignmentService.Create(ctx, &model.FormationAssignmentInput{
+				FormationID: mappingObject.FormationAssignment.FormationID,
+				Source:      mappingObject.FormationAssignment.Source,
+				SourceType:  mappingObject.FormationAssignment.SourceType,
+				Target:      mappingObject.FormationAssignment.Target,
+				TargetType:  mappingObject.FormationAssignment.TargetType,
+				State:       determineAssignmentState(mappingObject.Response, model.AssignFormation),
+				Value:       mappingObject.FormationAssignment.Value,
+			})
+			if err != nil {
+				return nil, errors.Wrapf(err, "while generating formation assignment %s ", mappingObject.Request.Webhook.ID)
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -372,7 +392,7 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 	if err != nil {
 		return nil, err
 	}
-	assignments := make([]*model.FormationAssignment, 0, (len(applications)+len(runtimes))*2)
+	assignments := make([]*model.FormationAssignment, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2)
 	for _, app := range applications {
 		assignments = append(assignments, &model.FormationAssignment{
 			FormationID: formation.ID,
@@ -436,7 +456,7 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 	return assignments, nil
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(assignments []*model.FormationAssignment, requests []*webhookclient.Request) []*FormationAssignmentRequestMapping {
+func (s *service) matchFormationAssignmentsWithRequests(assignments []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response) []*FormationAssignmentRequestMapping {
 	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
 		mappingObject := &FormationAssignmentRequestMapping{
@@ -458,6 +478,7 @@ func (s *service) matchFormationAssignmentsWithRequests(assignments []*model.For
 			for _, id := range participants {
 				if assignment.Source == id {
 					mappingObject.Request = requests[j]
+					mappingObject.Response = responses[j]
 					break
 				}
 			}
@@ -479,16 +500,19 @@ func (s *service) createWebhookRequest(ctx context.Context, webhook *model.Webho
 	}, nil
 }
 
-func (s *service) sendNotifications(ctx context.Context, notifications []*webhookclient.Request) error {
+func (s *service) sendNotifications(ctx context.Context, notifications []*webhookclient.Request) ([]*webhookdir.Response, error) {
 	log.C(ctx).Infof("Sending %d notifications", len(notifications))
+	responses := make([]*webhookdir.Response, 0, len(notifications))
 	for i, notification := range notifications {
 		log.C(ctx).Infof("Sending notification %d out of %d for webhook with ID %s", i+1, len(notifications), notification.Webhook.ID)
-		if _, err := s.webhookClient.Do(ctx, notification); err != nil {
-			return errors.Wrapf(err, "while executing webhook with ID %s", notification.Webhook.ID)
+		resp, err := s.webhookClient.Do(ctx, notification)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while executing webhook with ID %s", notification.Webhook.ID)
 		}
+		responses = append(responses, resp)
 		log.C(ctx).Infof("Successfully sent notification %d out of %d for webhook with %s", i+1, len(notifications), notification.Webhook.ID)
 	}
-	return nil
+	return responses, nil
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -570,7 +594,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
-		err = s.sendNotifications(ctx, requests)
+		_, err = s.sendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
 		}
@@ -599,7 +623,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
-		err = s.sendNotifications(ctx, requests)
+		_, err = s.sendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
 		}
@@ -1653,4 +1677,8 @@ func setToSlice(set map[string]bool) []string {
 		result = append(result, key)
 	}
 	return result
+}
+
+func determineAssignmentState(response *webhookdir.Response, operation model.FormationOperation) string {
+	return ""
 }
