@@ -51,7 +51,6 @@ require (
 
 require (
 	github.com/imdario/mergo v0.3.12
-	github.com/vektah/dataloaden v0.2.1-0.20190515034641-a19b9a6e7c9e
 	golang.org/x/net v0.0.0-20220919232410-f2f64ebce3c1
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	golang.org/x/text v0.3.7
