@@ -58,10 +58,11 @@ func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 
 	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unable to parse webhook URL")
+	require.Nil(t, resp)
 }
 
 func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
@@ -75,10 +76,28 @@ func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
 
 	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "missing webhook url")
+	require.Nil(t, resp)
+}
+
+func TestClient_Do_WhenOutputTemplateIsNil_ShouldReturnError(t *testing.T) {
+	webhookReq := &webhookclient.Request{
+		Webhook: graphql.Webhook{
+			OutputTemplate: nil,
+		},
+		Object: &webhook.ApplicationLifecycleWebhookRequestObject{},
+	}
+
+	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
+
+	resp, err := client.Do(context.Background(), webhookReq)
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "missing output template")
+	require.Nil(t, resp)
 }
 
 func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.T) {
@@ -96,10 +115,11 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 
 	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unable to parse webhook input body")
+	require.Nil(t, resp)
 }
 
 func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) {
@@ -118,10 +138,11 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 
 	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unable to parse webhook headers")
+	require.Nil(t, resp)
 }
 
 func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
@@ -142,10 +163,11 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 	var ctx context.Context
 
-	_, err := client.Do(ctx, webhookReq)
+	resp, err := client.Do(ctx, webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "nil Context")
+	require.Nil(t, resp)
 }
 
 func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T) {
@@ -166,10 +188,11 @@ func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T
 
 	client := webhookclient.NewClient(http.DefaultClient, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "could not determine auth flow")
+	require.Nil(t, resp)
 }
 
 func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
@@ -191,17 +214,18 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 		Transport: mockedTransport{err: errors.New(mockedError)},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), mockedError)
+	require.Nil(t, resp)
 }
 
 func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
 		Webhook: graphql.Webhook{
@@ -223,17 +247,18 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 		},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "missing location url after executing async webhook")
+	require.Nil(t, resp)
 }
 
 func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
 		Webhook: graphql.Webhook{
@@ -256,18 +281,19 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 		},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), mockedError)
 	require.Contains(t, err.Error(), "received error while calling external system")
+	require.Equal(t, http.StatusAccepted, *resp.ActualStatusCode)
 }
 
 func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldParseErrorSuccessfully(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
 		Webhook: graphql.Webhook{
@@ -292,11 +318,12 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 		},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Unauthorized")
 	require.Contains(t, err.Error(), "received error while calling external system")
+	require.Equal(t, http.StatusAccepted, *resp.ActualStatusCode)
 }
 
 func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_ShouldReturnWebhookStatusGoneError(t *testing.T) {
@@ -304,7 +331,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	outputTemplate := fmt.Sprintf("{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"gone_status_code\": %s,\"error\": \"{{.Body.error}}\"}", goneCodeString)
+	outputTemplate := fmt.Sprintf("{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"gone_status_code\": %s,\"error\": \"{{.Body.error}}\"}", goneCodeString)
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
 		Webhook: graphql.Webhook{
@@ -327,18 +354,19 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 		},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
 	require.IsType(t, webhookclient.WebhookStatusGoneErr{}, err)
 	require.Contains(t, err.Error(), goneCodeString)
+	require.Equal(t, http.StatusNotFound, *resp.ActualStatusCode)
 }
 
 func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
 		Webhook: graphql.Webhook{
@@ -361,17 +389,51 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 		},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "response success status code was not met")
+	require.Contains(t, err.Error(), fmt.Sprintf("response success status code was not met - expected success status code '202' or incomplete status code '204', got '%d'", http.StatusInternalServerError))
+	require.Equal(t, http.StatusInternalServerError, *resp.ActualStatusCode)
+}
+
+func TestClient_Do_WhenWebhookResponseStatusCodeIsIncomplete_ShouldBeSuccessful(t *testing.T) {
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
+	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhookclient.Request{
+		Webhook: graphql.Webhook{
+			URLTemplate:    &URLTemplate,
+			InputTemplate:  &inputTemplate,
+			HeaderTemplate: &headersTemplate,
+			OutputTemplate: &outputTemplate,
+			Mode:           &webhookAsyncMode,
+		},
+		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
+	}
+
+	client := webhookclient.NewClient(&http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusNoContent,
+			},
+		},
+	}, nil, nil)
+
+	resp, err := client.Do(context.Background(), webhookReq)
+
+	require.NoError(t, err)
+	require.Equal(t, http.StatusNoContent, *resp.ActualStatusCode)
 }
 
 func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	username, password := "user", "pass"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
@@ -409,16 +471,17 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 		},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.NoError(t, err)
+	require.Equal(t, http.StatusAccepted, *resp.ActualStatusCode)
 }
 
 func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	clientID, clientSecret, tokenURL := "client-id", "client-secret", "https://test-domain.com/oauth/token"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
@@ -458,14 +521,15 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 		},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.NoError(t, err)
+	require.Equal(t, http.StatusAccepted, *resp.ActualStatusCode)
 }
 
 func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	mtlsCalled := false
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
@@ -495,17 +559,18 @@ func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 
 	client := webhookclient.NewClient(nil, mtlsClient, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.NoError(t, err)
 	require.True(t, mtlsCalled)
+	require.Equal(t, http.StatusAccepted, *resp.ActualStatusCode)
 }
 
 func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	correlationIDKey := "X-Correlation-Id"
 	correlationID := "abc"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
@@ -543,9 +608,10 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 		},
 	}, nil, nil)
 
-	_, err := client.Do(context.Background(), webhookReq)
+	resp, err := client.Do(context.Background(), webhookReq)
 
 	require.NoError(t, err)
+	require.Equal(t, http.StatusAccepted, *resp.ActualStatusCode)
 }
 
 func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) {
@@ -727,7 +793,7 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 	_, err := client.Poll(context.Background(), webhookReq)
 
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "response success status code was not met")
+	require.Contains(t, err.Error(), fmt.Sprintf("response success status code was not met - expected success status code '200', got '%d'", http.StatusInternalServerError))
 }
 
 func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.T) {
@@ -823,7 +889,7 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 
 func TestClient_Poll_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
-	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	mtlsCalled := false
 
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}

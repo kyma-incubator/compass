@@ -135,7 +135,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2643"
+      version: "PR-2651"
       name: compass-operations-controller
     ord_service:
       dir:
