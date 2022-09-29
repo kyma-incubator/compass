@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
@@ -240,6 +241,7 @@ func (c *Client) buildFetchRequest(ctx context.Context, url string, page string)
 		return nil, errors.Wrapf(err, "failed to build request")
 	}
 
+	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
 	query := req.URL.Query()
 	query.Add(c.apiConfig.PagingCountParam, "true")
 	query.Add(c.apiConfig.PagingPageParam, page)
@@ -252,7 +254,8 @@ func (c *Client) buildFetchRequest(ctx context.Context, url string, page string)
 func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationName string) ([]byte, error) {
 	url := fmt.Sprintf("%s%s/%s", c.apiURL, c.apiConfig.EndpointFindDestination, destinationName)
 	log.C(ctx).Infof("Getting destination data from: %s \n", url)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to build request")
 	}
