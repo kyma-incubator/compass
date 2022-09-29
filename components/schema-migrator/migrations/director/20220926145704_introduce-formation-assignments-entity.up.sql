@@ -1,5 +1,8 @@
 BEGIN;
 
+ALTER TABLE formations
+    ADD CONSTRAINT formation_id_tenant_id_unique UNIQUE (id, tenant_id);
+
 CREATE TABLE formation_assignments (
     id           UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     formation_id UUID NOT NULL CHECK    (id <> '00000000-0000-0000-0000-000000000000'),
