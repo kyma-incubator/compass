@@ -306,6 +306,10 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 }
 
 func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
+	if sc.ProductID == omeProductID && sc.DisplayName == "" {
+		sc.DisplayName = sc.SystemNumber
+	}
+
 	if len(sc.TemplateID) > 0 {
 		return s.templateRenderer.ApplicationRegisterInputFromTemplate(ctx, sc)
 	}
@@ -332,10 +336,6 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterID
 		appRegisterInput.Labels["region"] = &region
 		appRegisterInput.Labels["poc"] = &poc
-
-		if sc.DisplayName == "" {
-			appRegisterInput.Name = sc.SystemNumber
-		}
 	}
 
 	return appRegisterInput, nil

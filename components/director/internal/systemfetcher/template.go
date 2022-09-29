@@ -93,10 +93,6 @@ func (r *renderer) ApplicationRegisterInputFromTemplate(ctx context.Context, sc 
 		appRegisterInput.Labels["dataCenterId"] = &sc.DataCenterID
 		appRegisterInput.Labels["region"] = &region
 		appRegisterInput.Labels["poc"] = &poc
-
-		if sc.DisplayName == "" {
-			appRegisterInput.Name = sc.SystemNumber
-		}
 	}
 
 	return &appRegisterInput, nil
