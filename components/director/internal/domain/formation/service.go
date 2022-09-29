@@ -333,7 +333,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 				SourceType:  mappingObject.FormationAssignment.SourceType,
 				Target:      mappingObject.FormationAssignment.Target,
 				TargetType:  mappingObject.FormationAssignment.TargetType,
-				State:       determineAssignmentState(mappingObject.Response, model.AssignFormation),
+				State:       string(determineAssignmentState(mappingObject.Response, model.AssignFormation)),
 				Value:       mappingObject.FormationAssignment.Value,
 			})
 			if err != nil {
@@ -394,6 +394,9 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 	}
 	assignments := make([]*model.FormationAssignment, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2)
 	for _, app := range applications {
+		if app.ID == objectID {
+			continue
+		}
 		assignments = append(assignments, &model.FormationAssignment{
 			FormationID: formation.ID,
 			TenantID:    tnt,
@@ -401,6 +404,7 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 			SourceType:  string(objectType),
 			Target:      app.ID,
 			TargetType:  string(graphql.FormationObjectTypeApplication),
+			State:       string(model.ReadyAssignmentState),
 			Value:       nil,
 		})
 		assignments = append(assignments, &model.FormationAssignment{
@@ -410,10 +414,14 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 			SourceType:  string(graphql.FormationObjectTypeApplication),
 			Target:      objectID,
 			TargetType:  string(objectType),
+			State:       string(model.ReadyAssignmentState),
 			Value:       nil,
 		})
 	}
 	for _, runtime := range runtimes {
+		if runtime.ID == objectID {
+			continue
+		}
 		assignments = append(assignments, &model.FormationAssignment{
 			FormationID: formation.ID,
 			TenantID:    tnt,
@@ -421,6 +429,7 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 			SourceType:  string(objectType),
 			Target:      runtime.ID,
 			TargetType:  string(graphql.FormationObjectTypeRuntime),
+			State:       string(model.ReadyAssignmentState),
 			Value:       nil,
 		})
 		assignments = append(assignments, &model.FormationAssignment{
@@ -430,10 +439,14 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 			SourceType:  string(graphql.FormationObjectTypeRuntime),
 			Target:      objectID,
 			TargetType:  string(objectType),
+			State:       string(model.ReadyAssignmentState),
 			Value:       nil,
 		})
 	}
 	for _, runtimeCtx := range runtimeContexts {
+		if runtimeCtx.ID == objectID {
+			continue
+		}
 		assignments = append(assignments, &model.FormationAssignment{
 			FormationID: formation.ID,
 			TenantID:    tnt,
@@ -441,6 +454,7 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 			SourceType:  string(objectType),
 			Target:      runtimeCtx.ID,
 			TargetType:  string(graphql.FormationObjectTypeRuntimeContext),
+			State:       string(model.ReadyAssignmentState),
 			Value:       nil,
 		})
 		assignments = append(assignments, &model.FormationAssignment{
@@ -450,6 +464,7 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 			SourceType:  string(graphql.FormationObjectTypeRuntimeContext),
 			Target:      objectID,
 			TargetType:  string(objectType),
+			State:       string(model.ReadyAssignmentState),
 			Value:       nil,
 		})
 	}
@@ -1679,6 +1694,6 @@ func setToSlice(set map[string]bool) []string {
 	return result
 }
 
-func determineAssignmentState(response *webhookdir.Response, operation model.FormationOperation) string {
-	return ""
+func determineAssignmentState(response *webhookdir.Response, operation model.FormationOperation) model.FormationAssignmentState {
+	return model.ReadyAssignmentState
 }
