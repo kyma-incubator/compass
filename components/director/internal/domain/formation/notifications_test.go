@@ -2,9 +2,10 @@ package formation_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 
