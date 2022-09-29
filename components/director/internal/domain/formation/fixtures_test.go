@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -44,6 +46,9 @@ var (
 		RuntimeType: runtimeType,
 	}
 	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
+
+	TestConfigValueRawJSON = json.RawMessage(`{"configKey":"configValue"}`)
+	TestConfigValueStr     = "{\"configKey\":\"configValue\"}"
 )
 
 const (
@@ -73,6 +78,16 @@ const (
 	ApplicationTemplateID            = "58963c6f-24f6-4128-a05c-51d5356e7e09"
 	runtimeType                      = "runtimeType"
 	applicationType                  = "applicationType"
+
+	// Formation Assignment constants
+	FormationAssignmentID          = "FormationAssignmentID"
+	FormationAssignmentFormationID = "FormationAssignmentFormationID"
+	FormationAssignmentTenantID    = "FormationAssignmentTenantID"
+	FormationAssignmentSource      = "FormationAssignmentSource"
+	FormationAssignmentSourceType  = "FormationAssignmentSourceType"
+	FormationAssignmentTarget      = "FormationAssignmentTarget"
+	FormationAssignmentTargetType  = "FormationAssignmentTargetType"
+	FormationAssignmentState       = "FormationAssignmentState"
 )
 
 func unusedLabelService() *automock.LabelService {
@@ -357,5 +372,89 @@ func fixFormationEntity() *formation.Entity {
 		TenantID:            Tnt,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
+	}
+}
+
+func fixGqlFormation() *graphql.Formation {
+	return &graphql.Formation{
+		ID:                  FormationID,
+		Name:                testFormationName,
+		FormationTemplateID: FormationTemplateID,
+	}
+}
+
+func fixGqlFormationAssignment(configValue *string) *graphql.FormationAssignment {
+	return &graphql.FormationAssignment{
+		ID:         FormationAssignmentID,
+		Source:     FormationAssignmentSource,
+		SourceType: FormationAssignmentSourceType,
+		Target:     FormationAssignmentTarget,
+		TargetType: FormationAssignmentTargetType,
+		State:      FormationAssignmentState,
+		Value:      configValue,
+	}
+}
+
+func fixGqlFormationAssignmentWithSuffix(configValue *string, suffix string) *graphql.FormationAssignment {
+	return &graphql.FormationAssignment{
+		ID:         FormationAssignmentID + suffix,
+		Source:     FormationAssignmentSource + suffix,
+		SourceType: FormationAssignmentSourceType + suffix,
+		Target:     FormationAssignmentTarget + suffix,
+		TargetType: FormationAssignmentTargetType + suffix,
+		State:      FormationAssignmentState + suffix,
+		Value:      configValue,
+	}
+}
+
+func fixFormationAssignmentModel(configValue json.RawMessage) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          FormationAssignmentID,
+		FormationID: FormationAssignmentFormationID,
+		TenantID:    FormationAssignmentTenantID,
+		Source:      FormationAssignmentSource,
+		SourceType:  FormationAssignmentSourceType,
+		Target:      FormationAssignmentTarget,
+		TargetType:  FormationAssignmentTargetType,
+		State:       FormationAssignmentState,
+		Value:       configValue,
+	}
+}
+
+func fixFormationAssignmentModelWithSuffix(configValue json.RawMessage, suffix string) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          FormationAssignmentID + suffix,
+		FormationID: FormationAssignmentFormationID + suffix,
+		TenantID:    FormationAssignmentTenantID + suffix,
+		Source:      FormationAssignmentSource + suffix,
+		SourceType:  FormationAssignmentSourceType + suffix,
+		Target:      FormationAssignmentTarget + suffix,
+		TargetType:  FormationAssignmentTargetType + suffix,
+		State:       FormationAssignmentState + suffix,
+		Value:       configValue,
+	}
+}
+
+func fixFormationAssignmentPage(fas []*model.FormationAssignment) *model.FormationAssignmentPage {
+	return &model.FormationAssignmentPage{
+		Data: fas,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(fas),
+	}
+}
+
+func fixGQLFormationAssignmentPage(gqlFAS []*graphql.FormationAssignment) *graphql.FormationAssignmentPage {
+	return &graphql.FormationAssignmentPage{
+		Data: gqlFAS,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(gqlFAS),
 	}
 }

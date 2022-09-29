@@ -26,8 +26,8 @@ var (
 // EntityConverter converts between the internal model and entity
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
-	ToEntity(in *model.FormationAssignment) (*Entity, error)
-	FromEntity(entity *Entity) (*model.FormationAssignment, error)
+	ToEntity(in *model.FormationAssignment) *Entity
+	FromEntity(entity *Entity) *model.FormationAssignment
 }
 
 type repository struct {
@@ -62,10 +62,7 @@ func (r *repository) Create(ctx context.Context, item *model.FormationAssignment
 	}
 
 	log.C(ctx).Debugf("Converting Formation Assignment with ID: %q to entity", item.ID)
-	entity, err := r.conv.ToEntity(item)
-	if err != nil {
-		return errors.Wrapf(err, "while converting Formation Assignment with ID: %q to entity", item.ID)
-	}
+	entity := r.conv.ToEntity(item)
 
 	log.C(ctx).Debugf("Persisting Formation Assignment entity with ID: %q", item.ID)
 	return r.creator.Create(ctx, entity)
@@ -78,15 +75,10 @@ func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.Forma
 		return nil, err
 	}
 
-	res, err := r.conv.FromEntity(&entity)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Formation Assignment from entity with ID: %q", id)
-	}
-
-	return res, nil
+	return r.conv.FromEntity(&entity), nil
 }
 
-// GetForFormation retrieves Formation Assignment with the provided `id` associated to Formation with id `formationID` from the database if it exists and is visible for `tenantID`
+// GetForFormation retrieves Formation Assignment with the provided `id` associated to Formation with id `formationID` from the database if it exists
 func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error) {
 	var formationAssignmentEnt Entity
 
@@ -99,12 +91,7 @@ func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formatio
 		return nil, err
 	}
 
-	res, err := r.conv.FromEntity(&formationAssignmentEnt)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Formation Assignment from entity with ID: %q", id)
-	}
-
-	return res, nil
+	return r.conv.FromEntity(&formationAssignmentEnt), nil
 }
 
 // List queries for all Formation Assignment sorted by ID and paginated by the pageSize and cursor parameters
@@ -118,12 +105,7 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor, tenantID st
 	items := make([]*model.FormationAssignment, 0, len(entityCollection))
 
 	for _, entity := range entityCollection {
-		m, err := r.conv.FromEntity(entity)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while converting Formation Assignment from entity with ID: %q", entity.ID)
-		}
-
-		items = append(items, m)
+		items = append(items, r.conv.FromEntity(entity))
 	}
 	return &model.FormationAssignmentPage{
 		Data:       items,
@@ -139,18 +121,14 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 	// todo::: check order
 	orderByColumns := repo.OrderByParams{repo.NewAscOrderBy("formation_id"), repo.NewAscOrderBy("id")}
 
-	counts, err := r.unionLister.List(ctx, resource.RuntimeContext, tenantID, formationIDs, "runtime_id", pageSize, cursor, orderByColumns, &formationAssignmentCollection)
+	counts, err := r.unionLister.List(ctx, resource.FormationAssignment, tenantID, formationIDs, "formation_id", pageSize, cursor, orderByColumns, &formationAssignmentCollection)
 	if err != nil {
 		return nil, err
 	}
 
-	formationAssignmentByID := map[string][]*model.FormationAssignment{}
+	formationAssignmentByFormationID := map[string][]*model.FormationAssignment{}
 	for _, faEntity := range formationAssignmentCollection {
-		faModel, err := r.conv.FromEntity(faEntity)
-		if err != nil {
-			return nil, err
-		}
-		formationAssignmentByID[faEntity.FormationID] = append(formationAssignmentByID[faEntity.FormationID], faModel)
+		formationAssignmentByFormationID[faEntity.FormationID] = append(formationAssignmentByFormationID[faEntity.FormationID], r.conv.FromEntity(faEntity))
 	}
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
@@ -163,7 +141,7 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 		totalCount := counts[formationID]
 		hasNextPage := false
 		endCursor := ""
-		if totalCount > offset+len(formationAssignmentByID[formationID]) {
+		if totalCount > offset+len(formationAssignmentByFormationID[formationID]) {
 			hasNextPage = true
 			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
 		}
@@ -174,7 +152,7 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 			HasNextPage: hasNextPage,
 		}
 
-		faPages = append(faPages, &model.FormationAssignmentPage{Data: formationAssignmentByID[formationID], TotalCount: totalCount, PageInfo: page})
+		faPages = append(faPages, &model.FormationAssignmentPage{Data: formationAssignmentByFormationID[formationID], TotalCount: totalCount, PageInfo: page})
 	}
 
 	return faPages, nil
@@ -186,12 +164,7 @@ func (r *repository) Update(ctx context.Context, model *model.FormationAssignmen
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	e, err := r.conv.ToEntity(model)
-	if err != nil {
-		return errors.Wrapf(err, "while converting Formation Assignment with ID: %q to entity", model.ID)
-	}
-
-	return r.updaterGlobal.UpdateSingleGlobal(ctx, e)
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
 }
 
 // Delete deletes a Formation Assignment with given ID

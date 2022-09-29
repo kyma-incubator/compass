@@ -17,7 +17,7 @@ type EntityConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EntityConverter) FromEntity(entity *formationassignment.Entity) (*model.FormationAssignment, error) {
+func (_m *EntityConverter) FromEntity(entity *formationassignment.Entity) *model.FormationAssignment {
 	ret := _m.Called(entity)
 
 	var r0 *model.FormationAssignment
@@ -29,18 +29,11 @@ func (_m *EntityConverter) FromEntity(entity *formationassignment.Entity) (*mode
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*formationassignment.Entity) error); ok {
-		r1 = rf(entity)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *EntityConverter) ToEntity(in *model.FormationAssignment) (*formationassignment.Entity, error) {
+func (_m *EntityConverter) ToEntity(in *model.FormationAssignment) *formationassignment.Entity {
 	ret := _m.Called(in)
 
 	var r0 *formationassignment.Entity
@@ -52,14 +45,7 @@ func (_m *EntityConverter) ToEntity(in *model.FormationAssignment) (*formationas
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*model.FormationAssignment) error); ok {
-		r1 = rf(in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // NewEntityConverter creates a new instance of EntityConverter. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
