@@ -197,8 +197,7 @@ func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.
 	if webhook.Auth != nil {
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
 			if resp, err := c.mtlsClient.Do(req); err != nil {
-				fmt.Printf("ALEX Err: %+v \n", err)
-				fmt.Printf("ALEX Resp: %+v \n", resp)
+				log.C(ctx).Infof("Failed to execute request with mtls certificate. Will try with the other one.")
 				return c.extSvcMtlsClient.Do(req)
 			} else {
 				return resp, err
