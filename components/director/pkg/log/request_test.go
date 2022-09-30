@@ -92,3 +92,39 @@ func TestRequestLoggerWithMDC(t *testing.T) {
 	hasMdcMessage := strings.Contains(logLine, "test=test")
 	require.True(t, hasMdcMessage, "The log line does not contain the MDC content: %v", logLine)
 }
+
+func TestRequestLoggerDebugPaths(t *testing.T) {
+	response := httptest.NewRecorder()
+	testURL, err := url.Parse("http://localhost:8080")
+	require.NoError(t, err)
+
+	request := &http.Request{
+		Method: http.MethodPost,
+		URL:    testURL,
+		Header: map[string][]string{},
+	}
+
+	oldLogger := logrus.StandardLogger().Out
+	buf := bytes.Buffer{}
+	logrus.SetOutput(&buf)
+	logrus.SetLevel(logrus.DebugLevel)
+	defer logrus.SetOutput(oldLogger)
+
+	emptyHandlerFunc := func(writer http.ResponseWriter, request *http.Request) {}
+
+	const debugPath = "/healthz"
+	handler := log.RequestLogger(debugPath)
+	handler(http.HandlerFunc(emptyHandlerFunc)).ServeHTTP(response, request)
+
+	logs := buf.String()
+	require.Contains(t, logs, `level=info msg="Started handling request..."`)
+	require.Contains(t, logs, `level=info msg="Finished handling request..."`)
+
+	buf.Reset()
+	request.URL.Path = debugPath
+	handler(http.HandlerFunc(emptyHandlerFunc)).ServeHTTP(response, request)
+
+	logs = buf.String()
+	require.Contains(t, logs, `level=debug msg="Started handling request..."`)
+	require.Contains(t, logs, `level=debug msg="Finished handling request..."`)
+}

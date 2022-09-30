@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
-// FormationAssignment missing godoc
+// FormationAssignment represent structure for FormationAssignment
 type FormationAssignment struct {
 	ID          string          `json:"id"`
 	FormationID string          `json:"formation_id"`
@@ -19,7 +19,7 @@ type FormationAssignment struct {
 	Value       json.RawMessage `json:"value"`
 }
 
-// FormationAssignmentInput missing godoc
+// FormationAssignmentInput is an input for creating a new FormationAssignment
 type FormationAssignmentInput struct {
 	FormationID string          `json:"formation_id"`
 	Source      string          `json:"source"`

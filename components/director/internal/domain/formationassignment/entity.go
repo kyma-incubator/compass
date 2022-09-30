@@ -18,7 +18,7 @@ type Entity struct {
 // EntityCollection is a collection of formation assignments entities.
 type EntityCollection []*Entity
 
-// Len returns the number of entities in the collection.
+// Len is implementation of a repo.Collection interface
 func (s EntityCollection) Len() int {
 	return len(s)
 }

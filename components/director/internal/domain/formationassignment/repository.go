@@ -48,7 +48,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:               repo.NewCreatorGlobal(resource.FormationAssignment, tableName, tableColumns),
 		getter:                repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		unionLister:           repo.NewUnionLister(tableName, tableColumns),
+		unionLister:           repo.NewUnionListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		lister:                repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
@@ -112,7 +112,6 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor, tenantID st
 func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error) {
 	var formationAssignmentCollection EntityCollection
 
-	// todo::: check order
 	orderByColumns := repo.OrderByParams{repo.NewAscOrderBy("formation_id"), repo.NewAscOrderBy("id")}
 
 	counts, err := r.unionLister.List(ctx, resource.FormationAssignment, tenantID, formationIDs, "formation_id", pageSize, cursor, orderByColumns, &formationAssignmentCollection)

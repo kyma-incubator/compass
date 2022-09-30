@@ -59,8 +59,9 @@ func main() {
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
+	const healthzEndpoint = "/healthz"
 	router := mux.NewRouter()
-	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint))
 	metricsCollector := metrics.NewAuditlogMetricCollector()
 	prometheus.MustRegister(metricsCollector)
 
@@ -96,7 +97,7 @@ func main() {
 	err = proxyRequestsForComponent(ctx, router, "/nsadapter", cfg.NsadapterOrigin, adapterTr, cfg.NsAdapterTimeout)
 	exitOnError(err, "Error while initializing proxy for NSAdapter")
 
-	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
+	router.HandleFunc(healthzEndpoint, func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
 		_, err := writer.Write([]byte("ok"))
 		if err != nil {
