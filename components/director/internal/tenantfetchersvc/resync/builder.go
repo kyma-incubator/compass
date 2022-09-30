@@ -64,7 +64,7 @@ func (b *synchronizerBuilder) Build(ctx context.Context) (*TenantsSynchronizer, 
 		return nil, err
 	}
 
-	tenantSvc, tenantConverter, runtimeSvc, labelRepo := domainServices(b.featuresConfig)
+	tenantSvc, tenantConverter, runtimeSvc, labelRepo := b.domainServices(b.featuresConfig)
 	tenantManager, err := NewTenantsManager(b.jobConfig, b.directorClient, universalEventAPIClient, additionalRegionalEventAPIClients, tenantConverter)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (b *synchronizerBuilder) eventAPIClients() (EventAPIClient, map[string]Even
 	return eventAPIClient, regionalEventAPIClients, nil
 }
 
-func domainServices(featuresConfig features.Config) (TenantStorageService, TenantConverter, RuntimeService, LabelRepo) {
+func (b *synchronizerBuilder) domainServices(featuresConfig features.Config) (TenantStorageService, TenantConverter, RuntimeService, LabelRepo) {
 	uidSvc := uid.NewService()
 
 	labelDefConverter := labeldef.NewConverter()
@@ -161,7 +161,7 @@ func domainServices(featuresConfig features.Config) (TenantStorageService, Tenan
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, nil, nil, applicationRepo, nil, webhookConverter, formationAssignmentSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(b.transact, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, nil, nil, applicationRepo, nil, webhookConverter, formationAssignmentSvc, formationAssignmentConv, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue)
 
