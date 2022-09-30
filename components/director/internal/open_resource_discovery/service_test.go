@@ -2154,7 +2154,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
+			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if event resource deletion due to tombstone fails",
@@ -2205,7 +2205,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
+			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if vendor resource deletion due to tombstone fails",
@@ -2255,7 +2255,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
+			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if product resource deletion due to tombstone fails",
@@ -2304,7 +2304,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
+			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if bundle resource deletion due to tombstone fails",
@@ -2353,7 +2353,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
+			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
