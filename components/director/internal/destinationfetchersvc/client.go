@@ -190,7 +190,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 		return nil, err
 	}
 
-	log.C(ctx).Debugf("Getting destinations page: %s data from: %s\n", page, fetchURL)
+	log.C(ctx).Debugf("Getting destinations page: %s data from: %s", page, fetchURL)
 
 	destinationsPageCallStart := time.Now()
 	res, err := c.sendRequestWithRetry(req)
@@ -216,21 +216,23 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 
 	destinationsPageCallFullDuration := time.Since(destinationsPageCallStart)
 
-	pageCountString := res.Header.Get(c.apiConfig.PagingCountHeader)
-	if pageCountString == "" {
+	pageCountHeader := res.Header.Get(c.apiConfig.PagingCountHeader)
+	if pageCountHeader == "" {
 		return nil, errors.Errorf("missing '%s' header from destinations response", c.apiConfig.PagingCountHeader)
 	}
-	pageCount, err := strconv.Atoi(pageCountString)
+	pageCount, err := strconv.Atoi(pageCountHeader)
 	if err != nil {
-		return nil, errors.Errorf("invalid header '%s' '%s'", c.apiConfig.PagingCountHeader, pageCountString)
+		return nil, errors.Errorf("invalid header '%s' '%s'", c.apiConfig.PagingCountHeader, pageCountHeader)
 	}
 
-	logDuration := log.C(ctx).Debugf
-	if destinationsPageCallFullDuration > c.apiConfig.Timeout/2 {
+	logDuration := log.C(ctx).Infof // set on debugf
+	if destinationsPageCallFullDuration > c.apiConfig.Timeout/5 {
 		logDuration = log.C(ctx).Warnf
 	}
-	logDuration("Getting destinations page %s/%s took %s, %s of which for headers",
-		page, pageCountString, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String())
+	const destinationCorrelationHeader = "x-vcap-request-id"
+	logDuration("Getting destinations page %s/%s took %s, %s of which for headers, %s: '%s'",
+		page, pageCountHeader, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String(),
+		destinationCorrelationHeader, res.Header.Get(destinationCorrelationHeader))
 
 	return &DestinationResponse{
 		destinations: destinations,
@@ -258,7 +260,7 @@ func (c *Client) buildFetchRequest(ctx context.Context, url string, page string)
 // FetchDestinationSensitiveData returns sensitive data of a destination
 func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationName string) ([]byte, error) {
 	fetchURL := fmt.Sprintf("%s%s/%s", c.apiURL, c.apiConfig.EndpointFindDestination, destinationName)
-	log.C(ctx).Infof("Getting destination data from: %s \n", fetchURL)
+	log.C(ctx).Infof("Getting destination data from: %s", fetchURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fetchURL, nil)
 	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
 	if err != nil {

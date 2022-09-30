@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -135,15 +136,23 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 		return errors.Wrapf(err, "failed to create destinations client for tenant '%s'", tenantID)
 	}
 
+	// Make it debugf
+	log.C(ctx).Infof("Syncing destinations for tenant '%s' with subdomain '%s'", tenantID, subdomainLabel.Value)
+
 	revision := d.UUIDSvc.Generate()
 	err = d.walkthroughPages(ctx, client, tenantID, func(destinations []destinationFromService) error {
-		return d.mapDestinationsToTenant(ctx, tenantID, revision, destinations)
+		start := time.Now()
+		err := d.mapDestinationsToTenant(ctx, tenantID, revision, destinations)
+		log.C(ctx).Infof("Mapping destinations for tenant '%s' took %s", tenantID, time.Since(start)) // remove
+		return err
 	})
 	if err != nil {
 		return errors.Wrapf(err, "failed to sync destinations for tenant '%s'", tenantID)
 	}
+	// Make it debugf
+	log.C(ctx).Infof("Upserted destinations for tenant '%s'. Removing old destinations...", tenantID)
 
-	if err := d.deleteMissingDestinations(ctx, revision, *subdomainLabel.Tenant); err != nil {
+	if err := d.deleteMissingDestinations(ctx, revision, tenantID); err != nil {
 		return errors.Wrapf(err, "failed to delete missing destinations for tenant '%s'", tenantID)
 	}
 	log.C(ctx).Infof("Finished sync of destinations for tenant '%s'", tenantID)
