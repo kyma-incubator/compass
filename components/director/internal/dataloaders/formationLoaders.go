@@ -1,4 +1,4 @@
-//go:generate go run github.com/vektah/dataloaden FormationLoader ParamFormation *github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationAssignmentPage
+//go:generate go run github.com/vektah/dataloaden FormationAssignmentLoader ParamFormationAssignment *github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationAssignmentPage
 
 package dataloader
 
@@ -12,13 +12,13 @@ import (
 
 const loadersKeyFormation contextKey = "dataloadersFormation"
 
-// FormationLoaders missing godoc
-type FormationLoaders struct {
-	FormationByID FormationLoader
+// FormationAssignmentLoaders missing godoc
+type FormationAssignmentLoaders struct {
+	FormationAssignmentByID FormationAssignmentLoader
 }
 
-// ParamFormation missing godoc
-type ParamFormation struct {
+// ParamFormationAssignment missing godoc
+type ParamFormationAssignment struct {
 	ID    string
 	First *int
 	After *graphql.PageCursor
@@ -26,11 +26,11 @@ type ParamFormation struct {
 }
 
 // HandlerFormation missing godoc
-func HandlerFormation(fetchFunc func(keys []ParamFormation) ([]*graphql.FormationAssignmentPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
+func HandlerFormation(fetchFunc func(keys []ParamFormationAssignment) ([]*graphql.FormationAssignmentPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), loadersKeyFormation, &FormationLoaders{
-				FormationByID: FormationLoader{
+			ctx := context.WithValue(r.Context(), loadersKeyFormation, &FormationAssignmentLoaders{
+				FormationAssignmentByID: FormationAssignmentLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
 					fetch:    fetchFunc,
@@ -43,6 +43,6 @@ func HandlerFormation(fetchFunc func(keys []ParamFormation) ([]*graphql.Formatio
 }
 
 // FormationFor missing godoc
-func FormationFor(ctx context.Context) *FormationLoaders {
-	return ctx.Value(loadersKeyFormation).(*FormationLoaders)
+func FormationFor(ctx context.Context) *FormationAssignmentLoaders {
+	return ctx.Value(loadersKeyFormation).(*FormationAssignmentLoaders)
 }

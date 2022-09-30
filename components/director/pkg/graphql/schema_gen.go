@@ -5620,7 +5620,7 @@ type Webhook {
 type Query {
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-
+	
 	**Examples**
 	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
 	- [query applications](examples/query-applications/query-applications.graphql)
@@ -5633,14 +5633,14 @@ type Query {
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-
+	
 	**Examples**
 	- [query applications for runtime](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
 	"""
 	applicationsForRuntime(runtimeID: ID!, first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-
+	
 	**Examples**
 	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
@@ -5652,7 +5652,7 @@ type Query {
 	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-
+	
 	**Examples**
 	- [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
 	- [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
@@ -5676,7 +5676,7 @@ type Query {
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 200, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-
+	
 	**Examples**
 	- [query integration systems](examples/query-integration-systems/query-integration-systems.graphql)
 	"""
@@ -5936,14 +5936,14 @@ type Mutation {
 	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
-
+	
 	**Examples**
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
-
+	
 	**Examples**
 	- [delete application label](examples/delete-application-label/delete-application-label.graphql)
 	"""
@@ -5960,9 +5960,9 @@ type Mutation {
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
 	When BundleInstanceAuth is not in pending state, the operation returns error.
-
+	
 	When used without error, the status of pending auth is set to success.
-
+	
 	**Examples**
 	- [set bundle instance auth](examples/set-bundle-instance-auth/set-bundle-instance-auth.graphql)
 	"""
@@ -5974,14 +5974,14 @@ type Mutation {
 	deleteBundleInstanceAuth(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.deleteBundleInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to PENDING.
-
+	
 	**Examples**
 	- [request bundle instance auth creation](examples/request-bundle-instance-auth-creation/request-bundle-instance-auth-creation.graphql)
 	"""
 	requestBundleInstanceAuthCreation(bundleID: ID!, in: BundleInstanceAuthRequestInput! @validate): BundleInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByBundle", idField: "bundleID") @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deleteBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to UNUSED.
-
+	
 	**Examples**
 	- [request bundle instance auth deletion](examples/request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
 	"""
@@ -6037,6 +6037,7 @@ type Mutation {
 	"""
 	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
+
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)

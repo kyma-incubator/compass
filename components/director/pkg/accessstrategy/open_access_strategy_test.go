@@ -12,6 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	externalClientCertSecretName = "resource-name1"
+	extSvcClientCertSecretName   = "resource-name2"
+)
+
 func TestOpenAccessStrategy(t *testing.T) {
 	testURL := "http://test"
 
@@ -22,7 +27,7 @@ func TestOpenAccessStrategy(t *testing.T) {
 	})
 
 	cerCache := certloader.NewCertificateCache()
-	provider := accessstrategy.NewDefaultExecutorProvider(cerCache)
+	provider := accessstrategy.NewDefaultExecutorProvider(cerCache, externalClientCertSecretName, extSvcClientCertSecretName)
 	executor, err := provider.Provide(accessstrategy.OpenAccessStrategy)
 	require.NoError(t, err)
 

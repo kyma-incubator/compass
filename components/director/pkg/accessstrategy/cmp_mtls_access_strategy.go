@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -20,25 +22,28 @@ type HTTPRoundTripper interface {
 const tenantHeader = "tenant"
 
 type cmpMTLSAccessStrategyExecutor struct {
-	certCache          certloader.Cache
-	tenantProviderFunc func(ctx context.Context) (string, error)
+	certCache                    certloader.Cache
+	tenantProviderFunc           func(ctx context.Context) (string, error)
+	externalClientCertSecretName string
+	extSvcClientCertSecretName   string
 }
 
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
-func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *cmpMTLSAccessStrategyExecutor {
+func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
-		certCache:          certCache,
-		tenantProviderFunc: tenantProviderFunc,
+		certCache:                    certCache,
+		tenantProviderFunc:           tenantProviderFunc,
+		externalClientCertSecretName: externalClientCertSecretName,
+		extSvcClientCertSecretName:   extSvcClientCertSecretName,
 	}
 }
 
 // Execute performs the access strategy's specific execution logic
 func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string) (*http.Response, error) {
-	clientCert := as.certCache.Get()
-	if clientCert == nil {
+	clientCerts := as.certCache.Get()
+	if clientCerts == nil {
 		return nil, errors.New("did not find client certificate in the cache")
 	}
-
 	tr := &http.Transport{}
 	if baseClient.Transport != nil {
 		switch v := baseClient.Transport.(type) {
@@ -51,7 +56,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		}
 	}
 
-	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCert}
+	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.externalClientCertSecretName]}
 
 	client := &http.Client{
 		Timeout:   baseClient.Timeout,
@@ -74,5 +79,15 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		req.Header.Set(tenantHeader, tnt)
 	}
 
-	return client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode >= http.StatusBadRequest {
+		if len(clientCerts) != 2 {
+			return nil, errors.Errorf("There must be exactly 2 certificates in the cert cache. Actual number of certificates: %d", len(clientCerts))
+		}
+		log.C(ctx).Info("Failed to execute request with initial mtls certificate. Will retry with backup certificate...")
+		tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCerts[as.extSvcClientCertSecretName]}
+		client.Transport = tr
+		return client.Do(req)
+	}
+	return resp, err
 }

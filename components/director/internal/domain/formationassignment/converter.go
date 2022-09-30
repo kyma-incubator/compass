@@ -86,9 +86,9 @@ func (c *converter) MultipleFromInput(in []*model.FormationAssignmentInput) []*m
 }
 
 // ToEntity converts from internal model to entity
-func (c *converter) ToEntity(in *model.FormationAssignment) (*Entity, error) {
+func (c *converter) ToEntity(in *model.FormationAssignment) *Entity {
 	if in == nil {
-		return nil, nil
+		return nil
 	}
 
 	return &Entity{
@@ -101,13 +101,13 @@ func (c *converter) ToEntity(in *model.FormationAssignment) (*Entity, error) {
 		TargetType:  in.TargetType,
 		State:       in.State,
 		Value:       repo.NewNullableStringFromJSONRawMessage(in.Value),
-	}, nil
+	}
 }
 
 // FromEntity converts from entity to internal model
-func (c *converter) FromEntity(e *Entity) (*model.FormationAssignment, error) {
+func (c *converter) FromEntity(e *Entity) *model.FormationAssignment {
 	if e == nil {
-		return nil, nil
+		return nil
 	}
 
 	return &model.FormationAssignment{
@@ -120,5 +120,5 @@ func (c *converter) FromEntity(e *Entity) (*model.FormationAssignment, error) {
 		TargetType:  e.TargetType,
 		State:       e.State,
 		Value:       repo.JSONRawMessageFromNullableString(e.Value),
-	}, nil
+	}
 }

@@ -98,7 +98,7 @@ format:: imports fmt
 release: verify build-image
 
 .PHONY: build-image
-build-image: pull-licenses
+build-image:
 	docker run --rm --privileged linuxkit/binfmt:v0.8 # https://stackoverflow.com/questions/70066249/docker-random-alpine-packages-fail-to-install
 	docker buildx create --name multi-arch-builder --use
 	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME):$(TAG) --push .
@@ -107,11 +107,11 @@ docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
 # Targets mounting sources to buildpack
-MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen lint
+MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate gqlgen lint
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new Docker image into k3d's Docker Registry
-build-for-k3d: pull-licenses-local
+build-for-k3d:
 	docker build -t k3d-kyma-registry:5001/$(IMG_NAME):$(TAG) .
 	docker push k3d-kyma-registry:5001/$(IMG_NAME):$(TAG)
 
@@ -166,12 +166,6 @@ check-gqlgen:
 		exit 1; \
 	fi;
 
-pull-licenses-local:
-ifdef LICENSE_PULLER_PATH
-	bash $(LICENSE_PULLER_PATH)
-else
-	mkdir -p licenses
-endif
 
 # Targets copying sources to buildpack
 COPY_TARGETS = test

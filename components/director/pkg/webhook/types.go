@@ -56,10 +56,13 @@ type URL struct {
 
 // Response defines the schema for Webhook output templates
 type Response struct {
-	Location          *string `json:"location"`
-	SuccessStatusCode *int    `json:"success_status_code"`
-	GoneStatusCode    *int    `json:"gone_status_code"`
-	Error             *string `json:"error"`
+	Config               *string `json:"config"`
+	Location             *string `json:"location"`
+	SuccessStatusCode    *int    `json:"success_status_code"`
+	IncompleteStatusCode *int    `json:"incomplete_status_code"`
+	ActualStatusCode     *int    `json:"-"`
+	GoneStatusCode       *int    `json:"gone_status_code"`
+	Error                *string `json:"error"`
 }
 
 // ResponseStatus defines the schema for Webhook status templates when dealing with async webhooks

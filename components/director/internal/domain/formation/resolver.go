@@ -33,6 +33,7 @@ type Converter interface {
 }
 
 // FormationAssignmentService missing godoc
+//go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
@@ -255,12 +256,12 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 
 // FormationAssignments retrieves a page of FormationAssignments for the specified Formation
 func (r *Resolver) FormationAssignments(ctx context.Context, obj *graphql.Formation, first *int, after *graphql.PageCursor) (*graphql.FormationAssignmentPage, error) {
-	param := dataloader.ParamFormation{ID: obj.ID, Ctx: ctx, First: first, After: after}
-	return dataloader.FormationFor(ctx).FormationByID.Load(param)
+	param := dataloader.ParamFormationAssignment{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.FormationFor(ctx).FormationAssignmentByID.Load(param)
 }
 
 // FormationAssignmentsDataLoader retrieves a page of FormationAssignments for each Formation ID in the keys argument
-func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormation) ([]*graphql.FormationAssignmentPage, []error) {
+func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormationAssignment) ([]*graphql.FormationAssignmentPage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Formations found")}
 	}
@@ -315,7 +316,7 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 // FormationAssignment missing godoc
 func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formation, id string) (*graphql.FormationAssignment, error) {
 	if obj == nil {
-		return nil, apperrors.NewInternalError("Formation Assignment cannot be empty")
+		return nil, apperrors.NewInternalError("Formation cannot be empty")
 	}
 
 	tx, err := r.transact.Begin()
@@ -326,7 +327,7 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	runtimeContext, err := r.formationAssignmentSvc.GetForFormation(ctx, id, obj.ID)
+	formationAssignment, err := r.formationAssignmentSvc.GetForFormation(ctx, id, obj.ID)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -339,5 +340,5 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 		return nil, err
 	}
 
-	return r.formationAssignmentConv.ToGraphQL(runtimeContext), nil
+	return r.formationAssignmentConv.ToGraphQL(formationAssignment), nil
 }

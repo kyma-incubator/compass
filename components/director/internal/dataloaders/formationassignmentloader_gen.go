@@ -9,10 +9,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-// FormationLoaderConfig captures the config to create a new FormationLoader
-type FormationLoaderConfig struct {
+// FormationAssignmentLoaderConfig captures the config to create a new FormationAssignmentLoader
+type FormationAssignmentLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []ParamFormation) ([]*graphql.FormationAssignmentPage, []error)
+	Fetch func(keys []ParamFormationAssignment) ([]*graphql.FormationAssignmentPage, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -21,19 +21,19 @@ type FormationLoaderConfig struct {
 	MaxBatch int
 }
 
-// NewFormationLoader creates a new FormationLoader given a fetch, wait, and maxBatch
-func NewFormationLoader(config FormationLoaderConfig) *FormationLoader {
-	return &FormationLoader{
+// NewFormationAssignmentLoader creates a new FormationAssignmentLoader given a fetch, wait, and maxBatch
+func NewFormationAssignmentLoader(config FormationAssignmentLoaderConfig) *FormationAssignmentLoader {
+	return &FormationAssignmentLoader{
 		fetch:    config.Fetch,
 		wait:     config.Wait,
 		maxBatch: config.MaxBatch,
 	}
 }
 
-// FormationLoader batches and caches requests
-type FormationLoader struct {
+// FormationAssignmentLoader batches and caches requests
+type FormationAssignmentLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []ParamFormation) ([]*graphql.FormationAssignmentPage, []error)
+	fetch func(keys []ParamFormationAssignment) ([]*graphql.FormationAssignmentPage, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,18 +44,18 @@ type FormationLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[ParamFormation]*graphql.FormationAssignmentPage
+	cache map[ParamFormationAssignment]*graphql.FormationAssignmentPage
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
-	batch *formationLoaderBatch
+	batch *formationAssignmentLoaderBatch
 
 	// mutex to prevent races
 	mu sync.Mutex
 }
 
-type formationLoaderBatch struct {
-	keys    []ParamFormation
+type formationAssignmentLoaderBatch struct {
+	keys    []ParamFormationAssignment
 	data    []*graphql.FormationAssignmentPage
 	error   []error
 	closing bool
@@ -63,14 +63,14 @@ type formationLoaderBatch struct {
 }
 
 // Load a FormationAssignmentPage by key, batching and caching will be applied automatically
-func (l *FormationLoader) Load(key ParamFormation) (*graphql.FormationAssignmentPage, error) {
+func (l *FormationAssignmentLoader) Load(key ParamFormationAssignment) (*graphql.FormationAssignmentPage, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a FormationAssignmentPage.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *FormationLoader) LoadThunk(key ParamFormation) func() (*graphql.FormationAssignmentPage, error) {
+func (l *FormationAssignmentLoader) LoadThunk(key ParamFormationAssignment) func() (*graphql.FormationAssignmentPage, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
@@ -79,7 +79,7 @@ func (l *FormationLoader) LoadThunk(key ParamFormation) func() (*graphql.Formati
 		}
 	}
 	if l.batch == nil {
-		l.batch = &formationLoaderBatch{done: make(chan struct{})}
+		l.batch = &formationAssignmentLoaderBatch{done: make(chan struct{})}
 	}
 	batch := l.batch
 	pos := batch.keyIndex(l, key)
@@ -113,7 +113,7 @@ func (l *FormationLoader) LoadThunk(key ParamFormation) func() (*graphql.Formati
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *FormationLoader) LoadAll(keys []ParamFormation) ([]*graphql.FormationAssignmentPage, []error) {
+func (l *FormationAssignmentLoader) LoadAll(keys []ParamFormationAssignment) ([]*graphql.FormationAssignmentPage, []error) {
 	results := make([]func() (*graphql.FormationAssignmentPage, error), len(keys))
 
 	for i, key := range keys {
@@ -131,7 +131,7 @@ func (l *FormationLoader) LoadAll(keys []ParamFormation) ([]*graphql.FormationAs
 // LoadAllThunk returns a function that when called will block waiting for a FormationAssignmentPages.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *FormationLoader) LoadAllThunk(keys []ParamFormation) func() ([]*graphql.FormationAssignmentPage, []error) {
+func (l *FormationAssignmentLoader) LoadAllThunk(keys []ParamFormationAssignment) func() ([]*graphql.FormationAssignmentPage, []error) {
 	results := make([]func() (*graphql.FormationAssignmentPage, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
@@ -149,7 +149,7 @@ func (l *FormationLoader) LoadAllThunk(keys []ParamFormation) func() ([]*graphql
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *FormationLoader) Prime(key ParamFormation, value *graphql.FormationAssignmentPage) bool {
+func (l *FormationAssignmentLoader) Prime(key ParamFormationAssignment, value *graphql.FormationAssignmentPage) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -163,22 +163,22 @@ func (l *FormationLoader) Prime(key ParamFormation, value *graphql.FormationAssi
 }
 
 // Clear the value at key from the cache, if it exists
-func (l *FormationLoader) Clear(key ParamFormation) {
+func (l *FormationAssignmentLoader) Clear(key ParamFormationAssignment) {
 	l.mu.Lock()
 	delete(l.cache, key)
 	l.mu.Unlock()
 }
 
-func (l *FormationLoader) unsafeSet(key ParamFormation, value *graphql.FormationAssignmentPage) {
+func (l *FormationAssignmentLoader) unsafeSet(key ParamFormationAssignment, value *graphql.FormationAssignmentPage) {
 	if l.cache == nil {
-		l.cache = map[ParamFormation]*graphql.FormationAssignmentPage{}
+		l.cache = map[ParamFormationAssignment]*graphql.FormationAssignmentPage{}
 	}
 	l.cache[key] = value
 }
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *formationLoaderBatch) keyIndex(l *FormationLoader, key ParamFormation) int {
+func (b *formationAssignmentLoaderBatch) keyIndex(l *FormationAssignmentLoader, key ParamFormationAssignment) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -202,7 +202,7 @@ func (b *formationLoaderBatch) keyIndex(l *FormationLoader, key ParamFormation) 
 	return pos
 }
 
-func (b *formationLoaderBatch) startTimer(l *FormationLoader) {
+func (b *formationAssignmentLoaderBatch) startTimer(l *FormationAssignmentLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -218,7 +218,7 @@ func (b *formationLoaderBatch) startTimer(l *FormationLoader) {
 	b.end(l)
 }
 
-func (b *formationLoaderBatch) end(l *FormationLoader) {
+func (b *formationAssignmentLoaderBatch) end(l *FormationAssignmentLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }

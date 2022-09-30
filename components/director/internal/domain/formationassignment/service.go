@@ -50,11 +50,11 @@ func (s *service) Create(ctx context.Context, in *model.FormationAssignmentInput
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
-	log.C(ctx).Debugf("ID: %q generated for Formation Assignment for tenant with ID: %q", formationAssignmentID, tenantID)
+	log.C(ctx).Debugf("ID: %q generated for formation assignment for tenant with ID: %q", formationAssignmentID, tenantID)
 
 	log.C(ctx).Infof("Creating formation assignment with source: %q and source type: %q, and target: %q with target type: %q", in.Source, in.SourceType, in.Target, in.TargetType)
 	if err = s.repo.Create(ctx, in.ToModel(formationAssignmentID, tenantID)); err != nil {
-		return "", errors.Wrapf(err, "while creating Formation Assignment for formation with ID: %q", in.FormationID)
+		return "", errors.Wrapf(err, "while creating formation assignment for formation with ID: %q", in.FormationID)
 	}
 
 	return formationAssignmentID, nil
@@ -71,7 +71,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 
 	fa, err := s.repo.Get(ctx, id, tenantID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Formation Assignment with ID: %q and tenant: %q", id, tenantID)
+		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q and tenant: %q", id, tenantID)
 	}
 
 	return fa, nil
@@ -86,7 +86,7 @@ func (s *service) GetForFormation(ctx context.Context, id, formationID string) (
 
 	fa, err := s.repo.GetForFormation(ctx, tenantID, id, formationID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
+		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q for formation with ID: %q", id, formationID)
 	}
 
 	return fa, nil
@@ -129,14 +129,14 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationAssi
 
 	exists, err := s.repo.Exists(ctx, id, tenantID)
 	if err != nil {
-		return errors.Wrapf(err, "while ensuring Formation Assignment with ID: %q exists", id)
+		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
 	} else if !exists {
 		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 	}
 
 	err = s.repo.Update(ctx, in.ToModel(id, tenantID))
 	if err != nil {
-		return errors.Wrapf(err, "while updating Formation Assignment with ID: %q", id)
+		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	}
 
 	if err := s.repo.Delete(ctx, id, tenantID); err != nil {
-		return errors.Wrapf(err, "while deleting Formation Assignment with ID: %q", id)
+		return errors.Wrapf(err, "while deleting formation assignment with ID: %q", id)
 	}
 	return nil
 }
@@ -164,7 +164,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 
 	exists, err := s.repo.Exists(ctx, id, tenantID)
 	if err != nil {
-		return false, errors.Wrapf(err, "while checking Formation Assignment existence for ID: %q and tenant: %q", id, tenantID)
+		return false, errors.Wrapf(err, "while checking formation assignment existence for ID: %q and tenant: %q", id, tenantID)
 	}
 	return exists, nil
 }

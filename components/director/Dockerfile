@@ -35,8 +35,7 @@ RUN mkdir /app && mv ./director /app/director \
   && mv ./ordaggregator /app/ordaggregator \
   && mv ./scopessynchronizer /app/scopessynchronizer \
   && mv ./systemfetcher /app/systemfetcher \
-  && mv ./destinationfetcher /app/destinationfetcher \
-  && mv ./licenses /app/licenses
+  && mv ./destinationfetcher /app/destinationfetcher
 
 FROM alpine:3.16.2
 LABEL source = git@github.com:kyma-incubator/compass.git

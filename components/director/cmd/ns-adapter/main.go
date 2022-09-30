@@ -91,7 +91,8 @@ func main() {
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	securedHTTPClient := httputildirector.PrepareHTTPClient(conf.ClientTimeout)
-	mtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache)
+	mtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache, conf.ExternalClientCertSecretName)
+	extSvcMtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache, conf.ExtSvcClientCertSecretName)
 
 	uidSvc := uid.NewService()
 
@@ -138,7 +139,7 @@ func main() {
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, &http.Client{Timeout: conf.ClientTimeout}, accessstrategy.NewDefaultExecutorProvider(certCache))
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, &http.Client{Timeout: conf.ClientTimeout}, accessstrategy.NewDefaultExecutorProvider(certCache, conf.ExternalClientCertSecretName, conf.ExtSvcClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -147,7 +148,7 @@ func main() {
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
 
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
