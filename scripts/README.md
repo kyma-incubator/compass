@@ -56,7 +56,7 @@ When CI run`make release` the following steps are executed:
 - rule`resolve` does not appear in the Makefile. but it's generated. 
 Notice this line of code:
 ```makefile
-MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen
+MOUNT_TARGETS = build resolve ensure dep-status check-imports imports check-fmt fmt errcheck vet generate gqlgen
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 ```
 for resolve, and others targets defined in `MOUNT_TARGETS`, function `buildpack-mount` is callled, which dynamically defines new rule:

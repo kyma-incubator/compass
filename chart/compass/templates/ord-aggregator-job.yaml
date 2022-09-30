@@ -89,6 +89,16 @@ spec:
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
                 - name: APP_EXTERNAL_CLIENT_KEY_KEY
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+                - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+                  value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+                - name: APP_EXT_SVC_CLIENT_CERT_SECRET
+                  value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+                - name: APP_EXT_SVC_CLIENT_CERT_KEY
+                  value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
+                - name: APP_EXT_SVC_CLIENT_KEY_KEY
+                  value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
+                - name: APP_EXT_SVC_CLIENT_CERT_SECRET_NAME
+                  value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
                 - name: APP_GLOBAL_REGISTRY_URL
                   value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
                 - name: APP_MAX_PARALLEL_WEBHOOK_PROCESSORS
@@ -157,4 +167,25 @@ subjects:
 roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-ord-aggregator-ext-svc
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-ord-aggregator
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
