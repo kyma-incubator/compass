@@ -12,7 +12,7 @@ CREATE TABLE formation_assignments (
     source_type  VARCHAR(256) NOT NULL,
     target       VARCHAR(256) NOT NULL,
     target_type  VARCHAR(256) NOT NULL,
-    state        VARCHAR(256) NOT NULL,
+    state        TEXT         NOT NULL CHECK ( state IN ('INITIAL', 'READY', 'CREATE_ERROR', 'DELETE_ERROR', 'CONFIG_PENDING')),
     value        JSONB,
     CONSTRAINT formation_assignments_formation_id_source_target_unique UNIQUE (formation_id, source, target)
 );
