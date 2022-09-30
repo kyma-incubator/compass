@@ -10,11 +10,13 @@ spec:
     - name: {{ template "fullname" . }}-rules
       rules:
         {{- range $tenantFetcher, $config := .Values.global.tenantFetchers }}
+        {{if eq $config.enabled true}}
         - alert: CompassTenantResync{{ $tenantFetcher }}JobFailure
           annotations:
             description: Failure for {{ $tenantFetcher }} tenant resync job
-          expr: max(delta(compass_tenantfetcher_{{ $tenantFetcher }}_job_sync_failure_number[{{ $config.job.interval }}])) >= 1
+          expr: max(delta(compass_tenantfetcher_{{ regexReplaceAll "-" $tenantFetcher "_" }}_job_sync_failure_number[{{ $config.job.interval }}])) >= 1
           for: 1s
           labels:
             severity: critical
+        {{- end }}
         {{- end }}

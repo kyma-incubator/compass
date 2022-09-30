@@ -14,17 +14,32 @@ type CertificateCache struct {
 }
 
 // Get provides a mock function with given fields:
-func (_m *CertificateCache) Get() *tls.Certificate {
+func (_m *CertificateCache) Get() map[string]*tls.Certificate {
 	ret := _m.Called()
 
-	var r0 *tls.Certificate
-	if rf, ok := ret.Get(0).(func() *tls.Certificate); ok {
+	var r0 map[string]*tls.Certificate
+	if rf, ok := ret.Get(0).(func() map[string]*tls.Certificate); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tls.Certificate)
+			r0 = ret.Get(0).(map[string]*tls.Certificate)
 		}
 	}
 
 	return r0
+}
+
+type mockConstructorTestingTNewCertificateCache interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewCertificateCache creates a new instance of CertificateCache. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewCertificateCache(t mockConstructorTestingTNewCertificateCache) *CertificateCache {
+	mock := &CertificateCache{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
 }
