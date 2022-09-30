@@ -310,10 +310,18 @@ func main() {
 
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
+	const (
+		healthzEndpoint = "/healthz"
+		livezEndpoint   = "/livez"
+		readyzEndpoint  = "/readyz"
+	)
+
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(
+		healthzEndpoint, livezEndpoint, readyzEndpoint,
+	), header.AttachHeadersToContext())
 	presenter := errorpresenter.NewPresenter(uid.NewService())
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
@@ -365,16 +373,16 @@ func main() {
 	logger.Infof("Registering readiness endpoint...")
 	schemaRepo := schema.NewRepository()
 	ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
-	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
+	mainRouter.HandleFunc(readyzEndpoint, healthz.NewReadinessHandler(ready))
 
 	logger.Infof("Registering liveness endpoint...")
-	mainRouter.HandleFunc("/livez", healthz.NewLivenessHandler())
+	mainRouter.HandleFunc(livezEndpoint, healthz.NewLivenessHandler())
 
 	logger.Infof("Registering health endpoint...")
 	health, err := healthz.New(ctx, cfg.HealthConfig)
 	exitOnError(err, "Could not initialize health")
 	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
-	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
+	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHealthHandler(health))
 
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))
@@ -654,7 +662,8 @@ func runtimeSvc(cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPCli
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
 	return runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue)
@@ -699,7 +708,8 @@ func runtimeCtxSvc(cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTP
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
 	return runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }
@@ -799,7 +809,8 @@ func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTT
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
 	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 }
