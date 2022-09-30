@@ -310,10 +310,18 @@ func main() {
 
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
+	const (
+		healthzEndpoint = "/healthz"
+		livezEndpoint   = "/livez"
+		readyzEndpoint  = "/readyz"
+	)
+
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
-	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
+	mainRouter.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(
+		healthzEndpoint, livezEndpoint, readyzEndpoint,
+	), header.AttachHeadersToContext())
 	presenter := errorpresenter.NewPresenter(uid.NewService())
 
 	gqlAPIRouter := mainRouter.PathPrefix(cfg.APIEndpoint).Subrouter()
@@ -366,16 +374,16 @@ func main() {
 	logger.Infof("Registering readiness endpoint...")
 	schemaRepo := schema.NewRepository()
 	ready := healthz.NewReady(transact, cfg.ReadyConfig, schemaRepo)
-	mainRouter.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
+	mainRouter.HandleFunc(readyzEndpoint, healthz.NewReadinessHandler(ready))
 
 	logger.Infof("Registering liveness endpoint...")
-	mainRouter.HandleFunc("/livez", healthz.NewLivenessHandler())
+	mainRouter.HandleFunc(livezEndpoint, healthz.NewLivenessHandler())
 
 	logger.Infof("Registering health endpoint...")
 	health, err := healthz.New(ctx, cfg.HealthConfig)
 	exitOnError(err, "Could not initialize health")
 	health.RegisterIndicator(healthz.NewIndicator(healthz.DBIndicatorName, healthz.NewDBIndicatorFunc(transact))).Start()
-	mainRouter.HandleFunc("/healthz", healthz.NewHealthHandler(health))
+	mainRouter.HandleFunc(healthzEndpoint, healthz.NewHealthHandler(health))
 
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))
