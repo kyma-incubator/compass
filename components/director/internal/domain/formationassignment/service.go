@@ -141,7 +141,7 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationAssi
 		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 	}
 
-	if err = s.repo.Update(ctx, in.ToModel(id, tenantID)); err != nil{
+	if err = s.repo.Update(ctx, in.ToModel(id, tenantID)); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 
