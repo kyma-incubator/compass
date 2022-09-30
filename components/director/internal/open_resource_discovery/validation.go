@@ -183,6 +183,15 @@ var optionalShortDescriptionRules = []validation.Rule{
 	validation.NilOrNotEmpty, validation.Length(1, 2048), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
+// ORDDocumentValidationError contains the validation errors when aggregating ord documents
+type ORDDocumentValidationError struct {
+	Err error
+}
+
+func (e *ORDDocumentValidationError) Error() string {
+	return e.Err.Error()
+}
+
 // ValidateSystemInstanceInput validates the given SystemInstance
 func ValidateSystemInstanceInput(app *model.Application) error {
 	return validation.ValidateStruct(app,
