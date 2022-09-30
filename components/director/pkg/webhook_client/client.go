@@ -94,6 +94,9 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 		}
 	}
 
+	headers.Set("scp-client-user", "i540050")
+	log.C(ctx).Infof("ALEX Headers: %+v", headers)
+
 	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, webhook.CorrelationIDKey, &request.CorrelationID)
 
 	req, err := http.NewRequestWithContext(ctx, method, *url, bytes.NewBuffer(body))
