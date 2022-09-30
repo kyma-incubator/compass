@@ -32,14 +32,14 @@ type Converter interface {
 	MultipleToGraphQL(in []*model.Formation) []*graphql.Formation
 }
 
-// FormationAssignmentService missing godoc
+// FormationAssignmentService is responsible for the service-layer FormationAssignment operations
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 }
 
-// FormationAssignmentConverter missing godoc
+// FormationAssignmentConverter converts FormationAssignment between the model.FormationAssignment service-layer representation and graphql.FormationAssignment.
 //go:generate mockery --name=FormationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentConverter interface {
 	MultipleToGraphQL(in []*model.FormationAssignment) []*graphql.FormationAssignment
@@ -305,8 +305,7 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 		}})
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, []error{err}
 	}
 
@@ -335,8 +334,7 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 

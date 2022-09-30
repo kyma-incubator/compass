@@ -79,6 +79,8 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 
 // GetForFormation retrieves the formation assignment with the provided `id` associated with formation with id `formationID`
 func (s *service) GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Getting formation assignment for ID: %q and formationID: %q", id, formationID)
+
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -94,6 +96,8 @@ func (s *service) GetForFormation(ctx context.Context, id, formationID string) (
 
 // List retrieves formation assignment page based on `pageSize` and `cursor`
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationAssignmentPage, error) {
+	log.C(ctx).Info("Listing formation assignments")
+
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
@@ -108,6 +112,8 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 
 // ListByFormationIDs retrieves a pages of formation assignment objects for each of the provided formation IDs
 func (s *service) ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error) {
+	log.C(ctx).Infof("Listing formation assignment for formation with IDs: %q", formationIDs)
+
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -122,20 +128,20 @@ func (s *service) ListByFormationIDs(ctx context.Context, formationIDs []string,
 
 // Update updates a formation assignment matching ID `id` using `in`
 func (s *service) Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error {
+	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
+
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	exists, err := s.repo.Exists(ctx, id, tenantID)
-	if err != nil {
+	if exists, err := s.repo.Exists(ctx, id, tenantID); err != nil {
 		return errors.Wrapf(err, "while ensuring formation assignment with ID: %q exists", id)
 	} else if !exists {
 		return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 	}
 
-	err = s.repo.Update(ctx, in.ToModel(id, tenantID))
-	if err != nil {
+	if err = s.repo.Update(ctx, in.ToModel(id, tenantID)); err != nil{
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
 	}
 
@@ -144,6 +150,8 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationAssi
 
 // Delete deletes a formation assignment matching ID `id`
 func (s *service) Delete(ctx context.Context, id string) error {
+	log.C(ctx).Infof("Deleting formation assignment with ID: %q", id)
+
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -157,6 +165,8 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 // Exists check if a formation assignment with given ID exists
 func (s *service) Exists(ctx context.Context, id string) (bool, error) {
+	log.C(ctx).Infof("Checking formation assignment existence for ID: %q", id)
+
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return false, errors.Wrapf(err, "while loading tenant from context")
