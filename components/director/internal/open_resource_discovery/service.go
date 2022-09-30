@@ -677,8 +677,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, tx persistence
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
 		if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
-			ordValidationError, ok := err.(*ORDDocumentValidationError)
-			if ok {
+			if ordValidationError, ok := err.(*ORDDocumentValidationError); ok {
 				validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
 
 				validationErrors = validationErrors[1:]
