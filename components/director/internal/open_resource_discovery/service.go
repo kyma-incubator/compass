@@ -680,6 +680,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, tx persistence
 			if ordValidationError, ok := err.(*ORDDocumentValidationError); ok {
 				validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
 
+				// the first item in the slice is the message 'invalid documents' for the wrapped errors
 				validationErrors = validationErrors[1:]
 
 				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
