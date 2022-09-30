@@ -35,6 +35,7 @@ type repository struct {
 	getter                repo.SingleGetter
 	pageableQuerierGlobal repo.PageableQuerier
 	unionLister           repo.UnionLister
+	lister                repo.ConditionTreeLister
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
 	existQuerier          repo.ExistQuerier
@@ -48,6 +49,7 @@ func NewRepository(conv EntityConverter) *repository {
 		getter:                repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		unionLister:           repo.NewUnionLister(tableName, tableColumns),
+		lister:                repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
@@ -99,13 +101,8 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor, tenantID st
 		return nil, err
 	}
 
-	items := make([]*model.FormationAssignment, 0, len(entityCollection))
-
-	for _, entity := range entityCollection {
-		items = append(items, r.conv.FromEntity(entity))
-	}
 	return &model.FormationAssignmentPage{
-		Data:       items,
+		Data:       r.multipleFromEntities(entityCollection),
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
@@ -155,6 +152,24 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 	return faPages, nil
 }
 
+// ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID`that have objectID as `target` or `source` from the database that are visible for `tenant`
+func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error) {
+	var entitiesWithSourceObjectID EntityCollection
+	var entitiesWithTargetObjectID EntityCollection
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
+		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewEqualCondition("source", objectID),
+			repo.NewEqualCondition("target", objectID),
+		})...))
+
+	if err := r.lister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entitiesWithSourceObjectID, conditions); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(append(entitiesWithSourceObjectID, entitiesWithTargetObjectID...)), nil
+}
+
 // Update updates the Formation Assignment matching the ID of the input model
 func (r *repository) Update(ctx context.Context, model *model.FormationAssignment) error {
 	if model == nil {
@@ -172,4 +187,12 @@ func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 // Exists check if a Formation Assignment with given ID exists
 func (r *repository) Exists(ctx context.Context, id, tenantID string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *repository) multipleFromEntities(entities EntityCollection) []*model.FormationAssignment {
+	items := make([]*model.FormationAssignment, 0, len(entities))
+	for _, ent := range entities {
+		items = append(items, r.conv.FromEntity(ent))
+	}
+	return items
 }
