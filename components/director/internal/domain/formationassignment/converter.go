@@ -54,6 +54,22 @@ func (c *converter) MultipleToGraphQL(in []*model.FormationAssignment) []*graphq
 	return formationTemplates
 }
 
+func (c *converter) ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput {
+	if assignment == nil {
+		return nil
+	}
+
+	return &model.FormationAssignmentInput{
+		FormationID: assignment.FormationID,
+		Source:      assignment.Source,
+		SourceType:  assignment.SourceType,
+		Target:      assignment.Target,
+		TargetType:  assignment.TargetType,
+		State:       assignment.State,
+		Value:       assignment.Value,
+	}
+}
+
 func (c *converter) FromInput(in *model.FormationAssignmentInput) *model.FormationAssignment {
 	if in == nil {
 		return nil
@@ -74,15 +90,15 @@ func (c *converter) MultipleFromInput(in []*model.FormationAssignmentInput) []*m
 	if in == nil {
 		return nil
 	}
-	formationTemplates := make([]*model.FormationAssignment, 0, len(in))
-	for _, r := range in {
-		if r == nil {
+	formationAssignments := make([]*model.FormationAssignment, 0, len(in))
+	for _, fai := range in {
+		if fai == nil {
 			continue
 		}
 
-		formationTemplates = append(formationTemplates, )
+		formationAssignments = append(formationAssignments, c.FromInput(fai))
 	}
-	return formationTemplates
+	return formationAssignments
 }
 
 // ToEntity converts from internal model to entity
