@@ -139,6 +139,17 @@ func unusedFormationRepo() *automock.FormationRepository {
 	return &automock.FormationRepository{}
 }
 
+func unusedNotificationsService() *automock.NotificationsService {
+	return &automock.NotificationsService{}
+}
+
+func noActionNotificationsService() *automock.NotificationsService {
+	notificationSvc := &automock.NotificationsService{}
+	notificationSvc.On("GenerateNotifications", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	notificationSvc.On("SendNotifications", mock.Anything, mock.Anything).Return(nil)
+	return notificationSvc
+}
+
 func unusedFormationTemplateRepo() *automock.FormationTemplateRepository {
 	return &automock.FormationTemplateRepository{}
 }
