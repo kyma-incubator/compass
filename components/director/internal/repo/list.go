@@ -22,6 +22,11 @@ type Lister interface {
 	Clone() *universalLister
 }
 
+// ConditionTreeLister is an interface for listing tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them based on provided conditionTree.
+type ConditionTreeLister interface {
+	ListConditionTree(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, conditionTree *ConditionTree) error
+}
+
 // ListerGlobal is an interface for listing global entities.
 type ListerGlobal interface {
 	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error
@@ -55,6 +60,16 @@ func NewLister(tableName string, selectedColumns []string) Lister {
 	return &universalLister{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
+		orderByParams:   NoOrderBy,
+	}
+}
+
+// NewConditionTreeListerWithEmbeddedTenant is a constructor for ConditionTreeLister about entities with tenant embedded in them.
+func NewConditionTreeListerWithEmbeddedTenant(tableName string, tenantColumn string, selectedColumns []string) ConditionTreeLister {
+	return &universalLister{
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+		tenantColumn:    &tenantColumn,
 		orderByParams:   NoOrderBy,
 	}
 }
@@ -105,6 +120,11 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 	return l.listWithTenantScope(ctx, resourceType, tenant, dest, NoLock, additionalConditions)
 }
 
+// ListConditionTree lists tenant scoped entities with tenant isolation subquery based on equal condition on tenantColumn.
+func (l *universalLister) ListConditionTree(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, conditionTree *ConditionTree) error {
+	return l.listConditionTreeWithEmbededTenant(ctx, resourceType, tenant, dest, NoLock, conditionTree)
+}
+
 // ListWithSelectForUpdate lists tenant scoped entities with tenant isolation subquery and
 func (l *universalLister) ListWithSelectForUpdate(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, additionalConditions ...Condition) error {
 	return l.listWithTenantScope(ctx, resourceType, tenant, dest, ForUpdateLock, additionalConditions)
@@ -129,6 +149,15 @@ func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType 
 	additionalConditions = append(additionalConditions, tenantIsolation)
 
 	return l.list(ctx, resourceType, dest, lockClause, additionalConditions...)
+}
+
+func (l *universalLister) listConditionTreeWithEmbededTenant(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, lockClause string, conditionTree *ConditionTree) error {
+	if tenant == "" {
+		return apperrors.NewTenantRequiredError()
+	}
+
+	conditions := And(&ConditionTree{Operand: NewEqualCondition(*l.tenantColumn, tenant)}, conditionTree)
+	return l.listWithConditionTree(ctx, resourceType, dest, lockClause, conditions)
 }
 
 // SetSelectedColumns sets the selected columns for the query.
@@ -166,6 +195,23 @@ func (l *universalLister) list(ctx context.Context, resourceType resource.Type, 
 	}
 
 	query, args, err := buildSelectQuery(l.tableName, l.selectedColumns, conditions, l.orderByParams, lockClause, true)
+	if err != nil {
+		return errors.Wrap(err, "while building list query")
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", query)
+	err = persist.SelectContext(ctx, dest, query, args...)
+
+	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)
+}
+
+func (l *universalLister) listWithConditionTree(ctx context.Context, resourceType resource.Type, dest Collection, lockClause string, conditionTree *ConditionTree) error {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	query, args, err := buildSelectQueryFromTree(l.tableName, l.selectedColumns, conditionTree, l.orderByParams, lockClause, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}
