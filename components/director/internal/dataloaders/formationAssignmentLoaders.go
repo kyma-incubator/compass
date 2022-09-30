@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const loadersKeyFormation contextKey = "dataloadersFormation"
+const loadersKeyFormationAssignment contextKey = "dataloadersFormationAssignment"
 
 // FormationAssignmentLoaders missing godoc
 type FormationAssignmentLoaders struct {
@@ -25,11 +25,11 @@ type ParamFormationAssignment struct {
 	Ctx   context.Context
 }
 
-// HandlerFormation missing godoc
-func HandlerFormation(fetchFunc func(keys []ParamFormationAssignment) ([]*graphql.FormationAssignmentPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
+// HandlerFormationAssignment missing godoc
+func HandlerFormationAssignment(fetchFunc func(keys []ParamFormationAssignment) ([]*graphql.FormationAssignmentPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), loadersKeyFormation, &FormationAssignmentLoaders{
+			ctx := context.WithValue(r.Context(), loadersKeyFormationAssignment, &FormationAssignmentLoaders{
 				FormationAssignmentByID: FormationAssignmentLoader{
 					maxBatch: maxBatch,
 					wait:     wait,
@@ -44,5 +44,5 @@ func HandlerFormation(fetchFunc func(keys []ParamFormationAssignment) ([]*graphq
 
 // FormationFor missing godoc
 func FormationFor(ctx context.Context) *FormationAssignmentLoaders {
-	return ctx.Value(loadersKeyFormation).(*FormationAssignmentLoaders)
+	return ctx.Value(loadersKeyFormationAssignment).(*FormationAssignmentLoaders)
 }

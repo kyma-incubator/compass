@@ -5,12 +5,12 @@ ALTER TABLE formations
 
 CREATE TABLE formation_assignments (
     id           UUID PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
-    formation_id UUID NOT NULL CHECK    (id <> '00000000-0000-0000-0000-000000000000'),
-    tenant_id    UUID NOT NULL CHECK    (id <> '00000000-0000-0000-0000-000000000000'),
+    formation_id UUID NOT NULL    CHECK (id <> '00000000-0000-0000-0000-000000000000'),
+    tenant_id    UUID NOT NULL    CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     FOREIGN KEY (formation_id, tenant_id) REFERENCES formations(id, tenant_id) ON DELETE CASCADE,
-    source       VARCHAR(256) NOT NULL,
+    source       UUID         NOT NULL,
     source_type  VARCHAR(256) NOT NULL,
-    target       VARCHAR(256) NOT NULL,
+    target       UUID         NOT NULL,
     target_type  VARCHAR(256) NOT NULL,
     state        TEXT         NOT NULL CHECK ( state IN ('INITIAL', 'READY', 'CREATE_ERROR', 'DELETE_ERROR', 'CONFIG_PENDING')),
     value        JSONB,

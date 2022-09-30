@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	UUID            = "addef137-10de-4c32-9711-724ef367279b"
 	TestID          = "c861c3db-1265-4143-a05c-1ced1291d816"
 	TestFormationID = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestTenantID    = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"

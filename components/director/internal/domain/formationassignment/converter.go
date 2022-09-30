@@ -42,16 +42,16 @@ func (c *converter) MultipleToGraphQL(in []*model.FormationAssignment) []*graphq
 	if in == nil {
 		return nil
 	}
-	formationTemplates := make([]*graphql.FormationAssignment, 0, len(in))
+	formationAssignment := make([]*graphql.FormationAssignment, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
 		}
 
-		formationTemplates = append(formationTemplates, c.ToGraphQL(r))
+		formationAssignment = append(formationAssignment, c.ToGraphQL(r))
 	}
 
-	return formationTemplates
+	return formationAssignment
 }
 
 // ToEntity converts from internal model to entity
