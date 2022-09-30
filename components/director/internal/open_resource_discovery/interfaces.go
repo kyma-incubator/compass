@@ -17,7 +17,7 @@ type WebhookService interface {
 // ApplicationService is responsible for the service-layer Application operations.
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
-	GetForUpdate(ctx context.Context, id string) (*model.Application, error)
+	Get(ctx context.Context, id string) (*model.Application, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 }
 
