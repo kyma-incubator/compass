@@ -155,100 +155,99 @@ func TestRepository_List(t *testing.T) {
 	suite.Run(t)
 }
 
-// todo::: fix test
-//func TestRepository_ListByFormationIDs(t *testing.T) {
-//	emptyPageFormationID := "empty-formation-id"
-//	onePageFormationID := "one-formation-id"
-//	multiplePageFormationID := "multiple-formation-id"
-//
-//	faModel1 := fixFormationAssignmentModelWithFormationID(onePageFormationID)
-//	faEntity1 := fixFormationAssignmentEntityWithFormationID(onePageFormationID)
-//
-//	faModel2 := fixFormationAssignmentModelWithFormationID(multiplePageFormationID)
-//	faEntity2 := fixFormationAssignmentEntityWithFormationID(multiplePageFormationID)
-//
-//	pageSize := 1
-//	cursor := ""
-//
-//	suite := testdb.RepoListPageableTestSuite{
-//		Name: "List Formation Assignments by Formation IDs",
-//		SQLQueryDetails: []testdb.SQLQueryDetails{
-//			{
-//				Query: regexp.QuoteMeta(`(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE id = $1 AND tenant_id = $2 AND formation_id = $3 ORDER BY formation_id ASC, id ASC LIMIT $4 OFFSET $5)
-//												UNION
-//												(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE id = $6 AND tenant_id = $7 AND formation_id = $8 ORDER BY runtime_id ASC, id ASC LIMIT $9 OFFSET $10)
-//												UNION
-//												(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE id = $11 AND tenant_id = $12 AND formation_id = $13 ORDER BY runtime_id ASC, id ASC LIMIT $14 OFFSET $15)`),
-//				Args:     []driver.Value{TestID, TestTenantID, emptyPageFormationID, pageSize, 0, TestID, TestTenantID, onePageFormationID, pageSize, 0, TestID, TestTenantID, multiplePageFormationID, pageSize, 0},
-//				IsSelect: true,
-//				ValidRowsProvider: func() []*sqlmock.Rows {
-//					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-//						AddRow(faEntity1.ID, faEntity1.FormationID, faEntity1.TenantID, faEntity1.Source, faEntity1.SourceType, faEntity1.Target, faEntity1.TargetType, faEntity1.State, faEntity1.Value).
-//						AddRow(faEntity2.ID, faEntity2.FormationID, faEntity2.TenantID, faEntity2.Source, faEntity2.SourceType, faEntity2.Target, faEntity2.TargetType, faEntity2.State, faEntity2.Value),
-//					}
-//				},
-//			},
-//			{
-//				Query:    regexp.QuoteMeta(`SELECT formation_id AS id, COUNT(*) AS total_count FROM public.formation_assignments WHERE id = $1 AND tenant_id = $2 GROUP BY formation_id ORDER BY formation_id ASC`),
-//				Args:     []driver.Value{TestID, TestTenantID},
-//				IsSelect: true,
-//				ValidRowsProvider: func() []*sqlmock.Rows {
-//					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageFormationID, 0).AddRow(onePageFormationID, 1).AddRow(multiplePageFormationID, 2)}
-//				},
-//			},
-//		},
-//		Pages: []testdb.PageDetails{
-//			{
-//				ExpectedModelEntities: nil,
-//				ExpectedDBEntities:    nil,
-//				ExpectedPage: &model.FormationAssignmentPage{
-//					Data: nil,
-//					PageInfo: &pagination.Page{
-//						StartCursor: "",
-//						EndCursor:   "",
-//						HasNextPage: false,
-//					},
-//					TotalCount: 0,
-//				},
-//			},
-//			{
-//				ExpectedModelEntities: []interface{}{faModel1},
-//				ExpectedDBEntities:    []interface{}{faEntity1},
-//				ExpectedPage: &model.FormationAssignmentPage{
-//					Data: []*model.FormationAssignment{faModel1},
-//					PageInfo: &pagination.Page{
-//						StartCursor: "",
-//						EndCursor:   "",
-//						HasNextPage: false,
-//					},
-//					TotalCount: 1,
-//				},
-//			},
-//			{
-//				ExpectedModelEntities: []interface{}{faModel2},
-//				ExpectedDBEntities:    []interface{}{faEntity2},
-//				ExpectedPage: &model.FormationAssignmentPage{
-//					Data: []*model.FormationAssignment{faModel2},
-//					PageInfo: &pagination.Page{
-//						StartCursor: "",
-//						EndCursor:   pagination.EncodeNextOffsetCursor(0, pageSize),
-//						HasNextPage: true,
-//					},
-//					TotalCount: 2,
-//				},
-//			},
-//		},
-//		ConverterMockProvider: func() testdb.Mock {
-//			return &automock.EntityConverter{}
-//		},
-//		RepoConstructorFunc:       formationassignment.NewRepository,
-//		MethodArgs:                []interface{}{TestTenantID, []string{emptyPageFormationID, onePageFormationID, multiplePageFormationID}, pageSize, cursor},
-//		MethodName:                "ListByFormationIDs",
-//		DisableConverterErrorTest: true,
-//	}
-//
-//	suite.Run(t)
-//}
+func TestRepository_ListByFormationIDs(t *testing.T) {
+	emptyPageFormationID := "empty-formation-id"
+	onePageFormationID := "one-formation-id"
+	multiplePageFormationID := "multiple-formation-id"
+
+	faModel1 := fixFormationAssignmentModelWithFormationID(onePageFormationID)
+	faEntity1 := fixFormationAssignmentEntityWithFormationID(onePageFormationID)
+
+	faModel2 := fixFormationAssignmentModelWithFormationID(multiplePageFormationID)
+	faEntity2 := fixFormationAssignmentEntityWithFormationID(multiplePageFormationID)
+
+	pageSize := 1
+	cursor := ""
+
+	suite := testdb.RepoListPageableTestSuite{
+		Name: "List Formation Assignments by Formation IDs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 ORDER BY formation_id ASC, id ASC LIMIT $3 OFFSET $4)
+												UNION
+												(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $5 AND formation_id = $6 ORDER BY formation_id ASC, id ASC LIMIT $7 OFFSET $8)
+												UNION
+												(SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $9 AND formation_id = $10 ORDER BY formation_id ASC, id ASC LIMIT $11 OFFSET $12)`),
+				Args:     []driver.Value{TestTenantID, emptyPageFormationID, pageSize, 0, TestTenantID, onePageFormationID, pageSize, 0, TestTenantID, multiplePageFormationID, pageSize, 0},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(faEntity1.ID, faEntity1.FormationID, faEntity1.TenantID, faEntity1.Source, faEntity1.SourceType, faEntity1.Target, faEntity1.TargetType, faEntity1.State, faEntity1.Value).
+						AddRow(faEntity2.ID, faEntity2.FormationID, faEntity2.TenantID, faEntity2.Source, faEntity2.SourceType, faEntity2.Target, faEntity2.TargetType, faEntity2.State, faEntity2.Value),
+					}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT formation_id AS id, COUNT(*) AS total_count FROM public.formation_assignments WHERE tenant_id = $1 GROUP BY formation_id ORDER BY formation_id ASC`),
+				Args:     []driver.Value{TestTenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageFormationID, 0).AddRow(onePageFormationID, 1).AddRow(multiplePageFormationID, 2)}
+				},
+			},
+		},
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: nil,
+				ExpectedDBEntities:    nil,
+				ExpectedPage: &model.FormationAssignmentPage{
+					Data: nil,
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 0,
+				},
+			},
+			{
+				ExpectedModelEntities: []interface{}{faModel1},
+				ExpectedDBEntities:    []interface{}{faEntity1},
+				ExpectedPage: &model.FormationAssignmentPage{
+					Data: []*model.FormationAssignment{faModel1},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+			{
+				ExpectedModelEntities: []interface{}{faModel2},
+				ExpectedDBEntities:    []interface{}{faEntity2},
+				ExpectedPage: &model.FormationAssignmentPage{
+					Data: []*model.FormationAssignment{faModel2},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   pagination.EncodeNextOffsetCursor(0, pageSize),
+						HasNextPage: true,
+					},
+					TotalCount: 2,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		MethodArgs:                []interface{}{TestTenantID, []string{emptyPageFormationID, onePageFormationID, multiplePageFormationID}, pageSize, cursor},
+		MethodName:                "ListByFormationIDs",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
 
 func TestRepository_Update(t *testing.T) {
 	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ? WHERE id = ? AND tenant_id = ?`)

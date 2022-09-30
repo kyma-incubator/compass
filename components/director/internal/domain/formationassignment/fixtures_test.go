@@ -60,6 +60,20 @@ func fixFormationAssignmentModel(configValue json.RawMessage) *model.FormationAs
 	}
 }
 
+func fixFormationAssignmentModelWithFormationID(formationID string) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          TestID,
+		FormationID: formationID,
+		TenantID:    TestTenantID,
+		Source:      TestSource,
+		SourceType:  TestSourceType,
+		Target:      TestTarget,
+		TargetType:  TestTargetType,
+		State:       TestState,
+		Value:       TestConfigValueRawJSON,
+	}
+}
+
 func fixFormationAssignmentModelInput(configValue json.RawMessage) *model.FormationAssignmentInput {
 	return &model.FormationAssignmentInput{
 		FormationID: TestFormationID,
@@ -83,6 +97,20 @@ func fixFormationAssignmentEntity(configValue string) *formationassignment.Entit
 		TargetType:  TestTargetType,
 		State:       TestState,
 		Value:       repo.NewValidNullableString(configValue),
+	}
+}
+
+func fixFormationAssignmentEntityWithFormationID(formationID string) *formationassignment.Entity {
+	return &formationassignment.Entity{
+		ID:          TestID,
+		FormationID: formationID,
+		TenantID:    TestTenantID,
+		Source:      TestSource,
+		SourceType:  TestSourceType,
+		Target:      TestTarget,
+		TargetType:  TestTargetType,
+		State:       TestState,
+		Value:       repo.NewValidNullableString(TestConfigValueStr),
 	}
 }
 

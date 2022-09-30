@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-// NewConverter creates a new instance of gqlConverter
+// NewConverter creates a new formation assignment converter
 func NewConverter() *converter {
 	return &converter{}
 }
