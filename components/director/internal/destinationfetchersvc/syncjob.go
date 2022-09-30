@@ -96,7 +96,7 @@ func syncTenantDestinationsWithTimeout(
 	defer cancel()
 	start := time.Now()
 	defer func() {
-		log.C(ctx).Info("Destinations synced for tenant '%s' for %s", tenantID, time.Since(start).String())
+		log.C(ctx).Infof("Destinations synced for tenant '%s' for %s", tenantID, time.Since(start).String())
 	}()
 	return destinationSyncer.SyncTenantDestinations(tenantSyncTimeoutCtx, tenantID)
 }
