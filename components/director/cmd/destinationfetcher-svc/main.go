@@ -22,8 +22,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
@@ -41,6 +39,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -185,9 +184,14 @@ func getDestinationService(cfg config, transact persistence.Transactioner) *dest
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client,
 	cfg config, destService *destinationfetcher.DestinationService) http.Handler {
+	const (
+		healthzEndpoint = "/healthz"
+		readyzEndpoint  = "/readyz"
+	)
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
+		cfg.DestinationsRootAPI+healthzEndpoint, cfg.DestinationsRootAPI+readyzEndpoint))
 
 	syncDestinationsAPIRouter := mainRouter.PathPrefix(cfg.DestinationsRootAPI).Subrouter()
 	destinationHandler := destinationfetcher.NewDestinationsHTTPHandler(destService, cfg.HandlerConfig)
@@ -208,9 +212,9 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client,
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.DestinationsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
-	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
+	healthCheckRouter.HandleFunc(readyzEndpoint, newReadinessHandler())
 	logger.Infof("Registering liveness endpoint...")
-	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
+	healthCheckRouter.HandleFunc(healthzEndpoint, newReadinessHandler())
 
 	return mainRouter
 }

@@ -4393,7 +4393,6 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
-	UNPAIR_APPLICATION
 }
 
 interface OneTimeToken {
@@ -5622,7 +5621,7 @@ type Mutation {
 	**Examples**
 	- [unpair application](examples/unpair-application/unpair-application.graphql)
 	"""
-	unpairApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unpairApplication") @async(operationType: UPDATE, idField: "id", webhookType: UNPAIR_APPLICATION)
+	unpairApplication(id: ID!, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.unpairApplication") @async(operationType: UPDATE, idField: "id", webhookType: UNREGISTER_APPLICATION)
 	"""
 	**Examples**
 	- [create application template](examples/create-application-template/create-application-template.graphql)
@@ -15842,7 +15841,7 @@ func (ec *executionContext) _Mutation_unpairApplication(ctx context.Context, fie
 			if err != nil {
 				return nil, err
 			}
-			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNPAIR_APPLICATION")
+			webhookType, err := ec.unmarshalOWebhookType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookType(ctx, "UNREGISTER_APPLICATION")
 			if err != nil {
 				return nil, err
 			}

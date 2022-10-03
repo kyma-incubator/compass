@@ -18,6 +18,7 @@ package log
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -25,8 +26,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// RequestLogger returns middleware that setups request scoped logging
-func RequestLogger() func(next http.Handler) http.Handler {
+// RequestLogger returns middleware that setups request scoped logging.
+// URL paths starting with pathsToLogOnDebug will be logged on debug instead of info.
+func RequestLogger(pathsToLogOnDebug ...string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -43,13 +45,18 @@ func RequestLogger() func(next http.Handler) http.Handler {
 				remoteAddr = realIP
 			}
 
+			logOnDebug := shouldLogOnDebug(r.URL.Path, pathsToLogOnDebug)
+
 			beforeLogger := entry.WithFields(logrus.Fields{
 				"request": r.RequestURI,
 				"method":  r.Method,
 				"remote":  remoteAddr,
 			})
-
-			beforeLogger.Info("Started handling request...")
+			beforeLogFunc := beforeLogger.Info
+			if logOnDebug {
+				beforeLogFunc = beforeLogger.Debug
+			}
+			beforeLogFunc("Started handling request...")
 
 			lrw := newLoggingResponseWriter(rw)
 			next.ServeHTTP(lrw, r)
@@ -65,9 +72,22 @@ func RequestLogger() func(next http.Handler) http.Handler {
 				afterLogger = mdc.appendFields(afterLogger)
 			}
 
-			afterLogger.Info("Finished handling request...")
+			afterLogFunc := afterLogger.Info
+			if logOnDebug {
+				afterLogFunc = afterLogger.Debug
+			}
+			afterLogFunc("Finished handling request...")
 		})
 	}
+}
+
+func shouldLogOnDebug(requestPath string, pathsToLogOnDebug []string) bool {
+	for _, path := range pathsToLogOnDebug {
+		if strings.HasPrefix(requestPath, path) {
+			return true
+		}
+	}
+	return false
 }
 
 // LoggerWithCorrelationID missing godoc
