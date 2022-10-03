@@ -14,7 +14,6 @@ import (
 )
 
 // RepoUpdateTestSuite represents a generic test suite for repository Update and UpdateWithVersion methods of any global entity or entity that has externally managed tenants in m2m table/view.
-// This test suite is not suitable for entities with embedded tenant in them.
 type RepoUpdateTestSuite struct {
 	Name                      string
 	SQLQueryDetails           []SQLQueryDetails
