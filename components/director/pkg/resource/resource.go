@@ -70,6 +70,8 @@ const (
 	Formations Type = "formations"
 	// FormationTemplate type represents formation template resource.
 	FormationTemplate Type = "formationTemplate"
+	// FormationAssignment type represents formation assignment resource.
+	FormationAssignment Type = "formationAssignment"
 	// Webhook type represents generic webhook resource. This resource does not assume the referenced resource type of the Webhook.
 	Webhook Type = "webhook"
 	// AppWebhook type represents application webhook resource.
