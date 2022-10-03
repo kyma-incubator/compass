@@ -13,9 +13,10 @@ var converter = formationassignment.NewConverter()
 
 func TestToGraphQL(t *testing.T) {
 	testCases := []struct {
-		Name     string
-		Input    *model.FormationAssignment
-		Expected *graphql.FormationAssignment
+		Name           string
+		Input          *model.FormationAssignment
+		Expected       *graphql.FormationAssignment
+		ExpectedErrMsg string
 	}{
 		{
 			Name:     "Success",
@@ -28,16 +29,24 @@ func TestToGraphQL(t *testing.T) {
 			Expected: nil,
 		},
 		{
-			Name:     "Error when configuration value is invalid json",
-			Input:    fixFormationAssignmentModel(TestInvalidConfigValueRawJSON),
-			Expected: nil,
+			Name:           "Error when configuration value is invalid json",
+			Input:          fixFormationAssignmentModel(TestInvalidConfigValueRawJSON),
+			Expected:       nil,
+			ExpectedErrMsg: "while converting formation assignment to GraphQL",
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
-			r := converter.ToGraphQL(testCase.Input)
+			r, err := converter.ToGraphQL(testCase.Input)
+
+			if testCase.ExpectedErrMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMsg)
+			} else {
+				require.NoError(t, err)
+			}
 
 			require.Equal(t, r, testCase.Expected)
 		})
@@ -49,6 +58,7 @@ func Test_converter_MultipleToGraphQL(t *testing.T) {
 		Name                         string
 		InputFormationAssignments    []*model.FormationAssignment
 		ExpectedFormationAssignments []*graphql.FormationAssignment
+		ExpectedErrorMsg             string
 	}{
 		{
 			Name:                         "Success",
@@ -65,11 +75,23 @@ func Test_converter_MultipleToGraphQL(t *testing.T) {
 			InputFormationAssignments:    []*model.FormationAssignment{nil, fixFormationAssignmentModel(TestConfigValueRawJSON)},
 			ExpectedFormationAssignments: []*graphql.FormationAssignment{fixFormationAssignmentGQLModel(&TestConfigValueStr)},
 		},
+		{
+			Name:                         "Error when conversion to GraphQL failed",
+			InputFormationAssignments:    []*model.FormationAssignment{fixFormationAssignmentModel(TestInvalidConfigValueRawJSON)},
+			ExpectedFormationAssignments: []*graphql.FormationAssignment{},
+			ExpectedErrorMsg:             "while converting formation assignment to GraphQL",
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			result := converter.MultipleToGraphQL(testCase.InputFormationAssignments)
+			result, err := converter.MultipleToGraphQL(testCase.InputFormationAssignments)
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
 
 			require.ElementsMatch(t, testCase.ExpectedFormationAssignments, result)
 		})

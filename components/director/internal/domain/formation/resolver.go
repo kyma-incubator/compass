@@ -42,8 +42,8 @@ type FormationAssignmentService interface {
 // FormationAssignmentConverter converts FormationAssignment between the model.FormationAssignment service-layer representation and graphql.FormationAssignment.
 //go:generate mockery --name=FormationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentConverter interface {
-	MultipleToGraphQL(in []*model.FormationAssignment) []*graphql.FormationAssignment
-	ToGraphQL(in *model.FormationAssignment) *graphql.FormationAssignment
+	MultipleToGraphQL(in []*model.FormationAssignment) ([]*graphql.FormationAssignment, error)
+	ToGraphQL(in *model.FormationAssignment) (*graphql.FormationAssignment, error)
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
@@ -296,7 +296,10 @@ func (r *Resolver) FormationAssignmentsDataLoader(keys []dataloader.ParamFormati
 
 	gqlFormationAssignments := make([]*graphql.FormationAssignmentPage, 0, len(formationAssignmentPages))
 	for _, page := range formationAssignmentPages {
-		fas := r.formationAssignmentConv.MultipleToGraphQL(page.Data)
+		fas, err := r.formationAssignmentConv.MultipleToGraphQL(page.Data)
+		if err != nil {
+			return nil, []error{err}
+		}
 
 		gqlFormationAssignments = append(gqlFormationAssignments, &graphql.FormationAssignmentPage{Data: fas, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
@@ -338,5 +341,5 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 		return nil, err
 	}
 
-	return r.formationAssignmentConv.ToGraphQL(formationAssignment), nil
+	return r.formationAssignmentConv.ToGraphQL(formationAssignment)
 }

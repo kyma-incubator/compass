@@ -17,7 +17,7 @@ type FormationAssignmentConverter struct {
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
-func (_m *FormationAssignmentConverter) MultipleToGraphQL(in []*model.FormationAssignment) []*graphql.FormationAssignment {
+func (_m *FormationAssignmentConverter) MultipleToGraphQL(in []*model.FormationAssignment) ([]*graphql.FormationAssignment, error) {
 	ret := _m.Called(in)
 
 	var r0 []*graphql.FormationAssignment
@@ -29,11 +29,18 @@ func (_m *FormationAssignmentConverter) MultipleToGraphQL(in []*model.FormationA
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*model.FormationAssignment) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *FormationAssignmentConverter) ToGraphQL(in *model.FormationAssignment) *graphql.FormationAssignment {
+func (_m *FormationAssignmentConverter) ToGraphQL(in *model.FormationAssignment) (*graphql.FormationAssignment, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.FormationAssignment
@@ -45,7 +52,14 @@ func (_m *FormationAssignmentConverter) ToGraphQL(in *model.FormationAssignment)
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.FormationAssignment) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewFormationAssignmentConverter creates a new instance of FormationAssignmentConverter. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
