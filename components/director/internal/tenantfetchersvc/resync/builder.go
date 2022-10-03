@@ -2,8 +2,9 @@ package resync
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"

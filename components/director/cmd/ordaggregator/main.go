@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 

@@ -3,10 +3,11 @@ package notification
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
-	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+	"github.com/tidwall/gjson"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"

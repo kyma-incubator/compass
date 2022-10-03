@@ -5,10 +5,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 

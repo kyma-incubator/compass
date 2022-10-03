@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/go-multierror"
 

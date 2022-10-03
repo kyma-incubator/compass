@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
