@@ -830,6 +830,24 @@ func TestResolver_FormationAssignment(t *testing.T) {
 			ExpectedFormationAssignment: nil,
 			ExpectedErrMsg:              testErr.Error(),
 		},
+		{
+			Name:            "Returns error when converting to GraphQL failed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetForFormation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(formationAssignmentModel, nil).Once()
+				return faSvc
+			},
+			ConverterFn: func() *automock.FormationAssignmentConverter {
+				faConv := &automock.FormationAssignmentConverter{}
+				faConv.On("ToGraphQL", formationAssignmentModel).Return(nil, testErr).Once()
+				return faConv
+			},
+			Formation:                   gqlFormation,
+			FormationAssignmentID:       FormationAssignmentID,
+			ExpectedFormationAssignment: nil,
+			ExpectedErrMsg:              testErr.Error(),
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -920,8 +938,8 @@ func TestResolver_FormationAssignments(t *testing.T) {
 			},
 			ConverterFn: func() *automock.FormationAssignmentConverter {
 				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("MultipleToGraphQL", fasFirst).Return(gqlFAFist).Once()
-				faConv.On("MultipleToGraphQL", fasSecond).Return(gqlFASecond).Once()
+				faConv.On("MultipleToGraphQL", fasFirst).Return(gqlFAFist, nil).Once()
+				faConv.On("MultipleToGraphQL", fasSecond).Return(gqlFASecond, nil).Once()
 				return faConv
 			},
 			ExpectedResult: gqlFAPages,
@@ -954,8 +972,24 @@ func TestResolver_FormationAssignments(t *testing.T) {
 			},
 			ConverterFn: func() *automock.FormationAssignmentConverter {
 				faConv := &automock.FormationAssignmentConverter{}
-				faConv.On("MultipleToGraphQL", fasFirst).Return(gqlFAFist).Once()
-				faConv.On("MultipleToGraphQL", fasSecond).Return(gqlFASecond).Once()
+				faConv.On("MultipleToGraphQL", fasFirst).Return(gqlFAFist, nil).Once()
+				faConv.On("MultipleToGraphQL", fasSecond).Return(gqlFASecond, nil).Once()
+				return faConv
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    []error{testErr},
+		},
+		{
+			Name:            "Returns error when converting to GraphQL failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(faPages, nil).Once()
+				return faSvc
+			},
+			ConverterFn: func() *automock.FormationAssignmentConverter {
+				faConv := &automock.FormationAssignmentConverter{}
+				faConv.On("MultipleToGraphQL", fasFirst).Return(nil, testErr).Once()
 				return faConv
 			},
 			ExpectedResult: nil,

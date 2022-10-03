@@ -11,6 +11,8 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
+	testing "testing"
+
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -56,13 +58,8 @@ func (_m *NotificationsService) SendNotifications(ctx context.Context, notificat
 	return r0
 }
 
-type NewNotificationsServiceT interface {
-	mock.TestingT
-	Cleanup(func())
-}
-
-// NewNotificationsService creates a new instance of NotificationsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationsService(t NewNotificationsServiceT) *NotificationsService {
+// NewNotificationsService creates a new instance of NotificationsService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
+func NewNotificationsService(t testing.TB) *NotificationsService {
 	mock := &NotificationsService{}
 	mock.Mock.Test(t)
 
