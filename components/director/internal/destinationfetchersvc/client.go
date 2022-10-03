@@ -37,7 +37,7 @@ type DestinationServiceAPIConfig struct {
 	RetryAttempts                 uint          `envconfig:"APP_DESTINATIONS_RETRY_ATTEMPTS,default=3"`
 	EndpointGetTenantDestinations string        `envconfig:"APP_ENDPOINT_GET_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
 	EndpointFindDestination       string        `envconfig:"APP_ENDPOINT_FIND_DESTINATION,default=/destination-configuration/v1/destinations"`
-	Timeout                       time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
+	Timeout                       time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=5s"`
 	PageSize                      int           `envconfig:"APP_DESTINATIONS_PAGE_SIZE,default=100"`
 	PagingPageParam               string        `envconfig:"APP_DESTINATIONS_PAGE_PARAM,default=$page"`
 	PagingSizeParam               string        `envconfig:"APP_DESTINATIONS_PAGE_SIZE_PARAM,default=$pageSize"`
@@ -45,6 +45,7 @@ type DestinationServiceAPIConfig struct {
 	PagingCountHeader             string        `envconfig:"APP_DESTINATIONS_PAGE_COUNT_HEADER,default=Page-Count"`
 	SkipSSLVerify                 bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
 	OAuthTokenPath                string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
+	ResponseCorrelationIDHeader   string        `envconfig:"APP_DESTINATIONS_RESPONSE_CORRELATION_ID_HEADER,default=x-vcap-request-id"`
 }
 
 // Client destination client
@@ -183,14 +184,12 @@ func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServic
 }
 
 // FetchTenantDestinationsPage returns a page of destinations
-func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (*DestinationResponse, error) {
+func (c *Client) FetchTenantDestinationsPage(ctx context.Context, tenantID, page string) (*DestinationResponse, error) {
 	fetchURL := c.apiURL + c.apiConfig.EndpointGetTenantDestinations
 	req, err := c.buildFetchRequest(ctx, fetchURL, page)
 	if err != nil {
 		return nil, err
 	}
-
-	log.C(ctx).Debugf("Getting destinations page: %s data from: %s", page, fetchURL)
 
 	destinationsPageCallStart := time.Now()
 	res, err := c.sendRequestWithRetry(req)
@@ -225,13 +224,13 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 		return nil, errors.Errorf("invalid header '%s' '%s'", c.apiConfig.PagingCountHeader, pageCountHeader)
 	}
 
-	logDuration := log.C(ctx).Infof // set on debugf
+	logDuration := log.C(ctx).Debugf
 	if destinationsPageCallFullDuration > c.apiConfig.Timeout/5 {
 		logDuration = log.C(ctx).Warnf
 	}
-	const destinationCorrelationHeader = "x-vcap-request-id"
-	logDuration("Getting destinations page %s/%s took %s, %s of which for headers, %s: '%s'",
-		page, pageCountHeader, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String(),
+	destinationCorrelationHeader := c.apiConfig.ResponseCorrelationIDHeader
+	logDuration("Getting tenant '%s' destinations page %s/%s took %s, %s of which for headers, %s: '%s'",
+		tenantID, page, pageCountHeader, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String(),
 		destinationCorrelationHeader, res.Header.Get(destinationCorrelationHeader))
 
 	return &DestinationResponse{
@@ -260,7 +259,6 @@ func (c *Client) buildFetchRequest(ctx context.Context, url string, page string)
 // FetchDestinationSensitiveData returns sensitive data of a destination
 func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationName string) ([]byte, error) {
 	fetchURL := fmt.Sprintf("%s%s/%s", c.apiURL, c.apiConfig.EndpointFindDestination, destinationName)
-	log.C(ctx).Infof("Getting destination data from: %s", fetchURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fetchURL, nil)
 	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
 	if err != nil {

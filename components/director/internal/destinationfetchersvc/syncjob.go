@@ -6,8 +6,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"golang.org/x/sync/semaphore"
@@ -59,18 +57,11 @@ func syncSubscribedTenantsDestinations(ctx context.Context, subscribedTenants []
 	return int(syncedTenants)
 }
 
-func ctxWithCorrelationID(ctx context.Context) context.Context {
-	correlationID := uid.NewService().Generate()
-	headers := map[string]string{"X-Correlation-Id": correlationID}
-	return correlation.SaveToContext(ctx, headers)
-}
-
 // StartDestinationFetcherSyncJob starts destination sync job and blocks
 func StartDestinationFetcherSyncJob(ctx context.Context, cfg SyncJobConfig, destinationSyncer DestinationSyncer) error {
 	resyncJob := cronjob.CronJob{
 		Name: "DestinationFetcherSync",
 		Fn: func(jobCtx context.Context) {
-			jobCtx = ctxWithCorrelationID(jobCtx)
 			subscribedTenants, err := destinationSyncer.GetSubscribedTenantIDs(jobCtx)
 			if err != nil {
 				log.C(jobCtx).WithError(err).Errorf("Could not fetch subscribed tenants for destination resync")

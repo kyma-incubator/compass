@@ -42,7 +42,7 @@ func (h *handler) SyncTenantDestinations(writer http.ResponseWriter, request *ht
 
 	tenantID, err := tenant.LoadFromContext(request.Context())
 	if err != nil {
-		log.C(ctx).WithError(err).Error("Failed to sync tenant destinations")
+		log.C(ctx).WithError(err).Error("Failed to load tenant ID from request")
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -52,6 +52,9 @@ func (h *handler) SyncTenantDestinations(writer http.ResponseWriter, request *ht
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		log.C(ctx).WithError(err).Error("Failed to sync tenant destinations")
+
 		http.Error(writer, fmt.Sprintf("Failed to sync destinations for tenant %s",
 			tenantID), http.StatusInternalServerError)
 		return

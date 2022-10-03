@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -124,7 +123,7 @@ func (d *DestinationService) generateClientBySubdomainLabel(ctx context.Context,
 
 // SyncTenantDestinations syncs destinations for a given tenant
 func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantID string) error {
-	log.C(ctx).Infof("Starting sync of destinations for tenant '%s'", tenantID)
+	log.C(ctx).Debugf("Starting sync of destinations for tenant '%s'", tenantID)
 
 	subdomainLabel, err := d.getSubscribedSubdomainLabel(ctx, tenantID)
 	if err != nil {
@@ -136,26 +135,22 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 		return errors.Wrapf(err, "failed to create destinations client for tenant '%s'", tenantID)
 	}
 
-	// Make it debugf
-	log.C(ctx).Infof("Syncing destinations for tenant '%s' with subdomain '%s'", tenantID, subdomainLabel.Value)
+	log.C(ctx).Debugf("Successfully created destination client for tenant '%s' with subdomain '%s'", tenantID, subdomainLabel.Value)
 
 	revision := d.UUIDSvc.Generate()
 	err = d.walkthroughPages(ctx, client, tenantID, func(destinations []destinationFromService) error {
-		start := time.Now()
-		err := d.mapDestinationsToTenant(ctx, tenantID, revision, destinations)
-		log.C(ctx).Infof("Mapping destinations for tenant '%s' took %s", tenantID, time.Since(start)) // remove
-		return err
+		return d.mapDestinationsToTenant(ctx, tenantID, revision, destinations)
 	})
 	if err != nil {
 		return errors.Wrapf(err, "failed to sync destinations for tenant '%s'", tenantID)
 	}
-	// Make it debugf
-	log.C(ctx).Infof("Upserted destinations for tenant '%s'. Removing old destinations...", tenantID)
+
+	log.C(ctx).Debugf("Successfully processed all destinations for tenant '%s'. Removing old destinations...", tenantID)
 
 	if err := d.deleteMissingDestinations(ctx, revision, tenantID); err != nil {
 		return errors.Wrapf(err, "failed to delete missing destinations for tenant '%s'", tenantID)
 	}
-	log.C(ctx).Infof("Finished sync of destinations for tenant '%s'", tenantID)
+	log.C(ctx).Debugf("Finished sync of destinations for tenant '%s'", tenantID)
 
 	return nil
 }
@@ -240,7 +235,7 @@ func (d *DestinationService) walkthroughPages(
 	hasMorePages := true
 	logPageCount := sync.Once{}
 	for page := 1; hasMorePages; page++ {
-		resp, err := client.FetchTenantDestinationsPage(ctx, strconv.Itoa(page))
+		resp, err := client.FetchTenantDestinationsPage(ctx, tenantID, strconv.Itoa(page))
 		if err != nil {
 			return errors.Wrap(err, "failed to fetch destinations page")
 		}
@@ -251,7 +246,7 @@ func (d *DestinationService) walkthroughPages(
 
 		hasMorePages = page < resp.pageCount
 		logPageCount.Do(func() {
-			log.C(ctx).Infof("Found %d pages of destinations in tenant '%s'", resp.pageCount, tenantID)
+			log.C(ctx).Debugf("Found %d pages of destinations in tenant '%s'", resp.pageCount, tenantID)
 		})
 	}
 	return nil
@@ -268,6 +263,8 @@ func (d *DestinationService) FetchDestinationsSensitiveData(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("Getting data for destinations %v from tenant '%s'", destinationNames, tenantID)
 
 	nameCount := len(destinationNames)
 	results := make([][]byte, nameCount)
@@ -304,7 +301,6 @@ func (d *DestinationService) FetchDestinationsSensitiveData(ctx context.Context,
 
 func fetchDestination(ctx context.Context, destinationName string, weighted *semaphore.Weighted,
 	client *Client, resChan chan []byte, errChan chan error) {
-	log.C(ctx).Infof("Fetching data for destination: %s \n", destinationName)
 	defer weighted.Release(1)
 	result, err := client.FetchDestinationSensitiveData(ctx, destinationName)
 	if err != nil {

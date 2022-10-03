@@ -68,7 +68,7 @@ func TestClient_TenantEndpoint(t *testing.T) {
 
 	t.Run("Success fetching data page 3", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantDestinationsPage(ctx, "3")
+		res, err := client.FetchTenantDestinationsPage(ctx, tenantID, "3")
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -76,7 +76,7 @@ func TestClient_TenantEndpoint(t *testing.T) {
 
 	t.Run("Success fetching data page but no Page-Count header is in response", func(t *testing.T) {
 		// WHEN
-		_, err := client.FetchTenantDestinationsPage(ctx, noPageCountHeader)
+		_, err := client.FetchTenantDestinationsPage(ctx, tenantID, noPageCountHeader)
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), fmt.Sprintf("missing '%s' header from destinations response",
@@ -85,7 +85,7 @@ func TestClient_TenantEndpoint(t *testing.T) {
 
 	t.Run("Fetch should fail with status code 500, but do three attempts", func(t *testing.T) {
 		// WHEN
-		_, err := client.FetchTenantDestinationsPage(ctx, "internalServerError")
+		_, err := client.FetchTenantDestinationsPage(ctx, tenantID, "internalServerError")
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "#3")
@@ -94,7 +94,7 @@ func TestClient_TenantEndpoint(t *testing.T) {
 
 	t.Run("Fetch should fail with status code 4xx", func(t *testing.T) {
 		// WHEN
-		_, err := client.FetchTenantDestinationsPage(ctx, "forbidden")
+		_, err := client.FetchTenantDestinationsPage(ctx, tenantID, "forbidden")
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "status code 403")

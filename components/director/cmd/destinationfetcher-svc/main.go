@@ -59,7 +59,7 @@ type config struct {
 	ServerTimeout              time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout            time.Duration `envconfig:"default=10s"`
 	DestinationFetcherSchedule time.Duration `envconfig:"APP_DESTINATION_FETCHER_SCHEDULE,default=10m"`
-	TenantSyncTimeout          time.Duration `envconfig:"APP_DESTINATION_FETCHER_TENANT_SYNC_TIMEOUT,default=10m"`
+	TenantSyncTimeout          time.Duration `envconfig:"APP_DESTINATION_FETCHER_TENANT_SYNC_TIMEOUT,default=5m"`
 	ParallelTenantSyncs        int           `envconfig:"APP_DESTINATION_FETCHER_PARALLEL_TENANTS,default=10"`
 	DestinationsRootAPI        string        `envconfig:"APP_ROOT_API,default=/destinations"`
 
