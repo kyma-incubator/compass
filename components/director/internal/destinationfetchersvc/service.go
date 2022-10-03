@@ -139,6 +139,9 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 
 	revision := d.UUIDSvc.Generate()
 	err = d.walkthroughPages(ctx, client, tenantID, func(destinations []destinationFromService) error {
+		if len(destinations) == 0 {
+			return nil
+		}
 		return d.mapDestinationsToTenant(ctx, tenantID, revision, destinations)
 	})
 	if err != nil {

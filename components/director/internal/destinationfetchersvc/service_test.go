@@ -213,6 +213,23 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 				assert.NoError(t, err)
 			},
 		},
+		{
+			Name: "When destination service returns zero pages - just remove old ones",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:  unusedBundleRepo,
+			DestRepo:    successfulDeleteDestinationRepo,
+			UUIDService: successfulUUIDService,
+			DestServiceHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Page-Count", "0")
+
+				_, err := w.Write([]byte("[]"))
+				assert.NoError(t, err)
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
