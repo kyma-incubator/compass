@@ -626,7 +626,19 @@ func (s *service) processFormationAssignments(ctx context.Context, formationAssi
 
 //TODO maybe add update
 func (s *service) createOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error {
-	assignment.State = string(determineAssignmentState(response, model.AssignFormation))
+	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
+		assignment.State = string(model.ReadyAssignmentState)
+	}
+	if response != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+		assignment.State = string(model.ConfigPendingAssignmentState)
+	}
+	if response != nil && response.Config != nil {
+		assignment.Value = json.RawMessage(*response.Config)
+	}
+	if response != nil && response.Error != nil {
+		assignment.State = string(model.CreateErrorAssignmentState)
+		assignment.Value = json.RawMessage(*response.Error)
+	}
 	if _, err := s.formationAssignmentService.Create(ctx, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
@@ -1219,10 +1231,4 @@ func setToSlice(set map[string]bool) []string {
 		result = append(result, key)
 	}
 	return result
-}
-
-func determineAssignmentState(response *webhookdir.Response, operation model.FormationOperation) model.FormationAssignmentState {
-	//TODO derive state from response
-	//NOTE response may be nil
-	return model.ReadyAssignmentState
 }
