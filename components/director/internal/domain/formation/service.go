@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -518,20 +519,20 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant which then will unassign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formation.ID, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-	}
-
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		if err = s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
 			return nil, err
 		}
 
 		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
 		if err != nil {
 			return nil, err
+		}
+
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
@@ -555,6 +556,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
 		if err != nil {
 			return nil, err
+		}
+
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		if err = s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
@@ -595,14 +601,15 @@ func (s *service) processFormationAssignments(ctx context.Context, formationAssi
 	if err != nil {
 		return err
 	}
-
+	spew.Dump(responses)
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
+	fmt.Println("HOHOHO")
 	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(formationAssignmentsForObject, requests, responses)
+	spew.Dump(assignmentRequestMappings)
 	for _, mapping := range assignmentRequestMappings {
 		if err := operation(ctx, mapping.FormationAssignment, mapping.Response); err != nil {
 			return err
@@ -627,7 +634,10 @@ func (s *service) createOrUpdateFormationAssignment(ctx context.Context, assignm
 }
 
 func (s *service) cleanupFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error {
-	if response == nil || response.ActualStatusCode == response.SuccessStatusCode {
+	spew.Dump(response)
+	//todo add logs
+
+	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
 		if err := s.formationAssignmentService.Delete(ctx, assignment.ID); err != nil {
 			return errors.Wrapf(err, "While deleting formation assignment with id %q", assignment.ID)
 		}
@@ -635,9 +645,9 @@ func (s *service) cleanupFormationAssignment(ctx context.Context, assignment *mo
 		return nil
 	}
 
-	if response.ActualStatusCode == response.IncompleteStatusCode {
+	if *response.ActualStatusCode == *response.IncompleteStatusCode {
 		assignment.State = string(model.DeleteErrorAssignmentState)
-		assignment.Value = json.RawMessage("Error while deleting assignment: config propagation is not supported on unassing notifications")
+		assignment.Value = json.RawMessage("Error while deleting assignment: config propagation is not supported on unassign notifications")
 		if err := s.formationAssignmentService.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}

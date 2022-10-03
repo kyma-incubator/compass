@@ -68,7 +68,13 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	})
 	h.mappings[id] = mappings
 
-	response := "{\\\"config\\\": \\\"{\\\"key\\\":\\\"value\\\"}\\\"}"
+	response := struct {
+		config map[string]string
+	}{
+		config: map[string]string{
+			"key": "value",
+		},
+	}
 	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 }
 
