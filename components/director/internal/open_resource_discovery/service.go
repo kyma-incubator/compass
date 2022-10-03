@@ -798,7 +798,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 			} else {
 				log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
 			}
-      return errors.Wrapf(err, "error processing ORD documents")
+			return errors.Wrapf(err, "error processing ORD documents")
 		}
 		log.C(ctx).Info("Successfully processed ORD documents")
 	}
