@@ -30,7 +30,7 @@ func syncSubscribedTenantsDestinations(ctx context.Context, subscribedTenants []
 	destinationSyncer DestinationSyncer) int {
 	parallelTenantsSemaphore := semaphore.NewWeighted(int64(cfg.ParallelTenants))
 	wg := sync.WaitGroup{}
-	var syncedTenants int32
+	var syncedTenants uint32
 	for _, tenantID := range subscribedTenants {
 		wg.Add(1)
 		go func(tenantID string) {
@@ -45,8 +45,8 @@ func syncSubscribedTenantsDestinations(ctx context.Context, subscribedTenants []
 				log.C(ctx).WithError(err).Error()
 				return
 			}
-			atomic.AddInt32(&syncedTenants, 1)
-			currentlySynced := int(atomic.LoadInt32(&syncedTenants))
+			atomic.AddUint32(&syncedTenants, 1)
+			currentlySynced := int(atomic.LoadUint32(&syncedTenants))
 			// Log on each ParallelTenants synced to track progress
 			if currentlySynced%cfg.ParallelTenants == 0 {
 				log.C(ctx).Infof("%d/%d tenants have been synced", currentlySynced, len(subscribedTenants))

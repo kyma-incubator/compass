@@ -53,7 +53,7 @@ func (h *handler) SyncTenantDestinations(writer http.ResponseWriter, request *ht
 			return
 		}
 
-		log.C(ctx).WithError(err).Error("Failed to sync tenant destinations")
+		log.C(ctx).WithError(err).Errorf("Failed to sync destinations for tenant '%s'", tenantID)
 
 		http.Error(writer, fmt.Sprintf("Failed to sync destinations for tenant %s",
 			tenantID), http.StatusInternalServerError)
