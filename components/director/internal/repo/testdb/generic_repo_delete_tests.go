@@ -15,7 +15,6 @@ import (
 )
 
 // RepoDeleteTestSuite represents a generic test suite for repository Delete method of any global entity or entity that has externally managed tenants in m2m table/view.
-// This test suite is not suitable for entities with embedded tenant in them.
 type RepoDeleteTestSuite struct {
 	Name                  string
 	SQLQueryDetails       []SQLQueryDetails
