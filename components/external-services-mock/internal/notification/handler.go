@@ -1,7 +1,10 @@
 package notification
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 
@@ -64,6 +67,42 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 		RequestBody: bodyBytes,
 	})
 	h.mappings[id] = mappings
+
+	response := "{\\\"config\\\": \\\"{\\\"key\\\":\\\"value\\\"}\\\"}"
+	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+}
+
+func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
+	id, ok := mux.Vars(r)["tenantId"]
+	if !ok {
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+		return
+	}
+
+	if _, ok = h.mappings[id]; !ok {
+		h.mappings[id] = make([]Response, 0, 1)
+	}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		return
+	}
+	mappings := h.mappings[id]
+	mappings = append(h.mappings[id], Response{
+		Operation:   Assign,
+		RequestBody: bodyBytes,
+	})
+	h.mappings[id] = mappings
+
+	if config := gjson.Get(string(bodyBytes), "configuration").String(); config == "" {
+		writer.WriteHeader(http.StatusNoContent)
+	}
 
 	writer.WriteHeader(http.StatusOK)
 }
