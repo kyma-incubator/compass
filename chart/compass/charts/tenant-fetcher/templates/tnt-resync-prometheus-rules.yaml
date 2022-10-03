@@ -1,3 +1,10 @@
+{{- $enabledTFCnt := 0 }}
+{{- range $tenantFetcher, $config := .Values.global.tenantFetchers }}
+  {{- if eq $config.enabled true }}
+    {{ $enabledTFCnt =  add 1 $enabledTFCnt }}
+  {{- end }}
+{{- end }}
+{{- if ne $enabledTFCnt 0 }} # there is at least one TF Job enabled
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -10,7 +17,7 @@ spec:
     - name: {{ template "fullname" . }}-rules
       rules:
         {{- range $tenantFetcher, $config := .Values.global.tenantFetchers }}
-        {{if eq $config.enabled true}}
+        {{- if eq $config.enabled true }}
         - alert: CompassTenantResync{{ $tenantFetcher }}JobFailure
           annotations:
             description: Failure for {{ $tenantFetcher }} tenant resync job
@@ -20,3 +27,4 @@ spec:
             severity: critical
         {{- end }}
         {{- end }}
+{{- end }}
