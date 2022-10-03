@@ -1684,7 +1684,6 @@ const (
 	WebhookTypeRegisterApplication      WebhookType = "REGISTER_APPLICATION"
 	WebhookTypeUnregisterApplication    WebhookType = "UNREGISTER_APPLICATION"
 	WebhookTypeOpenResourceDiscovery    WebhookType = "OPEN_RESOURCE_DISCOVERY"
-	WebhookTypeUnpairApplication        WebhookType = "UNPAIR_APPLICATION"
 )
 
 var AllWebhookType = []WebhookType{
@@ -1693,12 +1692,11 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
-	WebhookTypeUnpairApplication,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery:
 		return true
 	}
 	return false
