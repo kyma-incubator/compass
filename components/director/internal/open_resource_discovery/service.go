@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -17,6 +18,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
+
+// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
+const MultiErrorSeparator string = "* "
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
@@ -163,7 +167,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	}
 
 	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs); err != nil {
-		return errors.Wrap(err, "invalid documents")
+		return &ORDDocumentValidationError{errors.Wrap(err, "invalid documents")}
 	}
 
 	if err := documents.Sanitize(baseURL); err != nil {
@@ -784,7 +788,17 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
 		if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
-			return errors.Wrapf(err, "error processing ORD documents")
+			if ordValidationError, ok := err.(*ORDDocumentValidationError); ok {
+				validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
+
+				// the first item in the slice is the message 'invalid documents' for the wrapped errors
+				validationErrors = validationErrors[1:]
+
+				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
+			} else {
+				log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
+			}
+      return errors.Wrapf(err, "error processing ORD documents")
 		}
 		log.C(ctx).Info("Successfully processed ORD documents")
 	}
