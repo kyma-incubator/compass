@@ -16,6 +16,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
@@ -36,7 +37,7 @@ type DestinationServiceAPIConfig struct {
 	RetryAttempts                 uint          `envconfig:"APP_DESTINATIONS_RETRY_ATTEMPTS,default=3"`
 	EndpointGetTenantDestinations string        `envconfig:"APP_ENDPOINT_GET_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
 	EndpointFindDestination       string        `envconfig:"APP_ENDPOINT_FIND_DESTINATION,default=/destination-configuration/v1/destinations"`
-	Timeout                       time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
+	Timeout                       time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=5s"`
 	PageSize                      int           `envconfig:"APP_DESTINATIONS_PAGE_SIZE,default=100"`
 	PagingPageParam               string        `envconfig:"APP_DESTINATIONS_PAGE_PARAM,default=$page"`
 	PagingSizeParam               string        `envconfig:"APP_DESTINATIONS_PAGE_SIZE_PARAM,default=$pageSize"`
@@ -44,6 +45,7 @@ type DestinationServiceAPIConfig struct {
 	PagingCountHeader             string        `envconfig:"APP_DESTINATIONS_PAGE_COUNT_HEADER,default=Page-Count"`
 	SkipSSLVerify                 bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
 	OAuthTokenPath                string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
+	ResponseCorrelationIDHeader   string        `envconfig:"APP_DESTINATIONS_RESPONSE_CORRELATION_ID_HEADER,default=x-vcap-request-id"`
 }
 
 // Client destination client
@@ -128,7 +130,7 @@ func (d *destinationFromService) ToModel() (model.DestinationInput, error) {
 // DestinationResponse paged response from destination service
 type DestinationResponse struct {
 	destinations []destinationFromService
-	pageCount    string
+	pageCount    int
 }
 
 // NewClient returns new destination client
@@ -182,15 +184,14 @@ func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServic
 }
 
 // FetchTenantDestinationsPage returns a page of destinations
-func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (*DestinationResponse, error) {
-	url := c.apiURL + c.apiConfig.EndpointGetTenantDestinations
-	req, err := c.buildRequest(ctx, url, page)
+func (c *Client) FetchTenantDestinationsPage(ctx context.Context, tenantID, page string) (*DestinationResponse, error) {
+	fetchURL := c.apiURL + c.apiConfig.EndpointGetTenantDestinations
+	req, err := c.buildFetchRequest(ctx, fetchURL, page)
 	if err != nil {
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Getting destinations page: %s data from: %s\n", page, url)
-
+	destinationsPageCallStart := time.Now()
 	res, err := c.sendRequestWithRetry(req)
 	if err != nil {
 		return nil, err
@@ -205,15 +206,32 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 		return nil, errors.Errorf("received status code %d when trying to fetch destinations", res.StatusCode)
 	}
 
+	destinationsPageCallHeadersDuration := time.Since(destinationsPageCallStart)
+
 	var destinations []destinationFromService
 	if err := json.NewDecoder(res.Body).Decode(&destinations); err != nil {
 		return nil, errors.Wrap(err, "failed to decode response body")
 	}
 
-	pageCount := res.Header.Get(c.apiConfig.PagingCountHeader)
-	if pageCount == "" {
-		return nil, errors.Errorf("failed to extract header '%s' from destinations response", c.apiConfig.PagingCountHeader)
+	destinationsPageCallFullDuration := time.Since(destinationsPageCallStart)
+
+	pageCountHeader := res.Header.Get(c.apiConfig.PagingCountHeader)
+	if pageCountHeader == "" {
+		return nil, errors.Errorf("missing '%s' header from destinations response", c.apiConfig.PagingCountHeader)
 	}
+	pageCount, err := strconv.Atoi(pageCountHeader)
+	if err != nil {
+		return nil, errors.Errorf("invalid header '%s' '%s'", c.apiConfig.PagingCountHeader, pageCountHeader)
+	}
+
+	logDuration := log.C(ctx).Debugf
+	if destinationsPageCallFullDuration > c.apiConfig.Timeout/5 {
+		logDuration = log.C(ctx).Warnf
+	}
+	destinationCorrelationHeader := c.apiConfig.ResponseCorrelationIDHeader
+	logDuration("Getting tenant '%s' destinations page %s/%s took %s, %s of which for headers, %s: '%s'",
+		tenantID, page, pageCountHeader, destinationsPageCallFullDuration.String(), destinationsPageCallHeadersDuration.String(),
+		destinationCorrelationHeader, res.Header.Get(destinationCorrelationHeader))
 
 	return &DestinationResponse{
 		destinations: destinations,
@@ -221,12 +239,15 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 	}, nil
 }
 
-func (c *Client) buildRequest(ctx context.Context, url string, page string) (*http.Request, error) {
+func (c *Client) buildFetchRequest(ctx context.Context, url string, page string) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to build request")
 	}
-
+	headers := correlation.HeadersForRequest(req)
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
 	query := req.URL.Query()
 	query.Add(c.apiConfig.PagingCountParam, "true")
 	query.Add(c.apiConfig.PagingPageParam, page)
@@ -237,9 +258,9 @@ func (c *Client) buildRequest(ctx context.Context, url string, page string) (*ht
 
 // FetchDestinationSensitiveData returns sensitive data of a destination
 func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationName string) ([]byte, error) {
-	url := fmt.Sprintf("%s%s/%s", c.apiURL, c.apiConfig.EndpointFindDestination, destinationName)
-	log.C(ctx).Infof("Getting destination data from: %s \n", url)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	fetchURL := fmt.Sprintf("%s%s/%s", c.apiURL, c.apiConfig.EndpointFindDestination, destinationName)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fetchURL, nil)
+	req.Header.Set(correlation.RequestIDHeaderKey, correlation.CorrelationIDForRequest(req))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to build request")
 	}

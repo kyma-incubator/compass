@@ -36,8 +36,7 @@ const (
 )
 
 var (
-	labelTenantID = "f09ba084-0e82-49ab-ab2e-b7ecc988312f"
-	testErr       = errors.New("test error")
+	testErr = errors.New("test error")
 )
 
 func TestService_SyncTenantDestinations(t *testing.T) {
@@ -211,6 +210,23 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 				)
 				_, err := w.Write([]byte(fmt.Sprintf("[%s, %s, %s, %s]",
 					invalidDest1, invalidDest2, invalidDest3, invalidDest4)))
+				assert.NoError(t, err)
+			},
+		},
+		{
+			Name: "When destination service returns zero pages - just remove old ones",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:  unusedBundleRepo,
+			DestRepo:    successfulDeleteDestinationRepo,
+			UUIDService: successfulUUIDService,
+			DestServiceHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Page-Count", "0")
+
+				_, err := w.Write([]byte("[]"))
 				assert.NoError(t, err)
 			},
 		},
@@ -444,30 +460,33 @@ func successfulUUIDService() *automock.UUIDService {
 
 func successfulLabelSubdomainRequest() *automock.LabelRepo {
 	repo := &automock.LabelRepo{}
-	label := model.NewLabelForRuntime(runtimeID, labelTenantID, tenantLabelKey, subdomainLabelValue)
-	label.Tenant = &labelTenantID
+	label := model.NewLabelForRuntime(runtimeID, tenantID, tenantLabelKey, subdomainLabelValue)
+	tid := tenantID
+	label.Tenant = &tid
 	repo.On("GetSubdomainLabelForSubscribedRuntime", mock.Anything, tenantID).Return(label, nil)
 	return repo
 }
 
 func failedLabelRegionAndSuccessfulSubdomainRequest() *automock.LabelRepo {
 	repo := &automock.LabelRepo{}
-	label := model.NewLabelForRuntime(runtimeID, labelTenantID, tenantLabelKey, subdomainLabelValue)
-	label.Tenant = &labelTenantID
+	label := model.NewLabelForRuntime(runtimeID, tenantID, tenantLabelKey, subdomainLabelValue)
+	tid := tenantID
+	label.Tenant = &tid
 	repo.On("GetSubdomainLabelForSubscribedRuntime", mock.Anything, tenantID).Return(label, nil)
-	repo.On("GetByKey", mock.Anything, labelTenantID, model.TenantLabelableObject, labelTenantID, regionLabelKey).
+	repo.On("GetByKey", mock.Anything, tenantID, model.TenantLabelableObject, tenantID, regionLabelKey).
 		Return(nil, testErr)
 	return repo
 }
 
 func successfulLabelRegionAndSubdomainRequest() *automock.LabelRepo {
 	repo := &automock.LabelRepo{}
-	label := model.NewLabelForRuntime(runtimeID, labelTenantID, tenantLabelKey, subdomainLabelValue)
-	label.Tenant = &labelTenantID
+	label := model.NewLabelForRuntime(runtimeID, tenantID, tenantLabelKey, subdomainLabelValue)
+	tid := tenantID
+	label.Tenant = &tid
 	repo.On("GetSubdomainLabelForSubscribedRuntime", mock.Anything, tenantID).Return(label, nil)
-	label = model.NewLabelForRuntime(runtimeID, labelTenantID, regionLabelKey, region)
-	label.Tenant = &labelTenantID
-	repo.On("GetByKey", mock.Anything, labelTenantID, model.TenantLabelableObject, labelTenantID, regionLabelKey).
+	label = model.NewLabelForRuntime(runtimeID, tenantID, regionLabelKey, region)
+	label.Tenant = &tid
+	repo.On("GetByKey", mock.Anything, tenantID, model.TenantLabelableObject, tenantID, regionLabelKey).
 		Return(label, nil)
 	return repo
 }
@@ -503,7 +522,7 @@ func bundleRepoWithNoBundles() *automock.BundleRepo {
 func successfulDeleteDestinationRepo() *automock.DestinationRepo {
 	destinationRepo := unusedDestinationsRepo()
 	destinationRepo.On("DeleteOld",
-		mock.Anything, UUID, labelTenantID).Return(nil)
+		mock.Anything, UUID, tenantID).Return(nil)
 	return destinationRepo
 }
 
@@ -513,7 +532,7 @@ func successfulDestinationRepo(bundleID string) func() *automock.DestinationRepo
 		destinationRepo.On("Upsert",
 			mock.Anything, mock.Anything, mock.Anything, mock.Anything, bundleID, mock.Anything).Return(nil)
 		destinationRepo.On("DeleteOld",
-			mock.Anything, UUID, labelTenantID).Return(nil)
+			mock.Anything, UUID, tenantID).Return(nil)
 		return destinationRepo
 	}
 }
@@ -524,7 +543,7 @@ func successfulInsertFailingDeleteDestinationRepo(bundleID string) func() *autom
 		destinationRepo.On("Upsert",
 			mock.Anything, mock.Anything, mock.Anything, mock.Anything, bundleID, mock.Anything).Return(nil)
 		destinationRepo.On("DeleteOld",
-			mock.Anything, UUID, labelTenantID).Return(testErr)
+			mock.Anything, UUID, tenantID).Return(testErr)
 		return destinationRepo
 	}
 }
