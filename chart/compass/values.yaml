@@ -123,7 +123,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2643"
+      version: "PR-2669"
       name: compass-director
     hydrator:
       dir:
@@ -551,6 +551,7 @@ global:
     lease:
       lockname: destinationlease
     parallelTenants: 10
+    tenantSyncTimeout: "5m"
     authentication:
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
       appDestinationsSyncScope: "destinations:sync"
@@ -563,9 +564,9 @@ global:
       skipSSLValidation: false
       retry_interval: "100ms"
       retry_attempts: 3
-      goroutineLimit: 100
-      requestTimeout: "30s"
-      pageSize: 10
+      goroutineLimit: 10
+      requestTimeout: "5s"
+      pageSize: 100
       oauthTokenPath: "/oauth/token"
     instance:
       clientIdPath: "clientid"

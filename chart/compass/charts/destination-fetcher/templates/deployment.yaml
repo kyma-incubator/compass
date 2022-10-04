@@ -127,6 +127,8 @@ spec:
               value: {{ .Values.global.destinationFetcher.lease.lockname | quote }}
             - name: APP_DESTINATION_FETCHER_PARALLEL_TENANTS
               value: {{ .Values.global.destinationFetcher.parallelTenants | quote }}
+            - name: APP_DESTINATION_FETCHER_TENANT_SYNC_TIMEOUT
+              value: {{ .Values.global.destinationFetcher.tenantSyncTimeout }}
             - name: APP_ELECTION_LEASE_LOCK_NAMESPACE
               value: {{ .Release.Namespace }}
             - name: APP_DB_USER
