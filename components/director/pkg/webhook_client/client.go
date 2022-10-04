@@ -235,6 +235,7 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 				continue
 			}
 			marshal, err := json.Marshal(v)
+			marshal = bytes.ReplaceAll(marshal, []byte("\""), []byte("\\\""))
 			if err != nil {
 				return nil, err
 			}

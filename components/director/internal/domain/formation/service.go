@@ -643,11 +643,7 @@ func (s *service) createOrUpdateFormationAssignment(ctx context.Context, assignm
 	fmt.Println("RESPONSE: ")
 	spew.Dump(response)
 	if response != nil && response.Config != nil {
-		marshaled, err := json.Marshal(struct{ Config string }{Config: *response.Config})
-		if err != nil {
-			return errors.Wrapf(err, "While preparing config from response for assignment with ID %q", assignment.ID)
-		}
-		assignment.Value = marshaled
+		assignment.Value = []byte(*response.Config)
 	}
 	if response != nil && response.Error != nil && *response.Error != "" {
 		assignment.State = string(model.CreateErrorAssignmentState)

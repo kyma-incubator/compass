@@ -170,7 +170,7 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 		fmt.Println("Fails on execute")
 		return err
 	}
-
+	fmt.Println("RESULT: ", string(res.Bytes()))
 	if err = json.Unmarshal(res.Bytes(), dest); err != nil {
 		fmt.Println("Fails on unmarshal")
 		return err
