@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/go-multierror"
 
@@ -39,6 +38,11 @@ type webhookRepository interface {
 //go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type webhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
+}
+
+//go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookClient interface {
+	Do(ctx context.Context, request *webhookclient.Request) (*webhookdir.Response, error)
 }
 
 type notificationsService struct {

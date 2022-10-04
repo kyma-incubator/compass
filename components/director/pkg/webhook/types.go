@@ -167,14 +167,17 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 
 	res := new(bytes.Buffer)
 	if err = t.Execute(res, data); err != nil {
+		fmt.Println("Fails on execute")
 		return err
 	}
 
 	if err = json.Unmarshal(res.Bytes(), dest); err != nil {
+		fmt.Println("Fails on unmarshal")
 		return err
 	}
 
 	if validatable, ok := dest.(inputvalidation.Validatable); ok {
+		fmt.Println("Fails on validate")
 		return validatable.Validate()
 	}
 

@@ -70,10 +70,23 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	h.mappings[id] = mappings
 
 	response := struct {
-		config map[string]string
+		Config struct {
+			Key  string `json:"key"`
+			Key2 struct {
+				Key string `json:"key"`
+			} `json:"key2"`
+		}
 	}{
-		config: map[string]string{
-			"key": "value",
+		Config: struct {
+			Key  string `json:"key"`
+			Key2 struct {
+				Key string `json:"key"`
+			} `json:"key2"`
+		}{
+			Key: "value",
+			Key2: struct {
+				Key string `json:"key"`
+			}{Key: "value2"},
 		},
 	}
 	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)

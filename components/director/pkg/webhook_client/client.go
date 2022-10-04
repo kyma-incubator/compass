@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 
@@ -118,10 +119,13 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 	if err != nil {
 		return nil, err
 	}
-
+	spew.Dump(responseObject)
 	log.C(ctx).Info(fmt.Sprintf("Webhook response object: %v", *responseObject))
 
 	response, err := responseObject.ParseOutputTemplate(webhook.OutputTemplate)
+	fmt.Println(">>>>>>>>>>>>>>>>>> OUTPUT TEMPLATE ", webhook.OutputTemplate)
+	fmt.Println(">>>>>>>>>>>>>>>>>> RESPONSE ")
+	spew.Dump(response)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse response into webhook output template")
 	}
@@ -230,7 +234,11 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 			if v == nil {
 				continue
 			}
-			body[k] = fmt.Sprintf("%v", v)
+			marshal, err := json.Marshal(v)
+			if err != nil {
+				return nil, err
+			}
+			body[k] = string(marshal)
 		}
 	}
 

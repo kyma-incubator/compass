@@ -9,12 +9,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ListFormationAssignments(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, listFormationAssignmentsReq *gcli.Request, expectedCount int) *graphql.FormationAssignmentPage {
-	var formationAssignmentPage graphql.FormationAssignmentPage
-	err := testctx.Tc.RunOperation(ctx, gqlClient, listFormationAssignmentsReq, &formationAssignmentPage)
-	require.NoError(t, err)
-	require.NotEmpty(t, formationAssignmentPage)
-	require.Equal(t, expectedCount, formationAssignmentPage.TotalCount)
+type AssignmentState struct {
+	Config *string
+	State  string
+}
 
-	return &formationAssignmentPage
+func ListFormationAssignments(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, listFormationAssignmentsReq *gcli.Request) *graphql.FormationAssignmentPage {
+	var formation graphql.FormationExt
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, listFormationAssignmentsReq, &formation)
+	require.NoError(t, err)
+
+	return &formation.FormationAssignments
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -116,11 +115,6 @@ type automaticFormationAssignmentRepository interface {
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-}
-
-//go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
-type webhookClient interface {
-	Do(ctx context.Context, request *webhookclient.Request) (*webhookdir.Response, error)
 }
 
 //go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -312,7 +306,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err := s.processFormationAssignments(ctx, assignments, requests, s.createOrUpdateFormationAssignment); err != nil {
+		if err := s.processFormationAssignments(ctx, tnt, assignments, requests, s.createOrUpdateFormationAssignment); err != nil {
 			return nil, err
 		}
 
@@ -418,13 +412,22 @@ func (s *service) generateAssignments(ctx context.Context, tnt, objectID string,
 	return assignments, nil
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(assignments []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response) []*FormationAssignmentRequestMapping {
+func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, tenant string, assignments []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response) ([]*FormationAssignmentRequestMapping, error) {
 	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
 		mappingObject := &FormationAssignmentRequestMapping{
 			Request:             nil,
 			Response:            nil,
 			FormationAssignment: assignments[i],
+		}
+		target := assignment.Target
+		if assignment.TargetType == string(graphql.FormationObjectTypeRuntimeContext) {
+			rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, tenant, target)
+			if err != nil {
+				return nil, err
+			}
+
+			target = rtmCtx.RuntimeID
 		}
 
 	assignment:
@@ -437,7 +440,7 @@ func (s *service) matchFormationAssignmentsWithRequests(assignments []*model.For
 				objectID = *request.Webhook.ApplicationID
 			}
 
-			if objectID != assignment.Target {
+			if objectID != target {
 				continue
 			}
 
@@ -452,7 +455,7 @@ func (s *service) matchFormationAssignmentsWithRequests(assignments []*model.For
 		}
 		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
 	}
-	return formationAssignmentMapping
+	return formationAssignmentMapping, nil
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -541,7 +544,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		if err = s.processFormationAssignments(ctx, formationAssignmentsForObject, requests, s.cleanupFormationAssignment); err != nil {
+		if err = s.processFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.cleanupFormationAssignment); err != nil {
 			return nil, err
 		}
 
@@ -576,7 +579,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		if err = s.processFormationAssignments(ctx, formationAssignmentsForObject, requests, s.cleanupFormationAssignment); err != nil {
+		if err = s.processFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.cleanupFormationAssignment); err != nil {
 			return nil, err
 		}
 
@@ -597,20 +600,23 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 }
 
-func (s *service) processFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error {
+func (s *service) processFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error {
 	responses, err := s.notificationsService.SendNotifications(ctx, requests)
 	if err != nil {
 		return err
 	}
-	spew.Dump(responses)
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	fmt.Println("HOHOHO")
-	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(formationAssignmentsForObject, requests, responses)
-	spew.Dump(assignmentRequestMappings)
+
+	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, tenant, formationAssignmentsForObject, requests, responses)
+	if err != nil {
+		return errors.Wrap(err, "While mapping formationAssignments to notification requests and responses")
+	}
+	fmt.Println("SECOND TIME")
 	for _, mapping := range assignmentRequestMappings {
 		if err := operation(ctx, mapping.FormationAssignment, mapping.Response); err != nil {
 			return err
@@ -632,13 +638,26 @@ func (s *service) createOrUpdateFormationAssignment(ctx context.Context, assignm
 	if response != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 		assignment.State = string(model.ConfigPendingAssignmentState)
 	}
+
+	fmt.Println("<<<<<<<<<<<<<")
+	fmt.Println("RESPONSE: ")
+	spew.Dump(response)
 	if response != nil && response.Config != nil {
-		assignment.Value = json.RawMessage(*response.Config)
+		marshaled, err := json.Marshal(struct{ Config string }{Config: *response.Config})
+		if err != nil {
+			return errors.Wrapf(err, "While preparing config from response for assignment with ID %q", assignment.ID)
+		}
+		assignment.Value = marshaled
 	}
-	if response != nil && response.Error != nil {
+	if response != nil && response.Error != nil && *response.Error != "" {
 		assignment.State = string(model.CreateErrorAssignmentState)
-		assignment.Value = json.RawMessage(*response.Error)
+		marshaled, err := json.Marshal(struct{ Error string }{Error: *response.Error})
+		if err != nil {
+			return errors.Wrapf(err, "While preparing error message from response for assignment with ID %q", assignment.ID)
+		}
+		assignment.Value = marshaled
 	}
+	spew.Dump(assignment)
 	if _, err := s.formationAssignmentService.Create(ctx, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
@@ -660,7 +679,11 @@ func (s *service) cleanupFormationAssignment(ctx context.Context, assignment *mo
 
 	if *response.ActualStatusCode == *response.IncompleteStatusCode {
 		assignment.State = string(model.DeleteErrorAssignmentState)
-		assignment.Value = json.RawMessage("Error while deleting assignment: config propagation is not supported on unassign notifications")
+		marshaled, err := json.Marshal(struct{ Error string }{Error: "Error while deleting assignment: config propagation is not supported on unassign notifications"})
+		if err != nil {
+			return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
+		}
+		assignment.Value = marshaled
 		if err := s.formationAssignmentService.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
@@ -668,9 +691,13 @@ func (s *service) cleanupFormationAssignment(ctx context.Context, assignment *mo
 		return nil
 	}
 
-	if response.Error != nil {
+	if response.Error != nil && *response.Error != "" {
 		assignment.State = string(model.DeleteErrorAssignmentState)
-		assignment.Value = json.RawMessage(*response.Error)
+		marshaled, err := json.Marshal(struct{ Error string }{Error: *response.Error})
+		if err != nil {
+			return errors.Wrapf(err, "While preparing error message from response for assignment with ID %q", assignment.ID)
+		}
+		assignment.Value = marshaled
 		if err := s.formationAssignmentService.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}

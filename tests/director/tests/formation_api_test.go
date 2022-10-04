@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -785,7 +786,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		mode := graphql.WebhookModeSync
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
-		outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 		providerRuntimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
@@ -860,6 +861,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+		fmt.Println("BODY ", string(body))
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
@@ -869,6 +871,13 @@ func TestFormationNotifications(stdT *testing.T) {
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
+		rtmRequest := fixtures.FixGetRuntimeContextsRequest(providerRuntime.ID)
+		rtm := graphql.RuntimeExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, rtmRequest, &rtm)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(rtm.RuntimeContexts.Data))
+		runtimeContextID := rtm.RuntimeContexts.Data[0].ID
+
 		providerFormationTmplName := "provider-formation-template-name"
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
 		ft := createFormationTemplate(t, ctx, "provider", providerFormationTmplName, conf.SubscriptionProviderAppNameValue, graphql.ArtifactTypeSubscription)
@@ -877,6 +886,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
+		require.NotEmpty(t, formation.ID)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 
 		t.Log("Create integration system")
@@ -984,12 +994,57 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 		//list assignments - expect 0
+		fmt.Println("formation ID: ", formation.ID)
+		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formation.ID, 200)
+		//fmt.Println(listFormationAssignmentsRequest)
+		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, listFormationAssignmentsRequest)
+		require.Equal(t, 0, assignmentsPage.TotalCount)
+
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 		//list assignments - expect 2
+		listFormationAssignmentsRequest = fixtures.FixListFormationAssignmentRequest(formation.ID, 200)
+		assignmentsPage = fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, listFormationAssignmentsRequest)
+		assignments := assignmentsPage.Data
+		require.Equal(t, 2, assignmentsPage.TotalCount)
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			app1.ID:          {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\": \"value\"}")}},
+			runtimeContextID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\": \"value\"}")}},
+		}
+		fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+		fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+		fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+		spew.Dump(assignments)
+		fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+		fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+		fmt.Println("Expectations >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+		spew.Dump(expectedAssignments)
+
+		for _, assignment := range assignments {
+			targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+			require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
+			fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			fmt.Println("Assignment >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			spew.Dump(assignment)
+			fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			fmt.Println("Assignment Expectations >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			spew.Dump(targetAssignmentsExpectations)
+			assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+			require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
+			fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			fmt.Println("Current Expectation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			spew.Dump(assignmentExpectation)
+			require.Equal(t, assignmentExpectation.State, assignment.State)
+			fmt.Println(assignmentExpectation.Config, " hohoho ", assignment.Value)
+			assert.Equal(t, str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Value))
+		}
+
 		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 		certSecuredHTTPClient := &http.Client{
