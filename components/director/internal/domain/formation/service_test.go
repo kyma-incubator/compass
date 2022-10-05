@@ -829,6 +829,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 		LabelRepoFN                   func() *automock.LabelRepository
 		LabelServiceFn                func() *automock.LabelService
 		NotificationServiceFN         func() *automock.NotificationsService
+		FormationAssignmentServiceFn  func() *automock.FormationAssignmentService
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedASA                   model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
@@ -868,6 +869,12 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			},
 			LabelRepoFN:           unusedLabelRepo,
 			NotificationServiceFN: noActionNotificationsService,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
 				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Times(4)
@@ -931,6 +938,12 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				return runtimeContextRepo
 			},
 			NotificationServiceFN: noActionNotificationsService,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
 				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Times(4)
@@ -990,6 +1003,12 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				return repo
 			},
 			NotificationServiceFN: noActionNotificationsService,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Times(2)
@@ -1040,6 +1059,12 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				return repo
 			},
 			NotificationServiceFN: noActionNotificationsService,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("GetLabel", ctx, tnt, runtimeTypeLblInput[0]).Return(runtimeTypeLbl, nil)
@@ -1307,6 +1332,9 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			}
 
 			formationAssignmentSvc := unusedFormationAssignmentService()
+			if testCase.FormationAssignmentServiceFn != nil {
+				formationAssignmentSvc = testCase.FormationAssignmentServiceFn()
+			}
 			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
@@ -1598,6 +1626,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 		LabelServiceFn                func() *automock.LabelService
 		LabelRepositoryFn             func() *automock.LabelRepository
 		NotificationSvcFn             func() *automock.NotificationsService
+		FormationAssignmentSvcFn      func() *automock.FormationAssignmentService
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedASA                   model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
@@ -1656,7 +1685,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 
 				return repo
 			},
-			NotificationSvcFn:  noActionNotificationsService,
+			NotificationSvcFn: noActionNotificationsService,
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        fixModel(testFormationName),
 			ExpectedErrMessage: "",
@@ -1714,7 +1749,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 
 				return repo
 			},
-			NotificationSvcFn:  noActionNotificationsService,
+			NotificationSvcFn: noActionNotificationsService,
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -1762,7 +1803,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
 				return repo
 			},
-			NotificationSvcFn:  noActionNotificationsService,
+			NotificationSvcFn: noActionNotificationsService,
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -1808,7 +1855,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
 				return repo
 			},
-			NotificationSvcFn:  noActionNotificationsService,
+			NotificationSvcFn: noActionNotificationsService,
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -1852,10 +1905,11 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(testErr).Once()
 				return repo
 			},
-			NotificationSvcFn:  unusedNotificationsService,
-			InputASA:           fixModel(testFormationName),
-			ExpectedASA:        model.AutomaticScenarioAssignment{},
-			ExpectedErrMessage: testErr.Error(),
+			NotificationSvcFn:        unusedNotificationsService,
+			FormationAssignmentSvcFn: unusedFormationAssignmentService,
+			InputASA:                 fixModel(testFormationName),
+			ExpectedASA:              model.AutomaticScenarioAssignment{},
+			ExpectedErrMessage:       testErr.Error(),
 		},
 		{
 			Name:              "Returns error when checking if runtime exists by id fails",
@@ -1885,12 +1939,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			LabelRepositoryFn:  unusedLabelRepo,
-			NotificationSvcFn:  unusedNotificationsService,
-			InputASA:           fixModel(testFormationName),
-			ExpectedASA:        model.AutomaticScenarioAssignment{},
-			ExpectedErrMessage: testErr.Error(),
+			LabelServiceFn:           unusedLabelService,
+			LabelRepositoryFn:        unusedLabelRepo,
+			NotificationSvcFn:        unusedNotificationsService,
+			FormationAssignmentSvcFn: unusedFormationAssignmentService,
+			InputASA:                 fixModel(testFormationName),
+			ExpectedASA:              model.AutomaticScenarioAssignment{},
+			ExpectedErrMessage:       testErr.Error(),
 		},
 		{
 			Name:              "Returns error when listing owned runtimes fails",
@@ -1916,12 +1971,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			LabelRepositoryFn:  unusedLabelRepo,
-			NotificationSvcFn:  unusedNotificationsService,
-			InputASA:           fixModel(testFormationName),
-			ExpectedASA:        model.AutomaticScenarioAssignment{},
-			ExpectedErrMessage: testErr.Error(),
+			LabelServiceFn:           unusedLabelService,
+			LabelRepositoryFn:        unusedLabelRepo,
+			NotificationSvcFn:        unusedNotificationsService,
+			FormationAssignmentSvcFn: unusedFormationAssignmentService,
+			InputASA:                 fixModel(testFormationName),
+			ExpectedASA:              model.AutomaticScenarioAssignment{},
+			ExpectedErrMessage:       testErr.Error(),
 		},
 		{
 			Name:              "Returns error when getting formation template by id fails",
@@ -1943,12 +1999,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			LabelRepositoryFn:  unusedLabelRepo,
-			NotificationSvcFn:  unusedNotificationsService,
-			InputASA:           fixModel(testFormationName),
-			ExpectedASA:        model.AutomaticScenarioAssignment{},
-			ExpectedErrMessage: testErr.Error(),
+			LabelServiceFn:           unusedLabelService,
+			LabelRepositoryFn:        unusedLabelRepo,
+			NotificationSvcFn:        unusedNotificationsService,
+			FormationAssignmentSvcFn: unusedFormationAssignmentService,
+			InputASA:                 fixModel(testFormationName),
+			ExpectedASA:              model.AutomaticScenarioAssignment{},
+			ExpectedErrMessage:       testErr.Error(),
 		},
 		{
 			Name:              "Returns error when getting formation by name fails",
@@ -1969,6 +2026,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelServiceFn:                unusedLabelService,
 			LabelRepositoryFn:             unusedLabelRepo,
 			NotificationSvcFn:             unusedNotificationsService,
+			FormationAssignmentSvcFn:      unusedFormationAssignmentService,
 			InputASA:                      fixModel(testFormationName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            testErr.Error(),
@@ -1988,6 +2046,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelServiceFn:                unusedLabelService,
 			LabelRepositoryFn:             unusedLabelRepo,
 			NotificationSvcFn:             unusedNotificationsService,
+			FormationAssignmentSvcFn:      unusedFormationAssignmentService,
 			InputASA:                      fixModel(testFormationName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            testErr.Error(),
@@ -2006,7 +2065,8 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			lblService := testCase.LabelServiceFn()
 			lblRepo := testCase.LabelRepositoryFn()
 			notificationSvc := testCase.NotificationSvcFn()
-			formationAssignmentSvc := unusedFormationAssignmentService()
+			formationAssignmentSvc := testCase.FormationAssignmentSvcFn()
+
 			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
@@ -2179,6 +2239,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		LabelServiceFn                func() *automock.LabelService
 		LabelRepositoryFn             func() *automock.LabelRepository
 		NotificationServiceFn         func() *automock.NotificationsService
+		FormationAssignmentServiceFn  func() *automock.FormationAssignmentService
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
 	}{
@@ -2234,8 +2295,14 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			},
 			LabelRepositoryFn:     unusedLabelRepo,
 			NotificationServiceFn: noActionNotificationsService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    "",
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			InputASA:           fixModel(testFormationName),
+			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Returns error when assigning runtime context to formation fails",
@@ -2289,9 +2356,15 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				return svc
 			},
 			NotificationServiceFn: noActionNotificationsService,
-			LabelRepositoryFn:     unusedLabelRepo,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			LabelRepositoryFn:  unusedLabelRepo,
+			InputASA:           fixModel(testFormationName),
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Returns error when listing runtime contexts for runtime fails",
@@ -2327,9 +2400,15 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				return svc
 			},
 			NotificationServiceFn: noActionNotificationsService,
-			LabelRepositoryFn:     unusedLabelRepo,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			LabelRepositoryFn:  unusedLabelRepo,
+			InputASA:           fixModel(testFormationName),
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Returns error when listing all runtimes fails",
@@ -2363,9 +2442,15 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				return svc
 			},
 			NotificationServiceFn: noActionNotificationsService,
-			LabelRepositoryFn:     unusedLabelRepo,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			LabelRepositoryFn:  unusedLabelRepo,
+			InputASA:           fixModel(testFormationName),
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Returns error when assigning runtime to formation fails",
@@ -2395,10 +2480,11 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("GetLabel", ctx, tnt, runtimeLblInputs[0]).Return(nil, testErr)
 				return svc
 			},
-			LabelRepositoryFn:     unusedLabelRepo,
-			NotificationServiceFn: unusedNotificationsService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			LabelRepositoryFn:            unusedLabelRepo,
+			NotificationServiceFn:        unusedNotificationsService,
+			FormationAssignmentServiceFn: unusedFormationAssignmentService,
+			InputASA:                     fixModel(testFormationName),
+			ExpectedErrMessage:           testErr.Error(),
 		},
 		{
 			Name: "Returns error when checking if runtime exists by id fails",
@@ -2422,11 +2508,12 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
-			LabelRepositoryFn:     unusedLabelRepo,
-			NotificationServiceFn: unusedNotificationsService,
-			LabelServiceFn:        unusedLabelService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			LabelRepositoryFn:            unusedLabelRepo,
+			NotificationServiceFn:        unusedNotificationsService,
+			FormationAssignmentServiceFn: unusedFormationAssignmentService,
+			LabelServiceFn:               unusedLabelService,
+			InputASA:                     fixModel(testFormationName),
+			ExpectedErrMessage:           testErr.Error(),
 		},
 		{
 			Name: "Returns error when listing owned runtimes fails",
@@ -2446,11 +2533,12 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
-			LabelRepositoryFn:     unusedLabelRepo,
-			NotificationServiceFn: unusedNotificationsService,
-			LabelServiceFn:        unusedLabelService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			LabelRepositoryFn:            unusedLabelRepo,
+			NotificationServiceFn:        unusedNotificationsService,
+			FormationAssignmentServiceFn: unusedFormationAssignmentService,
+			LabelServiceFn:               unusedLabelService,
+			InputASA:                     fixModel(testFormationName),
+			ExpectedErrMessage:           testErr.Error(),
 		},
 		{
 			Name:                 "Returns error getting formation template by ID fails",
@@ -2466,11 +2554,12 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr).Once()
 				return repo
 			},
-			LabelRepositoryFn:     unusedLabelRepo,
-			NotificationServiceFn: unusedNotificationsService,
-			LabelServiceFn:        unusedLabelService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			LabelRepositoryFn:            unusedLabelRepo,
+			NotificationServiceFn:        unusedNotificationsService,
+			FormationAssignmentServiceFn: unusedFormationAssignmentService,
+			LabelServiceFn:               unusedLabelService,
+			InputASA:                     fixModel(testFormationName),
+			ExpectedErrMessage:           testErr.Error(),
 		},
 		{
 			Name:                 "Returns error getting formation by name fails",
@@ -2483,6 +2572,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			},
 			LabelRepositoryFn:             unusedLabelRepo,
 			NotificationServiceFn:         unusedNotificationsService,
+			FormationAssignmentServiceFn:  unusedFormationAssignmentService,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			LabelServiceFn:                unusedLabelService,
 			InputASA:                      fixModel(testFormationName),
@@ -2500,7 +2590,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			labelRepo := testCase.LabelRepositoryFn()
 
 			notificationSvc := testCase.NotificationServiceFn()
-			formationAssignmentSvc := unusedFormationAssignmentService()
+			formationAssignmentSvc := testCase.FormationAssignmentServiceFn()
 			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
@@ -2634,6 +2724,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		LabelServiceFn                func() *automock.LabelService
 		LabelRepositoryFn             func() *automock.LabelRepository
 		NotificationServiceFn         func() *automock.NotificationsService
+		FormationAssignmentServiceFn  func() *automock.FormationAssignmentService
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
 	}{
@@ -2689,8 +2780,14 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				return repo
 			},
 			NotificationServiceFn: noActionNotificationsService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    "",
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			InputASA:           fixModel(testFormationName),
+			ExpectedErrMessage: "",
 		},
 		{
 			Name: "Returns error when unassigning runtime context fails",
@@ -2745,8 +2842,14 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				return repo
 			},
 			NotificationServiceFn: noActionNotificationsService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			InputASA:           fixModel(testFormationName),
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Returns error when listing runtime contexts for runtime fails",
@@ -2791,8 +2894,14 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				return repo
 			},
 			NotificationServiceFn: noActionNotificationsService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			InputASA:           fixModel(testFormationName),
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Returns error when listing all runtimes fails",
@@ -2835,8 +2944,14 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				return repo
 			},
 			NotificationServiceFn: noActionNotificationsService,
-			InputASA:              fixModel(testFormationName),
-			ExpectedErrMessage:    testErr.Error(),
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			InputASA:           fixModel(testFormationName),
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Returns error when unassigning runtime from formation fails",
@@ -2983,6 +3098,9 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				notificationSvc = testCase.NotificationServiceFn()
 			}
 			formationAssignmentSvc := unusedFormationAssignmentService()
+			if testCase.FormationAssignmentServiceFn != nil {
+				formationAssignmentSvc = testCase.FormationAssignmentServiceFn()
+			}
 			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
