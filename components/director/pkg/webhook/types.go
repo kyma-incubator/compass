@@ -107,10 +107,6 @@ func (r *Response) Validate() error {
 		return errors.New("missing Output Template success status code field")
 	}
 
-	if r.IncompleteStatusCode == nil {
-		return errors.New("missing Output Template incomplete status code field")
-	}
-
 	if r.Error == nil {
 		return errors.New("missing Output Template error field")
 	}
