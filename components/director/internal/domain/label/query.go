@@ -161,8 +161,9 @@ func shouldGlobalSubaccountExists(filter *string) (bool, error) {
 		return true, nil
 	}
 
-	isJson := json.Valid([]byte(*filter))
-	if !isJson {
+	// check if *filter is valid json
+	var js map[string]interface{}
+	if err := json.Unmarshal([]byte(*filter), &js); err != nil {
 		return true, nil
 	}
 
