@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -642,7 +643,7 @@ func (s *service) createOrUpdateFormationAssignment(ctx context.Context, assignm
 	fmt.Println("<<<<<<<<<<<<<")
 	fmt.Println("RESPONSE: ")
 	spew.Dump(response)
-	if response != nil && response.Config != nil {
+	if response != nil && response.Config != nil && *response.Config != "" {
 		assignment.Value = []byte(*response.Config)
 	}
 	if response != nil && response.Error != nil && *response.Error != "" {

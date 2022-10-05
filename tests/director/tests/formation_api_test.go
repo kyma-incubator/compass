@@ -1137,6 +1137,25 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 	outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 	formationTmplName := "app-to-app-formation-template-name"
+
+	certSecuredHTTPClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: cc.Get()[conf.ExternalClientCertSecretName].Certificate,
+						PrivateKey:  cc.Get()[conf.ExternalClientCertSecretName].PrivateKey,
+					},
+				},
+				ClientAuth:         tls.RequireAndVerifyClientCert,
+				InsecureSkipVerify: conf.SkipSSLValidation,
+			},
+		},
+	}
+	cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
 	// TODO: Remove runtimeType once we support app only formations
 	ft := createFormationTemplate(t, ctx, "app-to-app", formationTmplName, "dummy-runtime-type", graphql.ArtifactTypeSubscription)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
@@ -1312,24 +1331,6 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	}
 	assertFormationAssignments(t, ctx, tnt, formation.ID, 2, expectedAssignments)
 
-	certSecuredHTTPClient := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Certificates: []tls.Certificate{
-					{
-						Certificate: cc.Get()[conf.ExternalClientCertSecretName].Certificate,
-						PrivateKey:  cc.Get()[conf.ExternalClientCertSecretName].PrivateKey,
-					},
-				},
-				ClientAuth:         tls.RequireAndVerifyClientCert,
-				InsecureSkipVerify: conf.SkipSSLValidation,
-			},
-		},
-	}
-
-	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-
 	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	assertNotificationsCountForTenant(t, body, app1.ID, 1)
 
@@ -1399,6 +1400,215 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 		}
 	}
 	require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")
+}
+
+func TestFormationAssignments(t *testing.T) {
+	ctx := context.TODO()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	urlTemplateRuntime := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/rtm-id{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+	inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+	outputTemplateRuntime := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+
+	urlTemplateApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/configuration/{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+	inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+	outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+
+	certSecuredHTTPClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: cc.Get()[conf.ExternalClientCertSecretName].Certificate,
+						PrivateKey:  cc.Get()[conf.ExternalClientCertSecretName].PrivateKey,
+					},
+				},
+				ClientAuth:         tls.RequireAndVerifyClientCert,
+				InsecureSkipVerify: conf.SkipSSLValidation,
+			},
+		},
+	}
+	cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+	mode := graphql.WebhookModeSync
+
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "app-template")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	applicationType := "SAP Cloud for Customer"
+	appRegion := "test-app-region"
+	appNamespace := "compass.test"
+	localTenantID := "local-tenant-id"
+	t.Logf("Create application template for type %q", applicationType)
+	appTemplateInput := graphql.ApplicationTemplateInput{
+		Name:        applicationType,
+		Description: &applicationType,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:          "{{name}}",
+			ProviderName:  str.Ptr("compass"),
+			Description:   ptr.String("test {{display-name}}"),
+			LocalTenantID: &localTenantID,
+			Webhooks: []*graphql.WebhookInput{
+				{
+					Type: graphql.WebhookTypeConfigurationChanged,
+					Auth: &graphql.AuthInput{
+						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
+					},
+					Mode:           &mode,
+					URLTemplate:    &urlTemplateApplication,
+					InputTemplate:  &inputTemplateApplication,
+					OutputTemplate: &outputTemplateApplication,
+				},
+			},
+			Labels: graphql.Labels{
+				"applicationType": applicationType,
+				"region":          appRegion,
+			},
+		},
+		Placeholders: []*graphql.PlaceholderDefinitionInput{
+			{
+				Name: "name",
+			},
+			{
+				Name: "display-name",
+			},
+		},
+		ApplicationNamespace: &appNamespace,
+		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
+	require.NoError(t, err)
+
+	appFromTmplSrc := graphql.ApplicationFromTemplateInput{
+		TemplateName: applicationType, Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: "name",
+				Value:       "app1-formation-notifications-tests",
+			},
+			{
+				Placeholder: "display-name",
+				Value:       "App 1",
+			},
+		},
+	}
+
+	t.Log("Create application")
+	appFromTmplSrcGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc)
+	require.NoError(t, err)
+	createAppFromTmplFirstRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
+	actualApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplFirstRequest, &actualApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+	t.Logf("actualApp ID: %q", actualApp.ID)
+
+	runtimeName := "formation-assignment-runtime"
+	runtimeInput := graphql.RuntimeRegisterInput{
+		Name:        runtimeName,
+		Description: str.Ptr(runtimeName),
+		Webhooks: []*graphql.WebhookInput{
+			{
+				Type: graphql.WebhookTypeConfigurationChanged,
+				Auth: &graphql.AuthInput{
+					AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
+				},
+				Mode:           &mode,
+				URLTemplate:    &urlTemplateRuntime,
+				InputTemplate:  &inputTemplateRuntime,
+				OutputTemplate: &outputTemplateRuntime,
+			},
+		},
+	}
+
+	actualRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, runtimeInput, conf.GatewayOauth)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
+	require.NotEmpty(t, actualRuntime)
+	require.NotEmpty(t, actualRuntime.ID)
+
+	formationName := "app-to-app-formation-name"
+	t.Logf("Creating formation with name: %q", formationName)
+	actualFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	assert.NotEmpty(t, actualFormation.ID)
+
+	var assignedFormation graphql.Formation
+
+	t.Logf("Assign runtime to formation %s", formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualRuntime.ID, graphql.FormationObjectTypeRuntime, tenantId)
+	assignReq := fixtures.FixAssignFormationRequest(actualRuntime.ID, string(graphql.FormationObjectTypeRuntime), formationName)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, assignReq, &assignedFormation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, assignedFormation.Name)
+	//list assignments - expect 0
+	assertFormationAssignments(t, ctx, tenantId, actualFormation.ID, 0, nil)
+
+	t.Logf("Application to formation %s", formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApp.ID, graphql.FormationObjectTypeApplication, tenantId)
+	assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), formationName)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, assignReq, &assignedFormation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, assignedFormation.Name)
+
+	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+		actualRuntime.ID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("null")}}, // Should expect CONFIG_PENDING state when reverse notifications are implemented
+		actualApp.ID:     {actualRuntime.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
+	}
+	assertFormationAssignments(t, ctx, tenantId, actualFormation.ID, 2, expectedAssignments)
+
+	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	assertNotificationsCountForTenant(t, body, "rtm-id", 1)
+
+	notificationsForConsumerTenant := gjson.GetBytes(body, "rtm-id")
+	assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
+
+	assertFormationNotification(t, assignNotificationForApp1, "assign", actualFormation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+	t.Logf("Unassign application from formation %s", formationName)
+	assignReq = fixtures.FixUnassignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), formationName)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, assignReq, &assignedFormation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, assignedFormation.Name)
+
+	body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	assertNotificationsCountForTenant(t, body, "rtm-id", 2)
+
+	notificationsForConsumerTenant = gjson.GetBytes(body, "rtm-id")
+
+	unassignNotificationFound := false
+	for _, notification := range notificationsForConsumerTenant.Array() {
+		op := notification.Get("Operation").String()
+		if op == "unassign" {
+			unassignNotificationFound = true
+			assertFormationNotification(t, notification, "unassign", actualFormation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		}
+	}
+	assert.True(t, unassignNotificationFound)
+
+	//list assignments - expect 0
+	assertFormationAssignments(t, ctx, tenantId, actualFormation.ID, 0, nil)
+
+	t.Logf("Unassign runtime from formation %s", formationName)
+	assignReq = fixtures.FixUnassignFormationRequest(actualRuntime.ID, string(graphql.FormationObjectTypeRuntime), formationName)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, assignReq, &assignedFormation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, assignedFormation.Name)
 }
 
 func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
