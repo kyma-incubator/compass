@@ -746,7 +746,7 @@ func TestPgRepository_ListByScenarios(t *testing.T) {
 		repository := runtime.NewRepository(nil)
 
 		// WHEN
-		actual, err := repository.ListByScenariosAndIDs(ctx, tenantID, []string{}, []string{})
+		actual, err := repository.ListByScenarios(ctx, tenantID, []string{})
 
 		// THEN
 		assert.NoError(t, err)

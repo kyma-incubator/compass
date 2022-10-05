@@ -305,7 +305,6 @@ func (r *pgRepository) ListByScenariosAndRuntimeIDs(ctx context.Context, tenant 
 }
 
 // ListByScenarios lists all runtime contexts that are in any of the given scenarios
-// TODO Unit Tests
 func (r *pgRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error) {
 	if len(scenarios) == 0 {
 		return nil, nil
