@@ -281,17 +281,17 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
-		if err != nil {
-			return nil, err
-		}
-
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
 		responses, err := s.notificationsService.SendNotifications(ctx, requests)
+		if err != nil {
+			return nil, err
+		}
+
+		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, err
 		}
@@ -415,11 +415,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-		}
-
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
@@ -428,6 +423,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		responses, err := s.notificationsService.SendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
+		}
+
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
@@ -448,11 +448,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-		}
-
 		if err = s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				return formationFromDB, nil
@@ -468,6 +463,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		responses, err := s.notificationsService.SendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
+		}
+
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
