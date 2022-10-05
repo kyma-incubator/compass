@@ -1,6 +1,7 @@
 package label
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -28,6 +29,10 @@ const (
 	stmtPrefixFormat           string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL AND`
 	stmtPrefixGlobalFormat     string         = `SELECT "%s" FROM %s WHERE "%s" IS NOT NULL`
 )
+
+type queryFilter struct {
+	exists bool
+}
 
 // FilterQuery builds select query for given filters
 //
@@ -103,13 +108,17 @@ func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombin
 
 		// TODO: for optimization it can be detected if the given Key was already added to the query
 		// if so, it can be omitted
-		// TODO [missing] -> json
-		//type query struct{
-		//	exists bool
-		//	value string
-		//}
-		//{key:"global_subaccount_id", query:"{\"exists\":\"false\",\"value\":\"\"}"}
-		if !(lblFilter.Key == globalSubaccountIDLabelKey && lblFilter.Query != nil) || *lblFilter.Query != "\"[missing]\"" {
+
+		shouldKeyExists := true
+		var err error
+		if lblFilter.Key == globalSubaccountIDLabelKey {
+			shouldKeyExists, err = shouldGlobalSubaccountExists(lblFilter.Query)
+			if err != nil {
+				return "", nil, errors.Wrap(err, "while determining if global_subaccount_id exists")
+			}
+		}
+
+		if shouldKeyExists {
 			queryBuilder.WriteString(` AND "key" = ?`)
 			args = append(args, lblFilter.Key)
 		}
@@ -135,7 +144,7 @@ func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombin
 				queryValue = `array[` + strings.Join(queryValues, ",") + `]`
 
 				queryBuilder.WriteString(fmt.Sprintf(` AND "value" ?| %s`, queryValue))
-			} else if lblFilter.Key == globalSubaccountIDLabelKey && queryValue == "\"[missing]\"" {
+			} else if lblFilter.Key == globalSubaccountIDLabelKey && !shouldKeyExists {
 				queryBuilder.WriteString(` AND "app_id" NOT IN (SELECT "app_id" FROM labels WHERE key = 'global_subaccount_id')`)
 			} else {
 				args = append(args, queryValue)
@@ -145,4 +154,22 @@ func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombin
 	}
 
 	return queryBuilder.String(), args, nil
+}
+
+func shouldGlobalSubaccountExists(filter *string) (bool, error) {
+	if filter == nil {
+		return true, nil
+	}
+
+	isJson := json.Valid([]byte(*filter))
+	if !isJson {
+		return true, nil
+	}
+
+	query := &queryFilter{}
+	if err := json.Unmarshal([]byte(*filter), query); err != nil {
+		return false, err
+	}
+
+	return query.exists, nil
 }
