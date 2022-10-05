@@ -2,15 +2,12 @@ package formation
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 
@@ -127,63 +124,50 @@ type formationAssignmentService interface {
 	ListFormationAssignmentsForObject(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
 	Delete(ctx context.Context, id string) error
-}
-
-//go:generate mockery --exported --name=formationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationAssignmentConverter interface {
-	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
+	ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error
+	CreateOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error
+	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
+	CleanupFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error
 }
 
 type service struct {
-	transact                     persistence.Transactioner
-	labelDefRepository           labelDefRepository
-	labelRepository              labelRepository
-	formationRepository          FormationRepository
-	formationTemplateRepository  FormationTemplateRepository
-	labelService                 labelService
-	labelDefService              labelDefService
-	asaService                   automaticFormationAssignmentService
-	uuidService                  uuidService
-	tenantSvc                    tenantService
-	repo                         automaticFormationAssignmentRepository
-	applicationRepository        applicationRepository
-	runtimeRepo                  runtimeRepository
-	runtimeContextRepo           runtimeContextRepository
-	formationAssignmentService   formationAssignmentService
-	formationAssignmentConverter formationAssignmentConverter
-	notificationsService         NotificationsService
-	runtimeTypeLabelKey          string
-	applicationTypeLabelKey      string
-}
-
-type FormationAssignmentRequestMapping struct {
-	Request             *webhookclient.Request
-	Response            *webhookdir.Response
-	FormationAssignment *model.FormationAssignment
+	labelDefRepository          labelDefRepository
+	labelRepository             labelRepository
+	formationRepository         FormationRepository
+	formationTemplateRepository FormationTemplateRepository
+	labelService                labelService
+	labelDefService             labelDefService
+	asaService                  automaticFormationAssignmentService
+	uuidService                 uuidService
+	tenantSvc                   tenantService
+	repo                        automaticFormationAssignmentRepository
+	runtimeRepo                 runtimeRepository
+	runtimeContextRepo          runtimeContextRepository
+	formationAssignmentService  formationAssignmentService
+	notificationsService        NotificationsService
+	runtimeTypeLabelKey         string
+	applicationTypeLabelKey     string
 }
 
 // NewService creates formation service
-func NewService(transact persistence.Transactioner, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, applicationRepository applicationRepository, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, formationAssignmentConverter formationAssignmentConverter, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
-		transact:                     transact,
-		labelDefRepository:           labelDefRepository,
-		labelRepository:              labelRepository,
-		formationRepository:          formationRepository,
-		formationTemplateRepository:  formationTemplateRepository,
-		labelService:                 labelService,
-		labelDefService:              labelDefService,
-		asaService:                   asaService,
-		uuidService:                  uuidService,
-		tenantSvc:                    tenantSvc,
-		repo:                         asaRepo,
-		applicationRepository:        applicationRepository,
-		runtimeRepo:                  runtimeRepo,
-		runtimeContextRepo:           runtimeContextRepo,
-		formationAssignmentService:   formationAssignmentService,
-		formationAssignmentConverter: formationAssignmentConverter,
-		notificationsService:         notificationsService,
-		runtimeTypeLabelKey:          runtimeTypeLabelKey,
-		applicationTypeLabelKey:      applicationTypeLabelKey,
+		labelDefRepository:          labelDefRepository,
+		labelRepository:             labelRepository,
+		formationRepository:         formationRepository,
+		formationTemplateRepository: formationTemplateRepository,
+		labelService:                labelService,
+		labelDefService:             labelDefService,
+		asaService:                  asaService,
+		uuidService:                 uuidService,
+		tenantSvc:                   tenantSvc,
+		repo:                        asaRepo,
+		runtimeRepo:                 runtimeRepo,
+		runtimeContextRepo:          runtimeContextRepo,
+		formationAssignmentService:  formationAssignmentService,
+		notificationsService:        notificationsService,
+		runtimeTypeLabelKey:         runtimeTypeLabelKey,
+		applicationTypeLabelKey:     applicationTypeLabelKey,
 	}
 }
 
@@ -297,7 +281,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		assignments, err := s.generateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, err
 		}
@@ -307,7 +291,12 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err := s.processFormationAssignments(ctx, tnt, assignments, requests, s.createOrUpdateFormationAssignment); err != nil {
+		responses, err := s.notificationsService.SendNotifications(ctx, requests)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, responses, s.formationAssignmentService.CreateOrUpdateFormationAssignment); err != nil {
 			return nil, err
 		}
 
@@ -348,115 +337,6 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID 
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
 	}
 	return nil
-}
-
-func generateAssignmentsForParticipant(tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType graphql.FormationObjectType, participant model.Identifiable) []*model.FormationAssignment {
-	assignments := make([]*model.FormationAssignment, 0, 2)
-	assignments = append(assignments, &model.FormationAssignment{
-		FormationID: formation.ID,
-		TenantID:    tnt,
-		Source:      objectID,
-		SourceType:  string(objectType),
-		Target:      participant.GetID(),
-		TargetType:  string(participantType),
-		State:       string(model.ReadyAssignmentState),
-		Value:       nil,
-	})
-	assignments = append(assignments, &model.FormationAssignment{
-		FormationID: formation.ID,
-		TenantID:    tnt,
-		Source:      participant.GetID(),
-		SourceType:  string(participantType),
-		Target:      objectID,
-		TargetType:  string(objectType),
-		State:       string(model.ReadyAssignmentState),
-		Value:       nil,
-	})
-	return assignments
-}
-
-func (s *service) generateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error) {
-	applications, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tnt, []string{formation.Name})
-	if err != nil {
-		return nil, err
-	}
-
-	runtimes, err := s.runtimeRepo.ListByScenarios(ctx, tnt, []string{formation.Name})
-	if err != nil {
-		return nil, err
-	}
-
-	runtimeContexts, err := s.runtimeContextRepo.ListByScenarios(ctx, tnt, []string{formation.Name})
-	if err != nil {
-		return nil, err
-	}
-
-	assignments := make([]*model.FormationAssignment, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2)
-	for _, app := range applications {
-		if app.ID == objectID {
-			continue
-		}
-		assignments = append(assignments, generateAssignmentsForParticipant(tnt, objectID, objectType, formation, graphql.FormationObjectTypeApplication, app)...)
-	}
-	for _, runtime := range runtimes {
-		if runtime.ID == objectID {
-			continue
-		}
-		assignments = append(assignments, generateAssignmentsForParticipant(tnt, objectID, objectType, formation, graphql.FormationObjectTypeRuntime, runtime)...)
-	}
-	for _, runtimeCtx := range runtimeContexts {
-		if runtimeCtx.ID == objectID {
-			continue
-		}
-		assignments = append(assignments, generateAssignmentsForParticipant(tnt, objectID, objectType, formation, graphql.FormationObjectTypeRuntimeContext, runtimeCtx)...)
-	}
-	return assignments, nil
-}
-
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, tenant string, assignments []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response) ([]*FormationAssignmentRequestMapping, error) {
-	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
-	for i, assignment := range assignments {
-		mappingObject := &FormationAssignmentRequestMapping{
-			Request:             nil,
-			Response:            nil,
-			FormationAssignment: assignments[i],
-		}
-		target := assignment.Target
-		if assignment.TargetType == string(graphql.FormationObjectTypeRuntimeContext) {
-			rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, tenant, target)
-			if err != nil {
-				return nil, err
-			}
-
-			target = rtmCtx.RuntimeID
-		}
-
-	assignment:
-		for j, request := range requests {
-			var objectID string
-			if request.Webhook.RuntimeID != nil {
-				objectID = *request.Webhook.RuntimeID
-			}
-			if request.Webhook.ApplicationID != nil {
-				objectID = *request.Webhook.ApplicationID
-			}
-
-			if objectID != target {
-				continue
-			}
-
-			participants := request.Object.GetParticipants()
-			for _, id := range participants {
-				if assignment.Source == id {
-					mappingObject.Request = requests[j]
-					mappingObject.Response = responses[j]
-					break assignment
-				}
-			}
-		}
-		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
-	}
-	return formationAssignmentMapping, nil
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -545,7 +425,12 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		if err = s.processFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.cleanupFormationAssignment); err != nil {
+		responses, err := s.notificationsService.SendNotifications(ctx, requests)
+		if err != nil {
+			return nil, err
+		}
+
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			return nil, err
 		}
 
@@ -580,7 +465,12 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		if err = s.processFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.cleanupFormationAssignment); err != nil {
+		responses, err := s.notificationsService.SendNotifications(ctx, requests)
+		if err != nil {
+			return nil, err
+		}
+
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			return nil, err
 		}
 
@@ -599,110 +489,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
-}
-
-func (s *service) processFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error {
-	responses, err := s.notificationsService.SendNotifications(ctx, requests)
-	if err != nil {
-		return err
-	}
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	fmt.Println("HOHOHO")
-
-	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, tenant, formationAssignmentsForObject, requests, responses)
-	if err != nil {
-		return errors.Wrap(err, "While mapping formationAssignments to notification requests and responses")
-	}
-	fmt.Println("SECOND TIME")
-	for _, mapping := range assignmentRequestMappings {
-		if err := operation(ctx, mapping.FormationAssignment, mapping.Response); err != nil {
-			return err
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-//TODO maybe add update
-func (s *service) createOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error {
-	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
-		assignment.State = string(model.ReadyAssignmentState)
-	}
-	if response != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
-		assignment.State = string(model.ConfigPendingAssignmentState)
-	}
-
-	fmt.Println("<<<<<<<<<<<<<")
-	fmt.Println("RESPONSE: ")
-	spew.Dump(response)
-	if response != nil && response.Config != nil && *response.Config != "" {
-		assignment.Value = []byte(*response.Config)
-	}
-	if response != nil && response.Error != nil && *response.Error != "" {
-		assignment.State = string(model.CreateErrorAssignmentState)
-		marshaled, err := json.Marshal(struct{ Error string }{Error: *response.Error})
-		if err != nil {
-			return errors.Wrapf(err, "While preparing error message from response for assignment with ID %q", assignment.ID)
-		}
-		assignment.Value = marshaled
-	}
-	spew.Dump(assignment)
-	if _, err := s.formationAssignmentService.Create(ctx, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
-		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
-	}
-
-	return nil
-}
-
-func (s *service) cleanupFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error {
-	spew.Dump(response)
-	//todo add logs
-
-	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
-		if err := s.formationAssignmentService.Delete(ctx, assignment.ID); err != nil {
-			return errors.Wrapf(err, "While deleting formation assignment with id %q", assignment.ID)
-		}
-
-		return nil
-	}
-
-	if *response.ActualStatusCode == *response.IncompleteStatusCode {
-		assignment.State = string(model.DeleteErrorAssignmentState)
-		marshaled, err := json.Marshal(struct{ Error string }{Error: "Error while deleting assignment: config propagation is not supported on unassign notifications"})
-		if err != nil {
-			return errors.Wrapf(err, "While preparing error message for assignment with ID %q", assignment.ID)
-		}
-		assignment.Value = marshaled
-		if err := s.formationAssignmentService.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
-			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
-		}
-
-		return nil
-	}
-
-	if response.Error != nil && *response.Error != "" {
-		assignment.State = string(model.DeleteErrorAssignmentState)
-		marshaled, err := json.Marshal(struct{ Error string }{Error: *response.Error})
-		if err != nil {
-			return errors.Wrapf(err, "While preparing error message from response for assignment with ID %q", assignment.ID)
-		}
-		assignment.Value = marshaled
-		if err := s.formationAssignmentService.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
-			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
-		}
-
-		return nil
-	}
-
-	return nil
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
