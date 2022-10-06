@@ -1137,6 +1137,77 @@ func TestServiceAssignFormation(t *testing.T) {
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
 		},
+		{
+			Name: "error for application if generating formation assignments fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, Tnt, &applicationLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &applicationLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			NotificationServiceFN: noActionNotificationsService,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(nil, testErr)
+				return formationAssignmentSvc
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for application if processing formation assignments fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, Tnt, &applicationLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &applicationLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			NotificationServiceFN: noActionNotificationsService,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(nil, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(testErr)
+				return formationAssignmentSvc
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
 	}
 
 	for _, testCase := range testCases {
