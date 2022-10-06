@@ -178,9 +178,17 @@ var (
 var shortDescriptionRules = []validation.Rule{
 	validation.Required, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
-
 var optionalShortDescriptionRules = []validation.Rule{
 	validation.NilOrNotEmpty, validation.Length(1, 2048), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+}
+
+// ORDDocumentValidationError contains the validation errors when aggregating ord documents
+type ORDDocumentValidationError struct {
+	Err error
+}
+
+func (e *ORDDocumentValidationError) Error() string {
+	return e.Err.Error()
 }
 
 // ValidateSystemInstanceInput validates the given SystemInstance
@@ -280,8 +288,8 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
-		validation.Field(&api.ShortDescription, shortDescriptionRules...),
-		validation.Field(&api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+		validation.Field(&api.ShortDescription, validation.Length(0, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks")),
+		validation.Field(&api.Description, validation.Length(0, MaxDescriptionLength)),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
 			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
 		})),

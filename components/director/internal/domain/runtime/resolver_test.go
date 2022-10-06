@@ -2800,6 +2800,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 }
 
 func TestResolver_RuntimeContexts(t *testing.T) {
+	// GIVEN
 	id := "foo"
 	key := "key"
 	val := "value"
@@ -2828,7 +2829,6 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 	gqlrtmCtxPageFirstApp := fixGQLRtmCtxPage(gqlRtmCtxsFirstRuntime)
 	gqlrtmCtxPageSecondApp := fixGQLRtmCtxPage(gqlRtmCtxsSecondRuntime)
 	gqlrtmCtxPages := []*graphql.RuntimeContextPage{gqlrtmCtxPageFirstApp, gqlrtmCtxPageSecondApp}
-	// GIVEN
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 

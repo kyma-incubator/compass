@@ -144,8 +144,12 @@ func main() {
 }
 
 func initAPIHandlers(ctx context.Context, logger *logrus.Entry, authenticators []authenticator.Config, cfg config, metricsCollector *metrics.Collector) http.Handler {
+	const (
+		healthzEndpoint = "/healthz"
+		readyzEndpoint  = "/readyz"
+	)
 	mainRouter := mux.NewRouter()
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint, readyzEndpoint))
 
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.NewRoute().Subrouter()
@@ -153,10 +157,10 @@ func initAPIHandlers(ctx context.Context, logger *logrus.Entry, authenticators [
 	registerHydratorHandlers(ctx, router, authenticators, cfg, metricsCollector)
 
 	logger.Infof("Registering readiness endpoint...")
-	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
+	healthCheckRouter.HandleFunc(readyzEndpoint, newReadinessHandler())
 
 	logger.Infof("Registering liveness endpoint...")
-	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
+	healthCheckRouter.HandleFunc(healthzEndpoint, newReadinessHandler())
 
 	return mainRouter
 }

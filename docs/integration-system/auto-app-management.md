@@ -76,8 +76,6 @@ mutation {
 
 Thanks to that,  Integration System can easily fetch all dependant Applications by querying them by label.
 Then, Integration System is responsible for updating Application details, like registering API and events definitions.
-Given Integration System has privileges for modifying only Applications with matching `integrationSystemID`, so it cannot
-modify Applications managed manually or managed by other Integration System.
 
 ## Integration System supporting many Application types
 

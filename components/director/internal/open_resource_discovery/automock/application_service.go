@@ -16,8 +16,8 @@ type ApplicationService struct {
 	mock.Mock
 }
 
-// GetForUpdate provides a mock function with given fields: ctx, id
-func (_m *ApplicationService) GetForUpdate(ctx context.Context, id string) (*model.Application, error) {
+// Get provides a mock function with given fields: ctx, id
+func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Application, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.Application

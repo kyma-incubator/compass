@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -17,6 +18,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 )
+
+// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
+const MultiErrorSeparator string = "* "
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
@@ -137,13 +141,13 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 		}
 
 		for _, app := range apps {
-			if err := s.lockAndProcessApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
+			if err := s.processApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 		}
 	} else if webhook.ObjectType == model.ApplicationWebhookReference {
 		appID := webhook.ObjectID
-		if err := s.lockAndProcessApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
+		if err := s.processApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
 			return err
 		}
 	}
@@ -163,7 +167,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	}
 
 	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs); err != nil {
-		return errors.Wrap(err, "invalid documents")
+		return &ORDDocumentValidationError{errors.Wrap(err, "invalid documents")}
 	}
 
 	if err := documents.Sanitize(baseURL); err != nil {
@@ -222,6 +226,18 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
+	return s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB)
+}
+
+func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	for _, ts := range tombstonesFromDB {
 		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 			return packagesFromDB[i].OrdID == ts.OrdID
@@ -266,11 +282,18 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 			}
 		}
 	}
-
-	return nil
+	return tx.Commit()
 }
 
 func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	vendorsFromDB, err := s.vendorSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
@@ -282,10 +305,23 @@ func (s *Service) processVendors(ctx context.Context, appID string, vendors []*m
 		}
 	}
 
-	return s.vendorSvc.ListByApplicationID(ctx, appID)
+	vendorsFromDB, err = s.vendorSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
+	}
+
+	return vendorsFromDB, tx.Commit()
 }
 
 func (s *Service) processProducts(ctx context.Context, appID string, products []*model.ProductInput) ([]*model.Product, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	productsFromDB, err := s.productSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing products for app with id %q", appID)
@@ -296,10 +332,24 @@ func (s *Service) processProducts(ctx context.Context, appID string, products []
 			return nil, errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
 		}
 	}
-	return s.productSvc.ListByApplicationID(ctx, appID)
+
+	productsFromDB, err = s.productSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing products for app with id %q", appID)
+	}
+
+	return productsFromDB, tx.Commit()
 }
 
 func (s *Service) processPackages(ctx context.Context, appID string, packages []*model.PackageInput, resourceHashes map[string]uint64) ([]*model.Package, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing packages for app with id %q", appID)
@@ -312,10 +362,23 @@ func (s *Service) processPackages(ctx context.Context, appID string, packages []
 		}
 	}
 
-	return s.packageSvc.ListByApplicationID(ctx, appID)
+	packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing packages for app with id %q", appID)
+	}
+
+	return packagesFromDB, tx.Commit()
 }
 
 func (s *Service) processBundles(ctx context.Context, appID string, bundles []*model.BundleCreateInput) ([]*model.Bundle, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	bundlesFromDB, err := s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing bundles for app with id %q", appID)
@@ -327,10 +390,23 @@ func (s *Service) processBundles(ctx context.Context, appID string, bundles []*m
 		}
 	}
 
-	return s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
+	bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing bundles for app with id %q", appID)
+	}
+
+	return bundlesFromDB, tx.Commit()
 }
 
 func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing apis for app with id %q", appID)
@@ -343,10 +419,23 @@ func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB [
 		}
 	}
 
-	return s.apiSvc.ListByApplicationID(ctx, appID)
+	apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing apis for app with id %q", appID)
+	}
+
+	return apisFromDB, tx.Commit()
 }
 
 func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing events for app with id %q", appID)
@@ -359,10 +448,23 @@ func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB
 		}
 	}
 
-	return s.eventSvc.ListByApplicationID(ctx, appID)
+	eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing events for app with id %q", appID)
+	}
+
+	return eventsFromDB, tx.Commit()
 }
 
 func (s *Service) processTombstones(ctx context.Context, appID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	tombstonesFromDB, err := s.tombstoneSvc.ListByApplicationID(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while listing tombstones for app with id %q", appID)
@@ -374,7 +476,12 @@ func (s *Service) processTombstones(ctx context.Context, appID string, tombstone
 		}
 	}
 
-	return s.tombstoneSvc.ListByApplicationID(ctx, appID)
+	tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing tombstones for app with id %q", appID)
+	}
+
+	return tombstonesFromDB, tx.Commit()
 }
 
 func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg model.PackageInput, pkgHash uint64) error {
@@ -639,6 +746,14 @@ func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[st
 }
 
 func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]*model.APIDefinition, map[string]*model.EventDefinition, map[string]*model.Package, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	apiDataFromDB, err := s.fetchAPIDefFromDB(ctx, appID)
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "while fetching apis for app with id %s", appID)
@@ -654,10 +769,10 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 		return nil, nil, nil, errors.Wrapf(err, "while fetching packages for app with id %s", appID)
 	}
 
-	return apiDataFromDB, eventDataFromDB, packageDataFromDB, nil
+	return apiDataFromDB, eventDataFromDB, packageDataFromDB, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, tx persistence.PersistenceTx, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
 	var documents Documents
 	var baseURL string
 	var err error
@@ -666,18 +781,26 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, tx persistence
 		ctx = addFieldToLogger(ctx, "app_id", app.ID)
 		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", webhook.ID, err)
+			return errors.Wrapf(err, "error fetching ORD document for webhook with id %q: %v", webhook.ID, err)
 		}
 	}
 
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
 		if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
-			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
-		} else {
-			log.C(ctx).Info("Successfully processed ORD documents")
-			return tx.Commit()
+			if ordValidationError, ok := err.(*ORDDocumentValidationError); ok {
+				validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
+
+				// the first item in the slice is the message 'invalid documents' for the wrapped errors
+				validationErrors = validationErrors[1:]
+
+				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
+			} else {
+				log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
+			}
+			return errors.Wrapf(err, "error processing ORD documents")
 		}
+		log.C(ctx).Info("Successfully processed ORD documents")
 	}
 	return nil
 }
@@ -739,7 +862,7 @@ func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID stri
 	return ctx, nil
 }
 
-func (s *Service) lockAndProcessApplicationWebhook(ctx context.Context, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -752,11 +875,15 @@ func (s *Service) lockAndProcessApplicationWebhook(ctx context.Context, webhook 
 	if err != nil {
 		return err
 	}
-	app, err := s.appSvc.GetForUpdate(ctx, appID)
+	app, err := s.appSvc.Get(ctx, appID)
 	if err != nil {
-		return errors.Wrapf(err, "error while locking app with id %q for update", appID)
+		return errors.Wrapf(err, "error while retrieving app with id %q", appID)
 	}
-	if err := s.processWebhookAndDocuments(ctx, tx, webhook, app, globalResourcesOrdIDs); err != nil {
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	if err = s.processWebhookAndDocuments(ctx, webhook, app, globalResourcesOrdIDs); err != nil {
 		return err
 	}
 

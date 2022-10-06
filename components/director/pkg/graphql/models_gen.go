@@ -446,6 +446,24 @@ type FetchRequestStatus struct {
 	Timestamp Timestamp                   `json:"timestamp"`
 }
 
+type FormationAssignment struct {
+	ID         string  `json:"id"`
+	Source     string  `json:"source"`
+	SourceType string  `json:"sourceType"`
+	Target     string  `json:"target"`
+	TargetType string  `json:"targetType"`
+	State      string  `json:"state"`
+	Value      *string `json:"value"`
+}
+
+type FormationAssignmentPage struct {
+	Data       []*FormationAssignment `json:"data"`
+	PageInfo   *PageInfo              `json:"pageInfo"`
+	TotalCount int                    `json:"totalCount"`
+}
+
+func (FormationAssignmentPage) IsPageable() {}
+
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`
@@ -1666,7 +1684,6 @@ const (
 	WebhookTypeRegisterApplication      WebhookType = "REGISTER_APPLICATION"
 	WebhookTypeUnregisterApplication    WebhookType = "UNREGISTER_APPLICATION"
 	WebhookTypeOpenResourceDiscovery    WebhookType = "OPEN_RESOURCE_DISCOVERY"
-	WebhookTypeUnpairApplication        WebhookType = "UNPAIR_APPLICATION"
 )
 
 var AllWebhookType = []WebhookType{
@@ -1675,12 +1692,11 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
-	WebhookTypeUnpairApplication,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery:
 		return true
 	}
 	return false

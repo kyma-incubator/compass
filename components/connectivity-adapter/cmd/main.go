@@ -67,9 +67,9 @@ func main() {
 
 func initAPIHandler(cfg config) (http.Handler, error) {
 	router := mux.NewRouter()
-	router.HandleFunc("/v1/health", health.HandleFunc).Methods(http.MethodGet)
-
-	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	const healthEndpoint = "/v1/health"
+	router.HandleFunc(healthEndpoint, health.HandleFunc).Methods(http.MethodGet)
+	router.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthEndpoint))
 
 	applicationRegistryRouter := router.PathPrefix("/{app-name}/v1").Subrouter()
 	connectorRouter := router.PathPrefix("/v1/applications").Subrouter()
