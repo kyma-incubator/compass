@@ -54,6 +54,8 @@ type runtimeRepository interface {
 }
 
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
+// Used for testing
+//nolint
 type templateInput interface {
 	ParseURLTemplate(tmpl *string) (*webhookdir.URL, error)
 	ParseInputTemplate(tmpl *string) ([]byte, error)
@@ -318,7 +320,7 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string
 			return err
 		}
 	}
-	log.C(ctx).Infof("Finished processing %d formation assigments", len(formationAssignmentsForObject)+1)
+	log.C(ctx).Infof("Finished processing %d formation assignments", len(formationAssignmentsForObject)+1)
 
 	return tx.Commit()
 }
@@ -453,6 +455,6 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 		}
 		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
 	}
-	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notificaiton", len(assignments)+1, len(requests)+1, len(assignments)-len(requests))
+	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments)+1, len(requests)+1, len(assignments)-len(requests))
 	return formationAssignmentMapping, nil
 }
