@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -96,7 +95,6 @@ func (ns *notificationsService) GenerateNotifications(ctx context.Context, tenan
 func (ns *notificationsService) SendNotifications(ctx context.Context, notifications []*webhookclient.Request) ([]*webhookdir.Response, error) {
 	log.C(ctx).Infof("Sending %d notifications", len(notifications))
 	var errs *multierror.Error
-	spew.Dump(notifications)
 	responses := make([]*webhookdir.Response, 0, len(notifications))
 	for i, notification := range notifications {
 		log.C(ctx).Infof("Sending notification %d out of %d for webhook with ID %s", i+1, len(notifications), notification.Webhook.ID)
@@ -114,7 +112,6 @@ func (ns *notificationsService) SendNotifications(ctx context.Context, notificat
 		responses = append(responses, resp)
 		log.C(ctx).Infof("Successfully sent notification %d out of %d for webhook with %s", i+1, len(notifications), notification.Webhook.ID)
 	}
-	fmt.Println("here")
 	return responses, errs.ErrorOrNil()
 }
 

@@ -24,8 +24,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -120,13 +118,9 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump(responseObject)
 	log.C(ctx).Info(fmt.Sprintf("Webhook response object: %v", *responseObject))
 
 	response, err := responseObject.ParseOutputTemplate(webhook.OutputTemplate)
-	fmt.Println(">>>>>>>>>>>>>>>>>> OUTPUT TEMPLATE ", webhook.OutputTemplate)
-	fmt.Println(">>>>>>>>>>>>>>>>>> RESPONSE ")
-	spew.Dump(response)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse response into webhook output template")
 	}
@@ -265,7 +259,8 @@ func checkForErr(resp *http.Response, successStatusCode, incompleteStatusCode *i
 		errMsg += fmt.Sprintf("response success status code was not met - expected success status code '%d'%s, got '%d'", *successStatusCode, incompleteStatusCodeMsg, resp.StatusCode)
 	}
 
-	if errorMessage != nil && *errorMessage != "" {
+	// The double quotes error message is caused by the json.Marshal
+	if errorMessage != nil && *errorMessage != "" && *errorMessage != "\"\"" {
 		errMsg += fmt.Sprintf("received error while calling external system: %s", *errorMessage)
 	}
 

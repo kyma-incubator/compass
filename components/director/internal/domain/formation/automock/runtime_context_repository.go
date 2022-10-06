@@ -82,29 +82,6 @@ func (_m *RuntimeContextRepository) GetByRuntimeID(ctx context.Context, tenant s
 	return r0, r1
 }
 
-// ListByScenarios provides a mock function with given fields: ctx, tenant, scenarios
-func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error) {
-	ret := _m.Called(ctx, tenant, scenarios)
-
-	var r0 []*model.RuntimeContext
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.RuntimeContext); ok {
-		r0 = rf(ctx, tenant, scenarios)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.RuntimeContext)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
-		r1 = rf(ctx, tenant, scenarios)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListByScenariosAndRuntimeIDs provides a mock function with given fields: ctx, tenant, scenarios, runtimeIDs
 func (_m *RuntimeContextRepository) ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, scenarios, runtimeIDs)

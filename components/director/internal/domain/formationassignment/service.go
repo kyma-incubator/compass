@@ -3,13 +3,12 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -40,30 +39,18 @@ type formationAssignmentConverter interface {
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
-	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
-	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error)
 }
 
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
-	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
-	ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error)
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
-	ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error)
 }
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
-	GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error)
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
-	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
-	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
-	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
 }
 
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -249,6 +236,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
+// GenerateAssignments creates assignments in-memory for all existing runtimes, runtime contexts and applications in the formation `formation` with `objectID`
 func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error) {
 	applications, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tnt, []string{formation.Name})
 	if err != nil {
@@ -287,6 +275,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 	return assignments, nil
 }
 
+// GenerateAssignmentsForParticipant creates in-memory the assignments for two participants in the initial state
 func (s *service) GenerateAssignmentsForParticipant(tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType graphql.FormationObjectType, participant model.Identifiable) []*model.FormationAssignment {
 	assignments := make([]*model.FormationAssignment, 0, 2)
 	assignments = append(assignments, &model.FormationAssignment{
@@ -296,7 +285,7 @@ func (s *service) GenerateAssignmentsForParticipant(tnt, objectID string, object
 		SourceType:  string(objectType),
 		Target:      participant.GetID(),
 		TargetType:  string(participantType),
-		State:       string(model.ReadyAssignmentState),
+		State:       string(model.InitialAssignmentState),
 		Value:       nil,
 	})
 	assignments = append(assignments, &model.FormationAssignment{
@@ -306,12 +295,13 @@ func (s *service) GenerateAssignmentsForParticipant(tnt, objectID string, object
 		SourceType:  string(participantType),
 		Target:      objectID,
 		TargetType:  string(objectType),
-		State:       string(model.ReadyAssignmentState),
+		State:       string(model.InitialAssignmentState),
 		Value:       nil,
 	})
 	return assignments
 }
 
+// ProcessFormationAssignments matches the formation assignments with the requests and responses and executes the provided `operation` on the FormationAssignmentMapping with the response
 func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
@@ -321,27 +311,24 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string
 
 	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, tenant, formationAssignmentsForObject, requests, responses)
 	if err != nil {
-		return errors.Wrap(err, "While mapping formationAssignments to notification requests and responses")
+		return errors.Wrap(err, "while mapping formationAssignments to notification requests and responses")
 	}
 	for _, mapping := range assignmentRequestMappings {
 		if err := operation(ctx, mapping.FormationAssignment, mapping.Response); err != nil {
 			return err
 		}
 	}
+	log.C(ctx).Infof("Finished processing %d formation assigments", len(formationAssignmentsForObject)+1)
 
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit()
 }
 
-//TODO maybe add update
+// CreateOrUpdateFormationAssignment prepares the `State` and `Config` of the formation assignment based on the response and saves it in the database
 func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error {
 	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
 		assignment.State = string(model.ReadyAssignmentState)
 	}
-	
+
 	if response != nil && response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 		assignment.State = string(model.ConfigPendingAssignmentState)
 	}
@@ -362,18 +349,20 @@ func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, assignm
 	if _, err := s.Create(ctx, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
+	log.C(ctx).Infof("Assignment with ID %s was createed with %s state", assignment.ID, assignment.State)
 
 	return nil
 }
 
+// CleanupFormationAssignment adapts the `State` and `Config` of the formation assignment based on the response and updates it
+// In the case the response is successful it deletes the formation assignment
+// In all other cases the `State` and `Config` are updated accordingly
 func (s *service) CleanupFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error {
-	spew.Dump(response)
-	//todo add logs
-
 	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
 		if err := s.Delete(ctx, assignment.ID); err != nil {
 			return errors.Wrapf(err, "While deleting formation assignment with id %q", assignment.ID)
 		}
+		log.C(ctx).Infof("Assignment with ID %s was deleted", assignment.ID)
 
 		return nil
 	}
@@ -388,6 +377,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, assignment *mo
 		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
+		log.C(ctx).Infof("Assignment with ID %s set to state %s", assignment.ID, assignment.State)
 
 		return nil
 	}
@@ -402,6 +392,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, assignment *mo
 		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
+		log.C(ctx).Infof("Assignment with ID %s set to state %s", assignment.ID, assignment.State)
 
 		return nil
 	}
@@ -409,6 +400,8 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, assignment *mo
 	return nil
 }
 
+// FormationAssignmentRequestMapping represents the mapping between the response, request and formation assignment
+// Semantically, the request and response can be nil if there is no notification for the formation assignment
 type FormationAssignmentRequestMapping struct {
 	Request             *webhookclient.Request
 	Response            *webhookdir.Response
@@ -425,12 +418,14 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 		}
 		target := assignment.Target
 		if assignment.TargetType == string(graphql.FormationObjectTypeRuntimeContext) {
+			log.C(ctx).Infof("Matching for runtime context, fetching associated runtime for runtime context with ID %s", target)
 			rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, tenant, target)
 			if err != nil {
 				return nil, err
 			}
 
 			target = rtmCtx.RuntimeID
+			log.C(ctx).Infof("Fetched associated runtime with ID %s for runtime context with ID %s", target, rtmCtx.ID)
 		}
 
 	assignment:
@@ -458,5 +453,6 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 		}
 		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
 	}
+	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notificaiton", len(assignments)+1, len(requests)+1, len(assignments)-len(requests))
 	return formationAssignmentMapping, nil
 }

@@ -37,13 +37,20 @@ type FormationAssignmentPage struct {
 	TotalCount int
 }
 
+// FormationAssignmentState represents the possible states a formation assignment can be in
 type FormationAssignmentState string
 
 const (
-	ReadyAssignmentState         FormationAssignmentState = "READY"
+	// InitialAssignmentState indicates that nothing has been done with the formation assignment
+	InitialAssignmentState FormationAssignmentState = "INITIAL"
+	// ReadyAssignmentState indicates that the formation assignment is in a ready state
+	ReadyAssignmentState FormationAssignmentState = "READY"
+	// ConfigPendingAssignmentState indicates that the config is either missing or not finalized in the formation assignment
 	ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
-	CreateErrorAssignmentState   FormationAssignmentState = "CREATE_ERROR"
-	DeleteErrorAssignmentState   FormationAssignmentState = "DELETE_ERROR"
+	// CreateErrorAssignmentState indicates that an error occurred during the creation of the formation assignment
+	CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
+	// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
+	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 )
 
 // ToModel converts FormationAssignmentInput to FormationAssignment

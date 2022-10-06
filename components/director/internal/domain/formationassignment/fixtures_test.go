@@ -132,3 +132,15 @@ func fixUUIDService() *automock.UIDService {
 	uidSvc.On("Generate").Return(TestID)
 	return uidSvc
 }
+
+func unusedUUIDService() *automock.UIDService {
+	return &automock.UIDService{}
+}
+
+func fixFormationAssignment() *model.FormationAssignment {
+	return &model.FormationAssignment{Source: "source"}
+}
+
+func fixFormationAssignmentWithID(id string) *model.FormationAssignment {
+	return &model.FormationAssignment{ID: id, Source: "source"}
+}

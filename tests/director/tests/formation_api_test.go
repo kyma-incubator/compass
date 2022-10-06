@@ -878,7 +878,6 @@ func TestFormationNotifications(stdT *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
-		fmt.Println("BODY ", string(body))
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
@@ -1514,7 +1513,6 @@ func TestFormationAssignments(t *testing.T) {
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
-	fmt.Println("BODY ", string(body))
 
 	subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 	require.NotEmpty(t, subJobStatusPath)

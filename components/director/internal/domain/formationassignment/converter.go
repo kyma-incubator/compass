@@ -93,21 +93,6 @@ func (c *converter) FromInput(in *model.FormationAssignmentInput) *model.Formati
 	}
 }
 
-func (c *converter) MultipleFromInput(in []*model.FormationAssignmentInput) []*model.FormationAssignment {
-	if in == nil {
-		return nil
-	}
-	formationAssignments := make([]*model.FormationAssignment, 0, len(in))
-	for _, fai := range in {
-		if fai == nil {
-			continue
-		}
-
-		formationAssignments = append(formationAssignments, c.FromInput(fai))
-	}
-	return formationAssignments
-}
-
 // ToEntity converts from internal model to entity
 func (c *converter) ToEntity(in *model.FormationAssignment) *Entity {
 	if in == nil {
