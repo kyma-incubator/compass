@@ -73,6 +73,20 @@ func fixFormationAssignmentModelWithFormationID(formationID string) *model.Forma
 	}
 }
 
+func fixAddIDAndTenantToFormationAssignment(fa *model.FormationAssignment) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          TestID,
+		FormationID: fa.FormationID,
+		TenantID:    TestTenantID,
+		Source:      fa.Source,
+		SourceType:  fa.SourceType,
+		Target:      fa.Target,
+		TargetType:  fa.TargetType,
+		State:       fa.State,
+		Value:       fa.Value,
+	}
+}
+
 func fixFormationAssignmentModelInput(configValue json.RawMessage) *model.FormationAssignmentInput {
 	return &model.FormationAssignmentInput{
 		FormationID: TestFormationID,
