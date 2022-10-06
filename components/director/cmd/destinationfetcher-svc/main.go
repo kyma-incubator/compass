@@ -59,7 +59,8 @@ type config struct {
 	ServerTimeout              time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout            time.Duration `envconfig:"default=10s"`
 	DestinationFetcherSchedule time.Duration `envconfig:"APP_DESTINATION_FETCHER_SCHEDULE,default=10m"`
-	ParallelTenantSyncs        int64         `envconfig:"APP_DESTINATION_FETCHER_PARALLEL_TENANTS,default=10"`
+	TenantSyncTimeout          time.Duration `envconfig:"APP_DESTINATION_FETCHER_TENANT_SYNC_TIMEOUT,default=5m"`
+	ParallelTenantSyncs        int           `envconfig:"APP_DESTINATION_FETCHER_PARALLEL_TENANTS,default=10"`
 	DestinationsRootAPI        string        `envconfig:"APP_ROOT_API,default=/destinations"`
 
 	HandlerConfig               destinationfetcher.HandlerConfig
@@ -123,13 +124,14 @@ func main() {
 		ElectionCfg:       cfg.ElectionConfig,
 		JobSchedulePeriod: cfg.DestinationFetcherSchedule,
 		ParallelTenants:   cfg.ParallelTenantSyncs,
+		TenantSyncTimeout: cfg.TenantSyncTimeout,
 	}
 	go func() {
 		err := destinationfetcher.StartDestinationFetcherSyncJob(ctx, syncJobConfig, destinationService)
 		if err != nil {
 			log.C(ctx).WithError(err).Error("Failed to start destination fetcher cronjob. Stopping app...")
-			cancel()
 		}
+		cancel()
 	}()
 
 	runMainSrv()
