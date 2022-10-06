@@ -164,6 +164,7 @@ func shouldGlobalSubaccountExists(filter *string) (bool, error) {
 	// check if *filter is valid json
 	var js map[string]interface{}
 	if err := json.Unmarshal([]byte(*filter), &js); err != nil {
+		//lint:ignore nilerr can proceed
 		return true, nil
 	}
 
