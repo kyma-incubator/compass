@@ -3,13 +3,13 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -64,6 +64,14 @@ type runtimeRepository interface {
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
+}
+
+//go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
+type templateInput interface {
+	ParseURLTemplate(tmpl *string) (*webhookdir.URL, error)
+	ParseInputTemplate(tmpl *string) ([]byte, error)
+	ParseHeadersTemplate(tmpl *string) (http.Header, error)
+	GetParticipants() []string
 }
 
 // UIDService generates UUIDs for new entities
@@ -303,19 +311,18 @@ func (s *service) GenerateAssignmentsForParticipant(tnt, objectID string, object
 	})
 	return assignments
 }
+
 func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	fmt.Println("HOHOHO")
 
 	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, tenant, formationAssignmentsForObject, requests, responses)
 	if err != nil {
 		return errors.Wrap(err, "While mapping formationAssignments to notification requests and responses")
 	}
-	fmt.Println("SECOND TIME")
 	for _, mapping := range assignmentRequestMappings {
 		if err := operation(ctx, mapping.FormationAssignment, mapping.Response); err != nil {
 			return err
@@ -334,16 +341,15 @@ func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, assignm
 	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
 		assignment.State = string(model.ReadyAssignmentState)
 	}
+	
 	if response != nil && response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 		assignment.State = string(model.ConfigPendingAssignmentState)
 	}
 
-	fmt.Println("<<<<<<<<<<<<<")
-	fmt.Println("RESPONSE: ")
-	spew.Dump(response)
 	if response != nil && response.Config != nil && *response.Config != "" {
 		assignment.Value = []byte(*response.Config)
 	}
+
 	if response != nil && response.Error != nil && *response.Error != "" {
 		assignment.State = string(model.CreateErrorAssignmentState)
 		marshaled, err := json.Marshal(struct{ Error string }{Error: *response.Error})
@@ -352,7 +358,7 @@ func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, assignm
 		}
 		assignment.Value = marshaled
 	}
-	spew.Dump(assignment)
+
 	if _, err := s.Create(ctx, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}

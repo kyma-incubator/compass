@@ -3,6 +3,12 @@ package formationassignment_test
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -78,7 +84,7 @@ func TestService_Create(t *testing.T) {
 
 			uuidSvc := fixUUIDService()
 
-			svc := formationassignment.NewService(faRepo, uuidSvc)
+			svc := formationassignment.NewService(nil, faRepo, uuidSvc, nil, nil, nil, nil)
 
 			// WHEN
 			r, err := svc.Create(testCase.Context, testCase.FormationAssignmentInput)
@@ -143,7 +149,7 @@ func TestService_Get(t *testing.T) {
 				faRepo = testCase.FormationAssignmentRepo()
 			}
 
-			svc := formationassignment.NewService(faRepo, nil)
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			r, err := svc.Get(testCase.Context, TestID)
@@ -208,7 +214,7 @@ func TestService_GetForFormation(t *testing.T) {
 				faRepo = testCase.FormationAssignmentRepo()
 			}
 
-			svc := formationassignment.NewService(faRepo, nil)
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			r, err := svc.GetForFormation(testCase.Context, TestID, TestFormationID)
@@ -298,7 +304,7 @@ func TestService_List(t *testing.T) {
 				faRepo = testCase.FormationAssignmentRepo()
 			}
 
-			svc := formationassignment.NewService(faRepo, nil)
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			r, err := svc.List(testCase.Context, testCase.InputPageSize, testCase.InputCursor)
@@ -392,10 +398,81 @@ func TestService_ListByFormationIDs(t *testing.T) {
 				faRepo = testCase.FormationAssignmentRepo()
 			}
 
-			svc := formationassignment.NewService(faRepo, nil)
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			r, err := svc.ListByFormationIDs(testCase.Context, formationsIDs, testCase.InputPageSize, testCase.InputCursor)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, faRepo)
+		})
+	}
+}
+
+func TestService_ListFormationAssignmentsForObject(t *testing.T) {
+	// GIVEN
+
+	formationID := "formationID"
+	objectID := "objectID"
+	result := []*model.FormationAssignment{faModel}
+
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		ExpectedOutput          []*model.FormationAssignment
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("ListAllForObject", ctxWithTenant, TestTenantID, formationID, objectID).Return(result, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   result,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:             "Error when loading tenant from context",
+			Context:          emptyCtx,
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: "while loading tenant from context: cannot read tenant from context",
+		},
+		{
+			Name:    "Error when listing formation assignment",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("ListAllForObject", ctxWithTenant, TestTenantID, formationID, objectID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			faRepo := &automock.FormationAssignmentRepository{}
+			if testCase.FormationAssignmentRepo != nil {
+				faRepo = testCase.FormationAssignmentRepo()
+			}
+
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
+
+			// WHEN
+			r, err := svc.ListFormationAssignmentsForObject(testCase.Context, formationID, objectID)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -481,7 +558,7 @@ func TestService_Update(t *testing.T) {
 				faRepo = testCase.FormationAssignmentRepo()
 			}
 
-			svc := formationassignment.NewService(faRepo, nil)
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Update(testCase.Context, TestID, testCase.FormationAssignmentInput)
@@ -539,7 +616,7 @@ func TestService_Delete(t *testing.T) {
 				faRepo = testCase.FormationAssignmentRepo()
 			}
 
-			svc := formationassignment.NewService(faRepo, nil)
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(testCase.Context, TestID)
@@ -597,7 +674,7 @@ func TestService_Exists(t *testing.T) {
 				faRepo = testCase.FormationAssignmentRepo()
 			}
 
-			svc := formationassignment.NewService(faRepo, nil)
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			exists, err := svc.Exists(testCase.Context, TestID)
@@ -614,4 +691,647 @@ func TestService_Exists(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, faRepo)
 		})
 	}
+}
+
+func TestService_GenerateAssignments(t *testing.T) {
+	// GIVEN
+
+	objectID := "objectID"
+	objectType := graphql.FormationObjectTypeApplication
+	applications := []*model.Application{&model.Application{BaseEntity: &model.BaseEntity{ID: "app"}}}
+	runtimes := []*model.Runtime{&model.Runtime{ID: "runtime"}}
+	runtimeContexts := []*model.RuntimeContext{&model.RuntimeContext{ID: "runtimeContext"}}
+	result := []*model.FormationAssignment{
+		&model.FormationAssignment{
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      applications[0].ID,
+			TargetType:  string(graphql.FormationObjectTypeApplication),
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      applications[0].ID,
+			SourceType:  string(graphql.FormationObjectTypeApplication),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      runtimes[0].ID,
+			TargetType:  string(graphql.FormationObjectTypeRuntime),
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      runtimes[0].ID,
+			SourceType:  string(graphql.FormationObjectTypeRuntime),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      runtimeContexts[0].ID,
+			TargetType:  string(graphql.FormationObjectTypeRuntimeContext),
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      runtimeContexts[0].ID,
+			SourceType:  string(graphql.FormationObjectTypeRuntimeContext),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+	}
+	formation := &model.Formation{
+		Name: "testFormation",
+		ID:   "ID",
+	}
+	testCases := []struct {
+		Name               string
+		Context            context.Context
+		ApplicationRepo    func() *automock.ApplicationRepository
+		RuntimeRepo        func() *automock.RuntimeRepository
+		RuntimeContextRepo func() *automock.RuntimeContextRepository
+		ExpectedOutput     []*model.FormationAssignment
+		ExpectedErrorMsg   string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			ApplicationRepo: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
+				return repo
+			},
+			RuntimeRepo: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimes, nil).Once()
+				return repo
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   result,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:    "Success does not create formation assignment for application and itself",
+			Context: ctxWithTenant,
+			ApplicationRepo: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(append(applications, &model.Application{BaseEntity: &model.BaseEntity{ID: objectID}}), nil).Once()
+				return repo
+			},
+			RuntimeRepo: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimes, nil).Once()
+				return repo
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   result,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:    "Success does not create formation assignment for runtime and itself",
+			Context: ctxWithTenant,
+			ApplicationRepo: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
+				return repo
+			},
+			RuntimeRepo: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(append(runtimes, &model.Runtime{ID: objectID}), nil).Once()
+				return repo
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   result,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:    "Success does not create formation assignment for runtime context and itself",
+			Context: ctxWithTenant,
+			ApplicationRepo: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
+				return repo
+			},
+			RuntimeRepo: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimes, nil).Once()
+				return repo
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(append(runtimeContexts, &model.RuntimeContext{ID: objectID}), nil).Once()
+				return repo
+			},
+			ExpectedOutput:   result,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:    "Error when listing applications",
+			Context: ctxWithTenant,
+			ApplicationRepo: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(nil, testErr).Once()
+				return repo
+			},
+			RuntimeRepo:        unusedRuntimeRepository,
+			RuntimeContextRepo: unusedRuntimeContextRepository,
+			ExpectedOutput:     nil,
+			ExpectedErrorMsg:   testErr.Error(),
+		},
+		{
+			Name:    "Error when listing runtimes",
+			Context: ctxWithTenant,
+			ApplicationRepo: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
+				return repo
+			},
+			RuntimeRepo: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(nil, testErr).Once()
+				return repo
+			},
+			RuntimeContextRepo: unusedRuntimeContextRepository,
+			ExpectedOutput:     nil,
+			ExpectedErrorMsg:   testErr.Error(),
+		},
+		{
+			Name:    "Error when listing runtime contexts",
+			Context: ctxWithTenant,
+			ApplicationRepo: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(applications, nil).Once()
+				return repo
+			},
+			RuntimeRepo: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimes, nil).Once()
+				return repo
+			},
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appRepo := testCase.ApplicationRepo()
+			runtimeRepo := testCase.RuntimeRepo()
+			runtimeContextRepo := testCase.RuntimeContextRepo()
+			svc := formationassignment.NewService(nil, nil, nil, appRepo, runtimeRepo, runtimeContextRepo, nil)
+
+			// WHEN
+			r, err := svc.GenerateAssignments(testCase.Context, TestTenantID, objectID, objectType, formation)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, appRepo, runtimeRepo, runtimeContextRepo)
+		})
+	}
+}
+
+func TestService_ProcessFormationAssignments(t *testing.T) {
+	// GIVEN
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+	operationContainer := &operationContainer{content: []*assignmentResponsePair{}, err: testErr}
+	appID := "app"
+	runtimeID := "runtime"
+	runtimCtxID := "runtimeCtx"
+	runtimeContext := &model.RuntimeContext{RuntimeID: runtimeID}
+	templateInput := &automock.TemplateInput{}
+	templateInput.Mock.On("GetParticipants").Return([]string{"source1", "source2"})
+
+	matchedApplicationAssignment := &model.FormationAssignment{
+		Source:     "source1",
+		Target:     appID,
+		TargetType: "targetType",
+	}
+
+	matchedRuntimeContextAssignment := &model.FormationAssignment{
+		Source:     "source2",
+		Target:     runtimCtxID,
+		TargetType: "RUNTIME_CONTEXT",
+	}
+
+	sourseNotMatchedAssignment := &model.FormationAssignment{
+		Source:     "source3",
+		Target:     appID,
+		TargetType: "targetType",
+	}
+
+	targetNotMatchedAssignment := &model.FormationAssignment{
+		Source:     "source4",
+		Target:     "app2",
+		TargetType: "targetType",
+	}
+
+	applicationRequest := &webhookclient.Request{Webhook: graphql.Webhook{ApplicationID: &appID}, Object: templateInput}
+	runtimeContextRequest := &webhookclient.Request{Webhook: graphql.Webhook{RuntimeID: &runtimeID}, Object: templateInput}
+
+	applicationResponse := &webhook.Response{Location: str.Ptr("location1")}
+	runtimeContextResponse := &webhook.Response{Location: str.Ptr("location2")}
+
+	testCases := []struct {
+		Name                 string
+		Context              context.Context
+		TxFn                 func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		RuntimeContextRepo   func() *automock.RuntimeContextRepository
+		FormationAssignments []*model.FormationAssignment
+		Requests             []*webhookclient.Request
+		Responses            []*webhook.Response
+		Operation            func(context.Context, *model.FormationAssignment, *webhook.Response) error
+		ExpectedMappings     []*assignmentResponsePair
+		ExpectedErrorMsg     string
+	}{
+		{
+			Name:                 "Success when match assignment for application",
+			Context:              ctxWithTenant,
+			TxFn:                 txGen.ThatSucceeds,
+			RuntimeContextRepo:   unusedRuntimeContextRepository,
+			FormationAssignments: []*model.FormationAssignment{matchedApplicationAssignment},
+			Requests:             []*webhookclient.Request{applicationRequest, runtimeContextRequest},
+			Responses:            []*webhook.Response{applicationResponse, runtimeContextResponse},
+			Operation:            operationContainer.append,
+			ExpectedMappings:     []*assignmentResponsePair{&assignmentResponsePair{assignment: matchedApplicationAssignment, response: applicationResponse}},
+			ExpectedErrorMsg:     "",
+		},
+		{
+			Name:    "Success when match assignment for runtimeContext",
+			Context: ctxWithTenant,
+			TxFn:    txGen.ThatSucceeds,
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetByID", ctxWithTenant, TestTenantID, runtimCtxID).Return(runtimeContext, nil).Once()
+				return repo
+			},
+			FormationAssignments: []*model.FormationAssignment{matchedRuntimeContextAssignment},
+			Requests:             []*webhookclient.Request{applicationRequest, runtimeContextRequest},
+			Responses:            []*webhook.Response{applicationResponse, runtimeContextResponse},
+			Operation:            operationContainer.append,
+			ExpectedMappings:     []*assignmentResponsePair{&assignmentResponsePair{assignment: matchedRuntimeContextAssignment, response: runtimeContextResponse}},
+			ExpectedErrorMsg:     "",
+		},
+		{
+			Name:                 "Success when no matching assignment for source found",
+			Context:              ctxWithTenant,
+			TxFn:                 txGen.ThatSucceeds,
+			RuntimeContextRepo:   unusedRuntimeContextRepository,
+			FormationAssignments: []*model.FormationAssignment{sourseNotMatchedAssignment},
+			Requests:             []*webhookclient.Request{applicationRequest, runtimeContextRequest},
+			Responses:            []*webhook.Response{applicationResponse, runtimeContextResponse},
+			Operation:            operationContainer.append,
+			ExpectedMappings:     []*assignmentResponsePair{&assignmentResponsePair{assignment: sourseNotMatchedAssignment, response: nil}},
+			ExpectedErrorMsg:     "",
+		},
+		{
+			Name:                 "Success when no match assignment for target found",
+			Context:              ctxWithTenant,
+			TxFn:                 txGen.ThatSucceeds,
+			RuntimeContextRepo:   unusedRuntimeContextRepository,
+			FormationAssignments: []*model.FormationAssignment{targetNotMatchedAssignment},
+			Requests:             []*webhookclient.Request{applicationRequest, runtimeContextRequest},
+			Responses:            []*webhook.Response{applicationResponse, runtimeContextResponse},
+			Operation:            operationContainer.append,
+			ExpectedMappings:     []*assignmentResponsePair{&assignmentResponsePair{assignment: targetNotMatchedAssignment, response: nil}},
+			ExpectedErrorMsg:     "",
+		},
+		{
+			Name:                 "Fails on transaction begin",
+			Context:              ctxWithTenant,
+			TxFn:                 txGen.ThatFailsOnBegin,
+			RuntimeContextRepo:   unusedRuntimeContextRepository,
+			FormationAssignments: []*model.FormationAssignment{},
+			Requests:             []*webhookclient.Request{},
+			Responses:            []*webhook.Response{},
+			Operation:            operationContainer.append,
+			ExpectedMappings:     []*assignmentResponsePair{},
+			ExpectedErrorMsg:     testErr.Error(),
+		},
+		{
+			Name:    "Fails on fetching runtimeContext",
+			Context: ctxWithTenant,
+			TxFn:    txGen.ThatDoesntExpectCommit,
+			RuntimeContextRepo: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetByID", ctxWithTenant, TestTenantID, runtimCtxID).Return(nil, testErr).Once()
+				return repo
+			},
+			FormationAssignments: []*model.FormationAssignment{matchedRuntimeContextAssignment},
+			Requests:             []*webhookclient.Request{applicationRequest, runtimeContextRequest},
+			Responses:            []*webhook.Response{applicationResponse, runtimeContextResponse},
+			Operation:            operationContainer.append,
+			ExpectedMappings:     []*assignmentResponsePair{},
+			ExpectedErrorMsg:     testErr.Error(),
+		},
+		{
+			Name:                 "Fails on executing operation",
+			Context:              ctxWithTenant,
+			TxFn:                 txGen.ThatDoesntExpectCommit,
+			RuntimeContextRepo:   unusedRuntimeContextRepository,
+			FormationAssignments: []*model.FormationAssignment{matchedApplicationAssignment},
+			Requests:             []*webhookclient.Request{applicationRequest, runtimeContextRequest},
+			Responses:            []*webhook.Response{applicationResponse, runtimeContextResponse},
+			Operation:            operationContainer.fail,
+			ExpectedMappings:     []*assignmentResponsePair{},
+			ExpectedErrorMsg:     testErr.Error(),
+		},
+		{
+			Name:                 "Fails on commit",
+			Context:              ctxWithTenant,
+			TxFn:                 txGen.ThatFailsOnCommit,
+			RuntimeContextRepo:   unusedRuntimeContextRepository,
+			FormationAssignments: []*model.FormationAssignment{matchedApplicationAssignment},
+			Requests:             []*webhookclient.Request{applicationRequest, runtimeContextRequest},
+			Responses:            []*webhook.Response{applicationResponse, runtimeContextResponse},
+			Operation:            operationContainer.append,
+			ExpectedMappings:     []*assignmentResponsePair{&assignmentResponsePair{assignment: matchedApplicationAssignment, response: applicationResponse}},
+			ExpectedErrorMsg:     testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+			runtimeContextRepo := testCase.RuntimeContextRepo()
+			svc := formationassignment.NewService(transact, nil, nil, nil, nil, runtimeContextRepo, nil)
+
+			// WHEN
+			err := svc.ProcessFormationAssignments(testCase.Context, TestTenantID, testCase.FormationAssignments, testCase.Requests, testCase.Responses, testCase.Operation)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedMappings, operationContainer.content)
+
+			mock.AssertExpectationsForObjects(t, persist, runtimeContextRepo)
+			operationContainer.clear()
+		})
+	}
+}
+
+func TestService_CreateOrUpdateFormationAssignment(t *testing.T) {
+	// GIVEN
+	operationContainer := &operationContainer{content: []*assignmentResponsePair{}, err: testErr}
+	source := "source"
+	//config := "{\"key\":\"value\"}"
+	ok := 200
+	incomplete := 204
+	//errMsg := "Test Error"
+	//marshaledErr, err := json.Marshal(struct{ Error string }{Error: errMsg})
+	//require.NoError(t, err)
+
+	readystateAssignmentInput := &model.FormationAssignmentInput{
+		Source: source,
+		State:  string(model.ReadyAssignmentState),
+	}
+	//configPendingStateAssignmentInput := &model.FormationAssignmentInput{
+	//	Source: source,
+	//	State:  string(model.ConfigPendingAssignmentState),
+	//}
+	//configAssignmentInput := &model.FormationAssignmentInput{
+	//	Source: source,
+	//	State:  string(model.ReadyAssignmentState),
+	//	Value:  []byte(config),
+	//}
+	//errorStateAssignmentInput := &model.FormationAssignmentInput{
+	//	Source: source,
+	//	State:  string(model.CreateErrorAssignmentState),
+	//	Value:  marshaledErr,
+	//}
+
+	inputAssignment := &model.FormationAssignment{
+		Source: source,
+	}
+
+	readyStateAssignment := &model.FormationAssignment{
+		Source: source,
+		State:  string(model.ReadyAssignmentState),
+	}
+
+	//configPendingStateAssignment := &model.FormationAssignment{
+	//	Source: source,
+	//	State:  string(model.ConfigPendingAssignmentState),
+	//}
+	//
+	//configAssignment := &model.FormationAssignment{
+	//	Source: source,
+	//	State:  string(model.ReadyAssignmentState),
+	//	Value:  []byte(config),
+	//}
+	//
+	//errorStateAssignment := &model.FormationAssignment{
+	//	Source: source,
+	//	State:  string(model.CreateErrorAssignmentState),
+	//	Value:  marshaledErr,
+	//}
+
+	successResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete}
+	//incompleteResponse := &webhook.Response{ActualStatusCode: &incomplete, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete}
+	//configResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete, Config: &config}
+	//errorResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete, Error: &errMsg}
+
+	testCases := []struct {
+		Name                         string
+		Context                      context.Context
+		FormationAssignmentRepo      func() *automock.FormationAssignmentRepository
+		FormationAssignmentConverter func() *automock.FormationAssignmentConverter
+		FormationAssignment          *model.FormationAssignment
+		Response                     *webhook.Response
+		ExpectedErrorMsg             string
+	}{
+		{
+			Name:    "Success: ready state assignment",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(readyStateAssignment)).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", readyStateAssignment).Return(readystateAssignmentInput).Once()
+				return conv
+			},
+			FormationAssignment: inputAssignment,
+			Response:            successResponse,
+			ExpectedErrorMsg:    "",
+		},
+		//{
+		//	Name:    "Success: incomplete state assignment",
+		//	Context: ctxWithTenant,
+		//	FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+		//		repo := &automock.FormationAssignmentRepository{}
+		//		repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(configPendingStateAssignment)).Return(nil).Once()
+		//		return repo
+		//	},
+		//	FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+		//		conv := &automock.FormationAssignmentConverter{}
+		//		conv.On("ToInput", configPendingStateAssignment).Return(configPendingStateAssignmentInput).Once()
+		//		return conv
+		//	},
+		//	FormationAssignment: inputAssignment,
+		//	Response:            incompleteResponse,
+		//	ExpectedErrorMsg:    "",
+		//},
+		//{
+		//	Name:    "Success: assignment with config",
+		//	Context: ctxWithTenant,
+		//	FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+		//		repo := &automock.FormationAssignmentRepository{}
+		//		repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(configAssignment)).Return(nil).Once()
+		//		return repo
+		//	},
+		//	FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+		//		conv := &automock.FormationAssignmentConverter{}
+		//		conv.On("ToInput", configAssignment).Return(configAssignmentInput).Once()
+		//		return conv
+		//	},
+		//	FormationAssignment: inputAssignment,
+		//	Response:            configResponse,
+		//	ExpectedErrorMsg:    "",
+		//},
+		//{
+		//	Name:    "Success: error state assignment",
+		//	Context: ctxWithTenant,
+		//	FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+		//		repo := &automock.FormationAssignmentRepository{}
+		//		repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(errorStateAssignment)).Return(nil).Once()
+		//		return repo
+		//	},
+		//	FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+		//		conv := &automock.FormationAssignmentConverter{}
+		//		conv.On("ToInput", errorStateAssignment).Return(errorStateAssignmentInput).Once()
+		//		return conv
+		//	},
+		//	FormationAssignment: inputAssignment,
+		//	Response:            errorResponse,
+		//	ExpectedErrorMsg:    "",
+		//},
+		{
+			Name:    "Fails on create",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(readyStateAssignment)).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", readyStateAssignment).Return(readystateAssignmentInput).Once()
+				return conv
+			},
+			FormationAssignment: inputAssignment,
+			Response:            successResponse,
+			ExpectedErrorMsg:    testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.FormationAssignmentRepo()
+			conv := testCase.FormationAssignmentConverter()
+			uuidSvc := fixUUIDService()
+			svc := formationassignment.NewService(nil, repo, uuidSvc, nil, nil, nil, conv)
+
+			// WHEN
+			err := svc.CreateOrUpdateFormationAssignment(testCase.Context, testCase.FormationAssignment, testCase.Response)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			mock.AssertExpectationsForObjects(t, repo, conv, uuidSvc)
+			operationContainer.clear()
+		})
+	}
+}
+
+func unusedRuntimeRepository() *automock.RuntimeRepository {
+	repo := &automock.RuntimeRepository{}
+	return repo
+}
+
+func unusedRuntimeContextRepository() *automock.RuntimeContextRepository {
+	repo := &automock.RuntimeContextRepository{}
+	return repo
+}
+
+type assignmentResponsePair struct {
+	assignment *model.FormationAssignment
+	response   *webhook.Response
+}
+
+type operationContainer struct {
+	content []*assignmentResponsePair
+	err     error
+}
+
+func (o *operationContainer) append(_ context.Context, a *model.FormationAssignment, r *webhook.Response) error {
+	o.content = append(o.content, &assignmentResponsePair{assignment: a, response: r})
+	return nil
+}
+
+func (o *operationContainer) fail(context.Context, *model.FormationAssignment, *webhook.Response) error {
+	return o.err
+}
+
+func (o *operationContainer) clear() {
+	o.content = []*assignmentResponsePair{}
 }
