@@ -229,12 +229,20 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 			if v == nil {
 				continue
 			}
-			marshal, err := json.Marshal(v)
-			marshal = bytes.ReplaceAll(marshal, []byte("\""), []byte("\\\""))
-			if err != nil {
-				return nil, err
+			var value string
+
+			switch v.(type) {
+			case string:
+				value = fmt.Sprintf("%v", v)
+			default:
+				marshal, err := json.Marshal(v)
+				marshal = bytes.ReplaceAll(marshal, []byte("\""), []byte("\\\""))
+				if err != nil {
+					return nil, err
+				}
+				value = string(marshal)
 			}
-			body[k] = string(marshal)
+			body[k] = value
 		}
 	}
 
@@ -259,8 +267,7 @@ func checkForErr(resp *http.Response, successStatusCode, incompleteStatusCode *i
 		errMsg += fmt.Sprintf("response success status code was not met - expected success status code '%d'%s, got '%d'", *successStatusCode, incompleteStatusCodeMsg, resp.StatusCode)
 	}
 
-	// The double quotes error message is caused by the json.Marshal
-	if errorMessage != nil && *errorMessage != "" && *errorMessage != "\"\"" {
+	if errorMessage != nil && *errorMessage != "" {
 		errMsg += fmt.Sprintf("received error while calling external system: %s", *errorMessage)
 	}
 
