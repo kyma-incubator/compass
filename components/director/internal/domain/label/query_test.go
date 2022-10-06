@@ -48,7 +48,7 @@ func Test_FilterQuery(t *testing.T) {
 		Key:   "Scenarios",
 		Query: &scenariosBarPongQuery,
 	}
-	filterGlobalSubaacountIdValues := labelfilter.LabelFilter{
+	filterGlobalSubaacountIDValues := labelfilter.LabelFilter{
 		Key:   "global_subaccount_id",
 		Query: &filterQueryWithJSON,
 	}
@@ -157,7 +157,7 @@ func Test_FilterQuery(t *testing.T) {
 		{
 			Name:                 "[Global_Subaccount_Id] Query for label assigned with values",
 			ReturnSetCombination: label.IntersectSet,
-			FilterInput:          []*labelfilter.LabelFilter{&filterGlobalSubaacountIdValues},
+			FilterInput:          []*labelfilter.LabelFilter{&filterGlobalSubaacountIDValues},
 			ExpectedQueryFilter:  stmtPrefix + ` AND "app_id" NOT IN (SELECT "app_id" FROM labels WHERE key = 'global_subaccount_id')`,
 			ExpectedArgs:         []interface{}{tenantID},
 			ExpectedError:        nil,

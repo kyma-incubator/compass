@@ -31,7 +31,7 @@ const (
 )
 
 type queryFilter struct {
-	exists bool
+	Exists bool
 }
 
 // FilterQuery builds select query for given filters
@@ -172,5 +172,5 @@ func shouldGlobalSubaccountExists(filter *string) (bool, error) {
 		return false, err
 	}
 
-	return query.exists, nil
+	return query.Exists, nil
 }
