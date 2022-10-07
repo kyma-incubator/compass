@@ -42,7 +42,7 @@ type webhookConverter interface {
 
 //go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type webhookClient interface {
-	Do(ctx context.Context, request *webhookclient.Request) (*webhookdir.Response, error)
+	Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
 type notificationsService struct {
@@ -71,7 +71,7 @@ func NewNotificationService(applicationRepository applicationRepository, applica
 	}
 }
 
-func (ns *notificationsService) GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.NotificationRequest, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
 		rtNotifications, err := ns.generateRuntimeNotificationsForApplicationAssignment(ctx, tenant, objectID, formation, operation)
@@ -92,7 +92,7 @@ func (ns *notificationsService) GenerateNotifications(ctx context.Context, tenan
 	}
 }
 
-func (ns *notificationsService) SendNotifications(ctx context.Context, notifications []*webhookclient.Request) ([]*webhookdir.Response, error) {
+func (ns *notificationsService) SendNotifications(ctx context.Context, notifications []*webhookclient.NotificationRequest) ([]*webhookdir.Response, error) {
 	log.C(ctx).Infof("Sending %d notifications", len(notifications))
 	var errs *multierror.Error
 	responses := make([]*webhookdir.Response, 0, len(notifications))
@@ -115,7 +115,19 @@ func (ns *notificationsService) SendNotifications(ctx context.Context, notificat
 	return responses, errs.ErrorOrNil()
 }
 
-func (ns *notificationsService) generateRuntimeNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) SendNotification(ctx context.Context, notification *webhookclient.NotificationRequest) (*webhookdir.Response, error) {
+	resp, err := ns.webhookClient.Do(ctx, notification)
+	if err != nil {
+		errorMsg := fmt.Sprintf("Failed while executing webhook with ID %s", notification.Webhook.ID)
+		log.C(ctx).Warn(errorMsg)
+		resp = &webhookdir.Response{
+			Error: &errorMsg,
+		}
+	}
+	return resp, err
+}
+
+func (ns *notificationsService) generateRuntimeNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications for application %s", operation, appID)
 	application, err := ns.applicationRepository.GetByID(ctx, tenant, appID)
 	if err != nil {
@@ -225,7 +237,7 @@ func (ns *notificationsService) generateRuntimeNotificationsForApplicationAssign
 		}
 	}
 
-	requests := make([]*webhookclient.Request, 0, len(runtimeIDsToBeNotified))
+	requests := make([]*webhookclient.NotificationRequest, 0, len(runtimeIDsToBeNotified))
 	for rtID := range runtimeIDsToBeNotified {
 		rtCtx := runtimeContextsInScenarioForListeningRuntimesMapping[rtID]
 		if rtCtx == nil {
@@ -253,7 +265,7 @@ func (ns *notificationsService) generateRuntimeNotificationsForApplicationAssign
 	return requests, nil
 }
 
-func (ns *notificationsService) generateApplicationNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateApplicationNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s app-to-app formation notifications for application %s", operation, appID)
 	application, err := ns.applicationRepository.GetByID(ctx, tenant, appID)
 	if err != nil {
@@ -301,7 +313,7 @@ func (ns *notificationsService) generateApplicationNotificationsForApplicationAs
 
 	log.C(ctx).Infof("There are %d applications listening for app-to-app formation notifications in tenant %s", len(listeningAppIDs), tenant)
 
-	requests := make([]*webhookclient.Request, 0, len(listeningAppIDs))
+	requests := make([]*webhookclient.NotificationRequest, 0, len(listeningAppIDs))
 	if listeningAppIDs[appID] {
 		log.C(ctx).Infof("The application with ID %s that is being %s is also listening for app-to-app formation notifications. Will create notifications about all other apps in the formation...", appID, operation)
 		var webhook *model.Webhook
@@ -436,7 +448,7 @@ func (ns *notificationsService) generateApplicationNotificationsForApplicationAs
 	return requests, nil
 }
 
-func (ns *notificationsService) generateRuntimeNotificationsForRuntimeContextAssignment(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateRuntimeNotificationsForRuntimeContextAssignment(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications for runtime context %s", operation, runtimeCtxID)
 	runtimeCtx, err := ns.runtimeContextRepo.GetByID(ctx, tenant, runtimeCtxID)
 	if err != nil {
@@ -462,7 +474,7 @@ func (ns *notificationsService) generateRuntimeNotificationsForRuntimeContextAss
 	return requests, nil
 }
 
-func (ns *notificationsService) generateRuntimeNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateRuntimeNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications for runtime %s", operation, runtimeID)
 	runtime, err := ns.runtimeRepo.GetByID(ctx, tenant, runtimeID)
 	if err != nil {
@@ -491,7 +503,7 @@ func (ns *notificationsService) generateRuntimeNotificationsForRuntimeAssignment
 		return nil, err
 	}
 
-	requests := make([]*webhookclient.Request, 0, len(applicationMapping))
+	requests := make([]*webhookclient.NotificationRequest, 0, len(applicationMapping))
 	for _, app := range applicationMapping {
 		var appTemplate *webhookdir.ApplicationTemplateWithLabels
 		if app.ApplicationTemplateID != nil {
@@ -566,12 +578,12 @@ func (ns *notificationsService) prepareApplicationMappingsInFormation(ctx contex
 	return applicationMapping, applicationTemplatesMapping, nil
 }
 
-func (ns *notificationsService) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.TemplateInput) (*webhookclient.Request, error) {
+func (ns *notificationsService) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.FormationAssignmentTemplateInput) (*webhookclient.NotificationRequest, error) {
 	gqlWebhook, err := ns.webhookConverter.ToGraphQL(webhook)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting webhook with ID %s", webhook.ID)
 	}
-	return &webhookclient.Request{
+	return &webhookclient.NotificationRequest{
 		Webhook:       *gqlWebhook,
 		Object:        input,
 		CorrelationID: correlation.CorrelationIDFromContext(ctx),

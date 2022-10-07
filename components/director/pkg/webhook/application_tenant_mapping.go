@@ -18,6 +18,8 @@ type ApplicationTenantMappingInput struct {
 	TargetApplicationTemplate *ApplicationTemplateWithLabels
 	// TargetApplication is the application that the notification is for (the one with the webhook / the one receiving the notification)
 	TargetApplication *ApplicationWithLabels
+	Assignment        *model.FormationAssignment
+	ReverseAssignment *model.FormationAssignment
 }
 
 // ParseURLTemplate missing godoc
@@ -45,4 +47,41 @@ func (rd *ApplicationTenantMappingInput) ParseHeadersTemplate(tmpl *string) (htt
 // GetParticipants missing godoc
 func (rd *ApplicationTenantMappingInput) GetParticipants() []string {
 	return []string{rd.SourceApplication.ID, rd.TargetApplication.ID}
+}
+
+func (rd *ApplicationTenantMappingInput) GetAssignments() (*model.FormationAssignment, *model.FormationAssignment) {
+	return rd.Assignment, rd.ReverseAssignment
+}
+
+func (rd *ApplicationTenantMappingInput) SetAssignments(assignment, reverseAssignment *model.FormationAssignment) {
+	rd.Assignment = assignment
+	rd.ReverseAssignment = reverseAssignment
+}
+
+func (rd *ApplicationTenantMappingInput) GetAssignment() *model.FormationAssignment {
+	return rd.Assignment
+}
+
+func (rd *ApplicationTenantMappingInput) GetReverseAssignment() *model.FormationAssignment {
+	return rd.ReverseAssignment
+}
+
+func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.FormationAssignment) {
+	rd.Assignment = assignment
+}
+
+func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
+	rd.ReverseAssignment = reverseAssignment
+}
+func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInput {
+	return &ApplicationTenantMappingInput{
+		Operation:                 rd.Operation,
+		FormationID:               rd.FormationID,
+		SourceApplicationTemplate: rd.SourceApplicationTemplate,
+		SourceApplication:         rd.SourceApplication,
+		TargetApplicationTemplate: rd.TargetApplicationTemplate,
+		TargetApplication:         rd.TargetApplication,
+		Assignment:                rd.Assignment,
+		ReverseAssignment:         rd.ReverseAssignment,
+	}
 }

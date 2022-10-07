@@ -35,7 +35,8 @@ type repository struct {
 	getter                repo.SingleGetter
 	pageableQuerierGlobal repo.PageableQuerier
 	unionLister           repo.UnionLister
-	lister                repo.ConditionTreeLister
+	lister                repo.Lister
+	conditionLister       repo.ConditionTreeLister
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
 	existQuerier          repo.ExistQuerier
@@ -49,7 +50,8 @@ func NewRepository(conv EntityConverter) *repository {
 		getter:                repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		unionLister:           repo.NewUnionListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		lister:                repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		lister:                repo.NewLister(tableName, tableColumns),
+		conditionLister:       repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
@@ -153,8 +155,7 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 
 // ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID`that have objectID as `target` or `source` from the database that are visible for `tenant`
 func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error) {
-	var entitiesWithSourceObjectID EntityCollection
-	var entitiesWithTargetObjectID EntityCollection
+	var entities EntityCollection
 	conditions := repo.And(
 		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
 		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
@@ -162,11 +163,23 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 			repo.NewEqualCondition("target", objectID),
 		})...))
 
-	if err := r.lister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entitiesWithSourceObjectID, conditions); err != nil {
+	if err := r.conditionLister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entities, conditions); err != nil {
 		return nil, err
 	}
 
-	return r.multipleFromEntities(append(entitiesWithSourceObjectID, entitiesWithTargetObjectID...)), nil
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListForIDs missing godoc
+func (r *repository) ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error) {
+	var entitiesWithIDs EntityCollection
+	conditions := repo.NewInConditionForStringValues("id", ids)
+
+	if err := r.lister.List(ctx, resource.FormationAssignment, tenant, &entitiesWithIDs, conditions); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entitiesWithIDs), nil
 }
 
 // Update updates the Formation Assignment matching the ID of the input model

@@ -25,6 +25,43 @@ type Request struct {
 	CorrelationID string
 }
 
+// NotificationRequest represents a webhook request to be executed
+type NotificationRequest struct {
+	Webhook       graphql.Webhook
+	Object        webhook.FormationAssignmentTemplateInput
+	CorrelationID string
+}
+
+type WebhookRequest interface {
+	GetWebhook() graphql.Webhook
+	GetObject() webhook.TemplateInput
+	GetCorrelationID() string
+}
+
+func (r *Request) GetWebhook() graphql.Webhook {
+	return r.Webhook
+}
+
+func (r *Request) GetObject() webhook.TemplateInput {
+	return r.Object
+}
+
+func (r *Request) GetCorrelationID() string {
+	return r.CorrelationID
+}
+
+func (nr *NotificationRequest) GetWebhook() graphql.Webhook {
+	return nr.Webhook
+}
+
+func (nr *NotificationRequest) GetObject() webhook.TemplateInput {
+	return nr.Object
+}
+
+func (nr *NotificationRequest) GetCorrelationID() string {
+	return nr.CorrelationID
+}
+
 // PollRequest represents a webhook poll request to be executed
 type PollRequest struct {
 	*Request

@@ -40,6 +40,8 @@ type FormationConfigurationChangeInput struct {
 	Application         *ApplicationWithLabels
 	Runtime             *RuntimeWithLabels
 	RuntimeContext      *RuntimeContextWithLabels
+	Assignment          *model.FormationAssignment
+	ReverseAssignment   *model.FormationAssignment
 }
 
 // ParseURLTemplate missing godoc
@@ -78,4 +80,32 @@ func (rd *FormationConfigurationChangeInput) GetParticipants() []string {
 	}
 
 	return participants
+}
+
+func (rd *FormationConfigurationChangeInput) GetAssignment() *model.FormationAssignment {
+	return rd.Assignment
+}
+
+func (rd *FormationConfigurationChangeInput) GetReverseAssignment() *model.FormationAssignment {
+	return rd.ReverseAssignment
+}
+
+func (rd *FormationConfigurationChangeInput) SetAssignment(assignment *model.FormationAssignment) {
+	rd.Assignment = assignment
+}
+
+func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
+	rd.ReverseAssignment = reverseAssignment
+}
+func (rd *FormationConfigurationChangeInput) Clone() FormationAssignmentTemplateInput {
+	return &FormationConfigurationChangeInput{
+		Operation:           rd.Operation,
+		FormationID:         rd.FormationID,
+		ApplicationTemplate: rd.ApplicationTemplate,
+		Application:         rd.Application,
+		Runtime:             rd.Runtime,
+		RuntimeContext:      rd.RuntimeContext,
+		Assignment:          rd.Assignment,
+		ReverseAssignment:   rd.ReverseAssignment,
+	}
 }

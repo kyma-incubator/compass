@@ -34,8 +34,3 @@ func (rd *ApplicationLifecycleWebhookRequestObject) ParseHeadersTemplate(tmpl *s
 	var headers http.Header
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
-
-// GetParticipants missing godoc
-func (rd *ApplicationLifecycleWebhookRequestObject) GetParticipants() []string {
-	return []string{}
-}

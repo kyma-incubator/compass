@@ -71,8 +71,8 @@ type FormationTemplateRepository interface {
 // NotificationsService represents the notification service for generating and sending notifications
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
-	GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.Request, error)
-	SendNotifications(ctx context.Context, notifications []*webhookclient.Request) ([]*webhookdir.Response, error)
+	GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.NotificationRequest, error)
+	SendNotifications(ctx context.Context, notifications []*webhookclient.NotificationRequest) ([]*webhookdir.Response, error)
 }
 
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -122,10 +122,10 @@ type formationAssignmentService interface {
 	ListFormationAssignmentsForObject(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
 	Delete(ctx context.Context, id string) error
-	ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error
-	CreateOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error
+	ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.NotificationRequest, operation func(context.Context, *model.FormationAssignment, webhookclient.NotificationRequest) error) error
+	CreateOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, request webhookclient.NotificationRequest) error
 	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
-	CleanupFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error
+	CleanupFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, request webhookclient.NotificationRequest) error
 }
 
 type service struct {
@@ -279,22 +279,17 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
-		}
-
-		responses, err := s.notificationsService.SendNotifications(ctx, requests)
-		if err != nil {
-			return nil, err
-		}
-
 		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, responses, s.formationAssignmentService.CreateOrUpdateFormationAssignment); err != nil {
+		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
+		}
+
+		if err := s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, s.formationAssignmentService.CreateOrUpdateFormationAssignment); err != nil {
 			return nil, err
 		}
 
@@ -418,17 +413,12 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		responses, err := s.notificationsService.SendNotifications(ctx, requests)
-		if err != nil {
-			return nil, err
-		}
-
 		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			return nil, err
 		}
 
@@ -458,17 +448,12 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		responses, err := s.notificationsService.SendNotifications(ctx, requests)
-		if err != nil {
-			return nil, err
-		}
-
 		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			return nil, err
 		}
 
