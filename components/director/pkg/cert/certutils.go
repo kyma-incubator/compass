@@ -111,32 +111,6 @@ func GetAuthSessionExtra(consumerType, internalConsumerID string, accessLevels [
 	}
 }
 
-// GetPossibleRegexTopLevelMatches returns the number of possible top level matches of a regex pattern.
-// This means that the pattern will be inspected and split only based on the most top level '|' delimiter
-// and inner group '|' delimiters won't be taken into account.
-func GetPossibleRegexTopLevelMatches(pattern string) int {
-	if pattern == "" {
-		return 0
-	}
-	count := 1
-	openedGroups := 0
-	for _, char := range pattern {
-		switch char {
-		case '|':
-			if openedGroups == 0 {
-				count++
-			}
-		case '(':
-			openedGroups++
-		case ')':
-			openedGroups--
-		default:
-			continue
-		}
-	}
-	return count
-}
-
 // DecodeCertificates accepts raw certificate chain and return slice of parsed certificates
 func DecodeCertificates(pemCertChain []byte) ([]*x509.Certificate, error) {
 	if pemCertChain == nil {
