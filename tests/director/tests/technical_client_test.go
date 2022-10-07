@@ -5,13 +5,16 @@ import (
 	"strings"
 	"testing"
 
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/stretchr/testify/require"
 )
 
-func TestTechnicalClient(t *testing.T) {
+func TestTechnicalClient(stdT *testing.T) {
+	t := testingx.NewT(stdT)
 	ctx := context.Background()
 
 	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.TestConsumerSubaccountID, conf.ExternalCertCommonName, "technical-client-test")
@@ -28,12 +31,13 @@ func TestTechnicalClient(t *testing.T) {
 		ExternalCertProvider:                  certprovider.Atom,
 	}
 
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	pk, cert := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 
-	t.Log("Trying to list tenants")
-	t.Log(externalCertProviderConfig.TestExternalCertSubject)
-	tenants, err := fixtures.GetTenants(directorCertSecuredClient)
-	require.NoError(t, err)
-	require.NotEmpty(t, tenants)
+	t.Run("Successfully list tenants", func(stdT *testing.T) {
+		tenants, err := fixtures.GetTenants(directorCertSecuredClient)
+		require.NoError(t, err)
+		require.NotEmpty(t, tenants)
+	})
+
 }
