@@ -139,7 +139,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-80"
+      version: "PR-82"
       name: compass-ord-service
     schema_migrator:
       dir:
@@ -160,7 +160,7 @@ global:
       name: compass-external-services-mock
     console:
       dir:
-      version: "PR-69"
+      version: "PR-72"
       name: compass-console
     e2e_tests:
       dir:
