@@ -17,7 +17,7 @@ func TestTechnicalClient(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	ctx := context.Background()
 
-	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.TestConsumerSubaccountID, conf.ExternalCertCommonName, "technical-client-test")
+	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestIntSystemOUSubaccount, conf.ExternalCertCommonName, "technical-client-test")
 
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
