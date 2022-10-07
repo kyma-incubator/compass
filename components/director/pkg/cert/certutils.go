@@ -53,12 +53,9 @@ func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPa
 		orgUnits := GetAllOrganizationalUnits(subject)
 
 		remainingOrgUnit := ""
-		matchedOrgUnits := 0
 		for _, orgUnit := range orgUnits {
 			if !orgUnitRegex.MatchString(orgUnit) {
 				remainingOrgUnit = orgUnit
-			} else {
-				matchedOrgUnits++
 			}
 		}
 
