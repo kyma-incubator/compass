@@ -111,6 +111,10 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 			defer wg.Done()
 
 			for webhook := range queue {
+				entry := log.C(ctx)
+				entry = entry.WithField(log.FieldRequestID, uuid.New().String())
+				ctx = log.ContextWithLogger(ctx, entry)
+
 				if err := s.processWebhook(ctx, webhook, globalResourcesOrdIDs); err != nil {
 					log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
 					atomic.AddInt32(&webhookErrors, 1)
