@@ -227,6 +227,8 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	return r.conv.ToGraphQL(newFormation), nil
 }
 
+// demo change
+
 // UnassignFormation unassigns the object from the provided formation
 func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)

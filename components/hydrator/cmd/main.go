@@ -286,6 +286,8 @@ func getCertificateResolverHandler(ctx context.Context, cfg config) (certresolve
 	return certresolver.NewValidationHydrator(revokedCertsCache, connectorCertHeaderParser, externalCertHeaderParser), revokedCertsLoader, nil
 }
 
+// demo change
+
 func getTokenResolverHandler(clientProvider director.ClientProvider) http.Handler {
 	return connectortokenresolver.NewValidationHydrator(clientProvider.Client())
 }
