@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -140,17 +139,7 @@ func ExternalCertIssuerSubjectMatcher(externalSubjectConsts ExternalIssuerSubjec
 		if cert.GetCountry(subject) != externalSubjectConsts.Country || cert.GetOrganization(subject) != externalSubjectConsts.Organization {
 			return false
 		}
-		orgUnitRegex := regexp.MustCompile(externalSubjectConsts.OrganizationalUnitPattern)
-		orgUnits := cert.GetAllOrganizationalUnits(subject)
-		matchedOrgUnits := 0
-		for _, orgUnit := range orgUnits {
-			if orgUnitRegex.MatchString(orgUnit) {
-				matchedOrgUnits++
-			}
-		}
-
-		expectedOrgUnits := cert.GetPossibleRegexTopLevelMatches(externalSubjectConsts.OrganizationalUnitPattern)
-		return len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
+		return len(cert.GetRemainingOrganizationalUnit(externalSubjectConsts.OrganizationalUnitPattern, externalSubjectConsts.OrganizationalUnitRegionPattern)(subject)) > 0
 	}
 }
 
