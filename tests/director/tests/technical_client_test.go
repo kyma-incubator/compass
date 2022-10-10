@@ -34,7 +34,7 @@ func TestTechnicalClient(stdT *testing.T) {
 
 		pk, cert := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
-	
+
 		tenants, err := fixtures.GetTenants(directorCertSecuredClient)
 		require.NoError(t, err)
 		require.NotEmpty(t, tenants)
