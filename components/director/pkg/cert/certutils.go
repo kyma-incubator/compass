@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -53,13 +54,20 @@ func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPa
 		orgUnits := GetAllOrganizationalUnits(subject)
 
 		remainingOrgUnit := ""
+		var matchedOrgUnits int
 		for _, orgUnit := range orgUnits {
 			if !orgUnitRegex.MatchString(orgUnit) {
 				remainingOrgUnit = orgUnit
+			} else {
+				matchedOrgUnits++
 			}
 		}
 
-		return remainingOrgUnit
+		if len(orgUnits)-matchedOrgUnits == 1 {
+			return remainingOrgUnit
+		}
+
+		return ""
 	}
 }
 
@@ -68,7 +76,7 @@ func ConstructOURegex(patterns ...string) string {
 	nonEmptyStr := make([]string, 0)
 	for _, pattern := range patterns {
 		if len(pattern) > 0 {
-			nonEmptyStr = append(nonEmptyStr, pattern)
+			nonEmptyStr = append(nonEmptyStr, fmt.Sprintf("\\b%s\\b", pattern))
 		}
 	}
 	return strings.Join(nonEmptyStr, "|")
