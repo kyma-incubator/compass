@@ -145,7 +145,7 @@ func buildFilterQuery(stmtPrefix string, stmtPrefixArgs []interface{}, setCombin
 
 				queryBuilder.WriteString(fmt.Sprintf(` AND "value" ?| %s`, queryValue))
 			} else if lblFilter.Key == globalSubaccountIDLabelKey && !shouldKeyExists {
-				queryBuilder.WriteString(` AND "app_id" NOT IN (SELECT "app_id" FROM public.labels WHERE key = 'global_subaccount_id')`)
+				queryBuilder.WriteString(` AND "app_id" NOT IN (SELECT "app_id" FROM public.labels WHERE key = 'global_subaccount_id' AND "app_id" IS NOT NULL)`)
 			} else {
 				args = append(args, queryValue)
 				queryBuilder.WriteString(` AND "value" @> ?`)

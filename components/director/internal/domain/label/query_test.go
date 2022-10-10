@@ -158,7 +158,7 @@ func Test_FilterQuery(t *testing.T) {
 			Name:                 "[Global_Subaccount_Id] Query for label assigned with values",
 			ReturnSetCombination: label.IntersectSet,
 			FilterInput:          []*labelfilter.LabelFilter{&filterGlobalSubaacountIDValues},
-			ExpectedQueryFilter:  stmtPrefix + ` AND "app_id" NOT IN (SELECT "app_id" FROM public.labels WHERE key = 'global_subaccount_id')`,
+			ExpectedQueryFilter:  stmtPrefix + ` AND "app_id" NOT IN (SELECT "app_id" FROM public.labels WHERE key = 'global_subaccount_id' AND "app_id" IS NOT NULL)`,
 			ExpectedArgs:         []interface{}{tenantID},
 			ExpectedError:        nil,
 		},
