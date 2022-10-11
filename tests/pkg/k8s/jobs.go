@@ -143,7 +143,7 @@ func WaitForJobToFinish(t *testing.T, ctx context.Context, k8sClient *kubernetes
 		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
 		require.NoError(t, err)
 		if job.Status.Failed > 0 || job.Status.Succeeded > 0 {
-				break
+			break
 		}
 		time.Sleep(time.Second * 5)
 	}
