@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -122,10 +123,10 @@ type formationAssignmentService interface {
 	ListFormationAssignmentsForObject(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
 	Delete(ctx context.Context, id string) error
-	ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.NotificationRequest, operation func(context.Context, *model.FormationAssignment, webhookclient.NotificationRequest) error) error
-	CreateOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, request webhookclient.NotificationRequest) error
+	ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.NotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) error) error
+	UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
 	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
-	CleanupFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, request webhookclient.NotificationRequest) error
+	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
 }
 
 type service struct {
@@ -274,23 +275,28 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
+		//Start transaction tx.Begin
+		// use new ctx that contains the new transaction
+		//rollback unless committed
 		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
 		if err != nil {
 			return nil, err
+			//rollback
 		}
-
 		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, err
+			//rollback
 		}
-
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
+			//rollback
 		}
 
-		if err := s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, s.formationAssignmentService.CreateOrUpdateFormationAssignment); err != nil {
+		if err := s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
 			return nil, err
+			//first commit and then return error
 		}
 
 		return formationFromDB, nil
@@ -418,9 +424,13 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
+		//Start transaction tx.Begin
+		// use new ctx that contains the new transaction
+		//rollback unless committed
 		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			return nil, err
 		}
+		//commit and return error
 
 		return formationFromDB, nil
 

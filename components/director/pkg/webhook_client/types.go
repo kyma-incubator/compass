@@ -62,6 +62,14 @@ func (nr *NotificationRequest) GetCorrelationID() string {
 	return nr.CorrelationID
 }
 
+func (nr *NotificationRequest) Clone() *NotificationRequest {
+	return &NotificationRequest{
+		Webhook:       nr.Webhook,
+		Object:        nr.Object.Clone(),
+		CorrelationID: nr.CorrelationID,
+	}
+}
+
 // PollRequest represents a webhook poll request to be executed
 type PollRequest struct {
 	*Request

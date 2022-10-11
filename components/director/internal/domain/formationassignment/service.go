@@ -287,11 +287,17 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 	for _, assignment := range assignments {
 		id, err := s.Create(ctx, assignment)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while creating formationAssignment for formation %q with source %q of type %q and target %q of type %q", assignment.FormationID, assignment.Source, assignment.SourceType, assignment.Target, assignment.TargetType)
 		}
 		ids = append(ids, id)
 	}
-	return s.repo.ListForIDs(ctx, tnt, ids)
+
+	formationAssignments, err := s.repo.ListForIDs(ctx, tnt, ids)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing formationAssignments")
+	}
+
+	return formationAssignments, nil
 }
 
 // GenerateAssignmentsForParticipant creates in-memory the assignments for two participants in the initial state
@@ -320,32 +326,38 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 
 // ProcessFormationAssignments matches the formation assignments with the requests and responses and executes the provided `operation` on the FormationAssignmentMapping with the response
 func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.NotificationRequest, operation func(context.Context, *AssignmentMappingPair) error) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
+	// var errs *multierror.Error
 	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, tenant, formationAssignmentsForObject, requests)
 	if err != nil {
 		return errors.Wrap(err, "while mapping formationAssignments to notification requests and responses")
 	}
 	for _, mapping := range assignmentRequestMappings {
 		if err := operation(ctx, mapping); err != nil {
+			//TODO collect errors instead of returning them
+			//	errs = multierror.Append(errs, errors.Wrapf(err, "appropriate message" ))
 			return err
 		}
 	}
 	log.C(ctx).Infof("Finished processing %d formation assignments", len(formationAssignmentsForObject)+1)
 
-	return tx.Commit()
+	return nil
 }
 
-// CreateOrUpdateFormationAssignment prepares the `State` and `Config` of the formation assignment based on the response and saves it in the database
-func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair, request *webhookclient.NotificationRequest) error {
-	response, err := s.notificationService.SendNotification(ctx, request)
+// UpdateFormationAssignment prepares the `State` and `Config` of the formation assignment based on the response and saves it in the database
+func (s *service) UpdateFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair) error {
+	return s.updateFormationAssignmentsWithReverseNotification(ctx, mappingPair, 0)
+}
+
+func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPair, depth int) error {
+	//In case of error store it in the assignment and set its state to error - use the same struct that is described in unassign
+	//Also collect the errors in multi-error and return them in the end
+	var shouldSendReverseNotification bool
+
+	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
 	if err != nil {
 		return errors.Wrapf(err, "while executing request")
 	}
+
 	assignment := mappingPair.Assignment.FormationAssignment
 	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
 		assignment.State = string(model.ReadyAssignmentState)
@@ -357,6 +369,7 @@ func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, mapping
 
 	if response != nil && response.Config != nil && *response.Config != "" {
 		assignment.Value = []byte(*response.Config)
+		shouldSendReverseNotification = true
 	}
 
 	if response != nil && response.Error != nil && *response.Error != "" {
@@ -368,10 +381,43 @@ func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, mapping
 		assignment.Value = marshaled
 	}
 
-	if _, err := s.Create(ctx, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+	if err = s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
 	log.C(ctx).Infof("Assignment with ID %s was createed with %s state", assignment.ID, assignment.State)
+
+	if shouldSendReverseNotification {
+		// em -> s4 - config pending
+		// s4 -> em - here is config1; config pending
+		// em -> s4 - there is config1 for you; ready; config2
+		// s4 -> em - there is config2 for your; ready;
+
+		// 1. em -> s4; resp: status: config pending -> end
+		// 2. s4 -> em; resp: config1; config pending -> recursion depth++
+		// 3. set config1 to 1. and resend; resp: config2; ready -> recursion depth++
+		// 4. set config2 to 2. and resend; resp: ready -> дъно
+		if depth >= 10 {
+			//TODO clarify message
+			return errors.Errorf("Depth limit exceeded for assignments: %q and %q", mappingPair.Assignment.FormationAssignment.ID, mappingPair.ReverseAssignment.FormationAssignment.ID)
+		}
+
+		newAssignment := mappingPair.ReverseAssignment.Clone()
+		newReverseAssignment := mappingPair.Assignment.Clone()
+
+		newAssignment.Request.Object.SetAssignment(newAssignment.FormationAssignment)
+		newAssignment.Request.Object.SetReverseAssignment(newReverseAssignment.FormationAssignment)
+		newReverseAssignment.Request.Object.SetAssignment(newReverseAssignment.FormationAssignment)
+		newReverseAssignment.Request.Object.SetReverseAssignment(newAssignment.FormationAssignment)
+
+		newAssignmentMappingPair := &AssignmentMappingPair{
+			Assignment:        newAssignment,
+			ReverseAssignment: newReverseAssignment,
+		}
+
+		if err = s.updateFormationAssignmentsWithReverseNotification(ctx, newAssignmentMappingPair, depth+1); err != nil {
+			return errors.Wrap(err, "while sending reverse notification")
+		}
+	}
 
 	return nil
 }
@@ -379,8 +425,19 @@ func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, mapping
 // CleanupFormationAssignment adapts the `State` and `Config` of the formation assignment based on the response and updates it
 // In the case the response is successful it deletes the formation assignment
 // In all other cases the `State` and `Config` are updated accordingly
-func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair, request *webhookclient.NotificationRequest) error {
-	response, err := s.notificationService.SendNotification(ctx, request)
+func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair) error {
+	//in case of any error create object with the following structure
+	//{
+	//	"error": {
+	//		"errorCode": "TenantMappingProcessingError",
+	//		"message": "Local reciever tenant not found."
+	//	}
+	//}
+	//we need two codes in order to differentiate between error returned by the client - error field in the response and technical error
+	//the newly created object should be stored in the assignment
+	// after updating the assignment the error can be returned
+
+	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
 	if err != nil {
 		return errors.Wrapf(err, "while executing request")
 	}
@@ -420,8 +477,6 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
 		log.C(ctx).Infof("Assignment with ID %s set to state %s", assignment.ID, assignment.State)
-
-		return nil
 	}
 
 	return nil
@@ -432,6 +487,23 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 type FormationAssignmentRequestMapping struct {
 	Request             *webhookclient.NotificationRequest
 	FormationAssignment *model.FormationAssignment
+}
+
+func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestMapping {
+	return &FormationAssignmentRequestMapping{
+		Request: f.Request.Clone(),
+		FormationAssignment: &model.FormationAssignment{
+			ID:          f.FormationAssignment.ID,
+			FormationID: f.FormationAssignment.FormationID,
+			TenantID:    f.FormationAssignment.TenantID,
+			Source:      f.FormationAssignment.Source,
+			SourceType:  f.FormationAssignment.SourceType,
+			Target:      f.FormationAssignment.Target,
+			TargetType:  f.FormationAssignment.TargetType,
+			State:       f.FormationAssignment.State,
+			Value:       f.FormationAssignment.Value,
+		},
+	}
 }
 
 type AssignmentMappingPair struct {
@@ -484,8 +556,10 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 	}
 	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments)+1, len(requests)+1, len(assignments)-len(requests))
 	sourceToTargetToMapping := make(map[string]map[string]*FormationAssignmentRequestMapping)
-	// TODO Check
 	for _, mapping := range formationAssignmentMapping {
+		if _, ok := sourceToTargetToMapping[mapping.FormationAssignment.Target]; !ok {
+			sourceToTargetToMapping[mapping.FormationAssignment.Target] = make(map[string]*FormationAssignmentRequestMapping, len(assignments)/2)
+		}
 		sourceToTargetToMapping[mapping.FormationAssignment.Source][mapping.FormationAssignment.Target] = mapping
 	}
 	// Make mapping
@@ -497,6 +571,10 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 			Assignment:        mapping,
 			ReverseAssignment: reverseMapping,
 		})
+		mapping.Request.Object.SetAssignment(mapping.FormationAssignment)
+		mapping.Request.Object.SetReverseAssignment(reverseMapping.FormationAssignment)
+		reverseMapping.Request.Object.SetAssignment(reverseMapping.FormationAssignment)
+		reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
 	}
 	return assignmentMappingPairs, nil
 }

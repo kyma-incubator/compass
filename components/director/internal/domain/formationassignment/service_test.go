@@ -1285,7 +1285,7 @@ func TestService_CreateOrUpdateFormationAssignment(t *testing.T) {
 			svc := formationassignment.NewService(nil, repo, uuidSvc, nil, nil, nil, conv)
 
 			// WHEN
-			err := svc.CreateOrUpdateFormationAssignment(testCase.Context, testCase.FormationAssignment, testCase.Response)
+			err := svc.updateFormationAssignmentsWithReverseNotification(testCase.Context, testCase.FormationAssignment, testCase.Response)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
