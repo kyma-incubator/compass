@@ -103,50 +103,25 @@ func WaitForJobToFail(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 }
 
 func WaitForJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string, shouldFail bool) {
-	elapsed := time.After(time.Minute * 15)
-	for {
-		select {
-		case <-elapsed:
-			t.Fatalf("Timeout reached waiting for job %q to complete. Exiting...", jobName)
-		default:
+	status := getJobStatus(t, ctx, k8sClient, jobName, namespace)
+	if status.Failed > 0 {
+		if !shouldFail {
+			t.Fatalf("Job %q has failed while expecting to succeed. Exiting...", jobName)
+		} else {
+			return
 		}
-		t.Logf("Waiting for job %q to finish...", jobName)
-		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
-		require.NoError(t, err)
-		if job.Status.Failed > 0 {
-			if !shouldFail {
-				t.Fatalf("Job %q has failed while expecting to succeed. Exiting...", jobName)
-			} else {
-				break
-			}
+	}
+	if status.Succeeded > 0 {
+		if shouldFail {
+			t.Fatalf("Job %q has succeeded while expecting to fail. Exiting...", jobName)
+		} else {
+			return
 		}
-		if job.Status.Succeeded > 0 {
-			if shouldFail {
-				t.Fatalf("Job %q has succeeded while expecting to fail. Exiting...", jobName)
-			} else {
-				break
-			}
-		}
-		time.Sleep(time.Second * 5)
 	}
 }
 
 func WaitForJobToFinish(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
-	elapsed := time.After(time.Minute * 15)
-	for {
-		select {
-		case <-elapsed:
-			t.Fatalf("Timeout reached waiting for job %q to complete. Exiting...", jobName)
-		default:
-		}
-		t.Logf("Waiting for job %q to finish...", jobName)
-		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
-		require.NoError(t, err)
-		if job.Status.Failed > 0 || job.Status.Succeeded > 0 {
-			break
-		}
-		time.Sleep(time.Second * 5)
-	}
+	getJobStatus(t, ctx, k8sClient, jobName, namespace)
 }
 
 func PrintJobLogs(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace, containerName string, shouldJobFail bool) {
@@ -192,4 +167,23 @@ func PrintJobLogs(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clien
 			return
 		}
 	}
+}
+
+func getJobStatus(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) v1.JobStatus {
+	elapsed := time.After(time.Minute * 15)
+	for {
+		select {
+		case <-elapsed:
+			t.Fatalf("Timeout reached waiting for job %q to complete. Exiting...", jobName)
+		default:
+		}
+		t.Logf("Waiting for job %q to finish...", jobName)
+		job, err := k8sClient.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
+		require.NoError(t, err)
+		if job.Status.Failed > 0 || job.Status.Succeeded > 0 {
+			return job.Status
+		}
+		time.Sleep(time.Second * 5)
+	}
+	return v1.JobStatus{}
 }
