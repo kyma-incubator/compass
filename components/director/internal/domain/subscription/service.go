@@ -28,6 +28,11 @@ type Config struct {
 	RuntimeTypeLabelKey        string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 }
 
+const (
+	// SubdomainLabelKey is the key of the tenant label for subdomain.
+	SubdomainLabelKey = "subdomain"
+)
+
 // RuntimeService is responsible for Runtime operations
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
@@ -57,6 +62,7 @@ type LabelService interface {
 	CreateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 	UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
 //go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -305,7 +311,21 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		}
 	}
 
-	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName); err != nil {
+	subdomainLabel, err := s.labelSvc.GetByKey(ctx, consumerInternalTenant, model.TenantLabelableObject, consumerInternalTenant, SubdomainLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return false, errors.Wrapf(err, "while getting label %q for %q with id %q", SubdomainLabelKey, model.TenantLabelableObject, consumerInternalTenant)
+		}
+	}
+
+	subdomainValue := ""
+	if subdomainLabel != nil && subdomainLabel.Value != nil {
+		if subdomainLabelValue, ok := subdomainLabel.Value.(string); ok {
+			subdomainValue = subdomainLabelValue
+		}
+	}
+
+	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region); err != nil {
 		return false, err
 	}
 
@@ -377,10 +397,12 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID string, subscribedAppName string) error {
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string) error {
 	values := []*model.ApplicationTemplateValueInput{
 		{Placeholder: "name", Value: subscribedAppName},
 		{Placeholder: "display-name", Value: subscribedAppName},
+		{Placeholder: "subdomain", Value: subdomain},
+		{Placeholder: "region", Value: region},
 	}
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
