@@ -100,7 +100,7 @@ func (ns *notificationsService) SendNotifications(ctx context.Context, notificat
 		log.C(ctx).Infof("Sending notification %d out of %d for webhook with ID %s", i+1, len(notifications), notification.Webhook.ID)
 		resp, err := ns.webhookClient.Do(ctx, notification)
 		if err != nil {
-			errorMsg := fmt.Sprintf("Failed while executing webhook with ID %s", notification.Webhook.ID)
+			errorMsg := fmt.Sprintf("Failed while executing webhook with ID %q and type %q", notification.Webhook.ID, notification.Webhook.Type)
 			log.C(ctx).Warn(errorMsg)
 			errs = multierror.Append(errs, errors.Wrapf(err, "while executing webhook with ID %s", notification.Webhook.ID))
 			resp = &webhookdir.Response{

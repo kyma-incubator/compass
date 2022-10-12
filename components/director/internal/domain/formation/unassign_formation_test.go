@@ -140,7 +140,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, ApplicationID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -187,7 +187,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, ApplicationID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -218,7 +218,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, ApplicationID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -255,7 +255,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, RuntimeID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -295,7 +295,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, RuntimeID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -370,7 +370,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, RuntimeID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -406,7 +406,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, RuntimeID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				// ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error
 				return formationAssignmentSvc
@@ -949,7 +949,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, ApplicationID).Return(nil, testErr)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(nil, testErr)
 				return formationAssignmentSvc
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -984,7 +984,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, ApplicationID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(testErr)
 				return formationAssignmentSvc
 			},
@@ -1030,7 +1030,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, RuntimeID).Return(nil, testErr)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(nil, testErr)
 				return formationAssignmentSvc
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -1070,7 +1070,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			NotificationServiceFN: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, expected.ID, RuntimeID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, Tnt, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(testErr)
 				return formationAssignmentSvc
 			},

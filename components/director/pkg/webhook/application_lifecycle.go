@@ -35,7 +35,7 @@ func (rd *ApplicationLifecycleWebhookRequestObject) ParseHeadersTemplate(tmpl *s
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
 
-// GetParticipants missing godoc
-func (rd *ApplicationLifecycleWebhookRequestObject) GetParticipants() []string {
+// GetParticipantsIDs unused, as this is not part of a formation notification, will be removed in a following PR
+func (rd *ApplicationLifecycleWebhookRequestObject) GetParticipantsIDs() []string {
 	return []string{}
 }

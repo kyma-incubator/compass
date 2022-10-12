@@ -36,7 +36,7 @@ type TemplateInput interface {
 	ParseURLTemplate(tmpl *string) (*URL, error)
 	ParseInputTemplate(tmpl *string) ([]byte, error)
 	ParseHeadersTemplate(tmpl *string) (http.Header, error)
-	GetParticipants() []string
+	GetParticipantsIDs() []string
 }
 
 // Mode is an enum for the mode of the webhook (sync or async)

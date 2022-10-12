@@ -421,7 +421,7 @@ func TestService_ListByFormationIDs(t *testing.T) {
 	}
 }
 
-func TestService_ListFormationAssignmentsForObject(t *testing.T) {
+func TestService_ListFormationAssignmentsForObjectID(t *testing.T) {
 	// GIVEN
 
 	formationID := "formationID"
@@ -475,7 +475,7 @@ func TestService_ListFormationAssignmentsForObject(t *testing.T) {
 			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
-			r, err := svc.ListFormationAssignmentsForObject(testCase.Context, formationID, objectID)
+			r, err := svc.ListFormationAssignmentsForObjectID(testCase.Context, formationID, objectID)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -950,7 +950,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 	runtimCtxID := "runtimeCtx"
 	runtimeContext := &model.RuntimeContext{RuntimeID: runtimeID}
 	templateInput := &automock.TemplateInput{}
-	templateInput.Mock.On("GetParticipants").Return([]string{"source1", "source2"})
+	templateInput.Mock.On("GetParticipantsIDs").Return([]string{"source1", "source2"})
 
 	matchedApplicationAssignment := &model.FormationAssignment{
 		Source:     "source1",
@@ -1195,7 +1195,7 @@ func TestService_CreateOrUpdateFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(readyStateAssignment)).Return(nil).Once()
+				repo.On("Create", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(readyStateAssignment)).Return(nil).Once()
 				return repo
 			},
 			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
@@ -1212,7 +1212,7 @@ func TestService_CreateOrUpdateFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(configPendingStateAssignment)).Return(nil).Once()
+				repo.On("Create", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configPendingStateAssignment)).Return(nil).Once()
 				return repo
 			},
 			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
@@ -1229,7 +1229,7 @@ func TestService_CreateOrUpdateFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(configAssignment)).Return(nil).Once()
+				repo.On("Create", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Return(nil).Once()
 				return repo
 			},
 			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
@@ -1246,7 +1246,7 @@ func TestService_CreateOrUpdateFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(errorStateAssignment)).Return(nil).Once()
+				repo.On("Create", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(errorStateAssignment)).Return(nil).Once()
 				return repo
 			},
 			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
@@ -1263,7 +1263,7 @@ func TestService_CreateOrUpdateFormationAssignment(t *testing.T) {
 			Context: ctxWithTenant,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Create", ctxWithTenant, fixAddIDAndTenantToFormationAssignment(readyStateAssignment)).Return(testErr).Once()
+				repo.On("Create", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(readyStateAssignment)).Return(testErr).Once()
 				return repo
 			},
 			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {

@@ -42,7 +42,7 @@ func (rd *ApplicationTenantMappingInput) ParseHeadersTemplate(tmpl *string) (htt
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
 
-// GetParticipants missing godoc
-func (rd *ApplicationTenantMappingInput) GetParticipants() []string {
+// GetParticipantsIDs returns the list of IDs part of the FormationConfigurationChangeInput
+func (rd *ApplicationTenantMappingInput) GetParticipantsIDs() []string {
 	return []string{rd.SourceApplication.ID, rd.TargetApplication.ID}
 }

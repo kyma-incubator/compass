@@ -35,27 +35,6 @@ func (_m *FormationAssignmentService) CleanupFormationAssignment(ctx context.Con
 	return r0
 }
 
-// Create provides a mock function with given fields: ctx, in
-func (_m *FormationAssignmentService) Create(ctx context.Context, in *model.FormationAssignmentInput) (string, error) {
-	ret := _m.Called(ctx, in)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignmentInput) string); ok {
-		r0 = rf(ctx, in)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationAssignmentInput) error); ok {
-		r1 = rf(ctx, in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // CreateOrUpdateFormationAssignment provides a mock function with given fields: ctx, assignment, response
 func (_m *FormationAssignmentService) CreateOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhook.Response) error {
 	ret := _m.Called(ctx, assignment, response)
@@ -63,20 +42,6 @@ func (_m *FormationAssignmentService) CreateOrUpdateFormationAssignment(ctx cont
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, *webhook.Response) error); ok {
 		r0 = rf(ctx, assignment, response)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Delete provides a mock function with given fields: ctx, id
-func (_m *FormationAssignmentService) Delete(ctx context.Context, id string) error {
-	ret := _m.Called(ctx, id)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -100,29 +65,6 @@ func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, t
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation) error); ok {
 		r1 = rf(ctx, tnt, objectID, objectType, _a4)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Get provides a mock function with given fields: ctx, id
-func (_m *FormationAssignmentService) Get(ctx context.Context, id string) (*model.FormationAssignment, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *model.FormationAssignment
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FormationAssignment); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.FormationAssignment)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -176,8 +118,8 @@ func (_m *FormationAssignmentService) ListByFormationIDs(ctx context.Context, fo
 	return r0, r1
 }
 
-// ListFormationAssignmentsForObject provides a mock function with given fields: ctx, formationID, objectID
-func (_m *FormationAssignmentService) ListFormationAssignmentsForObject(ctx context.Context, formationID string, objectID string) ([]*model.FormationAssignment, error) {
+// ListFormationAssignmentsForObjectID provides a mock function with given fields: ctx, formationID, objectID
+func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx context.Context, formationID string, objectID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, formationID, objectID)
 
 	var r0 []*model.FormationAssignment
@@ -206,20 +148,6 @@ func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Co
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.FormationAssignment, []*webhookclient.Request, []*webhook.Response, func(context.Context, *model.FormationAssignment, *webhook.Response) error) error); ok {
 		r0 = rf(ctx, tenant, formationAssignmentsForObject, requests, responses, operation)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Update provides a mock function with given fields: ctx, id, in
-func (_m *FormationAssignmentService) Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error {
-	ret := _m.Called(ctx, id, in)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignmentInput) error); ok {
-		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)
 	}

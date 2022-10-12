@@ -60,7 +60,7 @@ type templateInput interface {
 	ParseURLTemplate(tmpl *string) (*webhookdir.URL, error)
 	ParseInputTemplate(tmpl *string) ([]byte, error)
 	ParseHeadersTemplate(tmpl *string) (http.Header, error)
-	GetParticipants() []string
+	GetParticipantsIDs() []string
 }
 
 // UIDService generates UUIDs for new entities
@@ -159,7 +159,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.repo.List(ctx, pageSize, cursor, tenantID)
 }
 
-// ListByFormationIDs retrieves a page of Formation Assignment objects for each Formation
+// ListByFormationIDs retrieves a pages of Formation Assignment objects for each of the provided formation IDs
 func (s *service) ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error) {
 	log.C(ctx).Infof("Listing formation assignment for formation with IDs: %q", formationIDs)
 
@@ -175,8 +175,8 @@ func (s *service) ListByFormationIDs(ctx context.Context, formationIDs []string,
 	return s.repo.ListByFormationIDs(ctx, tnt, formationIDs, pageSize, cursor)
 }
 
-// ListFormationAssignmentsForObject retrieves all Formation Assignment objects for formation with ID `formationID` that have `objectID` as source or target
-func (s *service) ListFormationAssignmentsForObject(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error) {
+// ListFormationAssignmentsForObjectID retrieves all Formation Assignment objects for formation with ID `formationID` that have `objectID` as source or target
+func (s *service) ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -255,6 +255,8 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		return nil, err
 	}
 
+	// When assigning an object to a formation we need to create two formation assignments per participant.
+	// In the first formation assignment the object we're assigning will be the source and in the second it will be the target
 	assignments := make([]*model.FormationAssignment, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2)
 	for _, app := range applications {
 		if app.ID == objectID {
@@ -303,8 +305,8 @@ func (s *service) GenerateAssignmentsForParticipant(tnt, objectID string, object
 	return assignments
 }
 
-// ProcessFormationAssignments matches the formation assignments with the requests and responses and executes the provided `operation` on the FormationAssignmentMapping with the response
-func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response, operation func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error {
+// ProcessFormationAssignments matches the formation assignments with the requests and responses and executes the provided `formationAssignmentFunc` on the FormationAssignmentMapping with the response
+func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhookdir.Response, formationAssignmentFunc func(context.Context, *model.FormationAssignment, *webhookdir.Response) error) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -316,7 +318,7 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string
 		return errors.Wrap(err, "while mapping formationAssignments to notification requests and responses")
 	}
 	for _, mapping := range assignmentRequestMappings {
-		if err := operation(ctx, mapping.FormationAssignment, mapping.Response); err != nil {
+		if err := formationAssignmentFunc(ctx, mapping.FormationAssignment, mapping.Response); err != nil {
 			return err
 		}
 	}
@@ -325,7 +327,7 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string
 	return tx.Commit()
 }
 
-// CreateOrUpdateFormationAssignment prepares the `State` and `Config` of the formation assignment based on the response and saves it in the database
+// CreateOrUpdateFormationAssignment prepares the `State` and `Config` of the formation assignment based on the webhook response and saves it in the database
 func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhookdir.Response) error {
 	if response == nil || *response.ActualStatusCode == *response.SuccessStatusCode {
 		assignment.State = string(model.ReadyAssignmentState)
@@ -349,9 +351,9 @@ func (s *service) CreateOrUpdateFormationAssignment(ctx context.Context, assignm
 	}
 
 	if _, err := s.Create(ctx, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
-		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
+		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q of type %q and target %q of type %q", assignment.FormationID, assignment.Source, assignment.SourceType, assignment.Target, assignment.TargetType)
 	}
-	log.C(ctx).Infof("Assignment with ID %s was createed with %s state", assignment.ID, assignment.State)
+	log.C(ctx).Infof("Assignment with ID %s was created with %s state", assignment.ID, assignment.State)
 
 	return nil
 }
@@ -444,7 +446,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 				continue
 			}
 
-			participants := request.Object.GetParticipants()
+			participants := request.Object.GetParticipantsIDs()
 			for _, id := range participants {
 				if assignment.Source == id {
 					mappingObject.Request = requests[j]
