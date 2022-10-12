@@ -823,10 +823,7 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 		return err
 	}
 
-	formations, err = modificationFunc(formations, formationName)
-	if err != nil {
-		return err
-	}
+	formations = modificationFunc(formations, formationName)
 
 	schema, err := labeldef.NewSchemaForFormations(formations)
 	if err != nil {
@@ -863,10 +860,7 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID st
 		return err
 	}
 
-	formations, err := modificationFunc(existingFormations, formation.Name)
-	if err != nil {
-		return err
-	}
+	formations := modificationFunc(existingFormations, formation.Name)
 
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
@@ -878,19 +872,19 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID st
 	return s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
 
-type modificationFunc func([]string, string) ([]string, error)
+type modificationFunc func([]string, string) []string
 
-func addFormation(formations []string, formation string) ([]string, error) {
+func addFormation(formations []string, formation string) []string {
 	for _, f := range formations {
 		if f == formation {
-			return nil, apperrors.NewNotUniqueErrorWithMessage(resource.Formations, fmt.Sprintf("Formation %s already exists", formation))
+			return formations
 		}
 	}
 
-	return append(formations, formation), nil
+	return append(formations, formation)
 }
 
-func deleteFormation(formations []string, formation string) ([]string, error) {
+func deleteFormation(formations []string, formation string) ([]string) {
 	filteredFormations := make([]string, 0, len(formations))
 	for _, f := range formations {
 		if f != formation {
@@ -898,7 +892,7 @@ func deleteFormation(formations []string, formation string) ([]string, error) {
 		}
 	}
 
-	return filteredFormations, nil
+	return filteredFormations
 }
 
 func newLabelInput(formation, objectID string, objectType model.LabelableObject) *model.LabelInput {

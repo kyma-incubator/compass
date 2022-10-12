@@ -376,6 +376,11 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		return nil
 	}
 
+	// TODO Check for config pending?
+	if assignment.State == string(model.ReadyAssignmentState) {
+		return nil
+	}
+
 	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
 	if err != nil {
 		updateError := s.setAssignmentToErrorState(ctx, assignment, "error while sending notification", TechnicalError, model.CreateErrorAssignmentState)
@@ -398,6 +403,7 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
 		assignment.State = string(model.ReadyAssignmentState)
+		assignment.Value = json.RawMessage{}
 	}
 
 	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
@@ -625,10 +631,10 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 		}
 		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
 	}
-	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments)+1, len(requests)+1, len(assignments)-len(requests))
+	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments), len(requests), len(assignments)-len(requests))
 	sourceToTargetToMapping := make(map[string]map[string]*FormationAssignmentRequestMapping)
 	for _, mapping := range formationAssignmentMapping {
-		if _, ok := sourceToTargetToMapping[mapping.FormationAssignment.Target]; !ok {
+		if _, ok := sourceToTargetToMapping[mapping.FormationAssignment.Source]; !ok {
 			sourceToTargetToMapping[mapping.FormationAssignment.Source] = make(map[string]*FormationAssignmentRequestMapping, len(assignments)/2)
 		}
 		sourceToTargetToMapping[mapping.FormationAssignment.Source][mapping.FormationAssignment.Target] = mapping
@@ -642,10 +648,14 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 			Assignment:        mapping,
 			ReverseAssignment: reverseMapping,
 		})
-		mapping.Request.Object.SetAssignment(mapping.FormationAssignment)
-		mapping.Request.Object.SetReverseAssignment(reverseMapping.FormationAssignment)
-		reverseMapping.Request.Object.SetAssignment(reverseMapping.FormationAssignment)
-		reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
+		if mapping.Request != nil {
+			mapping.Request.Object.SetAssignment(mapping.FormationAssignment)
+			mapping.Request.Object.SetReverseAssignment(reverseMapping.FormationAssignment)
+		}
+		if reverseMapping.Request != nil {
+			reverseMapping.Request.Object.SetAssignment(reverseMapping.FormationAssignment)
+			reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
+		}
 	}
 	return assignmentMappingPairs, nil
 }
