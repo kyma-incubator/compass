@@ -84,14 +84,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Success with template mappings", func(t *testing.T) {
-		//systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-		//	{
-		//		ID:          "type1",
-		//		SourceKey:   []string{"templateProp"},
-		//		SourceValue: []string{"type1"},
-		//	},
-		//}
-
 		mock.expectedFilterCriteria = " key eq 'type1' "
 
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
@@ -130,14 +122,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Success for more than one page", func(t *testing.T) {
-		//systemfetcher.Mappings = []systemfetcher.TemplateMapping{
-		//	{
-		//		ID:          "type1",
-		//		SourceKey:   []string{"templateProp"},
-		//		SourceValue: []string{"type1"},
-		//	},
-		//}
-
 		mock.expectedFilterCriteria = " key eq 'type1' "
 
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
@@ -171,27 +155,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
-		//systemfetcher.Mappings = []systemfetcher.TemplateMapping{
-		//	{
-		//		Name:        "type1",
-		//		ID:          "type1",
-		//		SourceKey:   []string{"templateProp"},
-		//		SourceValue: []string{"type1"},
-		//	},
-		//	{
-		//		Name:        "type2",
-		//		ID:          "type2",
-		//		SourceKey:   []string{"templateProp"},
-		//		SourceValue: []string{"type2"},
-		//	},
-		//	{
-		//		Name:        "type3",
-		//		ID:          "type3",
-		//		SourceKey:   []string{"templateProp"},
-		//		SourceValue: []string{"type3"},
-		//	},
-		//}
-
 		mock.expectedFilterCriteria = " key eq 'type1' or key eq 'type2' or key eq 'type3' "
 		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
