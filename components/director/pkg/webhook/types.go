@@ -42,7 +42,7 @@ type TemplateInput interface {
 // FormationAssignmentTemplateInput is an interface that unions all structs that can act as a template input for a webhook
 type FormationAssignmentTemplateInput interface {
 	TemplateInput
-	GetParticipants() []string
+	GetParticipantsIDs() []string
 	GetAssignment() *model.FormationAssignment
 	GetReverseAssignment() *model.FormationAssignment
 	SetAssignment(*model.FormationAssignment)

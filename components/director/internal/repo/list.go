@@ -120,7 +120,7 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 	return l.listWithTenantScope(ctx, resourceType, tenant, dest, NoLock, additionalConditions)
 }
 
-// ListConditionTree lists tenant scoped entities with tenant isolation subquery based on equal condition on tenantColumn.
+// ListConditionTree lists tenant scoped entities matching the provided condition tree with tenant isolation which is based on equal condition on tenantColumn.
 func (l *universalLister) ListConditionTree(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, conditionTree *ConditionTree) error {
 	return l.listConditionTreeWithEmbeddedTenant(ctx, resourceType, tenant, dest, NoLock, conditionTree)
 }

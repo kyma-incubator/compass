@@ -13,21 +13,23 @@ import (
 const (
 	configTpl = `[{"consumer_type": "%s", "tenant_access_levels": ["%s"], "subject": "%s", "internal_consumer_id": "%s"}]`
 
-	validConsumer           = "Integration System"
-	validAccessLvl          = "account"
-	validSubject            = "C=DE, OU=Compass Clients, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"
-	validInternalConsumerID = "3bfbb60f-d67d-4657-8f9e-2d73a6b24a10"
+	validConsumer             = "Integration System"
+	validAccessLvl            = "account"
+	validSubjectWithoutRegion = "C=DE, OU=Compass Clients, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"
+	validSubjectWithRegion    = "C=DE, OU=Compass Clients, OU=Region, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"
+	validInternalConsumerID   = "3bfbb60f-d67d-4657-8f9e-2d73a6b24a10"
 
 	invalidValue = "test"
 )
 
-var validConfig = fmt.Sprintf(configTpl, validConsumer, validAccessLvl, validSubject, validInternalConsumerID)
+var validConfig = fmt.Sprintf(configTpl, validConsumer, validAccessLvl, validSubjectWithoutRegion, validInternalConsumerID)
 
 func TestNewProcessor(t *testing.T) {
 	testCases := []struct {
 		name             string
 		config           string
 		ouPattern        string
+		ouRegionPattern  string
 		expectedErrorMsg string
 	}{
 		{
@@ -41,12 +43,12 @@ func TestNewProcessor(t *testing.T) {
 		},
 		{
 			name:             "Returns error when configuration contains invalid consumer type",
-			config:           fmt.Sprintf(configTpl, invalidValue, validAccessLvl, validSubject, validInternalConsumerID),
+			config:           fmt.Sprintf(configTpl, invalidValue, validAccessLvl, validSubjectWithoutRegion, validInternalConsumerID),
 			expectedErrorMsg: "consumer type test is not valid",
 		},
 		{
 			name:             "Returns error when configuration contains invalid access level",
-			config:           fmt.Sprintf(configTpl, validConsumer, invalidValue, validSubject, validInternalConsumerID),
+			config:           fmt.Sprintf(configTpl, validConsumer, invalidValue, validSubjectWithoutRegion, validInternalConsumerID),
 			expectedErrorMsg: fmt.Sprintf("tenant access level %s is not valid", invalidValue),
 		},
 		{
@@ -58,7 +60,7 @@ func TestNewProcessor(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := subject.NewProcessor(test.config, test.ouPattern)
+			_, err := subject.NewProcessor(test.config, test.ouPattern, test.ouRegionPattern)
 			if len(test.expectedErrorMsg) > 0 {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.expectedErrorMsg)
@@ -71,32 +73,40 @@ func TestNewProcessor(t *testing.T) {
 
 func TestAuthIDFromSubjectFunc(t *testing.T) {
 	t.Run("Success when internal consumer id is provided", func(t *testing.T) {
-		p, err := subject.NewProcessor(validConfig, "")
+		p, err := subject.NewProcessor(validConfig, "", "")
 		require.NoError(t, err)
 
-		res := p.AuthIDFromSubjectFunc()(validSubject)
+		res := p.AuthIDFromSubjectFunc()(validSubjectWithoutRegion)
 		require.Equal(t, validInternalConsumerID, res)
 	})
 	t.Run("Success when internal consumer id is not provided", func(t *testing.T) {
-		config := fmt.Sprintf(configTpl, validConsumer, validAccessLvl, validSubject, "")
-		p, err := subject.NewProcessor(config, "Compass Clients")
+		config := fmt.Sprintf(configTpl, validConsumer, validAccessLvl, validSubjectWithoutRegion, "")
+		p, err := subject.NewProcessor(config, "Compass Clients", "")
 		require.NoError(t, err)
 
-		res := p.AuthIDFromSubjectFunc()(validSubject)
+		res := p.AuthIDFromSubjectFunc()(validSubjectWithoutRegion)
 		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
 	})
+
 	t.Run("Success getting authID from mapping", func(t *testing.T) {
-		p, err := subject.NewProcessor("[]", "Compass Clients")
+		p, err := subject.NewProcessor("[]", "Compass Clients", "")
 		require.NoError(t, err)
 
-		res := p.AuthIDFromSubjectFunc()(validSubject)
+		res := p.AuthIDFromSubjectFunc()(validSubjectWithoutRegion)
 		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
 	})
-	t.Run("Success getting authID from OUs", func(t *testing.T) {
-		p, err := subject.NewProcessor(fmt.Sprintf(configTpl, validConsumer, validAccessLvl, "OU=Random OU", validInternalConsumerID), "Compass Clients")
+	t.Run("Success getting authID from OUs when region is missing", func(t *testing.T) {
+		p, err := subject.NewProcessor(fmt.Sprintf(configTpl, validConsumer, validAccessLvl, "OU=Random OU", validInternalConsumerID), "Compass Clients", "")
 		require.NoError(t, err)
 
-		res := p.AuthIDFromSubjectFunc()(validSubject)
+		res := p.AuthIDFromSubjectFunc()(validSubjectWithoutRegion)
+		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
+	})
+	t.Run("Success getting authID from OUs when region exists in subject", func(t *testing.T) {
+		p, err := subject.NewProcessor(fmt.Sprintf(configTpl, validConsumer, validAccessLvl, "OU=Random OU", validInternalConsumerID), "Compass Clients", "Region")
+		require.NoError(t, err)
+
+		res := p.AuthIDFromSubjectFunc()(validSubjectWithRegion)
 		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
 	})
 }
@@ -105,17 +115,17 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Success getting auth session extra", func(t *testing.T) {
-		p, err := subject.NewProcessor(validConfig, "")
+		p, err := subject.NewProcessor(validConfig, "", "")
 		require.NoError(t, err)
 
-		extra := p.AuthSessionExtraFromSubjectFunc()(ctx, validSubject)
+		extra := p.AuthSessionExtraFromSubjectFunc()(ctx, validSubjectWithoutRegion)
 		require.Equal(t, validConsumer, extra["consumer_type"])
 		require.Equal(t, []string{validAccessLvl}, extra["tenant_access_levels"])
 		require.Equal(t, validInternalConsumerID, extra["internal_consumer_id"])
 	})
 	t.Run("Returns nil when can't match subjects components", func(t *testing.T) {
 		invalidSubject := "C=DE, OU=Compass Clients, OU=Random OU, L=validate, CN=test-compass-integration"
-		p, err := subject.NewProcessor(validConfig, "")
+		p, err := subject.NewProcessor(validConfig, "", "")
 		require.NoError(t, err)
 
 		extra := p.AuthSessionExtraFromSubjectFunc()(ctx, invalidSubject)
@@ -123,7 +133,7 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 	})
 	t.Run("Returns nil when can't match number of subjects components", func(t *testing.T) {
 		invalidSubject := "C=DE, OU=Compass Clients, L=validate, CN=test-compass-integration"
-		p, err := subject.NewProcessor(validConfig, "")
+		p, err := subject.NewProcessor(validConfig, "", "")
 		require.NoError(t, err)
 
 		extra := p.AuthSessionExtraFromSubjectFunc()(ctx, invalidSubject)

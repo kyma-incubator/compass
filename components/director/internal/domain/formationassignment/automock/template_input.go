@@ -14,8 +14,8 @@ type TemplateInput struct {
 	mock.Mock
 }
 
-// GetParticipants provides a mock function with given fields:
-func (_m *TemplateInput) GetParticipants() []string {
+// GetParticipantsIDs provides a mock function with given fields:
+func (_m *TemplateInput) GetParticipantsIDs() []string {
 	ret := _m.Called()
 
 	var r0 []string

@@ -1688,7 +1688,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			NotificationSvcFn: noActionNotificationsService,
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -1752,7 +1752,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			NotificationSvcFn: noActionNotificationsService,
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -1806,7 +1806,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			NotificationSvcFn: noActionNotificationsService,
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -1858,7 +1858,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			NotificationSvcFn: noActionNotificationsService,
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -2782,7 +2782,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			NotificationServiceFn: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -2844,7 +2844,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			NotificationServiceFn: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -2896,7 +2896,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			NotificationServiceFn: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
@@ -2946,7 +2946,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			NotificationServiceFn: noActionNotificationsService,
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObject", ctx, mock.Anything, mock.Anything).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
 				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},

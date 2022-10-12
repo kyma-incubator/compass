@@ -66,8 +66,8 @@ func (rd *FormationConfigurationChangeInput) ParseHeadersTemplate(tmpl *string) 
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
 
-// GetParticipants missing godoc
-func (rd *FormationConfigurationChangeInput) GetParticipants() []string {
+// GetParticipantsIDs returns the list of IDs part of the FormationConfigurationChangeInput
+func (rd *FormationConfigurationChangeInput) GetParticipantsIDs() []string {
 	var participants []string
 	if rd.Application != nil {
 		participants = append(participants, rd.Application.ID)

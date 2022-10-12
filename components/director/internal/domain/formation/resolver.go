@@ -2,6 +2,9 @@ package formation
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -32,11 +35,15 @@ type Converter interface {
 	MultipleToGraphQL(in []*model.Formation) []*graphql.Formation
 }
 
-// FormationAssignmentService is responsible for the service-layer FormationAssignment operations
-//go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type FormationAssignmentService interface {
+//go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentService interface {
 	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
+	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
+	ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.NotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) error) error
+	UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
+	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
+	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
 }
 
 // FormationAssignmentConverter converts FormationAssignment between the model.FormationAssignment service-layer representation and graphql.FormationAssignment.
@@ -57,13 +64,13 @@ type Resolver struct {
 	transact                persistence.Transactioner
 	service                 Service
 	conv                    Converter
-	formationAssignmentSvc  FormationAssignmentService
+	formationAssignmentSvc  formationAssignmentService
 	formationAssignmentConv FormationAssignmentConverter
 	fetcher                 TenantFetcher
 }
 
 // NewResolver creates formation resolver
-func NewResolver(transact persistence.Transactioner, service Service, conv Converter, formationAssignmentSvc FormationAssignmentService, formationAssignmentConv FormationAssignmentConverter, fetcher TenantFetcher) *Resolver {
+func NewResolver(transact persistence.Transactioner, service Service, conv Converter, formationAssignmentSvc formationAssignmentService, formationAssignmentConv FormationAssignmentConverter, fetcher TenantFetcher) *Resolver {
 	return &Resolver{
 		transact:                transact,
 		service:                 service,

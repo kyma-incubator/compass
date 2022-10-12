@@ -139,7 +139,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-80"
+      version: "PR-82"
       name: compass-ord-service
     schema_migrator:
       dir:
@@ -160,7 +160,7 @@ global:
       name: compass-external-services-mock
     console:
       dir:
-      version: "PR-69"
+      version: "PR-72"
       name: compass-console
     e2e_tests:
       dir:
@@ -365,7 +365,7 @@ global:
     host: compass-hydrator.compass-system.svc.cluster.local
     port: 3000
     prefix: /hydrators
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
       clientIDKey: "client_id"
@@ -633,6 +633,7 @@ global:
   externalCertConfiguration:
     issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
+    technicalClientSubjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=%s/L=%s/CN=%s"
     ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
     locality: "local"
@@ -1001,6 +1002,9 @@ global:
   # and scopes mapped to a consumer with the given type, then that consumer is using a client certificate
   scopes:
     scopesPerConsumerType:
+      technical_client:
+        - "tenant:read"
+        - "tenant:write"
       runtime:
         - "runtime:read"
         - "runtime:write"

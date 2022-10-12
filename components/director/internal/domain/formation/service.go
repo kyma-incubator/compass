@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -113,21 +112,6 @@ type automaticFormationAssignmentRepository interface {
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-}
-
-//go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationAssignmentService interface {
-	Create(ctx context.Context, in *model.FormationAssignmentInput) (string, error)
-	Get(ctx context.Context, id string) (*model.FormationAssignment, error)
-	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
-	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
-	ListFormationAssignmentsForObject(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
-	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
-	Delete(ctx context.Context, id string) error
-	ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.NotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) error) error
-	UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
-	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
-	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
 }
 
 type service struct {
@@ -432,7 +416,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -481,7 +465,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObject(ctx, formationFromDB.ID, objectID)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}

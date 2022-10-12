@@ -61,6 +61,7 @@ func (c *converter) MultipleToGraphQL(in []*model.FormationAssignment) ([]*graph
 	return formationAssignment, nil
 }
 
+// ToInput converts from internal model to internal model input
 func (c *converter) ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput {
 	if assignment == nil {
 		return nil
@@ -77,6 +78,7 @@ func (c *converter) ToInput(assignment *model.FormationAssignment) *model.Format
 	}
 }
 
+// FromInput converts from internal model input to internal model
 func (c *converter) FromInput(in *model.FormationAssignmentInput) *model.FormationAssignment {
 	if in == nil {
 		return nil

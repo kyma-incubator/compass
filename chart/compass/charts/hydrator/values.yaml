@@ -21,7 +21,8 @@ deployment:
     externalIssuerSubject:
       country: "DE"
       organization: "SAP SE"
-      organizationalUnitPattern: "Region|SAP Cloud Platform Clients" # Region or SAP Cloud Platform Clients
+      organizationalUnitPattern: "SAP Cloud Platform Clients"
+      organizationalUnitRegionPattern: "Region"
   securityContext: # Set on container level
     runAsUser: 2000
     allowPrivilegeEscalation: false
