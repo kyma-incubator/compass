@@ -62,6 +62,7 @@ const (
 	TenantID2                        = "18271026-3998-4391-be58-b783a09fcca8"
 	TargetTenantID2                  = "targetTenantID2"
 	WebhookID                        = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
+	Webhook2ID                       = "b9a62a7d-6805-43f9-a3be-370d2d125f0f"
 	RuntimeID                        = "rt-id"
 	WebhookForRuntimeContextID       = "5202f196-46d7-4d1e-be50-434dd9fcd157"
 	AppTenantMappingWebhookIDForApp1 = "b91e7d97-65ed-4b72-a225-4a3b484c27e1"
@@ -307,11 +308,11 @@ func fixRuntimeContextLabels() map[string]*model.Label {
 	}
 }
 
-func fixWebhookModel(webhookID, runtimeID string) *model.Webhook {
+func fixConfigurationChangedWebhookModel(webhookID, objectID string, objectType model.WebhookReferenceObjectType) *model.Webhook {
 	return &model.Webhook{
 		ID:         webhookID,
-		ObjectID:   runtimeID,
-		ObjectType: model.RuntimeWebhookReference,
+		ObjectID:   objectID,
+		ObjectType: objectType,
 		Type:       model.WebhookTypeConfigurationChanged,
 	}
 }
@@ -325,11 +326,19 @@ func fixApplicationTenantMappingWebhookModel(webhookID, appID string) *model.Web
 	}
 }
 
-func fixWebhookGQLModel(webhookID, runtimeID string) *graphql.Webhook {
+func fixRuntimeWebhookGQLModel(webhookID, runtimeID string) *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:        webhookID,
 		RuntimeID: str.Ptr(runtimeID),
 		Type:      graphql.WebhookTypeConfigurationChanged,
+	}
+}
+
+func fixApplicationWebhookGQLModel(webhookID, appID string) *graphql.Webhook {
+	return &graphql.Webhook{
+		ID:            webhookID,
+		ApplicationID: str.Ptr(appID),
+		Type:          graphql.WebhookTypeConfigurationChanged,
 	}
 }
 

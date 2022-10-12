@@ -570,7 +570,7 @@ func (ns *notificationsService) generateApplicationNotificationsForRuntimeAssign
 	log.C(ctx).Infof("There are %d out of %d applications listening for runtime-to-app formation notifications in tenant %s that are in scenario %s", len(listeningApplicationsInScenario), len(listeningApplicationIDs), tenant, formation.Name)
 
 	applicationsToBeNotifiedIDs := make(map[string]bool, len(listeningApplicationsInScenario))
-	applicationsTemplateIDs := make([]string, len(listeningApplicationsInScenario))
+	applicationsTemplateIDs := make([]string, 0, len(listeningApplicationsInScenario))
 	for _, app := range listeningApplicationsInScenario {
 		applicationsToBeNotifiedIDs[app.ID] = true
 		if app.ApplicationTemplateID != nil {

@@ -54,25 +54,36 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		ExpectedRequests          []*webhookclient.Request
 		ExpectedErrMessage        string
 	}{
+		// start testing 'generateRuntimeNotificationsForRuntimeAssignment' and 'generateApplicationNotificationsForRuntimeAssignment' funcs
 		{
-			Name: "success for runtime",
+			Name: "success when generating notifications for runtime about all applications in that formation and" +
+				"success when generating notifications for all listening applications about the assigned runtime in that formation",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+
+				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			WebhookConverterFN: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", fixWebhookModel(WebhookID, RuntimeID)).Return(fixWebhookGQLModel(WebhookID, RuntimeID), nil)
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(fixRuntimeWebhookGQLModel(WebhookID, RuntimeID), nil)
+
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(fixApplicationWebhookGQLModel(WebhookID, ApplicationID), nil)
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(fixApplicationWebhookGQLModel(Webhook2ID, Application2ID), nil)
 				return conv
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
 				repo := &automock.ApplicationTemplateRepository{}
 				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil)
+
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil)
+
 				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil)
 				return repo
 			},
@@ -86,11 +97,22 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
+
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			ObjectType:     graphql.FormationObjectTypeRuntime,
@@ -99,7 +121,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			InputFormation: expectedFormation,
 			ExpectedRequests: []*webhookclient.Request{
 				{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: expectedFormation.ID,
@@ -120,7 +142,46 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 					CorrelationID: "",
 				},
 				{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:           model.AssignFormation,
+						FormationID:         expectedFormation.ID,
+						ApplicationTemplate: nil,
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModelWithoutTemplate(Application2ID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: expectedFormation.ID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixApplicationWebhookGQLModel(Webhook2ID, Application2ID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:           model.AssignFormation,
 						FormationID:         expectedFormation.ID,
@@ -149,7 +210,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookConverterFN: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", fixWebhookModel(WebhookID, RuntimeID)).Return(nil, testErr)
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr)
 				return conv
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -175,7 +236,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -211,7 +272,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -246,7 +307,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -274,7 +335,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -301,7 +362,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -328,7 +389,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -387,8 +448,9 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
 		},
+		// start testing 'generateRuntimeNotificationsForRuntimeContextAssignment' func
 		{
-			Name: "success for runtime context",
+			Name: "success when generating notifications for runtime contexts about all applications in that formation",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
@@ -396,7 +458,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookConverterFN: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", fixWebhookModel(WebhookID, RuntimeContextRuntimeID)).Return(fixWebhookGQLModel(WebhookID, RuntimeContextRuntimeID), nil)
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID), nil)
 				return conv
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -429,7 +491,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeContextRuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:    graphql.FormationObjectTypeRuntimeContext,
@@ -437,7 +499,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ObjectID:      RuntimeContextID,
 			ExpectedRequests: []*webhookclient.Request{
 				{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: expectedFormation.ID,
@@ -461,7 +523,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 					CorrelationID: "",
 				},
 				{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:           model.AssignFormation,
 						FormationID:         expectedFormation.ID,
@@ -494,7 +556,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookConverterFN: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", fixWebhookModel(WebhookID, RuntimeContextRuntimeID)).Return(nil, testErr)
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr)
 				return conv
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -526,7 +588,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeContextRuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -568,7 +630,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeContextRuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -609,7 +671,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeContextRuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -643,7 +705,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeContextRuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -676,7 +738,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeContextRuntimeID), nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1399,6 +1461,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
+			// start testing 'generateRuntimeNotificationsForApplicationAssignment' and 'generateApplicationNotificationsForApplicationAssignment' funcs
 			Name: "success for application with both runtime and app-to-app notifications",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -1433,14 +1496,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixWebhookModel(WebhookID, RuntimeID), fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
 				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
 				return repo
 			},
 			WebhookConverterFN: func() *automock.WebhookConverter {
 				repo := &automock.WebhookConverter{}
-				repo.On("ToGraphQL", fixWebhookModel(WebhookID, RuntimeID)).Return(fixWebhookGQLModel(WebhookID, RuntimeID), nil)
-				repo.On("ToGraphQL", fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)).Return(fixWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID), nil)
+				repo.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(fixRuntimeWebhookGQLModel(WebhookID, RuntimeID), nil)
+				repo.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID), nil)
 				repo.On("ToGraphQL", fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp1, ApplicationID), nil)
 				repo.On("ToGraphQL", fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID), nil)
 				return repo
@@ -1465,7 +1528,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			ExpectedRequests: []*webhookclient.Request{
 				{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: expectedFormation.ID,
@@ -1486,7 +1549,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 					CorrelationID: "",
 				},
 				{
-					Webhook: *fixWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: expectedFormation.ID,
@@ -1579,12 +1642,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
 				return repo
 			},
 			WebhookConverterFN: func() *automock.WebhookConverter {
 				repo := &automock.WebhookConverter{}
-				repo.On("ToGraphQL", fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)).Return(nil, testErr)
+				repo.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1627,7 +1690,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1669,7 +1732,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1711,7 +1774,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1746,7 +1809,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1779,7 +1842,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1970,7 +2033,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
 				client.On("Do", ctx, &webhookclient.Request{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: FormationID,
@@ -1991,7 +2054,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 					CorrelationID: "",
 				}).Return(nil, nil)
 				client.On("Do", ctx, &webhookclient.Request{
-					Webhook: *fixWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: FormationID,
@@ -2060,7 +2123,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 			},
 			InputRequests: []*webhookclient.Request{
 				{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: FormationID,
@@ -2081,7 +2144,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 					CorrelationID: "",
 				},
 				{
-					Webhook: *fixWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: FormationID,
@@ -2153,7 +2216,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
 				client.On("Do", ctx, &webhookclient.Request{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: FormationID,
@@ -2177,7 +2240,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 			},
 			InputRequests: []*webhookclient.Request{
 				{
-					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
 						FormationID: FormationID,
