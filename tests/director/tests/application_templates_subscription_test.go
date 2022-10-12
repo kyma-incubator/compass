@@ -47,6 +47,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
 			ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 			ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+			ExternalCertProvider:                  certprovider.CertificateService,
 		}
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate

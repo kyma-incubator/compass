@@ -5,7 +5,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/util"
 
@@ -45,13 +47,14 @@ func GetUUIDOrganizationalUnit(subject string) string {
 }
 
 // GetRemainingOrganizationalUnit returns the OU that is remaining after matching previously expected ones based on a given pattern
-func GetRemainingOrganizationalUnit(organizationalUnitPattern string) func(string) string {
+func GetRemainingOrganizationalUnit(organizationalUnitPattern string, ouRegionPattern string) func(string) string {
 	return func(subject string) string {
-		orgUnitRegex := regexp.MustCompile(organizationalUnitPattern)
+		regex := ConstructOURegex(organizationalUnitPattern, ouRegionPattern)
+		orgUnitRegex := regexp.MustCompile(regex)
 		orgUnits := GetAllOrganizationalUnits(subject)
 
 		remainingOrgUnit := ""
-		matchedOrgUnits := 0
+		var matchedOrgUnits int
 		for _, orgUnit := range orgUnits {
 			if !orgUnitRegex.MatchString(orgUnit) {
 				remainingOrgUnit = orgUnit
@@ -60,14 +63,23 @@ func GetRemainingOrganizationalUnit(organizationalUnitPattern string) func(strin
 			}
 		}
 
-		expectedOrgUnits := GetPossibleRegexTopLevelMatches(organizationalUnitPattern)
-		singleRemainingOrgUnitExists := len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
-		if !singleRemainingOrgUnitExists {
-			return ""
+		if len(orgUnits)-matchedOrgUnits == 1 {
+			return remainingOrgUnit
 		}
 
-		return remainingOrgUnit
+		return ""
 	}
+}
+
+// ConstructOURegex returns regex which is used to determine authID from cert subject
+func ConstructOURegex(patterns ...string) string {
+	nonEmptyStr := make([]string, 0)
+	for _, pattern := range patterns {
+		if len(pattern) > 0 {
+			nonEmptyStr = append(nonEmptyStr, fmt.Sprintf("\\b%s\\b", pattern))
+		}
+	}
+	return strings.Join(nonEmptyStr, "|")
 }
 
 // GetAllOrganizationalUnits returns all OU parts of the subject
@@ -102,32 +114,6 @@ func GetAuthSessionExtra(consumerType, internalConsumerID string, accessLevels [
 		AccessLevelsExtraField:  accessLevels,
 		InternalConsumerIDField: internalConsumerID,
 	}
-}
-
-// GetPossibleRegexTopLevelMatches returns the number of possible top level matches of a regex pattern.
-// This means that the pattern will be inspected and split only based on the most top level '|' delimiter
-// and inner group '|' delimiters won't be taken into account.
-func GetPossibleRegexTopLevelMatches(pattern string) int {
-	if pattern == "" {
-		return 0
-	}
-	count := 1
-	openedGroups := 0
-	for _, char := range pattern {
-		switch char {
-		case '|':
-			if openedGroups == 0 {
-				count++
-			}
-		case '(':
-			openedGroups++
-		case ')':
-			openedGroups--
-		default:
-			continue
-		}
-	}
-	return count
 }
 
 // DecodeCertificates accepts raw certificate chain and return slice of parsed certificates

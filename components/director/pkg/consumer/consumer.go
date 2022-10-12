@@ -22,6 +22,8 @@ const (
 	User ConsumerType = "Static User"
 	// SuperAdmin is a consumer type that is used only in our tests
 	SuperAdmin ConsumerType = "Super Admin"
+	// TechnicalClient is a consumer type that is used by Atom
+	TechnicalClient ConsumerType = "Technical Client"
 )
 
 // Consumer missing godoc
@@ -45,6 +47,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return Runtime, nil
 	case model.IntegrationSystemReference:
 		return IntegrationSystem, nil
+	case model.TechnicalClientReference:
+		return TechnicalClient, nil
 	case model.SuperAdminReference:
 		return SuperAdmin, nil
 	}

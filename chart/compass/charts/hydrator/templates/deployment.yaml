@@ -108,6 +108,8 @@ spec:
               value: {{ .Values.deployment.args.externalIssuerSubject.organization | quote }}
             - name: APP_EXTERNAL_ISSUER_SUBJECT_ORGANIZATIONAL_UNIT_PATTERN
               value: {{ .Values.deployment.args.externalIssuerSubject.organizationalUnitPattern | quote }}
+            - name: APP_EXTERNAL_ISSUER_SUBJECT_ORGANIZATIONAL_UNIT_REGION_PATTERN
+              value: {{ .Values.deployment.args.externalIssuerSubject.organizationalUnitRegionPattern | quote }}
             - name: APP_CERTIFICATE_DATA_HEADER
               value: {{ .Values.global.hydrator.certificateDataHeader | quote }}
             - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG

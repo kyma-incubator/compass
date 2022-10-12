@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -140,6 +141,10 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 			wgDB.Done()
 		}()
 		for tenantSystems := range systemsQueue {
+			entry := log.C(ctx)
+			entry = entry.WithField(log.FieldRequestID, uuid.New().String())
+			ctx = log.ContextWithLogger(ctx, entry)
+
 			if err = s.processSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems); err != nil {
 				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantSystems.tenant.ExternalTenant)))
 				continue
