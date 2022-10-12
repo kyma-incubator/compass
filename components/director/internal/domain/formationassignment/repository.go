@@ -69,6 +69,16 @@ func (r *repository) Create(ctx context.Context, item *model.FormationAssignment
 	return r.creator.Create(ctx, r.conv.ToEntity(item))
 }
 
+// GetByTargetAndSource queries for a single Formation Assignment matching by a given Target and Source
+func (r *repository) GetByTargetAndSource(ctx context.Context, target, source, tenantID string) (*model.FormationAssignment, error) {
+	var entity Entity
+	if err := r.getter.Get(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("target", target), repo.NewEqualCondition("source", source)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&entity), nil
+}
+
 // Get queries for a single Formation Assignment matching by a given ID
 func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error) {
 	var entity Entity
@@ -172,6 +182,9 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 
 // ListForIDs missing godoc
 func (r *repository) ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error) {
+	if len(ids) == 0 {
+		return []*model.FormationAssignment{}, nil
+	}
 	var entitiesWithIDs EntityCollection
 	conditions := repo.NewInConditionForStringValues("id", ids)
 

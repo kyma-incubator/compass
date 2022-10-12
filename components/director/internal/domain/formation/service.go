@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -144,13 +145,15 @@ type service struct {
 	runtimeContextRepo          runtimeContextRepository
 	formationAssignmentService  formationAssignmentService
 	notificationsService        NotificationsService
+	transact                    persistence.Transactioner
 	runtimeTypeLabelKey         string
 	applicationTypeLabelKey     string
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(transact persistence.Transactioner, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
+		transact:                    transact,
 		labelDefRepository:          labelDefRepository,
 		labelRepository:             labelRepository,
 		formationRepository:         formationRepository,
@@ -276,29 +279,39 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	switch objectType {
 	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
 		//Start transaction tx.Begin
-		// use new ctx that contains the new transaction
-		//rollback unless committed
-		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
+		tx, err := s.transact.Begin()
 		if err != nil {
 			return nil, err
-			//rollback
 		}
-		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		transactionCtx := persistence.SaveToContext(ctx, tx)
+
+		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+		formationFromDB, err := s.assign(transactionCtx, tnt, objectID, objectType, formation)
 		if err != nil {
 			return nil, err
-			//rollback
 		}
-		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		assignments, err := s.formationAssignmentService.GenerateAssignments(transactionCtx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, err
+		}
+		requests, err := s.notificationsService.GenerateNotifications(transactionCtx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
-			//rollback
 		}
 
-		if err := s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, tnt, assignments, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+			commitError := tx.Commit()
+			if commitError != nil {
+				err = errors.Wrapf(err, "and while commiting transaction with error %s", commitError.Error())
+			}
 			return nil, err
-			//first commit and then return error
 		}
 
+		err = tx.Commit()
+		if err != nil {
+			return nil, errors.Wrap(err, "while committing transaction")
+		}
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeTenant:
@@ -424,14 +437,24 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
-		//Start transaction tx.Begin
-		// use new ctx that contains the new transaction
-		//rollback unless committed
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		tx, err := s.transact.Begin()
+		if err != nil {
 			return nil, err
 		}
-		//commit and return error
+		defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
+		ctx = persistence.SaveToContext(ctx, tx)
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+			commitErr := tx.Commit()
+			if commitErr != nil {
+				return nil, errors.Wrapf(err, "while committing transaction with error")
+			}
+			return nil, err
+		}
+		err = tx.Commit()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while committing transaction")
+		}
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
@@ -463,10 +486,26 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		tx, err := s.transact.Begin()
+		if err != nil {
 			return nil, err
 		}
 
+		transactionCtx := persistence.SaveToContext(ctx, tx)
+		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+			commitErr := tx.Commit()
+			if commitErr != nil {
+				return nil, errors.Wrapf(err, "while committing transaction with error")
+			}
+			return nil, err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while committing transaction")
+		}
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeTenant:
