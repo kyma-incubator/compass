@@ -60,14 +60,7 @@ const (
 		"additionalUrls": {},
 		"additionalAttributes": {}
 	}`
-
-	nameLabelKey           = "displayName"
-	namePlaceholder        = "name"
-	displayNamePlaceholder = "display-name"
-)
-
-var (
-	defaultMockSystems = fmt.Sprintf(`[{
+	defaultMockSystems = `[{
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
@@ -90,7 +83,14 @@ var (
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {}
-	}]`, cfg.SystemInformationSourceKey)
+	}]`
+
+	nameLabelKey           = "displayName"
+	namePlaceholder        = "name"
+	displayNamePlaceholder = "display-name"
+)
+
+var (
 	additionalSystemLabels = directorSchema.Labels{
 		nameLabelKey: "{{name}}",
 	}
@@ -98,7 +98,7 @@ var (
 
 func TestSystemFetcherSuccess(t *testing.T) {
 	ctx := context.TODO()
-	mockSystems := []byte(defaultMockSystems)
+	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
@@ -168,7 +168,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	ctx := context.TODO()
-	mockSystems := []byte(defaultMockSystems)
+	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
