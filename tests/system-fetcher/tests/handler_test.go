@@ -25,13 +25,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
+	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
-	"github.com/stretchr/testify/assert"
-
-	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -165,7 +165,6 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
-//passing
 func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	ctx := context.TODO()
 	mockSystems := []byte(defaultMockSystems)
@@ -246,7 +245,6 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	}
 }
 
-//passing
 func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	ctx := context.TODO()
 	mockSystems := []byte(`[{
@@ -343,7 +341,6 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	}
 }
 
-//fail
 func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	ctx := context.TODO()
 
@@ -417,17 +414,9 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 		}
 	}()
 
-	for _, app := range actualApps {
-		fmt.Printf("ALEX 1 ACTUAL %+v \n", app)
-	}
-	for _, app := range expectedApps {
-		fmt.Printf("ALEX 1 EXPECTED %+v \n", app)
-	}
-
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
-//fail
 func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	ctx := context.TODO()
 
@@ -521,13 +510,6 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 		}
 	}()
-
-	for _, app := range actualApps {
-		fmt.Printf("ALEX 2 ACTUAL %+v \n", app)
-	}
-	for _, app := range expectedApps {
-		fmt.Printf("ALEX 2 EXPECTED %+v \n", app)
-	}
 
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
@@ -658,13 +640,6 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 		}
 	}()
-
-	for _, app := range actualApps {
-		fmt.Printf("ALEX 3 ACTUAL %+v \n", app)
-	}
-	for _, app := range expectedApps {
-		fmt.Printf("ALEX 3 EXPECTED %+v \n", app)
-	}
 
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
@@ -1060,8 +1035,11 @@ func fixApplicationTemplate(name, intSystemID, systemRole string) directorSchema
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 		Labels: directorSchema.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
-			"systemRole":                   systemRole,
 		},
+	}
+
+	if len(systemRole) > 0 {
+		appTemplateInput.Labels[cfg.TemplateLabelFilter] = systemRole
 	}
 
 	return appTemplateInput
@@ -1089,19 +1067,14 @@ func fixApplicationTemplateWithoutWebhooks(name, intSystemID, systemRole string)
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 		Labels: directorSchema.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
-			"systemRole":                   systemRole,
 		},
 	}
 
-	return appTemplateInput
-}
-
-func retrieveAppIdsFromResponse(resp directorSchema.ApplicationPageExt) []string {
-	ids := make([]string, 0, len(resp.Data))
-	for _, app := range resp.Data {
-		ids = append(ids, app.ID)
+	if len(systemRole) > 0 {
+		appTemplateInput.Labels[cfg.TemplateLabelFilter] = systemRole
 	}
-	return ids
+
+	return appTemplateInput
 }
 
 func createAppTemplateName(name string) string {
