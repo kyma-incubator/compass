@@ -61,14 +61,20 @@ const (
 		"additionalAttributes": {}
 	}`
 
-	defaultMockSystems = `[{
+	nameLabelKey           = "displayName"
+	namePlaceholder        = "name"
+	displayNamePlaceholder = "display-name"
+)
+
+var (
+	defaultMockSystems = fmt.Sprintf(`[{
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
-		"prop": "val1",
+		"%s": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
@@ -84,16 +90,11 @@ const (
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {}
-	}]`
-
-	nameLabelKey           = "displayName"
-	namePlaceholder        = "name"
-	displayNamePlaceholder = "display-name"
+	}]`, cfg.SystemInformationSourceKey)
+	additionalSystemLabels = directorSchema.Labels{
+		nameLabelKey: "{{name}}",
+	}
 )
-
-var additionalSystemLabels = directorSchema.Labels{
-	nameLabelKey: "{{name}}",
-}
 
 func TestSystemFetcherSuccess(t *testing.T) {
 	ctx := context.TODO()
@@ -247,14 +248,14 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 
 func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	ctx := context.TODO()
-	mockSystems := []byte(`[{
+	mockSystems := []byte(fmt.Sprintf(`[{
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
-		"prop": "val1",
+		"%s": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
@@ -270,7 +271,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 		"infrastructureProvider": "",
 		"additionalUrls": {},
 		"additionalAttributes": {}
-	}]`)
+	}]`, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
@@ -420,14 +421,14 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	ctx := context.TODO()
 
-	mockSystems := []byte(`[{
+	mockSystems := []byte(fmt.Sprintf(`[{
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
-		"prop": "val1",
+		"%s": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
@@ -443,7 +444,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {}
-	}]`)
+	}]`, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetSystemFetcherTenantID())
@@ -518,14 +519,14 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	ctx := context.TODO()
 
-	mockSystems := []byte(`[{
+	mockSystems := []byte(fmt.Sprintf(`[{
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
-		"prop": "val1",
+		"%s": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
@@ -552,7 +553,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"infrastructureProvider": "",
 		"additionalUrls": {},
 		"additionalAttributes": {}
-	}]`)
+	}]`, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
@@ -647,14 +648,14 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	ctx := context.TODO()
 
-	mockSystems := []byte(`[{
+	mockSystems := []byte(fmt.Sprintf(`[{
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
-		"prop": "val1",
+		"%s": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
@@ -676,12 +677,12 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"productDescription": "description",
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
-		"prop": "val2",
+		"%s": "val2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
 		"additionalAttributes": {}
-	}]`)
+	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
@@ -763,14 +764,14 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 	require.ElementsMatch(t, expectedApps, actualApps)
 
-	mockSystems = []byte(`[{
+	mockSystems = []byte(fmt.Sprintf(`[{
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
-		"prop": "val1",
+		"%s": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
@@ -794,14 +795,14 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"productDescription": "description",
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
-		"prop": "val2",
+		"%s": "val2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
 		"additionalAttributes": {
 			"lifecycleStatus": "DELETED"
 		}
-	}]`)
+	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
