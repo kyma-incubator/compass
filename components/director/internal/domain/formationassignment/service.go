@@ -383,7 +383,7 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 
 	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
 	if err != nil {
-		updateError := s.setAssignmentToErrorState(ctx, assignment, "error while sending notification", TechnicalError, model.CreateErrorAssignmentState)
+		updateError := s.setAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.CreateErrorAssignmentState)
 		if updateError != nil {
 			return errors.Wrapf(
 				updateError,
@@ -419,7 +419,7 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 	if err = s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
-	log.C(ctx).Infof("Assignment with ID %s was created with %s state", assignment.ID, assignment.State)
+	log.C(ctx).Infof("Assignment with ID %s was updated with %s state", assignment.ID, assignment.State)
 
 	if shouldSendReverseNotification {
 		// em -> s4 - config pending
@@ -439,10 +439,14 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		newAssignment := mappingPair.ReverseAssignment.Clone()
 		newReverseAssignment := mappingPair.Assignment.Clone()
 
-		newAssignment.Request.Object.SetAssignment(newAssignment.FormationAssignment)
-		newAssignment.Request.Object.SetReverseAssignment(newReverseAssignment.FormationAssignment)
-		newReverseAssignment.Request.Object.SetAssignment(newReverseAssignment.FormationAssignment)
-		newReverseAssignment.Request.Object.SetReverseAssignment(newAssignment.FormationAssignment)
+		if newAssignment.Request != nil {
+			newAssignment.Request.Object.SetAssignment(newAssignment.FormationAssignment)
+			newAssignment.Request.Object.SetReverseAssignment(newReverseAssignment.FormationAssignment)
+		}
+		if newReverseAssignment.Request != nil {
+			newReverseAssignment.Request.Object.SetAssignment(newReverseAssignment.FormationAssignment)
+			newReverseAssignment.Request.Object.SetReverseAssignment(newAssignment.FormationAssignment)
+		}
 
 		newAssignmentMappingPair := &AssignmentMappingPair{
 			Assignment:        newAssignment,
@@ -465,7 +469,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	if mappingPair.Assignment.Request == nil {
 		if err := s.Delete(ctx, assignment.ID); err != nil {
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
-			updateError := s.setAssignmentToErrorState(ctx, assignment, "error while deleting assignment", TechnicalError, model.DeleteErrorAssignmentState)
+			updateError := s.setAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
 			if updateError != nil {
 				return errors.Wrapf(
 					updateError,
@@ -481,7 +485,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
 	if err != nil {
-		updateError := s.setAssignmentToErrorState(ctx, assignment, "error while sending notification", TechnicalError, model.DeleteErrorAssignmentState)
+		updateError := s.setAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
 		if updateError != nil {
 			return errors.Wrapf(
 				updateError,
@@ -551,8 +555,12 @@ type FormationAssignmentRequestMapping struct {
 }
 
 func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestMapping {
+	var request *webhookclient.NotificationRequest
+	if f.Request != nil {
+		request = f.Request.Clone()
+	}
 	return &FormationAssignmentRequestMapping{
-		Request: f.Request.Clone(),
+		Request: request,
 		FormationAssignment: &model.FormationAssignment{
 			ID:          f.FormationAssignment.ID,
 			FormationID: f.FormationAssignment.FormationID,

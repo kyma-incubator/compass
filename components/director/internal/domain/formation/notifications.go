@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -117,13 +116,10 @@ func (ns *notificationsService) SendNotifications(ctx context.Context, notificat
 
 func (ns *notificationsService) SendNotification(ctx context.Context, notification *webhookclient.NotificationRequest) (*webhookdir.Response, error) {
 	resp, err := ns.webhookClient.Do(ctx, notification)
-	if err != nil {
-		errorMsg := fmt.Sprintf("Failed while executing webhook with ID %s", notification.Webhook.ID)
-		log.C(ctx).Warn(errorMsg)
-		resp = &webhookdir.Response{
-			Error: &errorMsg,
-		}
+	if err != nil && resp != nil && resp.Error != nil && *resp.Error != "" {
+		return resp, nil
 	}
+
 	return resp, err
 }
 
