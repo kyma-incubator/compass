@@ -884,7 +884,7 @@ func addFormation(formations []string, formation string) []string {
 	return append(formations, formation)
 }
 
-func deleteFormation(formations []string, formation string) ([]string) {
+func deleteFormation(formations []string, formation string) []string {
 	filteredFormations := make([]string, 0, len(formations))
 	for _, f := range formations {
 		if f != formation {

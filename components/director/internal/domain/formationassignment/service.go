@@ -354,7 +354,7 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string
 			errs = multierror.Append(errs, errors.Wrapf(err, "while processing formation assignment with id %q", mapping.Assignment.FormationAssignment.ID))
 		}
 	}
-	log.C(ctx).Infof("Finished processing %d formation assignments", len(formationAssignmentsForObject)+1)
+	log.C(ctx).Infof("Finished processing %d formation assignments", len(formationAssignmentsForObject))
 
 	return errs.ErrorOrNil()
 }
@@ -652,16 +652,23 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 	assignmentMappingPairs := make([]*AssignmentMappingPair, 0, len(assignments))
 
 	for _, mapping := range formationAssignmentMapping {
-		reverseMapping := sourceToTargetToMapping[mapping.FormationAssignment.Target][mapping.FormationAssignment.Source]
+		var reverseMapping *FormationAssignmentRequestMapping
+		if mappingsForTarget, ok := sourceToTargetToMapping[mapping.FormationAssignment.Target]; ok {
+			if actualReverseMapping, ok := mappingsForTarget[mapping.FormationAssignment.Source]; ok {
+				reverseMapping = actualReverseMapping
+			}
+		}
 		assignmentMappingPairs = append(assignmentMappingPairs, &AssignmentMappingPair{
 			Assignment:        mapping,
 			ReverseAssignment: reverseMapping,
 		})
 		if mapping.Request != nil {
 			mapping.Request.Object.SetAssignment(mapping.FormationAssignment)
-			mapping.Request.Object.SetReverseAssignment(reverseMapping.FormationAssignment)
+			if reverseMapping != nil {
+				mapping.Request.Object.SetReverseAssignment(reverseMapping.FormationAssignment)
+			}
 		}
-		if reverseMapping.Request != nil {
+		if reverseMapping != nil && reverseMapping.Request != nil {
 			reverseMapping.Request.Object.SetAssignment(reverseMapping.FormationAssignment)
 			reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
 		}
