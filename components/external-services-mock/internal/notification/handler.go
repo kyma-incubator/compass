@@ -199,11 +199,28 @@ func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) 
 			httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
 			return
 		}
+
 		mappings := h.mappings[id]
-		mappings = append(h.mappings[id], Response{
-			Operation:   Assign,
-			RequestBody: bodyBytes,
-		})
+		if r.Method == http.MethodPatch {
+			mappings = append(h.mappings[id], Response{
+				Operation:   Assign,
+				RequestBody: bodyBytes,
+			})
+		}
+
+		if r.Method == http.MethodDelete {
+			applicationId, ok := mux.Vars(r)["applicationId"]
+			if !ok {
+				httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
+				return
+			}
+			mappings = append(h.mappings[id], Response{
+				Operation:     Unassign,
+				ApplicationID: &applicationId,
+				RequestBody:   bodyBytes,
+			})
+		}
+
 		h.mappings[id] = mappings
 
 		response := struct {
@@ -216,7 +233,13 @@ func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	h.Patch(writer, r)
+	if r.Method == http.MethodPatch {
+		h.Patch(writer, r)
+	}
+
+	if r.Method == http.MethodDelete {
+		h.Delete(writer, r)
+	}
 }
 
 func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {

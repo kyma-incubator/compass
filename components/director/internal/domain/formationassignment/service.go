@@ -398,7 +398,7 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
-		return nil
+		return errors.Errorf("Received error from response: %v", *response.Error)
 	}
 
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
@@ -512,11 +512,12 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
-		err = s.setAssignmentToErrorState(ctx, assignment, "Error while deleting assignment: config propagation is not supported on unassign notifications", ClientError, model.DeleteErrorAssignmentState)
-		if err != nil {
-			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
+		err = errors.New("Error while deleting assignment: config propagation is not supported on unassign notifications")
+		updateErr := s.setAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState)
+		if updateErr != nil {
+			return errors.Wrapf(updateErr, "while updating error state for formation with ID %q", assignment.ID)
 		}
-		return nil
+		return err
 	}
 
 	if response.Error != nil && *response.Error != "" {
@@ -524,7 +525,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
-		return nil
+		return errors.Errorf("Received error from response: %v", *response.Error)
 	}
 
 	return nil
