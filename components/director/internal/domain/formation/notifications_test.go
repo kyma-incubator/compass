@@ -188,6 +188,404 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name: "error when generating notifications for application if webhook conversion fails",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				return repo
+			},
+			WebhookConverterFN: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, testErr)
+				return conv
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				return repo
+			},
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil).Once()
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when generating notifications for application if fetching application template labels fails",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				return repo
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				return repo
+			},
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     expectedFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when generating notifications for application if fetching application templates fails",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				return repo
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return(nil, testErr)
+				return repo
+			},
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when generating notifications for application if fetching application labels fails",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				return repo
+			},
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(nil, testErr)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "success when generating notifications for runtime if there are no applications in the formation to notify",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{}, nil)
+				return repo
+			},
+			WebhookConverterFN: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(fixRuntimeWebhookGQLModel(WebhookID, RuntimeID), nil)
+				return conv
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				return repo
+			},
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Twice()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Twice()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil).Once()
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				return repo
+			},
+			ObjectType:     graphql.FormationObjectTypeRuntime,
+			OperationType:  model.AssignFormation,
+			ObjectID:       RuntimeID,
+			InputFormation: expectedFormation,
+			ExpectedRequests: []*webhookclient.Request{
+				{
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: expectedFormation.ID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:           model.AssignFormation,
+						FormationID:         expectedFormation.ID,
+						ApplicationTemplate: nil,
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModelWithoutTemplate(Application2ID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				},
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success when generating notifications for runtime if there are no applications with CONFIGURATION_CHANGED webhook to notify",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				return repo
+			},
+			WebhookConverterFN: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(fixRuntimeWebhookGQLModel(WebhookID, RuntimeID), nil)
+				return conv
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				return repo
+			},
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Twice()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Twice()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil).Once()
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{}, nil)
+				return repo
+			},
+			ObjectType:     graphql.FormationObjectTypeRuntime,
+			OperationType:  model.AssignFormation,
+			ObjectID:       RuntimeID,
+			InputFormation: expectedFormation,
+			ExpectedRequests: []*webhookclient.Request{
+				{
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: expectedFormation.ID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:           model.AssignFormation,
+						FormationID:         expectedFormation.ID,
+						ApplicationTemplate: nil,
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModelWithoutTemplate(Application2ID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				},
+			},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "error when generating notifications for application if fetching applications fails",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return(nil, testErr)
+				return repo
+			},
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Once()
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when generating notifications for application if fetching webhooks fails",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Once()
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return(nil, testErr)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when generating notifications for application if fetching runtime labels fails",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(fixRuntimeModel(RuntimeID), nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(nil, testErr)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when generating notifications for application if fetching runtime fails",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, RuntimeID).Return(nil, testErr)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
 			Name: "error when generating notifications for runtime if webhook conversion fails",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
