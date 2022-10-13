@@ -25,20 +25,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/k8s"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
@@ -107,13 +107,13 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.NotEmpty(t, intSys.ID)
 
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID, "val1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID, "")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
@@ -165,6 +165,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+//passing
 func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	ctx := context.TODO()
 	mockSystems := []byte(defaultMockSystems)
@@ -177,13 +178,13 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	require.NotEmpty(t, intSys.ID)
 
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithoutWebhooks(appTemplateName1, intSys.ID))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithoutWebhooks(appTemplateName1, intSys.ID, "val1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplateWithoutWebhooks(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplateWithoutWebhooks(appTemplateName2, intSys.ID, "")
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
@@ -245,6 +246,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	}
 }
 
+//passing
 func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	ctx := context.TODO()
 	mockSystems := []byte(`[{
@@ -280,13 +282,13 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	require.NotEmpty(t, intSys.ID)
 
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithoutWebhooks(appTemplateName1, intSys.ID))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithoutWebhooks(appTemplateName1, intSys.ID, "val1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplateWithoutWebhooks(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplateWithoutWebhooks(appTemplateName2, intSys.ID, "")
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
@@ -341,6 +343,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	}
 }
 
+//fail
 func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	ctx := context.TODO()
 
@@ -353,7 +356,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	require.NotEmpty(t, intSys.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID, "")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
@@ -361,7 +364,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID, ""))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -414,9 +417,17 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 		}
 	}()
 
+	for _, app := range actualApps {
+		fmt.Printf("ALEX 1 ACTUAL %+v \n", app)
+	}
+	for _, app := range expectedApps {
+		fmt.Printf("ALEX 1 EXPECTED %+v \n", app)
+	}
+
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+//fail
 func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	ctx := context.TODO()
 
@@ -455,13 +466,13 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	require.NotEmpty(t, intSys.ID)
 
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID, "val1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID, "")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
@@ -510,9 +521,18 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 		}
 	}()
+
+	for _, app := range actualApps {
+		fmt.Printf("ALEX 2 ACTUAL %+v \n", app)
+	}
+	for _, app := range expectedApps {
+		fmt.Printf("ALEX 2 EXPECTED %+v \n", app)
+	}
+
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+//fail
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	ctx := context.TODO()
 
@@ -561,13 +581,13 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	require.NotEmpty(t, intSys.ID)
 
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID, "val1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID, "")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
@@ -639,6 +659,13 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		}
 	}()
 
+	for _, app := range actualApps {
+		fmt.Printf("ALEX 3 ACTUAL %+v \n", app)
+	}
+	for _, app := range expectedApps {
+		fmt.Printf("ALEX 3 EXPECTED %+v \n", app)
+	}
+
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
@@ -689,13 +716,13 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.NotEmpty(t, intSys.ID)
 
 	appTemplateName1 := createAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID, "val1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := createAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID, "val2")
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
@@ -1007,7 +1034,7 @@ func applicationLabels(name, appTemplateName, integrationSystemID string, fromTe
 	return labels
 }
 
-func fixApplicationTemplate(name, intSystemID string) directorSchema.ApplicationTemplateInput {
+func fixApplicationTemplate(name, intSystemID, systemRole string) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        name,
 		Description: str.Ptr("template description"),
@@ -1033,13 +1060,14 @@ func fixApplicationTemplate(name, intSystemID string) directorSchema.Application
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 		Labels: directorSchema.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
+			"systemRole":                   systemRole,
 		},
 	}
 
 	return appTemplateInput
 }
 
-func fixApplicationTemplateWithoutWebhooks(name, intSystemID string) directorSchema.ApplicationTemplateInput {
+func fixApplicationTemplateWithoutWebhooks(name, intSystemID, systemRole string) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        name,
 		Description: str.Ptr("template description"),
@@ -1061,6 +1089,7 @@ func fixApplicationTemplateWithoutWebhooks(name, intSystemID string) directorSch
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 		Labels: directorSchema.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
+			"systemRole":                   systemRole,
 		},
 	}
 
