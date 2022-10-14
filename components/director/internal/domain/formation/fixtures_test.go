@@ -69,6 +69,7 @@ const (
 	AppTenantMappingWebhookIDForApp2 = "df7e9387-7bdf-46bb-b0c2-de5ec9a40a21"
 	RuntimeContextRuntimeID          = "rt-ctx-rt-id"
 	RuntimeContextID                 = "rt-ctx-id"
+	RuntimeContext2ID                = "rt-ctx-id-2"
 	FormationTemplateID              = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
 	FormationID                      = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
 	testFormationName                = "test-formation"
@@ -372,6 +373,15 @@ func fixRuntimeContextModel() *model.RuntimeContext {
 	return &model.RuntimeContext{
 		ID:        RuntimeContextID,
 		RuntimeID: RuntimeContextRuntimeID,
+		Key:       "some-key",
+		Value:     "some-value",
+	}
+}
+
+func fixRuntimeContextModelWithRuntimeID(rtID string) *model.RuntimeContext {
+	return &model.RuntimeContext{
+		ID:        RuntimeContext2ID,
+		RuntimeID: rtID,
 		Key:       "some-key",
 		Value:     "some-value",
 	}
