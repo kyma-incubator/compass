@@ -86,10 +86,10 @@ func newPusher(cfg PusherConfig, collectors ...prometheus.Collector) *push.Pushe
 	for _, c := range collectors {
 		registry.MustRegister(c)
 	}
-	pusher := push.New(cfg.Endpoint, TenantFetcherJobName).Gatherer(registry).Client(&http.Client{
+
+	return push.New(cfg.Endpoint, cfg.Subsystem).Gatherer(registry).Client(&http.Client{
 		Timeout: cfg.Timeout,
 	})
-	return pusher
 }
 
 func errorDescription(err error) string {
