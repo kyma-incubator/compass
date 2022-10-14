@@ -2,6 +2,7 @@ package resync_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 	"text/template"
@@ -14,6 +15,8 @@ import (
 )
 
 func Test_getMovedSubaccounts(t *testing.T) {
+	ctx := context.TODO()
+
 	idField := "id"
 	entityTypeField := "type"
 	nameField := "name"
@@ -165,13 +168,15 @@ func Test_getMovedSubaccounts(t *testing.T) {
 				Payload: []byte(fixTenantEventsResponseBytes(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
 
-			runtimes := page.GetMovedSubaccounts()
+			runtimes := page.GetMovedSubaccounts(ctx)
 			test.assertRuntimesFunc(t, runtimes)
 		})
 	}
 }
 
 func Test_getTenantMappings(t *testing.T) {
+	ctx := context.TODO()
+
 	idField := "id"
 	globalAccountGUIDField := "globalAccountGUID"
 	globalAccountKey := "gaID"
@@ -347,7 +352,7 @@ func Test_getTenantMappings(t *testing.T) {
 				ProviderName: providerName,
 				Payload:      []byte(fixTenantEventsResponseBytes(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
-			tenantMappings := page.GetTenantMappings(resync.CreatedAccountType)
+			tenantMappings := page.GetTenantMappings(ctx, resync.CreatedAccountType)
 			test.assertTenantMappingFunc(t, tenantMappings)
 		})
 	}
