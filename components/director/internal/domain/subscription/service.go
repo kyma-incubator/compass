@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -31,6 +32,8 @@ type Config struct {
 const (
 	// SubdomainLabelKey is the key of the tenant label for subdomain.
 	SubdomainLabelKey = "subdomain"
+	// RegionPrefix a prefix to be trimmed when creating an app from template
+	RegionPrefix = "cf-"
 )
 
 // RuntimeService is responsible for Runtime operations
@@ -402,7 +405,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		{Placeholder: "name", Value: subscribedAppName},
 		{Placeholder: "display-name", Value: subscribedAppName},
 		{Placeholder: "subdomain", Value: subdomain},
-		{Placeholder: "region", Value: region},
+		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
 	}
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
