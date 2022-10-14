@@ -100,7 +100,7 @@ func TestServiceList(t *testing.T) {
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
+				require.Error(t, err)
 				assert.Equal(t, testCase.ExpectedFormationPage, actual)
 			} else {
 				require.Error(t, err)
