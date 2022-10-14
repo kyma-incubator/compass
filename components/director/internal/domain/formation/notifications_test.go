@@ -4928,6 +4928,51 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 					},
 					CorrelationID: "",
 				}).Return(nil, nil)
+				client.On("Do", ctx, &webhookclient.Request{
+					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: FormationID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				}).Return(nil, nil)
+				client.On("Do", ctx, &webhookclient.Request{
+					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: FormationID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: &webhook.RuntimeContextWithLabels{
+							RuntimeContext: fixRuntimeContextModel(),
+							Labels:         fixRuntimeContextLabelsMap(),
+						},
+					},
+					CorrelationID: "",
+				}).Return(nil, nil)
 				return client
 			},
 			InputRequests: []*webhookclient.Request{
@@ -5014,6 +5059,51 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 						TargetApplication: &webhook.ApplicationWithLabels{
 							Application: fixApplicationModelWithoutTemplate(Application2ID),
 							Labels:      fixApplicationLabelsMap(),
+						},
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: FormationID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: FormationID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: &webhook.RuntimeContextWithLabels{
+							RuntimeContext: fixRuntimeContextModel(),
+							Labels:         fixRuntimeContextLabelsMap(),
 						},
 					},
 					CorrelationID: "",
