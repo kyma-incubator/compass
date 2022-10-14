@@ -196,7 +196,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookConverterFN: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, testErr)
+				conv.On("ToGraphQL", mock.MatchedBy(func(wh *model.Webhook) bool { return checkIfIDInSet(wh, []string{WebhookID, Webhook2ID}) })).Return(nil, testErr)
 				return conv
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -319,7 +319,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID).Return(fixRuntimeLabels(), nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -3015,7 +3015,9 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookConverterFN: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(nil, testErr)
+				conv.On("ToGraphQL", mock.MatchedBy(func(wh *model.Webhook) bool {
+					return checkIfIDInSet(wh, []string{AppTenantMappingWebhookIDForApp1, AppTenantMappingWebhookIDForApp2})
+				})).Return(nil, testErr)
 				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(fixApplicationWebhookGQLModel(WebhookID, ApplicationID), nil).Twice()
 				return conv
 			},
@@ -5206,4 +5208,13 @@ func checkIfEqual(first, second []string) bool {
 		}
 	}
 	return true
+}
+
+func checkIfIDInSet(wh *model.Webhook, ids []string) bool {
+	for _, id := range ids {
+		if wh.ID == id {
+			return true
+		}
+	}
+	return false
 }
