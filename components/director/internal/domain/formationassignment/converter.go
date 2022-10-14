@@ -61,6 +61,40 @@ func (c *converter) MultipleToGraphQL(in []*model.FormationAssignment) ([]*graph
 	return formationAssignment, nil
 }
 
+// ToInput converts from internal model to internal model input
+func (c *converter) ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput {
+	if assignment == nil {
+		return nil
+	}
+
+	return &model.FormationAssignmentInput{
+		FormationID: assignment.FormationID,
+		Source:      assignment.Source,
+		SourceType:  assignment.SourceType,
+		Target:      assignment.Target,
+		TargetType:  assignment.TargetType,
+		State:       assignment.State,
+		Value:       assignment.Value,
+	}
+}
+
+// FromInput converts from internal model input to internal model
+func (c *converter) FromInput(in *model.FormationAssignmentInput) *model.FormationAssignment {
+	if in == nil {
+		return nil
+	}
+
+	return &model.FormationAssignment{
+		FormationID: in.FormationID,
+		Source:      in.Source,
+		SourceType:  in.SourceType,
+		Target:      in.Target,
+		TargetType:  in.TargetType,
+		State:       in.State,
+		Value:       in.Value,
+	}
+}
+
 // ToEntity converts from internal model to entity
 func (c *converter) ToEntity(in *model.FormationAssignment) *Entity {
 	if in == nil {

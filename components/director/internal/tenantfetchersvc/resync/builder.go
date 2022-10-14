@@ -3,6 +3,8 @@ package resync
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -60,7 +62,7 @@ func (b *synchronizerBuilder) Build(ctx context.Context) (*TenantsSynchronizer, 
 		return nil, err
 	}
 
-	tenantSvc, tenantConverter, runtimeSvc, labelRepo := domainServices(b.featuresConfig)
+	tenantSvc, tenantConverter, runtimeSvc, labelRepo := b.domainServices(b.featuresConfig)
 	tenantManager, err := NewTenantsManager(b.jobConfig, b.directorClient, universalEventAPIClient, additionalRegionalEventAPIClients, tenantConverter)
 	if err != nil {
 		return nil, err
@@ -107,7 +109,7 @@ func (b *synchronizerBuilder) eventAPIClients() (EventAPIClient, map[string]Even
 	return eventAPIClient, regionalEventAPIClients, nil
 }
 
-func domainServices(featuresConfig features.Config) (TenantStorageService, TenantConverter, RuntimeService, LabelRepo) {
+func (b *synchronizerBuilder) domainServices(featuresConfig features.Config) (TenantStorageService, TenantConverter, RuntimeService, LabelRepo) {
 	uidSvc := uid.NewService()
 
 	labelDefConverter := labeldef.NewConverter()
@@ -148,9 +150,11 @@ func domainServices(featuresConfig features.Config) (TenantStorageService, Tenan
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	formationAssignmentSvc := formationassignment.NewService(b.transact, formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv)
 	notificationSvc := formation.NewNotificationService(applicationRepo, nil, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, nil)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, notificationSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue)
 
