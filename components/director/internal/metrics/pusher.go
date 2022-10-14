@@ -71,13 +71,13 @@ func (p AggregationFailurePusher) ReportAggregationFailure(ctx context.Context, 
 
 	log.C(ctx).WithFields(logrus.Fields{InstanceIDKeyName: p.instanceID}).Info("Reporting failed aggregation...")
 	p.aggregationFailuresCounter.WithLabelValues(errorDescription(err)).Inc()
-	p.push()
+	p.push(ctx)
 }
 
-func (p AggregationFailurePusher) push() {
+func (p AggregationFailurePusher) push(ctx context.Context) {
 	if err := p.pusher.Add(); err != nil {
 		wrappedErr := errors.Wrap(err, "while pushing metrics to Pushgateway")
-		log.D().WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
+		log.C(ctx).WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
 	}
 }
 

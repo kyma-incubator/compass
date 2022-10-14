@@ -177,13 +177,13 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, clientConfig 
 // FetchTenantEventsPage missing godoc
 func (c *Client) FetchTenantEventsPage(ctx context.Context, eventsType EventsType, additionalQueryParams QueryParams) (*EventsPage, error) {
 	if c.config.APIConfig.isUnassignedOptionalProperty(eventsType) {
-		log.D().Warnf("Optional property for event type %s was not set", eventsType)
+		log.C(ctx).Warnf("Optional property for event type %s was not set", eventsType)
 		return nil, nil
 	}
 
 	endpoint, err := c.getEndpointForEventsType(eventsType)
 	if endpoint == "" && err == nil {
-		log.D().Warnf("Endpoint for event %s is not set", eventsType)
+		log.C(ctx).Warnf("Endpoint for event %s is not set", eventsType)
 		return nil, nil
 	}
 
@@ -203,7 +203,7 @@ func (c *Client) FetchTenantEventsPage(ctx context.Context, eventsType EventsTyp
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
-			log.D().Warnf("Unable to close response body. Cause: %v", err)
+			log.C(ctx).Warnf("Unable to close response body. Cause: %v", err)
 		}
 	}()
 

@@ -43,7 +43,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	tenant2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
@@ -284,8 +283,9 @@ func synchronizeTenants(synchronizer *resync.TenantsSynchronizer, ctx context.Co
 	for {
 		select {
 		case <-ticker.C:
-			resyncCtx := correlation.SaveCorrelationIDHeaderToContext(ctx, str.Ptr(correlation.RequestIDHeaderKey), str.Ptr(uuid.New().String()))
-
+			logger := log.C(ctx)
+			logger = logger.WithField(log.FieldRequestID, uuid.New().String()).WithField("tenant-synchronizer-name", synchronizer.Name())
+			resyncCtx := log.ContextWithLogger(ctx, logger)
 			log.C(resyncCtx).Infof("Scheduled tenant resync job %s will be executed, job interval is %s", synchronizer.Name(), synchronizer.ResyncInterval())
 			if err := synchronizer.Synchronize(resyncCtx); err != nil {
 				log.C(resyncCtx).WithError(err).Errorf("Tenant fetcher resync %s failed with error: %v", synchronizer.Name(), err)
