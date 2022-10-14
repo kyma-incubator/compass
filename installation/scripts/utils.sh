@@ -122,3 +122,37 @@ function usek3d() {
 
     echo "Using 'k3d-kyma' kubectl context"
 }
+
+function is_helm_state_stable() {
+    local DEPLOYMENT="$1"
+    local NAMESPACE="$2"
+
+    # Handle initial state when deployment will not be present 
+    helm status ${DEPLOYMENT} -n ${NAMESPACE} > /dev/null 2>&1 || return 0
+
+    STABLE_STATUSES=("deployed" "uninstalled" "superseded" "failed")
+    CURRENT_STATUS="$(helm status ${DEPLOYMENT} -n ${NAMESPACE} -o json | jq -r .info.status)"
+    echo "Current deployment status is: ${CURRENT_STATUS}" 
+    for STATUS in "${STABLE_STATUSES[@]}"; do
+        if [[ "${CURRENT_STATUS}" == "${STATUS}" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+function wait_for_helm_stable_state() {
+  local DEPLOYMENT="$1"
+  local NAMESPACE="$2"
+  START_TIME=$(date +%s)
+  until is_helm_state_stable "${DEPLOYMENT}" "${NAMESPACE}" ; do
+      CURRENT_TIME=$(date +%s)
+      SECONDS=$((CURRENT_TIME-START_TIME))
+      if (( SECONDS > 300 )); then
+          echo "Timeout of 5 min for finishing installation of ${DEPLOYMENT} reached. Exiting."
+          exit 1
+      fi
+      echo "Wait 10s before check again ..."
+      sleep 10
+  done
+}
