@@ -2,7 +2,6 @@ package resync
 
 import (
 	"context"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -31,23 +30,21 @@ import (
 )
 
 type synchronizerBuilder struct {
-	jobConfig            JobConfig
-	featuresConfig       features.Config
-	transact             persistence.Transactioner
-	directorClient       *graphqlclient.Director
-	metricsPusher        MetricsPusher
-	metricsClientTimeout time.Duration
+	jobConfig                JobConfig
+	featuresConfig           features.Config
+	transact                 persistence.Transactioner
+	directorClient           *graphqlclient.Director
+	aggregationFailurePusher AggregationFailurePusher
 }
 
 // NewSynchronizerBuilder returns an entity that will use the provided configuration to create a tenant synchronizer.
-func NewSynchronizerBuilder(jobConfig JobConfig, featuresConfig features.Config, transact persistence.Transactioner, directorClient *graphqlclient.Director, metricsPusher MetricsPusher, metricsClientTimeout time.Duration) *synchronizerBuilder {
+func NewSynchronizerBuilder(jobConfig JobConfig, featuresConfig features.Config, transact persistence.Transactioner, directorClient *graphqlclient.Director, aggregationFailurePusher AggregationFailurePusher) *synchronizerBuilder {
 	return &synchronizerBuilder{
-		jobConfig:            jobConfig,
-		featuresConfig:       featuresConfig,
-		transact:             transact,
-		directorClient:       directorClient,
-		metricsPusher:        metricsPusher,
-		metricsClientTimeout: metricsClientTimeout,
+		jobConfig:                jobConfig,
+		featuresConfig:           featuresConfig,
+		transact:                 transact,
+		directorClient:           directorClient,
+		aggregationFailurePusher: aggregationFailurePusher,
 	}
 }
 
@@ -76,7 +73,7 @@ func (b *synchronizerBuilder) Build(ctx context.Context) (*TenantsSynchronizer, 
 		mover = newNoOpsMover()
 	}
 
-	ts := NewTenantSynchronizer(b.jobConfig, b.transact, tenantSvc, tenantManager, mover, tenantManager, kubeClient, b.metricsPusher)
+	ts := NewTenantSynchronizer(b.jobConfig, b.transact, tenantSvc, tenantManager, mover, tenantManager, kubeClient, b.aggregationFailurePusher)
 	return ts, nil
 }
 
@@ -91,9 +88,6 @@ func (b *synchronizerBuilder) eventAPIClients() (EventAPIClient, map[string]Even
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while creating a Event API client")
 	}
-	if b.metricsPusher != nil {
-		eventAPIClient.SetMetricsPusher(b.metricsPusher)
-	}
 
 	regionalEventAPIClients := map[string]EventAPIClient{}
 	for _, config := range b.jobConfig.RegionalAPIConfigs {
@@ -106,9 +100,6 @@ func (b *synchronizerBuilder) eventAPIClients() (EventAPIClient, map[string]Even
 		eventAPIClient, err := NewClient(config.OAuthConfig, config.AuthMode, clientConfig, config.ClientTimeout)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "while creating a regional Event API client for region %s", config.RegionName)
-		}
-		if b.metricsPusher != nil {
-			eventAPIClient.SetMetricsPusher(b.metricsPusher)
 		}
 		regionalEventAPIClients[config.RegionName] = eventAPIClient
 	}

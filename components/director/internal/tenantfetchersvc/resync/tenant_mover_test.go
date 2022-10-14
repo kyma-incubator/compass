@@ -70,7 +70,7 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			apiClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				return client
 			},
 			expectedTenants: []model.MovedSubaccountMappingInput{movedSubaccount1},
@@ -87,8 +87,8 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 				}
 
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.MovedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.MovedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 
 				return client
 			},
@@ -99,7 +99,7 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			apiClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.MovedSubaccountType, pageOneQueryParams).Return(nil, errors.New("failed to get moved")).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.MovedSubaccountType, pageOneQueryParams).Return(nil, errors.New("failed to get moved")).Once()
 				return client
 			},
 			expectedErrMsg: "while fetching moved tenants",

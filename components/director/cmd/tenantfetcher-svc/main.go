@@ -259,12 +259,16 @@ func tenantSynchronizers(ctx context.Context, taConfig tenantfetcher.HandlerConf
 		transact, closeFunc, err := persistence.Configure(ctx, taConfig.Database)
 		exitOnError(err, "Error while establishing the connection to the database")
 
-		var metricsPusher *metrics.Pusher
-		if len(taConfig.MetricsPushEndpoint) > 0 {
-			metricsPusher = metrics.NewPusher(taConfig.MetricsPushEndpoint, taConfig.ClientTimeout)
+		metricsCfg := metrics.PusherConfig{
+			Enabled:    len(taConfig.MetricsPushEndpoint) > 0,
+			Endpoint:   taConfig.MetricsPushEndpoint,
+			MetricName: strings.ReplaceAll(strings.ToLower(jobConfig.JobName), "-", "_") + "_job_sync_failure_number",
+			Timeout:    taConfig.ClientTimeout,
+			Subsystem:  metrics.TenantFetcherSubsystem,
 		}
+		metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+		builder := resync.NewSynchronizerBuilder(jobConfig, featuresConfig, transact, directorClient, metricsPusher)
 		log.C(ctx).Infof("Creating tenant synchronizer %s for tenants of type %s", jobConfig.JobName, jobConfig.TenantType)
-		builder := resync.NewSynchronizerBuilder(jobConfig, featuresConfig, transact, directorClient, metricsPusher, taConfig.ClientTimeout)
 		synchronizer, err := builder.Build(ctx)
 		exitOnError(err, fmt.Sprintf("Error while creating tenant synchronizer %s for tenants of type %s", jobConfig.JobName, jobConfig.TenantType))
 

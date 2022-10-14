@@ -49,7 +49,13 @@ type TenantMover interface {
 	MoveTenants(ctx context.Context, movedSubaccountMappings []model.MovedSubaccountMappingInput) error
 }
 
-// TenantsSynchronizer takes care of synchronizing tenants with external tenants registry.
+// AggregationFailurePusher taskes care of pushing aggregation failures to prometheus.
+//go:generate mockery --name=AggregationFailurePusher --output=automock --outpkg=automock --case=underscore --disable-version-string
+type AggregationFailurePusher interface {
+	ReportAggregationFailure(ctx context.Context, err error)
+}
+
+// TenantsSynchronizer takes care of synchronizing tenants with external tenant registry.
 // It creates, updates, deletes and moves tenants that were created, updated, deleted or moved in that external registry.
 type TenantsSynchronizer struct {
 	supportedRegions []string
@@ -64,11 +70,11 @@ type TenantsSynchronizer struct {
 	kubeClient KubeClient
 	config     JobConfig
 
-	metricsReporter MetricsPusher
+	metricsReporter AggregationFailurePusher
 }
 
 // NewTenantSynchronizer returns a new tenants synchronizer.
-func NewTenantSynchronizer(config JobConfig, transact persistence.Transactioner, tenantStorageService TenantStorageService, creator TenantCreator, mover TenantMover, deleter TenantDeleter, kubeClient KubeClient, metricsReporter MetricsPusher) *TenantsSynchronizer {
+func NewTenantSynchronizer(config JobConfig, transact persistence.Transactioner, tenantStorageService TenantStorageService, creator TenantCreator, mover TenantMover, deleter TenantDeleter, kubeClient KubeClient, metricsReporter AggregationFailurePusher) *TenantsSynchronizer {
 	return &TenantsSynchronizer{
 		supportedRegions:     supportedRegions(config),
 		transact:             transact,
@@ -114,7 +120,7 @@ func (ts *TenantsSynchronizer) ResyncInterval() time.Duration {
 func (ts *TenantsSynchronizer) Synchronize(ctx context.Context) error {
 	var err error
 	if err = ts.synchronizeTenants(ctx); err != nil {
-		ts.metricsReporter.ReportFailedSync(ctx, err)
+		ts.metricsReporter.ReportAggregationFailure(ctx, err)
 	}
 	return err
 }

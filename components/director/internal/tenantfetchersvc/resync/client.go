@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -19,10 +18,6 @@ import (
 	bndlErrors "github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
-)
-
-const (
-	maxErrMessageLength = 50
 )
 
 // OAuth2Config is the auth configuration used by Tenant Events API clients.
@@ -113,21 +108,13 @@ func (c APIEndpointsConfig) isUnassignedOptionalProperty(eventsType EventsType) 
 	return eventsType == MovedSubaccountType && len(c.EndpointSubaccountMoved) == 0
 }
 
-// MetricsPusher missing godoc
-//go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore --disable-version-string
-type MetricsPusher interface {
-	RecordEventingRequest(method string, statusCode int, desc string)
-	ReportFailedSync(ctx context.Context, err error)
-}
-
 // QueryParams describes the key and the corresponding value for query parameters when requesting the service
 type QueryParams map[string]string
 
 // Client implements the communication with the service
 type Client struct {
-	config        ClientConfig
-	httpClient    *http.Client
-	metricsPusher MetricsPusher
+	config     ClientConfig
+	httpClient *http.Client
 }
 
 // ClientConfig is the client specific configuration of the Events API
@@ -187,13 +174,8 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, clientConfig 
 	}, nil
 }
 
-// SetMetricsPusher missing godoc
-func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
-	c.metricsPusher = metricsPusher
-}
-
 // FetchTenantEventsPage missing godoc
-func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (*EventsPage, error) {
+func (c *Client) FetchTenantEventsPage(ctx context.Context, eventsType EventsType, additionalQueryParams QueryParams) (*EventsPage, error) {
 	if c.config.APIConfig.isUnassignedOptionalProperty(eventsType) {
 		log.D().Warnf("Optional property for event type %s was not set", eventsType)
 		return nil, nil
@@ -216,10 +198,6 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 
 	res, err := c.httpClient.Get(reqURL)
 	if err != nil {
-		if c.metricsPusher != nil {
-			desc := c.failedRequestDesc(err)
-			c.metricsPusher.RecordEventingRequest(http.MethodGet, 0, desc)
-		}
 		return nil, bndlErrors.Wrap(err, "while sending get request")
 	}
 	defer func() {
@@ -228,10 +206,6 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 			log.D().Warnf("Unable to close response body. Cause: %v", err)
 		}
 	}()
-
-	if c.metricsPusher != nil {
-		c.metricsPusher.RecordEventingRequest(http.MethodGet, res.StatusCode, res.Status)
-	}
 
 	bytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -303,24 +277,4 @@ func (c *Client) buildRequestURL(endpoint string, queryParams QueryParams) (stri
 	u.RawQuery = q.Encode()
 
 	return u.String(), nil
-}
-
-func (c *Client) failedRequestDesc(err error) string {
-	return GetErrorDesc(err)
-}
-
-// GetErrorDesc retrieve description from error
-func GetErrorDesc(err error) string {
-	var e *net.OpError
-	if errors.As(err, &e) && e.Err != nil {
-		return e.Err.Error()
-	}
-
-	if len(err.Error()) > maxErrMessageLength {
-		// not all errors are actually wrapped, sometimes the error message is just concatenated with ":"
-		errParts := strings.Split(err.Error(), ":")
-		return errParts[len(errParts)-1]
-	}
-
-	return err.Error()
 }

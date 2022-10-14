@@ -2,12 +2,12 @@ package metrics
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
@@ -18,104 +18,95 @@ import (
 	"github.com/prometheus/client_golang/prometheus/push"
 )
 
-// Pusher missing godoc
-type Pusher struct {
-	eventingRequestTotal *prometheus.GaugeVec
-	failedTenantsSyncJob *prometheus.CounterVec
-	pusher               *push.Pusher
-	instanceID           uuid.UUID
+const (
+	maxErrMessageLength = 50
+	errorMetricLabel    = "error"
+)
+
+type AggregationFailurePusher struct {
+	aggregationFailuresCounter *prometheus.CounterVec
+	pusher                     *push.Pusher
+	instanceID                 uuid.UUID
 }
 
-// NewPusher missing godoc
-func NewPusher(endpoint string, timeout time.Duration) *Pusher {
-	eventingRequestTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: Namespace,
-		Subsystem: TenantFetcherSubsystem,
-		Name:      "eventing_requests_total",
-		Help:      "Total Eventing Requests",
-	}, []string{"method", "code", "desc"})
+type RequestFailurePusher struct {
+	requestFailuresCounter *prometheus.CounterVec
+	pusher                 *push.Pusher
+	instanceID             uuid.UUID
+}
 
+type PusherConfig struct {
+	Enabled    bool
+	Endpoint   string
+	MetricName string
+	Timeout    time.Duration
+	Subsystem  string
+}
+
+// NewAggregationFailurePusher returns a new Prometheus metrics pusher that can be used to report aggregation failures.
+func NewAggregationFailurePusher(cfg PusherConfig) AggregationFailurePusher {
+	if !cfg.Enabled {
+		return AggregationFailurePusher{}
+	}
 	instanceID := uuid.New()
 	log.D().WithField(InstanceIDKeyName, instanceID).Infof("Initializing Metrics Pusher...")
 
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(eventingRequestTotal)
-	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry).Client(&http.Client{
-		Timeout: timeout,
-	})
-
-	return &Pusher{
-		eventingRequestTotal: eventingRequestTotal,
-		pusher:               pusher,
-		instanceID:           instanceID,
-	}
-}
-
-// RecordEventingRequest missing godoc
-func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc string) {
-	log.D().WithFields(logrus.Fields{
-		InstanceIDKeyName: p.instanceID,
-		"statusCode":      statusCode,
-		"desc":            desc,
-	}).Infof("Recording eventing request...")
-	p.eventingRequestTotal.WithLabelValues(method, strconv.Itoa(statusCode), desc).Inc()
-}
-
-// NewPusherPerJob missing godoc
-func NewPusherPerJob(jobName string, endpoint string, timeout time.Duration) *Pusher {
-	failedTenantsSyncJob := prometheus.NewCounterVec(prometheus.CounterOpts{
+	aggregationFailuresCounter := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: Namespace,
-		Subsystem: TenantFetcherSubsystem,
-		Name:      strings.ReplaceAll(strings.ToLower(jobName), "-", "_") + "_job_sync_failure_number",
-		Help:      jobName + " job sync failure number",
-	}, []string{"method", "code", "desc"})
+		Subsystem: cfg.Subsystem,
+		Name:      cfg.MetricName,
+		Help:      fmt.Sprintf("Aggregation status for %s", cfg.Subsystem),
+	}, []string{errorMetricLabel})
 
-	instanceID := uuid.New()
-	log.D().WithField(InstanceIDKeyName, instanceID).Infof("Initializing Metrics Pusher...")
-
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(failedTenantsSyncJob)
-	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry).Client(&http.Client{
-		Timeout: timeout,
-	})
-
-	return &Pusher{
-		failedTenantsSyncJob: failedTenantsSyncJob,
-		pusher:               pusher,
-		instanceID:           instanceID,
+	pusher := newPusher(cfg, aggregationFailuresCounter)
+	return AggregationFailurePusher{
+		aggregationFailuresCounter: aggregationFailuresCounter,
+		pusher:                     pusher,
+		instanceID:                 instanceID,
 	}
 }
 
-// RecordTenantsSyncJobFailure missing godoc
-func (p *Pusher) RecordTenantsSyncJobFailure(method string, statusCode int, desc string) {
-	log.D().WithFields(logrus.Fields{
-		InstanceIDKeyName: p.instanceID,
-		"statusCode":      statusCode,
-		"desc":            desc,
-	}).Infof("Recording failed tenants sync job...")
-	if p.failedTenantsSyncJob != nil {
-		p.failedTenantsSyncJob.WithLabelValues(method, strconv.Itoa(statusCode), desc).Inc()
+// ReportAggregationFailure reports failed aggregation with the provided error.
+func (p AggregationFailurePusher) ReportAggregationFailure(ctx context.Context, err error) {
+	if p.pusher == nil {
+		log.C(ctx).Error("Metrics pusher is not configured, skipping report...")
+		return
 	}
+
+	log.C(ctx).WithFields(logrus.Fields{InstanceIDKeyName: p.instanceID}).Info("Reporting failed aggregation...")
+	p.aggregationFailuresCounter.WithLabelValues(errorDescription(err)).Inc()
+	p.push()
 }
 
-// Push missing godoc
-func (p *Pusher) Push() {
-	log.D().WithField(InstanceIDKeyName, p.instanceID).Info("Pushing metrics...")
+func (p AggregationFailurePusher) push() {
 	if err := p.pusher.Add(); err != nil {
 		wrappedErr := errors.Wrap(err, "while pushing metrics to Pushgateway")
 		log.D().WithField(InstanceIDKeyName, p.instanceID).Error(wrappedErr)
 	}
 }
 
-// ReportFailedSync reports failed tenant fetcher job
-func (p *Pusher) ReportFailedSync(ctx context.Context, err error) {
-	log.C(ctx).WithError(err).Errorf("Reporting failed job sync with error: %v", err)
-	if p.pusher == nil {
-		log.C(ctx).Error("Failed to report job sync failure: metrics pusher is not configured")
-		return
+func newPusher(cfg PusherConfig, collectors ...prometheus.Collector) *push.Pusher {
+	registry := prometheus.NewRegistry()
+	for _, c := range collectors {
+		registry.MustRegister(c)
+	}
+	pusher := push.New(cfg.Endpoint, TenantFetcherJobName).Gatherer(registry).Client(&http.Client{
+		Timeout: cfg.Timeout,
+	})
+	return pusher
+}
+
+func errorDescription(err error) string {
+	var e *net.OpError
+	if errors.As(err, &e) && e.Err != nil {
+		return e.Err.Error()
 	}
 
-	desc := resync.GetErrorDesc(err)
-	p.RecordTenantsSyncJobFailure(http.MethodGet, 0, desc)
-	p.Push()
+	if len(err.Error()) > maxErrMessageLength {
+		// not all errors are actually wrapped, sometimes the error message is just concatenated with ":"
+		errParts := strings.Split(err.Error(), ":")
+		return errParts[len(errParts)-1]
+	}
+
+	return err.Error()
 }
