@@ -263,39 +263,24 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	switch objectType {
 	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
 		//Start transaction tx.Begin
-		tx, err := s.transact.Begin()
+		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
 		if err != nil {
 			return nil, err
 		}
-		transactionCtx := persistence.SaveToContext(ctx, tx)
-
-		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
-
-		formationFromDB, err := s.assign(transactionCtx, tnt, objectID, objectType, formation)
+		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, err
 		}
-		assignments, err := s.formationAssignmentService.GenerateAssignments(transactionCtx, tnt, objectID, objectType, formationFromDB)
-		if err != nil {
-			return nil, err
-		}
-		requests, err := s.notificationsService.GenerateNotifications(transactionCtx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, tnt, assignments, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
-			commitError := tx.Commit()
-			if commitError != nil {
-				err = errors.Wrapf(err, "and while commiting transaction with error %s", commitError.Error())
-			}
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+			log.C(ctx).Errorf("Error occured while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
 
-		err = tx.Commit()
-		if err != nil {
-			return nil, errors.Wrap(err, "while committing transaction")
-		}
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeTenant:

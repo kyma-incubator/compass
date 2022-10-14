@@ -390,7 +390,8 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 				"while updating error state: %s",
 				errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID).Error())
 		}
-		return errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID)
+		log.C(ctx).Error(errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID).Error())
+		return nil
 	}
 
 	if response.Error != nil && *response.Error != "" {
@@ -398,7 +399,9 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
-		return errors.Errorf("Received error from response: %v", *response.Error)
+
+		log.C(ctx).Error(errors.Errorf("Received error from response: %v", *response.Error).Error())
+		return nil
 	}
 
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
@@ -433,7 +436,8 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		// 4. set config2 to 2. and resend; resp: ready -> дъно
 		if depth >= 10 {
 			//TODO clarify message
-			return errors.Errorf("Depth limit exceeded for assignments: %q and %q", mappingPair.Assignment.FormationAssignment.ID, mappingPair.ReverseAssignment.FormationAssignment.ID)
+			log.C(ctx).Errorf("Depth limit exceeded for assignments: %q and %q", mappingPair.Assignment.FormationAssignment.ID, mappingPair.ReverseAssignment.FormationAssignment.ID)
+			return nil
 		}
 
 		newAssignment := mappingPair.ReverseAssignment.Clone()

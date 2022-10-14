@@ -273,11 +273,10 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	t.Log("Check if new scenario label value was set correctly")
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
 
-	t.Logf("Assign runtime to formation %s which was already assigned by ASA should fail with conflict", asaFormation)
+	t.Logf("Assign runtime to formation %s which was already assigned by ASA should succeed", asaFormation)
 	assignReq = fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Object is not unique")
+	require.NoError(t, err)
 
 	t.Log("Check if the formation label value is still assigned")
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
@@ -335,7 +334,6 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
-	fmt.Println(tenantId, " l ", subaccountID)
 
 	t.Logf("Should create formation: %s", asaFormation)
 	createAsaFormationReq := fixtures.FixCreateFormationRequest(asaFormation)
@@ -1958,7 +1956,8 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(t *testing.
 	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
 	assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
-	require.Error(t, err)
+	require.NoError(t, err)
+	require.Equal(t, providerFormationName, assignedFormation.Name)
 
 	// target:source:state
 	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
