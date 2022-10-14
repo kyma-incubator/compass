@@ -343,9 +343,9 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 }
 
 // ProcessFormationAssignments matches the formation assignments with the requests and responses and executes the provided `formationAssignmentFunc` on the FormationAssignmentMapping with the response
-func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) error) error {
+func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) error) error {
 	var errs *multierror.Error
-	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, tenant, formationAssignmentsForObject, requests)
+	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests)
 	if err != nil {
 		return errors.Wrap(err, "while mapping formationAssignments to notification requests and responses")
 	}
@@ -601,7 +601,7 @@ type AssignmentErrorWrapper struct {
 	Error AssignmentError `json:"error"`
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, tenant string, assignments []*model.FormationAssignment, requests []*webhookclient.NotificationRequest) ([]*AssignmentMappingPair, error) {
+func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest) ([]*AssignmentMappingPair, error) {
 	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
 		mappingObject := &FormationAssignmentRequestMapping{
@@ -611,13 +611,9 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 		target := assignment.Target
 		if assignment.TargetType == string(graphql.FormationObjectTypeRuntimeContext) {
 			log.C(ctx).Infof("Matching for runtime context, fetching associated runtime for runtime context with ID %s", target)
-			rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, tenant, target)
-			if err != nil {
-				return nil, err
-			}
 
-			target = rtmCtx.RuntimeID
-			log.C(ctx).Infof("Fetched associated runtime with ID %s for runtime context with ID %s", target, rtmCtx.ID)
+			target = runtimeContextIDToRuntimeIDMapping[assignment.Target]
+			log.C(ctx).Infof("Fetched associated runtime with ID %s for runtime context with ID %s", target, assignment.Target)
 		}
 
 	assignment:

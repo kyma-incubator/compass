@@ -47,6 +47,7 @@ type runtimeRepository interface {
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
 	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
+	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error)
 	ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error)
@@ -261,8 +262,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
-	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		//Start transaction tx.Begin
+	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime:
 		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
 		if err != nil {
 			return nil, err
@@ -271,12 +271,53 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if err != nil {
 			return nil, err
 		}
+
+		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
+		if err != nil {
+			return nil, err
+		}
+
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+			log.C(ctx).Errorf("Error occured while processing formationAssignments %s", err.Error())
+			return nil, err
+		}
+
+		return formationFromDB, nil
+	case graphql.FormationObjectTypeRuntimeContext:
+		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
+		if err != nil {
+			return nil, err
+		}
+		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, err
+		}
+
+		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
+		if err != nil {
+			return nil, err
+		}
+
+		runtimeID := rtmContextIDsMapping[objectID]
+		for _, assignment := range assignments {
+			if (assignment.Source == runtimeID && assignment.Target == objectID) || (assignment.Target == runtimeID && assignment.Source == objectID) {
+				if err = s.formationAssignmentService.Delete(ctx, assignment.ID); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
+		}
+
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
 			log.C(ctx).Errorf("Error occured while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
@@ -406,6 +447,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
+		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
+		if err != nil {
+			return nil, err
+		}
+
 		tx, err := s.transact.Begin()
 		if err != nil {
 			return nil, err
@@ -413,7 +459,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 		ctx = persistence.SaveToContext(ctx, tx)
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
@@ -455,6 +501,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
+		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
+		if err != nil {
+			return nil, err
+		}
+
 		tx, err := s.transact.Begin()
 		if err != nil {
 			return nil, err
@@ -463,7 +514,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		transactionCtx := persistence.SaveToContext(ctx, tx)
 		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, tnt, formationAssignmentsForObject, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, tnt, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
@@ -490,6 +541,24 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
+}
+
+func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
+	rtmContextIDs := make([]string, 0)
+	for _, assignment := range formationAssignmentsForObject {
+		if assignment.TargetType == string(graphql.FormationObjectTypeRuntimeContext) {
+			rtmContextIDs = append(rtmContextIDs, assignment.Target)
+		}
+	}
+	rtmContexts, err := s.runtimeContextRepo.ListByIDs(ctx, tnt, rtmContextIDs)
+	if err != nil {
+		return nil, err
+	}
+	rtmContextIDsToRuntimeMap := make(map[string]string, len(rtmContexts))
+	for _, rtmContext := range rtmContexts {
+		rtmContextIDsToRuntimeMap[rtmContext.ID] = rtmContext.RuntimeID
+	}
+	return rtmContextIDsToRuntimeMap, nil
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
