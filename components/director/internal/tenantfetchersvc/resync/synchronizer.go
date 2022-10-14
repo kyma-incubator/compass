@@ -49,7 +49,7 @@ type TenantMover interface {
 	MoveTenants(ctx context.Context, movedSubaccountMappings []model.MovedSubaccountMappingInput) error
 }
 
-// AggregationFailurePusher taskes care of pushing aggregation failures to prometheus.
+// AggregationFailurePusher takes care of pushing aggregation failures to Prometheus.
 //go:generate mockery --name=AggregationFailurePusher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AggregationFailurePusher interface {
 	ReportAggregationFailure(ctx context.Context, err error)

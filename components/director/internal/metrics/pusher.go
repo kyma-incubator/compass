@@ -23,24 +23,20 @@ const (
 	errorMetricLabel    = "error"
 )
 
-type AggregationFailurePusher struct {
-	aggregationFailuresCounter *prometheus.CounterVec
-	pusher                     *push.Pusher
-	instanceID                 uuid.UUID
-}
-
-type RequestFailurePusher struct {
-	requestFailuresCounter *prometheus.CounterVec
-	pusher                 *push.Pusher
-	instanceID             uuid.UUID
-}
-
+// PusherConfig is used to provide configuration options for AggregationFailurePusher.
 type PusherConfig struct {
 	Enabled    bool
 	Endpoint   string
 	MetricName string
 	Timeout    time.Duration
 	Subsystem  string
+}
+
+// AggregationFailurePusher is used for pushing metrics to Prometheus related to failed aggregation.
+type AggregationFailurePusher struct {
+	aggregationFailuresCounter *prometheus.CounterVec
+	pusher                     *push.Pusher
+	instanceID                 uuid.UUID
 }
 
 // NewAggregationFailurePusher returns a new Prometheus metrics pusher that can be used to report aggregation failures.
