@@ -1,6 +1,7 @@
 package resync
 
 import (
+	"context"
 	"encoding/json"
 	"regexp"
 
@@ -24,13 +25,13 @@ type EventsPage struct {
 }
 
 // GetMovedSubaccounts parses the data from the page payload to MovedSubaccountMappingInput
-func (ep EventsPage) GetMovedSubaccounts() []model.MovedSubaccountMappingInput {
-	eds := ep.getEventsDetails()
+func (ep EventsPage) GetMovedSubaccounts(ctx context.Context) []model.MovedSubaccountMappingInput {
+	eds := ep.getEventsDetails(ctx)
 	mappings := make([]model.MovedSubaccountMappingInput, 0, len(eds))
 	for _, detail := range eds {
-		mapping, err := ep.eventDataToMovedSubaccount(detail)
+		mapping, err := ep.eventDataToMovedSubaccount(ctx, detail)
 		if err != nil {
-			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
+			log.C(ctx).Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
 			continue
 		}
 
@@ -41,13 +42,13 @@ func (ep EventsPage) GetMovedSubaccounts() []model.MovedSubaccountMappingInput {
 }
 
 // GetTenantMappings parses the data from the page payload to BusinessTenantMappingInput
-func (ep EventsPage) GetTenantMappings(eventsType EventsType) []model.BusinessTenantMappingInput {
-	eds := ep.getEventsDetails()
+func (ep EventsPage) GetTenantMappings(ctx context.Context, eventsType EventsType) []model.BusinessTenantMappingInput {
+	eds := ep.getEventsDetails(ctx)
 	tenants := make([]model.BusinessTenantMappingInput, 0, len(eds))
 	for _, detail := range eds {
-		mapping, err := ep.eventDataToTenant(eventsType, detail)
+		mapping, err := ep.eventDataToTenant(ctx, eventsType, detail)
 		if err != nil {
-			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
+			log.C(ctx).Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
 			continue
 		}
 
@@ -57,7 +58,7 @@ func (ep EventsPage) GetTenantMappings(eventsType EventsType) []model.BusinessTe
 	return tenants
 }
 
-func (ep EventsPage) getEventsDetails() [][]byte {
+func (ep EventsPage) getEventsDetails(ctx context.Context) [][]byte {
 	tenantDetails := make([][]byte, 0)
 	gjson.GetBytes(ep.Payload, ep.FieldMapping.EventsField).ForEach(func(key gjson.Result, event gjson.Result) bool {
 		entityType := event.Get(ep.FieldMapping.EntityTypeField)
@@ -79,12 +80,12 @@ func (ep EventsPage) getEventsDetails() [][]byte {
 			case gjson.Null:
 				allDetails[key] = nil
 			default:
-				log.D().Debugf("Unknown property type %s", result.Type)
+				log.C(ctx).Debugf("Unknown property type %s", result.Type)
 			}
 		}
 		currentTenantDetails, err := json.Marshal(allDetails)
 		if err != nil {
-			log.D().Errorf("failed to marshal tenant details: %v", err)
+			log.C(ctx).Errorf("failed to marshal tenant details: %v", err)
 			return false
 		}
 		tenantDetails = append(tenantDetails, currentTenantDetails)
@@ -93,7 +94,7 @@ func (ep EventsPage) getEventsDetails() [][]byte {
 	return tenantDetails
 }
 
-func (ep EventsPage) eventDataToMovedSubaccount(eventData []byte) (*model.MovedSubaccountMappingInput, error) {
+func (ep EventsPage) eventDataToMovedSubaccount(ctx context.Context, eventData []byte) (*model.MovedSubaccountMappingInput, error) {
 	jsonPayload := string(eventData)
 	if !gjson.Valid(jsonPayload) {
 		return nil, errors.Errorf("invalid json Payload")
@@ -121,10 +122,10 @@ func (ep EventsPage) eventDataToMovedSubaccount(eventData []byte) (*model.MovedS
 
 	subdomain := gjson.Get(jsonPayload, ep.FieldMapping.SubdomainField)
 	if !subdomain.Exists() {
-		log.D().Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.FieldMapping.SubdomainField, id)
+		log.C(ctx).Warnf("Missig or invalid format of field: %s for tenant with ID: %s", ep.FieldMapping.SubdomainField, id)
 	}
 
-	subaccountInput, err := constructSubaccountTenant(jsonPayload, nameResult.String(), subdomain.String(), id, ep)
+	subaccountInput, err := constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, ep)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func (ep EventsPage) eventDataToMovedSubaccount(eventData []byte) (*model.MovedS
 	}, nil
 }
 
-func (ep EventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
+func (ep EventsPage) eventDataToTenant(ctx context.Context, eventType EventsType, eventData []byte) (*model.BusinessTenantMappingInput, error) {
 	jsonPayload := string(eventData)
 	if !gjson.Valid(jsonPayload) {
 		return nil, errors.Errorf("invalid json Payload")
@@ -159,12 +160,12 @@ func (ep EventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 
 	nameResult := gjson.Get(jsonPayload, ep.FieldMapping.NameField)
 	if !nameResult.Exists() {
-		log.D().Warnf("Missing or invalid format of name field: %s for tenant with ID: %s", ep.FieldMapping.NameField, id)
+		log.C(ctx).Warnf("Missing or invalid format of name field: %s for tenant with ID: %s", ep.FieldMapping.NameField, id)
 	}
 
 	subdomain := gjson.Get(jsonPayload, ep.FieldMapping.SubdomainField)
 	if !subdomain.Exists() {
-		log.D().Warnf("Missing or invalid format of subdomain field: %s for tenant with ID: %s", ep.FieldMapping.SubdomainField, id)
+		log.C(ctx).Warnf("Missing or invalid format of subdomain field: %s for tenant with ID: %s", ep.FieldMapping.SubdomainField, id)
 	}
 
 	entityType := gjson.Get(jsonPayload, ep.FieldMapping.EntityTypeField)
@@ -174,17 +175,17 @@ func (ep EventsPage) eventDataToTenant(eventType EventsType, eventData []byte) (
 
 	globalAccountRegex := regexp.MustCompile(GlobalAccountRegex)
 	if globalAccountRegex.MatchString(entityType.String()) {
-		return constructGlobalAccountTenant(jsonPayload, nameResult.String(), subdomain.String(), id, ep), nil
+		return constructGlobalAccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, ep), nil
 	} else {
-		return constructSubaccountTenant(jsonPayload, nameResult.String(), subdomain.String(), id, ep)
+		return constructSubaccountTenant(ctx, jsonPayload, nameResult.String(), subdomain.String(), id, ep)
 	}
 }
 
-func constructGlobalAccountTenant(jsonPayload, name, subdomain, externalTenant string, ep EventsPage) *model.BusinessTenantMappingInput {
+func constructGlobalAccountTenant(ctx context.Context, jsonPayload, name, subdomain, externalTenant string, ep EventsPage) *model.BusinessTenantMappingInput {
 	parentID := ""
 	customerIDResult := gjson.Get(jsonPayload, ep.FieldMapping.CustomerIDField)
 	if !customerIDResult.Exists() {
-		log.D().Warnf("Missig or invalid format of field: %s for tenant with id: %s", ep.FieldMapping.CustomerIDField, externalTenant)
+		log.C(ctx).Warnf("Missig or invalid format of field: %s for tenant with id: %s", ep.FieldMapping.CustomerIDField, externalTenant)
 	} else {
 		parentID = customerIDResult.String()
 	}
@@ -199,10 +200,10 @@ func constructGlobalAccountTenant(jsonPayload, name, subdomain, externalTenant s
 	}
 }
 
-func constructSubaccountTenant(jsonPayload, name, subdomain, externalTenant string, ep EventsPage) (*model.BusinessTenantMappingInput, error) {
+func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain, externalTenant string, ep EventsPage) (*model.BusinessTenantMappingInput, error) {
 	regionField := gjson.Get(jsonPayload, ep.FieldMapping.RegionField)
 	if !regionField.Exists() {
-		log.D().Debugf("Missing or invalid format of region field: %s for tenant with ID: %s", ep.FieldMapping.RegionField, externalTenant)
+		log.C(ctx).Debugf("Missing or invalid format of region field: %s for tenant with ID: %s", ep.FieldMapping.RegionField, externalTenant)
 	}
 	region := regionField.String()
 	parentIDField := gjson.Get(jsonPayload, ep.FieldMapping.GlobalAccountKey)

@@ -3,7 +3,7 @@
 package automock
 
 import (
-	testing "testing"
+	context "context"
 
 	resync "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
 	mock "github.com/stretchr/testify/mock"
@@ -14,13 +14,13 @@ type EventAPIClient struct {
 	mock.Mock
 }
 
-// FetchTenantEventsPage provides a mock function with given fields: eventsType, additionalQueryParams
-func (_m *EventAPIClient) FetchTenantEventsPage(eventsType resync.EventsType, additionalQueryParams resync.QueryParams) (*resync.EventsPage, error) {
-	ret := _m.Called(eventsType, additionalQueryParams)
+// FetchTenantEventsPage provides a mock function with given fields: ctx, eventsType, additionalQueryParams
+func (_m *EventAPIClient) FetchTenantEventsPage(ctx context.Context, eventsType resync.EventsType, additionalQueryParams resync.QueryParams) (*resync.EventsPage, error) {
+	ret := _m.Called(ctx, eventsType, additionalQueryParams)
 
 	var r0 *resync.EventsPage
-	if rf, ok := ret.Get(0).(func(resync.EventsType, resync.QueryParams) *resync.EventsPage); ok {
-		r0 = rf(eventsType, additionalQueryParams)
+	if rf, ok := ret.Get(0).(func(context.Context, resync.EventsType, resync.QueryParams) *resync.EventsPage); ok {
+		r0 = rf(ctx, eventsType, additionalQueryParams)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*resync.EventsPage)
@@ -28,21 +28,11 @@ func (_m *EventAPIClient) FetchTenantEventsPage(eventsType resync.EventsType, ad
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(resync.EventsType, resync.QueryParams) error); ok {
-		r1 = rf(eventsType, additionalQueryParams)
+	if rf, ok := ret.Get(1).(func(context.Context, resync.EventsType, resync.QueryParams) error); ok {
+		r1 = rf(ctx, eventsType, additionalQueryParams)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
-}
-
-// NewEventAPIClient creates a new instance of EventAPIClient. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventAPIClient(t testing.TB) *EventAPIClient {
-	mock := &EventAPIClient{}
-	mock.Mock.Test(t)
-
-	t.Cleanup(func() { mock.AssertExpectations(t) })
-
-	return mock
 }
