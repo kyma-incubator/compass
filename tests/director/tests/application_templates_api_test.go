@@ -3,9 +3,8 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
-
-	str "github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	gcli "github.com/machinebox/graphql"
 
@@ -816,6 +815,14 @@ func fixAppTemplateInputWithDefaultDistinguishLabel(name string) graphql.Applica
 	input := fixtures.FixApplicationTemplate(name)
 	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 
+	return input
+}
+
+func fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(name string) graphql.ApplicationTemplateInput {
+	input := fixtures.FixApplicationTemplate(name)
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
+	input.ApplicationInput.BaseURL = str.Ptr(fmt.Sprintf(baseURLTemplate, "{{subdomain}}", "{{region}}"))
+	input.Placeholders = append(input.Placeholders, &graphql.PlaceholderDefinitionInput{Name: "subdomain"}, &graphql.PlaceholderDefinitionInput{Name: "region"})
 	return input
 }
 

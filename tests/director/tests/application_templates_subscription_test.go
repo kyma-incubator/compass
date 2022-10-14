@@ -26,6 +26,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	RegionValue      = "eu-1"
+	DefaultSubdomain = "compass-external-services-mock-sap-mtls"
+	baseURLTemplate  = "http://%s.%s.subscription.com"
+)
+
 func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 	t := testingx.NewT(baseT)
 	t.Run("When creating app template with a certificate", func(stdT *testing.T) {
@@ -58,7 +64,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
-		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
@@ -91,6 +97,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+			expectedBaseURL := fmt.Sprintf(baseURLTemplate, DefaultSubdomain, RegionValue)
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
@@ -104,6 +111,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			require.Len(t, actualAppPage.Data, 1)
 			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+			require.Equal(t, expectedBaseURL, *actualAppPage.Data[0].BaseURL)
 		})
 
 		t.Run("Application is deleted successfully in consumer subaccount as a result of unsubscription", func(t *testing.T) {
