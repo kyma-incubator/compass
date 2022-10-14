@@ -324,7 +324,7 @@ global:
     caKey: ""
     caCertificate: ""
   system_broker:
-    enabled: true
+    enabled: false
     port: 5001
     prefix: /broker
     tokenProviderFromHeader:
