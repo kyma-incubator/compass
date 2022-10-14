@@ -257,7 +257,7 @@ func fetchMovedSubaccounts(ctx context.Context, eventAPIClient EventAPIClient, c
 	allMappings := make([]model.MovedSubaccountMappingInput, 0)
 
 	err := walkThroughPages(ctx, eventAPIClient, MovedSubaccountType, configProvider, func(page *EventsPage) error {
-		mappings := page.GetMovedSubaccounts()
+		mappings := page.GetMovedSubaccounts(ctx)
 		allMappings = append(allMappings, mappings...)
 		return nil
 	})

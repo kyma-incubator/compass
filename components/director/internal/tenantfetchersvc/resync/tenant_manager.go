@@ -297,7 +297,7 @@ func fetchTenantsWithRetries(ctx context.Context, eventAPIClient EventAPIClient,
 func fetchTenants(ctx context.Context, eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
 	tenants := make([]model.BusinessTenantMappingInput, 0)
 	if err := walkThroughPages(ctx, eventAPIClient, eventsType, configProvider, func(page *EventsPage) error {
-		mappings := page.GetTenantMappings(eventsType)
+		mappings := page.GetTenantMappings(ctx, eventsType)
 		tenants = append(tenants, mappings...)
 		return nil
 	}); err != nil {
