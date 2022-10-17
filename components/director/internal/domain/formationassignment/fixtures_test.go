@@ -2,12 +2,12 @@ package formationassignment_test
 
 import (
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
 const (
@@ -141,6 +141,26 @@ func fixFormationAssignmentWithID(id string) *model.FormationAssignment {
 	return &model.FormationAssignment{ID: id, Source: "source"}
 }
 
+func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMappingPair {
+	return &formationassignment.AssignmentMappingPair{
+		Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			Request:             nil,
+			FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
+		},
+		ReverseAssignment: nil,
+	}
+}
+
+func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.NotificationRequest) *formationassignment.AssignmentMappingPair {
+	return &formationassignment.AssignmentMappingPair{
+		Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			Request:             req,
+			FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
+		},
+		ReverseAssignment: nil,
+	}
+}
+
 func fixFormationAssignmentsWithObjectTypeAndID(objectType graphql.FormationObjectType, objectID, appID, rtmID, rtmCtxID string) []*model.FormationAssignment {
 	return []*model.FormationAssignment{
 		&model.FormationAssignment{
@@ -259,4 +279,46 @@ func fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(objectType graphql.Formati
 			Value:       nil,
 		},
 	}
+}
+
+func fixNotificationRequestAndReverseRequest(objectID, object2ID string, participants []string, assignment, assignmentReverse *model.FormationAssignment, webhookType, reverseWebhookType string, hasReverseWebhook bool) ([]*webhookclient.NotificationRequest, *automock.TemplateInput, *automock.TemplateInput) {
+	var request *webhookclient.NotificationRequest
+	var requestReverse *webhookclient.NotificationRequest
+
+	templateInput := &automock.TemplateInput{}
+	templateInputReverse := &automock.TemplateInput{}
+
+	webhook := graphql.Webhook{}
+	webhookReverse := graphql.Webhook{}
+	switch webhookType {
+	case "application":
+		webhook.ApplicationID = &objectID
+	case "runtime":
+		webhook.RuntimeID = &objectID
+	}
+
+	templateInput.Mock.On("GetParticipantsIDs").Return(participants).Times(1)
+	templateInput.Mock.On("SetAssignment", assignment).Times(2)
+	templateInput.Mock.On("SetReverseAssignment", assignmentReverse).Times(2)
+
+	request = &webhookclient.NotificationRequest{Webhook: webhook, Object: templateInput}
+
+	if hasReverseWebhook {
+		switch reverseWebhookType {
+		case "application":
+			webhookReverse.ApplicationID = &object2ID
+		case "runtime":
+			webhookReverse.RuntimeID = &object2ID
+		}
+
+		templateInputReverse.Mock.On("GetParticipantsIDs").Return(participants).Times(1)
+		templateInputReverse.Mock.On("SetAssignment", assignmentReverse).Times(2)
+		templateInputReverse.Mock.On("SetReverseAssignment", assignment).Times(2)
+
+		requestReverse = &webhookclient.NotificationRequest{Webhook: webhookReverse, Object: templateInputReverse}
+	} else {
+		requestReverse = nil
+	}
+
+	return []*webhookclient.NotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }

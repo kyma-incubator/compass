@@ -361,12 +361,9 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 // ProcessFormationAssignments matches the formation assignments with the requests and responses and executes the provided `formationAssignmentFunc` on the FormationAssignmentMapping with the response
 func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) error) error {
 	var errs *multierror.Error
-	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests)
-	if err != nil {
-		return errors.Wrap(err, "while mapping formationAssignments to notification requests and responses")
-	}
+	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests)
 	for _, mapping := range assignmentRequestMappings {
-		if err = formationAssignmentFunc(ctx, mapping); err != nil {
+		if err := formationAssignmentFunc(ctx, mapping); err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "while processing formation assignment with id %q", mapping.Assignment.FormationAssignment.ID))
 		}
 	}
@@ -617,7 +614,7 @@ type AssignmentErrorWrapper struct {
 	Error AssignmentError `json:"error"`
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest) ([]*AssignmentMappingPair, error) {
+func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest) []*AssignmentMappingPair {
 	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
 		mappingObject := &FormationAssignmentRequestMapping{
@@ -689,5 +686,5 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
 		}
 	}
-	return assignmentMappingPairs, nil
+	return assignmentMappingPairs
 }
