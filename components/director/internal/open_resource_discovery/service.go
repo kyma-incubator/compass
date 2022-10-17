@@ -798,6 +798,9 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 
 				// the first item in the slice is the message 'invalid documents' for the wrapped errors
 				validationErrors = validationErrors[1:]
+				for i := range validationErrors {
+					validationErrors[i] = strings.TrimSpace(validationErrors[i])
+				}
 
 				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
 			} else {
