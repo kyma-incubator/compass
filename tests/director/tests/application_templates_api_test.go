@@ -267,20 +267,16 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 			ExpectedErrMessage:  "application template name \"not-compliant-name\" does not comply with the following naming convention",
 		},
 		{
-			Name:            "not compliant placeholders",
+			Name:            "missing mandatory placeholders",
 			AppTemplateName: fmt.Sprintf("SAP %s", "app-template-name"),
 			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
 				},
-				{
-					Name:        "not-compliant",
-					Description: &displayNamePlaceholder,
-				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
-			ExpectedErrMessage:  "unexpected placeholder with name \"not-compliant\" found",
+			ExpectedErrMessage:  "\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed.",
 		},
 	}
 
@@ -433,20 +429,16 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 			ExpectedErrMessage:  "application template name \"not-compliant-name\" does not comply with the following naming convention",
 		},
 		{
-			Name:               "not compliant placeholders",
+			Name:               "missing mandatory placeholder",
 			NewAppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SubscriptionConfig.SelfRegRegion),
 			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
 				},
-				{
-					Name:        "not-compliant",
-					Description: &displayNamePlaceholder,
-				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
-			ExpectedErrMessage:  "unexpected placeholder with name \"not-compliant\" found",
+			ExpectedErrMessage:  "\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed.",
 		},
 	}
 
