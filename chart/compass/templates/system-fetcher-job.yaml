@@ -59,7 +59,7 @@ spec:
                 - name: APP_SYSTEM_INFORMATION_SOURCE_KEY
                   value: {{ .Values.global.systemFetcher.systemSourceKey }}
                 - name: APP_TEMPLATE_LABEL_FILTER
-                  value: {{ .Values.global.systemFetcher.appTemplatesLabelFilter }}
+                  value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
                 - name: APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT
                   value: {{ .Values.global.systemFetcher.templateOverrideApplicationInput | quote }}
                 - name: APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS

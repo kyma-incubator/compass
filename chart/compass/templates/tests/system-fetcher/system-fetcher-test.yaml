@@ -66,7 +66,7 @@ spec:
             - name: SYSTEM_INFORMATION_SOURCE_KEY
               value: {{ .Values.global.systemFetcher.systemSourceKey }}
             - name: TEMPLATE_LABEL_FILTER
-              value: {{ .Values.global.systemFetcher.appTemplatesLabelFilter }}
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
       restartPolicy: Never
 ---
 apiVersion: v1
