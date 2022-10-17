@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -27,6 +28,7 @@ type APIConfig struct {
 	PageSize        uint64        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE"`
 	PagingSkipParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
 	PagingSizeParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
+	SystemSourceKey string        `envconfig:"APP_SYSTEM_INFORMATION_SOURCE_KEY"`
 }
 
 // Client missing godoc
@@ -45,7 +47,9 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 
 // FetchSystemsForTenant fetches systems from the service
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
-	qp := map[string]string{"$filter": c.apiConfig.FilterCriteria, "fetchAcrossZones": "true"}
+	qp := c.buildFilter()
+	log.C(ctx).Infof("Fetching systems for tenant %s with query: %s", tenant, qp)
+
 	var systems []System
 
 	systemsFunc := c.getSystemsPagingFunc(ctx, &systems, tenant)
@@ -101,4 +105,23 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 		*systems = append(*systems, currentSystems...)
 		return uint64(len(currentSystems)), nil
 	}
+}
+
+func (c *Client) buildFilter() map[string]string {
+	var queryBuilder strings.Builder
+
+	for idx, at := range ApplicationTemplates {
+		lbl, ok := at.Labels[ApplicationTemplateLabelFilter]
+		if !ok {
+			continue
+		}
+
+		queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
+
+		if idx < len(ApplicationTemplates)-1 {
+			queryBuilder.WriteString("or")
+		}
+	}
+
+	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, queryBuilder.String()), "fetchAcrossZones": "true"}
 }

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/stretchr/testify/require"
 )
 
@@ -429,13 +428,13 @@ func TestSystem_UnmarshalJSON(t *testing.T) {
 		systemString := "{\"protocol\": \"HTTP\",\"host\": \"127.0.0.1:8080\",\"type\": \"otherSAPsys\",\"status\": \"disabled\",\"description\": \"description\"}"
 
 		Mappings = append(Mappings,
-			systemfetcher.TemplateMapping{
+			TemplateMapping{
 				Name:        "",
 				ID:          "sss",
 				SourceKey:   []string{"type"},
 				SourceValue: []string{"type"},
 			},
-			systemfetcher.TemplateMapping{
+			TemplateMapping{
 				Name:        "",
 				ID:          "ss",
 				SourceKey:   []string{"description"},
@@ -469,13 +468,13 @@ func TestSystem_UnmarshalJSON(t *testing.T) {
 		systemString := "{\"protocol\": \"HTTP\",\"host\": \"127.0.0.1:8080\",\"type\": \"otherSAPsys\",\"status\": \"disabled\",\"description\": \"description\"}"
 
 		Mappings = append(Mappings,
-			systemfetcher.TemplateMapping{
+			TemplateMapping{
 				Name:        "",
 				ID:          "sss",
 				SourceKey:   []string{"type"},
 				SourceValue: []string{"type"},
 			},
-			systemfetcher.TemplateMapping{
+			TemplateMapping{
 				Name:        "",
 				ID:          "ss",
 				SourceKey:   []string{"description"},
