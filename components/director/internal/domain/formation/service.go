@@ -282,7 +282,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
 			log.C(ctx).Errorf("Error occured while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
@@ -308,7 +308,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
 			log.C(ctx).Errorf("Error occured while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
@@ -450,7 +450,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 		ctx = persistence.SaveToContext(ctx, tx)
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
@@ -505,7 +505,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		transactionCtx := persistence.SaveToContext(ctx, tx)
 		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, tnt, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")

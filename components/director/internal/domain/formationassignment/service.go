@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/hashicorp/go-multierror"
-	"net/http"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -59,10 +57,13 @@ type runtimeRepository interface {
 // Used for testing
 //nolint
 type templateInput interface {
-	ParseURLTemplate(tmpl *string) (*webhookdir.URL, error)
-	ParseInputTemplate(tmpl *string) ([]byte, error)
-	ParseHeadersTemplate(tmpl *string) (http.Header, error)
+	webhookdir.TemplateInput
 	GetParticipantsIDs() []string
+	GetAssignment() *model.FormationAssignment
+	GetReverseAssignment() *model.FormationAssignment
+	SetAssignment(*model.FormationAssignment)
+	SetReverseAssignment(*model.FormationAssignment)
+	Clone() webhookdir.FormationAssignmentTemplateInput
 }
 
 //go:generate mockery --exported --name=notificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -358,7 +359,7 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 }
 
 // ProcessFormationAssignments matches the formation assignments with the requests and responses and executes the provided `formationAssignmentFunc` on the FormationAssignmentMapping with the response
-func (s *service) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) error) error {
+func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) error) error {
 	var errs *multierror.Error
 	assignmentRequestMappings, err := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests)
 	if err != nil {

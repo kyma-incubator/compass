@@ -18,11 +18,11 @@ type NotificationService struct {
 }
 
 // SendNotification provides a mock function with given fields: ctx, notification
-func (_m *NotificationService) SendNotification(ctx context.Context, notification *webhookclient.Request) (*webhook.Response, error) {
+func (_m *NotificationService) SendNotification(ctx context.Context, notification *webhookclient.NotificationRequest) (*webhook.Response, error) {
 	ret := _m.Called(ctx, notification)
 
 	var r0 *webhook.Response
-	if rf, ok := ret.Get(0).(func(context.Context, *webhookclient.Request) *webhook.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *webhookclient.NotificationRequest) *webhook.Response); ok {
 		r0 = rf(ctx, notification)
 	} else {
 		if ret.Get(0) != nil {
@@ -31,7 +31,7 @@ func (_m *NotificationService) SendNotification(ctx context.Context, notificatio
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *webhookclient.Request) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *webhookclient.NotificationRequest) error); ok {
 		r1 = rf(ctx, notification)
 	} else {
 		r1 = ret.Error(1)

@@ -140,3 +140,123 @@ func fixFormationAssignment() *model.FormationAssignment {
 func fixFormationAssignmentWithID(id string) *model.FormationAssignment {
 	return &model.FormationAssignment{ID: id, Source: "source"}
 }
+
+func fixFormationAssignmentsWithObjectTypeAndID(objectType graphql.FormationObjectType, objectID, appID, rtmID, rtmCtxID string) []*model.FormationAssignment {
+	return []*model.FormationAssignment{
+		&model.FormationAssignment{
+			ID:          "ID1",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      appID,
+			TargetType:  string(graphql.FormationObjectTypeApplication),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			ID:          "ID2",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      appID,
+			SourceType:  string(graphql.FormationObjectTypeApplication),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			ID:          "ID3",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      rtmID,
+			TargetType:  string(graphql.FormationObjectTypeRuntime),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			ID:          "ID4",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      rtmID,
+			SourceType:  string(graphql.FormationObjectTypeRuntime),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			ID:          "ID5",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      rtmCtxID,
+			TargetType:  string(graphql.FormationObjectTypeRuntimeContext),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			ID:          "ID6",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      rtmCtxID,
+			SourceType:  string(graphql.FormationObjectTypeRuntimeContext),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+	}
+}
+
+func fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(objectType graphql.FormationObjectType, objectID, appID, rtmCtxID string) []*model.FormationAssignment {
+	return []*model.FormationAssignment{
+		&model.FormationAssignment{
+			ID:          "ID1",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      appID,
+			TargetType:  string(graphql.FormationObjectTypeApplication),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			ID:          "ID2",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      appID,
+			SourceType:  string(graphql.FormationObjectTypeApplication),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			ID:          "ID3",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      objectID,
+			SourceType:  string(objectType),
+			Target:      rtmCtxID,
+			TargetType:  string(graphql.FormationObjectTypeRuntimeContext),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+		&model.FormationAssignment{
+			ID:          "ID4",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      rtmCtxID,
+			SourceType:  string(graphql.FormationObjectTypeRuntimeContext),
+			Target:      objectID,
+			TargetType:  string(objectType),
+			State:       string(model.InitialAssignmentState),
+			Value:       nil,
+		},
+	}
+}
