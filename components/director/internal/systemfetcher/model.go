@@ -3,23 +3,26 @@ package systemfetcher
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/tidwall/gjson"
 )
 
 var (
-	// Mappings global static configuration which is set after reading the configuration during startup, should only be used for the unmarshaling of system data
-	// Template mappings describe what properties and their values should be in order to map to a certain application template ID
-	// If there are multiple keys and values, all of them should match in order for the mapping to be successful
-	Mappings []TemplateMapping
+	// ApplicationTemplates global static configuration which is set after reading the configuration during startup, should only be used for the unmarshaling of system data
+	// It represents a model.ApplicationTemplate wih its labels in the form of map[string]*model.Label
+	ApplicationTemplates []TemplateMapping
+	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
+	// should match to the SystemSourceKey's value of the fetched systems
+	ApplicationTemplateLabelFilter string
+	// SystemSourceKey represents a key for filtering systems
+	SystemSourceKey string
 )
 
-// TemplateMapping missing godoc
+// TemplateMapping holds data for Application Templates and their Labels
 type TemplateMapping struct {
-	Name        string
-	Region      string
-	ID          string
-	SourceKey   []string
-	SourceValue []string
+	AppTemplate *model.ApplicationTemplate
+	Labels      map[string]*model.Label
 }
 
 // AdditionalURLs missing godoc
@@ -53,9 +56,9 @@ func (s *System) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	for _, tm := range Mappings {
+	for _, tm := range ApplicationTemplates {
 		if matchProps(data, tm) {
-			s.TemplateID = tm.ID
+			s.TemplateID = tm.AppTemplate.ID
 			return nil
 		}
 	}
@@ -64,11 +67,19 @@ func (s *System) UnmarshalJSON(data []byte) error {
 }
 
 func matchProps(data []byte, tm TemplateMapping) bool {
-	for i, sk := range tm.SourceKey {
-		v := gjson.GetBytes(data, sk).String()
-		if v != tm.SourceValue[i] {
-			return false
-		}
+	lbl, ok := tm.Labels[ApplicationTemplateLabelFilter]
+	if !ok {
+		return false
 	}
+
+	templateMappingLabelValue, ok := lbl.Value.(string)
+	if !ok {
+		return false
+	}
+
+	if systemSourceKeyValue := gjson.GetBytes(data, SystemSourceKey).String(); systemSourceKeyValue != templateMappingLabelValue {
+		return false
+	}
+
 	return true
 }

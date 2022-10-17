@@ -5,13 +5,21 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/tidwall/gjson"
 )
 
 // Mappings stores mappings between system values and ApplicationTemplates
-var Mappings []systemfetcher.TemplateMapping
+var Mappings []TemplateMapping
+
+// TemplateMapping mapping for application templates
+type TemplateMapping struct {
+	Name        string
+	Region      string
+	ID          string
+	SourceKey   []string
+	SourceValue []string
+}
 
 // SystemBase represents on-premise system
 type SystemBase struct {
@@ -57,7 +65,7 @@ func (s *System) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func matchProps(data []byte, tm systemfetcher.TemplateMapping) bool {
+func matchProps(data []byte, tm TemplateMapping) bool {
 	for i, sk := range tm.SourceKey {
 		v := gjson.GetBytes(data, sk).String()
 		if v != tm.SourceValue[i] {
