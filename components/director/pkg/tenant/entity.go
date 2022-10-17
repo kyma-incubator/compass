@@ -28,11 +28,11 @@ const (
 	Account Type = "account"
 	// Subaccount tenants must have a parent of type Account.
 	Subaccount Type = "subaccount"
-	// Organization tenants can be parents of Folder tenants.
+	// Organization tenants can be parents of Folder or ResourceGroup tenants.
 	Organization Type = "organization"
 	// Folder tenants must have a parent of type Organization.
 	Folder Type = "folder"
-	// ResourceGroup tenants must have a parent of type Folder.
+	// ResourceGroup tenants must have a parent of type Folder or Organization.
 	ResourceGroup Type = "resource-group"
 )
 
