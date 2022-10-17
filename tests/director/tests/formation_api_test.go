@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -1364,13 +1365,11 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		// Register provider runtime
-		rtRegion := "test-rt-region"
 		providerRuntimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
 			Labels: graphql.Labels{
 				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
-				"region": rtRegion,
 			},
 		}
 
@@ -1385,6 +1384,10 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		saasAppLbl, ok := providerRuntime.Labels[conf.SaaSAppNameLabelKey].(string)
 		require.True(t, ok)
 		require.NotEmpty(t, saasAppLbl)
+
+		regionLbl, ok := providerRuntime.Labels[tenantfetcher.RegionKey].(string)
+		require.True(t, ok)
+		require.NotEmpty(t, regionLbl)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -1495,7 +1498,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 				LocalTenantID: &localTenantID,
 				Webhooks: []*graphql.WebhookInput{
 					{
-						Type: graphql.WebhookTypeApplicationTenantMapping,
+						Type: graphql.WebhookTypeConfigurationChanged,
 						Auth: &graphql.AuthInput{
 							AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
 						},
@@ -1583,7 +1586,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
-		assertFormationNotificationForApplication(t, assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, rtRegion)
+		assertFormationNotificationForApplication(t, assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
 
 		t.Logf("Unassign Application from formation %s", providerFormationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
@@ -1602,12 +1605,12 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == "unassign" {
 				unassignApplicationNotificationFound = true
-				assertFormationNotificationForApplication(t, notification, "unassign", formation.ID, rtCtx.ID, rtCtx.Value, rtRegion)
+				assertFormationNotificationForApplication(t, notification, "unassign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
 			}
 		}
 		require.True(t, unassignApplicationNotificationFound, "notification for unassign app not found")
 		*/
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, rtRegion, unassignOperation, 1)
+		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 1)
 
 		t.Logf("Assign application to formation %s", providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
@@ -1628,12 +1631,12 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 				t.Logf("Found notification about rtCtx %q", rtCtxIDFromNotification)
 				if rtCtxIDFromNotification == rtCtx.ID && op == "assign" {
 					expectedNumberOfAssignNotifications++
-					assertFormationNotificationForApplication(t, notification, "assign", formation.ID, rtCtx.ID, rtCtx.Value, rtRegion)
+					assertFormationNotificationForApplication(t, notification, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
 				}
 			}
 			require.Equal(t, 2, expectedNumberOfAssignNotifications, "got less than the expected 2 assign notifications for application")
 		*/
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, rtRegion, assignOperation, 2)
+		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, assignOperation, 2)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
@@ -1653,12 +1656,12 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 				t.Logf("Found notification about rtCtx %q", rtCtxIDFromNotification)
 				if rtCtxIDFromNotification == rtCtx.ID && op == "unassign" {
 					expectedNumberOfUnassignNotifications++
-					assertFormationNotificationForApplication(t, notification, "unassign", formation.ID, rtCtx.ID, rtCtx.Value, rtRegion)
+					assertFormationNotificationForApplication(t, notification, "unassign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
 				}
 			}
 			require.Equal(t, 2, expectedNumberOfUnassignNotifications, "got less than the expected 2 unassign notifications for application")
 		*/
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, rtRegion, unassignOperation, 2)
+		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 2)
 	})
 }
 
