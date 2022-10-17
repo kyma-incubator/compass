@@ -288,12 +288,27 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, graphql.FormationObjectTypeApplication, app)...)
 	}
+
+	// When runtime context is assigned to formation its parent runtime is unassigned from the formation.
+	// There is no need to create formation assignments between the runtime context and the runtime. If such
+	// formation assignments were to be created the runtime unassignment from the formation would fail.
+	// The reason for this is that the formation assignments are created in one transaction and the runtime
+	// unassignment is done in a separate transaction which does not "see" them but will try to delete them.
+	parentID := ""
+	if objectType == graphql.FormationObjectTypeRuntimeContext {
+		rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return nil, err
+		}
+		parentID = rtmCtx.RuntimeID
+	}
 	for _, runtime := range runtimes {
-		if runtime.ID == objectID {
+		if runtime.ID == objectID || runtime.ID == parentID {
 			continue
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, graphql.FormationObjectTypeRuntime, runtime)...)
 	}
+
 	for _, runtimeCtx := range runtimeContexts {
 		if runtimeCtx.ID == objectID {
 			continue

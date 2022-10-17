@@ -303,15 +303,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		runtimeID := rtmContextIDsMapping[objectID]
-		for _, assignment := range assignments {
-			if (assignment.Source == runtimeID && assignment.Target == objectID) || (assignment.Target == runtimeID && assignment.Source == objectID) {
-				if err = s.formationAssignmentService.Delete(ctx, assignment.ID); err != nil {
-					return nil, err
-				}
-			}
-		}
-
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
