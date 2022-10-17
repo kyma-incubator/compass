@@ -68,8 +68,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
 
 				return client
 			},
@@ -93,9 +93,9 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 				}
 
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalClientsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -112,8 +112,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				return client
 			},
 			regionalClientsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -130,8 +130,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				return client
 			},
 			regionalClientsFn: func(resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -148,8 +148,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				return client
 			},
 			regionalClientsFn: func(resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -176,14 +176,14 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 					"timestamp": timestamp,
 					"region":    centralRegion,
 				}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, queryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalClientsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,
@@ -212,8 +212,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 					"timestamp": timestamp,
 					"region":    centralRegion,
 				}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, queryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalClientsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -221,8 +221,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 				busTenantWithoutSubdomain := busTenant1
 				busTenantWithoutSubdomain.Subdomain = ""
 				event := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, cfg.RegionalAPIConfigs[centralRegion].TenantFieldMapping, busTenant1))
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,
@@ -241,7 +241,7 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(nil, errors.New("failed to get created")).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(nil, errors.New("failed to get created")).Once()
 				return client
 			},
 			regionalClientsFn: func(resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -258,8 +258,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedAccountType, pageOneQueryParams).Return(nil, errors.New("failed to get updated")).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(nil, errors.New("failed to get updated")).Once()
 				return client
 			},
 			regionalClientsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -286,7 +286,7 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 					"timestamp": timestamp,
 					"region":    centralRegion,
 				}
-				client.On("FetchTenantEventsPage", resync.CreatedAccountType, queryParams).Return(nil, errors.New("error")).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, queryParams).Return(nil, errors.New("error")).Once()
 				return client
 			},
 			regionalClientsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -453,7 +453,7 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -476,8 +476,8 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 				}
 
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 
 				return client
 			},
@@ -505,12 +505,12 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 					"timestamp": timestamp,
 					"region":    centralRegion,
 				}
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, pageOneQueryParams).Return(nil, nil).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,
@@ -539,7 +539,7 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 					"timestamp": timestamp,
 					"region":    centralRegion,
 				}
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -547,7 +547,7 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 				busTenantWithoutSubdomain := busTenant1
 				busTenantWithoutSubdomain.Subdomain = ""
 				event := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, cfg.RegionalAPIConfigs[centralRegion].TenantFieldMapping, busTenant1))
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,
@@ -566,7 +566,7 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, pageOneQueryParams).Return(nil, errors.New("failed to get deleted")).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, pageOneQueryParams).Return(nil, errors.New("failed to get deleted")).Once()
 				return client
 			},
 			regionalDetailsFn: func(resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -593,12 +593,12 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 					"timestamp": timestamp,
 					"region":    centralRegion,
 				}
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, queryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.DeletedAccountType, pageOneQueryParams).Return(nil, errors.New("error")).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, pageOneQueryParams).Return(nil, errors.New("error")).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,
@@ -758,8 +758,8 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 					"pageNum":  "1",
 					"entityId": busTenant.ExternalTenant,
 				}
-				client.On("FetchTenantEventsPage", resync.CreatedSubaccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
@@ -776,14 +776,14 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedSubaccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,
@@ -802,14 +802,14 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
 			universalClientFn: func(resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 				return client
 			},
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
-				client.On("FetchTenantEventsPage", resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.CreatedSubaccountType, queryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", ctx, resync.UpdatedSubaccountType, queryParams).Return(nil, nil).Once()
 
 				details := map[string]resync.EventAPIClient{
 					centralRegion: client,

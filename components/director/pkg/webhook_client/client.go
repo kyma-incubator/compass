@@ -118,7 +118,6 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 	if err != nil {
 		return nil, err
 	}
-
 	log.C(ctx).Info(fmt.Sprintf("Webhook response object: %v", *responseObject))
 
 	response, err := responseObject.ParseOutputTemplate(webhook.OutputTemplate)
@@ -230,7 +229,20 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 			if v == nil {
 				continue
 			}
-			body[k] = fmt.Sprintf("%v", v)
+			var value string
+
+			switch v.(type) {
+			case string:
+				value = fmt.Sprintf("%v", v)
+			default:
+				marshal, err := json.Marshal(v)
+				marshal = bytes.ReplaceAll(marshal, []byte("\""), []byte("\\\""))
+				if err != nil {
+					return nil, err
+				}
+				value = string(marshal)
+			}
+			body[k] = value
 		}
 	}
 

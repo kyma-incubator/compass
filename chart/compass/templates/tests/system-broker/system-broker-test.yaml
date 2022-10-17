@@ -1,4 +1,4 @@
-{{ if .Values.global.isForTesting }}
+{{ if and .Values.global.isForTesting .Values.global.system_broker.enabled }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:

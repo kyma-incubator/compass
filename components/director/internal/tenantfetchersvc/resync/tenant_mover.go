@@ -62,7 +62,7 @@ func NewSubaccountsMover(jobConfig JobConfig, transact persistence.Transactioner
 // TenantsToMove returns all tenants that should be moved from one parent tenant to another
 func (tmv *tenantMover) TenantsToMove(ctx context.Context, region, fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
 	configProvider := eventsQueryConfigProviderWithRegion(tmv.config, fromTimestamp, region)
-	return fetchMovedSubaccountsWithRetries(tmv.eventAPIClient, tmv.config.RetryAttempts, configProvider)
+	return fetchMovedSubaccountsWithRetries(ctx, tmv.eventAPIClient, tmv.config.RetryAttempts, configProvider)
 }
 
 // MoveTenants Moves all eligible tenants from one parent tenant to another.
@@ -236,10 +236,10 @@ func tenantMappings(tenants []*model.BusinessTenantMapping) map[string]*model.Bu
 	return tenantsMap
 }
 
-func fetchMovedSubaccountsWithRetries(eventAPIClient EventAPIClient, retryAttempts uint, configProvider func() (QueryParams, PageConfig)) ([]model.MovedSubaccountMappingInput, error) {
+func fetchMovedSubaccountsWithRetries(ctx context.Context, eventAPIClient EventAPIClient, retryAttempts uint, configProvider func() (QueryParams, PageConfig)) ([]model.MovedSubaccountMappingInput, error) {
 	var tenants []model.MovedSubaccountMappingInput
 	err := retry.Do(func() error {
-		fetchedTenants, err := fetchMovedSubaccounts(eventAPIClient, configProvider)
+		fetchedTenants, err := fetchMovedSubaccounts(ctx, eventAPIClient, configProvider)
 		if err != nil {
 			return err
 		}
@@ -253,11 +253,11 @@ func fetchMovedSubaccountsWithRetries(eventAPIClient EventAPIClient, retryAttemp
 	return tenants, nil
 }
 
-func fetchMovedSubaccounts(eventAPIClient EventAPIClient, configProvider func() (QueryParams, PageConfig)) ([]model.MovedSubaccountMappingInput, error) {
+func fetchMovedSubaccounts(ctx context.Context, eventAPIClient EventAPIClient, configProvider func() (QueryParams, PageConfig)) ([]model.MovedSubaccountMappingInput, error) {
 	allMappings := make([]model.MovedSubaccountMappingInput, 0)
 
-	err := walkThroughPages(eventAPIClient, MovedSubaccountType, configProvider, func(page *EventsPage) error {
-		mappings := page.GetMovedSubaccounts()
+	err := walkThroughPages(ctx, eventAPIClient, MovedSubaccountType, configProvider, func(page *EventsPage) error {
+		mappings := page.GetMovedSubaccounts(ctx)
 		allMappings = append(allMappings, mappings...)
 		return nil
 	})
