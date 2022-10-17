@@ -73,6 +73,20 @@ func fixFormationAssignmentModelWithFormationID(formationID string) *model.Forma
 	}
 }
 
+func fixFormationAssignmentModelWithIDAndTenantID(fa *model.FormationAssignment) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          TestID,
+		FormationID: fa.FormationID,
+		TenantID:    TestTenantID,
+		Source:      fa.Source,
+		SourceType:  fa.SourceType,
+		Target:      fa.Target,
+		TargetType:  fa.TargetType,
+		State:       fa.State,
+		Value:       fa.Value,
+	}
+}
+
 func fixFormationAssignmentModelInput(configValue json.RawMessage) *model.FormationAssignmentInput {
 	return &model.FormationAssignmentInput{
 		FormationID: TestFormationID,
@@ -117,4 +131,12 @@ func fixUUIDService() *automock.UIDService {
 	uidSvc := &automock.UIDService{}
 	uidSvc.On("Generate").Return(TestID)
 	return uidSvc
+}
+
+func fixFormationAssignment() *model.FormationAssignment {
+	return &model.FormationAssignment{Source: "source"}
+}
+
+func fixFormationAssignmentWithID(id string) *model.FormationAssignment {
+	return &model.FormationAssignment{ID: id, Source: "source"}
 }

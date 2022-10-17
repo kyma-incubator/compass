@@ -2216,7 +2216,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 			notificationSvc := formation.NewNotificationService(nil, nil, nil, nil, nil, nil, nil, webhookClient)
 
 			// WHEN
-			err := notificationSvc.SendNotifications(ctx, testCase.InputRequests)
+			_, err := notificationSvc.SendNotifications(ctx, testCase.InputRequests)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
