@@ -132,7 +132,7 @@ func (s *service) ListByBundleIDs(ctx context.Context, bundleIDs []string, pageS
 		return nil, err
 	}
 
-	if pageSize < 1 || pageSize > 200 {
+	if pageSize < 1 || pageSize > 600 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 

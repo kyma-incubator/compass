@@ -101,7 +101,7 @@ func (s *service) DeleteByReferenceObjectID(ctx context.Context, objectType mode
 
 // ListByBundleIDs lists all BundleReferences for given array of bundle IDs. In addition, the number of records for each BundleReference is returned.
 func (s *service) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
-	if pageSize < 1 || pageSize > 200 {
+	if pageSize < 1 || pageSize > 600 {
 		return nil, nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
