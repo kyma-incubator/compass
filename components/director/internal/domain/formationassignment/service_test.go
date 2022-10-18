@@ -697,7 +697,6 @@ func TestService_Exists(t *testing.T) {
 
 func TestService_GenerateAssignments(t *testing.T) {
 	// GIVEN
-
 	objectID := "objectID"
 	applications := []*model.Application{{BaseEntity: &model.BaseEntity{ID: "app"}}}
 	runtimes := []*model.Runtime{{ID: "runtime"}}
@@ -1541,7 +1540,7 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	source := "source"
 	ok := http.StatusOK
 	accepted := http.StatusNoContent
-	//notFound := http.StatusNotFound
+	notFound := http.StatusNotFound
 
 	req := &webhookclient.NotificationRequest{
 		Webhook:       graphql.Webhook{},
@@ -1550,10 +1549,10 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	}
 
 	config := "{\"key\":\"value\"}"
-	errMsg := "Error while deleting assignment: config propagation is not supported on unassign notifications"
+	errMsg := "Test Error"
 	marshaled, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
 		Error: formationassignment.AssignmentError{
-			Message:   errMsg,
+			Message:   "Error while deleting assignment: config propagation is not supported on unassign notifications",
 			ErrorCode: 2,
 		},
 	})
@@ -1572,24 +1571,89 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		Value:    []byte(config),
 	}
 
-	//errorStateAssignment := &model.FormationAssignmentInput{
-	//	Source: source,
-	//	State:  string(model.CreateErrorAssignmentState),
-	//	Value:  marshaledErr,
-	//}
-	//errorStateAssignmentWithTenantAndID := &model.FormationAssignment{
-	//	ID:       TestID,
-	//	TenantID: TestTenantID,
-	//	Source:   source,
-	//	State:    string(model.CreateErrorAssignmentState),
-	//	Value:    marshaledErr,
-	//}
-	//marshaled, err := json.Marshal(struct{ Error string }{Error: "Error while deleting assignment: config propagation is not supported on unassign notifications"})
-	//require.NoError(t, err)
+	marshaledErrClientError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:   errMsg,
+			ErrorCode: 2,
+		},
+	})
+	require.NoError(t, err)
+	errorStateAssignment := &model.FormationAssignmentInput{
+		Source: source,
+		State:  string(model.CreateErrorAssignmentState),
+		Value:  marshaledErrClientError,
+	}
+	errorStateAssignmentWithTenantAndID := &model.FormationAssignment{
+		ID:       TestID,
+		TenantID: TestTenantID,
+		Source:   source,
+		State:    string(model.CreateErrorAssignmentState),
+		Value:    marshaledErrClientError,
+	}
+
+	marshaledTechnicalErr, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:   "while deleting formation assignment with ID: \"c861c3db-1265-4143-a05c-1ced1291d816\": Test Error",
+			ErrorCode: 1,
+		},
+	})
+	require.NoError(t, err)
+	errorStateAssignmentInputFailedToDelete := &model.FormationAssignmentInput{
+		Source: source,
+		State:  string(model.CreateErrorAssignmentState),
+		Value:  marshaledTechnicalErr,
+	}
+	errorStateAssignmentFailedToDelete := &model.FormationAssignment{
+		ID:       TestID,
+		TenantID: TestTenantID,
+		Source:   source,
+		State:    string(model.CreateErrorAssignmentState),
+		Value:    marshaledTechnicalErr,
+	}
+
+	marshaledFailedRequestTechnicalErr, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:   errMsg,
+			ErrorCode: 1,
+		},
+	})
+	require.NoError(t, err)
+	errorStateAssignmentInputFailedRequest := &model.FormationAssignmentInput{
+		Source: source,
+		State:  string(model.CreateErrorAssignmentState),
+		Value:  marshaledFailedRequestTechnicalErr,
+	}
+	errorStateAssignmentFailedRequest := &model.FormationAssignment{
+		ID:       TestID,
+		TenantID: TestTenantID,
+		Source:   source,
+		State:    string(model.CreateErrorAssignmentState),
+		Value:    marshaledFailedRequestTechnicalErr,
+	}
+
+	marshaledWhileDeletingError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
+		Error: formationassignment.AssignmentError{
+			Message:   "error while deleting assignment",
+			ErrorCode: 1,
+		},
+	})
+	require.NoError(t, err)
+	errorStateAssignmentInputWhileDeletingError := &model.FormationAssignmentInput{
+		Source: source,
+		State:  string(model.CreateErrorAssignmentState),
+		Value:  marshaledWhileDeletingError,
+	}
+	errorStateAssignmentWhileDeletingError := &model.FormationAssignment{
+		ID:       TestID,
+		TenantID: TestTenantID,
+		Source:   source,
+		State:    string(model.CreateErrorAssignmentState),
+		Value:    marshaledWhileDeletingError,
+	}
 
 	successResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted}
 	incompleteResponse := &webhook.Response{ActualStatusCode: &accepted, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted}
-	//errorResponse := &webhook.Response{ActualStatusCode: &notFound, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, Error: &errMsg}
+	errorResponse := &webhook.Response{ActualStatusCode: &notFound, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, Error: &errMsg}
 
 	testCases := []struct {
 		Name                           string
@@ -1661,92 +1725,251 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				return svc
 			},
 			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
-			ExpectedErrorMsg:               errMsg,
+			ExpectedErrorMsg:               "Error while deleting assignment: config propagation is not supported on unassign notifications",
 		},
-		//{
-		//	Name:    "error incomplete response code matches actual response code fails on update",
-		//	Context: ctxWithTenant,
-		//	FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-		//		repo := &automock.FormationAssignmentRepository{}
-		//		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-		//		repo.On("Update", ctxWithTenant, configAssignmentWithTenantAndID).Return(testErr).Once()
-		//		return repo
-		//	},
-		//	FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
-		//		conv := &automock.FormationAssignmentConverter{}
-		//		conv.On("ToInput", &model.FormationAssignment{
-		//			ID:     TestID,
-		//			Source: source,
-		//			State:  string(model.DeleteErrorAssignmentState),
-		//			Value:  marshaled,
-		//		}).Return(configAssignment).Once()
-		//		return conv
-		//	},
-		//	FormationAssignment: fixFormationAssignmentWithID(TestID),
-		//	Response:            incompleteResponse,
-		//	ExpectedErrorMsg:    testErr.Error(),
-		//},
-		//{
-		//	Name:    "response contains error",
-		//	Context: ctxWithTenant,
-		//	FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-		//		repo := &automock.FormationAssignmentRepository{}
-		//		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-		//		repo.On("Update", ctxWithTenant, errorStateAssignmentWithTenantAndID).Return(nil).Once()
-		//		return repo
-		//	},
-		//	FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
-		//		conv := &automock.FormationAssignmentConverter{}
-		//		conv.On("ToInput", &model.FormationAssignment{
-		//			ID:     TestID,
-		//			Source: source,
-		//			State:  string(model.DeleteErrorAssignmentState),
-		//			Value:  marshaledErr,
-		//		}).Return(errorStateAssignment).Once()
-		//		return conv
-		//	},
-		//	FormationAssignment: fixFormationAssignmentWithID(TestID),
-		//	Response:            errorResponse,
-		//	ExpectedErrorMsg:    "",
-		//},
-		//{
-		//	Name:    "response contains error fails on update",
-		//	Context: ctxWithTenant,
-		//	FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-		//		repo := &automock.FormationAssignmentRepository{}
-		//		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-		//		repo.On("Update", ctxWithTenant, errorStateAssignmentWithTenantAndID).Return(testErr).Once()
-		//		return repo
-		//	},
-		//	FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
-		//		conv := &automock.FormationAssignmentConverter{}
-		//		conv.On("ToInput", &model.FormationAssignment{
-		//			ID:     TestID,
-		//			Source: source,
-		//			State:  string(model.DeleteErrorAssignmentState),
-		//			Value:  marshaledErr,
-		//		}).Return(errorStateAssignment).Once()
-		//		return conv
-		//	},
-		//	FormationAssignment: fixFormationAssignmentWithID(TestID),
-		//	Response:            errorResponse,
-		//	ExpectedErrorMsg:    testErr.Error(),
-		//},
-		//{
-		//	Name:    "error when fails on delete",
-		//	Context: ctxWithTenant,
-		//	FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-		//		repo := &automock.FormationAssignmentRepository{}
-		//		repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
-		//		return repo
-		//	},
-		//	FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
-		//		conv := &automock.FormationAssignmentConverter{}
-		//		return conv
-		//	},
-		//	FormationAssignment: fixFormationAssignmentWithID(TestID),
-		//	ExpectedErrorMsg:    testErr.Error(),
-		//},
+		{
+			Name:    "response contains error",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, errorStateAssignmentWithTenantAndID).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaledErrClientError,
+				}).Return(errorStateAssignment).Once()
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, req).Return(errorResponse, nil).Once()
+				return svc
+			},
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
+			ExpectedErrorMsg:               "Received error from response: Test Error",
+		},
+		{
+			Name:    "error while delete assignment when there is no request succeed in updating",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, errorStateAssignmentFailedToDelete).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaledTechnicalErr,
+				}).Return(errorStateAssignmentInputFailedToDelete).Once()
+
+				return conv
+			},
+			NotificationService:            unusedNotificationService,
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithID(TestID),
+			ExpectedErrorMsg:               "while deleting formation assignment with id",
+		},
+		{
+			Name:    "error while delete assignment when there is no request then error while updating",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, errorStateAssignmentFailedToDelete).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaledTechnicalErr,
+				}).Return(errorStateAssignmentInputFailedToDelete).Once()
+
+				return conv
+			},
+			NotificationService:            unusedNotificationService,
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithID(TestID),
+			ExpectedErrorMsg:               "while updating error state:",
+		},
+		{
+			Name:    "error while delete assignment when there is no request succeed in updating",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, errorStateAssignmentFailedRequest).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaledFailedRequestTechnicalErr,
+				}).Return(errorStateAssignmentInputFailedRequest).Once()
+
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, req).Return(nil, testErr).Once()
+				return svc
+			},
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
+			ExpectedErrorMsg:               "while sending notification for formation assignment with ID \"c861c3db-1265-4143-a05c-1ced1291d816\": Test Error",
+		},
+		{
+			Name:    "error while delete assignment when there is no request then error while updating",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, errorStateAssignmentFailedToDelete).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaledFailedRequestTechnicalErr,
+				}).Return(errorStateAssignmentInputFailedToDelete).Once()
+
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, req).Return(nil, testErr).Once()
+				return svc
+			},
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
+			ExpectedErrorMsg:               "while updating error state:",
+		},
+		{
+			Name:    "error incomplete response code matches actual response code fails on update",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, configAssignmentWithTenantAndID).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaled,
+				}).Return(configAssignment).Once()
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, req).Return(incompleteResponse, nil).Once()
+				return svc
+			},
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
+			ExpectedErrorMsg:               "while updating error state for formation with ID",
+		},
+		{
+			Name:    "response contains error fails on update",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, errorStateAssignmentWithTenantAndID).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaledErrClientError,
+				}).Return(errorStateAssignment).Once()
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, req).Return(errorResponse, nil).Once()
+				return svc
+			},
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
+			ExpectedErrorMsg:               "while updating error state for formation with ID",
+		},
+		{
+			Name:    "error when fails on delete when success response",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, errorStateAssignmentWhileDeletingError).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaledWhileDeletingError,
+				}).Return(errorStateAssignmentInputWhileDeletingError).Once()
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, req).Return(successResponse, nil).Once()
+				return svc
+			},
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
+			ExpectedErrorMsg:               "while deleting formation assignment with id",
+		},
+		{
+			Name:    "error when fails on delete when success response then fail on update",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Delete", ctxWithTenant, TestID, TestTenantID).Return(testErr).Once()
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, errorStateAssignmentWhileDeletingError).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", &model.FormationAssignment{
+					ID:     TestID,
+					Source: source,
+					State:  string(model.DeleteErrorAssignmentState),
+					Value:  marshaledWhileDeletingError,
+				}).Return(errorStateAssignmentInputWhileDeletingError).Once()
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, req).Return(successResponse, nil).Once()
+				return svc
+			},
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
+			ExpectedErrorMsg:               "while updating error state: while deleting formation assignment with id",
+		},
 	}
 
 	for _, testCase := range testCases {
