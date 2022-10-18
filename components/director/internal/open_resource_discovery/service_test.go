@@ -1448,13 +1448,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			appSvcFn:     successfulAppGet,
-			tenantSvcFn:  successfulTenantSvc,
-			webhookSvcFn: successfulWebhookList,
-			productSvcFn: successfulProductUpdate,
-			vendorSvcFn:  successfulVendorUpdate,
-			packageSvcFn: successfulPackageUpdate,
-			bundleSvcFn:  successfulBundleUpdate,
+			appSvcFn:       successfulAppGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			productSvcFn:   successfulProductUpdate,
+			vendorSvcFn:    successfulVendorUpdate,
+			packageSvcFn:   successfulPackageUpdate,
+			bundleSvcFn:    successfulBundleUpdate,
 			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			specSvcFn:      successfulAPISpecUpdate,
 			apiSvcFn: func() *automock.APIService {
