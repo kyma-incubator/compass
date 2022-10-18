@@ -9,6 +9,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/formationmapping"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
@@ -149,6 +152,8 @@ type config struct {
 	ReadyConfig healthz.ReadyConfig
 
 	InfoConfig info.Config
+
+	FormationMappingCfg formationmapping.Config
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
@@ -387,6 +392,18 @@ func main() {
 
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))
+
+	asyncFARouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
+	asyncFARouter.Use(authMiddleware.Handler())
+
+	formationAssignmentRepo := formationassignment.NewRepository(formationassignment.NewConverter())
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService())
+	runtimeRepo := runtime.NewRepository(runtime.NewConverter(webhook.NewConverter(auth.NewConverter())))
+	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
+
+	fmHandler := formationmapping.NewFormationMappingHandler(formationAssignmentSvc, appRepo, runtimeRepo, runtimeContextRepo)
+	logger.Infof("Registering formation tenant mapping endpoints...")
+	asyncFARouter.HandleFunc(cfg.FormationMappingCfg.AsyncAPIEndpoint, fmHandler.UpdateStatus).Methods(http.MethodPatch)
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))

@@ -112,6 +112,29 @@ func (_m *FormationAssignmentRepository) GetForFormation(ctx context.Context, te
 	return r0, r1
 }
 
+// GetGlobalByID provides a mock function with given fields: ctx, id
+func (_m *FormationAssignmentRepository) GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.FormationAssignment); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // List provides a mock function with given fields: ctx, pageSize, cursor, tenantID
 func (_m *FormationAssignmentRepository) List(ctx context.Context, pageSize int, cursor string, tenantID string) (*model.FormationAssignmentPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor, tenantID)

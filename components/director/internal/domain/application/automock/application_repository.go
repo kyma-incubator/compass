@@ -336,6 +336,27 @@ func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, c
 	return r0, r1
 }
 
+// OwnerExists provides a mock function with given fields: ctx, tenant, id
+func (_m *ApplicationRepository) OwnerExists(ctx context.Context, tenant string, id string) (bool, error) {
+	ret := _m.Called(ctx, tenant, id)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
+		r0 = rf(ctx, tenant, id)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // TechnicalUpdate provides a mock function with given fields: ctx, item
 func (_m *ApplicationRepository) TechnicalUpdate(ctx context.Context, item *model.Application) error {
 	ret := _m.Called(ctx, item)

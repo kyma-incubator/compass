@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
@@ -80,8 +82,6 @@ func TestListFormations(t *testing.T) {
 	listFormationsReq := fixtures.FixListFormationsRequestWithPageSize(first)
 	saveExample(t, listFormationsReq.Query(), "query formations")
 	formationPage1 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
-	require.NotNil(t, formationPage1)
-	require.Equal(t, expectedFormations, formationPage1.TotalCount)
 	require.Empty(t, formationPage1.Data)
 
 	t.Logf("Should create formation: %q", firstFormationName)
@@ -95,8 +95,6 @@ func TestListFormations(t *testing.T) {
 	expectedFormations = 2
 	t.Logf("List should return %d formations", expectedFormations)
 	formationPage2 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
-	require.NotNil(t, formationPage2)
-	require.Equal(t, expectedFormations, formationPage2.TotalCount)
 	require.ElementsMatch(t, formationPage2.Data, []*graphql.Formation{
 		&firstFormation,
 		&secondFormation,
@@ -112,7 +110,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", tenantId)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)

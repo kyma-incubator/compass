@@ -37,6 +37,7 @@ const (
 	TestProviderSubaccount                                     = "TestProviderSubaccount"
 	TestProviderSubaccountRegion2                              = "TestProviderSubaccountRegion2"
 	TestConsumerSubaccount                                     = "TestConsumerSubaccount"
+	TestDefaultSubaccount                                      = "TestDefaultSubaccount"
 	TestIntegrationSystemManagedSubaccount                     = "TestIntegrationSystemManagedSubaccount"
 	TestIntegrationSystemManagedAccount                        = "TestIntegrationSystemManagedAccount"
 )
@@ -203,6 +204,14 @@ func (mgr *TestTenantsManager) Init() {
 			Type:           Subaccount,
 			Status:         Active,
 			Parent:         ApplicationsForRuntimeTenantName,
+		},
+		TestDefaultSubaccount: {
+			Name:           TestDefaultSubaccount,
+			ExternalTenant: "e2e8842e-3559-4ba5-9e0a-472cff8850b0",
+			ProviderName:   testProvider,
+			Type:           Subaccount,
+			Status:         Active,
+			Parent:         testDefaultTenant,
 		},
 		TestIntegrationSystemManagedSubaccount: {
 			Name:           TestIntegrationSystemManagedSubaccount,

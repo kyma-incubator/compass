@@ -210,6 +210,9 @@ global:
     useClone: "false"
   director:
     host: compass-director.compass-system.svc.cluster.local
+    formationAsyncApi:
+      pathPrefix: "/v1/businessIntegrations"
+      path: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
     prefix: /director
     graphql:
       external:

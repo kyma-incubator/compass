@@ -16,6 +16,7 @@ import (
 type FormationAssignmentRepository interface {
 	Create(ctx context.Context, item *model.FormationAssignment) error
 	Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
@@ -72,6 +73,18 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 	fa, err := s.repo.Get(ctx, id, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q and tenant: %q", id, tenantID)
+	}
+
+	return fa, nil
+}
+
+// GetGlobalByID retrieves the formation assignment matching ID `id` globally without tenant parameter // todo::: tests
+func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Getting formation assignment with ID: %q globally", id)
+
+	fa, err := s.repo.GetGlobalByID(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q globally", id)
 	}
 
 	return fa, nil

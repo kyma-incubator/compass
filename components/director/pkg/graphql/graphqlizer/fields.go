@@ -132,16 +132,28 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 }
 
 // ForFormation missing godoc
-func (fp *GqlFieldsProvider) ForFormation(ctx ...FieldCtx) string {
-	return `
-		id
-		name
-		formationTemplateId
-	`
+func (fp *GqlFieldsProvider) ForFormation() string {
+	return fmt.Sprintf(`
+        id
+        name
+        formationTemplateId
+        formationAssignments {%s}`, fp.Page(fp.ForFormationAssignment()))
+}
+
+// ForFormationAssignment missing godoc
+func (fp *GqlFieldsProvider) ForFormationAssignment() string {
+	return `id
+            source
+            sourceType
+            target
+            targetType
+            state
+            value
+    `
 }
 
 // ForFormationTemplate missing godoc
-func (fp *GqlFieldsProvider) ForFormationTemplate(ctx ...FieldCtx) string {
+func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 	return `
 		id
 		name

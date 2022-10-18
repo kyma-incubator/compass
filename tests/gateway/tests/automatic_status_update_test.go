@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 
@@ -102,7 +104,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 			Name: "test-app",
 			Labels: graphql.Labels{
 				"scenarios":                        []interface{}{testScenario},
-				testConfig.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+				testConfig.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
 			},
 			StatusCondition: &status,
 		}

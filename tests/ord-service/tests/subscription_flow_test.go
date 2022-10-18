@@ -27,6 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -48,7 +50,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	accountTenantID := conf.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
 
 	// Register application
-	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", accountTenantID)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), accountTenantID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, accountTenantID, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
@@ -67,12 +69,12 @@ func TestSelfRegisterFlow(t *testing.T) {
 	}()
 
 	t.Logf("Assign application to formation %s", formationName)
-	assignToFormation(t, ctx, app.ID, "APPLICATION", formationName, accountTenantID)
+	assignToFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
 	t.Logf("Successfully assigned application to formation %s", formationName)
 
 	defer func() {
 		t.Logf("Unassign application from formation %s", formationName)
-		unassignFromFormation(t, ctx, app.ID, "APPLICATION", formationName, accountTenantID)
+		unassignFromFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
 		t.Logf("Successfully unassigned application from formation %s", formationName)
 	}()
 
@@ -163,15 +165,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, saasAppLbl)
 
 		// Register application
-		const applicationType = "SAP Cloud for Customer"
-		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, applicationType, secondaryTenant)
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, app.ID)
 
 		// Register consumer application
 		const localTenantID = "localTenantID"
-		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, applicationType, localTenantID, secondaryTenant)
+		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), localTenantID, secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &consumerApp)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, consumerApp.ID)
@@ -304,7 +305,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			Authentication:  "BasicAuthentication",
 			XCorrelationID:  correlationID,
 			XSystemTenantID: localTenantID,
-			XSystemType:     applicationType,
+			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
 		client.CreateDestination(stdT, destination)
@@ -386,15 +387,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, saasAppLbl)
 
 		// Register application
-		const applicationType = "SAP Cloud for Customer"
-		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, applicationType, secondaryTenant)
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, app.ID)
 
 		// Register consumer application
 		const localTenantID = "localTenantID"
-		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, applicationType, localTenantID, secondaryTenant)
+		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), localTenantID, secondaryTenant)
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &consumerApp)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, consumerApp.ID)
@@ -529,7 +529,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			Authentication:  "BasicAuthentication",
 			XCorrelationID:  correlationID,
 			XSystemTenantID: localTenantID,
-			XSystemType:     applicationType,
+			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
 		client.CreateDestination(stdT, destination)

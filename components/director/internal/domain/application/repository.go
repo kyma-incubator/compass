@@ -38,11 +38,13 @@ type EntityConverter interface {
 
 type pgRepository struct {
 	existQuerier          repo.ExistQuerier
+	ownerExistQuerier     repo.ExistQuerier
 	singleGetter          repo.SingleGetter
 	globalGetter          repo.SingleGetterGlobal
 	globalDeleter         repo.DeleterGlobal
 	lister                repo.Lister
 	listerGlobal          repo.ListerGlobal
+	ownerLister           repo.Lister
 	deleter               repo.Deleter
 	pageableQuerier       repo.PageableQuerier
 	globalPageableQuerier repo.PageableQuerierGlobal
@@ -58,12 +60,14 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:          repo.NewExistQuerier(applicationTable),
+		ownerExistQuerier:     repo.NewExistQuerierWithOwnerCheck(applicationTable),
 		singleGetter:          repo.NewSingleGetter(applicationTable, applicationColumns),
 		globalGetter:          repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
 		deleter:               repo.NewDeleter(applicationTable),
 		lister:                repo.NewLister(applicationTable, applicationColumns),
 		listerGlobal:          repo.NewListerGlobal(resource.Application, applicationTable, applicationColumns),
+		ownerLister:           repo.NewOwnerLister(applicationTable, applicationColumns, true),
 		pageableQuerier:       repo.NewPageableQuerier(applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(applicationTable, applicationColumns),
@@ -78,6 +82,11 @@ func NewRepository(conv EntityConverter) *pgRepository {
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+// OwnerExists checks if application with given id and tenant exists and has owner access // todo::: tests
+func (r *pgRepository) OwnerExists(ctx context.Context, tenant, id string) (bool, error) {
+	return r.ownerExistQuerier.Exists(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Delete missing godoc

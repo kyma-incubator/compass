@@ -405,3 +405,29 @@ spec:
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-async-formation-mapping-external-certs
+spec:
+  # Configuration of oathkeeper for endpoint secured with certificates issued by external trusted root CA
+  upstream:
+    url: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
+  match:
+    methods: ["PATCH"]
+    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.director.formationAsyncApi.pathPrefix }}/<.*>
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
+    - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.authenticationMappingServices.subscriber.cfg | indent 4 }}
+    - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+    - handler: id_token
+      config:
+        claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}

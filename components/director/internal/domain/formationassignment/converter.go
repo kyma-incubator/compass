@@ -31,9 +31,9 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 	return &graphql.FormationAssignment{
 		ID:         in.ID,
 		Source:     in.Source,
-		SourceType: in.SourceType,
+		SourceType: graphql.FormationAssignmentType(in.SourceType),
 		Target:     in.Target,
-		TargetType: in.TargetType,
+		TargetType: graphql.FormationAssignmentType(in.TargetType),
 		State:      in.State,
 		Value:      &strValue,
 	}, nil
@@ -72,9 +72,9 @@ func (c *converter) ToEntity(in *model.FormationAssignment) *Entity {
 		FormationID: in.FormationID,
 		TenantID:    in.TenantID,
 		Source:      in.Source,
-		SourceType:  in.SourceType,
+		SourceType:  string(in.SourceType),
 		Target:      in.Target,
-		TargetType:  in.TargetType,
+		TargetType:  string(in.TargetType),
 		State:       in.State,
 		Value:       repo.NewNullableStringFromJSONRawMessage(in.Value),
 	}
@@ -91,9 +91,9 @@ func (c *converter) FromEntity(e *Entity) *model.FormationAssignment {
 		FormationID: e.FormationID,
 		TenantID:    e.TenantID,
 		Source:      e.Source,
-		SourceType:  e.SourceType,
+		SourceType:  model.FormationAssignmentType(e.SourceType),
 		Target:      e.Target,
-		TargetType:  e.TargetType,
+		TargetType:  model.FormationAssignmentType(e.TargetType),
 		State:       e.State,
 		Value:       repo.JSONRawMessageFromNullableString(e.Value),
 	}

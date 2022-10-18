@@ -6,28 +6,36 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+type FormationAssignmentType string
+
+const (
+	FormationAssignmentTypeApplication    FormationAssignmentType = "APPLICATION"
+	FormationAssignmentTypeRuntime        FormationAssignmentType = "RUNTIME"
+	FormationAssignmentTypeRuntimeContext FormationAssignmentType = "RUNTIME_CONTEXT"
+)
+
 // FormationAssignment represent structure for FormationAssignment
 type FormationAssignment struct {
-	ID          string          `json:"id"`
-	FormationID string          `json:"formation_id"`
-	TenantID    string          `json:"tenant_id"`
-	Source      string          `json:"source"`
-	SourceType  string          `json:"source_type"`
-	Target      string          `json:"target"`
-	TargetType  string          `json:"target_type"`
-	State       string          `json:"state"`
-	Value       json.RawMessage `json:"value"`
+	ID          string                  `json:"id"`
+	FormationID string                  `json:"formation_id"`
+	TenantID    string                  `json:"tenant_id"`
+	Source      string                  `json:"source"`
+	SourceType  FormationAssignmentType `json:"source_type"`
+	Target      string                  `json:"target"`
+	TargetType  FormationAssignmentType `json:"target_type"`
+	State       string                  `json:"state"`
+	Value       json.RawMessage         `json:"value"`
 }
 
 // FormationAssignmentInput is an input for creating a new FormationAssignment
 type FormationAssignmentInput struct {
-	FormationID string          `json:"formation_id"`
-	Source      string          `json:"source"`
-	SourceType  string          `json:"source_type"`
-	Target      string          `json:"target"`
-	TargetType  string          `json:"target_type"`
-	State       string          `json:"state"`
-	Value       json.RawMessage `json:"value"`
+	FormationID string                  `json:"formation_id"`
+	Source      string                  `json:"source"`
+	SourceType  FormationAssignmentType `json:"source_type"`
+	Target      string                  `json:"target"`
+	TargetType  FormationAssignmentType `json:"target_type"`
+	State       string                  `json:"state"`
+	Value       json.RawMessage         `json:"value"`
 }
 
 // FormationAssignmentPage missing godoc
