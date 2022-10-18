@@ -291,25 +291,25 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 }
 
 func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
-	vendorsFromDB, err := s.openTransactionAndListVendors(ctx, appID)
+	vendorsFromDB, err := s.listVendorsInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, vendor := range vendors {
-		if err := s.openTransactionAndResyncVendor(ctx, appID, vendorsFromDB, vendor); err != nil {
+		if err := s.resyncVendorInTx(ctx, appID, vendorsFromDB, vendor); err != nil {
 			return nil, err
 		}
 	}
 
-	vendorsFromDB, err = s.openTransactionAndListVendors(ctx, appID)
+	vendorsFromDB, err = s.listVendorsInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 	return vendorsFromDB, nil
 }
 
-func (s *Service) openTransactionAndListVendors(ctx context.Context, appID string) ([]*model.Vendor, error) {
+func (s *Service) listVendorsInTx(ctx context.Context, appID string) ([]*model.Vendor, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -325,7 +325,7 @@ func (s *Service) openTransactionAndListVendors(ctx context.Context, appID strin
 	return vendorsFromDB, tx.Commit()
 }
 
-func (s *Service) openTransactionAndResyncVendor(ctx context.Context, appID string, vendorsFromDB []*model.Vendor, vendor *model.VendorInput) error {
+func (s *Service) resyncVendorInTx(ctx context.Context, appID string, vendorsFromDB []*model.Vendor, vendor *model.VendorInput) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -340,25 +340,25 @@ func (s *Service) openTransactionAndResyncVendor(ctx context.Context, appID stri
 }
 
 func (s *Service) processProducts(ctx context.Context, appID string, products []*model.ProductInput) ([]*model.Product, error) {
-	productsFromDB, err := s.openTransactionAndListProducts(ctx, appID)
+	productsFromDB, err := s.listProductsInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, product := range products {
-		if err := s.openTransactionAndResyncProduct(ctx, appID, productsFromDB, product); err != nil {
+		if err := s.resyncProductInTx(ctx, appID, productsFromDB, product); err != nil {
 			return nil, err
 		}
 	}
 
-	productsFromDB, err = s.openTransactionAndListProducts(ctx, appID)
+	productsFromDB, err = s.listProductsInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 	return productsFromDB, nil
 }
 
-func (s *Service) openTransactionAndListProducts(ctx context.Context, appID string) ([]*model.Product, error) {
+func (s *Service) listProductsInTx(ctx context.Context, appID string) ([]*model.Product, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -374,7 +374,7 @@ func (s *Service) openTransactionAndListProducts(ctx context.Context, appID stri
 	return productsFromDB, tx.Commit()
 }
 
-func (s *Service) openTransactionAndResyncProduct(ctx context.Context, appID string, productsFromDB []*model.Product, product *model.ProductInput) error {
+func (s *Service) resyncProductInTx(ctx context.Context, appID string, productsFromDB []*model.Product, product *model.ProductInput) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -389,26 +389,26 @@ func (s *Service) openTransactionAndResyncProduct(ctx context.Context, appID str
 }
 
 func (s *Service) processPackages(ctx context.Context, appID string, packages []*model.PackageInput, resourceHashes map[string]uint64) ([]*model.Package, error) {
-	packagesFromDB, err := s.openTransactionAndListPackages(ctx, appID)
+	packagesFromDB, err := s.listPackagesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, pkg := range packages {
 		pkgHash := resourceHashes[pkg.OrdID]
-		if err := s.openTransactionAndResyncPackage(ctx, appID, packagesFromDB, pkg, pkgHash); err != nil {
+		if err := s.resyncPackageInTx(ctx, appID, packagesFromDB, pkg, pkgHash); err != nil {
 			return nil, err
 		}
 	}
 
-	packagesFromDB, err = s.openTransactionAndListPackages(ctx, appID)
+	packagesFromDB, err = s.listPackagesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 	return packagesFromDB, nil
 }
 
-func (s *Service) openTransactionAndListPackages(ctx context.Context, appID string) ([]*model.Package, error) {
+func (s *Service) listPackagesInTx(ctx context.Context, appID string) ([]*model.Package, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -424,7 +424,7 @@ func (s *Service) openTransactionAndListPackages(ctx context.Context, appID stri
 	return packagesFromDB, tx.Commit()
 }
 
-func (s *Service) openTransactionAndResyncPackage(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg *model.PackageInput, pkgHash uint64) error {
+func (s *Service) resyncPackageInTx(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg *model.PackageInput, pkgHash uint64) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -439,25 +439,25 @@ func (s *Service) openTransactionAndResyncPackage(ctx context.Context, appID str
 }
 
 func (s *Service) processBundles(ctx context.Context, appID string, bundles []*model.BundleCreateInput) ([]*model.Bundle, error) {
-	bundlesFromDB, err := s.openTransactionAndListBundles(ctx, appID)
+	bundlesFromDB, err := s.listBundlesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, bndl := range bundles {
-		if err := s.openTransactionAndResyncBundle(ctx, appID, bundlesFromDB, bndl); err != nil {
+		if err := s.resyncBundleInTx(ctx, appID, bundlesFromDB, bndl); err != nil {
 			return nil, err
 		}
 	}
 
-	bundlesFromDB, err = s.openTransactionAndListBundles(ctx, appID)
+	bundlesFromDB, err = s.listBundlesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 	return bundlesFromDB, nil
 }
 
-func (s *Service) openTransactionAndListBundles(ctx context.Context, appID string) ([]*model.Bundle, error) {
+func (s *Service) listBundlesInTx(ctx context.Context, appID string) ([]*model.Bundle, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -473,7 +473,7 @@ func (s *Service) openTransactionAndListBundles(ctx context.Context, appID strin
 	return bundlesFromDB, tx.Commit()
 }
 
-func (s *Service) openTransactionAndResyncBundle(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bundle *model.BundleCreateInput) error {
+func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bundle *model.BundleCreateInput) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -488,26 +488,26 @@ func (s *Service) openTransactionAndResyncBundle(ctx context.Context, appID stri
 }
 
 func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, error) {
-	apisFromDB, err := s.openTransactionAndListAPIs(ctx, appID)
+	apisFromDB, err := s.listAPIsInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, api := range apis {
 		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
-		if err := s.openTransactionAndResyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api, apiHash); err != nil {
+		if err := s.resyncAPIInTx(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api, apiHash); err != nil {
 			return nil, err
 		}
 	}
 
-	apisFromDB, err = s.openTransactionAndListAPIs(ctx, appID)
+	apisFromDB, err = s.listAPIsInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 	return apisFromDB, nil
 }
 
-func (s *Service) openTransactionAndListAPIs(ctx context.Context, appID string) ([]*model.APIDefinition, error) {
+func (s *Service) listAPIsInTx(ctx context.Context, appID string) ([]*model.APIDefinition, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -523,7 +523,7 @@ func (s *Service) openTransactionAndListAPIs(ctx context.Context, appID string) 
 	return apisFromDB, tx.Commit()
 }
 
-func (s *Service) openTransactionAndResyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api *model.APIDefinitionInput, apiHash uint64) error {
+func (s *Service) resyncAPIInTx(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api *model.APIDefinitionInput, apiHash uint64) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -538,26 +538,26 @@ func (s *Service) openTransactionAndResyncAPI(ctx context.Context, appID string,
 }
 
 func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, error) {
-	eventsFromDB, err := s.openTransactionAndListEvents(ctx, appID)
+	eventsFromDB, err := s.listEventsInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, event := range events {
 		eventHash := resourceHashes[str.PtrStrToStr(event.OrdID)]
-		if err := s.openTransactionAndResyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event, eventHash); err != nil {
+		if err := s.resyncEventInTx(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event, eventHash); err != nil {
 			return nil, err
 		}
 	}
 
-	eventsFromDB, err = s.openTransactionAndListEvents(ctx, appID)
+	eventsFromDB, err = s.listEventsInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 	return eventsFromDB, nil
 }
 
-func (s *Service) openTransactionAndListEvents(ctx context.Context, appID string) ([]*model.EventDefinition, error) {
+func (s *Service) listEventsInTx(ctx context.Context, appID string) ([]*model.EventDefinition, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -573,7 +573,7 @@ func (s *Service) openTransactionAndListEvents(ctx context.Context, appID string
 	return eventsFromDB, tx.Commit()
 }
 
-func (s *Service) openTransactionAndResyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event *model.EventDefinitionInput, eventHash uint64) error {
+func (s *Service) resyncEventInTx(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event *model.EventDefinitionInput, eventHash uint64) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -588,25 +588,25 @@ func (s *Service) openTransactionAndResyncEvent(ctx context.Context, appID strin
 }
 
 func (s *Service) processTombstones(ctx context.Context, appID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) {
-	tombstonesFromDB, err := s.openTransactionAndListTombstones(ctx, appID)
+	tombstonesFromDB, err := s.listTombstonesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, tombstone := range tombstones {
-		if err := s.openTransactionAndResyncTombstone(ctx, appID, tombstonesFromDB, tombstone); err != nil {
+		if err := s.resyncTombstoneInTx(ctx, appID, tombstonesFromDB, tombstone); err != nil {
 			return nil, err
 		}
 	}
 
-	tombstonesFromDB, err = s.openTransactionAndListTombstones(ctx, appID)
+	tombstonesFromDB, err = s.listTombstonesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 	return tombstonesFromDB, nil
 }
 
-func (s *Service) openTransactionAndListTombstones(ctx context.Context, appID string) ([]*model.Tombstone, error) {
+func (s *Service) listTombstonesInTx(ctx context.Context, appID string) ([]*model.Tombstone, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -622,7 +622,7 @@ func (s *Service) openTransactionAndListTombstones(ctx context.Context, appID st
 	return tombstonesFromDB, tx.Commit()
 }
 
-func (s *Service) openTransactionAndResyncTombstone(ctx context.Context, appID string, tombstonesFromDB []*model.Tombstone, tombstone *model.TombstoneInput) error {
+func (s *Service) resyncTombstoneInTx(ctx context.Context, appID string, tombstonesFromDB []*model.Tombstone, tombstone *model.TombstoneInput) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
