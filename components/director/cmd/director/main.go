@@ -328,7 +328,7 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, 600, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerAPIDef(rootResolver.APIDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerDocument(rootResolver.DocumentsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
