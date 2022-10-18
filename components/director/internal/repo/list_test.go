@@ -308,6 +308,89 @@ func TestListWithEmbeddedTenant(t *testing.T) {
 	})
 }
 
+func TestListConditionTreeWithEmbeddedTenant(t *testing.T) {
+	peterID := "peterID"
+	homerID := "homerID"
+	peter := User{FirstName: "Peter", LastName: "Griffin", Age: 40, ID: peterID}
+	peterRow := []driver.Value{peterID, "Peter", "Griffin", 40}
+	homer := User{FirstName: "Homer", LastName: "Simpson", Age: 55, ID: homerID}
+	homerRow := []driver.Value{homerID, "Homer", "Simpson", 55}
+
+	sut := repo.NewConditionTreeListerWithEmbeddedTenant(userTableName, "tenant_id", []string{"id", "first_name", "last_name", "age"})
+
+	t.Run("lists all items successfully", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "first_name", "last_name", "age"}).
+			AddRow(peterRow...).
+			AddRow(homerRow...)
+
+		mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, first_name, last_name, age FROM users WHERE (tenant_id = $1 AND first_name IN ($2, $3))`)).
+			WithArgs(tenantID, "Peter", "Homer").WillReturnRows(rows)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		var dest UserCollection
+
+		err := sut.ListConditionTree(ctx, UserType, tenantID, &dest, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Peter", "Homer"})})
+		require.NoError(t, err)
+		assert.Len(t, dest, 2)
+		assert.Contains(t, dest, peter)
+		assert.Contains(t, dest, homer)
+	})
+
+	t.Run("lists all items successfully with additional parameters", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "first_name", "last_name", "age"}).
+			AddRow(peterRow...)
+		mock.ExpectQuery(regexp.QuoteMeta("SELECT id, first_name, last_name, age FROM users WHERE (tenant_id = $1 AND (first_name = $2 OR age != $3))")).
+			WithArgs(tenantID, "Peter", 18).WillReturnRows(rows)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		var dest UserCollection
+
+		conditions := repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewEqualCondition("first_name", "Peter"),
+			repo.NewNotEqualCondition("age", 18),
+		})...)
+
+		err := sut.ListConditionTree(ctx, UserType, tenantID, &dest, conditions)
+		require.NoError(t, err)
+		assert.Len(t, dest, 1)
+	})
+
+	t.Run("returns error if missing persistence context", func(t *testing.T) {
+		ctx := context.TODO()
+		err := sut.ListConditionTree(ctx, UserType, tenantID, nil, nil)
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
+	})
+
+	t.Run("returns error on db operation", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		mock.ExpectQuery(`SELECT .*`).WillReturnError(someError())
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		var dest UserCollection
+
+		err := sut.ListConditionTree(ctx, UserType, tenantID, &dest, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Peter", "Homer"})})
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
+		ctx = persistence.SaveToContext(ctx, db)
+		var dest UserCollection
+		err := sut.ListConditionTree(ctx, UserType, tenantID, &dest, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Peter", "Homer"})})
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
+	})
+}
+
 func TestListGlobal(t *testing.T) {
 	peterID := "peterID"
 	homerID := "homerID"
@@ -379,6 +462,7 @@ func TestListGlobal(t *testing.T) {
 		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
 }
+
 func TestListGlobalWithSelectForUpdate(t *testing.T) {
 	peterID := "peterID"
 	homerID := "homerID"

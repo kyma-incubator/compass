@@ -36,6 +36,7 @@ type repository struct {
 	globalGetter          repo.SingleGetterGlobal
 	pageableQuerierGlobal repo.PageableQuerier
 	unionLister           repo.UnionLister
+	lister                repo.ConditionTreeLister
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
 	existQuerier          repo.ExistQuerier
@@ -50,6 +51,7 @@ func NewRepository(conv EntityConverter) *repository {
 		globalGetter:          repo.NewSingleGetterGlobal(resource.FormationAssignment, tableName, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		unionLister:           repo.NewUnionListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		lister:                repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
@@ -57,17 +59,17 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
-// Create creates a new formation assignment in the database with the fields from the model
+// Create creates a new Formation Assignment in the database with the fields from the model
 func (r *repository) Create(ctx context.Context, item *model.FormationAssignment) error {
 	if item == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.C(ctx).Debugf("Persisting formation assignment entity with ID: %q", item.ID)
+	log.C(ctx).Debugf("Persisting Formation Assignment entity with ID: %q", item.ID)
 	return r.creator.Create(ctx, r.conv.ToEntity(item))
 }
 
-// Get queries for a single formation assignment matching by a given ID
+// Get queries for a single Formation Assignment matching by a given ID
 func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error) {
 	var entity Entity
 	if err := r.getter.Get(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -87,7 +89,7 @@ func (r *repository) GetGlobalByID(ctx context.Context, id string) (*model.Forma
 	return r.conv.FromEntity(&entity), nil
 }
 
-// GetForFormation retrieves formation assignment with the provided `id` associated to Formation with id `formationID` from the database if it exists
+// GetForFormation retrieves Formation Assignment with the provided `id` associated to Formation with id `formationID` from the database if it exists
 func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error) {
 	var formationAssignmentEnt Entity
 
@@ -103,7 +105,7 @@ func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formatio
 	return r.conv.FromEntity(&formationAssignmentEnt), nil
 }
 
-// List queries for all formation assignment sorted by ID and paginated by the pageSize and cursor parameters
+// List queries for all Formation Assignment sorted by ID and paginated by the pageSize and cursor parameters
 func (r *repository) List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error) {
 	var entityCollection EntityCollection
 	page, totalCount, err := r.pageableQuerierGlobal.List(ctx, resource.FormationAssignment, tenantID, pageSize, cursor, "id", &entityCollection)
@@ -111,19 +113,14 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor, tenantID st
 		return nil, err
 	}
 
-	items := make([]*model.FormationAssignment, 0, len(entityCollection))
-
-	for _, entity := range entityCollection {
-		items = append(items, r.conv.FromEntity(entity))
-	}
 	return &model.FormationAssignmentPage{
-		Data:       items,
+		Data:       r.multipleFromEntities(entityCollection),
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
 }
 
-// ListByFormationIDs retrieves a page of formation assignment objects for each formationID from the database that are visible for `tenantID`
+// ListByFormationIDs retrieves a page of Formation Assignment objects for each formationID from the database that are visible for `tenantID`
 func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error) {
 	var formationAssignmentCollection EntityCollection
 
@@ -166,7 +163,25 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 	return faPages, nil
 }
 
-// Update updates the formation assignment matching the ID of the input model
+// ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID`that have objectID as `target` or `source` from the database that are visible for `tenant`
+func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error) {
+	var entitiesWithSourceObjectID EntityCollection
+	var entitiesWithTargetObjectID EntityCollection
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
+		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewEqualCondition("source", objectID),
+			repo.NewEqualCondition("target", objectID),
+		})...))
+
+	if err := r.lister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entitiesWithSourceObjectID, conditions); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(append(entitiesWithSourceObjectID, entitiesWithTargetObjectID...)), nil
+}
+
+// Update updates the Formation Assignment matching the ID of the input model
 func (r *repository) Update(ctx context.Context, model *model.FormationAssignment) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
@@ -175,12 +190,20 @@ func (r *repository) Update(ctx context.Context, model *model.FormationAssignmen
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
 }
 
-// Delete deletes a formation assignment with given ID
+// Delete deletes a Formation Assignment with given ID
 func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 	return r.deleter.DeleteOne(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// Exists check if a formation assignment with given ID exists
+// Exists check if a Formation Assignment with given ID exists
 func (r *repository) Exists(ctx context.Context, id, tenantID string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *repository) multipleFromEntities(entities EntityCollection) []*model.FormationAssignment {
+	items := make([]*model.FormationAssignment, 0, len(entities))
+	for _, ent := range entities {
+		items = append(items, r.conv.FromEntity(ent))
+	}
+	return items
 }

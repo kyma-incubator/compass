@@ -4,10 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -82,7 +85,7 @@ type config struct {
 }
 
 type appTemplateConfig struct {
-	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
+	LabelFilter                    string `envconfig:"APP_TEMPLATE_LABEL_FILTER"`
 	OverrideApplicationInput       string `envconfig:"APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT"`
 	PlaceholderToSystemKeyMappings string `envconfig:"APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS"`
 }
@@ -203,8 +206,11 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	formationAssignmentSvc := formationassignment.NewService(tx, formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv)
 	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 
 	authProvider := pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, cfg.ExternalClientCertSecretName, certCache, pkgAuth.DefaultMtlsClientCreator)
@@ -275,10 +281,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) error {
-	var systemToTemplateMappings []systemfetcher.TemplateMapping
-	if err := json.Unmarshal([]byte(cfg.TemplateConfig.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
-		return errors.Wrap(err, "failed to read system template mappings")
-	}
+	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
 
 	tx, err := transact.Begin()
 	if err != nil {
@@ -287,23 +290,27 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	defer transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	for index, tm := range systemToTemplateMappings {
-		var region interface{}
-		region = tm.Region
-		if region == "" {
-			region = nil
-		}
-		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, region)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to retrieve application template with name %q and region %v", tm.Name, region))
-		}
-		systemToTemplateMappings[index].ID = appTemplate.ID
+	appTemplates, err := appTemplateSvc.ListByFilters(ctx, []*labelfilter.LabelFilter{labelfilter.NewForKey(cfg.TemplateConfig.LabelFilter)})
+	if err != nil {
+		return errors.Wrapf(err, "while listing application templates by label filter %q", cfg.TemplateConfig.LabelFilter)
 	}
+
+	for _, appTemplate := range appTemplates {
+		lbl, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
+		if err != nil {
+			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
+		}
+
+		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: lbl})
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return errors.Wrap(err, "failed to commit transaction")
 	}
 
-	systemfetcher.Mappings = systemToTemplateMappings
+	systemfetcher.ApplicationTemplates = applicationTemplates
+	systemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
+	systemfetcher.SystemSourceKey = cfg.APIConfig.SystemSourceKey
 	return nil
 }

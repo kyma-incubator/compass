@@ -291,12 +291,30 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 }
 
 func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
+	vendorsFromDB, err := s.listVendorsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, vendor := range vendors {
+		if err := s.resyncVendorInTx(ctx, appID, vendorsFromDB, vendor); err != nil {
+			return nil, err
+		}
+	}
+
+	vendorsFromDB, err = s.listVendorsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+	return vendorsFromDB, nil
+}
+
+func (s *Service) listVendorsInTx(ctx context.Context, appID string) ([]*model.Vendor, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	vendorsFromDB, err := s.vendorSvc.ListByApplicationID(ctx, appID)
@@ -304,27 +322,48 @@ func (s *Service) processVendors(ctx context.Context, appID string, vendors []*m
 		return nil, errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
 	}
 
-	for _, vendor := range vendors {
-		if err := s.resyncVendor(ctx, appID, vendorsFromDB, *vendor); err != nil {
-			return nil, errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
-		}
-	}
-
-	vendorsFromDB, err = s.vendorSvc.ListByApplicationID(ctx, appID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
-	}
-
 	return vendorsFromDB, tx.Commit()
 }
 
+func (s *Service) resyncVendorInTx(ctx context.Context, appID string, vendorsFromDB []*model.Vendor, vendor *model.VendorInput) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncVendor(ctx, appID, vendorsFromDB, *vendor); err != nil {
+		return errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
+	}
+	return tx.Commit()
+}
+
 func (s *Service) processProducts(ctx context.Context, appID string, products []*model.ProductInput) ([]*model.Product, error) {
+	productsFromDB, err := s.listProductsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, product := range products {
+		if err := s.resyncProductInTx(ctx, appID, productsFromDB, product); err != nil {
+			return nil, err
+		}
+	}
+
+	productsFromDB, err = s.listProductsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+	return productsFromDB, nil
+}
+
+func (s *Service) listProductsInTx(ctx context.Context, appID string) ([]*model.Product, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	productsFromDB, err := s.productSvc.ListByApplicationID(ctx, appID)
@@ -332,27 +371,49 @@ func (s *Service) processProducts(ctx context.Context, appID string, products []
 		return nil, errors.Wrapf(err, "error while listing products for app with id %q", appID)
 	}
 
-	for _, product := range products {
-		if err := s.resyncProduct(ctx, appID, productsFromDB, *product); err != nil {
-			return nil, errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
-		}
-	}
-
-	productsFromDB, err = s.productSvc.ListByApplicationID(ctx, appID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing products for app with id %q", appID)
-	}
-
 	return productsFromDB, tx.Commit()
 }
 
+func (s *Service) resyncProductInTx(ctx context.Context, appID string, productsFromDB []*model.Product, product *model.ProductInput) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncProduct(ctx, appID, productsFromDB, *product); err != nil {
+		return errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
+	}
+	return tx.Commit()
+}
+
 func (s *Service) processPackages(ctx context.Context, appID string, packages []*model.PackageInput, resourceHashes map[string]uint64) ([]*model.Package, error) {
+	packagesFromDB, err := s.listPackagesInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pkg := range packages {
+		pkgHash := resourceHashes[pkg.OrdID]
+		if err := s.resyncPackageInTx(ctx, appID, packagesFromDB, pkg, pkgHash); err != nil {
+			return nil, err
+		}
+	}
+
+	packagesFromDB, err = s.listPackagesInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+	return packagesFromDB, nil
+}
+
+func (s *Service) listPackagesInTx(ctx context.Context, appID string) ([]*model.Package, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
@@ -360,28 +421,48 @@ func (s *Service) processPackages(ctx context.Context, appID string, packages []
 		return nil, errors.Wrapf(err, "error while listing packages for app with id %q", appID)
 	}
 
-	for _, pkg := range packages {
-		pkgHash := resourceHashes[pkg.OrdID]
-		if err := s.resyncPackage(ctx, appID, packagesFromDB, *pkg, pkgHash); err != nil {
-			return nil, errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
-		}
-	}
-
-	packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, appID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing packages for app with id %q", appID)
-	}
-
 	return packagesFromDB, tx.Commit()
 }
 
+func (s *Service) resyncPackageInTx(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg *model.PackageInput, pkgHash uint64) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncPackage(ctx, appID, packagesFromDB, *pkg, pkgHash); err != nil {
+		return errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
+	}
+	return tx.Commit()
+}
+
 func (s *Service) processBundles(ctx context.Context, appID string, bundles []*model.BundleCreateInput) ([]*model.Bundle, error) {
+	bundlesFromDB, err := s.listBundlesInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, bndl := range bundles {
+		if err := s.resyncBundleInTx(ctx, appID, bundlesFromDB, bndl); err != nil {
+			return nil, err
+		}
+	}
+
+	bundlesFromDB, err = s.listBundlesInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+	return bundlesFromDB, nil
+}
+
+func (s *Service) listBundlesInTx(ctx context.Context, appID string) ([]*model.Bundle, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	bundlesFromDB, err := s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
@@ -389,27 +470,49 @@ func (s *Service) processBundles(ctx context.Context, appID string, bundles []*m
 		return nil, errors.Wrapf(err, "error while listing bundles for app with id %q", appID)
 	}
 
-	for _, bndl := range bundles {
-		if err := s.resyncBundle(ctx, appID, bundlesFromDB, *bndl); err != nil {
-			return nil, errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bndl.OrdID)
-		}
-	}
-
-	bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing bundles for app with id %q", appID)
-	}
-
 	return bundlesFromDB, tx.Commit()
 }
 
+func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bundle *model.BundleCreateInput) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncBundle(ctx, appID, bundlesFromDB, *bundle); err != nil {
+		return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bundle.OrdID)
+	}
+	return tx.Commit()
+}
+
 func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, error) {
+	apisFromDB, err := s.listAPIsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, api := range apis {
+		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
+		if err := s.resyncAPIInTx(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api, apiHash); err != nil {
+			return nil, err
+		}
+	}
+
+	apisFromDB, err = s.listAPIsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+	return apisFromDB, nil
+}
+
+func (s *Service) listAPIsInTx(ctx context.Context, appID string) ([]*model.APIDefinition, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
@@ -417,28 +520,49 @@ func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB [
 		return nil, errors.Wrapf(err, "error while listing apis for app with id %q", appID)
 	}
 
-	for _, api := range apis {
-		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
-		if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, *api, apiHash); err != nil {
-			return nil, errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
-		}
-	}
-
-	apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, appID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing apis for app with id %q", appID)
-	}
-
 	return apisFromDB, tx.Commit()
 }
 
+func (s *Service) resyncAPIInTx(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api *model.APIDefinitionInput, apiHash uint64) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, *api, apiHash); err != nil {
+		return errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
+	}
+	return tx.Commit()
+}
+
 func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, error) {
+	eventsFromDB, err := s.listEventsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, event := range events {
+		eventHash := resourceHashes[str.PtrStrToStr(event.OrdID)]
+		if err := s.resyncEventInTx(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event, eventHash); err != nil {
+			return nil, err
+		}
+	}
+
+	eventsFromDB, err = s.listEventsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+	return eventsFromDB, nil
+}
+
+func (s *Service) listEventsInTx(ctx context.Context, appID string) ([]*model.EventDefinition, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
@@ -446,28 +570,48 @@ func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB
 		return nil, errors.Wrapf(err, "error while listing events for app with id %q", appID)
 	}
 
-	for _, event := range events {
-		eventHash := resourceHashes[str.PtrStrToStr(event.OrdID)]
-		if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, *event, eventHash); err != nil {
-			return nil, errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
-		}
-	}
-
-	eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, appID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing events for app with id %q", appID)
-	}
-
 	return eventsFromDB, tx.Commit()
 }
 
+func (s *Service) resyncEventInTx(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event *model.EventDefinitionInput, eventHash uint64) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, *event, eventHash); err != nil {
+		return errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
+	}
+	return tx.Commit()
+}
+
 func (s *Service) processTombstones(ctx context.Context, appID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) {
+	tombstonesFromDB, err := s.listTombstonesInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tombstone := range tombstones {
+		if err := s.resyncTombstoneInTx(ctx, appID, tombstonesFromDB, tombstone); err != nil {
+			return nil, err
+		}
+	}
+
+	tombstonesFromDB, err = s.listTombstonesInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+	return tombstonesFromDB, nil
+}
+
+func (s *Service) listTombstonesInTx(ctx context.Context, appID string) ([]*model.Tombstone, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	tombstonesFromDB, err := s.tombstoneSvc.ListByApplicationID(ctx, appID)
@@ -475,18 +619,21 @@ func (s *Service) processTombstones(ctx context.Context, appID string, tombstone
 		return nil, errors.Wrapf(err, "error while listing tombstones for app with id %q", appID)
 	}
 
-	for _, tombstone := range tombstones {
-		if err := s.resyncTombstone(ctx, appID, tombstonesFromDB, *tombstone); err != nil {
-			return nil, errors.Wrapf(err, "error while resyncing tombstone for resource with ORD ID %q", tombstone.OrdID)
-		}
-	}
-
-	tombstonesFromDB, err = s.tombstoneSvc.ListByApplicationID(ctx, appID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error while listing tombstones for app with id %q", appID)
-	}
-
 	return tombstonesFromDB, tx.Commit()
+}
+
+func (s *Service) resyncTombstoneInTx(ctx context.Context, appID string, tombstonesFromDB []*model.Tombstone, tombstone *model.TombstoneInput) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncTombstone(ctx, appID, tombstonesFromDB, *tombstone); err != nil {
+		return errors.Wrapf(err, "error while resyncing tombstone for resource with ORD ID %q", tombstone.OrdID)
+	}
+	return tx.Commit()
 }
 
 func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg model.PackageInput, pkgHash uint64) error {
@@ -798,6 +945,9 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 
 				// the first item in the slice is the message 'invalid documents' for the wrapped errors
 				validationErrors = validationErrors[1:]
+				for i := range validationErrors {
+					validationErrors[i] = strings.TrimSpace(validationErrors[i])
+				}
 
 				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
 			} else {

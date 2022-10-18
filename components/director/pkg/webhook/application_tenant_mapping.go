@@ -41,3 +41,8 @@ func (rd *ApplicationTenantMappingInput) ParseHeadersTemplate(tmpl *string) (htt
 	var headers http.Header
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
+
+// GetParticipantsIDs returns the list of IDs part of the FormationConfigurationChangeInput
+func (rd *ApplicationTenantMappingInput) GetParticipantsIDs() []string {
+	return []string{rd.SourceApplication.ID, rd.TargetApplication.ID}
+}

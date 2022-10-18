@@ -16,7 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/handler/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	txautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
@@ -1227,7 +1226,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		tntSvc := automock.TenantService{}
 		tntSvc.Mock.On("ListsByExternalIDs", mock.Anything, ids).Return([]*model.BusinessTenantMapping{{ID: "id", ExternalTenant: testSubaccount, Type: "subaccount"}}, nil)
 
-		nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
+		nsmodel.Mappings = append(nsmodel.Mappings, nsmodel.TemplateMapping{
 			Name:        "",
 			ID:          "ss",
 			SourceKey:   []string{"description"},
@@ -1712,7 +1711,7 @@ func clearMappings() {
 }
 
 func setMappings() {
-	nsmodel.Mappings = append(nsmodel.Mappings, systemfetcher.TemplateMapping{
+	nsmodel.Mappings = append(nsmodel.Mappings, nsmodel.TemplateMapping{
 		Name:        "",
 		ID:          "ss",
 		SourceKey:   []string{"type"},

@@ -111,31 +111,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2662"
+      version: "PR-2665"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2662"
+      version: "PR-2665"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2662"
+      version: "PR-2665"
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2684"
+      version: "PR-2694"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2644"
+      version: "PR-2665"
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2662"
+      version: "PR-2665"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2662"
+      version: "PR-2665"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -147,7 +147,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2662"
+      version: "PR-2665"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -156,7 +156,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2662"
+      version: "PR-2665"
       name: compass-external-services-mock
     console:
       dir:
@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2686"
+      version: "PR-2699"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -327,7 +327,7 @@ global:
     caKey: ""
     caCertificate: ""
   system_broker:
-    enabled: true
+    enabled: false
     port: 5001
     prefix: /broker
     tokenProviderFromHeader:
@@ -745,8 +745,8 @@ global:
     systemsAPIEndpoint: ""
     # systemsAPIFilterCriteria - criteria for fetching systems
     systemsAPIFilterCriteria: ""
-    # systemToTemplateMappings - how to map system properties to an existing application template
-    systemToTemplateMappings: '{}'
+    appTemplatesProductLabel: "systemRole"
+    systemSourceKey: "prop"
     appTemplates: []
     templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "displayName" }, { "placeholder_name": "display-name", "system_key": "displayName" }, { "placeholder_name": "systemNumber", "system_key": "systemNumber" }, { "placeholder_name": "productId", "system_key": "productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "ppmsProductVersionId", "optional": true }, { "placeholder_name": "description", "system_key": "productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "infrastructureProvider", "optional": true } ]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}"},"baseUrl": "{{baseUrl}}"}'

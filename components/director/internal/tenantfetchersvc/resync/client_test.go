@@ -18,19 +18,15 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync/automock"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_FetchTenantEventsPage(t *testing.T) {
 	// GIVEN
+	ctx := context.TODO()
 	mockClient, mockServerCloseFn, endpoint := fixHTTPClient(t)
 	defer mockServerCloseFn()
-
-	metricsPusherMock := fixMetricsPusherMock()
-	defer metricsPusherMock.AssertExpectations(t)
 
 	queryParams := resync.QueryParams{
 		"pageSize":  "1",
@@ -63,12 +59,11 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	client, err := resync.NewClient(resync.OAuth2Config{}, oauth.Standard, clientCfg, time.Second)
 	require.NoError(t, err)
 
-	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Success fetching account creation events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.CreatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.CreatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -76,7 +71,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching account update events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.UpdatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.UpdatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -84,7 +79,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching account deletion events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.DeletedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.DeletedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -92,7 +87,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching subaccount creation events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.CreatedSubaccountType, subaccountQueryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.CreatedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -100,7 +95,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching subaccount update events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.UpdatedSubaccountType, subaccountQueryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.UpdatedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -108,7 +103,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching subaccount deletion events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.DeletedSubaccountType, subaccountQueryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.DeletedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -116,7 +111,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching moved subaccount events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.MovedSubaccountType, subaccountQueryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.MovedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -124,7 +119,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when unknown events type", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(-1, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, -1, queryParams)
 		// THEN
 		require.EqualError(t, err, apperrors.NewInternalError("unknown events type").Error())
 		assert.Empty(t, res)
@@ -145,12 +140,11 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	client, err = resync.NewClient(resync.OAuth2Config{}, oauth.Standard, clientCfg, time.Second)
 	require.NoError(t, err)
 
-	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Success when no content", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.UpdatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.UpdatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Empty(t, res)
@@ -158,7 +152,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when endpoint not parsable", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.CreatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.CreatedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, "parse \"___ :// ___ \": first path segment in URL cannot contain colon")
 		assert.Empty(t, res)
@@ -166,7 +160,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when bad path", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.DeletedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.DeletedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, "while sending get request: Get \"http://127.0.0.1:8111/badpath?pageNum=1&pageSize=1&timestamp=1\": dial tcp 127.0.0.1:8111: connect: connection refused")
 		assert.Empty(t, res)
@@ -186,12 +180,11 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	client, err = resync.NewClient(resync.OAuth2Config{}, oauth.Standard, clientCfg, time.Second)
 	require.NoError(t, err)
 
-	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Error when status code not equal to 200 OK and 204 No Content is returned", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.UpdatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.UpdatedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("request to \"%s/badRequest?pageNum=1&pageSize=1&timestamp=1\" returned status code 400 and body \"\"", endpoint))
 		assert.Empty(t, res)
@@ -204,12 +197,11 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	client, err = resync.NewClient(resync.OAuth2Config{}, oauth.Standard, clientCfg, time.Second)
 	require.NoError(t, err)
 
-	client.SetMetricsPusher(metricsPusherMock)
 	client.SetHTTPClient(mockClient)
 
 	t.Run("Skip fetching moved subaccount events when endpoint is not provided", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(resync.MovedSubaccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(ctx, resync.MovedSubaccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Nil(t, res)
@@ -467,16 +459,6 @@ func fixMovedSubaccountsJSON() string {
 "totalResults": 2,
 "totalPages": 1
 }`
-}
-
-func fixMetricsPusherMock() *automock.MetricsPusher {
-	metricsPusherMock := &automock.MetricsPusher{}
-	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusOK, "200 OK")
-	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusNoContent, "204 No Content").Once()
-	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, 0, "connect: connection refused").Once()
-	metricsPusherMock.On("RecordEventingRequest", http.MethodGet, http.StatusBadRequest, "400 Bad Request").Once()
-
-	return metricsPusherMock
 }
 
 func TestNewClient(t *testing.T) {

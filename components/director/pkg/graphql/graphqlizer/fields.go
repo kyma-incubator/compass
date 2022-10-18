@@ -164,6 +164,19 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 	`
 }
 
+// ForFormationAssignment missing godoc
+func (fp *GqlFieldsProvider) ForFormationAssignment(ctx ...FieldCtx) string {
+	return `
+			id
+			source
+			sourceType
+			target
+			targetType
+			state
+			value
+	`
+}
+
 // OmitForWebhooks missing godoc
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
 	return buildProperties(map[string]string{

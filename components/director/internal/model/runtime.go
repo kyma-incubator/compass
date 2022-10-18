@@ -15,6 +15,11 @@ type Runtime struct {
 	CreationTimestamp time.Time
 }
 
+// GetID missing godoc
+func (r *Runtime) GetID() string {
+	return r.ID
+}
+
 // RuntimeStatus missing godoc
 type RuntimeStatus struct {
 	Condition RuntimeStatusCondition
