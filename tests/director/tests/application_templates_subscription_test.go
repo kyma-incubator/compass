@@ -27,44 +27,50 @@ import (
 )
 
 const (
-	RegionValue      = "eu-1"
-	DefaultSubdomain = "compass-external-services-mock-sap-mtls"
-	baseURLTemplate  = "http://%s.%s.subscription.com"
+	baseURLTemplate = "http://%s.%s.subscription.com"
 )
 
 func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 	t := testingx.NewT(baseT)
+	ctx := context.Background()
+
+	subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
+	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
+	subscriptionConsumerTenantID := conf.TestConsumerTenantID
+
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
+		},
+	}
+
+	// We need an externally issued cert with a subject that is not part of the access level mappings
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(baseT, ctx, externalCertProviderConfig)
+	appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+
 	t.Run("When creating app template with a certificate", func(stdT *testing.T) {
 		t := testingx.NewT(stdT)
 		// GIVEN
-		ctx := context.Background()
-
-		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
-		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
-		subscriptionConsumerTenantID := conf.TestConsumerTenantID
-
-		// We need an externally issued cert with a subject that is not part of the access level mappings
-		externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-			ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-			ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-			CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-			ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-			ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
-			ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-			ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-			ExternalCertProvider:                  certprovider.CertificateService,
-		}
-
-		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig)
-		appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
-
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
 
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
-		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
+		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
@@ -75,13 +81,6 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
 		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
-
-		httpClient := &http.Client{
-			Timeout: 10 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
-			},
-		}
 
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(stdT, err)
@@ -97,7 +96,6 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-			expectedBaseURL := fmt.Sprintf(baseURLTemplate, DefaultSubdomain, RegionValue)
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
@@ -111,7 +109,6 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			require.Len(t, actualAppPage.Data, 1)
 			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
-			require.Equal(t, expectedBaseURL, *actualAppPage.Data[0].BaseURL)
 		})
 
 		t.Run("Application is deleted successfully in consumer subaccount as a result of unsubscription", func(t *testing.T) {
@@ -363,6 +360,56 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.Contains(t, err.Error(), expectedErrMsg)
 		})
 
+	})
+
+	t.Run("When creating app template with optional placeholders", func(stdT *testing.T) {
+		t := testingx.NewT(stdT)
+		ctx := context.Background()
+
+		// Create Application Template
+		appTemplateName := createAppTemplateName("app-template-name-subscription-with-optional-placeholders")
+		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
+
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, appTmpl.ID)
+		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
+
+		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+		require.True(stdT, ok)
+		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
+
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		require.NoError(stdT, err)
+		response, err := httpClient.Do(depConfigureReq)
+		require.NoError(stdT, err)
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				stdT.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.Equal(stdT, http.StatusOK, response.StatusCode)
+
+		t.Run("Application is created successfully in consumer subaccount as a result of subscription using the optional region and subdomain placeholders", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+			expectedBaseURL := fmt.Sprintf(baseURLTemplate, conf.SubscriptionConfig.SelfRegisterSubdomainPlaceholderValue, conf.SubscriptionConfig.SelfRegRegion)
+
+			// WHEN
+			//defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplateWithOptionalPlaceholders.ID, appTemplateWithOptionalPlaceholders.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, conf.TestProviderSubaccountIDRegion2)
+
+			// THEN
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+			require.Equal(t, expectedBaseURL, *actualAppPage.Data[0].BaseURL)
+		})
 	})
 }
 
