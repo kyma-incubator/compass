@@ -1603,17 +1603,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-
-		/*unassignApplicationNotificationFound := false
-		for _, notification := range notificationsForConsumerTenant.Array() {
-			op := notification.Get("Operation").String()
-			if op == "unassign" {
-				unassignApplicationNotificationFound = true
-				assertFormationNotificationForApplication(t, notification, "unassign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
-			}
-		}
-		require.True(t, unassignApplicationNotificationFound, "notification for unassign app not found")
-		*/
 		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 1)
 
 		t.Logf("Assign application to formation %s", providerFormationName)
@@ -1627,19 +1616,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		assertNotificationsCountForTenant(t, body, localTenantID, 3)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		/*
-			expectedNumberOfAssignNotifications := 0
-			for _, notification := range notificationsForConsumerTenant.Array() {
-				rtCtxIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
-				op := notification.Get("Operation").String()
-				t.Logf("Found notification about rtCtx %q", rtCtxIDFromNotification)
-				if rtCtxIDFromNotification == rtCtx.ID && op == "assign" {
-					expectedNumberOfAssignNotifications++
-					assertFormationNotificationForApplication(t, notification, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
-				}
-			}
-			require.Equal(t, 2, expectedNumberOfAssignNotifications, "got less than the expected 2 assign notifications for application")
-		*/
 		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, assignOperation, 2)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
@@ -1652,19 +1628,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		assertNotificationsCountForTenant(t, body, localTenantID, 4)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		/*
-			expectedNumberOfUnassignNotifications := 0
-			for _, notification := range notificationsForConsumerTenant.Array() {
-				rtCtxIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
-				op := notification.Get("Operation").String()
-				t.Logf("Found notification about rtCtx %q", rtCtxIDFromNotification)
-				if rtCtxIDFromNotification == rtCtx.ID && op == "unassign" {
-					expectedNumberOfUnassignNotifications++
-					assertFormationNotificationForApplication(t, notification, "unassign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
-				}
-			}
-			require.Equal(t, 2, expectedNumberOfUnassignNotifications, "got less than the expected 2 unassign notifications for application")
-		*/
 		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 2)
 	})
 }
