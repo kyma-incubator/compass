@@ -32,7 +32,7 @@ type Config struct {
 const (
 	// SubdomainLabelKey is the key of the tenant label for subdomain.
 	SubdomainLabelKey = "subdomain"
-	// RegionPrefix a prefix to be trimmed when creating an app from template
+	// RegionPrefix a prefix to be trimmed from the region placeholder value when creating an app from template
 	RegionPrefix = "cf-"
 )
 
