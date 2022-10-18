@@ -407,56 +407,6 @@ func TestPgRepository_ListByScenariosAndRuntimeIDs(t *testing.T) {
 	})
 }
 
-func TestPgRepository_ListByScenariosNoPaging(t *testing.T) {
-	runtimeCtx1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
-	runtimeCtx2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
-	runtimeCtxEntity1 := fixEntityRuntimeCtxWithIDAndRuntimeID(runtimeCtx1ID, runtimeID)
-	runtimeCtxEntity2 := fixEntityRuntimeCtxWithIDAndRuntimeID(runtimeCtx2ID, runtimeID2)
-
-	runtimeCtxModel1 := fixModelRuntimeCtxWithIDAndRuntimeID(runtimeCtx1ID, runtimeID)
-	runtimeCtxModel2 := fixModelRuntimeCtxWithIDAndRuntimeID(runtimeCtx2ID, runtimeID2)
-
-	suite := testdb.RepoListTestSuite{
-		Name: "ListByScenariosNoPaging Runtime Contexts",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query: regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts 
-				                              WHERE id IN (SELECT "runtime_context_id" FROM public.labels 
-				                              WHERE "runtime_context_id" IS NOT NULL 
-				                              AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $1)) 
-				                              AND "key" = $2 AND "value" ?| array[$3] UNION SELECT "runtime_context_id" FROM public.labels WHERE "runtime_context_id" IS NOT NULL 
-				                              AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $4)) 
-				                              AND "key" = $5 AND "value" ?| array[$6] UNION SELECT "runtime_context_id" FROM public.labels WHERE "runtime_context_id" IS NOT NULL 
-				                              AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $7)) 
-				                              AND "key" = $8 AND "value" ?| array[$9]) 
-				                              AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $10))`),
-				Args:     []driver.Value{tenantID, model.ScenariosKey, "Java", tenantID, model.ScenariosKey, "Go", tenantID, model.ScenariosKey, "Elixir", tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(runtimeCtxEntity1.ID, runtimeCtxEntity1.RuntimeID, runtimeCtxEntity1.Key, runtimeCtxEntity1.Value).
-						AddRow(runtimeCtxEntity2.ID, runtimeCtxEntity2.RuntimeID, runtimeCtxEntity2.Key, runtimeCtxEntity2.Value),
-					}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
-				},
-			},
-		},
-		ExpectedModelEntities: []interface{}{runtimeCtxModel1, runtimeCtxModel2},
-		ExpectedDBEntities:    []interface{}{runtimeCtxEntity1, runtimeCtxEntity2},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
-		},
-		RepoConstructorFunc:       runtimectx.NewRepository,
-		MethodArgs:                []interface{}{tenantID, []string{"Java", "Go", "Elixir"}},
-		MethodName:                "ListByScenariosNoPaging",
-		DisableConverterErrorTest: true,
-	}
-
-	suite.Run(t)
-}
-
 func TestPgRepository_ListAll(t *testing.T) {
 	runtimeCtx1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtimeCtx2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"

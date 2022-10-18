@@ -566,56 +566,6 @@ func TestPgRepository_OwnerExistsByFiltersAndID(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_ListByScenariosNoPaging(t *testing.T) {
-	rt1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
-	rt2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
-	rtEntity1 := fixDetailedEntityRuntime(t, rt1ID, "Runtime 1", "Runtime desc 1")
-	rtEntity2 := fixDetailedEntityRuntime(t, rt2ID, "Runtime 2", "Runtime desc 2")
-
-	rtModel1 := fixDetailedModelRuntime(t, rt1ID, "Model Runtime 1", "Model Runtime desc 1")
-	rtModel2 := fixDetailedModelRuntime(t, rt2ID, "Model Runtime 2", "Model Runtime desc 2")
-
-	suite := testdb.RepoListTestSuite{
-		Name: "List Runtimes By Scenarios",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes 
-				 	                           WHERE id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL 
-					                           AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) 
-					                           AND "key" = $2 AND "value" ?| array[$3] UNION SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL 
-					                           AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $4)) AND "key" = $5 AND "value" ?| array[$6] 
-					                           UNION SELECT 
-					                           "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL 
-					                           AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $7)) 
-					                           AND "key" = $8 AND "value" ?| array[$9]) 
-					                           AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $10))`),
-				Args:     []driver.Value{givenTenant(), model.ScenariosKey, "Java", givenTenant(), model.ScenariosKey, "Go", givenTenant(), model.ScenariosKey, "Elixir", givenTenant()},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
-						AddRow(rtEntity1.ID, rtEntity1.Name, rtEntity1.Description, rtEntity1.StatusCondition, rtEntity1.StatusTimestamp, rtEntity1.CreationTimestamp).
-						AddRow(rtEntity2.ID, rtEntity2.Name, rtEntity2.Description, rtEntity2.StatusCondition, rtEntity2.StatusTimestamp, rtEntity2.CreationTimestamp),
-					}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
-				},
-			},
-		},
-		ExpectedModelEntities: []interface{}{rtModel1, rtModel2},
-		ExpectedDBEntities:    []interface{}{rtEntity1, rtEntity2},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
-		},
-		RepoConstructorFunc:       runtime.NewRepository,
-		MethodArgs:                []interface{}{givenTenant(), []string{"Java", "Go", "Elixir"}},
-		MethodName:                "ListByScenariosNoPaging",
-		DisableConverterErrorTest: true,
-	}
-
-	suite.Run(t)
-}
-
 func TestPgRepository_ListByIDs(t *testing.T) {
 	runtime1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtime2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
