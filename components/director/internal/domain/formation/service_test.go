@@ -3,6 +3,8 @@ package formation_test
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/pkg/errors"
 
@@ -863,6 +865,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 					RuntimeID: runtimes[1].ID,
 				}, nil)
 
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Times(3)
+
 				return runtimeContextRepo
 			},
 			LabelRepoFN:           unusedLabelRepo,
@@ -933,6 +937,9 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
 					RuntimeID: runtimes[0].ID,
 				}, nil)
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Twice()
+
 				return runtimeContextRepo
 			},
 			NotificationServiceFN: noActionNotificationsService,
@@ -993,6 +1000,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -1044,6 +1052,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo := &automock.RuntimeContextRepository{}
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -1512,6 +1521,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 	ctx := fixCtxWithTenant()
 
 	testErr := errors.New("test err")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	rtmIDs := []string{"123", "456", "789"}
 	rtmNames := []string{"first", "second", "third"}
@@ -1625,6 +1635,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 		LabelRepositoryFn             func() *automock.LabelRepository
 		NotificationSvcFn             func() *automock.NotificationsService
 		FormationAssignmentSvcFn      func() *automock.FormationAssignmentService
+		TransactionerFn               func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedASA                   model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
@@ -1654,7 +1665,12 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Times(3)
+
 				return runtimeContextRepo
+			},
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -1687,7 +1703,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -1718,6 +1734,8 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Times(2)
+
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -1730,6 +1748,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			LabelServiceFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.On("GetLabel", ctx, tnt, runtimeLblInputs[0]).Return(expectedRuntimeLabel, nil).Once()
@@ -1751,7 +1770,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -1779,6 +1798,9 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Once()
+
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -1802,10 +1824,11 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				return repo
 			},
 			NotificationSvcFn: noActionNotificationsService,
+			TransactionerFn:   txGen.ThatSucceeds,
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -1831,6 +1854,9 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo := &automock.RuntimeContextRepository{}
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Once()
+
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -1854,10 +1880,11 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				return repo
 			},
 			NotificationSvcFn: noActionNotificationsService,
+			TransactionerFn:   txGen.ThatSucceeds,
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -1904,6 +1931,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				return repo
 			},
 			NotificationSvcFn:        unusedNotificationsService,
+			TransactionerFn:          txGen.ThatDoesntStartTransaction,
 			FormationAssignmentSvcFn: unusedFormationAssignmentService,
 			InputASA:                 fixModel(testFormationName),
 			ExpectedASA:              model.AutomaticScenarioAssignment{},
@@ -1941,6 +1969,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelRepositoryFn:        unusedLabelRepo,
 			NotificationSvcFn:        unusedNotificationsService,
 			FormationAssignmentSvcFn: unusedFormationAssignmentService,
+			TransactionerFn:          txGen.ThatDoesntStartTransaction,
 			InputASA:                 fixModel(testFormationName),
 			ExpectedASA:              model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:       testErr.Error(),
@@ -1973,6 +2002,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelRepositoryFn:        unusedLabelRepo,
 			NotificationSvcFn:        unusedNotificationsService,
 			FormationAssignmentSvcFn: unusedFormationAssignmentService,
+			TransactionerFn:          txGen.ThatDoesntStartTransaction,
 			InputASA:                 fixModel(testFormationName),
 			ExpectedASA:              model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:       testErr.Error(),
@@ -2001,6 +2031,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelRepositoryFn:        unusedLabelRepo,
 			NotificationSvcFn:        unusedNotificationsService,
 			FormationAssignmentSvcFn: unusedFormationAssignmentService,
+			TransactionerFn:          txGen.ThatDoesntStartTransaction,
 			InputASA:                 fixModel(testFormationName),
 			ExpectedASA:              model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:       testErr.Error(),
@@ -2025,6 +2056,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelRepositoryFn:             unusedLabelRepo,
 			NotificationSvcFn:             unusedNotificationsService,
 			FormationAssignmentSvcFn:      unusedFormationAssignmentService,
+			TransactionerFn:               txGen.ThatDoesntStartTransaction,
 			InputASA:                      fixModel(testFormationName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            testErr.Error(),
@@ -2045,6 +2077,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelRepositoryFn:             unusedLabelRepo,
 			NotificationSvcFn:             unusedNotificationsService,
 			FormationAssignmentSvcFn:      unusedFormationAssignmentService,
+			TransactionerFn:               txGen.ThatDoesntStartTransaction,
 			InputASA:                      fixModel(testFormationName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            testErr.Error(),
@@ -2064,8 +2097,9 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			lblRepo := testCase.LabelRepositoryFn()
 			notificationSvc := testCase.NotificationSvcFn()
 			formationAssignmentSvc := testCase.FormationAssignmentSvcFn()
+			persist, transact := testCase.TransactionerFn()
 
-			svc := formation.NewService(nil, nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
+			svc := formation.NewService(transact, nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
 			err := svc.DeleteAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -2078,7 +2112,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, notificationSvc)
+			mock.AssertExpectationsForObjects(t, persist, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, notificationSvc)
 		})
 	}
 
@@ -2264,6 +2298,9 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[1].ID).Return(&model.RuntimeContext{
 					RuntimeID: runtimes[1].ID,
 				}, nil)
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Times(3)
+
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2326,6 +2363,9 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
 					RuntimeID: runtimes[0].ID,
 				}, nil)
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Times(2)
+
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2378,6 +2418,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2420,6 +2462,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo := &automock.RuntimeContextRepository{}
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2611,6 +2655,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 	ctx := fixCtxWithTenant()
 
 	testErr := errors.New("test err")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	rtmIDs := []string{"123", "456", "789"}
 	rtmNames := []string{"first", "second", "third"}
@@ -2723,6 +2768,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		LabelRepositoryFn             func() *automock.LabelRepository
 		NotificationServiceFn         func() *automock.NotificationsService
 		FormationAssignmentServiceFn  func() *automock.FormationAssignmentService
+		TransactionerFn               func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
 	}{
@@ -2748,7 +2794,12 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Times(3)
+
 				return runtimeContextRepo
+			},
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -2781,7 +2832,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -2810,8 +2861,12 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Twice()
+
 				return runtimeContextRepo
 			},
+
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
 				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Times(4)
@@ -2843,7 +2898,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -2868,8 +2923,11 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Once()
 				return runtimeContextRepo
 			},
+			TransactionerFn: txGen.ThatSucceeds,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
 				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Twice()
@@ -2895,7 +2953,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -2918,6 +2976,8 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo := &automock.RuntimeContextRepository{}
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
+
+				runtimeContextRepo.On("ListByIDs", mock.Anything, tenantID.String(), []string{}).Return(nil, nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2925,6 +2985,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Twice()
 				return repo
 			},
+			TransactionerFn: txGen.ThatSucceeds,
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
@@ -2945,7 +3006,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -2963,6 +3024,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				return runtimeRepo
 			},
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				runtimeContextRepo := &automock.RuntimeContextRepository{}
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
@@ -3014,6 +3076,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
+			TransactionerFn:    txGen.ThatDoesntStartTransaction,
 			LabelServiceFn:     unusedLabelService,
 			LabelRepositoryFn:  unusedLabelRepo,
 			InputASA:           fixModel(testFormationName),
@@ -3038,6 +3101,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
+			TransactionerFn:    txGen.ThatDoesntStartTransaction,
 			LabelServiceFn:     unusedLabelService,
 			LabelRepositoryFn:  unusedLabelRepo,
 			InputASA:           fixModel(testFormationName),
@@ -3060,6 +3124,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			},
 			LabelServiceFn:     unusedLabelService,
 			LabelRepositoryFn:  unusedLabelRepo,
+			TransactionerFn:    txGen.ThatDoesntStartTransaction,
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -3076,6 +3141,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			LabelServiceFn:                unusedLabelService,
 			LabelRepositoryFn:             unusedLabelRepo,
+			TransactionerFn:               txGen.ThatDoesntStartTransaction,
 			InputASA:                      fixModel(testFormationName),
 			ExpectedErrMessage:            testErr.Error(),
 		},
@@ -3090,6 +3156,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
 			lblService := testCase.LabelServiceFn()
 			lblRepo := testCase.LabelRepositoryFn()
+			persist, transact := testCase.TransactionerFn()
 
 			notificationSvc := unusedNotificationsService()
 			if testCase.NotificationServiceFn != nil {
@@ -3099,7 +3166,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			if testCase.FormationAssignmentServiceFn != nil {
 				formationAssignmentSvc = testCase.FormationAssignmentServiceFn()
 			}
-			svc := formation.NewService(nil, nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
+			svc := formation.NewService(transact, nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
 			err := svc.RemoveAssignedScenario(ctx, testCase.InputASA)
@@ -3112,7 +3179,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, asaRepo, notificationSvc)
+			mock.AssertExpectationsForObjects(t, persist, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, asaRepo, notificationSvc)
 		})
 	}
 }
