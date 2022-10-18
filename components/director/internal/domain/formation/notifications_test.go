@@ -51,7 +51,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		ObjectType                graphql.FormationObjectType
 		OperationType             model.FormationOperation
 		InputFormation            model.Formation
-		ExpectedRequests          []*webhookclient.Request
+		ExpectedRequests          []*webhookclient.NotificationRequest
 		ExpectedErrMessage        string
 	}{
 		{
@@ -97,7 +97,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -435,7 +435,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ObjectType:    graphql.FormationObjectTypeRuntimeContext,
 			OperationType: model.AssignFormation,
 			ObjectID:      RuntimeContextID,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -1463,7 +1463,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
 			},
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -1962,14 +1962,14 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		WebhookClientFN    func() *automock.WebhookClient
-		InputRequests      []*webhookclient.Request
+		InputRequests      []*webhookclient.NotificationRequest
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "success when webhook client call doesn't return error",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.Request{
+				client.On("Do", ctx, &webhookclient.NotificationRequest{
 					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -1990,7 +1990,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 					},
 					CorrelationID: "",
 				}).Return(nil, nil)
-				client.On("Do", ctx, &webhookclient.Request{
+				client.On("Do", ctx, &webhookclient.NotificationRequest{
 					Webhook: *fixWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -2014,7 +2014,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 					},
 					CorrelationID: "",
 				}).Return(nil, nil)
-				client.On("Do", ctx, &webhookclient.Request{
+				client.On("Do", ctx, &webhookclient.NotificationRequest{
 					Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp1, ApplicationID),
 					Object: &webhook.ApplicationTenantMappingInput{
 						Operation:                 model.AssignFormation,
@@ -2035,7 +2035,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 					},
 					CorrelationID: "",
 				}).Return(nil, nil)
-				client.On("Do", ctx, &webhookclient.Request{
+				client.On("Do", ctx, &webhookclient.NotificationRequest{
 					Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
 					Object: &webhook.ApplicationTenantMappingInput{
 						Operation:   model.AssignFormation,
@@ -2058,7 +2058,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 				}).Return(nil, nil)
 				return client
 			},
-			InputRequests: []*webhookclient.Request{
+			InputRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -2152,7 +2152,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 			Name: "fail when webhook client call fails",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.Request{
+				client.On("Do", ctx, &webhookclient.NotificationRequest{
 					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -2175,7 +2175,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 				}).Return(nil, testErr)
 				return client
 			},
-			InputRequests: []*webhookclient.Request{
+			InputRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{

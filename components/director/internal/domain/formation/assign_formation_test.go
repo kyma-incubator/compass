@@ -1264,7 +1264,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				formationAssignmentSvc = testCase.FormationAssignmentServiceFn()
 			}
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
+			svc := formation.NewService(nil, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, Tnt, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
