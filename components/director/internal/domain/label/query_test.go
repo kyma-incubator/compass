@@ -18,6 +18,7 @@ func Test_FilterQuery(t *testing.T) {
 	barQuery := `["bar-value"]`
 	scenariosFooQuery := `$[*] ? (@ == "foo")`
 	scenariosBarPongQuery := `$[*] ? (@ == "bar pong")`
+	filterQueryWithJSON := `{"exists": false}`
 
 	filterAllFoos := labelfilter.LabelFilter{
 		Key:   "Foo",
@@ -46,6 +47,10 @@ func Test_FilterQuery(t *testing.T) {
 	filterScenariosWithbarPongValues := labelfilter.LabelFilter{
 		Key:   "Scenarios",
 		Query: &scenariosBarPongQuery,
+	}
+	filterGlobalSubaacountIDValues := labelfilter.LabelFilter{
+		Key:   "global_subaccount_id",
+		Query: &filterQueryWithJSON,
 	}
 
 	stmtPrefix := `SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = ?))`
@@ -148,6 +153,14 @@ func Test_FilterQuery(t *testing.T) {
 				` INTERSECT ` + stmtPrefix + ` AND "key" = ? AND "value" ?| array[?]`,
 			ExpectedArgs:  []interface{}{tenantID, filterScenariosWithFooValues.Key, "foo", tenantID, filterScenariosWithbarPongValues.Key, "bar pong"},
 			ExpectedError: nil,
+		},
+		{
+			Name:                 "[Global_Subaccount_Id] Query for label assigned with values",
+			ReturnSetCombination: label.IntersectSet,
+			FilterInput:          []*labelfilter.LabelFilter{&filterGlobalSubaacountIDValues},
+			ExpectedQueryFilter:  stmtPrefix + ` AND "app_id" NOT IN (SELECT "app_id" FROM public.labels WHERE key = 'global_subaccount_id' AND "app_id" IS NOT NULL)`,
+			ExpectedArgs:         []interface{}{tenantID},
+			ExpectedError:        nil,
 		},
 	}
 

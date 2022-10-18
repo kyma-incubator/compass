@@ -340,7 +340,7 @@ func TestORDAggregator(stdT *testing.T) {
 			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 		}()
 
-		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+		k8s.WaitForJobToFinish(t, ctx, k8sClient, jobName, namespace)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -674,7 +674,7 @@ func TestORDAggregator(stdT *testing.T) {
 			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 		}()
 
-		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+		k8s.WaitForJobToFinish(t, ctx, k8sClient, jobName, namespace)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)

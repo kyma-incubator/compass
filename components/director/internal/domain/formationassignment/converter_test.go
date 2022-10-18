@@ -150,3 +150,63 @@ func TestConverter_FromEntity(t *testing.T) {
 		})
 	}
 }
+
+func TestConverter_ToInput(t *testing.T) {
+	testCases := []struct {
+		Name     string
+		Input    *model.FormationAssignment
+		Expected *model.FormationAssignmentInput
+	}{
+		{
+			Name:     "Success",
+			Input:    fixFormationAssignmentModel(TestConfigValueRawJSON),
+			Expected: fixFormationAssignmentModelInput(TestConfigValueRawJSON),
+		}, {
+			Name:     "Success when input is nil",
+			Input:    nil,
+			Expected: nil,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// WHEN
+			result := converter.ToInput(testCase.Input)
+
+			require.Equal(t, result, testCase.Expected)
+		})
+	}
+}
+
+func TestConverter_FromInput(t *testing.T) {
+	testCases := []struct {
+		Name     string
+		Input    *model.FormationAssignmentInput
+		Expected *model.FormationAssignment
+	}{
+		{
+			Name: "Success",
+			Expected: &model.FormationAssignment{
+				FormationID: TestFormationID,
+				Source:      TestSource,
+				SourceType:  TestSourceType,
+				Target:      TestTarget,
+				TargetType:  TestTargetType,
+				State:       TestState,
+				Value:       TestConfigValueRawJSON,
+			},
+			Input: fixFormationAssignmentModelInput(TestConfigValueRawJSON),
+		}, {
+			Name:     "Success when input is nil",
+			Input:    nil,
+			Expected: nil,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// WHEN
+			result := converter.FromInput(testCase.Input)
+
+			require.Equal(t, result, testCase.Expected)
+		})
+	}
+}

@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
@@ -47,7 +49,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/handler"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/nsmodel"
-	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -153,8 +154,12 @@ func main() {
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	formationAssignmentSvc := formationassignment.NewService(transact, formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv)
+
 	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, notificationSvc, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 
 	err = registerAppTemplate(ctx, transact, appTemplateSvc)
@@ -289,7 +294,7 @@ func exitOnError(err error, context string) {
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, transact persistence.Transactioner) error {
-	var systemToTemplateMappings []systemfetcher.TemplateMapping
+	var systemToTemplateMappings []nsmodel.TemplateMapping
 	if err := json.Unmarshal([]byte(cfg.SystemToTemplateMappings), &systemToTemplateMappings); err != nil {
 		return errors.Wrap(err, "failed to read system template mappings")
 	}

@@ -19,7 +19,7 @@ The audit log test performs the following operations:
 ### Unpair
 The Async Unpair test uses the endpoint that returns "In Progress" until dynamically configured by the test itself to start returning "Completed" - that endpoint simulates the application deleting its internal resources related to the Compass connection. Steps run by the test:
 
-1. Register an Application with webhook of type `UNPAIR_APPLICATION`.
+1. Register an Application with webhook of type `UNREGISTER_APPLICATION`.
 1. Verify that the application exists.
 1. Trigger asynchronous deletion of the application (call `unpairApplication` mutation with `mode: async`).
 1. Check that `Operation` resource exists for that application and it's status is `In Progress`.

@@ -2484,13 +2484,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
 				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ExpectedRequests: []*webhookclient.Request{
@@ -2694,12 +2694,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2764,12 +2764,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2833,12 +2833,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2899,12 +2899,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -2964,12 +2964,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3030,12 +3030,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3091,12 +3091,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3151,12 +3151,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3207,12 +3207,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3262,12 +3262,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3316,12 +3316,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3421,12 +3421,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3475,12 +3475,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3529,12 +3529,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3583,12 +3583,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3637,12 +3637,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3699,13 +3699,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
 				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
 				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3757,7 +3757,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
 				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{}, nil)
 				return repo
@@ -3765,7 +3765,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3816,7 +3816,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
 				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{}, nil)
 				return repo
@@ -3824,7 +3824,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3875,14 +3875,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
 				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3931,13 +3931,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3985,13 +3985,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4039,12 +4039,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4092,12 +4092,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4145,12 +4145,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4198,12 +4198,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4251,12 +4251,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4303,12 +4303,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4347,12 +4347,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4387,12 +4387,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4426,12 +4426,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return(nil, testErr)
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4464,12 +4464,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return(nil, testErr)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return(nil, testErr)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4502,7 +4502,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{inputFormation.Name}).Return(nil, testErr)
+				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return(nil, testErr)
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -5180,7 +5180,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 			notificationSvc := formation.NewNotificationService(nil, nil, nil, nil, nil, nil, nil, webhookClient)
 
 			// WHEN
-			err := notificationSvc.SendNotifications(ctx, testCase.InputRequests)
+			_, err := notificationSvc.SendNotifications(ctx, testCase.InputRequests)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

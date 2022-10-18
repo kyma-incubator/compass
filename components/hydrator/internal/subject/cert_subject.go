@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -18,6 +17,7 @@ const (
 	IntegrationSystemType = "Integration System"
 	ApplicationType       = "Application"
 	SuperAdminType        = "Super Admin"
+	TechnicalClient       = "Technical Client"
 )
 
 type CSRSubjectConfig struct {
@@ -29,9 +29,10 @@ type CSRSubjectConfig struct {
 }
 
 type ExternalIssuerSubjectConfig struct {
-	Country                   string `envconfig:"default=DE"`
-	Organization              string `envconfig:"default=Org"`
-	OrganizationalUnitPattern string `envconfig:"default=OrgUnit"`
+	Country                         string `envconfig:"default=DE"`
+	Organization                    string `envconfig:"default=Org"`
+	OrganizationalUnitPattern       string `envconfig:"default=OrgUnit"`
+	OrganizationalUnitRegionPattern string `envconfig:"default=Region"`
 }
 
 type subjectConsumerTypeMapping struct {
@@ -51,6 +52,7 @@ func (s *subjectConsumerTypeMapping) validate() error {
 		IntegrationSystemType: true,
 		ApplicationType:       true,
 		SuperAdminType:        true,
+		TechnicalClient:       true,
 	}
 
 	supportedTenantTypes := map[string]bool{
@@ -72,13 +74,14 @@ func (s *subjectConsumerTypeMapping) validate() error {
 }
 
 type processor struct {
-	mappings  []subjectConsumerTypeMapping
-	ouPattern string
+	mappings        []subjectConsumerTypeMapping
+	ouPattern       string
+	ouRegionPattern string
 }
 
 // NewProcessor returns a new subject processor configured with the given subject-to-consumer mapping, and subject organization unit pattern.
 // If the subject-to-consumer mapping is invalid, an error is returned.
-func NewProcessor(subjectConsumerTypeMappingConfig string, ouPattern string) (*processor, error) {
+func NewProcessor(subjectConsumerTypeMappingConfig string, ouPattern string, ouRegionPattern string) (*processor, error) {
 	mappings, err := unmarshalMappings(subjectConsumerTypeMappingConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while configuring subject processor")
@@ -89,15 +92,16 @@ func NewProcessor(subjectConsumerTypeMappingConfig string, ouPattern string) (*p
 		}
 	}
 	return &processor{
-		mappings:  mappings,
-		ouPattern: ouPattern,
+		mappings:        mappings,
+		ouPattern:       ouPattern,
+		ouRegionPattern: ouRegionPattern,
 	}, nil
 }
 
 // AuthIDFromSubjectFunc returns a function able to extract the authentication ID from a given certificate subject.
 func (p *processor) AuthIDFromSubjectFunc() func(subject string) string {
 	authIDFromMappingFunc := p.authIDFromMappings()
-	authIDFromOUsFunc := cert.GetRemainingOrganizationalUnit(p.ouPattern)
+	authIDFromOUsFunc := cert.GetRemainingOrganizationalUnit(p.ouPattern, p.ouRegionPattern)
 	return func(subject string) string {
 		if authIDFromMapping := authIDFromMappingFunc(subject); authIDFromMapping != "" {
 			return authIDFromMapping
@@ -135,17 +139,7 @@ func ExternalCertIssuerSubjectMatcher(externalSubjectConsts ExternalIssuerSubjec
 		if cert.GetCountry(subject) != externalSubjectConsts.Country || cert.GetOrganization(subject) != externalSubjectConsts.Organization {
 			return false
 		}
-		orgUnitRegex := regexp.MustCompile(externalSubjectConsts.OrganizationalUnitPattern)
-		orgUnits := cert.GetAllOrganizationalUnits(subject)
-		matchedOrgUnits := 0
-		for _, orgUnit := range orgUnits {
-			if orgUnitRegex.MatchString(orgUnit) {
-				matchedOrgUnits++
-			}
-		}
-
-		expectedOrgUnits := cert.GetPossibleRegexTopLevelMatches(externalSubjectConsts.OrganizationalUnitPattern)
-		return len(orgUnits)-expectedOrgUnits == 1 || expectedOrgUnits-matchedOrgUnits == 0
+		return len(cert.GetRemainingOrganizationalUnit(externalSubjectConsts.OrganizationalUnitPattern, externalSubjectConsts.OrganizationalUnitRegionPattern)(subject)) > 0
 	}
 }
 

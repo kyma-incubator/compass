@@ -4,22 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/pkg/errors"
+	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
 //go:generate mockery --exported --name=labelDefRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -41,7 +38,7 @@ type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error)
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
+	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
@@ -51,7 +48,7 @@ type runtimeRepository interface {
 type runtimeContextRepository interface {
 	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
 	ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error)
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
+	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error)
 }
@@ -77,7 +74,7 @@ type FormationTemplateRepository interface {
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
 	GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.Request, error)
-	SendNotifications(ctx context.Context, notifications []*webhookclient.Request) error
+	SendNotifications(ctx context.Context, notifications []*webhookclient.Request) ([]*webhookdir.Response, error)
 }
 
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -118,11 +115,6 @@ type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-//go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
-type webhookClient interface {
-	Do(ctx context.Context, request *webhookclient.Request) (*webhookdir.Response, error)
-}
-
 type service struct {
 	labelDefRepository          labelDefRepository
 	labelRepository             labelRepository
@@ -136,13 +128,14 @@ type service struct {
 	repo                        automaticFormationAssignmentRepository
 	runtimeRepo                 runtimeRepository
 	runtimeContextRepo          runtimeContextRepository
+	formationAssignmentService  formationAssignmentService
+	notificationsService        NotificationsService
 	runtimeTypeLabelKey         string
 	applicationTypeLabelKey     string
-	notificationsService        NotificationsService
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		labelDefRepository:          labelDefRepository,
 		labelRepository:             labelRepository,
@@ -154,9 +147,10 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		uuidService:                 uuidService,
 		tenantSvc:                   tenantSvc,
 		repo:                        asaRepo,
-		notificationsService:        notificationsService,
 		runtimeRepo:                 runtimeRepo,
 		runtimeContextRepo:          runtimeContextRepo,
+		formationAssignmentService:  formationAssignmentService,
+		notificationsService:        notificationsService,
 		runtimeTypeLabelKey:         runtimeTypeLabelKey,
 		applicationTypeLabelKey:     applicationTypeLabelKey,
 	}
@@ -273,15 +267,28 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if err != nil {
 			return nil, err
 		}
+
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
-		err = s.notificationsService.SendNotifications(ctx, requests)
+
+		responses, err := s.notificationsService.SendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
 		}
+
+		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, responses, s.formationAssignmentService.CreateOrUpdateFormationAssignment); err != nil {
+			return nil, err
+		}
+
 		return formationFromDB, nil
+
 	case graphql.FormationObjectTypeTenant:
 		targetTenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
@@ -291,7 +298,9 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if _, err = s.CreateAutomaticScenarioAssignment(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, targetTenantID)); err != nil {
 			return nil, err
 		}
+
 		return s.getFormationByName(ctx, formation.Name, tnt)
+
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
@@ -394,14 +403,26 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
+
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
-		err = s.notificationsService.SendNotifications(ctx, requests)
+
+		responses, err := s.notificationsService.SendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
 		}
+
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+		}
+
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+			return nil, err
+		}
+
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
@@ -416,7 +437,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+		if err = s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				return formationFromDB, nil
 			}
@@ -427,11 +448,23 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
-		err = s.notificationsService.SendNotifications(ctx, requests)
+
+		responses, err := s.notificationsService.SendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
 		}
+
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+		}
+
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+			return nil, err
+		}
+
 		return formationFromDB, nil
+
 	case graphql.FormationObjectTypeTenant:
 		asa, err := s.asaService.GetForScenarioName(ctx, formation.Name)
 		if err != nil {

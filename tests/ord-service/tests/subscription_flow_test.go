@@ -135,6 +135,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-subscription-cn", -1),
 		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
 	}
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate

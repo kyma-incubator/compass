@@ -5,10 +5,9 @@ go 1.18
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220930113935-7c21c8e9cc8d
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221006144530-844f804814b8
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220718091245-0570e3e974e0
@@ -50,7 +49,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 // indirect
-	github.com/lib/pq v1.10.4 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
