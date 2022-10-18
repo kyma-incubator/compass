@@ -910,6 +910,7 @@ func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *gr
 
 // Bundles missing godoc
 func (r *applicationResolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
+	*first = 600
 	return r.app.Bundles(ctx, obj, first, after)
 }
 
