@@ -262,33 +262,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
-	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime:
-		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
-		if err != nil {
-			return nil, err
-		}
-		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
-		if err != nil {
-			return nil, err
-		}
-
-		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
-		if err != nil {
-			return nil, err
-		}
-
-		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
-		}
-
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
-			log.C(ctx).Errorf("Error occured while processing formationAssignments %s", err.Error())
-			return nil, err
-		}
-
-		return formationFromDB, nil
-	case graphql.FormationObjectTypeRuntimeContext:
+	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
 		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
 		if err != nil {
 			return nil, err

@@ -114,6 +114,12 @@ func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
 	return &automock.RuntimeContextRepository{}
 }
 
+func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {
+	repo := &automock.RuntimeContextRepository{}
+	repo.On("ListByIDs", mock.Anything, Tnt, []string{}).Return(nil, nil).Once()
+	return repo
+}
+
 func unusedApplicationRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}
 }
