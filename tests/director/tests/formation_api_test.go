@@ -1483,10 +1483,10 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
-		applicationType := "app-type-1"
+		applicationType := "provider-app-type-1"
 		appRegion := "test-app-region"
 		appNamespace := "compass.test"
-		localTenantID := "local-tenant-id"
+		localTenantID := "local-tenant-id-test"
 		t.Logf("Create application template for type %q", applicationType)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name:        applicationType,
@@ -1529,7 +1529,11 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 			TemplateName: applicationType, Values: []*graphql.TemplateValueInput{
 				{
 					Placeholder: "name",
-					Value:       "app-rtctx-to-app-formation-notifications-tests",
+					Value:       "rtctx-to-app-notifications-tests",
+				},
+				{
+					Placeholder: "display-name",
+					Value:       "App test",
 				},
 			},
 		}
@@ -1582,9 +1586,9 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
+		assertNotificationsCountForTenant(t, body, localTenantID, 1)
 
-		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
+		notificationsForConsumerTenant := gjson.GetBytes(body, localTenantID)
 		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
 		assertFormationNotificationForApplication(t, assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
 
@@ -1596,9 +1600,9 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
+		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 
-		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
+		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
 
 		/*unassignApplicationNotificationFound := false
 		for _, notification := range notificationsForConsumerTenant.Array() {
@@ -1620,9 +1624,9 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 3)
+		assertNotificationsCountForTenant(t, body, localTenantID, 3)
 
-		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
+		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
 		/*
 			expectedNumberOfAssignNotifications := 0
 			for _, notification := range notificationsForConsumerTenant.Array() {
@@ -1645,9 +1649,9 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 4)
+		assertNotificationsCountForTenant(t, body, localTenantID, 4)
 
-		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
+		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
 		/*
 			expectedNumberOfUnassignNotifications := 0
 			for _, notification := range notificationsForConsumerTenant.Array() {
@@ -1756,7 +1760,7 @@ func assertSeveralFormationNotifications(t *testing.T, notificationsForConsumerT
 func assertFormationNotificationForApplication(t *testing.T, notification gjson.Result, op string, formationID string, expectedObjectID string, expectedSubscribedTenantID string, expectedObjectRegion string) {
 	require.Equal(t, op, notification.Get("Operation").String())
 	if op == "unassign" {
-		require.Equal(t, expectedObjectID, notification.Get("RuntimeContextID").String())
+		require.Equal(t, expectedObjectID, notification.Get("ApplicationID").String())
 	}
 	require.Equal(t, formationID, notification.Get("RequestBody.ucl-formation-id").String())
 
