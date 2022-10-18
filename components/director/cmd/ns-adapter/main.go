@@ -49,7 +49,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/handler"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/nsmodel"
-	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -295,7 +294,7 @@ func exitOnError(err error, context string) {
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, transact persistence.Transactioner) error {
-	var systemToTemplateMappings []systemfetcher.TemplateMapping
+	var systemToTemplateMappings []nsmodel.TemplateMapping
 	if err := json.Unmarshal([]byte(cfg.SystemToTemplateMappings), &systemToTemplateMappings); err != nil {
 		return errors.Wrap(err, "failed to read system template mappings")
 	}

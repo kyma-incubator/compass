@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
@@ -55,14 +57,21 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	mock, url := fixHTTPClient(t)
 	mock.bodiesToReturn = [][]byte{systemsJSON}
-	mock.expectedFilterCriteria = "filter1"
+	mock.expectedFilterCriteria = ""
+
+	sourceKey := "key"
+	labelFilter := "templateProp"
+
+	systemfetcher.SystemSourceKey = sourceKey
+	systemfetcher.ApplicationTemplateLabelFilter = labelFilter
 
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
 		Endpoint:        url + "/fetch",
-		FilterCriteria:  "filter1",
+		FilterCriteria:  "%s",
 		PageSize:        4,
 		PagingSkipParam: "$skip",
 		PagingSizeParam: "$top",
+		SystemSourceKey: sourceKey,
 	}, mock.httpClient)
 
 	t.Run("Success", func(t *testing.T) {
@@ -75,11 +84,19 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Success with template mappings", func(t *testing.T) {
-		systemfetcher.Mappings = []systemfetcher.TemplateMapping{
+		mock.expectedFilterCriteria = " key eq 'type1' "
+
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
-				ID:          "type1",
-				SourceKey:   []string{"templateProp"},
-				SourceValue: []string{"type1"},
+				AppTemplate: &model.ApplicationTemplate{
+					ID: "type1",
+				},
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: "type1",
+					},
+				},
 			},
 		}
 		mock.bodiesToReturn = [][]byte{[]byte(`[{
@@ -87,13 +104,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type1"
+			"key": "type1"
 		}, {
 			"displayName": "name2",
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type2"
+			"key": "type2"
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
@@ -105,13 +122,22 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Success for more than one page", func(t *testing.T) {
-		systemfetcher.Mappings = []systemfetcher.TemplateMapping{
+		mock.expectedFilterCriteria = " key eq 'type1' "
+
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
-				ID:          "type1",
-				SourceKey:   []string{"templateProp"},
-				SourceValue: []string{"type1"},
+				AppTemplate: &model.ApplicationTemplate{
+					ID: "type1",
+				},
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: "type1",
+					},
+				},
 			},
 		}
+
 		mock.bodiesToReturn = [][]byte{
 			[]byte(fourSystemsResp),
 			[]byte(`[{
@@ -119,7 +145,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type1"
+			"key": "type1"
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 2
@@ -129,44 +155,61 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
-		systemfetcher.Mappings = []systemfetcher.TemplateMapping{
+		mock.expectedFilterCriteria = " key eq 'type1' or key eq 'type2' or key eq 'type3' "
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
 			{
-				Name:        "type1",
-				ID:          "type1",
-				SourceKey:   []string{"templateProp"},
-				SourceValue: []string{"type1"},
+				AppTemplate: &model.ApplicationTemplate{
+					ID: "type1",
+				},
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: "type1",
+					},
+				},
 			},
 			{
-				Name:        "type2",
-				ID:          "type2",
-				SourceKey:   []string{"templateProp"},
-				SourceValue: []string{"type2"},
+				AppTemplate: &model.ApplicationTemplate{
+					ID: "type2",
+				},
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: "type2",
+					},
+				},
 			},
 			{
-				Name:        "type3",
-				ID:          "type3",
-				SourceKey:   []string{"templateProp"},
-				SourceValue: []string{"type3"},
+				AppTemplate: &model.ApplicationTemplate{
+					ID: "type3",
+				},
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: "type3",
+					},
+				},
 			},
 		}
+
 		mock.bodiesToReturn = [][]byte{[]byte(`[{
 			"displayName": "name1",
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type1"
+			"key": "type1"
 		}, {
 			"displayName": "name2",
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type2"
+			"key": "type2"
 		}, {
 			"displayName": "name3",
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type4"
+			"key": "type4"
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
