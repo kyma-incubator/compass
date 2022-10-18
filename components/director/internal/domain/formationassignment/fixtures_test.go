@@ -11,14 +11,16 @@ import (
 )
 
 const (
-	TestID          = "c861c3db-1265-4143-a05c-1ced1291d816"
-	TestFormationID = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
-	TestTenantID    = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
-	TestSource      = "05e10560-2259-4adf-bb3e-6aee0518f573"
-	TestSourceType  = "application"
-	TestTarget      = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
-	TestTargetType  = "runtimeContext"
-	TestState       = "INITIAL"
+	TestID               = "c861c3db-1265-4143-a05c-1ced1291d816"
+	TestFormationID      = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
+	TestTenantID         = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
+	TestSource           = "05e10560-2259-4adf-bb3e-6aee0518f573"
+	TestSourceType       = "application"
+	TestTarget           = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
+	TestTargetType       = "runtimeContext"
+	TestState            = "INITIAL"
+	TestWebhookID        = "eca98d44-aac0-4e44-898b-c394beab2e94"
+	TestReverseWebhookID = "aecec253-b4d8-416a-be5c-a27677ee5157"
 )
 
 var (
@@ -134,7 +136,7 @@ func fixUUIDService() *automock.UIDService {
 }
 
 func fixFormationAssignment() *model.FormationAssignment {
-	return &model.FormationAssignment{Source: "source"}
+	return &model.FormationAssignment{Source: "source", Target: "target"}
 }
 
 func fixFormationAssignmentWithID(id string) *model.FormationAssignment {
@@ -161,9 +163,45 @@ func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.Noti
 	}
 }
 
+func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.NotificationRequest) *formationassignment.AssignmentMappingPair {
+	return &formationassignment.AssignmentMappingPair{
+		Assignment: &formationassignment.FormationAssignmentRequestMapping{
+			Request:             req,
+			FormationAssignment: assignment,
+		},
+		ReverseAssignment: nil,
+	}
+}
+
+func fixFormationAssignmentWithConfigAndState(assignment *model.FormationAssignment, state model.FormationAssignmentState, value json.RawMessage) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          assignment.ID,
+		FormationID: assignment.FormationID,
+		TenantID:    assignment.TenantID,
+		Source:      assignment.Source,
+		SourceType:  assignment.SourceType,
+		Target:      assignment.Target,
+		TargetType:  assignment.TargetType,
+		State:       string(state),
+		Value:       value,
+	}
+}
+
+func fixFormationAssignmentWithConfigAndStateInput(assignment *model.FormationAssignmentInput, state model.FormationAssignmentState, value json.RawMessage) *model.FormationAssignmentInput {
+	return &model.FormationAssignmentInput{
+		FormationID: assignment.FormationID,
+		Source:      assignment.Source,
+		SourceType:  assignment.SourceType,
+		Target:      assignment.Target,
+		TargetType:  assignment.TargetType,
+		State:       string(state),
+		Value:       value,
+	}
+}
+
 func fixFormationAssignmentsWithObjectTypeAndID(objectType graphql.FormationObjectType, objectID, appID, rtmID, rtmCtxID string) []*model.FormationAssignment {
 	return []*model.FormationAssignment{
-		&model.FormationAssignment{
+		{
 			ID:          "ID1",
 			FormationID: "ID",
 			TenantID:    TestTenantID,
@@ -174,7 +212,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType graphql.FormationObje
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			ID:          "ID2",
 			FormationID: "ID",
 			TenantID:    TestTenantID,
@@ -185,7 +223,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType graphql.FormationObje
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			ID:          "ID3",
 			FormationID: "ID",
 			TenantID:    TestTenantID,
@@ -196,7 +234,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType graphql.FormationObje
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			ID:          "ID4",
 			FormationID: "ID",
 			TenantID:    TestTenantID,
@@ -207,7 +245,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType graphql.FormationObje
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			ID:          "ID5",
 			FormationID: "ID",
 			TenantID:    TestTenantID,
@@ -218,7 +256,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType graphql.FormationObje
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			ID:          "ID6",
 			FormationID: "ID",
 			TenantID:    TestTenantID,

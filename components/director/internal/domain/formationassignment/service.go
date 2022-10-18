@@ -380,17 +380,16 @@ func (s *service) UpdateFormationAssignment(ctx context.Context, mappingPair *As
 func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPair, depth int) error {
 	assignment := mappingPair.Assignment.FormationAssignment
 
+	if assignment.State == string(model.ReadyAssignmentState) {
+		return nil
+	}
+
 	if mappingPair.Assignment.Request == nil {
 		assignment.State = string(model.ReadyAssignmentState)
 		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
 		log.C(ctx).Infof("Assignment with ID %s was updated with %s state", assignment.ID, assignment.State)
-		return nil
-	}
-
-	// TODO Check for config pending?
-	if assignment.State == string(model.ReadyAssignmentState) {
 		return nil
 	}
 
@@ -419,7 +418,7 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
 		assignment.State = string(model.ReadyAssignmentState)
-		assignment.Value = json.RawMessage{}
+		assignment.Value = nil
 	}
 
 	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
@@ -447,9 +446,13 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		// 2. s4 -> em; resp: config1; config pending -> recursion depth++
 		// 3. set config1 to 1. and resend; resp: config2; ready -> recursion depth++
 		// 4. set config2 to 2. and resend; resp: ready -> дъно
-		if depth >= 10 {
+		if depth >= model.NotificationRecursionDepthLimit {
 			//TODO clarify message
 			log.C(ctx).Errorf("Depth limit exceeded for assignments: %q and %q", mappingPair.Assignment.FormationAssignment.ID, mappingPair.ReverseAssignment.FormationAssignment.ID)
+			return nil
+		}
+
+		if mappingPair.ReverseAssignment == nil {
 			return nil
 		}
 

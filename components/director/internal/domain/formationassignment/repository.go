@@ -183,7 +183,7 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 // ListForIDs missing godoc
 func (r *repository) ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error) {
 	if len(ids) == 0 {
-		return []*model.FormationAssignment{}, nil
+		return nil, nil
 	}
 	var entitiesWithIDs EntityCollection
 	conditions := repo.NewInConditionForStringValues("id", ids)

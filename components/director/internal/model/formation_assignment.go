@@ -53,6 +53,8 @@ const (
 	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 )
 
+const NotificationRecursionDepthLimit int = 10
+
 // ToModel converts FormationAssignmentInput to FormationAssignment
 func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssignment {
 	if i == nil {
