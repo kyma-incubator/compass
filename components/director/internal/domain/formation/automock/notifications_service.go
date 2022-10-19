@@ -11,8 +11,6 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
-
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -37,29 +35,6 @@ func (_m *NotificationsService) GenerateNotifications(ctx context.Context, tenan
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) error); ok {
 		r1 = rf(ctx, tenant, objectID, _a3, operation, objectType)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// SendNotifications provides a mock function with given fields: ctx, notifications
-func (_m *NotificationsService) SendNotifications(ctx context.Context, notifications []*webhookclient.NotificationRequest) ([]*webhook.Response, error) {
-	ret := _m.Called(ctx, notifications)
-
-	var r0 []*webhook.Response
-	if rf, ok := ret.Get(0).(func(context.Context, []*webhookclient.NotificationRequest) []*webhook.Response); ok {
-		r0 = rf(ctx, notifications)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhook.Response)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*webhookclient.NotificationRequest) error); ok {
-		r1 = rf(ctx, notifications)
 	} else {
 		r1 = ret.Error(1)
 	}

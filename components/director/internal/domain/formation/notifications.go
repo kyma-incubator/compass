@@ -3,8 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -91,30 +89,10 @@ func (ns *notificationsService) GenerateNotifications(ctx context.Context, tenan
 	}
 }
 
-func (ns *notificationsService) SendNotifications(ctx context.Context, notifications []*webhookclient.NotificationRequest) ([]*webhookdir.Response, error) {
-	log.C(ctx).Infof("Sending %d notifications", len(notifications))
-	var errs *multierror.Error
-	responses := make([]*webhookdir.Response, 0, len(notifications))
-	for i, notification := range notifications {
-		log.C(ctx).Infof("Sending notification %d out of %d for webhook with ID %s", i+1, len(notifications), notification.Webhook.ID)
-		resp, err := ns.webhookClient.Do(ctx, notification)
-		if err != nil {
-			errorMsg := fmt.Sprintf("Failed while executing webhook with ID %q and type %q", notification.Webhook.ID, notification.Webhook.Type)
-			log.C(ctx).Warn(errorMsg)
-			errs = multierror.Append(errs, errors.Wrapf(err, "while executing webhook with ID %s", notification.Webhook.ID))
-			resp = &webhookdir.Response{
-				Error: &errorMsg,
-			}
-			responses = append(responses, resp)
-			continue
-		}
-		responses = append(responses, resp)
-		log.C(ctx).Infof("Successfully sent notification %d out of %d for webhook with %s", i+1, len(notifications), notification.Webhook.ID)
-	}
-	return responses, errs.ErrorOrNil()
-}
-
 func (ns *notificationsService) SendNotification(ctx context.Context, notification *webhookclient.NotificationRequest) (*webhookdir.Response, error) {
+	if notification == nil {
+		return nil, nil
+	}
 	resp, err := ns.webhookClient.Do(ctx, notification)
 	if err != nil && resp != nil && resp.Error != nil && *resp.Error != "" {
 		return resp, nil
