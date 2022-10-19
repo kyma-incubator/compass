@@ -1246,7 +1246,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 
 	for _, testApp := range applications {
-		applicationInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks(testApp.ApplicationName)
+		applicationInput := fixtures.FixSampleApplicationRegisterInput(testApp.ApplicationName)
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
 		require.NoError(t, err)
@@ -1395,7 +1395,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	applicationHideSelectorValue := "applicationHideSelectorValue"
 
 	for _, testApp := range applications {
-		applicationInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks(testApp.ApplicationName)
+		applicationInput := fixtures.FixSampleApplicationRegisterInput(testApp.ApplicationName)
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
 		if testApp.Hidden {
 			(applicationInput.Labels)[applicationHideSelectorKey] = applicationHideSelectorValue

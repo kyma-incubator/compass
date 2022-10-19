@@ -25,18 +25,25 @@ type ORDConfigSecurity struct {
 }
 
 func FixSampleApplicationRegisterInputWithName(placeholder, name string) graphql.ApplicationRegisterInput {
-	sampleInput := FixSampleApplicationRegisterInput(placeholder)
+	sampleInput := FixSampleApplicationRegisterInputWithLabels(placeholder)
 	sampleInput.Name = name
 	return sampleInput
 }
 
 func FixSampleApplicationRegisterInputWithBaseURL(placeholder, baseURL string) graphql.ApplicationRegisterInput {
-	sampleInput := FixSampleApplicationRegisterInput(placeholder)
+	sampleInput := FixSampleApplicationRegisterInputWithLabels(placeholder)
 	sampleInput.BaseURL = &baseURL
 	return sampleInput
 }
 
 func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
+	return graphql.ApplicationRegisterInput{
+		Name:         placeholder,
+		ProviderName: ptr.String("compass"),
+	}
+}
+
+func FixSampleApplicationRegisterInputWithLabels(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
 		ProviderName: ptr.String("compass"),
