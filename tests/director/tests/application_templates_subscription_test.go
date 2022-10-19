@@ -397,7 +397,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			expectedBaseURL := fmt.Sprintf(baseURLTemplate, conf.SubscriptionConfig.SelfRegisterSubdomainPlaceholderValue, conf.SubscriptionConfig.SelfRegRegion)
 
 			// WHEN
-			//defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplateWithOptionalPlaceholders.ID, appTemplateWithOptionalPlaceholders.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, conf.TestProviderSubaccountIDRegion2)
 
 			// THEN
