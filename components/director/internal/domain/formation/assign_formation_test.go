@@ -3,6 +3,7 @@ package formation_test
 import (
 	"context"
 	"fmt"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -40,6 +41,14 @@ func TestServiceAssignFormation(t *testing.T) {
 		RuntimeType:      runtimeType,
 		ApplicationTypes: []string{applicationType},
 	}
+	notifications := []*webhookclient.NotificationRequest{{
+		Webhook: graphql.Webhook{
+			ID: "wid1",
+		},
+	}}
+	formationAssignments := []*model.FormationAssignment{{
+		ID: "faid1",
+	}}
 
 	inputSecondFormation := model.Formation{
 		Name: secondTestFormationName,
@@ -233,11 +242,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeApplication).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(formationAssignments, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments, map[string]string{}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -266,11 +279,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeApplication).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(formationAssignments, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments, map[string]string{}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -311,11 +328,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeApplication).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(formationAssignments, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments, map[string]string{}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -349,11 +370,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeID, graphql.FormationObjectTypeRuntime, expectedFormation).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeID, graphql.FormationObjectTypeRuntime, expectedFormation).Return(formationAssignments, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments, map[string]string{}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -382,11 +407,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeID, graphql.FormationObjectTypeRuntime, expectedFormation).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeID, graphql.FormationObjectTypeRuntime, expectedFormation).Return(formationAssignments, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments, map[string]string{}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -416,6 +445,17 @@ func TestServiceAssignFormation(t *testing.T) {
 				}).Return(nil)
 				return labelService
 			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return(notifications, nil).Once()
+				return notificationSvc
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeID, graphql.FormationObjectTypeRuntime, expectedFormation).Return(formationAssignments, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments, map[string]string{}, notifications, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
@@ -426,13 +466,6 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
-			},
-			NotificationServiceFN: noActionNotificationsService,
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeID, graphql.FormationObjectTypeRuntime, expectedFormation).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
 			ObjectID:           RuntimeID,
@@ -470,11 +503,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, RuntimeContextID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeContextID, graphql.FormationObjectTypeRuntimeContext, expectedFormation).Return(assignments, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, assignments, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, assignments, map[string]string{RuntimeContextRuntimeID: RuntimeID}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -508,11 +545,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, RuntimeContextID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeContextID, graphql.FormationObjectTypeRuntimeContext, expectedFormation).Return(assignments, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, assignments, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, assignments, map[string]string{RuntimeContextRuntimeID: RuntimeID}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -522,7 +563,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "success for runtime with new formation",
+			Name: "success for runtime context with new formation",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
@@ -558,11 +599,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, RuntimeContextID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeContextID, graphql.FormationObjectTypeRuntimeContext, expectedFormation).Return(assignments, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, assignments, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, assignments, map[string]string{RuntimeContextRuntimeID: RuntimeID}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1371,11 +1416,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeApplication).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(testErr)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(formationAssignments, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments, map[string]string{}, notifications, mock.Anything).Return(testErr)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -1510,7 +1559,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error for application if processing formation assignments fails",
+			Name: "error for runtime context if processing formation assignments fails",
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID())
@@ -1526,7 +1575,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("GetByID", ctx, Tnt, RuntimeContextID).Return(runtimeContext, nil).Once()
-				repo.On("ListByIDs", ctx, Tnt, []string{}).Return(nil, nil).Once()
+				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextID}).Return(nil, nil).Once()
 				return repo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -1539,11 +1588,15 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, Tnt, RuntimeContextID, expectedFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return(notifications, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeContextID, graphql.FormationObjectTypeRuntimeContext, expectedFormation).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(testErr)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, Tnt, RuntimeContextID, graphql.FormationObjectTypeRuntimeContext, expectedFormation).Return(assignments, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, assignments, map[string]string{}, notifications, mock.Anything).Return(testErr)
 				return formationAssignmentSvc
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
