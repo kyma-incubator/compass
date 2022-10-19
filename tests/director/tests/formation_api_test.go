@@ -1615,11 +1615,22 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
+		//list assignments - expect 0
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
+
+		//list assignments - expect 2
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			app.ID:   {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("null")}},
+			rtCtx.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
+		}
+
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
 
 		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
@@ -1655,6 +1666,9 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
+		//list assignments - expect 0
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 
@@ -1667,6 +1681,14 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &secondAssignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
+
+		//list assignments - expect 2
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			app.ID:   {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("null")}},
+			rtCtx.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
+		}
+
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, localTenantID, 3)
