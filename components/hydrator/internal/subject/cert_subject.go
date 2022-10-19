@@ -56,9 +56,12 @@ func (s *subjectConsumerTypeMapping) validate() error {
 	}
 
 	supportedTenantTypes := map[string]bool{
-		string(tenantEntity.Customer):   true,
-		string(tenantEntity.Account):    true,
-		string(tenantEntity.Subaccount): true,
+		string(tenantEntity.Customer):      true,
+		string(tenantEntity.Account):       true,
+		string(tenantEntity.Subaccount):    true,
+		string(tenantEntity.Organization):  true,
+		string(tenantEntity.Folder):        true,
+		string(tenantEntity.ResourceGroup): true,
 	}
 
 	if !supportedConsumerTypes[s.ConsumerType] {

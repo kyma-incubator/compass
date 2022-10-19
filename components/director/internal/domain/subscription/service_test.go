@@ -27,9 +27,10 @@ import (
 )
 
 const (
-	uuid                = "647af599-7f2d-485c-a63b-615b5ff6daf1"
-	tenantRegion        = "eu-1"
-	subscriptionAppName = "subscription-app-name-value"
+	uuid                   = "647af599-7f2d-485c-a63b-615b5ff6daf1"
+	tenantRegion           = "eu-1"
+	tenantRegionWithPrefix = subscription.RegionPrefix + tenantRegion
+	subscriptionAppName    = "subscription-app-name-value"
 
 	regionalTenantSubdomain    = "myregionaltenant"
 	subaccountTenantExtID      = "32468d6e-f4cc-453c-beca-28c7bf55e0dd"
@@ -46,6 +47,7 @@ const (
 	consumerSubaccountLabelKey     = "global_subaccount_id"
 	subscriptionLabelKey           = "subscription"
 	subscriptionAppNameLabelKey    = "runtimeType"
+	tntSubdomain                   = "subdomain1"
 )
 
 var (
@@ -53,6 +55,10 @@ var (
 	notFoundErr            = apperrors.NewNotFoundErrorWithType(resource.Runtime)
 	notFoundAppTemplateErr = apperrors.NewNotFoundErrorWithType(resource.ApplicationTemplate)
 
+	regionalAndSubscriptionFiltersWithPrefix = []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(subscriptionProviderIDLabelKey, fmt.Sprintf("\"%s\"", subscriptionProviderID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", tenantRegionWithPrefix)),
+	}
 	regionalAndSubscriptionFilters = []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(subscriptionProviderIDLabelKey, fmt.Sprintf("\"%s\"", subscriptionProviderID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", tenantRegion)),
@@ -78,6 +84,12 @@ var (
 		Value:      subaccountTenantExtID,
 		ObjectID:   runtimeCtxID,
 		ObjectType: model.RuntimeContextLabelableObject,
+	}
+
+	subdomainLabel = &model.Label{
+		Key:        subscription.SubdomainLabelKey,
+		Value:      tntSubdomain,
+		ObjectType: model.TenantLabelableObject,
 	}
 )
 
@@ -685,7 +697,8 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 	jsonAppCreateInput := fixJSONApplicationCreateInput(appTmplAppName)
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(appTmplID, appTmplName, jsonAppCreateInput)
-	modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName)
+	modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName, tntSubdomain, tenantRegion)
+	modelAppFromTemplateInputWithEmptySubdomain := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName, "", tenantRegion)
 	gqlAppCreateInput := fixGQLApplicationCreateInput(appTmplName)
 	modelAppCreateInput := fixModelApplicationCreateInput(appTmplName)
 	modelAppCreateInputWithLabels := fixModelApplicationCreateInputWithLabels(appTmplName, subaccountTenantExtID)
@@ -710,10 +723,10 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 	}{
 		{
 			Name:   "Succeeds",
-			Region: tenantRegion,
+			Region: tenantRegionWithPrefix,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFilters).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -736,10 +749,15 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 				return appSvc
 			},
-			LabelServiceFn: unusedLabelSvc,
-			UIDServiceFn:   unusedUUIDSvc,
-			IsSuccessful:   true,
-			Repeats:        1,
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(subdomainLabel, nil).Once()
+
+				return lblSvc
+			},
+			UIDServiceFn: unusedUUIDSvc,
+			IsSuccessful: true,
+			Repeats:      1,
 		},
 		{
 			Name:   "Returns an error when can't find internal consumer tenant",
@@ -809,7 +827,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			Repeats:        1,
 		},
 		{
-			Name:   "Returns an error when fails finding app template",
+			Name:   "Returns an error when fails to find an app template",
 			Region: tenantRegion,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
@@ -843,6 +861,83 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			Repeats:             1,
 		},
 		{
+			Name:   "Returns an error when fails to get subdomain label",
+			Region: tenantRegion,
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFilters).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.AssertNotCalled(t, "PrepareApplicationCreateInputJSON")
+				return appTemplateSvc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
+				return tenantSvc
+			},
+			AppConverterFn: func() *automock.ApplicationConverter {
+				appConv := &automock.ApplicationConverter{}
+				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
+
+				return appConv
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(subaccountTenantInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.AssertNotCalled(t, "CreateFromTemplate")
+
+				return appSvc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(nil, testError).Once()
+
+				return lblSvc
+			},
+			UIDServiceFn:        unusedUUIDSvc,
+			ExpectedErrorOutput: testError.Error(),
+			IsSuccessful:        false,
+			Repeats:             1,
+		},
+		{
+			Name:   "Success with empty subdomain value when it is missing",
+			Region: tenantRegionWithPrefix,
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInputWithEmptySubdomain.Values).Return(jsonAppCreateInput, nil).Once()
+				return appTemplateSvc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
+				return tenantSvc
+			},
+			AppConverterFn: func() *automock.ApplicationConverter {
+				appConv := &automock.ApplicationConverter{}
+				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
+
+				return appConv
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(subaccountTenantInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.On("CreateFromTemplate", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
+
+				return appSvc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Label)).Once()
+
+				return lblSvc
+			},
+			UIDServiceFn: unusedUUIDSvc,
+			IsSuccessful: true,
+			Repeats:      1,
+		},
+		{
 			Name:   "Returns an error when preparing application input json",
 			Region: tenantRegion,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
@@ -871,7 +966,12 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 				return appSvc
 			},
-			LabelServiceFn:      unusedLabelSvc,
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(subdomainLabel, nil).Once()
+
+				return lblSvc
+			},
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
@@ -906,7 +1006,12 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 				return appSvc
 			},
-			LabelServiceFn:      unusedLabelSvc,
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(subdomainLabel, nil).Once()
+
+				return lblSvc
+			},
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
@@ -938,7 +1043,12 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 				return appSvc
 			},
-			LabelServiceFn:      unusedLabelSvc,
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(subdomainLabel, nil).Once()
+
+				return lblSvc
+			},
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
@@ -970,7 +1080,12 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				appSvc.On("CreateFromTemplate", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, &appTmplID).Return("", testError).Once()
 				return appSvc
 			},
-			LabelServiceFn:      unusedLabelSvc,
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(subdomainLabel, nil).Once()
+
+				return lblSvc
+			},
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
@@ -1005,10 +1120,15 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 				return appSvc
 			},
-			LabelServiceFn: unusedLabelSvc,
-			UIDServiceFn:   unusedUUIDSvc,
-			IsSuccessful:   true,
-			Repeats:        repeats,
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.AssertNotCalled(t, "GetByKey")
+
+				return lblSvc
+			},
+			UIDServiceFn: unusedUUIDSvc,
+			IsSuccessful: true,
+			Repeats:      repeats,
 		},
 	}
 

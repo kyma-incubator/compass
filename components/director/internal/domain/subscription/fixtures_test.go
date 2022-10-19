@@ -2,7 +2,6 @@ package subscription_test
 
 import (
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -19,7 +18,7 @@ var (
 )
 
 func fixJSONApplicationCreateInput(name string) string {
-	return fmt.Sprintf(`{"name": "%s", "providerName": "%s", "description": "%s", "healthCheckURL": "%s"}`, name, testProviderName, testDescription, testURL)
+	return fmt.Sprintf(`{"name": "%s", "providerName": "%s", "description": "%s", "healthCheckURL": "%s", baseURL:"https://{{subdomain}}.{{region}}.com"}`, name, testProviderName, testDescription, testURL)
 }
 
 func fixModelAppTemplateWithAppInputJSON(id, name, appInputJSON string) *model.ApplicationTemplate {
@@ -79,12 +78,14 @@ func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	}
 }
 
-func fixModelApplicationFromTemplateInput(name, subscribedAppName string) model.ApplicationFromTemplateInput {
+func fixModelApplicationFromTemplateInput(name, subscribedAppName, subdomain, region string) model.ApplicationFromTemplateInput {
 	return model.ApplicationFromTemplateInput{
 		TemplateName: name,
 		Values: []*model.ApplicationTemplateValueInput{
 			{Placeholder: "name", Value: subscribedAppName},
 			{Placeholder: "display-name", Value: subscribedAppName},
+			{Placeholder: "subdomain", Value: subdomain},
+			{Placeholder: "region", Value: region},
 		},
 	}
 }
