@@ -113,7 +113,7 @@ func (s *service) ListsByExternalIDs(ctx context.Context, ids []string) ([]*mode
 	return s.tenantMappingRepo.ListByExternalTenants(ctx, ids)
 }
 
-// List returns all tenants present in the Compass storage.
+// ListPageBySearchTerm returns all tenants present in the Compass storage.
 func (s *service) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
 	return s.tenantMappingRepo.ListPageBySearchTerm(ctx, searchTerm, pageSize, cursor)
 }
