@@ -819,6 +819,132 @@ func TestResolver_Write(t *testing.T) {
 	}
 }
 
+func TestResolver_WriteSingle(t *testing.T) {
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	tenantName := "name1"
+	tenantExternalTenant := "external1"
+	tenantParent := ""
+	tenantSubdomain := "subdomain"
+	tenantRegion := "region"
+	tenantProvider := "test"
+	tenantID := "2af44425-d02d-4aed-9086-b0fc3122b508"
+
+	tenantToUpsertGQL := graphql.BusinessTenantMappingInput{
+		Name:           tenantName,
+		ExternalTenant: tenantExternalTenant,
+		Parent:         str.Ptr(tenantParent),
+		Subdomain:      str.Ptr(tenantSubdomain),
+		Region:         str.Ptr(tenantRegion),
+		Type:           string(tnt.Account),
+		Provider:       tenantProvider,
+	}
+	tenantToUpsertModel := model.BusinessTenantMappingInput{
+		Name:           tenantName,
+		ExternalTenant: tenantExternalTenant,
+		Parent:         tenantParent,
+		Subdomain:      tenantSubdomain,
+		Region:         tenantRegion,
+		Type:           string(tnt.Account),
+		Provider:       tenantProvider,
+	}
+
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn    func() *automock.BusinessTenantMappingService
+		TenantConvFn   func() *automock.BusinessTenantMappingConverter
+		TenantsInput   graphql.BusinessTenantMappingInput
+		ExpectedError  error
+		ExpectedResult string
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := unusedTenantService()
+				tenantSvc.On("UpsertSingle", txtest.CtxWithDBMatcher(), tenantToUpsertModel).Return(tenantID, nil).Once()
+				return tenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				tenantConv := &automock.BusinessTenantMappingConverter{}
+				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				return tenantConv
+			},
+			TenantsInput:   tenantToUpsertGQL,
+			ExpectedError:  nil,
+			ExpectedResult: tenantID,
+		},
+		{
+			Name:           "Returns error when can not start transaction",
+			TxFn:           txGen.ThatFailsOnBegin,
+			TenantSvcFn:    unusedTenantService,
+			TenantConvFn:   unusedTenantConverter,
+			TenantsInput:   tenantToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: "",
+		},
+		{
+			Name: "Error when upserting",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := unusedTenantService()
+				tenantSvc.On("UpsertSingle", txtest.CtxWithDBMatcher(), tenantToUpsertModel).Return("", testError).Once()
+				return tenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				tenantConv := &automock.BusinessTenantMappingConverter{}
+				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				return tenantConv
+			},
+			TenantsInput:   tenantToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: "",
+		},
+		{
+			Name: "Returns error when fails to commit",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := &automock.BusinessTenantMappingService{}
+				tenantSvc.On("UpsertSingle", txtest.CtxWithDBMatcher(), tenantToUpsertModel).Return(tenantID, nil).Once()
+				return tenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				tenantConv := &automock.BusinessTenantMappingConverter{}
+				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				return tenantConv
+			},
+			TenantsInput:   tenantToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: "",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			tenantConv := testCase.TenantConvFn()
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+
+			// WHEN
+			result, err := resolver.WriteSingle(ctx, testCase.TenantsInput)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+		})
+	}
+}
+
 func TestResolver_Delete(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
