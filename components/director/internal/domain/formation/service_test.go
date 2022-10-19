@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/pkg/errors"
 
@@ -706,6 +707,40 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			Name: rtmNames[2],
 		},
 	}
+	formationAssignments := []*model.FormationAssignment{
+		{
+			ID:          "fa1",
+			FormationID: FormationID,
+			Source:      "1",
+		},
+		{
+			ID:          "fa2",
+			FormationID: FormationID,
+			Source:      "123",
+		},
+		{
+			ID:          "fa3",
+			FormationID: FormationID,
+			Source:      "2",
+		},
+	}
+	notifications := []*webhookclient.NotificationRequest{
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid1",
+			},
+		},
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid2",
+			},
+		},
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid3",
+			},
+		},
+	}
 	ownedRuntimes := []*model.Runtime{runtimes[0], runtimes[1]}
 
 	runtimeLblInputs := []*model.LabelInput{
@@ -869,12 +904,23 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 
 				return runtimeContextRepo
 			},
-			LabelRepoFN:           unusedLabelRepo,
-			NotificationServiceFN: noActionNotificationsService,
+			LabelRepoFN: unusedLabelRepo,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[0].ID, &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[0]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[1].ID, &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[2]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmContexts[0].ID, graphql.FormationObjectTypeRuntimeContext, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[0]}, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmIDs[0], graphql.FormationObjectTypeRuntime, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[1]}, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmContexts[1].ID, graphql.FormationObjectTypeRuntimeContext, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[2]}, nil).Once()
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[2]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[2]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -942,11 +988,19 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 
 				return runtimeContextRepo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[0].ID, &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[0]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmContexts[0].ID, graphql.FormationObjectTypeRuntimeContext, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[0]}, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmIDs[0], graphql.FormationObjectTypeRuntime, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[1]}, nil).Once()
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -1008,11 +1062,16 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Times(2)
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmIDs[0], graphql.FormationObjectTypeRuntime, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[1]}, nil).Once()
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1065,11 +1124,16 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Times(2)
 				return repo
 			},
-			NotificationServiceFN: noActionNotificationsService,
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmIDs[0], graphql.FormationObjectTypeRuntime, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[1]}, nil).Once()
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
@@ -1540,6 +1604,40 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			Name: rtmNames[2],
 		},
 	}
+	formationAssignments := []*model.FormationAssignment{
+		{
+			ID:          "fa1",
+			FormationID: FormationID,
+			Source:      "1",
+		},
+		{
+			ID:          "fa2",
+			FormationID: FormationID,
+			Source:      "123",
+		},
+		{
+			ID:          "fa3",
+			FormationID: FormationID,
+			Source:      "2",
+		},
+	}
+	notifications := []*webhookclient.NotificationRequest{
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid1",
+			},
+		},
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid2",
+			},
+		},
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid3",
+			},
+		},
+	}
 	ownedRuntimes := []*model.Runtime{runtimes[0], runtimes[1]}
 
 	runtimeLblInputs := []*model.LabelInput{
@@ -1699,11 +1797,23 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 
 				return repo
 			},
-			NotificationSvcFn: noActionNotificationsService,
+			NotificationSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[0].ID, &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[0]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[1].ID, &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[2]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[0].ID).Return([]*model.FormationAssignment{formationAssignments[0]}, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[1].ID).Return([]*model.FormationAssignment{formationAssignments[2]}, nil)
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[2]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[2]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -1766,11 +1876,20 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 
 				return repo
 			},
-			NotificationSvcFn: noActionNotificationsService,
+			NotificationSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[0].ID, &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[0]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[0].ID).Return([]*model.FormationAssignment{formationAssignments[0]}, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -1823,14 +1942,20 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
 				return repo
 			},
-			NotificationSvcFn: noActionNotificationsService,
-			TransactionerFn:   txGen.ThatSucceeds,
+			NotificationSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
+			TransactionerFn:    txGen.ThatSucceeds,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -1879,14 +2004,20 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
 				return repo
 			},
-			NotificationSvcFn: noActionNotificationsService,
-			TransactionerFn:   txGen.ThatSucceeds,
+			NotificationSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
+			TransactionerFn:    txGen.ThatSucceeds,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -2150,6 +2281,41 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			Name: rtmNames[2],
 		},
 	}
+	formationAssignments := []*model.FormationAssignment{
+		{
+			ID:          "fa1",
+			FormationID: FormationID,
+			Source:      "1",
+		},
+		{
+			ID:          "fa2",
+			FormationID: FormationID,
+			Source:      "123",
+		},
+		{
+			ID:          "fa3",
+			FormationID: FormationID,
+			Source:      "2",
+		},
+	}
+	notifications := []*webhookclient.NotificationRequest{
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid1",
+			},
+		},
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid2",
+			},
+		},
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid3",
+			},
+		},
+	}
+
 	ownedRuntimes := []*model.Runtime{runtimes[0], runtimes[1]}
 
 	runtimeLblInputs := []*model.LabelInput{
@@ -2328,12 +2494,23 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("UpdateLabel", ctx, tnt, expectedRtmCtxLabels[1].ID, runtimeCtxLblInputs[1]).Return(nil)
 				return svc
 			},
-			LabelRepositoryFn:     unusedLabelRepo,
-			NotificationServiceFn: noActionNotificationsService,
+			LabelRepositoryFn: unusedLabelRepo,
+			NotificationServiceFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[0].ID, &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[0]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[1].ID, &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[2]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmContexts[0].ID, graphql.FormationObjectTypeRuntimeContext, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[0]}, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmIDs[0], graphql.FormationObjectTypeRuntime, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[1]}, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmContexts[1].ID, graphql.FormationObjectTypeRuntimeContext, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[2]}, nil).Once()
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[2]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[2]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -2393,11 +2570,19 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("UpdateLabel", ctx, tnt, expectedRtmCtxLabels[1].ID, runtimeCtxLblInputs[1]).Return(testErr)
 				return svc
 			},
-			NotificationServiceFn: noActionNotificationsService,
+			NotificationServiceFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[0].ID, &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[0]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmContexts[0].ID, graphql.FormationObjectTypeRuntimeContext, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[0]}, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmIDs[0], graphql.FormationObjectTypeRuntime, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[1]}, nil).Once()
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			LabelRepositoryFn:  unusedLabelRepo,
@@ -2439,11 +2624,16 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("UpdateLabel", ctx, tnt, expectedRuntimeLabel.ID, runtimeLblInputs[0]).Return(nil)
 				return svc
 			},
-			NotificationServiceFn: noActionNotificationsService,
+			NotificationServiceFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.AssignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, tnt, rtmIDs[0], graphql.FormationObjectTypeRuntime, &modelFormation).Return([]*model.FormationAssignment{formationAssignments[1]}, nil).Once()
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			LabelRepositoryFn:  unusedLabelRepo,
@@ -2674,6 +2864,40 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			Name: rtmNames[2],
 		},
 	}
+	formationAssignments := []*model.FormationAssignment{
+		{
+			ID:          "fa1",
+			FormationID: FormationID,
+			Source:      "1",
+		},
+		{
+			ID:          "fa2",
+			FormationID: FormationID,
+			Source:      "123",
+		},
+		{
+			ID:          "fa3",
+			FormationID: FormationID,
+			Source:      "2",
+		},
+	}
+	notifications := []*webhookclient.NotificationRequest{
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid1",
+			},
+		},
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid2",
+			},
+		},
+		{
+			Webhook: graphql.Webhook{
+				ID: "wid3",
+			},
+		},
+	}
 	ownedRuntimes := []*model.Runtime{runtimes[0], runtimes[1]}
 
 	runtimeLblInputs := []*model.LabelInput{
@@ -2828,11 +3052,23 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 
 				return repo
 			},
-			NotificationServiceFn: noActionNotificationsService,
+			NotificationServiceFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[0].ID, &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[0]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[1].ID, &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[2]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[0].ID).Return([]*model.FormationAssignment{formationAssignments[0]}, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[1].ID).Return([]*model.FormationAssignment{formationAssignments[2]}, nil)
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[2]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[2]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -2865,7 +3101,6 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 
 				return runtimeContextRepo
 			},
-
 			TransactionerFn: txGen.ThatSucceedsTwice,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -2894,11 +3129,20 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 
 				return repo
 			},
-			NotificationServiceFn: noActionNotificationsService,
+			NotificationServiceFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmContexts[0].ID, &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntimeContext).Return([]*webhookclient.NotificationRequest{notifications[0]}, nil).Once()
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[0].ID).Return([]*model.FormationAssignment{formationAssignments[0]}, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
@@ -2949,11 +3193,17 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 
 				return repo
 			},
-			NotificationServiceFn: noActionNotificationsService,
+			NotificationServiceFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateNotifications", ctx, tnt, rtmIDs[0], &modelFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return([]*webhookclient.NotificationRequest{notifications[1]}, nil).Once()
+				return notificationSvc
+			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, mock.Anything, mock.Anything).Return(nil, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			InputASA:           fixModel(testFormationName),
