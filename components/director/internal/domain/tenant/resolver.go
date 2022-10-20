@@ -250,11 +250,11 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenants := r.conv.InputFromGraphQL(inputTenant)
+	tenant := r.conv.InputFromGraphQL(inputTenant)
 
-	id, err := r.srv.UpsertSingle(ctx, tenants)
+	id, err := r.srv.UpsertSingle(ctx, tenant)
 	if err != nil {
-		return "", errors.Wrap(err, "while writing new tenants")
+		return "", errors.Wrapf(err, "while writing a new tenant %q", inputTenant.ExternalTenant)
 	}
 
 	if err = tx.Commit(); err != nil {
