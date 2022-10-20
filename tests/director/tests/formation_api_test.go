@@ -1717,11 +1717,11 @@ func TestFormationAssignments(stdT *testing.T) {
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		urlTemplateRuntime := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if not .Assignment.Value}},\\\"config\\\":\\\"{{.Assignment.Value}}\\\"{{end}},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplateRuntime := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		urlTemplateApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/configuration/{{.Application.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.RuntimeContext.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
+		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if not .Assignment.Value}},\\\"config\\\":\\\"{{.Assignment.Value}}\\\"{{end}},\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
 		outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		certSecuredHTTPClient := &http.Client{
@@ -1975,9 +1975,11 @@ func TestFormationAssignments(stdT *testing.T) {
 		assertFormationNotification(t, assignNotificationForApp1, "assign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 
 		// rtCtx -> App notifications
-		assertNotificationsCountForTenant(t, body, localTenantID, 1)
+		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
 		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
+		assertFormationNotificationForApplication(t, assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
+		assignNotificationForApp = notificationsForConsumerTenant.Array()[1]
 		assertFormationNotificationForApplication(t, assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
 
 		var unassignFormation graphql.Formation
@@ -2218,18 +2220,6 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 				ProviderName:  str.Ptr("compass"),
 				Description:   ptr.String("test {{display-name}}"),
 				LocalTenantID: &localTenantID,
-				Webhooks: []*graphql.WebhookInput{
-					{
-						Type: graphql.WebhookTypeConfigurationChanged,
-						Auth: &graphql.AuthInput{
-							AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-						},
-						Mode:           &mode,
-						URLTemplate:    &urlTemplate,
-						InputTemplate:  &inputTemplate,
-						OutputTemplate: &outputTemplate,
-					},
-				},
 				Labels: graphql.Labels{
 					"applicationType": applicationType,
 					"region":          appRegion,
@@ -2530,18 +2520,6 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 				ProviderName:  str.Ptr("compass"),
 				Description:   ptr.String("test {{display-name}}"),
 				LocalTenantID: &localTenantID,
-				Webhooks: []*graphql.WebhookInput{
-					{
-						Type: graphql.WebhookTypeConfigurationChanged,
-						Auth: &graphql.AuthInput{
-							AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-						},
-						Mode:           &mode,
-						URLTemplate:    &urlTemplate,
-						InputTemplate:  &inputTemplate,
-						OutputTemplate: &outputTemplate,
-					},
-				},
 				Labels: graphql.Labels{
 					"applicationType": applicationType,
 					"region":          appRegion,

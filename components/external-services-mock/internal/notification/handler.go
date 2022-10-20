@@ -3,6 +3,8 @@ package notification
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 
@@ -42,6 +44,7 @@ func NewHandler() *Handler {
 }
 
 func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
+	fmt.Println("Patch")
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
 		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
@@ -93,6 +96,7 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
+	fmt.Println("RespondWithIncomplete")
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
 		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
@@ -108,11 +112,6 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	}
 	mappings := h.mappings[id]
 	mappings = append(h.mappings[id], Response{
 		Operation:   Assign,
@@ -120,7 +119,8 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 	})
 	h.mappings[id] = mappings
 
-	if config := gjson.Get(string(bodyBytes), "configuration").String(); config == "" {
+	spew.Dump(string(bodyBytes))
+	if config := gjson.Get(string(bodyBytes), "config").String(); config == "" {
 		writer.WriteHeader(http.StatusNoContent)
 	}
 

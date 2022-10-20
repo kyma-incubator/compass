@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 
@@ -56,6 +57,7 @@ func NewClient(httpClient *http.Client, mtlsClient, extSvcMtlsClient *http.Clien
 }
 
 func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Response, error) {
+	spew.Dump(request.GetObject())
 	var err error
 	webhook := request.GetWebhook()
 
