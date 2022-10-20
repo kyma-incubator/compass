@@ -181,6 +181,34 @@ func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.B
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.Upsert)
 }
 
+// UpsertSingle creates a provided tenant if it does not exist. If it does exist, it is internally updated.
+// It creates or updates the subdomain and region labels of the provided tenant, no matter if it is pre-existing or not.
+func (s *labeledService) UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error) {
+	return s.upsertTenant(ctx, tenantInput, s.tenantMappingRepo.Upsert)
+}
+
+func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) (string, error) {
+	id := s.uidService.Generate()
+	tenant := *tenantInput.ToBusinessTenantMapping(id)
+	subdomains, regions := tenantLocality([]model.BusinessTenantMappingInput{tenantInput})
+
+	subdomain := ""
+	region := ""
+	if s, ok := subdomains[tenant.ExternalTenant]; ok {
+		subdomain = s
+	}
+	if r, ok := regions[tenant.ExternalTenant]; ok {
+		region = r
+	}
+
+	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, upsertFunc)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
+	}
+
+	return tenantID, nil
+}
+
 func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) error {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
 	subdomains, regions := tenantLocality(tenantInputs)

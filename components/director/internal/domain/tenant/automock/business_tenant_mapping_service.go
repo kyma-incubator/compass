@@ -203,6 +203,27 @@ func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantIn
 	return r0
 }
 
+// UpsertSingle provides a mock function with given fields: ctx, tenantInput
+func (_m *BusinessTenantMappingService) UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error) {
+	ret := _m.Called(ctx, tenantInput)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMappingInput) string); ok {
+		r0 = rf(ctx, tenantInput)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.BusinessTenantMappingInput) error); ok {
+		r1 = rf(ctx, tenantInput)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewBusinessTenantMappingService creates a new instance of BusinessTenantMappingService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
 func NewBusinessTenantMappingService(t testing.TB) *BusinessTenantMappingService {
 	mock := &BusinessTenantMappingService{}
