@@ -805,7 +805,7 @@ func (ns *notificationsService) prepareApplicationWithLabels(ctx context.Context
 	return applicationWithLabels, appTemplateWithLabels, nil
 }
 
-func (ns *notificationsService) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.TemplateInput) (*webhookclient.NotificationRequest, error) {
+func (ns *notificationsService) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.FormationAssignmentTemplateInput) (*webhookclient.NotificationRequest, error) {
 	gqlWebhook, err := ns.webhookConverter.ToGraphQL(webhook)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting webhook with ID %s", webhook.ID)

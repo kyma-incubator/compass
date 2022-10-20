@@ -5,7 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"

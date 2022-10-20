@@ -18,7 +18,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
 //go:generate mockery --exported --name=labelDefRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
