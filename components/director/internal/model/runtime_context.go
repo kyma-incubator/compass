@@ -12,6 +12,11 @@ type RuntimeContext struct {
 	Value     string
 }
 
+// GetID missing godoc
+func (r *RuntimeContext) GetID() string {
+	return r.ID
+}
+
 // RuntimeContextInput missing godoc
 type RuntimeContextInput struct {
 	Key       string

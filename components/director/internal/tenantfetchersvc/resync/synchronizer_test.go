@@ -469,9 +469,9 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			tenantDeleter := testCase.TenantDeleterFn()
 			kubeClient := testCase.KubeClientFn()
 
-			metricsPusher := &automock.MetricsPusher{}
+			metricsPusher := &automock.AggregationFailurePusher{}
 			if len(testCase.ExpectedErrMsg) > 0 {
-				metricsPusher.On("ReportFailedSync", ctx, mock.MatchedBy(func(actual error) bool {
+				metricsPusher.On("ReportAggregationFailure", ctx, mock.MatchedBy(func(actual error) bool {
 					return strings.Contains(actual.Error(), testCase.ExpectedErrMsg)
 				}))
 			}

@@ -304,6 +304,42 @@ func (r *pgRepository) ListByScenariosAndRuntimeIDs(ctx context.Context, tenant 
 	return r.multipleFromEntities(entities), nil
 }
 
+// ListByScenarios lists all runtime contexts that are in any of the given scenarios
+func (r *pgRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error) {
+	if len(scenarios) == 0 {
+		return nil, nil
+	}
+	tenantUUID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
+	}
+
+	var entities RuntimeContextCollection
+
+	// Scenarios query part
+	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+	}
+
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.RuntimeContextLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	var conditions repo.Conditions
+	if scenariosSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
+	}
+
+	if err = r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
 // Create stores RuntimeContext entity in the database using the values from `item`
 func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {
