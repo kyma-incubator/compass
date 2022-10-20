@@ -87,6 +87,8 @@ spec:
               value: {{ .Values.global.tests.selfRegistration.region2 }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE
+              value: {{ .Values.global.externalServicesMock.certSecuredHost }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER

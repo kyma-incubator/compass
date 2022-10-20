@@ -124,11 +124,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2694"
+      version: "PR-2701"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2665"
+      version: "PR-2698"
       name: compass-hydrator
     gateway:
       dir:
@@ -144,7 +144,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2659"
+      version: "PR-2698"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -165,7 +165,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2699"
+      version: "PR-2695"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
