@@ -16,6 +16,20 @@ type BusinessTenantMappingConverter struct {
 	mock.Mock
 }
 
+// InputFromGraphQL provides a mock function with given fields: tnt
+func (_m *BusinessTenantMappingConverter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput {
+	ret := _m.Called(tnt)
+
+	var r0 model.BusinessTenantMappingInput
+	if rf, ok := ret.Get(0).(func(graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput); ok {
+		r0 = rf(tnt)
+	} else {
+		r0 = ret.Get(0).(model.BusinessTenantMappingInput)
+	}
+
+	return r0
+}
+
 // MultipleInputFromGraphQL provides a mock function with given fields: in
 func (_m *BusinessTenantMappingConverter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
 	ret := _m.Called(in)

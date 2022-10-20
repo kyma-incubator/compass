@@ -860,9 +860,14 @@ func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context
 	return r.scenarioAssignment.CreateAutomaticScenarioAssignment(ctx, in)
 }
 
-// WriteTenants creates tenants of type customer, account, or subaccount
+// WriteTenants creates tenants of type customer, account, subaccount, organization, folder, or resource-group
 func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) (int, error) {
 	return r.tenant.Write(ctx, in)
+}
+
+// WriteTenant creates tenant of type customer, account, subaccount, organization, folder, or resource-group
+func (r *mutationResolver) WriteTenant(ctx context.Context, in graphql.BusinessTenantMappingInput) (string, error) {
+	return r.tenant.WriteSingle(ctx, in)
 }
 
 // DeleteTenants deletes multiple tenants by external tenant id
