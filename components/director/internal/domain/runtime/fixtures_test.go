@@ -300,3 +300,7 @@ func fixRtmCtxPage(rtmCtxs []*model.RuntimeContext) *model.RuntimeContextPage {
 		TotalCount: len(rtmCtxs),
 	}
 }
+
+func givenTenant() string {
+	return "8f237125-50be-4bb4-96ce-389e2b931f46"
+}

@@ -20,7 +20,7 @@ import (
 // EventAPIClient missing godoc
 //go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventAPIClient interface {
-	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (*EventsPage, error)
+	FetchTenantEventsPage(ctx context.Context, eventsType EventsType, additionalQueryParams QueryParams) (*EventsPage, error)
 }
 
 // TenantConverter expects tenant converter implementation
@@ -114,7 +114,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 	}
 	configProvider := eventsQueryConfigProviderWithAdditionalFields(tm.config, additionalFields)
 
-	fetchedTenants, err := fetchCreatedTenantsWithRetries(tm.eventAPIClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
+	fetchedTenants, err := fetchCreatedTenantsWithRetries(ctx, tm.eventAPIClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 	tenantChan := make(chan *model.BusinessTenantMappingInput, len(tm.regionalClients))
 	for region, regionalClient := range tm.regionalClients {
 		go func(ctx context.Context, region string, regionalClient EventAPIClient, ch chan *model.BusinessTenantMappingInput) {
-			createdRegionalTenants, err := fetchCreatedTenantsWithRetries(regionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
+			createdRegionalTenants, err := fetchCreatedTenantsWithRetries(ctx, regionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Failed to fetch created tenants from region %s: %v", region, err)
 			}
@@ -186,7 +186,7 @@ func (tm *TenantsManager) DeleteTenants(ctx context.Context, tenantsToDelete []m
 
 func (tm *TenantsManager) fetchTenantsForEventType(ctx context.Context, region, fromTimestamp string, eventsType EventsType) ([]model.BusinessTenantMappingInput, error) {
 	configProvider := eventsQueryConfigProviderWithRegion(tm.config, fromTimestamp, region)
-	fetchedTenants, err := fetchTenantsWithRetries(tm.eventAPIClient, tm.config.RetryAttempts, eventsType, configProvider)
+	fetchedTenants, err := fetchTenantsWithRetries(ctx, tm.eventAPIClient, tm.config.RetryAttempts, eventsType, configProvider)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching tenants with universal client")
 	}
@@ -197,7 +197,7 @@ func (tm *TenantsManager) fetchTenantsForEventType(ctx context.Context, region, 
 		return fetchedTenants, nil
 	}
 	configProvider = eventsQueryConfigProvider(tm.config, fromTimestamp)
-	createdRegionalTenants, err := fetchTenantsWithRetries(regionClient, tm.config.RetryAttempts, eventsType, configProvider)
+	createdRegionalTenants, err := fetchTenantsWithRetries(ctx, regionClient, tm.config.RetryAttempts, eventsType, configProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -259,16 +259,16 @@ func eventsQueryConfigProviderWithAdditionalFields(config EventsConfig, addition
 	}
 }
 
-func fetchCreatedTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, supportedEvents supportedEvents, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
+func fetchCreatedTenantsWithRetries(ctx context.Context, eventAPIClient EventAPIClient, retryNumber uint, supportedEvents supportedEvents, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
 	var fetchedTenants []model.BusinessTenantMappingInput
 
-	createdTenants, err := fetchTenantsWithRetries(eventAPIClient, retryNumber, supportedEvents.createdTenantEvent, configProvider)
+	createdTenants, err := fetchTenantsWithRetries(ctx, eventAPIClient, retryNumber, supportedEvents.createdTenantEvent, configProvider)
 	if err != nil {
 		return nil, fmt.Errorf("while fetching created tenants: %v", err)
 	}
 	fetchedTenants = append(fetchedTenants, createdTenants...)
 
-	updatedTenants, err := fetchTenantsWithRetries(eventAPIClient, retryNumber, supportedEvents.updatedTenantEvent, configProvider)
+	updatedTenants, err := fetchTenantsWithRetries(ctx, eventAPIClient, retryNumber, supportedEvents.updatedTenantEvent, configProvider)
 	if err != nil {
 		return nil, fmt.Errorf("while fetching updated tenants: %v", err)
 	}
@@ -278,10 +278,10 @@ func fetchCreatedTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber u
 	return fetchedTenants, nil
 }
 
-func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, eventsType EventsType, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
+func fetchTenantsWithRetries(ctx context.Context, eventAPIClient EventAPIClient, retryNumber uint, eventsType EventsType, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
 	var tenants []model.BusinessTenantMappingInput
 	if err := fetchWithRetries(retryNumber, func() error {
-		fetchedTenants, err := fetchTenants(eventAPIClient, eventsType, configProvider)
+		fetchedTenants, err := fetchTenants(ctx, eventAPIClient, eventsType, configProvider)
 		if err != nil {
 			return fmt.Errorf("while fetching tenants: %v", err)
 		}
@@ -294,10 +294,10 @@ func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, ev
 	return tenants, nil
 }
 
-func fetchTenants(eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
+func fetchTenants(ctx context.Context, eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
 	tenants := make([]model.BusinessTenantMappingInput, 0)
-	if err := walkThroughPages(eventAPIClient, eventsType, configProvider, func(page *EventsPage) error {
-		mappings := page.GetTenantMappings(eventsType)
+	if err := walkThroughPages(ctx, eventAPIClient, eventsType, configProvider, func(page *EventsPage) error {
+		mappings := page.GetTenantMappings(ctx, eventsType)
 		tenants = append(tenants, mappings...)
 		return nil
 	}); err != nil {
@@ -311,9 +311,9 @@ func fetchWithRetries(retryAttempts uint, applyFunc func() error) error {
 	return retry.Do(applyFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
 }
 
-func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig), applyFunc func(*EventsPage) error) error {
+func walkThroughPages(ctx context.Context, eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig), applyFunc func(*EventsPage) error) error {
 	params, pageConfig := configProvider()
-	firstPage, err := eventAPIClient.FetchTenantEventsPage(eventsType, params)
+	firstPage, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, params)
 	if err != nil {
 		return errors.Wrap(err, "while fetching tenant events page")
 	}
@@ -335,7 +335,7 @@ func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, conf
 
 	for i := pageStart + 1; i <= totalPages; i++ {
 		params[pageConfig.PageNumField] = strconv.FormatInt(i, 10)
-		res, err := eventAPIClient.FetchTenantEventsPage(eventsType, params)
+		res, err := eventAPIClient.FetchTenantEventsPage(ctx, eventsType, params)
 		if err != nil {
 			return errors.Wrap(err, "while fetching tenant events page")
 		}

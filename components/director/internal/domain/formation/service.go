@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
 //go:generate mockery --exported --name=labelDefRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -39,6 +40,7 @@ type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error)
+	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
@@ -49,6 +51,7 @@ type runtimeContextRepository interface {
 	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error)
 	ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error)
+	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error)
 }
@@ -258,8 +261,10 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 //				- A notification about the assigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
 //  			- A notification about the assigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
 //				- If the assigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
-// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext, and the runtime has configuration change webhook,
-//			a notification about each application in the formation is sent to this runtime.
+//				- If the assigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
+// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
+//				- If the assigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
+//				- A notification about the assigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
 //
 // If an error occurs during the formationAssignment processing the failed formationAssignment's value is updated with the error and the processing proceeds. The error should not
 // be returned but only logged. If the error is returned the assign operation will be rolled back and all the created resources(labels, formationAssignments etc.) will be rolled
@@ -390,13 +395,15 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 // it removes the formation from the scenario label of the runtime/runtime context if the provided
 // formation is NOT assigned from ASA and does nothing if it is assigned from ASA.
 //
-// Additionally, a notification is sent to each runtime that needs to be notified (has a configuration change webhook) and is part of the formation either directly or via runtimeContext.
+//  Additionally, notifications are sent to the interested participants for that formation change.
 // 		- If objectType is graphql.FormationObjectTypeApplication:
 //				- A notification about the unassigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
 //  			- A notification about the unassigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
 //				- If the unassigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
-// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext, and the runtime has configuration change webhook,
-//			a notification for each application in the formation is sent to this runtime.
+//				- If the unassigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
+// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
+//				- If the unassigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
+//   			- A notification about the unassigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
 //
 // For the formationAssignments that have their source or target field set to objectID:
 // 		- If the formationAssignment does not have notification associated with it

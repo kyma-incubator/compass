@@ -18,7 +18,6 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 PATH_TO_VALUES="$CURRENT_DIR/../../chart/compass/values.yaml"
 PATH_TO_HYDRATOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/hydrator/values.yaml"
 PATH_TO_COMPASS_OIDC_CONFIG_FILE="$HOME/.compass.yaml"
-MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
 SCHEMA_MIGRATOR_COMPONENT_PATH=${ROOT_PATH}/components/schema-migrator
 RESET_VALUES_YAML=true
@@ -45,6 +44,10 @@ do
         ;;
         --skip-kyma-start)
             SKIP_KYMA_START=true
+            shift # past argument
+        ;;
+        --skip-db-install)
+            SKIP_DB_INSTALL=true
             shift # past argument
         ;;
         --dump-db)
@@ -264,11 +267,13 @@ function patchJWKS() {
 }
 patchJWKS&
 
-echo 'Installing DB'
-DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
-bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
-STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-echo "DB installation status ${STATUS}"
+if [[ ! ${SKIP_DB_INSTALL} ]]; then
+  echo 'Installing DB'
+  DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
+  bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
+  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
+  echo "DB installation status ${STATUS}"
+fi
 
 echo 'Installing Compass'
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"

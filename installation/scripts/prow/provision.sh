@@ -41,10 +41,3 @@ else
     sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB
 fi
 
-if [[ ${DUMP_DB} ]]; then
-    sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh --dump-db true
-else
-    sudo ARTIFACTS=${ARTIFACTS} ${INSTALLATION_DIR}/scripts/testing.sh --dump-db false
-fi
-
-

@@ -38,6 +38,7 @@ type TemplateInput interface {
 	ParseURLTemplate(tmpl *string) (*URL, error)
 	ParseInputTemplate(tmpl *string) ([]byte, error)
 	ParseHeadersTemplate(tmpl *string) (http.Header, error)
+	GetParticipantsIDs() []string
 }
 
 // FormationAssignmentTemplateInput is an interface that unions all structs that can act as a template input for a webhook
