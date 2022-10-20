@@ -27,7 +27,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-const globalSubaccountIDLabelKey = "global_subaccount_id"
+const (
+	globalSubaccountIDLabelKey = "global_subaccount_id"
+	namePlaceholder            = "name"
+	displayNamePlaceholder     = "display-name"
+)
 
 // ApplicationTemplateService missing godoc
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -600,14 +604,21 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 }
 
 func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder) error {
-	if len(placeholders) != 2 {
-		return errors.Errorf("expecting %q and %q placeholders", "name", "display-name")
+	var namePlaceholderExists bool
+	var displayNameExists bool
+	for _, placeholder := range placeholders {
+		if placeholder.Name == namePlaceholder {
+			namePlaceholderExists = true
+			continue
+		}
+
+		if placeholder.Name == displayNamePlaceholder {
+			displayNameExists = true
+		}
 	}
 
-	for _, placeholder := range placeholders {
-		if !(placeholder.Name == "name") && !(placeholder.Name == "display-name") {
-			return errors.Errorf("unexpected placeholder with name %q found", placeholder.Name)
-		}
+	if !namePlaceholderExists || !displayNameExists {
+		return errors.Errorf("%q or %q placeholder is missing. They must be present in order to proceed.", namePlaceholder, displayNamePlaceholder)
 	}
 
 	// Matches the following pattern - "SAP <product name>"

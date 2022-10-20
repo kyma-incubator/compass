@@ -3,9 +3,8 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
-
-	str "github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	gcli "github.com/machinebox/graphql"
 
@@ -268,20 +267,16 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 			ExpectedErrMessage:  "application template name \"not-compliant-name\" does not comply with the following naming convention",
 		},
 		{
-			Name:            "not compliant placeholders",
+			Name:            "missing mandatory placeholders",
 			AppTemplateName: fmt.Sprintf("SAP %s", "app-template-name"),
 			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
 				},
-				{
-					Name:        "not-compliant",
-					Description: &displayNamePlaceholder,
-				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
-			ExpectedErrMessage:  "unexpected placeholder with name \"not-compliant\" found",
+			ExpectedErrMessage:  "\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed.",
 		},
 	}
 
@@ -434,20 +429,16 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 			ExpectedErrMessage:  "application template name \"not-compliant-name\" does not comply with the following naming convention",
 		},
 		{
-			Name:               "not compliant placeholders",
+			Name:               "missing mandatory placeholder",
 			NewAppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SubscriptionConfig.SelfRegRegion),
 			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
 				},
-				{
-					Name:        "not-compliant",
-					Description: &displayNamePlaceholder,
-				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
-			ExpectedErrMessage:  "unexpected placeholder with name \"not-compliant\" found",
+			ExpectedErrMessage:  "\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed.",
 		},
 	}
 
@@ -816,6 +807,14 @@ func fixAppTemplateInputWithDefaultDistinguishLabel(name string) graphql.Applica
 	input := fixtures.FixApplicationTemplate(name)
 	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 
+	return input
+}
+
+func fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(name string) graphql.ApplicationTemplateInput {
+	input := fixtures.FixApplicationTemplate(name)
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
+	input.ApplicationInput.BaseURL = str.Ptr(fmt.Sprintf(baseURLTemplate, "{{subdomain}}", "{{region}}"))
+	input.Placeholders = append(input.Placeholders, &graphql.PlaceholderDefinitionInput{Name: "subdomain"}, &graphql.PlaceholderDefinitionInput{Name: "region"})
 	return input
 }
 
