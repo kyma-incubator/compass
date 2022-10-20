@@ -709,6 +709,25 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 		{{ end }}`)
 }
 
+// WriteTenantInputToGQL creates tenant input for writeTenant mutation from single tenant
+func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInput) (string, error) {
+	return g.genericToGQL(in, `
+		name: {{ quote .Name }},
+		externalTenant: {{ quote .ExternalTenant }},
+		{{- if .Parent }}
+		parent: {{ quote .Parent }},
+		{{- end }}
+		{{- if .Region }}
+		region: {{ quote .Region }},
+		{{- end }}
+		{{- if .Subdomain }}
+		subdomain: {{ quote .Subdomain }},
+		{{- end }}
+		type: {{ quote .Type }},
+		provider: {{ quote .Provider }}
+	}`)
+}
+
 // DeleteTenantsInputToGQL creates tenant input for deleteTenants mutation from multiple external tenant ids
 func (g *Graphqlizer) DeleteTenantsInputToGQL(in []graphql.BusinessTenantMappingInput) (string, error) {
 	return g.genericToGQL(in, `
