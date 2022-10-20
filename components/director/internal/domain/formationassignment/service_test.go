@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"net/http"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -2573,8 +2574,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	}
 }
 
-//TODO create if not exist test
-//TODO cleanup formation assignment
 func unusedFormationAssignmentRepository() *automock.FormationAssignmentRepository {
 	repo := &automock.FormationAssignmentRepository{}
 	return repo
@@ -2603,11 +2602,6 @@ func unusedRuntimeRepository() *automock.RuntimeRepository {
 func unusedRuntimeContextRepository() *automock.RuntimeContextRepository {
 	repo := &automock.RuntimeContextRepository{}
 	return repo
-}
-
-type assignmentResponsePair struct {
-	assignment *model.FormationAssignment
-	response   *webhook.Response
 }
 
 type operationContainer struct {

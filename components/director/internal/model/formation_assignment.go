@@ -51,9 +51,9 @@ const (
 	CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
 	// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
+	// NotificationRecursionDepthLimit is the maximum count of configuration exchanges during assigning an object to formation
+	NotificationRecursionDepthLimit int = 10
 )
-
-const NotificationRecursionDepthLimit int = 10
 
 // ToModel converts FormationAssignmentInput to FormationAssignment
 func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssignment {

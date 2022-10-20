@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"

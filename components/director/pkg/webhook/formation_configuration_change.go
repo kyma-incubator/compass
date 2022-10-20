@@ -82,21 +82,27 @@ func (rd *FormationConfigurationChangeInput) GetParticipantsIDs() []string {
 	return participants
 }
 
+// GetAssignment returns the assignment associated with the FormationConfigurationChangeInput
 func (rd *FormationConfigurationChangeInput) GetAssignment() *model.FormationAssignment {
 	return rd.Assignment
 }
 
+// GetReverseAssignment returns the reverse assignment associated with the FormationConfigurationChangeInput
 func (rd *FormationConfigurationChangeInput) GetReverseAssignment() *model.FormationAssignment {
 	return rd.ReverseAssignment
 }
 
+// SetAssignment sets the assignment for the FormationConfigurationChangeInput to the provided one
 func (rd *FormationConfigurationChangeInput) SetAssignment(assignment *model.FormationAssignment) {
 	rd.Assignment = assignment
 }
 
+// SetReverseAssignment sets the reverse assignment for the FormationConfigurationChangeInput to the provided one
 func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
 	rd.ReverseAssignment = reverseAssignment
 }
+
+// Clone returns a copy of the FormationConfigurationChangeInput
 func (rd *FormationConfigurationChangeInput) Clone() FormationAssignmentTemplateInput {
 	return &FormationConfigurationChangeInput{
 		Operation:           rd.Operation,

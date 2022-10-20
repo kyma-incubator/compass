@@ -32,42 +32,50 @@ type NotificationRequest struct {
 	CorrelationID string
 }
 
-type WebhookRequest interface {
-	GetWebhook() graphql.Webhook
-	GetObject() webhook.TemplateInput
-	GetCorrelationID() string
-}
-
-func (r *Request) GetWebhook() graphql.Webhook {
-	return r.Webhook
-}
-
-func (r *Request) GetObject() webhook.TemplateInput {
-	return r.Object
-}
-
-func (r *Request) GetCorrelationID() string {
-	return r.CorrelationID
-}
-
+// GetWebhook returns the Webhook associated with the NotificationRequest
 func (nr *NotificationRequest) GetWebhook() graphql.Webhook {
 	return nr.Webhook
 }
 
+// GetObject returns the Object associated with the NotificationRequest
 func (nr *NotificationRequest) GetObject() webhook.TemplateInput {
 	return nr.Object
 }
 
+// GetCorrelationID returns the CorrelationID assigned to the NotificationRequest
 func (nr *NotificationRequest) GetCorrelationID() string {
 	return nr.CorrelationID
 }
 
+// Clone returns a copy of the NotificationRequest
 func (nr *NotificationRequest) Clone() *NotificationRequest {
 	return &NotificationRequest{
 		Webhook:       nr.Webhook,
 		Object:        nr.Object.Clone(),
 		CorrelationID: nr.CorrelationID,
 	}
+}
+
+// WebhookRequest represent a request associated with registered webhook
+type WebhookRequest interface {
+	GetWebhook() graphql.Webhook
+	GetObject() webhook.TemplateInput
+	GetCorrelationID() string
+}
+
+// GetWebhook return the Webhook associated with the Request
+func (r *Request) GetWebhook() graphql.Webhook {
+	return r.Webhook
+}
+
+// GetObject returns the Object associated with the Request
+func (r *Request) GetObject() webhook.TemplateInput {
+	return r.Object
+}
+
+// GetCorrelationID returns the CorrelationID assigned to the Request
+func (r *Request) GetCorrelationID() string {
+	return r.CorrelationID
 }
 
 // PollRequest represents a webhook poll request to be executed

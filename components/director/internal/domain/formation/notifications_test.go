@@ -2,8 +2,9 @@ package formation_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"

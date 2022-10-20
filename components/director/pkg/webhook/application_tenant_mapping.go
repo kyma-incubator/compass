@@ -49,30 +49,38 @@ func (rd *ApplicationTenantMappingInput) GetParticipantsIDs() []string {
 	return []string{rd.SourceApplication.ID, rd.TargetApplication.ID}
 }
 
+// GetAssignments returns the assignments associated with the ApplicationTenantMappingInput
 func (rd *ApplicationTenantMappingInput) GetAssignments() (*model.FormationAssignment, *model.FormationAssignment) {
 	return rd.Assignment, rd.ReverseAssignment
 }
 
+// SetAssignments sets the assignments for the ApplicationTenantMappingInput to the provided ones
 func (rd *ApplicationTenantMappingInput) SetAssignments(assignment, reverseAssignment *model.FormationAssignment) {
 	rd.Assignment = assignment
 	rd.ReverseAssignment = reverseAssignment
 }
 
+// GetAssignment returns the assignment associated with the ApplicationTenantMappingInput
 func (rd *ApplicationTenantMappingInput) GetAssignment() *model.FormationAssignment {
 	return rd.Assignment
 }
 
+// GetReverseAssignment returns the reverse assignment associated with the ApplicationTenantMappingInput
 func (rd *ApplicationTenantMappingInput) GetReverseAssignment() *model.FormationAssignment {
 	return rd.ReverseAssignment
 }
 
+// SetAssignment sets the assignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.FormationAssignment) {
 	rd.Assignment = assignment
 }
 
+// SetReverseAssignment sets the reverseAssignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
 	rd.ReverseAssignment = reverseAssignment
 }
+
+// Clone return a copy of the ApplicationTenantMappingInput
 func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInput {
 	return &ApplicationTenantMappingInput{
 		Operation:                 rd.Operation,

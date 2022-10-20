@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -248,6 +249,10 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // graphql.FormationObjectTypeRuntimeContext it adds the provided formation to the scenario label of the entity if such exists,
 // otherwise new scenario label is created for the entity with the provided formation.
 //
+// FormationAssignments for the object that is being assigned and the already assigned objects are generated and stored.
+// For each object X already part of the formation formationAssignment with source=X and target=objectID and formationAssignment
+// with source=objectID and target=X are generated.
+//
 // Additionally, notifications are sent to the interested participants for that formation change.
 // 		- If objectType is graphql.FormationObjectTypeApplication:
 //				- A notification about the assigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
@@ -255,6 +260,13 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 //				- If the assigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
 // 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext, and the runtime has configuration change webhook,
 //			a notification about each application in the formation is sent to this runtime.
+//
+// If an error occurs during the formationAssignment processing the failed formationAssignment's value is updated with the error and the processing proceeds. The error should not
+// be returned but only logged. If the error is returned the assign operation will be rolled back and all the created resources(labels, formationAssignments etc.) will be rolled
+// back. On the other hand the participants in the formation will have been notified for the assignment and there is no mechanism for informing them that the assignment was not executed successfully.
+//
+// After the assigning there may be formationAssignments in CREATE_ERROR state. They can be fixed by assigning the object to the same formation again. This will result in retrying only
+// the formationAssignments that are in state different from READY.
 //
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
@@ -281,7 +293,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 
 		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
-			log.C(ctx).Errorf("Error occured while processing formationAssignments %s", err.Error())
+			log.C(ctx).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
 
@@ -385,6 +397,19 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 //				- If the unassigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
 // 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext, and the runtime has configuration change webhook,
 //			a notification for each application in the formation is sent to this runtime.
+//
+// For the formationAssignments that have their source or target field set to objectID:
+// 		- If the formationAssignment does not have notification associated with it
+//				- the formation assignment is deleted
+//		- If the formationAssignment is associated with a notification
+//				- If the response from the notification is success
+//						- the formationAssignment is deleted
+// 				- If the response from the notification is different from success
+//						- the formation assignment is updated with an error
+//
+// After the processing of the formationAssignments the state is persisted regardless of whether there were any errors.
+// If an error has occurred during the formationAssignment processing the unassign operation is rolled back(the updated
+// with the error formationAssignments are already persisted in the database).
 //
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant which then will unassign the right Runtime / RuntimeContexts based on the formation template's runtimeType.

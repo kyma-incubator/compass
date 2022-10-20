@@ -170,7 +170,7 @@ func unusedFormationAssignmentService() *automock.FormationAssignmentService {
 
 func noActionNotificationsService() *automock.NotificationsService {
 	notificationSvc := &automock.NotificationsService{}
-	notificationSvc.On("GenerateNotifications", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
+	notificationSvc.On("GenerateNotifications", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	return notificationSvc
 }
 

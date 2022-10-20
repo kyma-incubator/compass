@@ -2,6 +2,7 @@ package formation
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"

@@ -2,6 +2,7 @@ package formationassignment_test
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"

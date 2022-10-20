@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -263,7 +264,11 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-// GenerateAssignments creates assignments in-memory for all existing runtimes, runtime contexts and applications in the formation `formation` with `objectID`
+// GenerateAssignments creates and persists two formation assignments per participant in the formation `formation`.
+// For the first formation assignment the source is the objectID and the target is participant's ID.
+// For the second assignment the source and target are swapped.
+//
+// In case of objectType==RUNTIME_CONTEXT formationAssignments for the object and it's parent runtime are not generated.
 func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error) {
 	applications, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tnt, []string{formation.Name})
 	if err != nil {
@@ -358,7 +363,15 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 	return assignments
 }
 
-// ProcessFormationAssignments matches the formation assignments with the requests and responses and executes the provided `formationAssignmentFunc` on the FormationAssignmentMapping with the response
+// ProcessFormationAssignments matches the formation assignments with the corresponding notification requests and packs them in FormationAssignmentRequestMapping.
+// Each FormationAssignmentRequestMapping is then packed with its reverse in AssignmentMappingPair. Then the provided `formationAssignmentFunc` is executed against the AssignmentMappingPairs.
+//
+// Assignment and reverseAssignment example
+// assignment{source=X, target=Y} - reverseAssignment{source=Y, target=X}
+//
+// Mapping and reverseMapping example
+// mapping{notificationRequest=request, formationAssignment=assignment} - reverseMapping{notificationRequest=reverseRequest, formationAssignment=reverseAssignment}
+
 func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) error) error {
 	var errs *multierror.Error
 	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests)
@@ -447,7 +460,6 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		// 3. set config1 to 1. and resend; resp: config2; ready -> recursion depth++
 		// 4. set config2 to 2. and resend; resp: ready -> дъно
 		if depth >= model.NotificationRecursionDepthLimit {
-			//TODO clarify message
 			log.C(ctx).Errorf("Depth limit exceeded for assignments: %q and %q", mappingPair.Assignment.FormationAssignment.ID, mappingPair.ReverseAssignment.FormationAssignment.ID)
 			return nil
 		}
@@ -481,7 +493,9 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 	return nil
 }
 
-// CleanupFormationAssignment adapts the `State` and `Config` of the formation assignment based on the response and updates it
+// CleanupFormationAssignment If the provided mappingPair does not contain notification request the assignment is deleted.
+// If the provided pair contains notification request - sends it and adapts the `State` and `Config` of the formation assignment
+// based on the response.
 // In the case the response is successful it deletes the formation assignment
 // In all other cases the `State` and `Config` are updated accordingly
 func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair) error {
@@ -569,54 +583,6 @@ func (s *service) setAssignmentToErrorState(ctx context.Context, assignment *mod
 	return nil
 }
 
-// FormationAssignmentRequestMapping represents the mapping between the response, request and formation assignment
-type FormationAssignmentRequestMapping struct {
-	Request             *webhookclient.NotificationRequest
-	FormationAssignment *model.FormationAssignment
-}
-
-func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestMapping {
-	var request *webhookclient.NotificationRequest
-	if f.Request != nil {
-		request = f.Request.Clone()
-	}
-	return &FormationAssignmentRequestMapping{
-		Request: request,
-		FormationAssignment: &model.FormationAssignment{
-			ID:          f.FormationAssignment.ID,
-			FormationID: f.FormationAssignment.FormationID,
-			TenantID:    f.FormationAssignment.TenantID,
-			Source:      f.FormationAssignment.Source,
-			SourceType:  f.FormationAssignment.SourceType,
-			Target:      f.FormationAssignment.Target,
-			TargetType:  f.FormationAssignment.TargetType,
-			State:       f.FormationAssignment.State,
-			Value:       f.FormationAssignment.Value,
-		},
-	}
-}
-
-type AssignmentErrorCode int
-
-const (
-	TechnicalError = 1
-	ClientError    = 2
-)
-
-type AssignmentMappingPair struct {
-	Assignment        *FormationAssignmentRequestMapping
-	ReverseAssignment *FormationAssignmentRequestMapping
-}
-
-type AssignmentError struct {
-	Message   string              `json:"message"`
-	ErrorCode AssignmentErrorCode `json:"errorCode"`
-}
-
-type AssignmentErrorWrapper struct {
-	Error AssignmentError `json:"error"`
-}
-
 func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest) []*AssignmentMappingPair {
 	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
@@ -690,4 +656,59 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		}
 	}
 	return assignmentMappingPairs
+}
+
+// FormationAssignmentRequestMapping represents the mapping between the notification request and formation assignment
+type FormationAssignmentRequestMapping struct {
+	Request             *webhookclient.NotificationRequest
+	FormationAssignment *model.FormationAssignment
+}
+
+// Clone returns a copy of the FormationAssignmentRequestMapping
+func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestMapping {
+	var request *webhookclient.NotificationRequest
+	if f.Request != nil {
+		request = f.Request.Clone()
+	}
+	return &FormationAssignmentRequestMapping{
+		Request: request,
+		FormationAssignment: &model.FormationAssignment{
+			ID:          f.FormationAssignment.ID,
+			FormationID: f.FormationAssignment.FormationID,
+			TenantID:    f.FormationAssignment.TenantID,
+			Source:      f.FormationAssignment.Source,
+			SourceType:  f.FormationAssignment.SourceType,
+			Target:      f.FormationAssignment.Target,
+			TargetType:  f.FormationAssignment.TargetType,
+			State:       f.FormationAssignment.State,
+			Value:       f.FormationAssignment.Value,
+		},
+	}
+}
+
+// AssignmentErrorCode represents error code used to differentiate the source of the error
+type AssignmentErrorCode int
+
+const (
+	// TechnicalError indicates that the reason for the error is technical - for example networking issue
+	TechnicalError = 1
+	// ClientError indicates that the error was returned from the client
+	ClientError = 2
+)
+
+// AssignmentMappingPair represents a pair of FormationAssignmentRequestMapping and its reverse
+type AssignmentMappingPair struct {
+	Assignment        *FormationAssignmentRequestMapping
+	ReverseAssignment *FormationAssignmentRequestMapping
+}
+
+// AssignmentError error struct used for storing the errors that occur during the FormationAssignment processing
+type AssignmentError struct {
+	Message   string              `json:"message"`
+	ErrorCode AssignmentErrorCode `json:"errorCode"`
+}
+
+// AssignmentErrorWrapper wrapper for AssignmentError
+type AssignmentErrorWrapper struct {
+	Error AssignmentError `json:"error"`
 }

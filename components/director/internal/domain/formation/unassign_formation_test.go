@@ -2,11 +2,12 @@ package formation_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"testing"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 

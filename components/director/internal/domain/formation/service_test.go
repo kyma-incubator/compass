@@ -2,6 +2,7 @@ package formation_test
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
