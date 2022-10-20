@@ -69,9 +69,9 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	}
 
 	config, err := c.fetchConfig(ctx, app, webhook, tenantValue)
-	//if err != nil {
-	//	return nil, "", err
-	//}
+	if err != nil {
+		return nil, "", err
+	}
 
 	baseURL, err := calculateBaseURL(*webhook.URL, *config)
 	if err != nil {
