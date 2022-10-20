@@ -711,7 +711,7 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 
 // WriteTenantInputToGQL creates tenant input for writeTenant mutation from single tenant
 func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInput) (string, error) {
-	return g.genericToGQL(in, `
+	return g.genericToGQL(in, `{
 		name: {{ quote .Name }},
 		externalTenant: {{ quote .ExternalTenant }},
 		{{- if .Parent }}
