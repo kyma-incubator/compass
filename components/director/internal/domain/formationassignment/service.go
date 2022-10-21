@@ -391,13 +391,18 @@ func (s *service) UpdateFormationAssignment(ctx context.Context, mappingPair *As
 }
 
 func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPair, depth int) error {
-	assignment := mappingPair.Assignment.FormationAssignment
+	assignmentClone := mappingPair.Assignment.Clone()
+	var reverseClone *FormationAssignmentRequestMapping
+	if mappingPair.ReverseAssignment != nil {
+		reverseClone = mappingPair.ReverseAssignment.Clone()
+	}
+	assignment := assignmentClone.FormationAssignment
 
 	if assignment.State == string(model.ReadyAssignmentState) {
 		return nil
 	}
 
-	if mappingPair.Assignment.Request == nil {
+	if assignmentClone.Request == nil {
 		assignment.State = string(model.ReadyAssignmentState)
 		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
@@ -406,7 +411,7 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		return nil
 	}
 
-	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
+	response, err := s.notificationService.SendNotification(ctx, assignmentClone.Request)
 	if err != nil {
 		updateError := s.setAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.CreateErrorAssignmentState)
 		if updateError != nil {
@@ -444,32 +449,29 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		shouldSendReverseNotification = true
 	}
 
-	if err = s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
-		return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
+	storedAssignment, err := s.Get(ctx, assignment.ID)
+	if err != nil {
+		return err
 	}
-	log.C(ctx).Infof("Assignment with ID %s was updated with %s state", assignment.ID, assignment.State)
+	if storedAssignment.State != string(model.ReadyAssignmentState) {
+		if err = s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
+		}
+		log.C(ctx).Infof("Assignment with ID %s was updated with %s state", assignment.ID, assignment.State)
+	}
 
 	if shouldSendReverseNotification {
-		// em -> s4 - config pending
-		// s4 -> em - here is config1; config pending
-		// em -> s4 - there is config1 for you; ready; config2
-		// s4 -> em - there is config2 for your; ready;
-
-		// 1. em -> s4; resp: status: config pending -> end
-		// 2. s4 -> em; resp: config1; config pending -> recursion depth++
-		// 3. set config1 to 1. and resend; resp: config2; ready -> recursion depth++
-		// 4. set config2 to 2. and resend; resp: ready -> дъно
 		if depth >= model.NotificationRecursionDepthLimit {
-			log.C(ctx).Errorf("Depth limit exceeded for assignments: %q and %q", mappingPair.Assignment.FormationAssignment.ID, mappingPair.ReverseAssignment.FormationAssignment.ID)
+			log.C(ctx).Errorf("Depth limit exceeded for assignments: %q and %q", assignmentClone.FormationAssignment.ID, reverseClone.FormationAssignment.ID)
 			return nil
 		}
 
-		if mappingPair.ReverseAssignment == nil {
+		if reverseClone == nil {
 			return nil
 		}
 
-		newAssignment := mappingPair.ReverseAssignment.Clone()
-		newReverseAssignment := mappingPair.Assignment.Clone()
+		newAssignment := reverseClone.Clone()
+		newReverseAssignment := assignmentClone.Clone()
 
 		if newAssignment.Request != nil {
 			newAssignment.Request.Object.SetAssignment(newAssignment.FormationAssignment)

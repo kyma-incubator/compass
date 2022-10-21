@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -1654,7 +1656,8 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, localTenantID)
 		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
-		assertFormationNotificationForApplication(t, assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
+		err = verifyFormationNotificationForApplication(assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "")
+		assert.NoErrorf(t, err, "%s", err.Error())
 
 		t.Logf("Unassign Application from formation %s", providerFormationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
@@ -1717,11 +1720,11 @@ func TestFormationAssignments(stdT *testing.T) {
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		urlTemplateRuntime := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if not .Assignment.Value}},\\\"config\\\":\\\"{{.Assignment.Value}}\\\"{{end}},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if and .ReverseAssignment .ReverseAssignment.Value}},\\\"config\\\":\\\"{{ js (printf \\\"%s\\\" .ReverseAssignment.Value)}}\\\"{{end}},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplateRuntime := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		urlTemplateApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/configuration/{{.Application.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.RuntimeContext.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if not .Assignment.Value}},\\\"config\\\":\\\"{{.Assignment.Value}}\\\"{{end}},\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
+		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if and .ReverseAssignment .ReverseAssignment.Value}},\\\"config\\\":\\\"{{ js (printf \\\"%s\\\" .ReverseAssignment.Value)}}\\\"{{end}},\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
 		outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		certSecuredHTTPClient := &http.Client{
@@ -1961,7 +1964,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			rtCtx.ID:     {actualApp.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: str.Ptr("null")}},
+			rtCtx.ID:     {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 			actualApp.ID: {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
@@ -1978,9 +1981,11 @@ func TestFormationAssignments(stdT *testing.T) {
 		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
 		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
-		assertFormationNotificationForApplication(t, assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
+		err = verifyFormationNotificationForApplication(assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
+		assert.NoError(t, err)
 		assignNotificationForApp = notificationsForConsumerTenant.Array()[1]
-		assertFormationNotificationForApplication(t, assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl)
+		err = verifyFormationNotificationForApplication(assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "")
+		assert.NoError(t, err)
 
 		var unassignFormation graphql.Formation
 		t.Logf("Unassign application from formation %s", formation.Name)
@@ -2010,7 +2015,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		assert.True(t, unassignNotificationFound)
 
 		// rtCtx -> App notifications
-		assertNotificationsCountForTenant(t, body, localTenantID, 2)
+		assertNotificationsCountForTenant(t, body, localTenantID, 3)
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
 		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 1)
 
@@ -2714,27 +2719,61 @@ func assertSeveralFormationNotifications(t *testing.T, notificationsForConsumerT
 		t.Logf("Found notification about rtCtx %q", rtCtxIDFromNotification)
 		if rtCtxIDFromNotification == rtCtx.ID && op == operationType {
 			actualNumberOfNotifications++
-			assertFormationNotificationForApplication(t, notification, operationType, formationID, rtCtx.ID, rtCtx.Value, region)
+			err := verifyFormationNotificationForApplication(notification, operationType, formationID, rtCtx.ID, rtCtx.Value, region, "")
+			assert.NoErrorf(t, err, "%s")
 		}
 	}
 	require.Equal(t, expectedNumberOfNotifications, actualNumberOfNotifications)
 }
 
-func assertFormationNotificationForApplication(t *testing.T, notification gjson.Result, op string, formationID string, expectedObjectID string, expectedSubscribedTenantID string, expectedObjectRegion string) {
-	require.Equal(t, op, notification.Get("Operation").String())
-	if op == "unassign" {
-		require.Equal(t, expectedObjectID, notification.Get("ApplicationID").String())
+func verifyFormationNotificationForApplication(notification gjson.Result, op string, formationID string, expectedObjectID string, expectedSubscribedTenantID string, expectedObjectRegion string, expectedConfiguration string) error {
+	actualOp := notification.Get("Operation").String()
+	if op != actualOp {
+		return errors.Errorf("Operation does not match: expected %q, but got %q", op, actualOp)
 	}
-	require.Equal(t, formationID, notification.Get("RequestBody.ucl-formation-id").String())
+
+	if op == "unassign" {
+		actualObjectID := notification.Get("ApplicationID").String()
+		if expectedObjectID != actualObjectID {
+			return errors.Errorf("ObjectID does not match: expected %q, but got %q", expectedObjectID, actualObjectID)
+		}
+	}
+
+	actualFormationID := notification.Get("RequestBody.ucl-formation-id").String()
+	if formationID != actualFormationID {
+		return errors.Errorf("FormationID does not match: expected %q, but got %q", formationID, actualFormationID)
+	}
 
 	notificationItems := notification.Get("RequestBody.items")
-	require.True(t, notificationItems.Exists())
-	require.Equal(t, 1, len(notificationItems.Array()))
+	if !notificationItems.Exists() {
+		return errors.Errorf("NotificationItems do not exist")
+	}
+
+	actualItemsLength := len(notificationItems.Array())
+	if actualItemsLength != 1 {
+		return errors.Errorf("Items count does not match: expected %q, but got %q", 1, actualItemsLength)
+	}
 
 	rtCtxFromNotification := notificationItems.Array()[0]
-	require.Equal(t, expectedObjectID, rtCtxFromNotification.Get("ucl-system-tenant-id").String())
-	require.Equal(t, expectedSubscribedTenantID, rtCtxFromNotification.Get("application-tenant-id").String())
-	require.Equal(t, expectedObjectRegion, rtCtxFromNotification.Get("region").String())
+	/*actualObjectID := notification.Get("RequestBody.items").String()
+	if expectedObjectID != actualObjectID {
+		return errors.Errorf("ObjectID does not match: expected %q, but got %q", expectedObjectID, actualObjectID)
+	}*/
+
+	actualSubscribedTenantID := rtCtxFromNotification.Get("application-tenant-id").String()
+	if expectedSubscribedTenantID != actualSubscribedTenantID {
+		return errors.Errorf("SubscribeTenantID does not match: expected %q, but got %q", expectedSubscribedTenantID, rtCtxFromNotification.Get("application-tenant-id").String())
+	}
+
+	actualObjectRegion := rtCtxFromNotification.Get("region").String()
+	if expectedObjectRegion != actualObjectRegion {
+		return errors.Errorf("ObjectRegion does not match: expected %q, but got %q", expectedObjectRegion, actualObjectRegion)
+	}
+	if expectedConfiguration != "" && notification.Get("RequestBody.config").String() != expectedConfiguration {
+		return errors.Errorf("config does not match: expected %q, but got %q", expectedConfiguration, notification.Get("RequestBody.config").String())
+	}
+
+	return nil
 }
 
 func validateRuntimesScenariosLabels(t *testing.T, ctx context.Context, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntimeID, providerRuntimeID string) {

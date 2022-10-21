@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"net/http"
 
@@ -119,12 +118,31 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 	})
 	h.mappings[id] = mappings
 
-	spew.Dump(string(bodyBytes))
 	if config := gjson.Get(string(bodyBytes), "config").String(); config == "" {
 		writer.WriteHeader(http.StatusNoContent)
+		return
 	}
-
-	writer.WriteHeader(http.StatusOK)
+	response := struct {
+		Config struct {
+			Key  string `json:"key"`
+			Key2 struct {
+				Key string `json:"key"`
+			} `json:"key2"`
+		}
+	}{
+		Config: struct {
+			Key  string `json:"key"`
+			Key2 struct {
+				Key string `json:"key"`
+			} `json:"key2"`
+		}{
+			Key: "value",
+			Key2: struct {
+				Key string `json:"key"`
+			}{Key: "value2"},
+		},
+	}
+	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
