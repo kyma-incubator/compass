@@ -1981,12 +1981,22 @@ func TestFormationAssignments(stdT *testing.T) {
 		// rtCtx -> App notifications
 		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
-		err = verifyFormationNotificationForApplication(assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")
-		assert.NoError(t, err)
-		assignNotificationForApp = notificationsForConsumerTenant.Array()[1]
-		err = verifyFormationNotificationForApplication(assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "")
-		assert.NoError(t, err)
+		assertExpectationsForApplicationNotifications(t, notificationsForConsumerTenant.Array(), []*applicationFormationExpectations{{
+			op:                 assignOperation,
+			formationID:        formation.ID,
+			objectID:           rtCtx.ID,
+			subscribedTenantID: rtCtx.Value,
+			objectRegion:       regionLbl,
+			configuration:      "",
+		},
+			{
+				op:                 assignOperation,
+				formationID:        formation.ID,
+				objectID:           rtCtx.ID,
+				subscribedTenantID: rtCtx.Value,
+				objectRegion:       regionLbl,
+				configuration:      "{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}",
+			}})
 
 		var unassignFormation graphql.Formation
 		t.Logf("Unassign application from formation %s", formation.Name)
@@ -2727,6 +2737,29 @@ func assertSeveralFormationNotifications(t *testing.T, notificationsForConsumerT
 	require.Equal(t, expectedNumberOfNotifications, actualNumberOfNotifications)
 }
 
+type applicationFormationExpectations struct {
+	op                 string
+	formationID        string
+	objectID           string
+	subscribedTenantID string
+	objectRegion       string
+	configuration      string
+}
+
+func assertExpectationsForApplicationNotifications(t *testing.T, notifications []gjson.Result, expectations []*applicationFormationExpectations) {
+	assert.Equal(t, len(expectations), len(notifications))
+	for _, expectation := range expectations {
+		found := false
+		for _, notification := range notifications {
+			err := verifyFormationNotificationForApplication(notification, expectation.op, expectation.formationID, expectation.objectID, expectation.subscribedTenantID, expectation.objectRegion, expectation.configuration)
+			if err == nil {
+				found = true
+			}
+		}
+		assert.Truef(t, found, "Did not match expectations for notification %v", expectation)
+	}
+}
+
 func verifyFormationNotificationForApplication(notification gjson.Result, op string, formationID string, expectedObjectID string, expectedSubscribedTenantID string, expectedObjectRegion string, expectedConfiguration string) error {
 	actualOp := notification.Get("Operation").String()
 	if op != actualOp {
@@ -2757,8 +2790,8 @@ func verifyFormationNotificationForApplication(notification gjson.Result, op str
 
 	rtCtxFromNotification := notificationItems.Array()[0]
 	/*actualObjectID := notification.Get("RequestBody.items").String()
-	if expectedObjectID != actualObjectID {
-		return errors.Errorf("ObjectID does not match: expected %q, but got %q", expectedObjectID, actualObjectID)
+	if objectID != actualObjectID {
+		return errors.Errorf("ObjectID does not match: expected %q, but got %q", objectID, actualObjectID)
 	}*/
 
 	actualSubscribedTenantID := rtCtxFromNotification.Get("application-tenant-id").String()
