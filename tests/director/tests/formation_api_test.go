@@ -1607,6 +1607,25 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
+		certSecuredHTTPClient := &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					Certificates: []tls.Certificate{
+						{
+							Certificate: cc.Get()[conf.ExternalClientCertSecretName].Certificate,
+							PrivateKey:  cc.Get()[conf.ExternalClientCertSecretName].PrivateKey,
+						},
+					},
+					ClientAuth:         tls.RequireAndVerifyClientCert,
+					InsecureSkipVerify: conf.SkipSSLValidation,
+				},
+			},
+		}
+
+		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
 		t.Logf("Assign application to formation %s", providerFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		var assignedFormation graphql.Formation
@@ -1632,24 +1651,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
 
 		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
-
-		certSecuredHTTPClient := &http.Client{
-			Timeout: 10 * time.Second,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					Certificates: []tls.Certificate{
-						{
-							Certificate: cc.Get()[conf.ExternalClientCertSecretName].Certificate,
-							PrivateKey:  cc.Get()[conf.ExternalClientCertSecretName].PrivateKey,
-						},
-					},
-					ClientAuth:         tls.RequireAndVerifyClientCert,
-					InsecureSkipVerify: conf.SkipSSLValidation,
-				},
-			},
-		}
-
-		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, localTenantID, 1)
