@@ -1592,11 +1592,15 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 	// configResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete, Config: &config}
 	// errorResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete, Error: &errMsg}
 
+	input := &webhook.FormationConfigurationChangeInput{
+		Operation: model.AssignFormation,
+	}
+
 	reqWebhook := &webhookclient.NotificationRequest{
 		Webhook: graphql.Webhook{
 			ID: TestWebhookID,
 		},
-		Object:        nil,
+		Object:        input,
 		CorrelationID: "",
 	}
 
@@ -1678,6 +1682,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Once()
 				repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configPendingStateAssignment)).Return(nil).Once()
 				return repo
 			},
@@ -1699,11 +1704,54 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			ExpectedErrorMsg:        "",
 		},
 		{
-			Name:    "Success: ready state assignment",
+			Name:    "Success: do not update assignment if already in ready state",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(readyStateAssignment, nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: unusedFormationAssignmentConverter,
+			NotificationService: func() *automock.NotificationService {
+				notificationSvc := &automock.NotificationService{}
+				notificationSvc.On("SendNotification", ctxWithTenant, reqWebhook).Return(&webhook.Response{
+					SuccessStatusCode:    &ok,
+					IncompleteStatusCode: &incomplete,
+					ActualStatusCode:     &incomplete,
+				}, nil)
+				return notificationSvc
+			},
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhook),
+			ExpectedErrorMsg:        "",
+		},
+		{
+			Name:    "Error: fail to get assignment",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(nil, testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: unusedFormationAssignmentConverter,
+			NotificationService: func() *automock.NotificationService {
+				notificationSvc := &automock.NotificationService{}
+				notificationSvc.On("SendNotification", ctxWithTenant, reqWebhook).Return(&webhook.Response{
+					SuccessStatusCode:    &ok,
+					IncompleteStatusCode: &incomplete,
+					ActualStatusCode:     &incomplete,
+				}, nil)
+				return notificationSvc
+			},
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhook),
+			ExpectedErrorMsg:        "while fetching formation assignment with ID",
+		},
+		{
+			Name:    "Success: update assignment to ready state",
 			Context: ctxWithTenant,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Once()
 				repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(readyStateAssignment)).Return(nil).Once()
 				return repo
 			},
@@ -1730,6 +1778,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Once()
 				repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configPendingStateAssignment)).Return(testErr).Once()
 				return repo
 			},
@@ -1850,6 +1899,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Once()
 				repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Return(nil).Once()
 				return repo
 			},
@@ -1891,7 +1941,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			}
 
 			//// THEN
-			mock.AssertExpectationsForObjects(t, repo, conv)
+			mock.AssertExpectationsForObjects(t, repo, conv, notificationSvc)
 		})
 	}
 
@@ -1930,7 +1980,8 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 		}, nil)
 
 		repo := &automock.FormationAssignmentRepository{}
-		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil)
+		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Times(2)
+		repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Twice()
 		repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Return(nil).Once()
 		repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(reverseConfigAssignment)).Return(nil).Once()
 
@@ -1948,24 +1999,25 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 				FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(reverseInitialStateAssignment),
 			},
 		}
-		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignment.FormationAssignment)
-		reverseInputMock.On("SetReverseAssignment", assignmentPair.Assignment.FormationAssignment)
+		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignment.FormationAssignment).Once()
 
-		inputMock.On("SetAssignment", assignmentPair.Assignment.FormationAssignment)
-		inputMock.On("SetReverseAssignment", assignmentPair.ReverseAssignment.FormationAssignment)
+		inputMock.On("SetReverseAssignment", assignmentPair.ReverseAssignment.FormationAssignment).Once()
 
-		inputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment))
-		inputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseConfigAssignment))
+		// once while processing the assignment and once when processing in the recursion call
+		inputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Twice()
+		inputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseConfigAssignment)).Once()
 
-		reverseInputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseConfigAssignment))
-		reverseInputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment))
+		reverseInputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseConfigAssignment)).Once()
+		// once while processing the assignment and once when processing in the recursion call
+		reverseInputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Twice()
 
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
 		err = svc.UpdateFormationAssignment(ctxWithTenant, assignmentPair)
-
 		require.NoError(t, err)
+
+		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
 	t.Run("error when updating to database in recursion call", func(t *testing.T) {
 		mappingRequest := &webhookclient.NotificationRequest{
@@ -1974,7 +2026,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			},
 		}
 		inputMock := &automock.TemplateInput{}
-		inputMock.On("Clone").Return(inputMock)
+		inputMock.On("Clone").Return(inputMock).Times(3)
 		mappingRequest.Object = inputMock
 
 		reverseMappingRequest := &webhookclient.NotificationRequest{
@@ -1983,7 +2035,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			},
 		}
 		reverseInputMock := &automock.TemplateInput{}
-		reverseInputMock.On("Clone").Return(reverseInputMock)
+		reverseInputMock.On("Clone").Return(reverseInputMock).Times(3)
 		reverseMappingRequest.Object = reverseInputMock
 
 		notificationSvc := &automock.NotificationService{}
@@ -1992,17 +2044,18 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			SuccessStatusCode:    &ok,
 			IncompleteStatusCode: &incomplete,
 			ActualStatusCode:     &ok,
-		}, nil)
+		}, nil).Once()
 
 		notificationSvc.On("SendNotification", ctxWithTenant, reverseMappingRequest).Return(&webhook.Response{
 			Config:               &config,
 			SuccessStatusCode:    &ok,
 			IncompleteStatusCode: &incomplete,
 			ActualStatusCode:     &ok,
-		}, nil)
+		}, nil).Once()
 
 		repo := &automock.FormationAssignmentRepository{}
-		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil)
+		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Twice()
+		repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Twice()
 		repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Return(nil).Once()
 		repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(reverseConfigAssignment)).Return(testErr).Once()
 
@@ -2020,25 +2073,21 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 				FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(reverseInitialStateAssignment),
 			},
 		}
-		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignment.FormationAssignment)
-		reverseInputMock.On("SetReverseAssignment", assignmentPair.Assignment.FormationAssignment)
 
-		inputMock.On("SetAssignment", assignmentPair.Assignment.FormationAssignment)
-		inputMock.On("SetReverseAssignment", assignmentPair.ReverseAssignment.FormationAssignment)
+		inputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Once()
+		inputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseInitialStateAssignment)).Once()
 
-		inputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment))
-		inputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseConfigAssignment))
-
-		reverseInputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(reverseConfigAssignment))
-		reverseInputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment))
+		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignment.FormationAssignment).Once()
+		reverseInputMock.On("SetReverseAssignment", fixFormationAssignmentModelWithIDAndTenantID(configAssignment)).Once()
 
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
 		err = svc.UpdateFormationAssignment(ctxWithTenant, assignmentPair)
-
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
+
+		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
 	t.Run("success when reaching the maximum depth limit with two config pending assignments that return unfinished configurations", func(t *testing.T) {
 		mappingRequest := &webhookclient.NotificationRequest{
@@ -2047,7 +2096,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			},
 		}
 		inputMock := &automock.TemplateInput{}
-		inputMock.On("Clone").Return(inputMock).Times(10)
+		inputMock.On("Clone").Return(inputMock).Times(21)
 		mappingRequest.Object = inputMock
 
 		reverseMappingRequest := &webhookclient.NotificationRequest{
@@ -2056,7 +2105,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			},
 		}
 		reverseInputMock := &automock.TemplateInput{}
-		reverseInputMock.On("Clone").Return(reverseInputMock).Times(10)
+		reverseInputMock.On("Clone").Return(reverseInputMock).Times(21)
 		reverseMappingRequest.Object = reverseInputMock
 
 		notificationSvc := &automock.NotificationService{}
@@ -2075,13 +2124,14 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 		}, nil)
 
 		repo := &automock.FormationAssignmentRepository{}
-		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil)
-		repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configPendingStateWithConfigAssignment)).Return(nil).Times(model.NotificationRecursionDepthLimit)
-		repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(reverseConfigPendingAssignment)).Return(nil).Times(model.NotificationRecursionDepthLimit)
+		repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Times(11)
+		repo.On("Get", ctxWithTenant, TestID, TestTenantID).Return(initialStateAssignment, nil).Times(11)
+		repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(configPendingStateWithConfigAssignment)).Return(nil).Times(6)
+		repo.On("Update", ctxWithTenant, fixFormationAssignmentModelWithIDAndTenantID(reverseConfigPendingAssignment)).Return(nil).Times(5)
 
 		conv := &automock.FormationAssignmentConverter{}
-		conv.On("ToInput", configPendingStateWithConfigAssignment).Return(configPendingStateWithConfigAssignmentInput).Times(model.NotificationRecursionDepthLimit)
-		conv.On("ToInput", reverseConfigPendingAssignment).Return(reverseConfigPendingAssignmentInput).Times(model.NotificationRecursionDepthLimit)
+		conv.On("ToInput", configPendingStateWithConfigAssignment).Return(configPendingStateWithConfigAssignmentInput).Times(6)
+		conv.On("ToInput", reverseConfigPendingAssignment).Return(reverseConfigPendingAssignmentInput).Times(5)
 
 		assignmentPair := &formationassignment.AssignmentMappingPair{
 			Assignment: &formationassignment.FormationAssignmentRequestMapping{
@@ -2094,9 +2144,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			},
 		}
 		reverseInputMock.On("SetAssignment", assignmentPair.ReverseAssignment.FormationAssignment)
-		reverseInputMock.On("SetReverseAssignment", assignmentPair.Assignment.FormationAssignment)
 
-		inputMock.On("SetAssignment", assignmentPair.Assignment.FormationAssignment)
 		inputMock.On("SetReverseAssignment", assignmentPair.ReverseAssignment.FormationAssignment)
 
 		inputMock.On("SetAssignment", fixFormationAssignmentModelWithIDAndTenantID(configPendingStateWithConfigAssignment))
@@ -2109,8 +2157,9 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 
 		///WHEN
 		err = svc.UpdateFormationAssignment(ctxWithTenant, assignmentPair)
-
 		require.NoError(t, err)
+
+		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
 }
 

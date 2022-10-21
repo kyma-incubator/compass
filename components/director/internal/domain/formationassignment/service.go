@@ -451,8 +451,9 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 
 	storedAssignment, err := s.Get(ctx, assignment.ID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while fetching formation assignment with ID: %q", assignment.ID)
 	}
+
 	if storedAssignment.State != string(model.ReadyAssignmentState) {
 		if err = s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
