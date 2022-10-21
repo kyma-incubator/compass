@@ -1657,7 +1657,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		notificationsForConsumerTenant := gjson.GetBytes(body, localTenantID)
 		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
 		err = verifyFormationNotificationForApplication(assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "")
-		assert.NoErrorf(t, err, "%s", err.Error())
+		assert.NoError(t, err)
 
 		t.Logf("Unassign Application from formation %s", providerFormationName)
 		unassignReq := fixtures.FixUnassignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
@@ -2720,7 +2720,7 @@ func assertSeveralFormationNotifications(t *testing.T, notificationsForConsumerT
 		if rtCtxIDFromNotification == rtCtx.ID && op == operationType {
 			actualNumberOfNotifications++
 			err := verifyFormationNotificationForApplication(notification, operationType, formationID, rtCtx.ID, rtCtx.Value, region, "")
-			assert.NoErrorf(t, err, "%s")
+			assert.NoError(t, err)
 		}
 	}
 	require.Equal(t, expectedNumberOfNotifications, actualNumberOfNotifications)
