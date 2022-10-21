@@ -28,6 +28,7 @@ import (
 
 const (
 	baseURLTemplate = "http://%s.%s.subscription.com"
+	regionPrefix    = "cf-"
 )
 
 func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
@@ -394,7 +395,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription using the optional region and subdomain placeholders", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-			expectedBaseURL := fmt.Sprintf(baseURLTemplate, conf.SubscriptionConfig.SelfRegisterSubdomainPlaceholderValue, conf.SubscriptionConfig.SelfRegRegion)
+			expectedBaseURL := fmt.Sprintf(baseURLTemplate, conf.SubscriptionConfig.SelfRegisterSubdomainPlaceholderValue, strings.TrimPrefix(conf.SubscriptionConfig.SelfRegRegion, regionPrefix))
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
