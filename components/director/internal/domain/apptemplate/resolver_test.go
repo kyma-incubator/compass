@@ -1638,7 +1638,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			ExpectedError: errors.New("expecting \"name\" and \"display-name\" placeholders"),
+			ExpectedError: errors.New("\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed."),
 		},
 		{
 			Name: "Returns error when validating app template placeholders",
@@ -1676,7 +1676,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			ExpectedError: errors.New("unexpected placeholder with name \"test\""),
+			ExpectedError: errors.New("\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed."),
 		},
 		{
 			Name: "Returns error when validating app template name",
