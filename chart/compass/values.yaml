@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2704"
+      version: "PR-2708"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
