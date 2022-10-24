@@ -24,6 +24,7 @@ type BusinessTenantMappingService interface {
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
+	UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error)
 	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
@@ -35,6 +36,7 @@ type BusinessTenantMappingService interface {
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
 	MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput
+	InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput
 	ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant
 }
 
@@ -236,6 +238,30 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 	}
 
 	return len(tenants), nil
+}
+
+// WriteSingle creates a single tenant
+func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.BusinessTenantMappingInput) (string, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return "", err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenant := r.conv.InputFromGraphQL(inputTenant)
+
+	id, err := r.srv.UpsertSingle(ctx, tenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while writing a new tenant %q", inputTenant.ExternalTenant)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return "", err
+	}
+
+	return id, nil
 }
 
 // Delete deletes tenants

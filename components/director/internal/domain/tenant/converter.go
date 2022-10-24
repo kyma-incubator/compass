@@ -94,6 +94,18 @@ func (c *converter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMapping
 	return res
 }
 
+func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput {
+	return model.BusinessTenantMappingInput{
+		Name:           tnt.Name,
+		ExternalTenant: tnt.ExternalTenant,
+		Parent:         str.PtrStrToStr(tnt.Parent),
+		Subdomain:      str.PtrStrToStr(tnt.Subdomain),
+		Region:         str.PtrStrToStr(tnt.Region),
+		Type:           tnt.Type,
+		Provider:       tnt.Provider,
+	}
+}
+
 // MultipleToGraphQL converts all the provided model.BusinessTenantMapping service-layer representations of a tenant to the GraphQL-layer representations graphql.Tenant.
 func (c *converter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant {
 	tenants := make([]*graphql.Tenant, 0, len(in))
