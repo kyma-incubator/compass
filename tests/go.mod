@@ -26,6 +26,9 @@ require (
 	k8s.io/client-go v0.20.2
 )
 
+replace github.com/kyma-incubator/compass/components/director => /Users/I507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/director
+replace github.com/kyma-incubator/compass/components/connector => /Users/I507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/connector
+
 require (
 	github.com/99designs/gqlgen v0.11.3 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect

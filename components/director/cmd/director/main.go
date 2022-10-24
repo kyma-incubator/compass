@@ -12,9 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/formationmapping"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
-	"github.com/kyma-incubator/compass/components/director/internal/formationmapping"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
@@ -396,15 +393,12 @@ func main() {
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))
 
+	fmAuthMiddleware := createFormationMappingAuthenticator(transact, cfg, appRepo)
+
 	asyncFARouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
-	asyncFARouter.Use(authMiddleware.Handler())
+	asyncFARouter.Use(authMiddleware.Handler(), fmAuthMiddleware.Handler()) // order is important
 
-	formationAssignmentRepo := formationassignment.NewRepository(formationassignment.NewConverter())
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService())
-	runtimeRepo := runtime.NewRepository(runtime.NewConverter(webhook.NewConverter(auth.NewConverter())))
-	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
-
-	fmHandler := formationmapping.NewFormationMappingHandler(formationAssignmentSvc, appRepo, runtimeRepo, runtimeContextRepo)
+	fmHandler := formationmapping.NewFormationMappingHandler()
 	logger.Infof("Registering formation tenant mapping endpoints...")
 	asyncFARouter.HandleFunc(cfg.FormationMappingCfg.AsyncAPIEndpoint, fmHandler.UpdateStatus).Methods(http.MethodPatch)
 
@@ -850,4 +844,29 @@ func intSystemSvc() claims.IntegrationSystemService {
 	intSysConverter := integrationsystem.NewConverter()
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	return integrationsystem.NewService(intSysRepo, uid.NewService())
+}
+
+func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg config, appRepo application.ApplicationRepository) *formationmapping.Authenticator {
+	formationAssignmentConv := formationassignment.NewConverter()
+	authConverter := auth.NewConverter()
+	webhookConverter := webhook.NewConverter(authConverter)
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	specConverter := spec.NewConverter(frConverter)
+	docConverter := document.NewConverter(frConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	labelRepo := label.NewRepository(label.NewConverter())
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
+	runtimeRepo := runtime.NewRepository(runtime.NewConverter(webhook.NewConverter(auth.NewConverter())))
+
+	formationAssignmentSvc := formationassignment.NewService(transact, formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv)
+
+	return formationmapping.NewFormationMappingAuthenticator(transact, formationAssignmentSvc, runtimeRepo, runtimeContextRepo, appRepo, appTemplateRepo, labelRepo, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, cfg.SubscriptionConfig.ConsumerSubaccountLabelKey)
 }

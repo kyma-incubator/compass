@@ -158,7 +158,7 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
-// todo::: go doc and tests
+// GetGlobalByID retrieves the runtime context matching ID `id` globally without tenant parameter
 func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.RuntimeContext, error) {
 	var runtimeCtxEnt RuntimeContext
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {

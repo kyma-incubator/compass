@@ -127,7 +127,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 	return fa, nil
 }
 
-// GetGlobalByID retrieves the formation assignment matching ID `id` globally without tenant parameter // todo::: tests
+// GetGlobalByID retrieves the formation assignment matching ID `id` globally without tenant parameter
 func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error) {
 	log.C(ctx).Infof("Getting formation assignment with ID: %q globally", id)
 
@@ -275,33 +275,33 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		if app.ID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(tnt, objectID, objectType, formation, graphql.FormationObjectTypeApplication, app)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(tnt, objectID, objectType, formation, model.FormationAssignmentTypeApplication, app)...)
 	}
 	for _, runtime := range runtimes {
 		if runtime.ID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(tnt, objectID, objectType, formation, graphql.FormationObjectTypeRuntime, runtime)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(tnt, objectID, objectType, formation, model.FormationAssignmentTypeRuntime, runtime)...)
 	}
 	for _, runtimeCtx := range runtimeContexts {
 		if runtimeCtx.ID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(tnt, objectID, objectType, formation, graphql.FormationObjectTypeRuntimeContext, runtimeCtx)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(tnt, objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtx)...)
 	}
 	return assignments, nil
 }
 
 // GenerateAssignmentsForParticipant creates in-memory the assignments for two participants in the initial state
-func (s *service) GenerateAssignmentsForParticipant(tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType graphql.FormationObjectType, participant model.Identifiable) []*model.FormationAssignment {
+func (s *service) GenerateAssignmentsForParticipant(tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participant model.Identifiable) []*model.FormationAssignment {
 	assignments := make([]*model.FormationAssignment, 0, 2)
 	assignments = append(assignments, &model.FormationAssignment{
 		FormationID: formation.ID,
 		TenantID:    tnt,
 		Source:      objectID,
-		SourceType:  string(objectType),
+		SourceType:  model.FormationAssignmentType(objectType),
 		Target:      participant.GetID(),
-		TargetType:  string(participantType),
+		TargetType:  participantType,
 		State:       string(model.InitialAssignmentState),
 		Value:       nil,
 	})
@@ -309,9 +309,9 @@ func (s *service) GenerateAssignmentsForParticipant(tnt, objectID string, object
 		FormationID: formation.ID,
 		TenantID:    tnt,
 		Source:      participant.GetID(),
-		SourceType:  string(participantType),
+		SourceType:  participantType,
 		Target:      objectID,
-		TargetType:  string(objectType),
+		TargetType:  model.FormationAssignmentType(objectType),
 		State:       string(model.InitialAssignmentState),
 		Value:       nil,
 	})
@@ -434,7 +434,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ten
 			FormationAssignment: assignments[i],
 		}
 		target := assignment.Target
-		if assignment.TargetType == string(graphql.FormationObjectTypeRuntimeContext) {
+		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
 			log.C(ctx).Infof("Matching for runtime context, fetching associated runtime for runtime context with ID %s", target)
 			rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, tenant, target)
 			if err != nil {

@@ -6,11 +6,15 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
+// FormationAssignmentType describes possible source and target types
 type FormationAssignmentType string
 
 const (
-	FormationAssignmentTypeApplication    FormationAssignmentType = "APPLICATION"
-	FormationAssignmentTypeRuntime        FormationAssignmentType = "RUNTIME"
+	// FormationAssignmentTypeApplication represent application type in formation assignment
+	FormationAssignmentTypeApplication FormationAssignmentType = "APPLICATION"
+	// FormationAssignmentTypeRuntime represent runtime type in formation assignment
+	FormationAssignmentTypeRuntime FormationAssignmentType = "RUNTIME"
+	// FormationAssignmentTypeRuntimeContext represent runtime context type in formation assignment
 	FormationAssignmentTypeRuntimeContext FormationAssignmentType = "RUNTIME_CONTEXT"
 )
 

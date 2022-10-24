@@ -79,7 +79,7 @@ func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.Forma
 	return r.conv.FromEntity(&entity), nil
 }
 
-// GetGlobalByID missing godoc todo::: add doc
+// GetGlobalByID retrieves formation assignment matching ID `id` globally without tenant parameter
 func (r *repository) GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error) {
 	var entity Entity
 	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {

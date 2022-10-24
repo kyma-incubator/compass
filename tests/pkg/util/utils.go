@@ -11,7 +11,11 @@ import (
 type ApplicationType string
 
 const (
-	ContentTypeApplicationJSON = "application/json"
+	AuthorizationHeader = "Authorization"
+	ContentTypeHeader   = "Content-Type"
+
+	ContentTypeApplicationJSON       = "application/json"
+	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
 
 	ApplicationTypeC4C             ApplicationType = "SAP Cloud for Customer"
 	ApplicationTypeS4HANAOnPremise ApplicationType = "SAP S/4HANA On-Premise"

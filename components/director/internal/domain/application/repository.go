@@ -44,7 +44,6 @@ type pgRepository struct {
 	globalDeleter         repo.DeleterGlobal
 	lister                repo.Lister
 	listerGlobal          repo.ListerGlobal
-	ownerLister           repo.Lister
 	deleter               repo.Deleter
 	pageableQuerier       repo.PageableQuerier
 	globalPageableQuerier repo.PageableQuerierGlobal
@@ -67,7 +66,6 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		deleter:               repo.NewDeleter(applicationTable),
 		lister:                repo.NewLister(applicationTable, applicationColumns),
 		listerGlobal:          repo.NewListerGlobal(resource.Application, applicationTable, applicationColumns),
-		ownerLister:           repo.NewOwnerLister(applicationTable, applicationColumns, true),
 		pageableQuerier:       repo.NewPageableQuerier(applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
 		creator:               repo.NewCreator(applicationTable, applicationColumns),
@@ -84,9 +82,9 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 	return r.existQuerier.Exists(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// OwnerExists checks if application with given id and tenant exists and has owner access // todo::: tests
+// OwnerExists checks if application with given id and tenant exists and has owner access
 func (r *pgRepository) OwnerExists(ctx context.Context, tenant, id string) (bool, error) {
-	return r.ownerExistQuerier.Exists(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.ownerExistQuerier.Exists(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // Delete missing godoc

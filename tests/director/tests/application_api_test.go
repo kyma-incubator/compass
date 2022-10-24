@@ -1709,7 +1709,7 @@ func TestMergeApplications(t *testing.T) {
 	}()
 
 	t.Logf("Assign application to formation %s", newFormation)
-	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
@@ -1717,7 +1717,7 @@ func TestMergeApplications(t *testing.T) {
 
 	defer func() {
 		t.Logf("Unassigning src-app from formation %s", newFormation)
-		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
+		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 		var response graphql.Formation
 		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, request, &response)
 		if nil == err {
@@ -1736,7 +1736,7 @@ func TestMergeApplications(t *testing.T) {
 
 	defer func() {
 		t.Logf("Unassigning dst-app from formation %s", newFormation)
-		request := fixtures.FixUnassignFormationRequest(destApp.ID, "APPLICATION", newFormation)
+		request := fixtures.FixUnassignFormationRequest(destApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 		var response graphql.Formation
 		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, request, &response)
 		if nil == err {
@@ -1889,14 +1889,14 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 		t.Logf("Deleted formation with name: %s", response.Name)
 	}()
 	t.Logf("Assign application to formation %s", newFormation)
-	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
 	defer func() {
 		t.Logf("Unassigning src-app from formation %s", newFormation)
-		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
+		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 		var response graphql.Formation
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &response)
 		if nil == err {

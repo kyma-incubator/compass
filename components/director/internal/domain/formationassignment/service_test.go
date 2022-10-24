@@ -172,6 +172,65 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_GetGlobalByID(t *testing.T) {
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		ExpectedOutput          *model.FormationAssignment
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetGlobalByID", ctxWithTenant, TestID).Return(faModel, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   faModel,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:    "Error when getting formation assignment globally",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetGlobalByID", ctxWithTenant, TestID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: fmt.Sprintf("while getting formation assignment with ID: %q globally", TestID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			faRepo := &automock.FormationAssignmentRepository{}
+			if testCase.FormationAssignmentRepo != nil {
+				faRepo = testCase.FormationAssignmentRepo()
+			}
+
+			svc := formationassignment.NewService(nil, faRepo, nil, nil, nil, nil, nil)
+
+			// WHEN
+			r, err := svc.GetGlobalByID(testCase.Context, TestID)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, faRepo)
+		})
+	}
+}
+
 func TestService_GetForFormation(t *testing.T) {
 	testCases := []struct {
 		Name                    string
@@ -705,63 +764,63 @@ func TestService_GenerateAssignments(t *testing.T) {
 	runtimes := []*model.Runtime{&model.Runtime{ID: "runtime"}}
 	runtimeContexts := []*model.RuntimeContext{&model.RuntimeContext{ID: "runtimeContext"}}
 	result := []*model.FormationAssignment{
-		&model.FormationAssignment{
+		{
 			FormationID: "ID",
 			TenantID:    TestTenantID,
 			Source:      objectID,
-			SourceType:  string(objectType),
+			SourceType:  model.FormationAssignmentType(objectType),
 			Target:      applications[0].ID,
-			TargetType:  string(graphql.FormationObjectTypeApplication),
+			TargetType:  model.FormationAssignmentTypeApplication,
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			FormationID: "ID",
 			TenantID:    TestTenantID,
 			Source:      applications[0].ID,
-			SourceType:  string(graphql.FormationObjectTypeApplication),
+			SourceType:  model.FormationAssignmentTypeApplication,
 			Target:      objectID,
-			TargetType:  string(objectType),
+			TargetType:  model.FormationAssignmentType(objectType),
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			FormationID: "ID",
 			TenantID:    TestTenantID,
 			Source:      objectID,
-			SourceType:  string(objectType),
+			SourceType:  model.FormationAssignmentType(objectType),
 			Target:      runtimes[0].ID,
-			TargetType:  string(graphql.FormationObjectTypeRuntime),
+			TargetType:  model.FormationAssignmentTypeRuntime,
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			FormationID: "ID",
 			TenantID:    TestTenantID,
 			Source:      runtimes[0].ID,
-			SourceType:  string(graphql.FormationObjectTypeRuntime),
+			SourceType:  model.FormationAssignmentTypeRuntime,
 			Target:      objectID,
-			TargetType:  string(objectType),
+			TargetType:  model.FormationAssignmentType(objectType),
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			FormationID: "ID",
 			TenantID:    TestTenantID,
 			Source:      objectID,
-			SourceType:  string(objectType),
+			SourceType:  model.FormationAssignmentType(objectType),
 			Target:      runtimeContexts[0].ID,
-			TargetType:  string(graphql.FormationObjectTypeRuntimeContext),
+			TargetType:  model.FormationAssignmentTypeRuntimeContext,
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
-		&model.FormationAssignment{
+		{
 			FormationID: "ID",
 			TenantID:    TestTenantID,
 			Source:      runtimeContexts[0].ID,
-			SourceType:  string(graphql.FormationObjectTypeRuntimeContext),
+			SourceType:  model.FormationAssignmentTypeRuntimeContext,
 			Target:      objectID,
-			TargetType:  string(objectType),
+			TargetType:  model.FormationAssignmentType(objectType),
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},

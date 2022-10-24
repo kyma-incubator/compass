@@ -253,14 +253,14 @@ func TestRuntimeFormationFlow(t *testing.T) {
 
 	nonExistingFormation := "nonExistingFormation"
 	t.Logf("Shoud not assign runtime to formation %s, as it is not in the label definition", nonExistingFormation)
-	failAssignReq := fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME", nonExistingFormation)
+	failAssignReq := fixtures.FixAssignFormationRequest(rtm.ID, string(graphql.FormationObjectTypeRuntime), nonExistingFormation)
 	var failAssignFormation *graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, failAssignReq, failAssignFormation)
 	require.Error(t, err)
 	require.Nil(t, failAssignFormation)
 
 	t.Logf("Assign runtime to formation %s", newFormation)
-	assignReq := fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME", newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(rtm.ID, string(graphql.FormationObjectTypeRuntime), newFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
@@ -272,7 +272,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
 
 	t.Logf("Assign runtime to formation %s which was already assigned by ASA should fail with conflict", asaFormation)
-	assignReq = fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
+	assignReq = fixtures.FixAssignFormationRequest(rtm.ID, string(graphql.FormationObjectTypeRuntime), asaFormation)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Object is not unique")
@@ -281,7 +281,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
 
 	t.Logf("Try to unassign runtime from formation %q which was assigned by ASA", asaFormation)
-	unassignReq := fixtures.FixUnassignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
+	unassignReq := fixtures.FixUnassignFormationRequest(rtm.ID, string(graphql.FormationObjectTypeRuntime), asaFormation)
 	var unassignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
 	require.NoError(t, err)
@@ -298,7 +298,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	assert.Nil(t, nilFormation)
 
 	t.Logf("Unassign Runtime from formation %s", newFormation)
-	unassignReq = fixtures.FixUnassignFormationRequest(rtm.ID, "RUNTIME", newFormation)
+	unassignReq = fixtures.FixUnassignFormationRequest(rtm.ID, string(graphql.FormationObjectTypeRuntime), newFormation)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
@@ -410,14 +410,14 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 
 	nonExistingFormation := "nonExistingFormation"
 	t.Logf("Shoud not assign runtime context to formation %s, as it is not in the label definition", nonExistingFormation)
-	failAssignReq := fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME_CONTEXT", nonExistingFormation)
+	failAssignReq := fixtures.FixAssignFormationRequest(rtm.ID, string(graphql.FormationObjectTypeRuntimeContext), nonExistingFormation)
 	var failAssignFormation *graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, failAssignReq, failAssignFormation)
 	require.Error(t, err)
 	require.Nil(t, failAssignFormation)
 
 	t.Logf("Assign runtime context to formation %s", newFormation)
-	assignReq := fixtures.FixAssignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(runtimeContext.ID, string(graphql.FormationObjectTypeRuntimeContext), newFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
@@ -429,7 +429,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2, newFormation})
 
 	t.Logf("Assign runtime context to formation %s which was already assigned by ASA should fail with conflict", asaFormation)
-	assignReq = fixtures.FixAssignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", asaFormation)
+	assignReq = fixtures.FixAssignFormationRequest(runtimeContext.ID, string(graphql.FormationObjectTypeRuntimeContext), asaFormation)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Object is not unique")
@@ -438,7 +438,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2, newFormation})
 
 	t.Logf("Try to unassign runtime context from formation %q which was assigned by ASA", asaFormation)
-	unassignReq := fixtures.FixUnassignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", asaFormation)
+	unassignReq := fixtures.FixUnassignFormationRequest(runtimeContext.ID, string(graphql.FormationObjectTypeRuntimeContext), asaFormation)
 	var unassignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
 	require.NoError(t, err)
@@ -455,7 +455,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	assert.Nil(t, nilFormation)
 
 	t.Logf("Unassign Runtime Context from formation %s", newFormation)
-	unassignReq = fixtures.FixUnassignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", newFormation)
+	unassignReq = fixtures.FixUnassignFormationRequest(runtimeContext.ID, string(graphql.FormationObjectTypeRuntimeContext), newFormation)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
@@ -508,7 +508,7 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.Equal(t, secondFormation, unusedFormation.Name)
 
 	t.Logf("Assign tenant %s to formation %s", subaccountID, firstFormation)
-	assignReq := fixtures.FixAssignFormationRequest(subaccountID, "TENANT", firstFormation)
+	assignReq := fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
@@ -522,7 +522,7 @@ func TestTenantFormationFlow(t *testing.T) {
 	assertions.AssertAutomaticScenarioAssignment(t, assignment, *asaPage.Data[0])
 
 	t.Logf("Unassign tenant %s from formation %s", subaccountID, firstFormation)
-	unassignReq := fixtures.FixUnassignFormationRequest(subaccountID, "TENANT", firstFormation)
+	unassignReq := fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
 	var unassignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
 	require.NoError(t, err)
@@ -566,12 +566,14 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 		// Create kyma formation template
 		kymaFormationTmplName := "kyma-formation-template-name"
-		kymaFT := createFormationTemplate(t, ctx, "kyma", kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, graphql.ArtifactTypeEnvironmentInstance)
+		kymaAppTypes := []string{"kyma-app-type-1", "kyma-app-type-2"}
+		kymaFT := createFormationTemplate(t, ctx, kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, kymaAppTypes, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, kymaFT.ID)
 
 		// Create provider formation template
 		providerFormationTmplName := "provider-formation-template-name"
-		providerFT := createFormationTemplate(t, ctx, "provider", providerFormationTmplName, conf.SubscriptionProviderAppNameValue, graphql.ArtifactTypeSubscription)
+		providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
+		providerFT := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, providerFT.ID)
 
 		// Create kyma formation
@@ -641,8 +643,8 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 			require.NoError(t, err)
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-			subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-			subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
+			subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+			subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 			subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 			// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
@@ -724,8 +726,8 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 			require.NoError(t, err)
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-			subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-			subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
+			subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+			subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 			subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 			// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
@@ -856,8 +858,8 @@ func TestFormationNotifications(stdT *testing.T) {
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-		subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-		subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
+		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
@@ -892,16 +894,19 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.Equal(t, 1, len(rtm.RuntimeContexts.Data))
 		runtimeContextID := rtm.RuntimeContexts.Data[0].ID
 
+		applicationType := "provider-app-type-1"
 		providerFormationTmplName := "provider-formation-template-name"
+
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, "provider", providerFormationTmplName, conf.SubscriptionProviderAppNameValue, graphql.ArtifactTypeSubscription)
+		//providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
+		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
-		require.NotEmpty(t, formation.ID)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		require.NotEmpty(t, formation.ID)
 
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-template")
@@ -920,7 +925,6 @@ func TestFormationNotifications(stdT *testing.T) {
 		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
-		applicationType := "provider-app-type-1"
 		appRegion := "test-app-region"
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
@@ -954,7 +958,8 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 
 		appFromTmplSrc := graphql.ApplicationFromTemplateInput{
-			TemplateName: applicationType, Values: []*graphql.TemplateValueInput{
+			TemplateName: applicationType,
+			Values: []*graphql.TemplateValueInput{
 				{
 					Placeholder: "name",
 					Value:       "app1-formation-notifications-tests",
@@ -1011,20 +1016,18 @@ func TestFormationNotifications(stdT *testing.T) {
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		//list assignments - expect 2
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
+		//list assignments - expect 2
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app1.ID:          {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 			runtimeContextID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("null")}},
 		}
-
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
-
-		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
@@ -1099,7 +1102,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.True(t, unassignNotificationFound, "notification for unassign app1 not found")
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
@@ -1154,7 +1157,8 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 	// TODO: Remove runtimeType once we support app only formations
-	ft := createFormationTemplate(t, ctx, "app-to-app", formationTmplName, "dummy-runtime-type", graphql.ArtifactTypeSubscription)
+	appTypes := []string{"app-to-app-app-type-1", "app-to-app-app-type-2"}
+	ft := createFormationTemplate(t, ctx, formationTmplName, "dummy-runtime-type", appTypes, graphql.ArtifactTypeSubscription)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 	formationName := "app-to-app-formation-name"
@@ -1493,8 +1497,8 @@ func TestFormationAssignments(stdT *testing.T) {
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-		subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-		subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
+		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
@@ -1530,15 +1534,16 @@ func TestFormationAssignments(stdT *testing.T) {
 		runtimeContextID := rtm.RuntimeContexts.Data[0].ID
 
 		providerFormationTmplName := "provider-formation-template-name"
+		providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, "provider", providerFormationTmplName, conf.SubscriptionProviderAppNameValue, graphql.ArtifactTypeSubscription)
+		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
-		require.NotEmpty(t, formation.ID)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		require.NotEmpty(t, formation.ID)
 
 		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
@@ -1632,7 +1637,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		var assignedFormation graphql.Formation
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
@@ -1688,7 +1693,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
@@ -1828,7 +1833,7 @@ func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
 
 func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
 	t.Logf("Assign tenant: %q to formation with name: %q...", objectID, formationName)
-	assignReq := fixtures.FixAssignFormationRequest(objectID, "TENANT", formationName)
+	assignReq := fixtures.FixAssignFormationRequest(objectID, string(graphql.FormationObjectTypeTenant), formationName)
 	var formation graphql.Formation
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignReq, &formation)
 	require.NoError(t, err)
@@ -1838,7 +1843,7 @@ func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenant
 
 func unassignTenantFromFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
 	t.Logf("Unassign tenant: %q from formation with name: %q...", objectID, formationName)
-	unassignReq := fixtures.FixUnassignFormationRequest(objectID, "TENANT", formationName)
+	unassignReq := fixtures.FixUnassignFormationRequest(objectID, string(graphql.FormationObjectTypeTenant), formationName)
 	var formation graphql.Formation
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, unassignReq, &formation)
 	require.NoError(t, err)
@@ -1846,12 +1851,12 @@ func unassignTenantFromFormation(t *testing.T, ctx context.Context, objectID, te
 	t.Logf("Successfully unassigned tenant: %q from formation with name: %q", objectID, formationName)
 }
 
-func createFormationTemplate(t *testing.T, ctx context.Context, prefix, formationTemplateName, runtimeType string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
+func createFormationTemplate(t *testing.T, ctx context.Context, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
 	formationTmplInput := graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
-		ApplicationTypes:       []string{prefix + "-app-type-1", prefix + "-app-type-2"},
+		ApplicationTypes:       applicationTypes,
 		RuntimeType:            runtimeType,
-		RuntimeTypeDisplayName: prefix + "-formation-template-display-name",
+		RuntimeTypeDisplayName: formationTemplateName,
 		RuntimeArtifactKind:    runtimeArtifactKind,
 	}
 
