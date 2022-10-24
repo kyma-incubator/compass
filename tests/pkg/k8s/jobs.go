@@ -120,10 +120,6 @@ func WaitForJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clients
 	}
 }
 
-func WaitForJobToFinish(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
-	getJobStatus(t, ctx, k8sClient, jobName, namespace)
-}
-
 func PrintJobLogs(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace, containerName string, shouldJobFail bool) {
 	if shouldJobFail {
 		return
