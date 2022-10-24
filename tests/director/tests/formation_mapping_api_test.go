@@ -46,7 +46,7 @@ const (
 	formationAssignmentIDPathParam = "ucl-assignment-id"
 )
 
-func Test_UpdateStatus_Success(t *testing.T) {
+func Test_UpdateStatus(t *testing.T) {
 	ctx := context.Background()
 	parentTenantID := tenant.TestTenants.GetDefaultTenantID()
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
