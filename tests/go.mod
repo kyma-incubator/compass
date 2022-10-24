@@ -5,11 +5,11 @@ go 1.18
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220225101454-1e11cf2f8a9b
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221024111200-4b61cc3b1c49
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20221024111200-4b61cc3b1c49
 	github.com/kyma-incubator/compass/components/director v0.0.0-20221024111200-4b61cc3b1c49
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221024111200-4b61cc3b1c49
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20221024111200-4b61cc3b1c49
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220718091245-0570e3e974e0
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
