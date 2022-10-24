@@ -45,8 +45,6 @@ type TemplateInput interface {
 type FormationAssignmentTemplateInput interface {
 	TemplateInput
 	GetParticipantsIDs() []string
-	GetAssignment() *model.FormationAssignment
-	GetReverseAssignment() *model.FormationAssignment
 	SetAssignment(*model.FormationAssignment)
 	SetReverseAssignment(*model.FormationAssignment)
 	Clone() FormationAssignmentTemplateInput

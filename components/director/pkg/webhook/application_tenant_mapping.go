@@ -18,8 +18,8 @@ type ApplicationTenantMappingInput struct {
 	TargetApplicationTemplate *ApplicationTemplateWithLabels
 	// TargetApplication is the application that the notification is for (the one with the webhook / the one receiving the notification)
 	TargetApplication *ApplicationWithLabels
-	Assignment        *model.FormationAssignment
-	ReverseAssignment *model.FormationAssignment
+	Assignment        *FormationAssignment
+	ReverseAssignment *FormationAssignment
 }
 
 // ParseURLTemplate missing godoc
@@ -49,35 +49,34 @@ func (rd *ApplicationTenantMappingInput) GetParticipantsIDs() []string {
 	return []string{rd.SourceApplication.ID, rd.TargetApplication.ID}
 }
 
-// GetAssignments returns the assignments associated with the ApplicationTenantMappingInput
-func (rd *ApplicationTenantMappingInput) GetAssignments() (*model.FormationAssignment, *model.FormationAssignment) {
-	return rd.Assignment, rd.ReverseAssignment
-}
-
-// SetAssignments sets the assignments for the ApplicationTenantMappingInput to the provided ones
-func (rd *ApplicationTenantMappingInput) SetAssignments(assignment, reverseAssignment *model.FormationAssignment) {
-	rd.Assignment = assignment
-	rd.ReverseAssignment = reverseAssignment
-}
-
-// GetAssignment returns the assignment associated with the ApplicationTenantMappingInput
-func (rd *ApplicationTenantMappingInput) GetAssignment() *model.FormationAssignment {
-	return rd.Assignment
-}
-
-// GetReverseAssignment returns the reverse assignment associated with the ApplicationTenantMappingInput
-func (rd *ApplicationTenantMappingInput) GetReverseAssignment() *model.FormationAssignment {
-	return rd.ReverseAssignment
-}
-
 // SetAssignment sets the assignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.FormationAssignment) {
-	rd.Assignment = assignment
+	rd.Assignment = &FormationAssignment{
+		ID:          assignment.ID,
+		FormationID: assignment.FormationID,
+		TenantID:    assignment.TenantID,
+		Source:      assignment.Source,
+		SourceType:  assignment.SourceType,
+		Target:      assignment.Target,
+		TargetType:  assignment.TargetType,
+		State:       assignment.State,
+		Value:       string(assignment.Value),
+	}
 }
 
 // SetReverseAssignment sets the reverseAssignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
-	rd.ReverseAssignment = reverseAssignment
+	rd.ReverseAssignment = &FormationAssignment{
+		ID:          reverseAssignment.ID,
+		FormationID: reverseAssignment.FormationID,
+		TenantID:    reverseAssignment.TenantID,
+		Source:      reverseAssignment.Source,
+		SourceType:  reverseAssignment.SourceType,
+		Target:      reverseAssignment.Target,
+		TargetType:  reverseAssignment.TargetType,
+		State:       reverseAssignment.State,
+		Value:       string(reverseAssignment.Value),
+	}
 }
 
 // Clone return a copy of the ApplicationTenantMappingInput

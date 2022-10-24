@@ -32,6 +32,20 @@ type RuntimeContextWithLabels struct {
 	Labels map[string]interface{}
 }
 
+// FormationAssignment represents the FormationAssignment model, but with the value stored as a string
+// Because otherwise the template later renders it as a stringified []byte rather than a string
+type FormationAssignment struct {
+	ID          string `json:"id"`
+	FormationID string `json:"formation_id"`
+	TenantID    string `json:"tenant_id"`
+	Source      string `json:"source"`
+	SourceType  string `json:"source_type"`
+	Target      string `json:"target"`
+	TargetType  string `json:"target_type"`
+	State       string `json:"state"`
+	Value       string `json:"value"`
+}
+
 // FormationConfigurationChangeInput struct contains the input for a formation notification
 type FormationConfigurationChangeInput struct {
 	Operation           model.FormationOperation
@@ -40,8 +54,8 @@ type FormationConfigurationChangeInput struct {
 	Application         *ApplicationWithLabels
 	Runtime             *RuntimeWithLabels
 	RuntimeContext      *RuntimeContextWithLabels
-	Assignment          *model.FormationAssignment
-	ReverseAssignment   *model.FormationAssignment
+	Assignment          *FormationAssignment
+	ReverseAssignment   *FormationAssignment
 }
 
 // ParseURLTemplate missing godoc
@@ -82,24 +96,34 @@ func (rd *FormationConfigurationChangeInput) GetParticipantsIDs() []string {
 	return participants
 }
 
-// GetAssignment returns the assignment associated with the FormationConfigurationChangeInput
-func (rd *FormationConfigurationChangeInput) GetAssignment() *model.FormationAssignment {
-	return rd.Assignment
-}
-
-// GetReverseAssignment returns the reverse assignment associated with the FormationConfigurationChangeInput
-func (rd *FormationConfigurationChangeInput) GetReverseAssignment() *model.FormationAssignment {
-	return rd.ReverseAssignment
-}
-
 // SetAssignment sets the assignment for the FormationConfigurationChangeInput to the provided one
 func (rd *FormationConfigurationChangeInput) SetAssignment(assignment *model.FormationAssignment) {
-	rd.Assignment = assignment
+	rd.Assignment = &FormationAssignment{
+		ID:          assignment.ID,
+		FormationID: assignment.FormationID,
+		TenantID:    assignment.TenantID,
+		Source:      assignment.Source,
+		SourceType:  assignment.SourceType,
+		Target:      assignment.Target,
+		TargetType:  assignment.TargetType,
+		State:       assignment.State,
+		Value:       string(assignment.Value),
+	}
 }
 
 // SetReverseAssignment sets the reverse assignment for the FormationConfigurationChangeInput to the provided one
 func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
-	rd.ReverseAssignment = reverseAssignment
+	rd.ReverseAssignment = &FormationAssignment{
+		ID:          reverseAssignment.ID,
+		FormationID: reverseAssignment.FormationID,
+		TenantID:    reverseAssignment.TenantID,
+		Source:      reverseAssignment.Source,
+		SourceType:  reverseAssignment.SourceType,
+		Target:      reverseAssignment.Target,
+		TargetType:  reverseAssignment.TargetType,
+		State:       reverseAssignment.State,
+		Value:       string(reverseAssignment.Value),
+	}
 }
 
 // Clone returns a copy of the FormationConfigurationChangeInput
