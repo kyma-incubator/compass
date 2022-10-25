@@ -1572,13 +1572,6 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 		Value:    []byte(config),
 	}
 
-	/*configPendingAssignment := &model.FormationAssignment{
-		ID:       TestID,
-		TenantID: TestTenantID,
-		Source:   source,
-		Target:   target,
-		State:    string(model.ConfigPendingAssignmentState),
-	}*/
 	reverseConfigPendingAssignment := &model.FormationAssignment{
 		ID:       TestID,
 		TenantID: TestTenantID,
@@ -1587,10 +1580,6 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 		State:    string(model.ConfigPendingAssignmentState),
 		Value:    []byte(config),
 	}
-	// successResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete}
-	// incompleteResponse := &webhook.Response{ActualStatusCode: &incomplete, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete}
-	// configResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete, Config: &config}
-	// errorResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &incomplete, Error: &errMsg}
 
 	input := &webhook.FormationConfigurationChangeInput{
 		Operation: model.AssignFormation,

@@ -1416,7 +1416,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			// GIVENa
+			// GIVEN
 			persist, transact := txGen.ThatDoesntStartTransaction()
 			if testCase.TxFn != nil {
 				persist, transact = testCase.TxFn()

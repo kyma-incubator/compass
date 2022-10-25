@@ -34,8 +34,3 @@ func (rd *ApplicationLifecycleWebhookRequestObject) ParseHeadersTemplate(tmpl *s
 	var headers http.Header
 	return headers, parseTemplate(tmpl, *rd, &headers)
 }
-
-// GetParticipantsIDs unused, as this is not part of a formation notification, will be removed in a following PR
-func (rd *ApplicationLifecycleWebhookRequestObject) GetParticipantsIDs() []string {
-	return []string{}
-}

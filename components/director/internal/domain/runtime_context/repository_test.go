@@ -481,7 +481,7 @@ func TestPgRepository_ListByIDs(t *testing.T) {
 	runtimeCtxModel2 := fixModelRuntimeCtxWithIDAndRuntimeID(runtimeCtx2ID, runtimeID2)
 
 	suite := testdb.RepoListTestSuite{
-		Name: "ListByScenarios Runtime Contexts",
+		Name: "ListByIDs Runtime Contexts",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE id IN ($1, $2) AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $3))`),

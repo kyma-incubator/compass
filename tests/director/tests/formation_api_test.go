@@ -2299,7 +2299,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 
 		// target:source:state
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("null")}}, // Should expect CONFIG_PENDING state when reverse notifications are implemented
+			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("null")}},
 			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
@@ -2320,7 +2320,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("null")}}, // Should expect CONFIG_PENDING state when reverse notifications are implemented
+			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("null")}},
 			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
@@ -2789,10 +2789,6 @@ func verifyFormationNotificationForApplication(notification gjson.Result, op str
 	}
 
 	rtCtxFromNotification := notificationItems.Array()[0]
-	/*actualObjectID := notification.Get("RequestBody.items").String()
-	if objectID != actualObjectID {
-		return errors.Errorf("ObjectID does not match: expected %q, but got %q", objectID, actualObjectID)
-	}*/
 
 	actualSubscribedTenantID := rtCtxFromNotification.Get("application-tenant-id").String()
 	if expectedSubscribedTenantID != actualSubscribedTenantID {

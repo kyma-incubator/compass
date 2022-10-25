@@ -194,10 +194,6 @@ func TestServiceAssignFormation(t *testing.T) {
 		TargetTenantID: TargetTenant,
 	}
 
-	//webhookRequest := &webhookclient.Request{
-	//	Webhook: graphql.Webhook{ID: WebhookID},
-	//}
-
 	testCases := []struct {
 		Name                          string
 		UIDServiceFn                  func() *automock.UuidService
