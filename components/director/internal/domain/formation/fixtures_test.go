@@ -116,6 +116,12 @@ func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
 	return &automock.RuntimeContextRepository{}
 }
 
+func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {
+	repo := &automock.RuntimeContextRepository{}
+	repo.On("ListByIDs", mock.Anything, Tnt, []string{}).Return(nil, nil).Once()
+	return repo
+}
+
 func unusedApplicationRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}
 }
@@ -167,7 +173,6 @@ func unusedFormationAssignmentService() *automock.FormationAssignmentService {
 func noActionNotificationsService() *automock.NotificationsService {
 	notificationSvc := &automock.NotificationsService{}
 	notificationSvc.On("GenerateNotifications", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-	notificationSvc.On("SendNotifications", mock.Anything, mock.Anything).Return(nil, nil)
 	return notificationSvc
 }
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -15,7 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -47,6 +48,7 @@ type runtimeRepository interface {
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
 	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
+	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error)
 	ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error)
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
@@ -73,8 +75,7 @@ type FormationTemplateRepository interface {
 // NotificationsService represents the notification service for generating and sending notifications
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
-	GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.Request, error)
-	SendNotifications(ctx context.Context, notifications []*webhookclient.Request) ([]*webhookdir.Response, error)
+	GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.NotificationRequest, error)
 }
 
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -130,13 +131,15 @@ type service struct {
 	runtimeContextRepo          runtimeContextRepository
 	formationAssignmentService  formationAssignmentService
 	notificationsService        NotificationsService
+	transact                    persistence.Transactioner
 	runtimeTypeLabelKey         string
 	applicationTypeLabelKey     string
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(transact persistence.Transactioner, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
+		transact:                    transact,
 		labelDefRepository:          labelDefRepository,
 		labelRepository:             labelRepository,
 		formationRepository:         formationRepository,
@@ -248,6 +251,10 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // graphql.FormationObjectTypeRuntimeContext it adds the provided formation to the scenario label of the entity if such exists,
 // otherwise new scenario label is created for the entity with the provided formation.
 //
+// FormationAssignments for the object that is being assigned and the already assigned objects are generated and stored.
+// For each object X already part of the formation formationAssignment with source=X and target=objectID and formationAssignment
+// with source=objectID and target=X are generated.
+//
 // Additionally, notifications are sent to the interested participants for that formation change.
 // 		- If objectType is graphql.FormationObjectTypeApplication:
 //				- A notification about the assigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
@@ -258,6 +265,13 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 //				- If the assigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
 //				- A notification about the assigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
 //
+// If an error occurs during the formationAssignment processing the failed formationAssignment's value is updated with the error and the processing proceeds. The error should not
+// be returned but only logged. If the error is returned the assign operation will be rolled back and all the created resources(labels, formationAssignments etc.) will be rolled
+// back. On the other hand the participants in the formation will have been notified for the assignment and there is no mechanism for informing them that the assignment was not executed successfully.
+//
+// After the assigning there may be formationAssignments in CREATE_ERROR state. They can be fixed by assigning the object to the same formation again. This will result in retrying only
+// the formationAssignments that are in state different from READY.
+//
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -267,23 +281,23 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if err != nil {
 			return nil, err
 		}
+		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, err
+		}
+
+		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
+		if err != nil {
+			return nil, err
+		}
 
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		responses, err := s.notificationsService.SendNotifications(ctx, requests)
-		if err != nil {
-			return nil, err
-		}
-
-		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, assignments, requests, responses, s.formationAssignmentService.CreateOrUpdateFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+			log.C(ctx).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
 
@@ -390,6 +404,19 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 //				- If the unassigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
 //   			- A notification about the unassigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
 //
+// For the formationAssignments that have their source or target field set to objectID:
+// 		- If the formationAssignment does not have notification associated with it
+//				- the formation assignment is deleted
+//		- If the formationAssignment is associated with a notification
+//				- If the response from the notification is success
+//						- the formationAssignment is deleted
+// 				- If the response from the notification is different from success
+//						- the formation assignment is updated with an error
+//
+// After the processing of the formationAssignments the state is persisted regardless of whether there were any errors.
+// If an error has occurred during the formationAssignment processing the unassign operation is rolled back(the updated
+// with the error formationAssignments are already persisted in the database).
+//
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant which then will unassign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -409,20 +436,34 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		responses, err := s.notificationsService.SendNotifications(ctx, requests)
-		if err != nil {
-			return nil, err
-		}
-
 		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
+		if err != nil {
 			return nil, err
 		}
 
+		tx, err := s.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+		defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+		ctx = persistence.SaveToContext(ctx, tx)
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+			commitErr := tx.Commit()
+			if commitErr != nil {
+				return nil, errors.Wrapf(err, "while committing transaction with error")
+			}
+			return nil, err
+		}
+		err = tx.Commit()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while committing transaction")
+		}
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
@@ -449,20 +490,36 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		responses, err := s.notificationsService.SendNotifications(ctx, requests)
-		if err != nil {
-			return nil, err
-		}
-
 		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, tnt, formationAssignmentsForObject, requests, responses, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
+		if err != nil {
 			return nil, err
 		}
 
+		tx, err := s.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+
+		transactionCtx := persistence.SaveToContext(ctx, tx)
+		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
+
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+			commitErr := tx.Commit()
+			if commitErr != nil {
+				return nil, errors.Wrapf(err, "while committing transaction with error")
+			}
+			return nil, err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return nil, errors.Wrapf(err, "while committing transaction")
+		}
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeTenant:
@@ -478,6 +535,24 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
+}
+
+func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
+	rtmContextIDs := make([]string, 0)
+	for _, assignment := range formationAssignmentsForObject {
+		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
+			rtmContextIDs = append(rtmContextIDs, assignment.Target)
+		}
+	}
+	rtmContexts, err := s.runtimeContextRepo.ListByIDs(ctx, tnt, rtmContextIDs)
+	if err != nil {
+		return nil, err
+	}
+	rtmContextIDsToRuntimeMap := make(map[string]string, len(rtmContexts))
+	for _, rtmContext := range rtmContexts {
+		rtmContextIDsToRuntimeMap[rtmContext.ID] = rtmContext.RuntimeID
+	}
+	return rtmContextIDsToRuntimeMap, nil
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
@@ -796,10 +871,7 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 		return err
 	}
 
-	formations, err = modificationFunc(formations, formationName)
-	if err != nil {
-		return err
-	}
+	formations = modificationFunc(formations, formationName)
 
 	schema, err := labeldef.NewSchemaForFormations(formations)
 	if err != nil {
@@ -836,10 +908,7 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID st
 		return err
 	}
 
-	formations, err := modificationFunc(existingFormations, formation.Name)
-	if err != nil {
-		return err
-	}
+	formations := modificationFunc(existingFormations, formation.Name)
 
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
@@ -851,19 +920,19 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID st
 	return s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
 
-type modificationFunc func([]string, string) ([]string, error)
+type modificationFunc func([]string, string) []string
 
-func addFormation(formations []string, formation string) ([]string, error) {
+func addFormation(formations []string, formation string) []string {
 	for _, f := range formations {
 		if f == formation {
-			return nil, apperrors.NewNotUniqueErrorWithMessage(resource.Formations, fmt.Sprintf("Formation %s already exists", formation))
+			return formations
 		}
 	}
 
-	return append(formations, formation), nil
+	return append(formations, formation)
 }
 
-func deleteFormation(formations []string, formation string) ([]string, error) {
+func deleteFormation(formations []string, formation string) []string {
 	filteredFormations := make([]string, 0, len(formations))
 	for _, f := range formations {
 		if f != formation {
@@ -871,7 +940,7 @@ func deleteFormation(formations []string, formation string) ([]string, error) {
 		}
 	}
 
-	return filteredFormations, nil
+	return filteredFormations
 }
 
 func newLabelInput(formation, objectID string, objectType model.LabelableObject) *model.LabelInput {

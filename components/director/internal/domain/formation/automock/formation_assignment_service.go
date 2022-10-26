@@ -5,6 +5,8 @@ package automock
 import (
 	context "context"
 
+	formationassignment "github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+
 	graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	mock "github.com/stretchr/testify/mock"
@@ -12,8 +14,6 @@ import (
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
 	testing "testing"
-
-	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
@@ -23,13 +23,13 @@ type FormationAssignmentService struct {
 	mock.Mock
 }
 
-// CleanupFormationAssignment provides a mock function with given fields: ctx, assignment, response
-func (_m *FormationAssignmentService) CleanupFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhook.Response) error {
-	ret := _m.Called(ctx, assignment, response)
+// CleanupFormationAssignment provides a mock function with given fields: ctx, mappingPair
+func (_m *FormationAssignmentService) CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error {
+	ret := _m.Called(ctx, mappingPair)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, *webhook.Response) error); ok {
-		r0 = rf(ctx, assignment, response)
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPair) error); ok {
+		r0 = rf(ctx, mappingPair)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -37,13 +37,13 @@ func (_m *FormationAssignmentService) CleanupFormationAssignment(ctx context.Con
 	return r0
 }
 
-// CreateOrUpdateFormationAssignment provides a mock function with given fields: ctx, assignment, response
-func (_m *FormationAssignmentService) CreateOrUpdateFormationAssignment(ctx context.Context, assignment *model.FormationAssignment, response *webhook.Response) error {
-	ret := _m.Called(ctx, assignment, response)
+// Delete provides a mock function with given fields: ctx, id
+func (_m *FormationAssignmentService) Delete(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, *webhook.Response) error); ok {
-		r0 = rf(ctx, assignment, response)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -143,13 +143,27 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 	return r0, r1
 }
 
-// ProcessFormationAssignments provides a mock function with given fields: ctx, tenant, formationAssignmentsForObject, requests, responses, operation
-func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Context, tenant string, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.Request, responses []*webhook.Response, operation func(context.Context, *model.FormationAssignment, *webhook.Response) error) error {
-	ret := _m.Called(ctx, tenant, formationAssignmentsForObject, requests, responses, operation)
+// ProcessFormationAssignments provides a mock function with given fields: ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation
+func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) error) error {
+	ret := _m.Called(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.FormationAssignment, []*webhookclient.Request, []*webhook.Response, func(context.Context, *model.FormationAssignment, *webhook.Response) error) error); ok {
-		r0 = rf(ctx, tenant, formationAssignmentsForObject, requests, responses, operation)
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.FormationAssignment, map[string]string, []*webhookclient.NotificationRequest, func(context.Context, *formationassignment.AssignmentMappingPair) error) error); ok {
+		r0 = rf(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateFormationAssignment provides a mock function with given fields: ctx, mappingPair
+func (_m *FormationAssignmentService) UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error {
+	ret := _m.Called(ctx, mappingPair)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPair) error); ok {
+		r0 = rf(ctx, mappingPair)
 	} else {
 		r0 = ret.Error(0)
 	}

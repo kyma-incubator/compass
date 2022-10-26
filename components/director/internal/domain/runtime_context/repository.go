@@ -350,6 +350,24 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant string, scena
 	return r.multipleFromEntities(entities), nil
 }
 
+// ListByIDs lists all runtime contexts that are in any of the given scenarios
+func (r *pgRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var entities RuntimeContextCollection
+
+	var conditions repo.Conditions
+	conditions = append(conditions, repo.NewInConditionForStringValues("id", ids))
+
+	if err := r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
 // Create stores RuntimeContext entity in the database using the values from `item`
 func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {

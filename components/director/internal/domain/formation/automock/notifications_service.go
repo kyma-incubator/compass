@@ -13,8 +13,6 @@ import (
 
 	testing "testing"
 
-	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
-
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -24,44 +22,21 @@ type NotificationsService struct {
 }
 
 // GenerateNotifications provides a mock function with given fields: ctx, tenant, objectID, _a3, operation, objectType
-func (_m *NotificationsService) GenerateNotifications(ctx context.Context, tenant string, objectID string, _a3 *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.Request, error) {
+func (_m *NotificationsService) GenerateNotifications(ctx context.Context, tenant string, objectID string, _a3 *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.NotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, objectID, _a3, operation, objectType)
 
-	var r0 []*webhookclient.Request
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) []*webhookclient.Request); ok {
+	var r0 []*webhookclient.NotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) []*webhookclient.NotificationRequest); ok {
 		r0 = rf(ctx, tenant, objectID, _a3, operation, objectType)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.Request)
+			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
 		}
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) error); ok {
 		r1 = rf(ctx, tenant, objectID, _a3, operation, objectType)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// SendNotifications provides a mock function with given fields: ctx, notifications
-func (_m *NotificationsService) SendNotifications(ctx context.Context, notifications []*webhookclient.Request) ([]*webhook.Response, error) {
-	ret := _m.Called(ctx, notifications)
-
-	var r0 []*webhook.Response
-	if rf, ok := ret.Get(0).(func(context.Context, []*webhookclient.Request) []*webhook.Response); ok {
-		r0 = rf(ctx, notifications)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhook.Response)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*webhookclient.Request) error); ok {
-		r1 = rf(ctx, notifications)
 	} else {
 		r1 = ret.Error(1)
 	}
