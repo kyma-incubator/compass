@@ -134,8 +134,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -167,8 +167,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
@@ -188,8 +188,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
@@ -209,7 +209,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				ctxOnlyWithConsumer := consumer.SaveToContext(emptyCtx, c)
 				return ctxOnlyWithConsumer
 			},
@@ -231,8 +231,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
@@ -257,8 +257,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Application)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Application)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
@@ -283,8 +283,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -309,8 +309,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -339,8 +339,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			labelRepoFn: fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -369,8 +369,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			labelRepoFn: fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -403,8 +403,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return lblRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
@@ -439,8 +439,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			selfRegDistinguishLabelKey: "nonExistingLabel",
 			consumerSubaccountLabelKey: "nonExistingLabel",
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -475,8 +475,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -511,8 +511,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -536,8 +536,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(faTargetID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(faTargetID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
@@ -562,8 +562,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
@@ -598,8 +598,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
@@ -624,8 +624,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -649,8 +649,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -674,8 +674,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
@@ -700,8 +700,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusInternalServerError,
@@ -729,8 +729,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -758,8 +758,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusUnauthorized,
@@ -787,8 +787,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
-				c := fixGetConsumerFunc(consumerUUID, consumer.Runtime)
-				return fixContextWithTenantAndConsumerFunc(c, internalTntID, externalTntID)
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,

@@ -32,14 +32,14 @@ func fixRequestWithContext(t *testing.T, ctx context.Context, httpMethod string)
 	return reqWithContext
 }
 
-func fixGetConsumerFunc(consumerID string, consumerType consumer.ConsumerType) consumer.Consumer {
+func fixGetConsumer(consumerID string, consumerType consumer.ConsumerType) consumer.Consumer {
 	return consumer.Consumer{
 		ConsumerID:   consumerID,
 		ConsumerType: consumerType,
 	}
 }
 
-func fixContextWithTenantAndConsumerFunc(c consumer.Consumer, internalTntID, externalTntID string) context.Context {
+func fixContextWithTenantAndConsumer(c consumer.Consumer, internalTntID, externalTntID string) context.Context {
 	emptyCtx := context.Background()
 	tenantCtx := tenant.SaveToContext(emptyCtx, internalTntID, externalTntID)
 	consumerAndTenantCtx := consumer.SaveToContext(tenantCtx, c)
