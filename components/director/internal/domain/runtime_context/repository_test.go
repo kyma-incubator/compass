@@ -471,6 +471,60 @@ func TestPgRepository_ListByScenarios(t *testing.T) {
 	})
 }
 
+func TestPgRepository_ListByIDs(t *testing.T) {
+	runtimeCtx1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	runtimeCtx2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
+	runtimeCtxEntity1 := fixEntityRuntimeCtxWithIDAndRuntimeID(runtimeCtx1ID, runtimeID)
+	runtimeCtxEntity2 := fixEntityRuntimeCtxWithIDAndRuntimeID(runtimeCtx2ID, runtimeID2)
+
+	runtimeCtxModel1 := fixModelRuntimeCtxWithIDAndRuntimeID(runtimeCtx1ID, runtimeID)
+	runtimeCtxModel2 := fixModelRuntimeCtxWithIDAndRuntimeID(runtimeCtx2ID, runtimeID2)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "ListByIDs Runtime Contexts",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE id IN ($1, $2) AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $3))`),
+				Args:     []driver.Value{runtimeCtx1ID, runtimeCtx2ID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(runtimeCtxEntity1.ID, runtimeCtxEntity1.RuntimeID, runtimeCtxEntity1.Key, runtimeCtxEntity1.Value).
+						AddRow(runtimeCtxEntity2.ID, runtimeCtxEntity2.RuntimeID, runtimeCtxEntity2.Key, runtimeCtxEntity2.Value),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ExpectedModelEntities: []interface{}{runtimeCtxModel1, runtimeCtxModel2},
+		ExpectedDBEntities:    []interface{}{runtimeCtxEntity1, runtimeCtxEntity2},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       runtimectx.NewRepository,
+		MethodArgs:                []interface{}{tenantID, []string{runtimeCtx1ID, runtimeCtx2ID}},
+		MethodName:                "ListByIDs",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+
+	// Additional test - empty slice because test suite returns empty result given valid query
+	t.Run("returns empty slice given no scenarios", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		repository := runtimectx.NewRepository(nil)
+
+		// WHEN
+		actual, err := repository.ListByIDs(ctx, tenantID, []string{})
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	})
+}
 func TestPgRepository_ListAll(t *testing.T) {
 	runtimeCtx1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	runtimeCtx2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"

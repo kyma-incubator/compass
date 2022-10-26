@@ -3,8 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	gcli "github.com/machinebox/graphql"
 
