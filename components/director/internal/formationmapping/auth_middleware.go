@@ -59,8 +59,8 @@ type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
-// errorResponse structure used for the JSON encoded response
-type errorResponse struct {
+// ErrorResponse structure used for the JSON encoded response
+type ErrorResponse struct {
 	Message string `json:"error"`
 }
 
@@ -120,6 +120,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if formationID == "" || formationAssignmentID == "" {
 				log.C(ctx).Errorf("Missing required parameters: %q or/and %q", FormationIDParam, FormationAssignmentIDParam)
 				respondWithError(ctx, w, http.StatusBadRequest, errors.New("Not all of the required parameters are provided"))
+				return
 			}
 
 			isAuthorized, statusCode, err := a.isAuthorized(ctx, formationAssignmentID)
@@ -209,6 +210,8 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerInternalTenantID, consumerType, fa.Target, fa.TargetType)
 			return true, http.StatusOK, nil
 		}
+
+		return false, http.StatusUnauthorized, nil
 	}
 
 	if fa.TargetType == model.FormationAssignmentTypeRuntimeContext && (consumerType == consumer.Runtime || consumerType == consumer.ExternalCertificate || consumerType == consumer.SuperAdmin) { // consumer.SuperAdmin is needed for the local testing setup
@@ -229,6 +232,8 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the parent of the formation assignment with target: %q and target type: %q that is being updated", consumerInternalTenantID, consumerType, fa.Target, fa.TargetType)
 			return true, http.StatusOK, nil
 		}
+
+		return false, http.StatusUnauthorized, nil
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -285,7 +290,7 @@ func respondWithError(ctx context.Context, w http.ResponseWriter, status int, er
 	log.C(ctx).WithError(err).Errorf("Responding with error: %v", err)
 	w.Header().Add(httputils.HeaderContentTypeKey, httputils.ContentTypeApplicationJSON)
 	w.WriteHeader(status)
-	errorResponse := errorResponse{Message: err.Error()}
+	errorResponse := ErrorResponse{Message: err.Error()}
 	encodingErr := json.NewEncoder(w).Encode(errorResponse)
 	if encodingErr != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to encode error response: %v", err)

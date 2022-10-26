@@ -21,13 +21,13 @@ import (
 type ConfigurationState string
 
 const (
-	// ConfigurationStateReady represent ready state of the configuration
+	// ConfigurationStateReady represents ready state of the configuration
 	ConfigurationStateReady ConfigurationState = "READY"
-	// ConfigurationStateCreateError represent error in the configuration creation
+	// ConfigurationStateCreateError represents error in the configuration creation
 	ConfigurationStateCreateError ConfigurationState = "CREATE_ERROR"
-	// ConfigurationStateDeleteError represent error in the configuration deletion
+	// ConfigurationStateDeleteError represents error in the configuration deletion
 	ConfigurationStateDeleteError ConfigurationState = "DELETE_ERROR"
-	// ConfigurationStateConfigPending represent pending state of the configuration
+	// ConfigurationStateConfigPending represents pending state of the configuration
 	ConfigurationStateConfigPending ConfigurationState = "CONFIG_PENDING"
 )
 
@@ -36,7 +36,8 @@ type malformedRequest struct {
 	msg    string
 }
 
-type requestBody struct {
+// RequestBody contains the request input of the formation mapping async request
+type RequestBody struct {
 	State         ConfigurationState `json:"state"`
 	Configuration json.RawMessage    `json:"configuration"`
 	Error         string             `json:"error"`
@@ -54,7 +55,7 @@ func NewFormationMappingHandler() *Handler {
 func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var reqBody requestBody
+	var reqBody RequestBody
 	err := decodeJSONBody(w, r, &reqBody)
 	if err != nil {
 		var mr *malformedRequest
@@ -85,13 +86,13 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.C(ctx).Infof("Updating status of formation assignment with ID: %q for formation with ID: %q", formationAssignmentID, formationID)
-	// todo::: implement business logic here
+	// todo:: implement business logic here
 
 	httputils.Respond(w, http.StatusOK)
 }
 
 // Validate validates the request body input
-func (b requestBody) Validate() error {
+func (b RequestBody) Validate() error {
 	var fieldRules []*validation.FieldRules
 	fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(ConfigurationStateReady, ConfigurationStateCreateError, ConfigurationStateDeleteError, ConfigurationStateConfigPending)))
 
@@ -112,8 +113,7 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 	if r.Header.Get(httputils.HeaderContentTypeKey) != "" {
 		value, _ := header.ParseValueAndParams(r.Header, httputils.HeaderContentTypeKey)
 		if value != httputils.ContentTypeApplicationJSON {
-			msg := "Content-Type header is not application/json"
-			return &malformedRequest{status: http.StatusUnsupportedMediaType, msg: msg}
+			return &malformedRequest{status: http.StatusUnsupportedMediaType, msg: "Content-Type header is not application/json"}
 		}
 	}
 
