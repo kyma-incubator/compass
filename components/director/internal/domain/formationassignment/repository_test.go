@@ -1,9 +1,12 @@
 package formationassignment_test
 
 import (
+	"context"
 	"database/sql/driver"
 	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -354,4 +357,78 @@ func TestRepository_Exists(t *testing.T) {
 	}
 
 	suite.Run(t)
+}
+
+func TestRepository_GetByTargetAndSource(t *testing.T) {
+	suite := testdb.RepoGetTestSuite{
+		Name:       "Get Formation Assignment by Target and Source",
+		MethodName: "GetByTargetAndSource",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND target = $2 AND source = $3`),
+				Args:     []driver.Value{TestTenantID, TestTarget, TestSource},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestState, TestConfigValueStr)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		ExpectedModelEntity:       fixFormationAssignmentModel(TestConfigValueRawJSON),
+		ExpectedDBEntity:          fixFormationAssignmentEntity(TestConfigValueStr),
+		MethodArgs:                []interface{}{TestTarget, TestSource, TestTenantID},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_ListForIDs(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "ListForIDs Formations Assignments",
+		MethodName: "ListForIDs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND id IN ($2)`),
+				Args:     []driver.Value{TestTenantID, TestSource},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestState, TestConfigValueStr)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ExpectedModelEntities:     []interface{}{faModel},
+		ExpectedDBEntities:        []interface{}{faEntity},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		MethodArgs:                []interface{}{TestTenantID, []string{TestSource}},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+
+	// Additional test - empty slice because test suite returns empty result given valid query
+	t.Run("returns empty slice given no scenarios", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		repository := formationassignment.NewRepository(nil)
+
+		// WHEN
+		actual, err := repository.ListForIDs(ctx, TestTenantID, []string{})
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	})
 }

@@ -340,8 +340,6 @@ func TestORDAggregator(stdT *testing.T) {
 			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 		}()
 
-		k8s.WaitForJobToFinish(t, ctx, k8sClient, jobName, namespace)
-
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
 
@@ -487,6 +485,8 @@ func TestORDAggregator(stdT *testing.T) {
 			return true
 		})
 		require.NoError(t, err)
+
+		t.Log("Successfully verified all ORD documents")
 	})
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {
 		ctx := context.Background()
@@ -674,8 +674,6 @@ func TestORDAggregator(stdT *testing.T) {
 			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 		}()
 
-		k8s.WaitForJobToFinish(t, ctx, k8sClient, jobName, namespace)
-
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
 
@@ -817,6 +815,8 @@ func TestORDAggregator(stdT *testing.T) {
 			return true
 		})
 		require.NoError(t, err)
+
+		t.Log("Successfully verified all ORD documents")
 	})
 }
 

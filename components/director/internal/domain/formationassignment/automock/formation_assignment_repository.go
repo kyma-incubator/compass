@@ -87,6 +87,29 @@ func (_m *FormationAssignmentRepository) Get(ctx context.Context, id string, ten
 	return r0, r1
 }
 
+// GetByTargetAndSource provides a mock function with given fields: ctx, target, source, tenantID
+func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Context, target string, source string, tenantID string) (*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, target, source, tenantID)
+
+	var r0 *model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.FormationAssignment); ok {
+		r0 = rf(ctx, target, source, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, target, source, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetForFormation provides a mock function with given fields: ctx, tenantID, id, formationID
 func (_m *FormationAssignmentRepository) GetForFormation(ctx context.Context, tenantID string, id string, formationID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenantID, id, formationID)
@@ -172,6 +195,29 @@ func (_m *FormationAssignmentRepository) ListByFormationIDs(ctx context.Context,
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, int, string) error); ok {
 		r1 = rf(ctx, tenantID, formationIDs, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListForIDs provides a mock function with given fields: ctx, tenant, ids
+func (_m *FormationAssignmentRepository) ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, tenant, ids)
+
+	var r0 []*model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.FormationAssignment); ok {
+		r0 = rf(ctx, tenant, ids)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, tenant, ids)
 	} else {
 		r1 = ret.Error(1)
 	}
