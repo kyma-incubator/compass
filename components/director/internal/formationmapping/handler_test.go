@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -92,7 +92,7 @@ func Test_StatusUpdate(t *testing.T) {
 
 			// THEN
 			resp := w.Result()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			if tCase.expectedErrOutput == "" {
