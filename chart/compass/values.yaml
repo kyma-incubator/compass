@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2702"
+      version: "PR-2705"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -931,6 +931,7 @@ global:
     destination:
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
     subscription:
+      consumerSubdomain: "compass-external-services-mock-sap-mtls"
       tenants:
         providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
         providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
