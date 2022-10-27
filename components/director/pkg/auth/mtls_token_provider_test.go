@@ -22,7 +22,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -177,7 +177,7 @@ func getFakeCreator(oauthCfg oauth.Config, suite suite.Suite, shouldFail bool) a
 				suite.Require().Equal(req.Header.Get(oauthCfg.TenantHeaderName), tenant)
 				suite.Require().Equal(req.Header.Get("Content-Type"), "application/x-www-form-urlencoded")
 
-				body, err := ioutil.ReadAll(req.Body)
+				body, err := io.ReadAll(req.Body)
 				suite.Require().NoError(err)
 				suite.Require().NotNil(body)
 
@@ -195,7 +195,7 @@ func getFakeCreator(oauthCfg oauth.Config, suite suite.Suite, shouldFail bool) a
 
 				return &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(`{"access_token": "%s"}`, fakeTkn)))),
+					Body:       io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(`{"access_token": "%s"}`, fakeTkn)))),
 				}, nil
 			}),
 		}
