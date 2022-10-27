@@ -8,7 +8,3 @@ prerequisites:
 components:
   - name: "istio-resources"
   - name: "ory"
-  - name: "logging"
-  - name: "tracing"
-  - name: "kiali"
-  - name: "monitoring"

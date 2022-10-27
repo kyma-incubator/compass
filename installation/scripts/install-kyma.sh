@@ -102,5 +102,5 @@ if [[ $KYMA_INSTALLATION == *full* ]]; then
   kyma deploy --components-file $KYMA_COMPONENTS_FULL --values-file $FULL_OVERRIDES_TEMP --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source $KYMA_SOURCE
+  kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source local
 fi

@@ -23,38 +23,44 @@ const (
 )
 
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
-//go:generate mockery --exported --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations
-//go:generate mockery --exported --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 // RuntimeContextRepository is responsible for the repo-layer runtime context operations
-//go:generate mockery --exported --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.RuntimeContext, error)
 }
 
 // ApplicationRepository is responsible for the repo-layer application operations
-//go:generate mockery --exported --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
 
+// TenantRepository is responsible for the repo-layer tenant operations
+//go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantRepository interface {
+	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 // ApplicationTemplateRepository is responsible for the repo-layer application template operations
-//go:generate mockery --exported --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelRepository is responsible for the repo-layer label operations
-//go:generate mockery --exported --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
@@ -71,6 +77,7 @@ type Authenticator struct {
 	runtimeRepo                RuntimeRepository
 	runtimeContextRepo         RuntimeContextRepository
 	appRepo                    ApplicationRepository
+	tenantRepo                 TenantRepository
 	appTemplateRepo            ApplicationTemplateRepository
 	labelRepo                  LabelRepository
 	selfRegDistinguishLabelKey string
@@ -84,6 +91,7 @@ func NewFormationMappingAuthenticator(
 	runtimeRepo RuntimeRepository,
 	runtimeContextRepo RuntimeContextRepository,
 	appRepo ApplicationRepository,
+	tenantRepo TenantRepository,
 	appTemplateRepo ApplicationTemplateRepository,
 	labelRepo LabelRepository,
 	selfRegDistinguishLabelKey,
@@ -95,6 +103,7 @@ func NewFormationMappingAuthenticator(
 		runtimeRepo:                runtimeRepo,
 		runtimeContextRepo:         runtimeContextRepo,
 		appRepo:                    appRepo,
+		tenantRepo:                 tenantRepo,
 		appTemplateRepo:            appTemplateRepo,
 		labelRepo:                  labelRepo,
 		selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
@@ -146,6 +155,7 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
 	}
+	consumerID := consumerInfo.ConsumerID
 	consumerType := consumerInfo.ConsumerType
 
 	tx, err := a.transact.Begin()
@@ -178,21 +188,30 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 		log.C(ctx).Infof("Successfully got application with ID: %q globally", fa.Target)
 
 		// If the consumer is integration system validate the formation assignment type is application that can be managed by the integration system caller
-		if consumerType == consumer.IntegrationSystem && app.IntegrationSystemID != nil && *app.IntegrationSystemID == consumerInfo.ConsumerID {
-			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerInfo.ConsumerID, consumerType, fa.Target, fa.TargetType)
+		if consumerType == consumer.IntegrationSystem && app.IntegrationSystemID != nil && *app.IntegrationSystemID == consumerID {
+			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
 			return true, http.StatusOK, nil
 		}
 
 		// Verify if the caller has owner access to the formation assignment with type application that is being updated
-		exists, err := a.appRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
+		log.C(ctx).Infof("Getting parent tenant of the caller with ID: %q and type: %q", consumerID, consumerType)
+		tnt, err := a.tenantRepo.Get(ctx, consumerInternalTenantID)
 		if err != nil {
-			log.C(ctx).Warningf("an error occurred while verifying caller with ID: %q and type: %q has owner access to formation assignment with type: %q and target ID: %q", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
+			log.C(ctx).Warningf("an error occurred while getting tenant from ID: %q", consumerInternalTenantID)
 		}
 
-		if exists {
-			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerInternalTenantID, consumerType, fa.Target, fa.TargetType)
-			return true, http.StatusOK, nil
+		if tnt != nil && tnt.Parent != "" {
+			exists, err := a.appRepo.OwnerExists(ctx, tnt.Parent, fa.Target)
+			if err != nil {
+				log.C(ctx).Warningf("an error occurred while verifying caller with ID: %q and type: %q has owner access to formation assignment with type: %q and target ID: %q", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
+			}
+
+			if exists {
+				log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerInternalTenantID, consumerType, fa.Target, fa.TargetType)
+				return true, http.StatusOK, nil
+			}
 		}
+		log.C(ctx).Warningf("The caller with ID: %q and type: %q has NOT direct owner access to formation assignment with type: %q and target ID: %q. Checking if the application is made through subscription...", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
 
 		// Validate if the application is registered through subscription and the caller has owner access to that application
 		return a.validateSubscriptionProvider(ctx, app.ApplicationTemplateID, consumerExternalTenantID, string(consumerType), fa.Target, string(fa.TargetType))

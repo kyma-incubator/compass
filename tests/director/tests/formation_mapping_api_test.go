@@ -55,7 +55,7 @@ func Test_UpdateStatus(t *testing.T) {
 	testConfig := `{"testCfgKey":"testCfgValue"}`
 	certSecuredHTTPClient := gql.NewCertAuthorizedHTTPClient(cc.Get()[conf.ExternalClientCertSecretName].PrivateKey, cc.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)
 
-	t.Run("Runtime caller successfully updates formation assignment with target type runtime", func(t *testing.T) {
+	t.Run("Caller successfully updates formation assignment for himself", func(t *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name:        "selfRegisterRuntimeAsync",
 			Description: ptr.String("selfRegisterRuntimeAsync-description"),
@@ -105,8 +105,15 @@ func Test_UpdateStatus(t *testing.T) {
 		require.Len(t, assignmentsPage.Data, 2)
 		require.Equal(t, 2, assignmentsPage.TotalCount)
 
-		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntime, app.ID)
-		executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formationID, formationAssignmentID, http.StatusOK)
+		t.Run("Runtime caller successfully updates his formation assignment", func(t *testing.T) {
+			formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntime, app.ID)
+			executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formationID, formationAssignmentID, http.StatusOK)
+		})
+
+		t.Run("Application caller successfully updates his formation assignment", func(t *testing.T) {
+			formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeApplication, runtime.ID)
+			executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formationID, formationAssignmentID, http.StatusOK)
+		})
 	})
 
 	t.Run("Runtime caller successfully updates formation assignment with target type rtm context", func(t *testing.T) {
@@ -337,9 +344,10 @@ func Test_UpdateStatus(t *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
 
 		// Create Application Template
-		appTemplateName := createAppTemplateName("app-template-name-subscription")
-		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+		appTemplateName := createAppTemplateName("app-template-name-subscription-async")
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhooks(appTemplateName)
 		appTemplateInput.Labels["applicationType"] = appTemplateName
+		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredGQLClient, subscriptionConsumerAccountID, appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredGQLClient, subscriptionConsumerAccountID, appTmpl)
