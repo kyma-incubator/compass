@@ -22,7 +22,6 @@ func fixTestHandler(t *testing.T) http.HandlerFunc {
 		_, err := writer.Write([]byte("OK"))
 		require.NoError(t, err)
 	}
-
 }
 
 func fixRequestWithContext(t *testing.T, ctx context.Context, httpMethod string) *http.Request {
