@@ -73,7 +73,7 @@ func (i WebhookInput) Validate() error {
 		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery)),
 		validation.Field(&i.URL, is.URL, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.CorrelationIDKey, validation.RuneLength(0, longStringLengthLimit)),
-		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync), validation.When(i.Type == WebhookTypeConfigurationChanged || i.Type == WebhookTypeApplicationTenantMapping, validation.In(WebhookModeSync))),
+		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync, WebhookModeAsyncCallback), validation.When(i.Type == WebhookTypeConfigurationChanged || i.Type == WebhookTypeApplicationTenantMapping, validation.In(WebhookModeSync, WebhookModeAsyncCallback)).Else(validation.NotIn(WebhookModeAsyncCallback))),
 		validation.Field(&i.RetryInterval, validation.Min(0)),
 		validation.Field(&i.Timeout, validation.Min(0)),
 		validation.Field(&i.Auth),
