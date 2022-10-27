@@ -120,8 +120,8 @@ spec:
                     -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID" \
                     | jq -r .access_token)
 
-                  if [[ -z "$TOKEN" ]]; then
-                    echo -e "${RED}Bearer token should not be empty. Exiting... ${NC}"
+                  if [[ -z "$TOKEN" || $TOKEN == "null" ]]; then
+                    echo -e "${RED}Bearer token should not be empty or null. Exiting... ${NC}"
                     exit 1
                   fi
 
