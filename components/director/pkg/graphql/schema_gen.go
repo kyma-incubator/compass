@@ -4939,7 +4939,8 @@ input FormationInput {
 input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
-	runtimeTypes: [String!]!
+	runtimeType: String
+	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 }
@@ -28080,9 +28081,15 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
+		case "runtimeType":
+			var err error
+			it.RuntimeType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "runtimeTypes":
 			var err error
-			it.RuntimeTypes, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			it.RuntimeTypes, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
