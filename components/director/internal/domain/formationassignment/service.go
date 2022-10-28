@@ -23,6 +23,7 @@ type FormationAssignmentRepository interface {
 	Create(ctx context.Context, item *model.FormationAssignment) error
 	GetByTargetAndSource(ctx context.Context, target, source, tenantID string) (*model.FormationAssignment, error)
 	Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
@@ -147,6 +148,18 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 	fa, err := s.repo.Get(ctx, id, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q and tenant: %q", id, tenantID)
+	}
+
+	return fa, nil
+}
+
+// GetGlobalByID retrieves the formation assignment matching ID `id` globally without tenant parameter
+func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Getting formation assignment with ID: %q globally", id)
+
+	fa, err := s.repo.GetGlobalByID(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q globally", id)
 	}
 
 	return fa, nil
@@ -292,7 +305,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		if app.ID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, graphql.FormationObjectTypeApplication, app)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeApplication, app)...)
 	}
 
 	// When runtime context is assigned to formation its parent runtime is unassigned from the formation.
@@ -312,14 +325,14 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		if runtime.ID == objectID || runtime.ID == parentID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, graphql.FormationObjectTypeRuntime, runtime)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntime, runtime)...)
 	}
 
 	for _, runtimeCtx := range runtimeContexts {
 		if runtimeCtx.ID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, graphql.FormationObjectTypeRuntimeContext, runtimeCtx)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtx)...)
 	}
 
 	ids := make([]string, 0, len(assignments))
@@ -340,23 +353,23 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 }
 
 // GenerateAssignmentsForParticipant creates in-memory the assignments for two participants in the initial state
-func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType graphql.FormationObjectType, participant model.Identifiable) []*model.FormationAssignmentInput {
+func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participant model.Identifiable) []*model.FormationAssignmentInput {
 	assignments := make([]*model.FormationAssignmentInput, 0, 2)
 	assignments = append(assignments, &model.FormationAssignmentInput{
 		FormationID: formation.ID,
 		Source:      objectID,
-		SourceType:  string(objectType),
+		SourceType:  model.FormationAssignmentType(objectType),
 		Target:      participant.GetID(),
-		TargetType:  string(participantType),
+		TargetType:  participantType,
 		State:       string(model.InitialAssignmentState),
 		Value:       nil,
 	})
 	assignments = append(assignments, &model.FormationAssignmentInput{
 		FormationID: formation.ID,
 		Source:      participant.GetID(),
-		SourceType:  string(participantType),
+		SourceType:  participantType,
 		Target:      objectID,
-		TargetType:  string(objectType),
+		TargetType:  model.FormationAssignmentType(objectType),
 		State:       string(model.InitialAssignmentState),
 		Value:       nil,
 	})
@@ -600,7 +613,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			FormationAssignment: assignments[i],
 		}
 		target := assignment.Target
-		if assignment.TargetType == string(graphql.FormationObjectTypeRuntimeContext) {
+		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
 			log.C(ctx).Infof("Matching for runtime context, fetching associated runtime for runtime context with ID %s", target)
 
 			target = runtimeContextIDToRuntimeIDMapping[assignment.Target]

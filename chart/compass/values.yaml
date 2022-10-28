@@ -143,7 +143,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2698"
+      version: "PR-2712"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -210,6 +210,9 @@ global:
     useClone: "false"
   director:
     host: compass-director.compass-system.svc.cluster.local
+    formationAsyncApi:
+      pathPrefix: "/v1/businessIntegrations"
+      path: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
     prefix: /director
     graphql:
       external:

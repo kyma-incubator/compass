@@ -132,7 +132,7 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 }
 
 // ForFormation missing godoc
-func (fp *GqlFieldsProvider) ForFormation(ctx ...FieldCtx) string {
+func (fp *GqlFieldsProvider) ForFormation() string {
 	return `
 		id
 		name
@@ -141,7 +141,7 @@ func (fp *GqlFieldsProvider) ForFormation(ctx ...FieldCtx) string {
 }
 
 // ForFormationTemplate missing godoc
-func (fp *GqlFieldsProvider) ForFormationTemplate(ctx ...FieldCtx) string {
+func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 	return `
 		id
 		name
@@ -153,7 +153,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplate(ctx ...FieldCtx) string {
 }
 
 // ForFormationAssignment missing godoc
-func (fp *GqlFieldsProvider) ForFormationAssignment(ctx ...FieldCtx) string {
+func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 	return `
 			id
 			source

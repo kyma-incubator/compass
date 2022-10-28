@@ -313,6 +313,52 @@ func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID u
 	return r0, r1
 }
 
+// ListByScenariosAndIDs provides a mock function with given fields: ctx, tenant, scenarios, ids
+func (_m *ApplicationRepository) ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error) {
+	ret := _m.Called(ctx, tenant, scenarios, ids)
+
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []string) []*model.Application); ok {
+		r0 = rf(ctx, tenant, scenarios, ids)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []string) error); ok {
+		r1 = rf(ctx, tenant, scenarios, ids)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByScenariosNoPaging provides a mock function with given fields: ctx, tenant, scenarios
+func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
+	ret := _m.Called(ctx, tenant, scenarios)
+
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Application); ok {
+		r0 = rf(ctx, tenant, scenarios)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, tenant, scenarios)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListGlobal provides a mock function with given fields: ctx, pageSize, cursor
 func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor)
@@ -329,6 +375,27 @@ func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, c
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// OwnerExists provides a mock function with given fields: ctx, tenant, id
+func (_m *ApplicationRepository) OwnerExists(ctx context.Context, tenant string, id string) (bool, error) {
+	ret := _m.Called(ctx, tenant, id)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
+		r0 = rf(ctx, tenant, id)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
 	} else {
 		r1 = ret.Error(1)
 	}

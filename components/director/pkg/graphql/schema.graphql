@@ -116,6 +116,12 @@ enum FetchRequestStatusCondition {
 	FAILED
 }
 
+enum FormationAssignmentType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+}
+
 enum FormationObjectType {
 	APPLICATION
 	TENANT
@@ -1052,9 +1058,9 @@ type Formation {
 type FormationAssignment {
 	id: ID!
 	source: ID!
-	sourceType: String!
+	sourceType: FormationAssignmentType!
 	target: ID!
-	targetType: String!
+	targetType: FormationAssignmentType!
 	state: String!
 	value: String
 }

@@ -58,6 +58,35 @@ func TestRepository_Exists(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_OwnerExists(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name: "Application Exists",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.applications WHERE id = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2 AND owner = true))`),
+				Args:     []driver.Value{givenID(), givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: application.NewRepository,
+		TargetID:            givenID(),
+		TenantID:            givenTenant(),
+		MethodName:          "OwnerExists",
+		MethodArgs:          []interface{}{givenTenant(), givenID()},
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_Delete(t *testing.T) {
 	suite := testdb.RepoDeleteTestSuite{
 		Name: "Application Delete",

@@ -262,6 +262,65 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
+func TestService_GetGlobalByID(t *testing.T) {
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		ExpectedOutput          *model.FormationAssignment
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetGlobalByID", ctxWithTenant, TestID).Return(faModel, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   faModel,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:    "Error when getting formation assignment globally",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetGlobalByID", ctxWithTenant, TestID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: fmt.Sprintf("while getting formation assignment with ID: %q globally", TestID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			faRepo := &automock.FormationAssignmentRepository{}
+			if testCase.FormationAssignmentRepo != nil {
+				faRepo = testCase.FormationAssignmentRepo()
+			}
+
+			svc := formationassignment.NewService(faRepo, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			r, err := svc.GetGlobalByID(testCase.Context, TestID)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, faRepo)
+		})
+	}
+}
+
 func TestService_GetForFormation(t *testing.T) {
 	testCases := []struct {
 		Name                    string
@@ -793,10 +852,10 @@ func TestService_GenerateAssignments(t *testing.T) {
 	runtimes := []*model.Runtime{{ID: "runtime"}}
 	runtimeContexts := []*model.RuntimeContext{{ID: "runtimeContext"}}
 
-	formationAssignmentsForApplication := fixFormationAssignmentsWithObjectTypeAndID(graphql.FormationObjectTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
-	formationAssignmentsForRuntime := fixFormationAssignmentsWithObjectTypeAndID(graphql.FormationObjectTypeRuntime, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
-	formationAssignmentsForRuntimeContext := fixFormationAssignmentsWithObjectTypeAndID(graphql.FormationObjectTypeRuntimeContext, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
-	formationAssignmentsForRuntimeContextWithParentInTheFormation := fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(graphql.FormationObjectTypeRuntimeContext, objectID, applications[0].ID, runtimeContexts[0].ID)
+	formationAssignmentsForApplication := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentsForRuntime := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeRuntime, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentsForRuntimeContext := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentsForRuntimeContextWithParentInTheFormation := fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimeContexts[0].ID)
 
 	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6"}
 	formationAssignmentIDsRtmCtxParentInFormation := []string{"ID1", "ID2", "ID3", "ID4"}

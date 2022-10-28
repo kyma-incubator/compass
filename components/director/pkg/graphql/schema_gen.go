@@ -4527,6 +4527,12 @@ enum WebhookType {
 	OPEN_RESOURCE_DISCOVERY
 }
 
+enum FormationAssignmentType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+}
+
 interface OneTimeToken {
 	token: String!
 	connectorURL: String!
@@ -5391,9 +5397,9 @@ type Formation {
 type FormationAssignment {
 	id: ID!
 	source: ID!
-	sourceType: String!
+	sourceType: FormationAssignmentType!
 	target: ID!
-	targetType: String!
+	targetType: FormationAssignmentType!
 	state: String!
 	value: String
 }
@@ -6052,7 +6058,6 @@ type Mutation {
 	"""
 	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
-
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -14711,9 +14716,9 @@ func (ec *executionContext) _FormationAssignment_sourceType(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(FormationAssignmentType)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignment_target(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
@@ -14779,9 +14784,9 @@ func (ec *executionContext) _FormationAssignment_targetType(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(FormationAssignmentType)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignment_state(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
@@ -33281,6 +33286,15 @@ func (ec *executionContext) marshalNFormationAssignment2ᚖgithubᚗcomᚋkyma�
 		return graphql.Null
 	}
 	return ec._FormationAssignment(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx context.Context, v interface{}) (FormationAssignmentType, error) {
+	var res FormationAssignmentType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx context.Context, sel ast.SelectionSet, v FormationAssignmentType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNFormationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationInput(ctx context.Context, v interface{}) (FormationInput, error) {
