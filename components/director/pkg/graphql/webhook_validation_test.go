@@ -546,7 +546,7 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name: "ExpectedValid - missing location",
+			Name: "ExpectedValid - missing location when SYNC mode",
 			Value: stringPtr(`{
 			   "success_status_code": 202,
 			   "error": "{{.Body.error}}"
