@@ -48,6 +48,17 @@ spec:
             - {{ . }}
             {{- end }}
     - match:
+      - uri:
+          exact: {{ .Values.global.director.formationAsyncApi.pathPrefix }}
+      redirect:
+        uri: {{ .Values.global.director.formationAsyncApi.pathPrefix }}/
+      headers:
+        request:
+          remove:
+           {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+           {{- end }}
+    - match:
         - uri:
             regex: /.*
       headers:

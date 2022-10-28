@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -42,7 +40,7 @@ type webhookConverter interface {
 
 //go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type webhookClient interface {
-	Do(ctx context.Context, request *webhookclient.Request) (*webhookdir.Response, error)
+	Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
 type notificationsService struct {
@@ -71,7 +69,7 @@ func NewNotificationService(applicationRepository applicationRepository, applica
 	}
 }
 
-func (ns *notificationsService) GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.NotificationRequest, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
 		rtAndRtCtxNotifications, err := ns.generateNotificationsAboutRuntimesAndRuntimeContextsForApplicationAssignment(ctx, tenant, objectID, formation, operation)
@@ -113,30 +111,19 @@ func (ns *notificationsService) GenerateNotifications(ctx context.Context, tenan
 	}
 }
 
-func (ns *notificationsService) SendNotifications(ctx context.Context, notifications []*webhookclient.Request) ([]*webhookdir.Response, error) {
-	log.C(ctx).Infof("Sending %d notifications", len(notifications))
-	var errs *multierror.Error
-	responses := make([]*webhookdir.Response, 0, len(notifications))
-	for i, notification := range notifications {
-		log.C(ctx).Infof("Sending notification %d out of %d for webhook with ID %s", i+1, len(notifications), notification.Webhook.ID)
-		resp, err := ns.webhookClient.Do(ctx, notification)
-		if err != nil {
-			errorMsg := fmt.Sprintf("Failed while executing webhook with ID %q and type %q", notification.Webhook.ID, notification.Webhook.Type)
-			log.C(ctx).Warn(errorMsg)
-			errs = multierror.Append(errs, errors.Wrapf(err, "while executing webhook with ID %s", notification.Webhook.ID))
-			resp = &webhookdir.Response{
-				Error: &errorMsg,
-			}
-			responses = append(responses, resp)
-			continue
-		}
-		responses = append(responses, resp)
-		log.C(ctx).Infof("Successfully sent notification %d out of %d for webhook with %s", i+1, len(notifications), notification.Webhook.ID)
+func (ns *notificationsService) SendNotification(ctx context.Context, notification *webhookclient.NotificationRequest) (*webhookdir.Response, error) {
+	if notification == nil {
+		return nil, nil
 	}
-	return responses, errs.ErrorOrNil()
+	resp, err := ns.webhookClient.Do(ctx, notification)
+	if err != nil && resp != nil && resp.Error != nil && *resp.Error != "" {
+		return resp, nil
+	}
+
+	return resp, err
 }
 
-func (ns *notificationsService) generateNotificationsAboutRuntimesAndRuntimeContextsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateNotificationsAboutRuntimesAndRuntimeContextsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications about runtimes and runtime contexts in the same formation for application %s", operation, appID)
 	applicationWithLabels, appTemplateWithLabels, err := ns.prepareApplicationWithLabels(ctx, tenant, appID)
 	if err != nil {
@@ -217,7 +204,7 @@ func (ns *notificationsService) generateNotificationsAboutRuntimesAndRuntimeCont
 		}
 	}
 
-	requests := make([]*webhookclient.Request, 0, len(runtimesMapping))
+	requests := make([]*webhookclient.NotificationRequest, 0, len(runtimesMapping))
 	for rtID := range runtimesMapping {
 		rtCtx := runtimesToRuntimeContextsMapping[rtID]
 		if rtCtx == nil {
@@ -244,7 +231,7 @@ func (ns *notificationsService) generateNotificationsAboutRuntimesAndRuntimeCont
 	return requests, nil
 }
 
-func (ns *notificationsService) generateRuntimeNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateRuntimeNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications about application %s for all listening runtimes in the same formation", operation, appID)
 	applicationWithLabels, appTemplateWithLabels, err := ns.prepareApplicationWithLabels(ctx, tenant, appID)
 	if err != nil {
@@ -330,7 +317,7 @@ func (ns *notificationsService) generateRuntimeNotificationsForApplicationAssign
 		}
 	}
 
-	requests := make([]*webhookclient.Request, 0, len(runtimeIDsToBeNotified))
+	requests := make([]*webhookclient.NotificationRequest, 0, len(runtimeIDsToBeNotified))
 	for rtID := range runtimeIDsToBeNotified {
 		rtCtx := runtimeContextsInScenarioForListeningRuntimesMapping[rtID]
 		if rtCtx == nil {
@@ -358,7 +345,7 @@ func (ns *notificationsService) generateRuntimeNotificationsForApplicationAssign
 	return requests, nil
 }
 
-func (ns *notificationsService) generateApplicationNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateApplicationNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s app-to-app formation notifications for application %s", operation, appID)
 	applicationWithLabels, appTemplateWithLabels, err := ns.prepareApplicationWithLabels(ctx, tenant, appID)
 	if err != nil {
@@ -382,7 +369,7 @@ func (ns *notificationsService) generateApplicationNotificationsForApplicationAs
 
 	log.C(ctx).Infof("There are %d applications listening for app-to-app formation notifications in tenant %s", len(listeningAppIDs), tenant)
 
-	requests := make([]*webhookclient.Request, 0, len(listeningAppIDs))
+	requests := make([]*webhookclient.NotificationRequest, 0, len(listeningAppIDs))
 	if listeningAppIDs[appID] {
 		log.C(ctx).Infof("The application with ID %s that is being %s is also listening for app-to-app formation notifications. Will create notifications about all other apps in the formation...", appID, operation)
 		var webhook *model.Webhook
@@ -517,7 +504,7 @@ func (ns *notificationsService) generateApplicationNotificationsForApplicationAs
 	return requests, nil
 }
 
-func (ns *notificationsService) generateApplicationNotificationsForRuntimeContextAssignment(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateApplicationNotificationsForRuntimeContextAssignment(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications about runtime context %s for all interested applications in the formation", operation, runtimeCtxID)
 	runtimeCtx, err := ns.runtimeContextRepo.GetByID(ctx, tenant, runtimeCtxID)
 	if err != nil {
@@ -543,7 +530,7 @@ func (ns *notificationsService) generateApplicationNotificationsForRuntimeContex
 	return requests, nil
 }
 
-func (ns *notificationsService) generateApplicationNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateApplicationNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications about runtime %s for all interested applications in the formation", operation, runtimeID)
 	runtime, err := ns.runtimeRepo.GetByID(ctx, tenant, runtimeID)
 	if err != nil {
@@ -631,7 +618,7 @@ func (ns *notificationsService) generateApplicationNotificationsForRuntimeAssign
 		}
 	}
 
-	requests := make([]*webhookclient.Request, 0, len(applicationMapping))
+	requests := make([]*webhookclient.NotificationRequest, 0, len(applicationMapping))
 	for _, app := range applicationMapping {
 		var appTemplate *webhookdir.ApplicationTemplateWithLabels
 		if app.ApplicationTemplateID != nil {
@@ -656,7 +643,7 @@ func (ns *notificationsService) generateApplicationNotificationsForRuntimeAssign
 	return requests, nil
 }
 
-func (ns *notificationsService) generateRuntimeNotificationsForRuntimeContextAssignment(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateRuntimeNotificationsForRuntimeContextAssignment(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications for runtime context %s", operation, runtimeCtxID)
 	runtimeCtx, err := ns.runtimeContextRepo.GetByID(ctx, tenant, runtimeCtxID)
 	if err != nil {
@@ -682,7 +669,7 @@ func (ns *notificationsService) generateRuntimeNotificationsForRuntimeContextAss
 	return requests, nil
 }
 
-func (ns *notificationsService) generateRuntimeNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.Request, error) {
+func (ns *notificationsService) generateRuntimeNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) ([]*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating %s notifications about all applications in the formation for runtime %s", operation, runtimeID)
 	runtime, err := ns.runtimeRepo.GetByID(ctx, tenant, runtimeID)
 	if err != nil {
@@ -711,7 +698,7 @@ func (ns *notificationsService) generateRuntimeNotificationsForRuntimeAssignment
 		return nil, err
 	}
 
-	requests := make([]*webhookclient.Request, 0, len(applicationMapping))
+	requests := make([]*webhookclient.NotificationRequest, 0, len(applicationMapping))
 	for _, app := range applicationMapping {
 		var appTemplate *webhookdir.ApplicationTemplateWithLabels
 		if app.ApplicationTemplateID != nil {
@@ -818,12 +805,12 @@ func (ns *notificationsService) prepareApplicationWithLabels(ctx context.Context
 	return applicationWithLabels, appTemplateWithLabels, nil
 }
 
-func (ns *notificationsService) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.TemplateInput) (*webhookclient.Request, error) {
+func (ns *notificationsService) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.FormationAssignmentTemplateInput) (*webhookclient.NotificationRequest, error) {
 	gqlWebhook, err := ns.webhookConverter.ToGraphQL(webhook)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting webhook with ID %s", webhook.ID)
 	}
-	return &webhookclient.Request{
+	return &webhookclient.NotificationRequest{
 		Webhook:       *gqlWebhook,
 		Object:        input,
 		CorrelationID: correlation.CorrelationIDFromContext(ctx),

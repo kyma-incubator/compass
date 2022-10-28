@@ -158,6 +158,16 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
+// GetGlobalByID retrieves the runtime context matching ID `id` globally without tenant parameter
+func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.RuntimeContext, error) {
+	var runtimeCtxEnt RuntimeContext
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
+}
+
 // RuntimeContextCollection represents collection of RuntimeContext
 type RuntimeContextCollection []RuntimeContext
 
@@ -334,6 +344,24 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant string, scena
 	}
 
 	if err = r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListByIDs lists all runtime contexts that are in any of the given scenarios
+func (r *pgRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var entities RuntimeContextCollection
+
+	var conditions repo.Conditions
+	conditions = append(conditions, repo.NewInConditionForStringValues("id", ids))
+
+	if err := r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 

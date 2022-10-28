@@ -20,11 +20,11 @@ type WebhookClient struct {
 }
 
 // Do provides a mock function with given fields: ctx, request
-func (_m *WebhookClient) Do(ctx context.Context, request *webhookclient.Request) (*webhook.Response, error) {
+func (_m *WebhookClient) Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhook.Response, error) {
 	ret := _m.Called(ctx, request)
 
 	var r0 *webhook.Response
-	if rf, ok := ret.Get(0).(func(context.Context, *webhookclient.Request) *webhook.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookRequest) *webhook.Response); ok {
 		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
@@ -33,7 +33,7 @@ func (_m *WebhookClient) Do(ctx context.Context, request *webhookclient.Request)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *webhookclient.Request) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookRequest) error); ok {
 		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)

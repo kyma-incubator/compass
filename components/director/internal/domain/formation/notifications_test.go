@@ -51,7 +51,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		ObjectType                graphql.FormationObjectType
 		OperationType             model.FormationOperation
 		InputFormation            model.Formation
-		ExpectedRequests          []*webhookclient.Request
+		ExpectedRequests          []*webhookclient.NotificationRequest
 		ExpectedErrMessage        string
 	}{
 		// start testing 'generateRuntimeNotificationsForRuntimeAssignment' and 'generateApplicationNotificationsForRuntimeAssignment' funcs
@@ -105,7 +105,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -377,7 +377,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -464,7 +464,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -822,7 +822,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -910,7 +910,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -1193,7 +1193,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ObjectType:    graphql.FormationObjectTypeRuntimeContext,
 			OperationType: model.AssignFormation,
 			ObjectID:      RuntimeContextID,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -1507,7 +1507,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeContextID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -1606,7 +1606,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeContextID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -2162,7 +2162,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeContextID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -2493,7 +2493,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -3329,7 +3329,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:      model.AssignFormation,
 			InputFormation:     expectedFormation,
 			ExpectedErrMessage: "",
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -4576,7 +4576,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
 			},
-			ExpectedRequests: []*webhookclient.Request{
+			ExpectedRequests: []*webhookclient.NotificationRequest{
 				{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
@@ -4827,7 +4827,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 	}
 }
 
-func Test_NotificationsService_SendNotifications(t *testing.T) {
+func Test_NotificationsService_SendNotification(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
 
@@ -4836,14 +4836,14 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		WebhookClientFN    func() *automock.WebhookClient
-		InputRequests      []*webhookclient.Request
+		InputRequest       *webhookclient.NotificationRequest
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "success when webhook client call doesn't return error",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.Request{
+				client.On("Do", ctx, &webhookclient.NotificationRequest{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -4861,262 +4861,38 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						RuntimeContext: nil,
-					},
-					CorrelationID: "",
-				}).Return(nil, nil)
-				client.On("Do", ctx, &webhookclient.Request{
-					Webhook: *fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: &webhook.RuntimeContextWithLabels{
-							RuntimeContext: fixRuntimeContextModel(),
-							Labels:         fixRuntimeContextLabelsMap(),
-						},
-					},
-					CorrelationID: "",
-				}).Return(nil, nil)
-				client.On("Do", ctx, &webhookclient.Request{
-					Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp1, ApplicationID),
-					Object: &webhook.ApplicationTenantMappingInput{
-						Operation:                 model.AssignFormation,
-						FormationID:               FormationID,
-						SourceApplicationTemplate: nil,
-						SourceApplication: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModelWithoutTemplate(Application2ID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						TargetApplication: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-					},
-					CorrelationID: "",
-				}).Return(nil, nil)
-				client.On("Do", ctx, &webhookclient.Request{
-					Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
-					Object: &webhook.ApplicationTenantMappingInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						SourceApplication: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						TargetApplicationTemplate: nil,
-						TargetApplication: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModelWithoutTemplate(Application2ID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-					},
-					CorrelationID: "",
-				}).Return(nil, nil)
-				client.On("Do", ctx, &webhookclient.Request{
-					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: nil,
-					},
-					CorrelationID: "",
-				}).Return(nil, nil)
-				client.On("Do", ctx, &webhookclient.Request{
-					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: &webhook.RuntimeContextWithLabels{
-							RuntimeContext: fixRuntimeContextModel(),
-							Labels:         fixRuntimeContextLabelsMap(),
-						},
 					},
 					CorrelationID: "",
 				}).Return(nil, nil)
 				return client
 			},
-			InputRequests: []*webhookclient.Request{
-				{
-					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: nil,
+			InputRequest: &webhookclient.NotificationRequest{
+				Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+				Object: &webhook.FormationConfigurationChangeInput{
+					Operation:   model.AssignFormation,
+					FormationID: FormationID,
+					ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+						ApplicationTemplate: fixApplicationTemplateModel(),
+						Labels:              fixApplicationTemplateLabelsMap(),
 					},
-					CorrelationID: "",
-				},
-				{
-					Webhook: *fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: &webhook.RuntimeContextWithLabels{
-							RuntimeContext: fixRuntimeContextModel(),
-							Labels:         fixRuntimeContextLabelsMap(),
-						},
+					Application: &webhook.ApplicationWithLabels{
+						Application: fixApplicationModel(ApplicationID),
+						Labels:      fixApplicationLabelsMap(),
 					},
-					CorrelationID: "",
-				},
-				{
-					Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp1, ApplicationID),
-					Object: &webhook.ApplicationTenantMappingInput{
-						Operation:                 model.AssignFormation,
-						FormationID:               FormationID,
-						SourceApplicationTemplate: nil,
-						SourceApplication: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModelWithoutTemplate(Application2ID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						TargetApplication: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
+					Runtime: &webhook.RuntimeWithLabels{
+						Runtime: fixRuntimeModel(RuntimeID),
+						Labels:  fixRuntimeLabelsMap(),
 					},
-					CorrelationID: "",
+					RuntimeContext: nil,
 				},
-				{
-					Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
-					Object: &webhook.ApplicationTenantMappingInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						SourceApplication: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						TargetApplicationTemplate: nil,
-						TargetApplication: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModelWithoutTemplate(Application2ID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-					},
-					CorrelationID: "",
-				},
-				{
-					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: nil,
-					},
-					CorrelationID: "",
-				},
-				{
-					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: &webhook.RuntimeContextWithLabels{
-							RuntimeContext: fixRuntimeContextModel(),
-							Labels:         fixRuntimeContextLabelsMap(),
-						},
-					},
-					CorrelationID: "",
-				},
+				CorrelationID: "",
 			},
 		},
 		{
 			Name: "fail when webhook client call fails",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.Request{
+				client.On("Do", ctx, &webhookclient.NotificationRequest{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -5139,34 +4915,32 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 				}).Return(nil, testErr)
 				return client
 			},
-			InputRequests: []*webhookclient.Request{
-				{
-					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
-					Object: &webhook.FormationConfigurationChangeInput{
-						Operation:   model.AssignFormation,
-						FormationID: FormationID,
-						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
-							ApplicationTemplate: fixApplicationTemplateModel(),
-							Labels:              fixApplicationTemplateLabelsMap(),
-						},
-						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(ApplicationID),
-							Labels:      fixApplicationLabelsMap(),
-						},
-						Runtime: &webhook.RuntimeWithLabels{
-							Runtime: fixRuntimeModel(RuntimeID),
-							Labels:  fixRuntimeLabelsMap(),
-						},
-						RuntimeContext: nil,
+			InputRequest: &webhookclient.NotificationRequest{
+				Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+				Object: &webhook.FormationConfigurationChangeInput{
+					Operation:   model.AssignFormation,
+					FormationID: FormationID,
+					ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+						ApplicationTemplate: fixApplicationTemplateModel(),
+						Labels:              fixApplicationTemplateLabelsMap(),
 					},
-					CorrelationID: "",
+					Application: &webhook.ApplicationWithLabels{
+						Application: fixApplicationModel(ApplicationID),
+						Labels:      fixApplicationLabelsMap(),
+					},
+					Runtime: &webhook.RuntimeWithLabels{
+						Runtime: fixRuntimeModel(RuntimeID),
+						Labels:  fixRuntimeLabelsMap(),
+					},
+					RuntimeContext: nil,
 				},
+				CorrelationID: "",
 			},
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name:          "does nothing when no arguments are supplied",
-			InputRequests: nil,
+			Name:         "does nothing when no arguments are supplied",
+			InputRequest: nil,
 		},
 	}
 
@@ -5180,7 +4954,7 @@ func Test_NotificationsService_SendNotifications(t *testing.T) {
 			notificationSvc := formation.NewNotificationService(nil, nil, nil, nil, nil, nil, nil, webhookClient)
 
 			// WHEN
-			_, err := notificationSvc.SendNotifications(ctx, testCase.InputRequests)
+			_, err := notificationSvc.SendNotification(ctx, testCase.InputRequest)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

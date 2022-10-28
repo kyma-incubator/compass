@@ -1270,7 +1270,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		DoStub: func(_ context.Context, _ *webhookclient.Request) (*web_hook.Response, error) {
+		DoStub: func(_ context.Context, _ webhookclient.WebhookRequest) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -1321,7 +1321,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		DoStub: func(_ context.Context, _ *webhookclient.Request) (*web_hook.Response, error) {
+		DoStub: func(_ context.Context, _ webhookclient.WebhookRequest) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -1373,7 +1373,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		DoStub: func(_ context.Context, _ *webhookclient.Request) (*web_hook.Response, error) {
+		DoStub: func(_ context.Context, _ webhookclient.WebhookRequest) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
