@@ -111,7 +111,7 @@ var (
 			ObservedGeneration: int64ToInt64Ptr(1),
 		},
 	}
-	originalLogger = *ctrl.Log
+	originalLogSink = ctrl.Log.GetSink()
 )
 
 func TestReconcile_FailureToGetOperationCRDueToNotFoundError_ShouldResultNoRequeueNoError(t *testing.T) {
@@ -120,7 +120,7 @@ func TestReconcile_FailureToGetOperationCRDueToNotFoundError_ShouldResultNoReque
 	stubLoggerAssertion(t, notFoundErr.Error(),
 		fmt.Sprintf("Unable to retrieve %s resource from API server", ctrlRequest.NamespacedName),
 		fmt.Sprintf("%s resource was not found in API server", ctrlRequest.NamespacedName))
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(nil, notFoundErr)
@@ -144,7 +144,7 @@ func TestReconcile_FailureToGetOperationCRDueToNotFoundError_ShouldResultNoReque
 func TestReconcile_FailureToGetOperationCRDueToGeneralError_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to retrieve")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(nil, mockedErr)
@@ -169,7 +169,7 @@ func TestReconcile_FailureToGetOperationCRDueToGeneralError_ShouldResultNoRequeu
 func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_DirectorUpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status", "Validation error occurred during operation status initialization")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -203,7 +203,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_D
 func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status", "Validation error occurred during operation status initialization")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -239,7 +239,7 @@ func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_S
 func TestReconcile_FailureToInitializeOperationStatusDueToValidationError_When_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Failed to initialize operation status", "Validation error occurred during operation status initialization")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -275,7 +275,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorUpdateOperationFails
 	// GIVEN:
 	expectedErr := "unexpected end of JSON input"
 	stubLoggerAssertion(t, expectedErr, "Unable to parse request object")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Spec.RequestObject = ""
@@ -313,7 +313,7 @@ func TestReconcile_FailureToParseRequestObject_When_StatusManagerFailedStatusFai
 	// GIVEN:
 	expectedErr := "unexpected end of JSON input"
 	stubLoggerAssertion(t, expectedErr, "Unable to parse request object")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Spec.RequestObject = ""
@@ -353,7 +353,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorAndStatusManagerUpda
 	// GIVEN:
 	expectedErr := "unexpected end of JSON input"
 	stubLoggerAssertion(t, expectedErr, "Unable to parse request object")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Spec.RequestObject = ""
@@ -391,7 +391,7 @@ func TestReconcile_FailureToParseRequestObject_When_DirectorAndStatusManagerUpda
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_When_K8sDeleteFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to fetch application")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.InitializedAt = metav1.Time{}
@@ -430,7 +430,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_Wh
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_And_K8sDeleteSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to fetch application")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.InitializedAt = metav1.Time{}
@@ -468,7 +468,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutReached_An
 func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to fetch application")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -502,7 +502,7 @@ func TestReconcile_FailureToFetchApplication_And_ReconciliationTimeoutNotReached
 func TestReconcile_FetchApplicationReturnsNotFoundErr_And_OperationIsDeleteAndInProgress_ShouldResultSuccessOperationNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 	operation := *initializedMockedOperation
 	operation.Spec.OperationType = v1alpha1.OperationTypeDelete
 
@@ -539,7 +539,7 @@ func TestReconcile_FetchApplicationReturnsNotFoundErr_And_OperationIsDeleteAndIn
 func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsUpdateAndInProgress_ShouldResultFailedOperationNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 	operation := *initializedMockedOperation
 	operation.Spec.OperationType = v1alpha1.OperationTypeUpdate
 
@@ -575,7 +575,7 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsUpdateAn
 func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDeleteNorInProgress_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -608,7 +608,7 @@ func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsNotDelet
 func TestReconcile_FetchApplicationReturnsNilApplication_And_OperationIsSucceeded_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, notFoundErr.Error(), fmt.Sprintf("Unable to fetch application with ID %s", appGUID))
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Phase = v1alpha1.StateSuccess
@@ -783,7 +783,7 @@ func TestReconcile_WebhookIsMissing_When_DirectorUpdateOperationFails_ShouldResu
 	// GIVEN:
 	expectedErr := fmt.Errorf("missing webhook with ID: %s", initializedMockedOperation.Spec.WebhookIDs[0])
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to retrieve webhook")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -822,7 +822,7 @@ func TestReconcile_WebhookIsMissing_When_StatusManagerFailedStatusFails_ShouldRe
 	// GIVEN:
 	expectedErr := fmt.Errorf("missing webhook with ID: %s", initializedMockedOperation.Spec.WebhookIDs[0])
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to retrieve webhook")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -863,7 +863,7 @@ func TestReconcile_WebhookIsMissing_When_DirectorAndStatusManagerUpdateSucceeds_
 	// GIVEN:
 	expectedErr := fmt.Errorf("missing webhook with ID: %s", initializedMockedOperation.Spec.WebhookIDs[0])
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to retrieve webhook")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -1010,7 +1010,7 @@ func TestReconcile_ReconciliationTimeoutReached_And_DirectorAndStatusManagerUpda
 func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
 	k8sClient.GetReturns(initializedMockedOperation, nil)
@@ -1054,7 +1054,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	expectedErr := recerr.NewFatalReconcileError("unable to parse output template")
 
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
@@ -1102,7 +1102,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	expectedErr := recerr.NewFatalReconcileError("unable to parse output template")
 
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
@@ -1152,7 +1152,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	expectedErr := recerr.NewFatalReconcileError("unable to parse output template")
 
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
@@ -1203,7 +1203,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	expectedErr := webhookclient.NewWebhookStatusGoneErr(goneStatusCode)
 
 	stubLoggerAssertion(t, expectedErr.Error(), "gone response status")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	typeDelete := v1alpha1.OperationTypeDelete
@@ -1251,7 +1251,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_When_DirectorUpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
@@ -1301,7 +1301,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
@@ -1353,7 +1353,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_WebhookTimeoutReached_And_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.InitializedAt = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
@@ -1612,7 +1612,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_Di
 	// GIVEN:
 	expectedErr := "cannot parse"
 	stubLoggerAssertion(t, expectedErr, "Unable to calculate next poll time")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
@@ -1659,7 +1659,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_St
 	// GIVEN:
 	expectedErr := "cannot parse"
 	stubLoggerAssertion(t, expectedErr, "Unable to calculate next poll time")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
@@ -1708,7 +1708,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_TimeLayoutParsingFails_When_Di
 	// GIVEN:
 	expectedErr := "cannot parse"
 	stubLoggerAssertion(t, expectedErr, "Unable to calculate next poll time")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: "abc"}}
@@ -1756,7 +1756,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 	// GIVEN:
 	expectedErr := "cannot parse"
 	stubLoggerAssertion(t, expectedErr, "Unable to calculate next poll time")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL, LastPollTimestamp: time.Now().Format(time.RFC3339Nano)}}
@@ -1801,7 +1801,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollIntervalHasNotPassed_Shoul
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutNotReached_ShouldResultRequeueAfterNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook Poll request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
@@ -1847,7 +1847,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 	expectedErr := recerr.NewFatalReconcileError("unable to parse status template")
 
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook Poll request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
@@ -1897,7 +1897,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 	expectedErr := recerr.NewFatalReconcileError("unable to parse status template")
 
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook Poll request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
@@ -1949,7 +1949,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 	expectedErr := recerr.NewFatalReconcileError("unable to parse status template")
 
 	stubLoggerAssertion(t, expectedErr.Error(), "Unable to execute Webhook Poll request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
@@ -1998,7 +1998,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_FatalEr
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_When_DirectorUpdateOperationFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook Poll request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
@@ -2051,7 +2051,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_When_StatusManagerFailedStatusFails_ShouldResultNoRequeueError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook Poll request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
@@ -2106,7 +2106,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_WebhookTimeoutReached_And_DirectorAndStatusManagerUpdateSucceeds_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
 	stubLoggerAssertion(t, mockedErr.Error(), "Unable to execute Webhook Poll request")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}
@@ -2678,7 +2678,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 
 func TestReconcile_OperationNoWebhookPollURL_And_PollIntervalHasNotPassed_And_ShouldResultNoRequeueNoError(t *testing.T) {
 	// GIVEN:
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Spec.WebhookIDs = []string{}
@@ -2726,7 +2726,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	// GIVEN:
 	unknownStatus := "UNKNOWN"
 	stubLoggerAssertion(t, fmt.Sprintf("unexpected poll status response: %s", unknownStatus), "unknown status code received")
-	defer func() { ctrl.Log = &originalLogger }()
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 
 	operation := *initializedMockedOperation
 	operation.Status.Webhooks = []v1alpha1.Webhook{{WebhookID: initializedMockedOperation.Spec.WebhookIDs[0], WebhookPollURL: mockedLocationURL}}

@@ -31,11 +31,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func stubLoggerAssertion(t *testing.T, errExpectation string, msgExpectations ...string) {
-	ctrl.Log = log.NewDelegatingLogger(&mockedLogger{
+	ctrl.Log = ctrl.Log.WithSink(&mockedLogSink{
 		AssertErrorExpectations: func(err error, msg string) {
 			require.Contains(t, err.Error(), errExpectation)
 
@@ -51,7 +50,7 @@ func stubLoggerAssertion(t *testing.T, errExpectation string, msgExpectations ..
 }
 
 func stubLoggerNotLoggedAssertion(t *testing.T, errExpectation string, msgExpectations ...string) {
-	ctrl.Log = log.NewDelegatingLogger(&mockedLogger{
+	ctrl.Log = ctrl.Log.WithSink(&mockedLogSink{
 		AssertErrorExpectations: func(err error, msg string) {
 			require.NotContains(t, err.Error(), errExpectation)
 
