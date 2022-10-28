@@ -1,7 +1,6 @@
 package graphql_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -258,7 +257,6 @@ func TestWebhookInput_Validate_Mode(t *testing.T) {
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
-				fmt.Println(err)
 				require.Error(t, err)
 			}
 		})
