@@ -9,26 +9,24 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
 
 const (
-	AuthorizationHeader = "Authorization"
-	ContentTypeHeader   = "Content-Type"
-	UserContextHeader   = "user_context"
-	LocationHeader      = "Location"
-	JobSucceededStatus  = "SUCCEEDED"
-	EventuallyTimeout   = 60 * time.Second
-	EventuallyTick      = 2 * time.Second
-
-	ContentTypeApplicationJson = "application/json"
+	UserContextHeader  = "user_context"
+	LocationHeader     = "Location"
+	JobSucceededStatus = "SUCCEEDED"
+	EventuallyTimeout  = 60 * time.Second
+	EventuallyTick     = 2 * time.Second
 )
 
 func BuildAndExecuteUnsubscribeRequest(t *testing.T, resourceID, resourceName string, httpClient *http.Client, subscriptionURL, apiPath, subscriptionToken, propagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {
 	unsubscribeReq, err := http.NewRequest(http.MethodDelete, subscriptionURL+apiPath, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
-	unsubscribeReq.Header.Add(AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+	unsubscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 	unsubscribeReq.Header.Add(propagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 	t.Logf("Removing subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, resourceName, resourceID, subscriptionProviderSubaccountID)
@@ -56,8 +54,8 @@ func BuildAndExecuteUnsubscribeRequest(t *testing.T, resourceID, resourceName st
 func GetSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusURL, token string) string {
 	getJobReq, err := http.NewRequest(http.MethodGet, jobStatusURL, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
-	getJobReq.Header.Add(AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
-	getJobReq.Header.Add(ContentTypeHeader, ContentTypeApplicationJson)
+	getJobReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+	getJobReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 
 	resp, err := httpClient.Do(getJobReq)
 	require.NoError(t, err)

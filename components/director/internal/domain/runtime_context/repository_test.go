@@ -52,6 +52,39 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_GetGlobalByID(t *testing.T) {
+	runtimeCtxModel := fixModelRuntimeCtx()
+	runtimeCtxEntity := fixEntityRuntimeCtx()
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Runtime Context Globally by ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE id = $1`),
+				Args:     []driver.Value{runtimeCtxID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(runtimeCtxModel.ID, runtimeCtxModel.RuntimeID, runtimeCtxModel.Key, runtimeCtxModel.Value)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       runtimectx.NewRepository,
+		ExpectedModelEntity:       runtimeCtxModel,
+		ExpectedDBEntity:          runtimeCtxEntity,
+		MethodName:                "GetGlobalByID",
+		MethodArgs:                []interface{}{runtimeCtxID},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_GetByRuntimeID(t *testing.T) {
 	runtimeCtxModel := fixModelRuntimeCtx()
 	runtimeCtxEntity := fixEntityRuntimeCtx()

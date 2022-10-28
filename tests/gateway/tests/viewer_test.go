@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -55,7 +57,7 @@ func TestViewerQuery(t *testing.T) {
 			Name: "test-app",
 			Labels: graphql.Labels{
 				"scenarios":                        []interface{}{testScenario},
-				testConfig.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+				testConfig.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
 			},
 		}
 

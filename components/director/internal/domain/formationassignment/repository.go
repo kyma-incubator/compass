@@ -33,6 +33,7 @@ type EntityConverter interface {
 type repository struct {
 	creator               repo.CreatorGlobal
 	getter                repo.SingleGetter
+	globalGetter          repo.SingleGetterGlobal
 	pageableQuerierGlobal repo.PageableQuerier
 	unionLister           repo.UnionLister
 	lister                repo.Lister
@@ -48,6 +49,7 @@ func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:               repo.NewCreatorGlobal(resource.FormationAssignment, tableName, tableColumns),
 		getter:                repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		globalGetter:          repo.NewSingleGetterGlobal(resource.FormationAssignment, tableName, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		unionLister:           repo.NewUnionListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		lister:                repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
@@ -83,6 +85,16 @@ func (r *repository) GetByTargetAndSource(ctx context.Context, target, source, t
 func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error) {
 	var entity Entity
 	if err := r.getter.Get(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&entity), nil
+}
+
+// GetGlobalByID retrieves formation assignment matching ID `id` globally without tenant parameter
+func (r *repository) GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error) {
+	var entity Entity
+	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
