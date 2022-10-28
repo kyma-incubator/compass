@@ -39,8 +39,8 @@ type malformedRequest struct {
 // RequestBody contains the request input of the formation mapping async request
 type RequestBody struct {
 	State         ConfigurationState `json:"state"`
-	Configuration json.RawMessage    `json:"configuration"`
-	Error         string             `json:"error"`
+	Configuration json.RawMessage    `json:"configuration,omitempty"`
+	Error         string             `json:"error,omitempty"`
 }
 
 // Handler is the base struct definition of the FormationMappingHandler
@@ -83,6 +83,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	if formationID == "" || formationAssignmentID == "" {
 		log.C(ctx).Errorf("Missing required parameters: %q or/and %q", FormationIDParam, FormationAssignmentIDParam)
 		respondWithError(ctx, w, http.StatusBadRequest, errors.New("Not all of the required parameters are provided"))
+		return
 	}
 
 	log.C(ctx).Infof("Updating status of formation assignment with ID: %q for formation with ID: %q", formationAssignmentID, formationID)
@@ -105,7 +106,7 @@ func (b RequestBody) Validate() error {
 		fieldRules = append(fieldRules, validation.Field(&b.Error, validation.Empty))
 		return validation.ValidateStruct(&b, fieldRules...)
 	} else {
-		return errors.New("The Request Body cannot contains only State")
+		return errors.New("The request body cannot contains only state")
 	}
 }
 

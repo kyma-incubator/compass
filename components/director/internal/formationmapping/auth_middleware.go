@@ -179,7 +179,7 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 
 	log.C(ctx).Infof("Consumer with internal ID: %q and external ID: %q with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerExternalTenantID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
 	if fa.TargetType == model.FormationAssignmentTypeApplication {
-		log.C(ctx).Infof("The formation assignment that is being update has type: %s and ID: %q", model.FormationAssignmentTypeApplication, fa.Target)
+		log.C(ctx).Infof("The formation assignment that is being updated has type: %s and ID: %q", model.FormationAssignmentTypeApplication, fa.Target)
 
 		app, err := a.appRepo.GetGlobalByID(ctx, fa.Target)
 		if err != nil {
@@ -197,13 +197,13 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 		log.C(ctx).Infof("Getting parent tenant of the caller with ID: %q and type: %q", consumerID, consumerType)
 		tnt, err := a.tenantRepo.Get(ctx, consumerInternalTenantID)
 		if err != nil {
-			log.C(ctx).Warningf("an error occurred while getting tenant from ID: %q", consumerInternalTenantID)
+			return false, http.StatusInternalServerError, errors.Wrapf(err, "an error occurred while getting tenant from ID: %q", consumerInternalTenantID)
 		}
 
-		if tnt != nil && tnt.Parent != "" {
+		if tnt.Parent != "" {
 			exists, err := a.appRepo.OwnerExists(ctx, tnt.Parent, fa.Target)
 			if err != nil {
-				log.C(ctx).Warningf("an error occurred while verifying caller with ID: %q and type: %q has owner access to formation assignment with type: %q and target ID: %q", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
+				return false, http.StatusInternalServerError, errors.Wrapf(err, "an error occurred while verifying caller with ID: %q and type: %q has owner access to formation assignment with type: %q and target ID: %q", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
 			}
 
 			if exists {
@@ -218,7 +218,7 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 	}
 
 	if fa.TargetType == model.FormationAssignmentTypeRuntime && (consumerType == consumer.Runtime || consumerType == consumer.ExternalCertificate || consumerType == consumer.SuperAdmin) { // consumer.SuperAdmin is needed for the local testing setup
-		log.C(ctx).Infof("The formation assignment that is being update has type: %s and ID: %q", model.FormationAssignmentTypeRuntime, fa.Target)
+		log.C(ctx).Infof("The formation assignment that is being updated has type: %s and ID: %q", model.FormationAssignmentTypeRuntime, fa.Target)
 
 		exists, err := a.runtimeRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
 		if err != nil {
@@ -234,7 +234,7 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 	}
 
 	if fa.TargetType == model.FormationAssignmentTypeRuntimeContext && (consumerType == consumer.Runtime || consumerType == consumer.ExternalCertificate || consumerType == consumer.SuperAdmin) { // consumer.SuperAdmin is needed for the local testing setup
-		log.C(ctx).Infof("The formation assignment that is being update has type: %s and ID: %q", model.FormationAssignmentTypeRuntimeContext, fa.Target)
+		log.C(ctx).Infof("The formation assignment that is being updated has type: %s and ID: %q", model.FormationAssignmentTypeRuntimeContext, fa.Target)
 
 		log.C(ctx).Debugf("Getting runtime context with ID: %q from formation assignment with ID: %q", fa.Target, fa.ID)
 		rtmCtx, err := a.runtimeContextRepo.GetGlobalByID(ctx, fa.Target)

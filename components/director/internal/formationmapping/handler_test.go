@@ -9,9 +9,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+
 	"github.com/gorilla/mux"
 	fm "github.com/kyma-incubator/compass/components/director/internal/formationmapping"
-	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,6 +36,23 @@ func Test_StatusUpdate(t *testing.T) {
 		expectedStatusCode int
 		expectedErrOutput  string
 	}{
+		// Request(+metadata) validation checks
+		{
+			name:               "Decode Error: Content-Type header is not application/json",
+			headers:            map[string][]string{httputils.HeaderContentTypeKey: {"invalidContentType"}},
+			expectedStatusCode: http.StatusUnsupportedMediaType,
+			expectedErrOutput:  "Content-Type header is not application/json",
+		},
+		{
+			name: "Error when one or more of the required path parameters are missing",
+			reqBody: fm.RequestBody{
+				State:         fm.ConfigurationStateReady,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrOutput:  "Not all of the required parameters are provided",
+		},
+		// Request body validation checks
 		{
 			name: "Success",
 			reqBody: fm.RequestBody{
@@ -46,29 +64,32 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:               "Decode Error: Content-Type header is not application/json",
-			headers:            map[string][]string{httputils.HeaderContentTypeKey: {"invalidContentType"}},
-			expectedStatusCode: http.StatusUnsupportedMediaType,
-			expectedErrOutput:  "Content-Type header is not application/json",
-		},
-		{
-			name: "Validate Error: incorrect request body input",
+			name: "Validate Error: error when we have ready state with config but also an error provided",
 			reqBody: fm.RequestBody{
 				State:         fm.ConfigurationStateReady,
-				Configuration: json.RawMessage("{}"),
+				Configuration: json.RawMessage(testValidConfig),
 				Error:         "testErrMsg",
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedErrOutput:  "Request Body contains invalid input:",
 		},
 		{
-			name: "Error when one or more of the required path parameters are missing",
+			name: "Validate Error: error when configuration is provided but the state is incorrect",
 			reqBody: fm.RequestBody{
-				State:         fm.ConfigurationStateReady,
+				State:         fm.ConfigurationStateCreateError,
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "Not all of the required parameters are provided",
+			expectedErrOutput:  "Request Body contains invalid input:",
+		},
+		{
+			name: "Validate Error: error when request body contains only state",
+			reqBody: fm.RequestBody{
+				State: fm.ConfigurationStateReady,
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrOutput:  "Request Body contains invalid input:",
 		},
 	}
 
