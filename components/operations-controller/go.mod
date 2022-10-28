@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221006144530-844f804814b8
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220725083431-c2155c720423
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221026170340-d110c70ba3e0
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221026170340-d110c70ba3e0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
@@ -67,8 +67,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/onrik/logrus v0.9.0 // indirect
-	github.com/onsi/ginkgo/v2 v2.4.0
-	github.com/onsi/gomega v1.22.1
+	github.com/onsi/ginkgo/v2 v2.4.0 // indirect
+	github.com/onsi/gomega v1.22.1 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
