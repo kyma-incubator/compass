@@ -438,9 +438,9 @@ func fixGqlFormationAssignmentWithSuffix(configValue *string, suffix string) *gr
 	return &graphql.FormationAssignment{
 		ID:         FormationAssignmentID + suffix,
 		Source:     FormationAssignmentSource + suffix,
-		SourceType: FormationAssignmentSourceType + suffix,
+		SourceType: graphql.FormationAssignmentType(FormationAssignmentSourceType + suffix),
 		Target:     FormationAssignmentTarget + suffix,
-		TargetType: FormationAssignmentTargetType + suffix,
+		TargetType: graphql.FormationAssignmentType(FormationAssignmentTargetType + suffix),
 		State:      FormationAssignmentState + suffix,
 		Value:      configValue,
 	}
@@ -466,9 +466,9 @@ func fixFormationAssignmentModelWithSuffix(configValue json.RawMessage, suffix s
 		FormationID: FormationAssignmentFormationID + suffix,
 		TenantID:    FormationAssignmentTenantID + suffix,
 		Source:      FormationAssignmentSource + suffix,
-		SourceType:  FormationAssignmentSourceType + suffix,
+		SourceType:  model.FormationAssignmentType(FormationAssignmentSourceType + suffix),
 		Target:      FormationAssignmentTarget + suffix,
-		TargetType:  FormationAssignmentTargetType + suffix,
+		TargetType:  model.FormationAssignmentType(FormationAssignmentTargetType + suffix),
 		State:       FormationAssignmentState + suffix,
 		Value:       configValue,
 	}

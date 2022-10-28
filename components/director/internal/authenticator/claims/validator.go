@@ -40,7 +40,7 @@ type ApplicationTemplateService interface {
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 }
 
-// ApplicationService is used to interact with runtime contexts.
+// ApplicationService is responsible for the service-layer Application operations.
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	ListAll(ctx context.Context) ([]*model.Application, error)

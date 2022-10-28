@@ -447,13 +447,13 @@ type FetchRequestStatus struct {
 }
 
 type FormationAssignment struct {
-	ID         string  `json:"id"`
-	Source     string  `json:"source"`
-	SourceType string  `json:"sourceType"`
-	Target     string  `json:"target"`
-	TargetType string  `json:"targetType"`
-	State      string  `json:"state"`
-	Value      *string `json:"value"`
+	ID         string                  `json:"id"`
+	Source     string                  `json:"source"`
+	SourceType FormationAssignmentType `json:"sourceType"`
+	Target     string                  `json:"target"`
+	TargetType FormationAssignmentType `json:"targetType"`
+	State      string                  `json:"state"`
+	Value      *string                 `json:"value"`
 }
 
 type FormationAssignmentPage struct {
@@ -1208,6 +1208,49 @@ func (e *FetchRequestStatusCondition) UnmarshalGQL(v interface{}) error {
 }
 
 func (e FetchRequestStatusCondition) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FormationAssignmentType string
+
+const (
+	FormationAssignmentTypeApplication    FormationAssignmentType = "APPLICATION"
+	FormationAssignmentTypeRuntime        FormationAssignmentType = "RUNTIME"
+	FormationAssignmentTypeRuntimeContext FormationAssignmentType = "RUNTIME_CONTEXT"
+)
+
+var AllFormationAssignmentType = []FormationAssignmentType{
+	FormationAssignmentTypeApplication,
+	FormationAssignmentTypeRuntime,
+	FormationAssignmentTypeRuntimeContext,
+}
+
+func (e FormationAssignmentType) IsValid() bool {
+	switch e {
+	case FormationAssignmentTypeApplication, FormationAssignmentTypeRuntime, FormationAssignmentTypeRuntimeContext:
+		return true
+	}
+	return false
+}
+
+func (e FormationAssignmentType) String() string {
+	return string(e)
+}
+
+func (e *FormationAssignmentType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FormationAssignmentType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FormationAssignmentType", str)
+	}
+	return nil
+}
+
+func (e FormationAssignmentType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

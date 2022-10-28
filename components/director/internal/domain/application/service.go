@@ -55,6 +55,7 @@ type repoUpserterFunc func(ctx context.Context, tenant string, application *mode
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
@@ -66,6 +67,8 @@ type ApplicationRepository interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
+	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
 	Upsert(ctx context.Context, tenant string, model *model.Application) (string, error)

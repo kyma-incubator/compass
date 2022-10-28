@@ -27,6 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -62,7 +64,7 @@ func TestORDService(t *testing.T) {
 	appInput2 := fixtures.CreateApp("tenant2")
 	appInputInScenario := fixtures.CreateApp("tenant3-in-scenario")
 	appInputInScenario.Labels = map[string]interface{}{
-		conf.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+		conf.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
 	}
 	appInputNotInScenario := fixtures.CreateApp("tenant3-no-scenario")
 	appInputAPIProtocolFiltering := fixtures.CreateApp("tenant4")

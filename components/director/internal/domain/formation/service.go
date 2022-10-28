@@ -518,7 +518,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
 	rtmContextIDs := make([]string, 0)
 	for _, assignment := range formationAssignmentsForObject {
-		if assignment.TargetType == string(graphql.FormationObjectTypeRuntimeContext) {
+		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
 			rtmContextIDs = append(rtmContextIDs, assignment.Target)
 		}
 	}

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/formationmapping"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
@@ -151,6 +152,8 @@ type config struct {
 	ReadyConfig healthz.ReadyConfig
 
 	InfoConfig info.Config
+
+	FormationMappingCfg formationmapping.Config
 
 	DataloaderMaxBatch int           `envconfig:"default=200"`
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
@@ -389,6 +392,15 @@ func main() {
 
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))
+
+	fmAuthMiddleware := createFormationMappingAuthenticator(transact, cfg, appRepo, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+
+	asyncFARouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
+	asyncFARouter.Use(authMiddleware.Handler(), fmAuthMiddleware.Handler()) // order is important
+
+	fmHandler := formationmapping.NewFormationMappingHandler()
+	logger.Infof("Registering formation tenant mapping endpoints...")
+	asyncFARouter.HandleFunc(cfg.FormationMappingCfg.AsyncAPIEndpoint, fmHandler.UpdateStatus).Methods(http.MethodPatch)
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
@@ -832,4 +844,35 @@ func intSystemSvc() claims.IntegrationSystemService {
 	intSysConverter := integrationsystem.NewConverter()
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	return integrationsystem.NewService(intSysRepo, uid.NewService())
+}
+
+func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg config, appRepo application.ApplicationRepository, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) *formationmapping.Authenticator {
+	formationAssignmentConv := formationassignment.NewConverter()
+	authConverter := auth.NewConverter()
+	webhookConverter := webhook.NewConverter(authConverter)
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	specConverter := spec.NewConverter(frConverter)
+	docConverter := document.NewConverter(frConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	tenantConverter := tenant.NewConverter()
+
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	labelRepo := label.NewRepository(label.NewConverter())
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
+	runtimeRepo := runtime.NewRepository(runtime.NewConverter(webhook.NewConverter(auth.NewConverter())))
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
+
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+
+	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
+
+	return formationmapping.NewFormationMappingAuthenticator(transact, formationAssignmentSvc, runtimeRepo, runtimeContextRepo, appRepo, tenantRepo, appTemplateRepo, labelRepo, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, cfg.SubscriptionConfig.ConsumerSubaccountLabelKey)
 }
