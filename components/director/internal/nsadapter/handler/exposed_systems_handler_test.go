@@ -1694,7 +1694,7 @@ func Verify(t *testing.T, resp *http.Response, expectedStatusCode int, expectedC
 			status, expectedStatusCode)
 	}
 
-	if contentType := resp.Header.Get(httputils.HeaderContentType); contentType != expectedContentType {
+	if contentType := resp.Header.Get(httputils.HeaderContentTypeKey); contentType != expectedContentType {
 		t.Errorf("the response contains unexpected content type: got %s want %s",
 			contentType, expectedContentType)
 	}

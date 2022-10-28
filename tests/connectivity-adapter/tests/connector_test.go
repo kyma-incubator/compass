@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
@@ -44,7 +46,7 @@ func TestConnector(t *testing.T) {
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: directorSchema.Labels{
 			"scenarios":                        []interface{}{testScenario},
-			testConfig.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+			testConfig.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
 		},
 	}
 

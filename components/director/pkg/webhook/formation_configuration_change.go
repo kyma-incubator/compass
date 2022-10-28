@@ -35,15 +35,15 @@ type RuntimeContextWithLabels struct {
 // FormationAssignment represents the FormationAssignment model, but with the value stored as a string
 // Because otherwise the template later renders it as a stringified []byte rather than a string
 type FormationAssignment struct {
-	ID          string `json:"id"`
-	FormationID string `json:"formation_id"`
-	TenantID    string `json:"tenant_id"`
-	Source      string `json:"source"`
-	SourceType  string `json:"source_type"`
-	Target      string `json:"target"`
-	TargetType  string `json:"target_type"`
-	State       string `json:"state"`
-	Value       string `json:"value"`
+	ID          string                        `json:"id"`
+	FormationID string                        `json:"formation_id"`
+	TenantID    string                        `json:"tenant_id"`
+	Source      string                        `json:"source"`
+	SourceType  model.FormationAssignmentType `json:"source_type"`
+	Target      string                        `json:"target"`
+	TargetType  model.FormationAssignmentType `json:"target_type"`
+	State       string                        `json:"state"`
+	Value       string                        `json:"value"`
 }
 
 // FormationConfigurationChangeInput struct contains the input for a formation notification

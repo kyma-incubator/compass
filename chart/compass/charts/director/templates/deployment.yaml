@@ -253,6 +253,10 @@ spec:
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
             - name: APP_ORD_WEBHOOK_MAPPINGS
               value: {{ .Values.global.director.ordWebhookMappings | quote }}
+            - name: APP_FORMATION_MAPPING_API_PATH_PREFIX
+              value: {{ .Values.global.director.formationAsyncApi.pathPrefix }}
+            - name: APP_FORMATION_MAPPING_API_ENDPOINT
+              value: {{ .Values.global.director.formationAsyncApi.path }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

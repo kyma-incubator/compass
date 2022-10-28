@@ -184,7 +184,7 @@ func TestServiceAssignFormation(t *testing.T) {
 	assignments := []*model.FormationAssignment{
 		{
 			Target:     RuntimeContextID,
-			TargetType: string(graphql.FormationObjectTypeRuntimeContext),
+			TargetType: model.FormationAssignmentTypeRuntimeContext,
 		},
 	}
 

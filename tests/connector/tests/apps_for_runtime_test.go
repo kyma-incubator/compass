@@ -3,6 +3,8 @@ package tests
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -24,7 +26,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	// Register first Application
 	firstApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-first-app",
-		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: "SAP Cloud for Customer"},
+		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C)},
 	})
 	defer func() {
 		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, firstApp.ID)
@@ -61,7 +63,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	// Register second Application
 	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-second-app",
-		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: "SAP Cloud for Customer"},
+		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C)},
 	})
 	defer func() {
 		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, secondApp.ID)
