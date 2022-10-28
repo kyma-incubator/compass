@@ -43,6 +43,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20221021075309-f6a4
 github.com/kyma-incubator/compass/components/director v0.0.0-20221021075309-f6a4c48ab83f/go.mod h1:Gmso4VPdiEI3AQJ1QAsEPQQ0UOib+eYW/+gdQlBBH4U=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221027144037-9863742d5e22 h1:Cne/cKcTzrPTiNw4M8eDGr/TV5bn5r2TyRtm4aAof7I=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221027144037-9863742d5e22/go.mod h1:Gmso4VPdiEI3AQJ1QAsEPQQ0UOib+eYW/+gdQlBBH4U=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221028144124-218028ca3a05 h1:jHzl/0kVRmVb6+YLOcKnwgCz/GjD6N1ge84XlAHQfq0=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221028144124-218028ca3a05/go.mod h1:XKKfWWfWTAI53KZ5VtQkhoYgWdq94gazeKrTxs7dX8k=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220104122431-99ed924ea212 h1:W2AlyMB0R+TkQxAgCONCZH0hHQ9SkTNd7ciLvSkGgeE=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220104122431-99ed924ea212/go.mod h1:AovrOYTP0Y173w3LiH23OgRopaMQZaCIJ0TsdVdgOQ4=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
