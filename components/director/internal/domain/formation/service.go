@@ -596,10 +596,6 @@ func (s *service) processScenario(ctx context.Context, in model.AutomaticScenari
 		return err
 	}
 
-	//	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
-
-	// lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("%s", strings.Join(runtimeTypes, ", ")))}
-
 	lblFilters := make([]*labelfilter.LabelFilter, 0, len(runtimeTypes))
 	for _, runtimeType := range runtimeTypes {
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
@@ -815,11 +811,6 @@ func (s *service) isASAMatchingRuntimeContext(ctx context.Context, asa *model.Au
 		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
 		lblFilters = append(lblFilters, labelfilter.NewForKeyWithQuery(s.runtimeTypeLabelKey, query))
 	}
-	//lblFilters := make([]*labelfilter.LabelFilter, 0, len(runtimeTypes))
-	//for _, runtimeType := range runtimeTypes {
-	//	query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
-	//	lblFilters = append(lblFilters, labelfilter.NewForKeyWithQuery(s.runtimeTypeLabelKey, query))
-	//}
 
 	rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, asa.TargetTenantID, runtimeContextID)
 	if err != nil {
