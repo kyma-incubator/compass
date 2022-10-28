@@ -39,7 +39,7 @@ func TestServiceAssignFormation(t *testing.T) {
 	expectedFormationTemplate := &model.FormationTemplate{
 		ID:               FormationTemplateID,
 		Name:             testFormationTemplateName,
-		RuntimeType:      runtimeType,
+		RuntimeTypes:     []string{runtimeType},
 		ApplicationTypes: []string{applicationType},
 	}
 	notifications := []*webhookclient.NotificationRequest{{
@@ -1126,16 +1126,16 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&model.FormationTemplate{
-					ID:          FormationTemplateID,
-					Name:        "some-other-template",
-					RuntimeType: "not-the-expected-type",
+					ID:           FormationTemplateID,
+					Name:         "some-other-template",
+					RuntimeTypes: []string{"not-the-expected-type"},
 				}, nil).Once()
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
 			ObjectID:           RuntimeID,
 			InputFormation:     inputFormation,
-			ExpectedErrMessage: fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeTypeLbl.Value, "some-other-template", "not-the-expected-type"),
+			ExpectedErrMessage: fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeTypeLbl.Value, "some-other-template", []string{"not-the-expected-type"}),
 		},
 		{
 			Name: "error when assigning runtime fetching runtime type label fails",
@@ -1196,16 +1196,16 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&model.FormationTemplate{
-					ID:          FormationTemplateID,
-					Name:        "some-other-template",
-					RuntimeType: "not-the-expected-type",
+					ID:           FormationTemplateID,
+					Name:         "some-other-template",
+					RuntimeTypes: []string{"not-the-expected-type"},
 				}, nil).Once()
 				return repo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
 			ObjectID:           RuntimeContextID,
 			InputFormation:     inputFormation,
-			ExpectedErrMessage: fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeTypeLbl.Value, "some-other-template", "not-the-expected-type"),
+			ExpectedErrMessage: fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeTypeLbl.Value, "some-other-template", []string{"not-the-expected-type"}),
 		},
 		{
 			Name: "error when assigning runtime context fetching runtime type label fails",
