@@ -37,6 +37,36 @@ func (_m *SpecService) CreateByReferenceObjectID(ctx context.Context, in model.S
 	return r0, r1
 }
 
+// CreateByReferenceObjectIDWithDelayedFetchRequest provides a mock function with given fields: ctx, in, objectType, objectID
+func (_m *SpecService) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error) {
+	ret := _m.Called(ctx, in, objectType, objectID)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, model.SpecInput, model.SpecReferenceObjectType, string) string); ok {
+		r0 = rf(ctx, in, objectType, objectID)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 *model.FetchRequest
+	if rf, ok := ret.Get(1).(func(context.Context, model.SpecInput, model.SpecReferenceObjectType, string) *model.FetchRequest); ok {
+		r1 = rf(ctx, in, objectType, objectID)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*model.FetchRequest)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, model.SpecInput, model.SpecReferenceObjectType, string) error); ok {
+		r2 = rf(ctx, in, objectType, objectID)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetByReferenceObjectID provides a mock function with given fields: ctx, objectType, objectID
 func (_m *SpecService) GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
 	ret := _m.Called(ctx, objectType, objectID)
