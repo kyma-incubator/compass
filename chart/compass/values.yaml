@@ -123,7 +123,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2700"
+      version: "PR-2709"
       name: compass-director
     hydrator:
       dir:
@@ -718,6 +718,7 @@ global:
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
+    maxParallelSpecificationProcessors: 100
     containerName: "ord-aggregator"
   systemFetcher:
     enabled: false

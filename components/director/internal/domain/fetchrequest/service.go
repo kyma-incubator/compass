@@ -70,7 +70,7 @@ func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *strin
 	}
 
 	var data *string
-	data, fr.Status = s.fetchSpec(ctx, fr)
+	data, fr.Status = s.FetchSpec(ctx, fr)
 
 	if err := s.repo.Update(ctx, tnt, fr); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request status: %v", err)
@@ -80,7 +80,22 @@ func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *strin
 	return data
 }
 
-func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
+func (s *service) Update(ctx context.Context, fr *model.FetchRequest) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while getting tenant: %v", err)
+		return err
+	}
+
+	if err := s.repo.Update(ctx, tnt, fr); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error has occurred while updating fetch request: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*string, *model.FetchRequestStatus) {
 	err := s.validateFetchRequest(fr)
 	if err != nil {
 		log.C(ctx).WithError(err).Error()
