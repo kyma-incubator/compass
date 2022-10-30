@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/tidwall/sjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -45,9 +47,6 @@ const (
 	IntegrationSystemScopes                          = "application.local_tenant_id:write webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read internal_visibility:read application.auths:read formation:write"
 	IntegrationSystemScopesWithoutInternalVisibility = "application.local_tenant_id:write webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read"
 
-	contentTypeHeader                = "Content-Type"
-	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
-
 	grantTypeFieldName   = "grant_type"
 	passwordGrantType    = "password"
 	credentialsGrantType = "client_credentials"
@@ -68,7 +67,7 @@ func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 
-	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
+	req.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationURLEncoded)
 	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", encodedCredentials))
 
 	transport := &http.Transport{
@@ -103,7 +102,7 @@ func FetchHydraAccessTokenBench(b *testing.B, encodedCredentials string, tokenUR
 	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
 	require.NoError(b, err)
 
-	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
+	req.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationURLEncoded)
 	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", encodedCredentials))
 
 	transport := &http.Transport{
@@ -231,7 +230,7 @@ func GetTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, 
 	if oauthConfig.Data.Get(userNameKey) != "" && oauthConfig.Data.Get(passwordKey) != "" {
 		req.SetBasicAuth(oauthConfig.ClientID, oauthConfig.ClientSecret)
 	}
-	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
+	req.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationURLEncoded)
 
 	resp, err := client.Do(req)
 	require.NoError(t, err)

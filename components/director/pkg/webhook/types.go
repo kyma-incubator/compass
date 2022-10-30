@@ -24,6 +24,8 @@ import (
 	"net/url"
 	"text/template"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/pkg/errors"
@@ -36,7 +38,15 @@ type TemplateInput interface {
 	ParseURLTemplate(tmpl *string) (*URL, error)
 	ParseInputTemplate(tmpl *string) ([]byte, error)
 	ParseHeadersTemplate(tmpl *string) (http.Header, error)
+}
+
+// FormationAssignmentTemplateInput is an interface that unions all structs that can act as a template input for a webhook
+type FormationAssignmentTemplateInput interface {
+	TemplateInput
 	GetParticipantsIDs() []string
+	SetAssignment(*model.FormationAssignment)
+	SetReverseAssignment(*model.FormationAssignment)
+	Clone() FormationAssignmentTemplateInput
 }
 
 // Mode is an enum for the mode of the webhook (sync or async)

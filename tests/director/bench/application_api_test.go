@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -41,7 +43,7 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 		appInput := fixtures.CreateApp(fmt.Sprintf("director-%d", i))
 		appInput.Labels = map[string]interface{}{
 			"scenarios":                  []string{testScenario},
-			conf.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+			conf.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
 		}
 		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, appInput)
 		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, tenantID, &appResp)

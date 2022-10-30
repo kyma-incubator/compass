@@ -11,11 +11,11 @@ import (
 )
 
 type FakeWebhookClient struct {
-	DoStub        func(context.Context, *webhookclient.Request) (*webhook.Response, error)
+	DoStub        func(context.Context, webhookclient.WebhookRequest) (*webhook.Response, error)
 	doMutex       sync.RWMutex
 	doArgsForCall []struct {
 		arg1 context.Context
-		arg2 *webhookclient.Request
+		arg2 webhookclient.WebhookRequest
 	}
 	doReturns struct {
 		result1 *webhook.Response
@@ -43,12 +43,12 @@ type FakeWebhookClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeWebhookClient) Do(arg1 context.Context, arg2 *webhookclient.Request) (*webhook.Response, error) {
+func (fake *FakeWebhookClient) Do(arg1 context.Context, arg2 webhookclient.WebhookRequest) (*webhook.Response, error) {
 	fake.doMutex.Lock()
 	ret, specificReturn := fake.doReturnsOnCall[len(fake.doArgsForCall)]
 	fake.doArgsForCall = append(fake.doArgsForCall, struct {
 		arg1 context.Context
-		arg2 *webhookclient.Request
+		arg2 webhookclient.WebhookRequest
 	}{arg1, arg2})
 	stub := fake.DoStub
 	fakeReturns := fake.doReturns
@@ -69,13 +69,13 @@ func (fake *FakeWebhookClient) DoCallCount() int {
 	return len(fake.doArgsForCall)
 }
 
-func (fake *FakeWebhookClient) DoCalls(stub func(context.Context, *webhookclient.Request) (*webhook.Response, error)) {
+func (fake *FakeWebhookClient) DoCalls(stub func(context.Context, webhookclient.WebhookRequest) (*webhook.Response, error)) {
 	fake.doMutex.Lock()
 	defer fake.doMutex.Unlock()
 	fake.DoStub = stub
 }
 
-func (fake *FakeWebhookClient) DoArgsForCall(i int) (context.Context, *webhookclient.Request) {
+func (fake *FakeWebhookClient) DoArgsForCall(i int) (context.Context, webhookclient.WebhookRequest) {
 	fake.doMutex.RLock()
 	defer fake.doMutex.RUnlock()
 	argsForCall := fake.doArgsForCall[i]

@@ -116,6 +116,12 @@ func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
 	return &automock.RuntimeContextRepository{}
 }
 
+func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {
+	repo := &automock.RuntimeContextRepository{}
+	repo.On("ListByIDs", mock.Anything, Tnt, []string{}).Return(nil, nil).Once()
+	return repo
+}
+
 func unusedApplicationRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}
 }
@@ -167,7 +173,6 @@ func unusedFormationAssignmentService() *automock.FormationAssignmentService {
 func noActionNotificationsService() *automock.NotificationsService {
 	notificationSvc := &automock.NotificationsService{}
 	notificationSvc.On("GenerateNotifications", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-	notificationSvc.On("SendNotifications", mock.Anything, mock.Anything).Return(nil, nil)
 	return notificationSvc
 }
 
@@ -433,9 +438,9 @@ func fixGqlFormationAssignmentWithSuffix(configValue *string, suffix string) *gr
 	return &graphql.FormationAssignment{
 		ID:         FormationAssignmentID + suffix,
 		Source:     FormationAssignmentSource + suffix,
-		SourceType: FormationAssignmentSourceType + suffix,
+		SourceType: graphql.FormationAssignmentType(FormationAssignmentSourceType + suffix),
 		Target:     FormationAssignmentTarget + suffix,
-		TargetType: FormationAssignmentTargetType + suffix,
+		TargetType: graphql.FormationAssignmentType(FormationAssignmentTargetType + suffix),
 		State:      FormationAssignmentState + suffix,
 		Value:      configValue,
 	}
@@ -461,9 +466,9 @@ func fixFormationAssignmentModelWithSuffix(configValue json.RawMessage, suffix s
 		FormationID: FormationAssignmentFormationID + suffix,
 		TenantID:    FormationAssignmentTenantID + suffix,
 		Source:      FormationAssignmentSource + suffix,
-		SourceType:  FormationAssignmentSourceType + suffix,
+		SourceType:  model.FormationAssignmentType(FormationAssignmentSourceType + suffix),
 		Target:      FormationAssignmentTarget + suffix,
-		TargetType:  FormationAssignmentTargetType + suffix,
+		TargetType:  model.FormationAssignmentType(FormationAssignmentTargetType + suffix),
 		State:       FormationAssignmentState + suffix,
 		Value:       configValue,
 	}

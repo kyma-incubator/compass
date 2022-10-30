@@ -59,7 +59,7 @@ type DirectorClient interface {
 // WebhookClient defines a general purpose Webhook executor client
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . WebhookClient
 type WebhookClient interface {
-	Do(ctx context.Context, request *webhookclient.Request) (*webhookdir.Response, error)
+	Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhookdir.Response, error)
 	Poll(ctx context.Context, request *webhookclient.PollRequest) (*webhookdir.ResponseStatus, error)
 }
 

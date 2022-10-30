@@ -55,9 +55,9 @@ func NewClient(httpClient *http.Client, mtlsClient, extSvcMtlsClient *http.Clien
 	}
 }
 
-func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, error) {
+func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Response, error) {
 	var err error
-	webhook := request.Webhook
+	webhook := request.GetWebhook()
 
 	if webhook.OutputTemplate == nil {
 		return nil, errors.Errorf("missing output template")
@@ -66,7 +66,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 	var method string
 	url := webhook.URL
 	if webhook.URLTemplate != nil {
-		resultURL, err := request.Object.ParseURLTemplate(webhook.URLTemplate)
+		resultURL, err := request.GetObject().ParseURLTemplate(webhook.URLTemplate)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse webhook URL")
 		}
@@ -80,7 +80,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 
 	body := []byte(emptyBody)
 	if webhook.InputTemplate != nil {
-		body, err = request.Object.ParseInputTemplate(webhook.InputTemplate)
+		body, err = request.GetObject().ParseInputTemplate(webhook.InputTemplate)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse webhook input body")
 		}
@@ -88,13 +88,13 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 
 	headers := http.Header{}
 	if webhook.HeaderTemplate != nil {
-		headers, err = request.Object.ParseHeadersTemplate(webhook.HeaderTemplate)
+		headers, err = request.GetObject().ParseHeadersTemplate(webhook.HeaderTemplate)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse webhook headers")
 		}
 	}
-
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, webhook.CorrelationIDKey, &request.CorrelationID)
+	correlationID := request.GetCorrelationID()
+	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, webhook.CorrelationIDKey, &correlationID)
 
 	req, err := http.NewRequestWithContext(ctx, method, *url, bytes.NewBuffer(body))
 	if err != nil {

@@ -41,6 +41,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationAsyncApi.pathPrefix }}{{ .Values.global.director.formationAsyncApi.path }}"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
             - name: APP_WEBHOOK_URL
@@ -137,7 +139,7 @@ spec:
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE
-              value: {{ .Values.global.externalServicesMock.certSecuredHost }}
+              value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID

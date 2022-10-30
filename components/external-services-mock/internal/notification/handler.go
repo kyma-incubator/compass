@@ -3,6 +3,7 @@ package notification
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -14,8 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO Unit tests
-
 type Operation string
 
 const (
@@ -26,7 +25,8 @@ const (
 )
 
 type Handler struct {
-	mappings map[string][]Response
+	mappings          map[string][]Response
+	shouldReturnError bool
 }
 
 type Response struct {
@@ -37,11 +37,13 @@ type Response struct {
 
 func NewHandler() *Handler {
 	return &Handler{
-		mappings: make(map[string][]Response),
+		mappings:          make(map[string][]Response),
+		shouldReturnError: true,
 	}
 }
 
 func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
+	fmt.Println("Patch")
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
 		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
@@ -93,6 +95,7 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
+	fmt.Println("RespondWithIncomplete")
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
 		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
@@ -113,6 +116,7 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
 		return
 	}
+
 	mappings := h.mappings[id]
 	mappings = append(h.mappings[id], Response{
 		Operation:   Assign,
@@ -120,11 +124,31 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 	})
 	h.mappings[id] = mappings
 
-	if config := gjson.Get(string(bodyBytes), "configuration").String(); config == "" {
+	if config := gjson.Get(string(bodyBytes), "config").String(); config == "" {
 		writer.WriteHeader(http.StatusNoContent)
+		return
 	}
-
-	writer.WriteHeader(http.StatusOK)
+	response := struct {
+		Config struct {
+			Key  string `json:"key"`
+			Key2 struct {
+				Key string `json:"key"`
+			} `json:"key2"`
+		}
+	}{
+		Config: struct {
+			Key  string `json:"key"`
+			Key2 struct {
+				Key string `json:"key"`
+			} `json:"key2"`
+		}{
+			Key: "value",
+			Key2: struct {
+				Key string `json:"key"`
+			}{Key: "value2"},
+		},
+	}
+	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
@@ -175,6 +199,76 @@ func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+}
+
+func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) {
+	if h.shouldReturnError {
+		id, ok := mux.Vars(r)["tenantId"]
+		if !ok {
+			httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+			return
+		}
+
+		if _, ok = h.mappings[id]; !ok {
+			h.mappings[id] = make([]Response, 0, 1)
+		}
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+			return
+		}
+
+		var result interface{}
+		if err := json.Unmarshal(bodyBytes, &result); err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+			return
+		}
+
+		mappings := h.mappings[id]
+		if r.Method == http.MethodPatch {
+			mappings = append(h.mappings[id], Response{
+				Operation:   Assign,
+				RequestBody: bodyBytes,
+			})
+		}
+
+		if r.Method == http.MethodDelete {
+			applicationId, ok := mux.Vars(r)["applicationId"]
+			if !ok {
+				httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
+				return
+			}
+			mappings = append(h.mappings[id], Response{
+				Operation:     Unassign,
+				ApplicationID: &applicationId,
+				RequestBody:   bodyBytes,
+			})
+		}
+
+		h.mappings[id] = mappings
+
+		response := struct {
+			Error string `json:"error"`
+		}{
+			Error: "failed to parse request",
+		}
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusBadRequest, response)
+		h.shouldReturnError = false
+		return
+	}
+
+	if r.Method == http.MethodPatch {
+		h.Patch(writer, r)
+	}
+
+	if r.Method == http.MethodDelete {
+		h.Delete(writer, r)
+	}
+}
+
+func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {
+	h.shouldReturnError = true
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
