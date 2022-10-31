@@ -218,6 +218,7 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 	return nil
 }
 
+// UpdateSpecOnly takes care of simply updateing a single spec entity in db without looking and executing corresponding fetch requests that may be related to it
 func (s *service) UpdateSpecOnly(ctx context.Context, spec model.Spec) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

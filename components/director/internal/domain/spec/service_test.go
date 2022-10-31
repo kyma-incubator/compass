@@ -793,6 +793,59 @@ func TestService_UpdateByReferenceObjectID(t *testing.T) {
 	})
 }
 
+func TestService_UpdateSpecOnly(t *testing.T) {
+	testSpec := &model.Spec{}
+
+	testCases := []struct {
+		Name           string
+		Context        context.Context
+		SpecRepoMock   *automock.SpecRepository
+		ExpectedResult *model.Spec
+		ExpectedError  error
+	}{
+		{
+			Name:    "Success",
+			Context: tnt.SaveToContext(context.TODO(), tenantID, tenantID),
+			SpecRepoMock: func() *automock.SpecRepository {
+				specRepositoryMock := automock.SpecRepository{}
+				specRepositoryMock.On("Update", mock.Anything, tenantID, testSpec).Return(nil).Once()
+				return &specRepositoryMock
+			}(),
+			ExpectedError: nil,
+		},
+		{
+			Name:          "Fails when tenant is missing in context",
+			Context:       context.TODO(),
+			SpecRepoMock:  &automock.SpecRepository{},
+			ExpectedError: apperrors.NewCannotReadTenantError(),
+		},
+		{
+			Name:    "Fails when repo update fails",
+			Context: tnt.SaveToContext(context.TODO(), tenantID, tenantID),
+			SpecRepoMock: func() *automock.SpecRepository {
+				specRepositoryMock := automock.SpecRepository{}
+				specRepositoryMock.On("Update", mock.Anything, tenantID, testSpec).Return(testErr).Once()
+				return &specRepositoryMock
+			}(),
+			ExpectedError: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.SpecRepoMock
+			svc := spec.NewService(repo, nil, nil, nil)
+
+			err := svc.UpdateSpecOnly(testCase.Context, *testSpec)
+			if testCase.ExpectedError != nil {
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_Delete(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
