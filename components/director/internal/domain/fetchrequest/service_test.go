@@ -68,7 +68,7 @@ func TestService_Update(t *testing.T) {
 	}{
 
 		{
-			Name:         "Successful Update",
+			Name:         "Success",
 			Context:      tenant.SaveToContext(context.TODO(), tenantID, tenantID),
 			FetchRequest: fetchReq,
 			FetchRequestRepoMock: func() *automock.FetchRequestRepository {
@@ -79,10 +79,10 @@ func TestService_Update(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:                 "Fails when missing tenant",
+			Name:                 "Fails when tenant is missing in context",
 			Context:              context.TODO(),
 			FetchRequest:         fetchReq,
-			FetchRequestRepoMock: nil,
+			FetchRequestRepoMock: &automock.FetchRequestRepository{},
 			ExpectedError:        apperrors.NewCannotReadTenantError(),
 		},
 		{
@@ -100,9 +100,12 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			svc := fetchrequest.NewService(testCase.FetchRequestRepoMock, nil, nil)
+			repo := testCase.FetchRequestRepoMock
+			svc := fetchrequest.NewService(repo, nil, nil)
 			resultErr := svc.Update(testCase.Context, testCase.FetchRequest)
 			assert.Equal(t, testCase.ExpectedError, resultErr)
+
+			repo.AssertExpectations(t)
 		})
 	}
 

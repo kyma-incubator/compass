@@ -14,13 +14,79 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
+const tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+
+var testErr = errors.New("Test error")
+
+func TestService_GetByID(t *testing.T) {
+	testSpec := &model.Spec{}
+
+	testCases := []struct {
+		Name           string
+		Context        context.Context
+		SpecRepoMock   *automock.SpecRepository
+		ExpectedResult *model.Spec
+		ExpectedError  error
+	}{
+		{
+			Name:    "Success",
+			Context: tnt.SaveToContext(context.TODO(), tenantID, tenantID),
+			SpecRepoMock: func() *automock.SpecRepository {
+				specRepositoryMock := automock.SpecRepository{}
+				specRepositoryMock.On("GetByID", mock.Anything, tenantID, mock.Anything, mock.Anything).Return(testSpec, nil).Once()
+				return &specRepositoryMock
+			}(),
+			ExpectedResult: testSpec,
+			ExpectedError:  nil,
+		},
+		{
+			Name:           "Fails when tenant is missing in context",
+			Context:        context.TODO(),
+			SpecRepoMock:   &automock.SpecRepository{},
+			ExpectedResult: nil,
+			ExpectedError:  apperrors.NewCannotReadTenantError(),
+		},
+		{
+			Name:    "Fails when repo get by id fails",
+			Context: tnt.SaveToContext(context.TODO(), tenantID, tenantID),
+			SpecRepoMock: func() *automock.SpecRepository {
+				specRepositoryMock := automock.SpecRepository{}
+				specRepositoryMock.On("GetByID", mock.Anything, tenantID, mock.Anything, mock.Anything).Return(nil, testErr).Once()
+				return &specRepositoryMock
+			}(),
+			ExpectedResult: testSpec,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.SpecRepoMock
+			svc := spec.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			spec, err := svc.GetByID(testCase.Context, "123", model.APISpecReference)
+
+			// then
+			if testCase.ExpectedError == nil {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, spec)
+			} else {
+				require.Error(t, err)
+				assert.Equal(t, err, testCase.ExpectedError)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_ListByReferenceObjectID(t *testing.T) {
 	// GIVEN
-	testErr := errors.New("Test error")
-
 	specs := []*model.Spec{
 		fixModelAPISpec(),
 		fixModelAPISpec(),

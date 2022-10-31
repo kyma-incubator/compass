@@ -80,6 +80,7 @@ func (s *service) HandleSpec(ctx context.Context, fr *model.FetchRequest) *strin
 	return data
 }
 
+// Update is identical to HandleSpec with the difference that the fetch request is only updated in DB without being re-executed
 func (s *service) Update(ctx context.Context, fr *model.FetchRequest) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

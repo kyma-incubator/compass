@@ -65,16 +65,7 @@ func NewService(repo SpecRepository, fetchRequestRepo FetchRequestRepository, ui
 	}
 }
 
-// ListByReferenceObjectID missing godoc
-func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
-}
-
+// GetByID takes care of retrieving a specific spec entity from db based on a provided id and objectType (API or Event)
 func (s *service) GetByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -87,6 +78,16 @@ func (s *service) GetByID(ctx context.Context, id string, objectType model.SpecR
 	}
 
 	return spec, nil
+}
+
+// ListByReferenceObjectID missing godoc
+func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
 // GetByReferenceObjectID
