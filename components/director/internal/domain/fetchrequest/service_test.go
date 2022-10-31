@@ -26,6 +26,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,6 +34,8 @@ const (
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"
 )
+
+var testErr = errors.New("test")
 
 type RoundTripFunc func(req *http.Request) *http.Response
 
@@ -50,9 +53,62 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 	}
 }
 
-func TestService_HandleSpec(t *testing.T) {
-	testErr := errors.New("test")
+func TestService_Update(t *testing.T) {
+	fetchReq := &model.FetchRequest{
+		ID:   "test",
+		Mode: model.FetchModeSingle,
+	}
 
+	testCases := []struct {
+		Name                 string
+		Context              context.Context
+		FetchRequest         *model.FetchRequest
+		FetchRequestRepoMock *automock.FetchRequestRepository
+		ExpectedError        error
+	}{
+
+		{
+			Name:         "Successful Update",
+			Context:      tenant.SaveToContext(context.TODO(), tenantID, tenantID),
+			FetchRequest: fetchReq,
+			FetchRequestRepoMock: func() *automock.FetchRequestRepository {
+				fetchReqRepoMock := automock.FetchRequestRepository{}
+				fetchReqRepoMock.On("Update", mock.Anything, tenantID, fetchReq).Return(nil).Once()
+				return &fetchReqRepoMock
+			}(),
+			ExpectedError: nil,
+		},
+		{
+			Name:                 "Fails when missing tenant",
+			Context:              context.TODO(),
+			FetchRequest:         fetchReq,
+			FetchRequestRepoMock: nil,
+			ExpectedError:        apperrors.NewCannotReadTenantError(),
+		},
+		{
+			Name:         "Fails when repo update fails",
+			Context:      tenant.SaveToContext(context.TODO(), tenantID, tenantID),
+			FetchRequest: fetchReq,
+			FetchRequestRepoMock: func() *automock.FetchRequestRepository {
+				fetchReqRepoMock := automock.FetchRequestRepository{}
+				fetchReqRepoMock.On("Update", mock.Anything, tenantID, fetchReq).Return(testErr).Once()
+				return &fetchReqRepoMock
+			}(),
+			ExpectedError: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			svc := fetchrequest.NewService(testCase.FetchRequestRepoMock, nil, nil)
+			resultErr := svc.Update(testCase.Context, testCase.FetchRequest)
+			assert.Equal(t, testCase.ExpectedError, resultErr)
+		})
+	}
+
+}
+
+func TestService_HandleSpec(t *testing.T) {
 	const username = "username"
 	const password = "password"
 	const clientID = "clId"
