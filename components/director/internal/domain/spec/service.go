@@ -155,6 +155,7 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 	return id, nil
 }
 
+// CreateByReferenceObjectIDWithDelayedFetchRequest identical to CreateByReferenceObjectID with the only difference that the spec and fetch request entities are only persisted in DB and the fetch request itself is not executed
 func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
