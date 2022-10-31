@@ -173,6 +173,8 @@ monitoring:
           memory: 1Gi
   prometheusOperator:
     configReloaderMemory: 256Mi
+  pushgateway:
+    enabled: true
 ory:
   hydra:
     deployment:
