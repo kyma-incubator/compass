@@ -1,6 +1,7 @@
 package graphql_test
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 	"testing"
 
@@ -172,6 +173,59 @@ func TestFormationTemplateInput_ValidateApplicationTypes(t *testing.T) {
 			//GIVEN
 			formationTemplateInput := fixValidFormationTemplateInput()
 			formationTemplateInput.ApplicationTypes = testCase.Value
+			// WHEN
+			err := formationTemplateInput.Validate()
+			// THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		Value         []string
+		RuntimeType   *string
+		ExpectedValid bool
+	}{
+		{
+			Name:          "Success",
+			Value:         []string{"normal-type", "another-normal-type"},
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Empty slice",
+			Value:         []string{},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Empty slice with runtime type",
+			Value:         []string{},
+			RuntimeType:   str.Ptr("some-type"),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Nil slice",
+			Value:         nil,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Empty elements in slice",
+			Value:         []string{""},
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			formationTemplateInput := fixValidFormationTemplateInput()
+			formationTemplateInput.RuntimeTypes = testCase.Value
+			formationTemplateInput.RuntimeType = testCase.RuntimeType
 			// WHEN
 			err := formationTemplateInput.Validate()
 			// THEN

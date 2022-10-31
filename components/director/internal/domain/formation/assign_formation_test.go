@@ -1138,6 +1138,36 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeTypeLbl.Value, "some-other-template", []string{"not-the-expected-type"}),
 		},
 		{
+			Name: "error when assigning runtime with runtime type that does not match formation template allowed type",
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				emptyRuntimeType := &model.Label{
+					ID:         "123",
+					Key:        runtimeType,
+					Tenant:     str.Ptr(Tnt),
+					ObjectID:   RuntimeID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(emptyRuntimeType, nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "missing runtimeType",
+		},
+		{
 			Name: "error when assigning runtime fetching runtime type label fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
