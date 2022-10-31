@@ -310,6 +310,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		apiSvcFn          func() *automock.APIService
 		eventSvcFn        func() *automock.EventService
 		specSvcFn         func() *automock.SpecService
+		fetchReqFn        func() *automock.FetchRequestService
 		packageSvcFn      func() *automock.PackageService
 		productSvcFn      func() *automock.ProductService
 		vendorSvcFn       func() *automock.VendorService
@@ -2712,6 +2713,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			if test.specSvcFn != nil {
 				specSvc = test.specSvcFn()
 			}
+			fetchReqSvc := &automock.FetchRequestService{}
+			if test.fetchReqFn != nil {
+				fetchReqSvc = test.fetchReqFn()
+			}
 			packageSvc := &automock.PackageService{}
 			if test.packageSvcFn != nil {
 				packageSvc = test.packageSvcFn()
@@ -2741,8 +2746,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			ordCfg := ord.NewServiceConfig(4)
-			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
+			ordCfg := ord.NewServiceConfig(4, 100)
+			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
 			err := svc.SyncORDDocuments(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
