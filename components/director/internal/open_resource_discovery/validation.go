@@ -180,7 +180,7 @@ var shortDescriptionRules = []validation.Rule{
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.NilOrNotEmpty, validation.Length(1, 2048), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 // ORDDocumentValidationError contains the validation errors when aggregating ord documents
@@ -334,7 +334,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
 		// validation is softened temporarily
-		validation.Field(&api.Successors, validation.By(func(value interface{}) error {
+		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
 		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),

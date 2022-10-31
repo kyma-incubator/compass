@@ -11,4 +11,6 @@ const (
 	TenantFetcherJobName = TenantFetcherSubsystem
 	// InstanceIDKeyName missing godoc
 	InstanceIDKeyName = "instance"
+	// OrdAggregatorSubsystem missing godoc
+	OrdAggregatorSubsystem = "ordaggregator"
 )

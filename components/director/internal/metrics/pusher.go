@@ -52,9 +52,10 @@ func NewAggregationFailurePusher(cfg PusherConfig) AggregationFailurePusher {
 		Subsystem: cfg.Subsystem,
 		Name:      cfg.MetricName,
 		Help:      fmt.Sprintf("Aggregation status for %s", cfg.Subsystem),
-	}, []string{errorMetricLabel})
+	}, []string{errorMetricLabel, "api_id", "x_request_id"})
 
 	pusher := newPusher(cfg, aggregationFailuresCounter)
+	fmt.Println("The counter", aggregationFailuresCounter)
 	return AggregationFailurePusher{
 		aggregationFailuresCounter: aggregationFailuresCounter,
 		pusher:                     pusher,
@@ -70,7 +71,32 @@ func (p AggregationFailurePusher) ReportAggregationFailure(ctx context.Context, 
 	}
 
 	log.C(ctx).WithFields(logrus.Fields{InstanceIDKeyName: p.instanceID}).Info("Reporting failed aggregation...")
-	p.aggregationFailuresCounter.WithLabelValues(errorDescription(err)).Inc()
+	//p.aggregationFailuresCounter.WithLabelValues(errorDescription(err)).Inc()
+
+	//fmt.Println("Error description is: ", errorDescription(err))
+	p.push(ctx)
+	fmt.Println("After push")
+}
+
+// ReportAggregationFailureORD reports failed aggregation with the provided error. copy
+func (p AggregationFailurePusher) ReportAggregationFailureORD(ctx context.Context, err string) {
+	if p.pusher == nil {
+		log.C(ctx).Error("Metrics pusher is not configured, skipping report...")
+		return
+	}
+
+	log.C(ctx).WithFields(logrus.Fields{InstanceIDKeyName: p.instanceID}).Info("Reporting failed aggregation...")
+
+	currentAppID := log.C(ctx).Data["app_id"].(string)
+	currentCorrelationID := log.C(ctx).Data["x-request-id"].(string)
+
+	p.aggregationFailuresCounter.WithLabelValues(err, currentAppID, currentCorrelationID).Inc()
+
+	//for _, v := range err {
+	//	p.aggregationFailuresCounter.WithLabelValues(v, currentAppID, currentCorrelationID).Inc()
+	//}
+
+	fmt.Println("AFTER LABELING")
 	p.push(ctx)
 }
 

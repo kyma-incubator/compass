@@ -2,12 +2,15 @@ package ord
 
 import (
 	"context"
+	"fmt"
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/vrischmann/envconfig"
 	"strings"
 	"sync"
 	"sync/atomic"
-
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -924,15 +927,38 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 	return apiDataFromDB, eventDataFromDB, packageDataFromDB, tx.Commit()
 }
 
+type MetricConfig struct {
+	PushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	//JobName       string        `envconfig:"JOB_NAME" required:"true"`
+	ClientTimeout time.Duration `envconfig:"default=60s"`
+}
+
 func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
 	var documents Documents
 	var baseURL string
 	var err error
 
+	cfg := MetricConfig{}
+	err1 := envconfig.Init(&cfg)
+	if err1 != nil {
+		return err1
+	}
+
+	metricsCfg := metrics.PusherConfig{
+		Enabled:    len(cfg.PushEndpoint) > 0,
+		Endpoint:   cfg.PushEndpoint,
+		MetricName: "compass_ord_aggregator_job_sync_failure_number",
+		Timeout:    cfg.ClientTimeout,
+		Subsystem:  metrics.OrdAggregatorSubsystem,
+	}
+
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
 		ctx = addFieldToLogger(ctx, "app_id", app.ID)
 		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook)
 		if err != nil {
+			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+			metricsPusher.ReportAggregationFailure(ctx, err)
+
 			return errors.Wrapf(err, "error fetching ORD document for webhook with id %q: %v", webhook.ID, err)
 		}
 	}
@@ -949,8 +975,22 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 					validationErrors[i] = strings.TrimSpace(validationErrors[i])
 				}
 
+				metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+				fmt.Println("THE ERRORR", validationErrors)
+
+				for i := 0; i < len(validationErrors); i++ {
+					//currentError := errors.New(validationErrors[i])
+					//metricsPusher.ReportAggregationFailure(ctx, currentError)
+					metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
+				}
+
+				//metricsPusher.ReportAggregationFailureORD(ctx, validationErrors)
+
 				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
 			} else {
+				metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+				metricsPusher.ReportAggregationFailure(ctx, err)
+
 				log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
 			}
 			return errors.Wrapf(err, "error processing ORD documents")
