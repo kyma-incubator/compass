@@ -44,6 +44,12 @@ type applicationRepository interface {
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
 }
 
+//go:generate mockery --exported --name=applicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type applicationTemplateRepository interface {
+	//Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) // todo:: add methods
+	//ListByIDs(ctx context.Context, ids []string) ([]*model.ApplicationTemplate, error) // todo:: add methods
+}
+
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
@@ -53,6 +59,27 @@ type runtimeContextRepository interface {
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
+}
+
+//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type labelRepository interface {
+	// todo::: add methods
+}
+
+//go:generate mockery --exported --name=webhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookRepository interface {
+	//ListByReferenceObjectTypeAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) // todo:: add methods
+	//GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) // todo:: add methods
+}
+
+//go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookConverter interface {
+	//ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) // todo:: add methods
+}
+
+//go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookClient interface {
+	//Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhookdir.Response, error) // todo:: add methods
 }
 
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -638,6 +665,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		}
 		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
 	}
+
 	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments), len(requests), len(assignments)-len(requests))
 	sourceToTargetToMapping := make(map[string]map[string]*FormationAssignmentRequestMapping)
 	for _, mapping := range formationAssignmentMapping {

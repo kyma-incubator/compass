@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -26,6 +29,19 @@ const (
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
+	UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
+}
+
+// FormationRepository represents the Formations' repository layer
+//go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationRepository interface {
+	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
+}
+
+// FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
+//go:generate mockery --name=FormationAssignmentNotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationAssignmentNotificationService interface {
+	GenerateNotification(ctx context.Context, tenant, objectID, formationName string, faType, faReverseType model.FormationAssignmentType) (*webhookclient.NotificationRequest, error)
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations
@@ -306,7 +322,7 @@ func (a *Authenticator) validateSubscriptionProvider(ctx context.Context, appTem
 
 // respondWithError writes a http response using with the JSON encoded error wrapped in an ErrorResponse struct
 func respondWithError(ctx context.Context, w http.ResponseWriter, status int, err error) {
-	log.C(ctx).WithError(err).Errorf("Responding with error: %v", err)
+	log.C(ctx).Errorf("Responding with error: %v", err)
 	w.Header().Add(httputils.HeaderContentTypeKey, httputils.ContentTypeApplicationJSON)
 	w.WriteHeader(status)
 	errorResponse := ErrorResponse{Message: err.Error()}
