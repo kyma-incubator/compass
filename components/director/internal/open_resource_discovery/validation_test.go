@@ -1923,6 +1923,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Exceeded length of `shortDescription` field for API",
 			DocumentProvider: func() []*ord.Document {
@@ -1932,13 +1933,13 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid empty `shortDescription` field for API",
+			Name: "Valid empty `shortDescription` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ShortDescription = str.Ptr("")
-
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "New lines in `shortDescription` field for API",
 			DocumentProvider: func() []*ord.Document {
@@ -1955,6 +1956,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid `description` field with exceeding max length for API",
 			DocumentProvider: func() []*ord.Document {

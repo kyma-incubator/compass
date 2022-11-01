@@ -69,7 +69,7 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	ClientTimeout     time.Duration `envconfig:"default=60s"`
+	ClientTimeout     time.Duration `envconfig:"default=120s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
 	RetryConfig retry.Config
