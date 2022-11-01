@@ -1,9 +1,10 @@
 package graphql_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -195,6 +196,12 @@ func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
 		{
 			Name:          "Success",
 			Value:         []string{"normal-type", "another-normal-type"},
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Success with both runtimeType and runtimeTypes",
+			Value:         []string{"normal-type", "another-normal-type"},
+			RuntimeType:   str.Ptr("some-other-runtime-type"),
 			ExpectedValid: true,
 		},
 		{

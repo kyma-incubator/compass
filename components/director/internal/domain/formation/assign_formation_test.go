@@ -1138,7 +1138,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeTypeLbl.Value, "some-other-template", []string{"not-the-expected-type"}),
 		},
 		{
-			Name: "error when assigning runtime with runtime type that does not match formation template allowed type",
+			Name: "error for runtime type label missing",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				emptyRuntimeType := &model.Label{
