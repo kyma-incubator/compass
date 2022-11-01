@@ -26,6 +26,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	sanitizedDoc := fixSanitizedORDDocument()
+	var testSpecData = "{}"
+	var testSpec = model.Spec{}
 	var nilSpecInput *model.SpecInput
 	var nilBundleID *string
 
@@ -189,21 +191,73 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return vendorService
 	}
 
+	successfulSpecCreate := func() *automock.SpecService {
+		specSvc := &automock.SpecService{}
+
+		api1SpecInput1 := fixAPI1SpecInputs()[0]
+		api1SpecInput2 := fixAPI1SpecInputs()[1]
+		api1SpecInput3 := fixAPI1SpecInputs()[2]
+
+		api2SpecInput1 := fixAPI2SpecInputs()[0]
+		api2SpecInput2 := fixAPI2SpecInputs()[1]
+
+		event1Spec := fixEvent1SpecInputs()[0]
+		event2Spec := fixEvent2SpecInputs()[0]
+
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput1, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput2, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput3, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput3.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput1, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput2, model.APISpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+
+		expectedSpecToUpdate := testSpec
+		expectedSpecToUpdate.Data = &testSpecData
+		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+
+		return specSvc
+	}
+
 	successfulSpecUpdate := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
 
+		api1SpecInput1 := fixAPI1SpecInputs()[0]
+		api1SpecInput2 := fixAPI1SpecInputs()[1]
+		api1SpecInput3 := fixAPI1SpecInputs()[2]
+
+		api2SpecInput1 := fixAPI2SpecInputs()[0]
+		api2SpecInput2 := fixAPI2SpecInputs()[1]
+
+		event1Spec := fixEvent1SpecInputs()[0]
+		event2Spec := fixEvent2SpecInputs()[0]
+
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput1, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput2, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput3, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput3.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput1, model.APISpecReference, api2ID).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput2, model.APISpecReference, api2ID).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
 
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixEvent1SpecInputs()[0], model.EventSpecReference, event1ID).Return("", nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, model.EventSpecReference, event1ID).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixEvent2SpecInputs()[0], model.EventSpecReference, event2ID).Return("", nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, event2ID).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
+
+		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+
+		expectedSpecToUpdate := testSpec
+		expectedSpecToUpdate.Data = &testSpecData
+		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
 
 		return specSvc
 	}
@@ -215,38 +269,65 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec2ID, model.APISpecReference).Return(fixSuccessfulFetchRequest(), nil).Once()
 		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api1spec3ID, model.APISpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec3ID, model.APISpecReference).Return(nil, nil).Once()
+		//specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api1spec3ID, model.APISpecReference).Return(nil, nil).Once()
 
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(fixAPI2Specs(), nil).Once()
 		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api2spec1ID, model.APISpecReference).Return(fixSuccessfulFetchRequest(), nil).Once()
 		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), api2spec2ID, model.APISpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api2spec2ID, model.APISpecReference).Return(nil, nil).Once()
+		//specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), api2spec2ID, model.APISpecReference).Return(nil, nil).Once()
 
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
 		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(nil, nil).Once()
+		//specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(nil, nil).Once()
 
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(fixEvent2Specs(), nil).Once()
 		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(nil, nil).Once()
+		//specSvc.On("RefetchSpec", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(nil, nil).Once()
+
+		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).Times(4)
+
+		expectedSpecToUpdate := testSpec
+		expectedSpecToUpdate.Data = &testSpecData
+		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).Times(4)
 
 		return specSvc
 	}
 
 	successfulAPISpecUpdate := func() *automock.SpecService {
 		specSvc := &automock.SpecService{}
+
+		api1SpecInput1 := fixAPI1SpecInputs()[0]
+		api1SpecInput2 := fixAPI1SpecInputs()[1]
+		api1SpecInput3 := fixAPI1SpecInputs()[2]
+
+		api2SpecInput1 := fixAPI2SpecInputs()[0]
+		api2SpecInput2 := fixAPI2SpecInputs()[1]
+
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput1, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput2, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api1SpecInput3, model.APISpecReference, api1ID).Return("", fixFetchRequestFromFetchRequestInput(api1SpecInput3.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
-		specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput1, model.APISpecReference, api2ID).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput1.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
+		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *api2SpecInput2, model.APISpecReference, api2ID).Return("", fixFetchRequestFromFetchRequestInput(api2SpecInput2.FetchRequest, model.APISpecFetchRequestReference, ""), nil).Once()
 
 		return specSvc
+	}
+
+	successfulFetchRequestUpdate := func() *automock.FetchRequestService {
+		fetchReqSvc := &automock.FetchRequestService{}
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+
+		fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
+			return actual.Status.Condition == model.FetchRequestStatusConditionSucceeded
+		})).Return(nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+
+		return fetchReqSvc
 	}
 
 	successfulAPIUpdate := func() *automock.APIService {
@@ -282,8 +363,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		eventSvc := &automock.EventService{}
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], fixEvent1SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
-		eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], fixEvent2SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
+		eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], ([]*model.SpecInput)(nil), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
+		eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], ([]*model.SpecInput)(nil), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 		eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 		return eventSvc
 	}
@@ -323,7 +404,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(28)
+				return txGen.ThatSucceedsMultipleTimes(29)
 			},
 			appSvcFn:       successfulAppGet,
 			tenantSvcFn:    successfulTenantSvc,
@@ -341,6 +422,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventUpdate,
 			specSvcFn:    successfulSpecUpdate,
+			fetchReqFn:   successfulFetchRequestUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
@@ -357,7 +439,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(28)
+				return txGen.ThatSucceedsMultipleTimes(29)
 			},
 			appSvcFn:       successfulAppGet,
 			tenantSvcFn:    successfulTenantSvc,
@@ -382,6 +464,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return eventSvc
 			},
 			specSvcFn:    successfulSpecRefetch,
+			fetchReqFn:   successfulFetchRequestUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
@@ -398,7 +481,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are not in db should Create them",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(28)
+				return txGen.ThatSucceedsMultipleTimes(29)
 			},
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
@@ -408,13 +491,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], fixAPI2SpecInputs(), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
 				return apiSvc
 			},
 			eventSvcFn:   successfulEventCreate,
+			specSvcFn:    successfulSpecCreate,
+			fetchReqFn:   successfulFetchRequestUpdate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
@@ -431,7 +516,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when there is ORD webhook on app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(29)
+				return txGen.ThatSucceedsMultipleTimes(30)
 			},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
@@ -458,6 +543,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventUpdate,
 			specSvcFn:    successfulSpecUpdate,
+			fetchReqFn:   successfulFetchRequestUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
@@ -478,7 +564,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry should get them from DB and proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(28)
+				return txGen.ThatSucceedsMultipleTimes(29)
 			},
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
@@ -488,13 +574,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], fixAPI2SpecInputs(), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
 				return apiSvc
 			},
 			eventSvcFn:   successfulEventCreate,
+			specSvcFn:    successfulSpecCreate,
+			fetchReqFn:   successfulFetchRequestUpdate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
@@ -516,7 +604,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry and get them from DB should proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(28)
+				return txGen.ThatSucceedsMultipleTimes(29)
 			},
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
@@ -526,13 +614,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], fixAPI2SpecInputs(), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
 				return apiSvc
 			},
 			eventSvcFn:   successfulEventCreate,
+			specSvcFn:    successfulSpecCreate,
+			fetchReqFn:   successfulFetchRequestUpdate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
@@ -1564,7 +1654,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", testErr).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", testErr).Once()
 				return apiSvc
 			},
 			eventSvcFn:        successfulEmptyEventList,
@@ -1639,7 +1729,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", testErr).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil, testErr).Once()
 				return specSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -1815,18 +1905,18 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc := &automock.SpecService{}
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil, nil).Once()
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil, nil).Once()
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(nil).Once()
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixEvent1SpecInputs()[0], model.EventSpecReference, event1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixEvent2SpecInputs()[0], model.EventSpecReference, event2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixEvent1SpecInputs()[0], model.EventSpecReference, event1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixEvent2SpecInputs()[0], model.EventSpecReference, event2ID).Return("", nil, nil).Once()
 
 				return specSvc
 			},
@@ -1973,12 +2063,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc := &automock.SpecService{}
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil, nil).Once()
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil, nil).Once()
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(testErr).Once()
 				return specSvc
 			},
@@ -2018,16 +2108,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc := &automock.SpecService{}
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil, nil).Once()
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil, nil).Once()
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixEvent1SpecInputs()[0], model.EventSpecReference, event1ID).Return("", testErr).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixEvent1SpecInputs()[0], model.EventSpecReference, event1ID).Return("", nil, testErr).Once()
 				return specSvc
 			},
 			eventSvcFn: func() *automock.EventService {
@@ -2065,13 +2155,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil, nil).Once()
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil, nil).Once()
 
 				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(nil, testErr).Once()
 				return specSvc
@@ -2110,13 +2200,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil, nil).Once()
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil, nil).Once()
 
 				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
 				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(nil, testErr).Once()
@@ -2156,13 +2246,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[0], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[1], model.APISpecReference, api1ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI1SpecInputs()[2], model.APISpecReference, api1ID).Return("", nil, nil).Once()
 
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api2ID).Return(nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil).Once()
-				specSvc.On("CreateByReferenceObjectID", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[0], model.APISpecReference, api2ID).Return("", nil, nil).Once()
+				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *fixAPI2SpecInputs()[1], model.APISpecReference, api2ID).Return("", nil, nil).Once()
 
 				specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event1ID).Return(fixEvent1Specs(), nil).Once()
 				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
