@@ -12,6 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
@@ -21,7 +25,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -46,16 +49,21 @@ const (
 	formationAssignmentIDPathParam = "ucl-assignment-id"
 )
 
-func Test_UpdateStatus(t *testing.T) {
+func Test_UpdateStatus(baseT *testing.T) {
+	t := testingx.NewT(baseT)
 	ctx := context.Background()
-	parentTenantID := tenant.TestTenants.GetDefaultTenantID()
-	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 	intSysName := "async-formation-int-system"
 	testConfig := `{"testCfgKey":"testCfgValue"}`
-	certSecuredHTTPClient := gql.NewCertAuthorizedHTTPClient(cc.Get()[conf.ExternalClientCertSecretName].PrivateKey, cc.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)
 
 	t.Run("Caller successfully updates formation assignment for himself", func(t *testing.T) {
+		// Prepare provider external client certificate and secret, and build graphql director client configured with certificate
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		certSecuredHTTPClient := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+		parentTenantID := conf.TestProviderAccountID
+		subaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
+
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name:        "selfRegisterRuntimeAsync",
 			Description: ptr.String("selfRegisterRuntimeAsync-description"),
@@ -74,12 +82,10 @@ func Test_UpdateStatus(t *testing.T) {
 		require.NotEmpty(t, app.ID)
 
 		asyncFormationTmplName := "async-formation-template-name"
-		t.Logf("Creating formation template with name: %q", asyncFormationTmplName)
 		ft := createFormationTemplate(t, ctx, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
-		t.Logf("Creating formation with name: %q from template with name: %q", asyncFormationName, asyncFormationTmplName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
 		formationID := formation.ID
@@ -89,6 +95,7 @@ func Test_UpdateStatus(t *testing.T) {
 		assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), asyncFormationName)
 		var assignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, parentTenantID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: asyncFormationName}, app.ID, graphql.FormationObjectTypeApplication, parentTenantID)
 		require.NoError(t, err)
 		require.Equal(t, asyncFormationName, assignedFormation.Name)
 
@@ -210,12 +217,10 @@ func Test_UpdateStatus(t *testing.T) {
 
 		applicationType := "provider-async-app-type-1"
 		providerAsyncFormationTmplName := "provider-async-formation-template-name"
-		t.Logf("Creating formation template for the provider runtime type: %q with name: %q", conf.SubscriptionProviderAppNameValue, providerAsyncFormationTmplName)
 		ft := createFormationTemplate(t, ctx, providerAsyncFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerAsyncFormationName := "provider-async-formation-name"
-		t.Logf("Creating formation with name: %q from template with name: %q", providerAsyncFormationName, providerAsyncFormationTmplName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName)
 		require.NotEmpty(t, formation.ID)
@@ -298,6 +303,7 @@ func Test_UpdateStatus(t *testing.T) {
 		assignReq := fixtures.FixAssignFormationRequest(asyncApp.ID, string(graphql.FormationObjectTypeApplication), providerAsyncFormationName)
 		var assignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerAsyncFormationName}, asyncApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
@@ -404,12 +410,10 @@ func Test_UpdateStatus(t *testing.T) {
 
 		providerAsyncFormationTmplName := "provider-async-formation-template-name"
 		providerAppTypes := []string{appTemplateName}
-		t.Logf("Creating formation template for the provider runtime type: %q with name: %q", conf.SubscriptionProviderAppNameValue, providerAsyncFormationTmplName)
 		ft := createFormationTemplate(t, ctx, providerAsyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, providerAppTypes, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerAsyncFormationName := "provider-async-formation-name"
-		t.Logf("Creating formation with name: %q from template with name: %q", providerAsyncFormationName, providerAsyncFormationTmplName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName)
 		require.NotEmpty(t, formation.ID)
@@ -419,6 +423,7 @@ func Test_UpdateStatus(t *testing.T) {
 		assignReq := fixtures.FixAssignFormationRequest(appID, string(graphql.FormationObjectTypeApplication), providerAsyncFormationName)
 		var assignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerAsyncFormationName}, appID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
@@ -438,6 +443,9 @@ func Test_UpdateStatus(t *testing.T) {
 	})
 
 	t.Run("Unauthorized call", func(t *testing.T) {
+		parentTenantID := tenant.TestTenants.GetDefaultTenantID()
+		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name:        "selfRegisterRuntimeAsync",
 			Description: ptr.String("selfRegisterRuntimeAsync-description"),
@@ -456,12 +464,10 @@ func Test_UpdateStatus(t *testing.T) {
 		require.NotEmpty(t, app.ID)
 
 		asyncFormationTmplName := "async-formation-template-name"
-		t.Logf("Creating formation template with name: %q", asyncFormationTmplName)
 		ft := createFormationTemplate(t, ctx, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
-		t.Logf("Creating formation with name: %q from template with name: %q", asyncFormationName, asyncFormationTmplName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
 		formationID := formation.ID
@@ -471,6 +477,7 @@ func Test_UpdateStatus(t *testing.T) {
 		assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), asyncFormationName)
 		var assignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, parentTenantID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: asyncFormationName}, app.ID, graphql.FormationObjectTypeApplication, parentTenantID)
 		require.NoError(t, err)
 		require.Equal(t, asyncFormationName, assignedFormation.Name)
 
