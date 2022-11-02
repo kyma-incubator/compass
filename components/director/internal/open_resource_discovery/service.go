@@ -232,7 +232,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	eventsFromDB, eventSpecSyncEntities, err := s.processEvents(ctx, appID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
+	eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, appID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
 	if err != nil {
 		return err
 	}
@@ -246,7 +246,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	fetchRequests := append(apiFetchRequests, eventSpecSyncEntities...)
+	fetchRequests := append(apiFetchRequests, eventFetchRequests...)
 	return s.processSpecs(ctx, fetchRequests)
 }
 
@@ -257,7 +257,7 @@ func (s *Service) processSpecs(ctx context.Context, fetchRequests []*model.Fetch
 	wg := &sync.WaitGroup{}
 	wg.Add(workers)
 
-	fetchReqMutext := sync.Mutex{}
+	fetchReqMutex := sync.Mutex{}
 	fetchRequestResults := make([]*fetchRequestResult, 0)
 	log.C(ctx).Infof("Starting %d parallel specification processor workers to process %d fetch requests...", workers, len(fetchRequests))
 	for i := 0; i < workers; i++ {
@@ -273,7 +273,7 @@ func (s *Service) processSpecs(ctx context.Context, fetchRequests []*model.Fetch
 					fetchRequest: &fr,
 					data:         data,
 					status:       status,
-				}, &fetchReqMutext)
+				}, &fetchReqMutex)
 			}
 		}()
 	}
