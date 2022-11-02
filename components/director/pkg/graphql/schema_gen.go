@@ -4455,6 +4455,12 @@ enum FetchRequestStatusCondition {
 	FAILED
 }
 
+enum FormationAssignmentType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+}
+
 enum FormationObjectType {
 	APPLICATION
 	TENANT
@@ -4525,12 +4531,6 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
-}
-
-enum FormationAssignmentType {
-	APPLICATION
-	RUNTIME
-	RUNTIME_CONTEXT
 }
 
 interface OneTimeToken {
@@ -6058,6 +6058,7 @@ type Mutation {
 	"""
 	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
+
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
