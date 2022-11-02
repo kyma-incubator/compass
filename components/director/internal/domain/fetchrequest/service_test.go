@@ -108,7 +108,6 @@ func TestService_Update(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
-
 }
 
 func TestService_HandleSpec(t *testing.T) {
