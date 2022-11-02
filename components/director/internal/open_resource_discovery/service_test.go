@@ -363,7 +363,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return specSvc
 	}
 
-	successfulFetchRequestUpdate := func() *automock.FetchRequestService {
+	successfulFetchRequestFetch := func() *automock.FetchRequestService {
+		fetchReqSvc := &automock.FetchRequestService{}
+		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
+			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+
+		return fetchReqSvc
+	}
+
+	successfulFetchRequestFetchAndUpdate := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
 		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
@@ -468,7 +476,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventUpdate,
 			specSvcFn:    successfulSpecRecreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
@@ -510,7 +518,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return eventSvc
 			},
 			specSvcFn:    successfulSpecRefetch,
-			fetchReqFn:   successfulFetchRequestUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
@@ -545,7 +553,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventCreate,
 			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
@@ -589,7 +597,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventUpdate,
 			specSvcFn:    successfulSpecRecreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
@@ -628,7 +636,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventCreate,
 			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
@@ -668,7 +676,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventCreate,
 			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
@@ -2880,6 +2888,45 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
+			Name: "Returns error when failing to open final transaction to commit fetched specs",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx, transact := txGen.ThatSucceedsMultipleTimes(28)
+				transact.On("Begin").Return(persistTx, testErr).Once()
+				return persistTx, transact
+			},
+			appSvcFn:     successfulAppGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], ([]*model.SpecInput)(nil), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return(api1ID, nil).Once()
+				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], ([]*model.SpecInput)(nil), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return(api2ID, nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
+				return apiSvc
+			},
+			eventSvcFn:   successfulEventCreate,
+			specSvcFn:    successfulSpecCreate,
+			fetchReqFn:   successfulFetchRequestFetch,
+			packageSvcFn: successfulPackageCreate,
+			productSvcFn: successfulProductCreate,
+			vendorSvcFn:  successfulVendorCreate,
+			tombstoneSvcFn: func() *automock.TombstoneService {
+				tombstoneSvc := &automock.TombstoneService{}
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				tombstoneSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Tombstones[0]).Return("", nil).Once()
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+				return tombstoneSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
+			ExpectedErr:       errors.New("failed to process 1 webhooks"),
+		},
+
+		{
 			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(27)
@@ -2900,7 +2947,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventCreate,
 			specSvcFn:    successfulSpecCreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
 			packageSvcFn: successfulPackageCreate,
 			productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulEmptyVendorList,
@@ -2942,7 +2989,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			eventSvcFn:   successfulEventUpdate,
 			specSvcFn:    successfulSpecRecreateAndUpdate,
-			fetchReqFn:   successfulFetchRequestUpdate,
+			fetchReqFn:   successfulFetchRequestFetchAndUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulEmptyVendorList,
