@@ -447,6 +447,12 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 		return nil
 	}
 
+	requestWebhookMode := assignmentClone.Request.Webhook.Mode
+	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
+		log.C(ctx).Info("The Webhook in the notification is in ASYNC_CALLBACK mode. Waiting for the receiver to report the status on the status API...")
+		return nil
+	}
+
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
 		assignment.State = string(model.ReadyAssignmentState)
 		assignment.Value = nil

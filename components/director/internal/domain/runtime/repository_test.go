@@ -538,12 +538,13 @@ func TestPgRepository_OwnerExistsByFiltersAndID(t *testing.T) {
 		Name: "Owned Runtime With Runtime Type Exists",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT 1 FROM public.runtimes WHERE id = $1 AND 
-											id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND 
-											(id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" @> $4) AND
-											(id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $5 AND owner = true))`),
+				Query: regexp.QuoteMeta(` SELECT 1 FROM public.runtimes WHERE id = $1
+										     AND id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL 
+										     AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) 
+										     AND "key" = $3 AND "value" ?| array[$4]) 
+										     AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $5 AND owner = true))`),
 
-				Args:     []driver.Value{runtimeID, tenantID, runtimeType, "\"runtimeType\"", tenantID},
+				Args:     []driver.Value{runtimeID, tenantID, runtimeType, runtimeType, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
@@ -560,7 +561,7 @@ func TestPgRepository_OwnerExistsByFiltersAndID(t *testing.T) {
 		TargetID:            runtimeID,
 		TenantID:            tenantID,
 		MethodName:          "OwnerExistsByFiltersAndID",
-		MethodArgs:          []interface{}{tenantID, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}},
+		MethodArgs:          []interface{}{tenantID, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("$[*] ? ( @ == \"%s\" )", runtimeType))}},
 	}
 
 	suite.Run(t)
