@@ -330,7 +330,7 @@ func (s *Service) processFetchRequestResults(ctx context.Context, results []*fet
 		if result.status.Condition == model.FetchRequestStatusConditionSucceeded {
 			spec, err := s.specSvc.GetByID(ctx, result.fetchRequest.ObjectID, specReferenceType)
 			if err != nil {
-				return nil
+				return err
 			}
 
 			spec.Data = result.data
