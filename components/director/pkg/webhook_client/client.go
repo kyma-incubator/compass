@@ -131,7 +131,7 @@ func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Respo
 		return response, err
 	}
 
-	isLocationEmpty := response.Location != nil && *response.Location == ""
+	isLocationEmpty := response.Location == nil || *response.Location == ""
 	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
 	if isLocationEmpty && isAsyncWebhook {
