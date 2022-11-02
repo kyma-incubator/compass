@@ -599,7 +599,8 @@ input FormationInput {
 input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
-	runtimeType: String!
+	runtimeType: String
+	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 }
@@ -1082,6 +1083,7 @@ type FormationTemplate {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeType: String!
+	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 }

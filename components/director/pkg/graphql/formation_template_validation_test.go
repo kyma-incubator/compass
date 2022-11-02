@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/require"
@@ -184,11 +186,70 @@ func TestFormationTemplateInput_ValidateApplicationTypes(t *testing.T) {
 	}
 }
 
+func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		Value         []string
+		RuntimeType   *string
+		ExpectedValid bool
+	}{
+		{
+			Name:          "Success",
+			Value:         []string{"normal-type", "another-normal-type"},
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Success with both runtimeType and runtimeTypes",
+			Value:         []string{"normal-type", "another-normal-type"},
+			RuntimeType:   str.Ptr("some-other-runtime-type"),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Empty slice",
+			Value:         []string{},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Empty slice with runtime type",
+			Value:         []string{},
+			RuntimeType:   str.Ptr("some-type"),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Nil slice",
+			Value:         nil,
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Empty elements in slice",
+			Value:         []string{""},
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			formationTemplateInput := fixValidFormationTemplateInput()
+			formationTemplateInput.RuntimeTypes = testCase.Value
+			formationTemplateInput.RuntimeType = testCase.RuntimeType
+			// WHEN
+			err := formationTemplateInput.Validate()
+			// THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func fixValidFormationTemplateInput() graphql.FormationTemplateInput {
 	return graphql.FormationTemplateInput{
 		Name:                   "formation-template-name",
 		ApplicationTypes:       []string{"some-application-type"},
-		RuntimeType:            "some-runtime-type",
+		RuntimeTypes:           []string{"some-runtime-type"},
 		RuntimeTypeDisplayName: "display-name-for-runtime",
 		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
 	}

@@ -11,26 +11,27 @@ import (
 const (
 	testID                   = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	formationTemplateName    = "formation-template-name"
-	runtimeType              = "some-runtime-type"
 	runtimeTypeDisplayName   = "display-name-for-runtime"
 	artifactKindAsString     = "SUBSCRIPTION"
 	applicationTypesAsString = "[\"some-application-type\"]"
+	runtimeTypesAsString     = "[\"some-runtime-type\"]"
 )
 
 var (
 	nilModelEntity              *model.FormationTemplate
 	applicationTypes            = []string{"some-application-type"}
+	runtimeTypes                = []string{"some-runtime-type"}
 	formationTemplateModelInput = model.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
-		RuntimeType:            runtimeType,
+		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
 	}
 	formationTemplateGraphQLInput = graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
-		RuntimeType:            runtimeType,
+		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
 	}
@@ -38,7 +39,7 @@ var (
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
-		RuntimeType:            runtimeType,
+		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
 	}
@@ -46,7 +47,7 @@ var (
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypesAsString,
-		RuntimeType:            runtimeType,
+		RuntimeTypes:           runtimeTypesAsString,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
 	}
@@ -54,7 +55,8 @@ var (
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
-		RuntimeType:            runtimeType,
+		RuntimeType:            runtimeTypes[0],
+		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
 	}
@@ -79,7 +81,7 @@ var (
 )
 
 func fixColumns() []string {
-	return []string{"id", "name", "application_types", "runtime_type", "runtime_type_display_name", "runtime_artifact_kind"}
+	return []string{"id", "name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind"}
 }
 
 func UnusedFormationTemplateService() *automock.FormationTemplateService {
