@@ -1652,6 +1652,17 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 		CorrelationID: "",
 	}
 
+	whMode := graphql.WebhookModeAsyncCallback
+	reqWebhookWithAsyncCallbackMode := &webhookclient.NotificationRequest{
+		Webhook: graphql.Webhook{
+			ID:   TestWebhookID,
+			Mode: &whMode,
+			Type: graphql.WebhookTypeConfigurationChanged,
+		},
+		Object:        input,
+		CorrelationID: "",
+	}
+
 	testCases := []struct {
 		Name                         string
 		Context                      context.Context
@@ -1940,6 +1951,23 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			},
 			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(initialStateAssignment), reqWebhook),
 			ExpectedErrorMsg:        testErr.Error(),
+		},
+		{
+			Name:                         "Success: webhook has mode ASYNC_CALLBACK",
+			Context:                      ctxWithTenant,
+			FormationAssignmentRepo:      unusedFormationAssignmentRepository,
+			FormationAssignmentConverter: unusedFormationAssignmentConverter,
+			NotificationService: func() *automock.NotificationService {
+				notificationSvc := &automock.NotificationService{}
+				notificationSvc.On("SendNotification", ctxWithTenant, reqWebhookWithAsyncCallbackMode).Return(&webhook.Response{
+					SuccessStatusCode:    &ok,
+					IncompleteStatusCode: &incomplete,
+					ActualStatusCode:     &ok,
+				}, nil)
+				return notificationSvc
+			},
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhookWithAsyncCallbackMode),
+			ExpectedErrorMsg:        "",
 		},
 		{
 			Name:    "Success: assignment with config",
