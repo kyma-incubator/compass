@@ -1681,18 +1681,20 @@ func (e ViewerType) MarshalGQL(w io.Writer) {
 type WebhookMode string
 
 const (
-	WebhookModeSync  WebhookMode = "SYNC"
-	WebhookModeAsync WebhookMode = "ASYNC"
+	WebhookModeSync          WebhookMode = "SYNC"
+	WebhookModeAsync         WebhookMode = "ASYNC"
+	WebhookModeAsyncCallback WebhookMode = "ASYNC_CALLBACK"
 )
 
 var AllWebhookMode = []WebhookMode{
 	WebhookModeSync,
 	WebhookModeAsync,
+	WebhookModeAsyncCallback,
 }
 
 func (e WebhookMode) IsValid() bool {
 	switch e {
-	case WebhookModeSync, WebhookModeAsync:
+	case WebhookModeSync, WebhookModeAsync, WebhookModeAsyncCallback:
 		return true
 	}
 	return false

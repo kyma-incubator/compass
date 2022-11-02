@@ -4522,6 +4522,7 @@ enum ViewerType {
 enum WebhookMode {
 	SYNC
 	ASYNC
+	ASYNC_CALLBACK
 }
 
 enum WebhookType {
