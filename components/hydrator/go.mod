@@ -8,9 +8,9 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221026170340-d110c70ba3e0
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20221026170340-d110c70ba3e0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221026170340-d110c70ba3e0
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220327143459-11b81bddcce9
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20220420124254-ee69592dca21
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221028144124-218028ca3a05
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 // indirect
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
