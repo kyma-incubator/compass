@@ -83,7 +83,7 @@ func FixApplicationTemplateWithoutWebhooks(name string) graphql.ApplicationTempl
 			"test": []interface{}{"test"},
 		},
 		ApplicationNamespace: &appNamespace,
-		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
+		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 	return appTemplateInput
 }
