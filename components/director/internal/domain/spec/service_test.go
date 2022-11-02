@@ -594,6 +594,9 @@ func TestService_CreateByReferenceObjectIDWithDelayedFetchRequest(t *testing.T) 
 	specInputWithFR := fixModelAPISpecInputWithFetchRequest()
 	specInputWithFR.Data = nil
 
+	specInputWithEmptyAPIType := fixModelAPISpecInputWithFetchRequest()
+	specInputWithEmptyAPIType.APIType = nil
+
 	specModel := fixModelAPISpec()
 	specModel.Data = nil
 
@@ -640,6 +643,22 @@ func TestService_CreateByReferenceObjectIDWithDelayedFetchRequest(t *testing.T) 
 			},
 			Input:       *specInputWithFR,
 			ExpectedErr: nil,
+		},
+		{
+			Name: "Error - spec conversion",
+			RepositoryFn: func() *automock.SpecRepository {
+				return &automock.SpecRepository{}
+			},
+			FetchRequestRepoFn: func() *automock.FetchRequestRepository {
+				return &automock.FetchRequestRepository{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(specID).Once()
+				return svc
+			},
+			Input:       *specInputWithEmptyAPIType,
+			ExpectedErr: errors.New("API Spec type cannot be empty"),
 		},
 		{
 			Name: "Error - Spec Creation",
