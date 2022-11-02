@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -46,7 +47,8 @@ const (
 	formationAssignmentIDPathParam = "ucl-assignment-id"
 )
 
-func Test_UpdateStatus(t *testing.T) {
+func Test_UpdateStatus(baseT *testing.T) {
+	t := testingx.NewT(baseT)
 	ctx := context.Background()
 	parentTenantID := tenant.TestTenants.GetDefaultTenantID()
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
