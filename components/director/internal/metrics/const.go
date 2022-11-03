@@ -13,4 +13,10 @@ const (
 	InstanceIDKeyName = "instance"
 	// OrdAggregatorSubsystem missing godoc
 	OrdAggregatorSubsystem = "ordaggregator"
+	// ErrorMetricLabel missing godoc
+	ErrorMetricLabel = "error"
+	// APIIDMetricLabel missing godoc
+	APIIDMetricLabel = "api_id"
+	// CorrelationIDMetricLabel missing godoc
+	CorrelationIDMetricLabel = "x_request_id"
 )
