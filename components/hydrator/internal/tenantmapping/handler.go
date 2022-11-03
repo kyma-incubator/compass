@@ -80,7 +80,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	if req.Method != http.MethodPost {
 		err := fmt.Sprintf("Bad request method. Got %s, expected POST", req.Method)
-		log.C(ctx).Errorf(err)
+		log.C(ctx).Error(err)
 		http.Error(writer, err, http.StatusBadRequest)
 		return
 	}

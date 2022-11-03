@@ -23,7 +23,8 @@ type FormationAssignmentRepository interface {
 	Create(ctx context.Context, item *model.FormationAssignment) error
 	GetByTargetAndSource(ctx context.Context, target, source, tenantID string) (*model.FormationAssignment, error)
 	Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error)
-	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)                            // todo:: add/modify methods
+	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error) // todo:: add/modify methods
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
@@ -42,44 +43,40 @@ type formationAssignmentConverter interface {
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 }
 
 //go:generate mockery --exported --name=applicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationTemplateRepository interface {
-	//Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) // todo:: add methods
-	//ListByIDs(ctx context.Context, ids []string) ([]*model.ApplicationTemplate, error) // todo:: add methods
+	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 }
 
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
+	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
 }
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 }
 
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelRepository interface {
-	// todo::: add methods
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 //go:generate mockery --exported --name=webhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type webhookRepository interface {
-	//ListByReferenceObjectTypeAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) // todo:: add methods
-	//GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) // todo:: add methods
+	GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
 }
 
 //go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type webhookConverter interface {
-	//ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) // todo:: add methods
-}
-
-//go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
-type webhookClient interface {
-	//Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhookdir.Response, error) // todo:: add methods
+	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 }
 
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -187,6 +184,18 @@ func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.Formatio
 	fa, err := s.repo.GetGlobalByID(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q globally", id)
+	}
+
+	return fa, nil
+}
+
+// GetGlobalByIDAndFormationID retrieves the formation assignment matching ID `id` and formation ID `formationID` globally, without tenant parameter
+func (s *service) GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Getting formation assignment with ID: %q and formation ID: %q globally", id, formationID)
+
+	fa, err := s.repo.GetGlobalByIDAndFormationID(ctx, id, formationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q and formation ID: %q globally", id, formationID)
 	}
 
 	return fa, nil

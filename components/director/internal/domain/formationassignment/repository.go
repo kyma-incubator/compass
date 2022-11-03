@@ -101,6 +101,16 @@ func (r *repository) GetGlobalByID(ctx context.Context, id string) (*model.Forma
 	return r.conv.FromEntity(&entity), nil
 }
 
+// GetGlobalByIDAndFormationID retrieves formation assignment matching ID `id` and formation ID `formationID` globally, without tenant parameter
+func (r *repository) GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error) {
+	var entity Entity
+	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), repo.NewEqualCondition("formation_id", formationID)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&entity), nil
+}
+
 // GetForFormation retrieves Formation Assignment with the provided `id` associated to Formation with id `formationID` from the database if it exists
 func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error) {
 	var formationAssignmentEnt Entity

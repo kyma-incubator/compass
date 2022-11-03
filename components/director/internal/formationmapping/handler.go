@@ -47,16 +47,16 @@ type RequestBody struct {
 // Handler is the base struct definition of the FormationMappingHandler
 type Handler struct {
 	faService             FormationAssignmentService
+	faConverter           formationAssignmentConverter
 	faNotificationService FormationAssignmentNotificationService
-	formationRepository   FormationRepository
 }
 
-// NewFormationMappingHandler creates an empty formation mapping Handler
-func NewFormationMappingHandler(faService FormationAssignmentService, faNotificationService FormationAssignmentNotificationService, formationRepository FormationRepository) *Handler {
+// NewFormationMappingHandler creates a formation mapping Handler
+func NewFormationMappingHandler(faService FormationAssignmentService, faConverter formationAssignmentConverter, faNotificationService FormationAssignmentNotificationService) *Handler {
 	return &Handler{
 		faService:             faService,
+		faConverter:           faConverter,
 		faNotificationService: faNotificationService,
-		formationRepository:   formationRepository,
 	}
 }
 
@@ -95,36 +95,43 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Infof("Updating status of formation assignment with ID: %q for formation with ID: %q", formationAssignmentID, formationID)
-	// todo:: implement business logic here
-
-	fa, err := h.faService.GetGlobalByID(ctx, formationAssignmentID)
+	fa, err := h.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("while getting formation assignment with ID: %q globally", formationAssignmentID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("while getting formation assignment with ID: %q and formation ID: %q globally", formationAssignmentID, formationID))
 		return
 	}
 
-	reverseFA := fa
+	fa.State = string(reqBody.State)
+	fa.Value = reqBody.Configuration
+
+	log.C(ctx).Infof("Updating status of formation assignment with ID: %q and formation ID: %q to %q", formationAssignmentID, formationID, fa.State)
+	err = h.faService.Update(ctx, formationAssignmentID, h.faConverter.ToInput(fa))
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q to state: %q", formationAssignmentID, formationID, fa.State)
+		respondWithError(ctx, w, http.StatusInternalServerError, errors.New("An unexpected error occurred while updating formation assignment status"))
+		return
+	}
+
+	if len(reqBody.Configuration) == 0 { // generate notifications only when configuration is provided
+		log.C(ctx).Infof("The formation assignment with ID: %q and formation ID: %q was successfully updated with state: %q", formationAssignmentID, formationID, fa.State)
+		httputils.Respond(w, http.StatusOK)
+	}
+
+	notificationReq, err := h.faNotificationService.GenerateNotification(ctx, fa)
+	if err != nil {
+		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("an error occurred while generating formation assignment notification for formation assignment ID: %q and formation with ID: %q", formationAssignmentID, fa.FormationID))
+		return
+	}
+
+	reverseFA := fa.Clone()
 	reverseFA.Source = fa.Target
 	reverseFA.SourceType = fa.TargetType
 	reverseFA.Target = fa.Source
 	reverseFA.TargetType = fa.SourceType
 
-	formation, err := h.formationRepository.Get(ctx, fa.FormationID, fa.TenantID)
+	reverseNotificationReq, err := h.faNotificationService.GenerateNotification(ctx, reverseFA)
 	if err != nil {
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("while getting formation with ID: %q in tenant with ID: %q", fa.FormationID, fa.TenantID))
-		return
-	}
-
-	notificationReq, err := h.faNotificationService.GenerateNotification(ctx, fa.TenantID, fa.Source, formation.Name, fa.SourceType, fa.TargetType)
-	if err != nil {
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("while generating formation assignment notification for object ID: %q and object type: %q for formation with name: %q and tenant with ID: %q", fa.Target, fa.TargetType, formation.Name, fa.TenantID))
-		return
-	}
-
-	reverseNotificationReq, err := h.faNotificationService.GenerateNotification(ctx, fa.TenantID, fa.Target, formation.Name, fa.TargetType, fa.SourceType)
-	if err != nil {
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("while generating formation assignment notification for object ID: %q and object type: %q for formation with name: %q and tenant with ID: %q", fa.Source, fa.SourceType, formation.Name, fa.TenantID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("an error occurred while generating formation assignment notification for formation assignment ID: %q and formation with ID: %q", formationAssignmentID, fa.FormationID))
 		return
 	}
 
@@ -139,7 +146,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	assignmentPair := formationassignment.AssignmentMappingPair{
-		Assignment:        &reverseFAReqMapping,
+		Assignment:        &reverseFAReqMapping, // the status update call is a response to the original notification that's why here we switch the assignment and reverse assignment
 		ReverseAssignment: &faReqMapping,
 	}
 

@@ -5,6 +5,8 @@ package automock
 import (
 	context "context"
 
+	formationassignment "github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
@@ -38,6 +40,57 @@ func (_m *FormationAssignmentService) GetGlobalByID(ctx context.Context, id stri
 	}
 
 	return r0, r1
+}
+
+// GetGlobalByIDAndFormationID provides a mock function with given fields: ctx, formationAssignmentID, formationID
+func (_m *FormationAssignmentService) GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID string, formationID string) (*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, formationAssignmentID, formationID)
+
+	var r0 *model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.FormationAssignment); ok {
+		r0 = rf(ctx, formationAssignmentID, formationID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, formationAssignmentID, formationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Update provides a mock function with given fields: ctx, id, in
+func (_m *FormationAssignmentService) Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error {
+	ret := _m.Called(ctx, id, in)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignmentInput) error); ok {
+		r0 = rf(ctx, id, in)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateFormationAssignment provides a mock function with given fields: ctx, mappingPair
+func (_m *FormationAssignmentService) UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error {
+	ret := _m.Called(ctx, mappingPair)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPair) error); ok {
+		r0 = rf(ctx, mappingPair)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.

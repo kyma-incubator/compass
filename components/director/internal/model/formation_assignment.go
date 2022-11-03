@@ -85,3 +85,18 @@ func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssign
 		Value:       i.Value,
 	}
 }
+
+// Clone clones the formation assignment
+func (f *FormationAssignment) Clone() *FormationAssignment {
+	return &FormationAssignment{
+		ID:          f.ID,
+		FormationID: f.FormationID,
+		TenantID:    f.TenantID,
+		Source:      f.Source,
+		SourceType:  f.SourceType,
+		Target:      f.Target,
+		TargetType:  f.TargetType,
+		State:       f.State,
+		Value:       f.Value,
+	}
+}

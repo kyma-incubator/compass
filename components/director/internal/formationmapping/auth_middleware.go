@@ -29,19 +29,20 @@ const (
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
+	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
 	UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
+	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
 }
 
-// FormationRepository represents the Formations' repository layer
-//go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type FormationRepository interface {
-	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
+//go:generate mockery --exported --name=FormationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentConverter interface {
+	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
 }
 
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
-//go:generate mockery --name=FormationAssignmentNotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
-	GenerateNotification(ctx context.Context, tenant, objectID, formationName string, faType, faReverseType model.FormationAssignmentType) (*webhookclient.NotificationRequest, error)
+	GenerateNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.NotificationRequest, error)
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations
@@ -181,7 +182,7 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	fa, err := a.faService.GetGlobalByID(ctx, formationAssignmentID)
+	fa, err := a.faService.GetGlobalByID(ctx, formationAssignmentID) // todo::: do we need here to get by ID and formationID? like in the handler?
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation assignment with ID: %q globally", formationAssignmentID)
 	}

@@ -897,15 +897,14 @@ func createFormationMappingHandler(appRepo application.ApplicationRepository, se
 	runtimeRepo := runtime.NewRepository(runtime.NewConverter(webhook.NewConverter(auth.NewConverter())))
 	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
 	webhookRepo := webhook.NewRepository(webhookConverter)
-	formationRepo := formation.NewRepository(formation.NewConverter())
 
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
 
 	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
-	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter)
 
-	fmHandler := formationmapping.NewFormationMappingHandler(formationAssignmentSvc, faNotificationSvc, formationRepo)
+	fmHandler := formationmapping.NewFormationMappingHandler(formationAssignmentSvc, formationAssignmentConv, faNotificationSvc)
 
 	return fmHandler
 }

@@ -321,6 +321,65 @@ func TestService_GetGlobalByID(t *testing.T) {
 	}
 }
 
+func TestService_GetGlobalByIDAndFormationID(t *testing.T) {
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		ExpectedOutput          *model.FormationAssignment
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetGlobalByIDAndFormationID", ctxWithTenant, TestID, TestFormationID).Return(faModel, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   faModel,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:    "Error when getting formation assignment globally",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetGlobalByIDAndFormationID", ctxWithTenant, TestID, TestFormationID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: fmt.Sprintf("while getting formation assignment with ID: %q and formation ID: %q globally", TestID, TestFormationID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			faRepo := &automock.FormationAssignmentRepository{}
+			if testCase.FormationAssignmentRepo != nil {
+				faRepo = testCase.FormationAssignmentRepo()
+			}
+
+			svc := formationassignment.NewService(faRepo, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			r, err := svc.GetGlobalByIDAndFormationID(testCase.Context, TestID, TestFormationID)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, faRepo)
+		})
+	}
+}
+
 func TestService_GetForFormation(t *testing.T) {
 	testCases := []struct {
 		Name                    string
