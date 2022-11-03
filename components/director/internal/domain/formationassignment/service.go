@@ -23,8 +23,8 @@ type FormationAssignmentRepository interface {
 	Create(ctx context.Context, item *model.FormationAssignment) error
 	GetByTargetAndSource(ctx context.Context, target, source, tenantID string) (*model.FormationAssignment, error)
 	Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error)
-	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)                            // todo:: add/modify methods
-	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error) // todo:: add/modify methods
+	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
+	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
