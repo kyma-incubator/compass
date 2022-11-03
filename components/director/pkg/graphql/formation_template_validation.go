@@ -7,10 +7,17 @@ import (
 
 // Validate missing godoc
 func (i FormationTemplateInput) Validate() error {
-	return validation.ValidateStruct(&i,
+	fieldRules := []*validation.FieldRules{
 		validation.Field(&i.Name, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.ApplicationTypes, validation.Required, inputvalidation.Each(validation.Required, validation.RuneLength(0, longStringLengthLimit))),
-		validation.Field(&i.RuntimeType, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
+		validation.Field(&i.RuntimeTypes, inputvalidation.Each(validation.Required, validation.RuneLength(0, longStringLengthLimit))),
 		validation.Field(&i.RuntimeTypeDisplayName, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
-		validation.Field(&i.RuntimeArtifactKind, validation.Required, validation.In(ArtifactTypeSubscription, ArtifactTypeServiceInstance, ArtifactTypeEnvironmentInstance)))
+		validation.Field(&i.RuntimeArtifactKind, validation.Required, validation.In(ArtifactTypeSubscription, ArtifactTypeServiceInstance, ArtifactTypeEnvironmentInstance)),
+	}
+
+	if i.RuntimeType == nil {
+		fieldRules = append(fieldRules, validation.Field(&i.RuntimeTypes, validation.Required))
+	}
+
+	return validation.ValidateStruct(&i, fieldRules...)
 }

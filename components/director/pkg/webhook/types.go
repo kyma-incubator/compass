@@ -109,10 +109,6 @@ func (u *URL) Validate() error {
 
 // Validate missing godoc
 func (r *Response) Validate() error {
-	if r.Location == nil {
-		return errors.New("missing Output Template location field")
-	}
-
 	if r.SuccessStatusCode == nil {
 		return errors.New("missing Output Template success status code field")
 	}

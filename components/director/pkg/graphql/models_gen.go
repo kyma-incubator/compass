@@ -482,6 +482,7 @@ type FormationTemplate struct {
 	Name                   string       `json:"name"`
 	ApplicationTypes       []string     `json:"applicationTypes"`
 	RuntimeType            string       `json:"runtimeType"`
+	RuntimeTypes           []string     `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
 }
@@ -489,7 +490,8 @@ type FormationTemplate struct {
 type FormationTemplateInput struct {
 	Name                   string       `json:"name"`
 	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeType            string       `json:"runtimeType"`
+	RuntimeType            *string      `json:"runtimeType"`
+	RuntimeTypes           []string     `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
 }
@@ -1681,18 +1683,20 @@ func (e ViewerType) MarshalGQL(w io.Writer) {
 type WebhookMode string
 
 const (
-	WebhookModeSync  WebhookMode = "SYNC"
-	WebhookModeAsync WebhookMode = "ASYNC"
+	WebhookModeSync          WebhookMode = "SYNC"
+	WebhookModeAsync         WebhookMode = "ASYNC"
+	WebhookModeAsyncCallback WebhookMode = "ASYNC_CALLBACK"
 )
 
 var AllWebhookMode = []WebhookMode{
 	WebhookModeSync,
 	WebhookModeAsync,
+	WebhookModeAsyncCallback,
 }
 
 func (e WebhookMode) IsValid() bool {
 	switch e {
-	case WebhookModeSync, WebhookModeAsync:
+	case WebhookModeSync, WebhookModeAsync, WebhookModeAsyncCallback:
 		return true
 	}
 	return false

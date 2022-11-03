@@ -20,10 +20,16 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 	if in == nil {
 		return nil
 	}
+
+	runtimeTypes := in.RuntimeTypes
+	if in.RuntimeTypes == nil {
+		runtimeTypes = []string{*in.RuntimeType}
+	}
+
 	return &model.FormationTemplateInput{
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
-		RuntimeType:            in.RuntimeType,
+		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
 	}
@@ -38,7 +44,7 @@ func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id s
 		ID:                     id,
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
-		RuntimeType:            in.RuntimeType,
+		RuntimeTypes:           in.RuntimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    in.RuntimeArtifactKind,
 	}
@@ -53,7 +59,8 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) *graphql.FormationTem
 		ID:                     in.ID,
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
-		RuntimeType:            in.RuntimeType,
+		RuntimeType:            in.RuntimeTypes[0],
+		RuntimeTypes:           in.RuntimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    graphql.ArtifactType(in.RuntimeArtifactKind),
 	}
@@ -85,12 +92,16 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling application types")
 	}
+	marshalledRuntimeTypes, err := json.Marshal(in.RuntimeTypes)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshalling application types")
+	}
 
 	return &Entity{
 		ID:                     in.ID,
 		Name:                   in.Name,
 		ApplicationTypes:       string(marshalledApplicationTypes),
-		RuntimeType:            in.RuntimeType,
+		RuntimeTypes:           string(marshalledRuntimeTypes),
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    string(in.RuntimeArtifactKind),
 	}, nil
@@ -108,11 +119,17 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		return nil, errors.Wrap(err, "while unmarshalling application types")
 	}
 
+	var unmarshalledRuntimeTypes []string
+	err = json.Unmarshal([]byte(in.RuntimeTypes), &unmarshalledRuntimeTypes)
+	if err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling runtime types")
+	}
+
 	return &model.FormationTemplate{
 		ID:                     in.ID,
 		Name:                   in.Name,
 		ApplicationTypes:       unmarshalledApplicationTypes,
-		RuntimeType:            in.RuntimeType,
+		RuntimeTypes:           unmarshalledRuntimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
 	}, nil
