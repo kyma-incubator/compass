@@ -2,15 +2,14 @@ package ord
 
 import (
 	"context"
-	"fmt"
-	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"github.com/vrischmann/envconfig"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -29,6 +28,13 @@ const MultiErrorSeparator string = "* "
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
 	maxParallelWebhookProcessors int
+}
+
+// MetricsConfig is the ord aggregator configuration for pushing metrics to Prometheus
+type MetricsConfig struct {
+	PushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	ClientTimeout time.Duration `envconfig:"default=60s"`
+	JobName       string        `envconfig:"default=compass-ord-aggregator"`
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
@@ -84,7 +90,7 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 }
 
 // SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
-func (s *Service) SyncORDDocuments(ctx context.Context) error {
+func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error {
 	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
@@ -119,7 +125,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 				entry = entry.WithField(log.FieldRequestID, uuid.New().String())
 				ctx = log.ContextWithLogger(ctx, entry)
 
-				if err := s.processWebhook(ctx, webhook, globalResourcesOrdIDs); err != nil {
+				if err := s.processWebhook(ctx, cfg, webhook, globalResourcesOrdIDs); err != nil {
 					log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
 					atomic.AddInt32(&webhookErrors, 1)
 				}
@@ -140,7 +146,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
 		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
@@ -149,13 +155,13 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 		}
 
 		for _, app := range apps {
-			if err := s.processApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
+			if err := s.processApplicationWebhook(ctx, cfg, webhook, app.ID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 		}
 	} else if webhook.ObjectType == model.ApplicationWebhookReference {
 		appID := webhook.ObjectID
-		if err := s.processApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
+		if err := s.processApplicationWebhook(ctx, cfg, webhook, appID, globalResourcesOrdIDs); err != nil {
 			return err
 		}
 	}
@@ -927,29 +933,18 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 	return apiDataFromDB, eventDataFromDB, packageDataFromDB, tx.Commit()
 }
 
-type MetricConfig struct {
-	PushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-	//JobName       string        `envconfig:"JOB_NAME" required:"true"`
-	ClientTimeout time.Duration `envconfig:"default=60s"`
-}
-
-func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
 	var documents Documents
 	var baseURL string
 	var err error
 
-	cfg := MetricConfig{}
-	err1 := envconfig.Init(&cfg)
-	if err1 != nil {
-		return err1
-	}
-
 	metricsCfg := metrics.PusherConfig{
 		Enabled:    len(cfg.PushEndpoint) > 0,
 		Endpoint:   cfg.PushEndpoint,
-		MetricName: "compass_ord_aggregator_job_sync_failure_number",
+		MetricName: strings.ReplaceAll(strings.ToLower(cfg.JobName), "-", "_") + "_job_sync_failure_number",
 		Timeout:    cfg.ClientTimeout,
 		Subsystem:  metrics.OrdAggregatorSubsystem,
+		Labels:     []string{metrics.ErrorMetricLabel, metrics.APIIDMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
 
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
@@ -957,7 +952,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-			metricsPusher.ReportAggregationFailure(ctx, err)
+			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
 			return errors.Wrapf(err, "error fetching ORD document for webhook with id %q: %v", webhook.ID, err)
 		}
@@ -971,25 +966,18 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 
 				// the first item in the slice is the message 'invalid documents' for the wrapped errors
 				validationErrors = validationErrors[1:]
-				for i := range validationErrors {
-					validationErrors[i] = strings.TrimSpace(validationErrors[i])
-				}
 
 				metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-				fmt.Println("THE ERRORR", validationErrors)
 
-				for i := 0; i < len(validationErrors); i++ {
-					//currentError := errors.New(validationErrors[i])
-					//metricsPusher.ReportAggregationFailure(ctx, currentError)
+				for i := range validationErrors {
+					validationErrors[i] = strings.TrimSpace(validationErrors[i])
 					metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
 				}
-
-				//metricsPusher.ReportAggregationFailureORD(ctx, validationErrors)
 
 				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
 			} else {
 				metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-				metricsPusher.ReportAggregationFailure(ctx, err)
+				metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
 				log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
 			}
@@ -1057,7 +1045,7 @@ func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID stri
 	return ctx, nil
 }
 
-func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -1078,7 +1066,7 @@ func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.
 		return err
 	}
 
-	if err = s.processWebhookAndDocuments(ctx, webhook, app, globalResourcesOrdIDs); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, app, globalResourcesOrdIDs); err != nil {
 		return err
 	}
 
