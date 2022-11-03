@@ -1,11 +1,22 @@
 package notification
 
 import (
+	"bytes"
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/tidwall/gjson"
@@ -24,9 +35,28 @@ const (
 	Unassign Operation = "unassign"
 )
 
+type NotificationsConfiguration struct {
+	ExternalClientCertTestSecretName        string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
+	ExternalClientCertTestSecretNamespace   string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
+	ExternalClientCertCertKey               string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
+	ExternalClientCertKeyKey                string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
+	DirectorExternalCertFormationMappingURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL"`
+}
+
+type RequestBody struct {
+	State         ConfigurationState `json:"state"`
+	Configuration json.RawMessage    `json:"configuration"`
+	Error         string             `json:"error"`
+}
+
+type ConfigurationState string
+
+const ReadyConfigurationState ConfigurationState = "READY"
+
 type Handler struct {
 	mappings          map[string][]Response
 	shouldReturnError bool
+	config            NotificationsConfiguration
 }
 
 type Response struct {
@@ -35,15 +65,15 @@ type Response struct {
 	RequestBody   json.RawMessage
 }
 
-func NewHandler() *Handler {
+func NewHandler(notificationConfiguration NotificationsConfiguration) *Handler {
 	return &Handler{
 		mappings:          make(map[string][]Response),
 		shouldReturnError: true,
+		config:            notificationConfiguration,
 	}
 }
 
 func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
-	fmt.Println("Patch")
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
 		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
@@ -94,8 +124,65 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 }
 
+func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id, ok := mux.Vars(r)["tenantId"]
+	if !ok {
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+		return
+	}
+
+	if _, ok = h.mappings[id]; !ok {
+		h.mappings[id] = make([]Response, 0, 1)
+	}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		return
+	}
+	mappings := h.mappings[id]
+	mappings = append(h.mappings[id], Response{
+		Operation:   Assign,
+		RequestBody: bodyBytes,
+	})
+	h.mappings[id] = mappings
+
+	formationID := gjson.Get(string(bodyBytes), "ucl-formation-id").String()
+	if formationID == "" {
+		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation ID"))
+		return
+	}
+
+	formationAssignmentID := gjson.Get(string(bodyBytes), "formation-assignment-id").String()
+	if formationAssignmentID == "" {
+		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation assignment ID"))
+		return
+	}
+
+	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(writer, ctx)
+	if err != nil {
+		httputils.RespondWithError(ctx, writer, 500, err)
+		return
+	}
+
+	go func() {
+		time.Sleep(time.Second * 5)
+		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, `{"config": {"key": "value", "key2": {"key": "value2"}}}`, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
+		}
+	}()
+
+	writer.WriteHeader(http.StatusAccepted)
+}
+
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
-	fmt.Println("RespondWithIncomplete")
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
 		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
@@ -187,6 +274,66 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
+func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id, ok := mux.Vars(r)["tenantId"]
+	if !ok {
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+		return
+	}
+	applicationId, ok := mux.Vars(r)["applicationId"]
+	if !ok {
+		httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
+		return
+	}
+
+	if _, ok := h.mappings[id]; !ok {
+		h.mappings[id] = make([]Response, 0, 1)
+	}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		return
+	}
+
+	h.mappings[id] = append(h.mappings[id], Response{
+		Operation:     Unassign,
+		ApplicationID: &applicationId,
+		RequestBody:   bodyBytes,
+	})
+
+	formationID := gjson.Get(string(bodyBytes), "ucl-formation-id").String()
+	if formationID == "" {
+		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation ID"))
+		return
+	}
+
+	formationAssignmentID := gjson.Get(string(bodyBytes), "formation-assignment-id").String()
+	if formationAssignmentID == "" {
+		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation assignment ID"))
+		return
+	}
+
+	//certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(writer, ctx)
+	//if err != nil {
+	//	httputils.RespondWithError(ctx, writer, 500, err)
+	//	return
+	//}
+
+	go func() {
+		time.Sleep(time.Second * 5)
+		//TODO
+	}()
+
+	writer.WriteHeader(http.StatusAccepted)
+}
+
 func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 	if bodyBytes, err := json.Marshal(&h.mappings); err != nil {
 		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
@@ -274,4 +421,81 @@ func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {
 func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 	h.mappings = make(map[string][]Response)
 	writer.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) getCertAuthorizedHTTPClient(writer http.ResponseWriter, ctx context.Context) (*http.Client, error) {
+	k8sClient, err := kubernetes.NewKubernetesClientSet(ctx, time.Second, time.Minute, time.Minute)
+	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(h.config.ExternalClientCertTestSecretNamespace).Get(ctx, h.config.ExternalClientCertTestSecretName, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting secret")
+	}
+
+	providerKeyBytes := providerExtCrtTestSecret.Data[h.config.ExternalClientCertKeyKey]
+	if len(providerKeyBytes) == 0 {
+		return nil, errors.New("Private key is empty")
+	}
+
+	providerCertChainBytes := providerExtCrtTestSecret.Data[h.config.ExternalClientCertCertKey]
+	if len(providerCertChainBytes) == 0 {
+		return nil, errors.New("Certificate chain is empty")
+	}
+
+	privateKey, certChain, err := clientCertPair(providerCertChainBytes, providerKeyBytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "while generating client certificate pair")
+	}
+	certAuthorizedHTTPClient := gql.NewCertAuthorizedHTTPClient(privateKey, certChain, true)
+	return certAuthorizedHTTPClient, nil
+}
+
+func clientCertPair(certChainBytes, privateKeyBytes []byte) (*rsa.PrivateKey, [][]byte, error) {
+	certs, err := cert.DecodeCertificates(certChainBytes)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	privateKeyPem, _ := pem.Decode(privateKeyBytes)
+	if privateKeyPem == nil {
+		return nil, nil, errors.New("Private key should not be nil")
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyPem.Bytes)
+	if err != nil {
+		pkcs8PrivateKey, err := x509.ParsePKCS8PrivateKey(privateKeyPem.Bytes)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		var ok bool
+		privateKey, ok = pkcs8PrivateKey.(*rsa.PrivateKey)
+		if !ok {
+			return nil, nil, errors.New("Incorrect type of privateKey")
+		}
+	}
+
+	tlsCert := cert.NewTLSCertificate(privateKey, certs...)
+	return privateKey, tlsCert.Certificate, nil
+}
+
+func (h *Handler) executeStatusUpdateRequest(certSecuredHTTPClient *http.Client, testConfig, formationID, formationAssignmentID string) error {
+	reqBody := RequestBody{
+		State:         ReadyConfigurationState,
+		Configuration: json.RawMessage(testConfig),
+	}
+	marshalBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return err
+	}
+
+	formationMappingEndpoint := strings.Replace(h.config.DirectorExternalCertFormationMappingURL, fmt.Sprintf("{%s}", "ucl-formation-id"), formationID, 1)
+	formationMappingEndpoint = strings.Replace(formationMappingEndpoint, fmt.Sprintf("{%s}", "ucl-assignment-id"), formationAssignmentID, 1)
+
+	request, err := http.NewRequest(http.MethodPatch, formationMappingEndpoint, bytes.NewBuffer(marshalBody))
+	if err != nil {
+		return err
+	}
+
+	request.Header.Add("Content-Type", "application/json")
+	_, err = certSecuredHTTPClient.Do(request)
+	return err
 }

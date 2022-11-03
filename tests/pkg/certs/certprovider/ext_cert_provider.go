@@ -51,7 +51,7 @@ func NewExternalCertFromConfig(t *testing.T, ctx context.Context, testConfig Ext
 		k8s.PrintJobLogs(t, ctx, k8sClient, testConfig.ExternalCertTestJobName, testConfig.ExternalClientCertTestSecretNamespace, testConfig.ExternalCertCronjobContainerName, false)
 
 		k8s.DeleteJob(t, ctx, k8sClient, testConfig.ExternalCertTestJobName, testConfig.ExternalClientCertTestSecretNamespace)
-		k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
+		//k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
 	}()
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, testConfig.ExternalCertTestJobName, testConfig.ExternalClientCertTestSecretNamespace)
 

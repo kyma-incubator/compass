@@ -1722,8 +1722,8 @@ func TestFormationAssignments(stdT *testing.T) {
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // in local set up the parent is ApplicationsForRuntimeTenantName
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
-		urlTemplateRuntime := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if and .ReverseAssignment .ReverseAssignment.Value}},\\\"config\\\":{{ .ReverseAssignment.Value }}{{end}},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+		urlTemplateRuntime := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if and .ReverseAssignment .ReverseAssignment.Value}},\\\"config\\\":{{ .ReverseAssignment.Value }}{{end}},{{if and .Assignment .Assignment.ID}}\\\"formation-assignment-id\\\": \\\"{{ .Assignment.ID }}\\\",{{end}}\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplateRuntime := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		urlTemplateApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/configuration/{{.Application.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.RuntimeContext.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
@@ -1752,7 +1752,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		mode := graphql.WebhookModeSync
+		mode := graphql.WebhookModeAsync
 		providerRuntimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
@@ -2980,15 +2980,23 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 	assignments := assignmentsPage.Data
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
+	require.Eventually(t, func() bool {
+		result := true
+		for _, assignment := range assignments {
+			targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+			assertResult := assert.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
+			result = result && assertResult
 
-	for _, assignment := range assignments {
-		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
+			assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+			assertResult = assert.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
+			result = result && assertResult
 
-		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
+			assertResult = assert.Equal(t, assignmentExpectation.State, assignment.State)
+			result = result && assertResult
 
-		require.Equal(t, assignmentExpectation.State, assignment.State)
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Value))
-	}
+			assertResult = assert.Equal(t, str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Value))
+			result = result && assertResult
+		}
+		return result
+	}, time.Second*7, 50*time.Millisecond)
 }
