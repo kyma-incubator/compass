@@ -28,7 +28,6 @@ const (
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
-	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
 	UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
 	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
@@ -149,7 +148,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			isAuthorized, statusCode, err := a.isAuthorized(ctx, formationAssignmentID)
+			isAuthorized, statusCode, err := a.isAuthorized(ctx, formationAssignmentID, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
 				respondWithError(ctx, w, statusCode, errors.New("An unexpected error occurred while processing the request"))
@@ -167,7 +166,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 }
 
 // isAuthorized verify through custom logic the caller is authorized to update the formation assignment status
-func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID string) (bool, int, error) {
+func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID, formationID string) (bool, int, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
@@ -182,9 +181,9 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	fa, err := a.faService.GetGlobalByID(ctx, formationAssignmentID) // todo::: do we need here to get by ID and formationID? like in the handler?
+	fa, err := a.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
-		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation assignment with ID: %q globally", formationAssignmentID)
+		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation assignment with ID: %q and formation ID: %q globally", formationAssignmentID, formationID)
 	}
 
 	consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)

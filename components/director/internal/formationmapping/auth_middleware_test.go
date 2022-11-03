@@ -140,7 +140,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, "invalid", "invalid"), nil).Once()
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, "invalid", "invalid"), nil).Once()
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -197,7 +197,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(nil, testErr)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(nil, testErr)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -219,7 +219,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", mock.Anything, testFormationAssignmentID).Return(faWithSourceAppAndTargetRuntime, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", mock.Anything, testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -242,7 +242,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatFailsOnCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, "invalid", "invalid"), nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, "invalid", "invalid"), nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -265,7 +265,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -291,7 +291,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -321,7 +321,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -352,7 +352,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -382,7 +382,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -416,7 +416,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -450,7 +450,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -488,7 +488,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -528,7 +528,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -568,7 +568,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -608,7 +608,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -634,7 +634,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -665,7 +665,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
@@ -706,7 +706,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceAppAndTargetRuntime, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil)
 				return faSvc
 			},
 			runtimeRepoFn: func() *automock.RuntimeRepository {
@@ -732,7 +732,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceAppAndTargetRuntime, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil)
 				return faSvc
 			},
 			runtimeRepoFn: func() *automock.RuntimeRepository {
@@ -758,7 +758,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceAppAndTargetRuntime, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil)
 				return faSvc
 			},
 			runtimeRepoFn: func() *automock.RuntimeRepository {
@@ -785,7 +785,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
 				return faSvc
 			},
 			runtimeRepoFn: fixUnusedRuntimeRepo,
@@ -811,7 +811,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceAppAndTargetRuntimeContext, nil).Once()
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeContext, nil).Once()
 				return faSvc
 			},
 			runtimeRepoFn: func() *automock.RuntimeRepository {
@@ -841,7 +841,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
 				return faSvc
 			},
 			runtimeRepoFn: func() *automock.RuntimeRepository {
@@ -871,7 +871,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
 				return faSvc
 			},
 			runtimeRepoFn: func() *automock.RuntimeRepository {
