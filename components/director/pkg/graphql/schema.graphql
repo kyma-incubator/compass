@@ -183,6 +183,7 @@ enum ViewerType {
 enum WebhookMode {
 	SYNC
 	ASYNC
+	ASYNC_CALLBACK
 }
 
 enum WebhookType {
@@ -598,7 +599,8 @@ input FormationInput {
 input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
-	runtimeType: String!
+	runtimeType: String
+	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 }
@@ -1081,6 +1083,7 @@ type FormationTemplate {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeType: String!
+	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 }

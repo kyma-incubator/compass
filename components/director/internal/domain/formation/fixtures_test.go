@@ -41,11 +41,11 @@ var (
 	testScenario = "test-scenario"
 
 	formationTemplate = model.FormationTemplate{
-		ID:          FormationTemplateID,
-		Name:        "formation-template",
-		RuntimeType: runtimeType,
+		ID:           FormationTemplateID,
+		Name:         "formation-template",
+		RuntimeTypes: []string{runtimeType},
 	}
-	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
+	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType))}
 
 	TestConfigValueRawJSON = json.RawMessage(`{"configKey":"configValue"}`)
 	TestConfigValueStr     = "{\"configKey\":\"configValue\"}"
@@ -231,7 +231,7 @@ func fixFormationTemplateModel() *model.FormationTemplate {
 		ID:                     FormationTemplateID,
 		Name:                   "formation-tmpl-name",
 		ApplicationTypes:       []string{"appType1", "appType2"},
-		RuntimeType:            "runtimeTypes",
+		RuntimeTypes:           []string{"runtimeTypes"},
 		RuntimeTypeDisplayName: "runtimeDisplayName",
 		RuntimeArtifactKind:    model.RuntimeArtifactKindEnvironmentInstance,
 	}
