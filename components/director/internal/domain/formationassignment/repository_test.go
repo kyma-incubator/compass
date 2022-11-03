@@ -342,6 +342,36 @@ func TestRepository_ListAllForObject(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ListAllForObjectIDs(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "ListAllForObjectIDs Formations Assignments",
+		MethodName: "ListAllForObjectIDs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, last_operation, last_operation_initiator, last_operation_initiator_type, state, value FROM public.formation_assignments WHERE (tenant_id = $1 AND (formation_id = $2 AND (source IN ($3, $4) OR target IN ($5, $6)))`),
+				Args:     []driver.Value{TestTenantID, TestFormationID, TestSource, TestTarget, TestSource, TestTarget},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, "assign", TestSource, TestSourceType, TestState, TestConfigValueStr)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ExpectedModelEntities:     []interface{}{faModel},
+		ExpectedDBEntities:        []interface{}{faEntity},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		MethodArgs:                []interface{}{TestTenantID, TestFormationID, []string{TestSource, TestTarget}},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_Update(t *testing.T) {
 	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ? WHERE id = ? AND tenant_id = ?`)
 	suite := testdb.RepoUpdateTestSuite{

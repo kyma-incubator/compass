@@ -185,7 +185,7 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 	return faPages, nil
 }
 
-// ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID`that have objectID as `target` or `source` from the database that are visible for `tenant`
+// ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID` that have objectID as `target` or `source` from the database that are visible for `tenant`
 func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error) {
 	var entities EntityCollection
 	conditions := repo.And(
@@ -193,6 +193,23 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
 			repo.NewEqualCondition("source", objectID),
 			repo.NewEqualCondition("target", objectID),
+		})...))
+
+	if err := r.conditionLister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entities, conditions); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListAllForObjectIDs retrieves all FormationAssignment objects for formation with ID `formationID` that have any of the objectIDs as `target` or `source` from the database that are visible for `tenant`
+func (r *repository) ListAllForObjectIDs(ctx context.Context, tenant, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
+	var entities EntityCollection
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
+		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewInConditionForStringValues("source", objectIDs),
+			repo.NewInConditionForStringValues("target", objectIDs),
 		})...))
 
 	if err := r.conditionLister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entities, conditions); err != nil {
