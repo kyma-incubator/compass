@@ -392,22 +392,28 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participant model.Identifiable) []*model.FormationAssignmentInput {
 	assignments := make([]*model.FormationAssignmentInput, 0, 2)
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID: formation.ID,
-		Source:      objectID,
-		SourceType:  model.FormationAssignmentType(objectType),
-		Target:      participant.GetID(),
-		TargetType:  participantType,
-		State:       string(model.InitialAssignmentState),
-		Value:       nil,
+		FormationID:                formation.ID,
+		Source:                     objectID,
+		SourceType:                 model.FormationAssignmentType(objectType),
+		Target:                     participant.GetID(),
+		TargetType:                 participantType,
+		LastOperation:              model.AssignFormation,
+		LastOperationInitiator:     objectID,
+		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
+		State:                      string(model.InitialAssignmentState),
+		Value:                      nil,
 	})
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID: formation.ID,
-		Source:      participant.GetID(),
-		SourceType:  participantType,
-		Target:      objectID,
-		TargetType:  model.FormationAssignmentType(objectType),
-		State:       string(model.InitialAssignmentState),
-		Value:       nil,
+		FormationID:                formation.ID,
+		Source:                     participant.GetID(),
+		SourceType:                 participantType,
+		Target:                     objectID,
+		TargetType:                 model.FormationAssignmentType(objectType),
+		LastOperation:              model.AssignFormation,
+		LastOperationInitiator:     objectID,
+		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
+		State:                      string(model.InitialAssignmentState),
+		Value:                      nil,
 	})
 	return assignments
 }
@@ -586,6 +592,17 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		}
 		return errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID)
 	}
+
+	requestWebhookMode := mappingPair.Assignment.Request.Webhook.Mode
+	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
+		log.C(ctx).Info("The Webhook in the notification is in ASYNC_CALLBACK mode. Updating the assignment state to DELETING and waiting for the receiver to report the status on the status API...")
+		assignment.State = string(model.DeletingAssignmentState)
+		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
+		}
+		return nil
+	}
+
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
 		if err = s.Delete(ctx, assignment.ID); err != nil {
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
