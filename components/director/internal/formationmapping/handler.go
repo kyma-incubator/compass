@@ -252,7 +252,7 @@ func (h *Handler) processFormationAssignmentAsynchronousUnassign(ctx context.Con
 
 	formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(ctx, fa.FormationID, lastOpInitiatorID)
 	if err != nil {
-		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", fa.ID)
+		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", lastOpInitiatorType, lastOpInitiatorID)
 	}
 
 	formation, err := h.formationService.Get(ctx, fa.FormationID)
