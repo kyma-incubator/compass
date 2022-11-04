@@ -1812,6 +1812,10 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[1].ID).Return([]*model.FormationAssignment{formationAssignments[2]}, nil)
 
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmContexts[0].ID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmIDs[0]).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmContexts[1].ID).Return(nil, nil)
+
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[2]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[2]}, mock.Anything).Return(nil).Once()
@@ -1889,6 +1893,9 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[0].ID).Return([]*model.FormationAssignment{formationAssignments[0]}, nil)
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
 
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmContexts[0].ID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmIDs[0]).Return(nil, nil)
+
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
@@ -1953,6 +1960,8 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
 
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmIDs[0]).Return(nil, nil)
+
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2014,6 +2023,8 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmIDs[0]).Return(nil, nil)
 
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
@@ -3072,6 +3083,10 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[1].ID).Return([]*model.FormationAssignment{formationAssignments[2]}, nil)
 
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmContexts[0].ID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmIDs[0]).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmContexts[1].ID).Return(nil, nil)
+
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[2]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[2]}, mock.Anything).Return(nil).Once()
@@ -3147,6 +3162,9 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmContexts[0].ID).Return([]*model.FormationAssignment{formationAssignments[0]}, nil)
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
 
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmContexts[0].ID).Return(nil, nil)
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmIDs[0]).Return(nil, nil)
+
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[0]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[0]}, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
@@ -3209,6 +3227,8 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
 
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmIDs[0]).Return(nil, nil)
+
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
 			},
@@ -3267,6 +3287,8 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, modelFormation.ID, rtmIDs[0]).Return([]*model.FormationAssignment{formationAssignments[1]}, nil)
+
+				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), modelFormation.ID, rtmIDs[0]).Return(nil, nil)
 
 				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), []*model.FormationAssignment{formationAssignments[1]}, map[string]string{}, []*webhookclient.NotificationRequest{notifications[1]}, mock.Anything).Return(nil).Once()
 				return formationAssignmentSvc
