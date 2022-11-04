@@ -3,6 +3,8 @@
 package automock
 
 import (
+	testing "testing"
+
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -28,13 +30,8 @@ func (_m *FormationAssignmentConverter) ToInput(assignment *model.FormationAssig
 	return r0
 }
 
-type mockConstructorTestingTNewFormationAssignmentConverter interface {
-	mock.TestingT
-	Cleanup(func())
-}
-
-// NewFormationAssignmentConverter creates a new instance of FormationAssignmentConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentConverter(t mockConstructorTestingTNewFormationAssignmentConverter) *FormationAssignmentConverter {
+// NewFormationAssignmentConverter creates a new instance of FormationAssignmentConverter. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
+func NewFormationAssignmentConverter(t testing.TB) *FormationAssignmentConverter {
 	mock := &FormationAssignmentConverter{}
 	mock.Mock.Test(t)
 

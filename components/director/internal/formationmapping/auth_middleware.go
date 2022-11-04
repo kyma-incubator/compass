@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -25,23 +27,33 @@ const (
 	FormationAssignmentIDParam = "ucl-assignment-id"
 )
 
+//go:generate mockery --exported --name=formationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentConverter interface {
+	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
+}
+
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
-	UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
 	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
-}
-
-//go:generate mockery --exported --name=FormationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationAssignmentConverter interface {
-	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
+	Delete(ctx context.Context, id string) error
+	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
+	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState) error
 }
 
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
 	GenerateNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.NotificationRequest, error)
+}
+
+// formationService is responsible for the service-layer Formation operations
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	Get(ctx context.Context, id string) (*model.Formation, error)
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations

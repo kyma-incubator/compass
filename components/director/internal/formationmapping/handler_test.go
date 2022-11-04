@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/formationmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -58,10 +60,11 @@ func Test_StatusUpdate(t *testing.T) {
 	testCases := []struct {
 		name                string
 		reqBody             fm.RequestBody
+		transactFn          func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		faServiceFn         func() *automock.FormationAssignmentService
 		faConverterFn       func() *automock.FormationAssignmentConverter
 		faNotificationSvcFn func() *automock.FormationAssignmentNotificationService
-		formationRepoFn     func() *automock.FormationRepository
+		formationSvcFn      func() *automock.FormationService
 		hasURLVars          bool
 		headers             map[string][]string
 		expectedStatusCode  int
@@ -73,7 +76,6 @@ func Test_StatusUpdate(t *testing.T) {
 			faServiceFn:         fixUnusedFormationAssignmentSvc,
 			faConverterFn:       fixUnusedFormationAssignmentConverter,
 			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationRepoFn:     fixUnusedFormationRepo,
 			headers:             map[string][]string{httputils.HeaderContentTypeKey: {"invalidContentType"}},
 			expectedStatusCode:  http.StatusUnsupportedMediaType,
 			expectedErrOutput:   "Content-Type header is not application/json",
@@ -83,9 +85,8 @@ func Test_StatusUpdate(t *testing.T) {
 			faServiceFn:         fixUnusedFormationAssignmentSvc,
 			faConverterFn:       fixUnusedFormationAssignmentConverter,
 			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationRepoFn:     fixUnusedFormationRepo,
 			reqBody: fm.RequestBody{
-				State:         fm.ConfigurationStateReady,
+				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			expectedStatusCode: http.StatusBadRequest,
@@ -97,9 +98,8 @@ func Test_StatusUpdate(t *testing.T) {
 			faServiceFn:         fixUnusedFormationAssignmentSvc,
 			faConverterFn:       fixUnusedFormationAssignmentConverter,
 			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationRepoFn:     fixUnusedFormationRepo,
 			reqBody: fm.RequestBody{
-				State:         fm.ConfigurationStateReady,
+				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
 				Error:         "testErrMsg",
 			},
@@ -111,9 +111,8 @@ func Test_StatusUpdate(t *testing.T) {
 			faServiceFn:         fixUnusedFormationAssignmentSvc,
 			faConverterFn:       fixUnusedFormationAssignmentConverter,
 			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationRepoFn:     fixUnusedFormationRepo,
 			reqBody: fm.RequestBody{
-				State:         fm.ConfigurationStateCreateError,
+				State:         model.CreateErrorAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			expectedStatusCode: http.StatusBadRequest,
@@ -124,9 +123,8 @@ func Test_StatusUpdate(t *testing.T) {
 			faServiceFn:         fixUnusedFormationAssignmentSvc,
 			faConverterFn:       fixUnusedFormationAssignmentConverter,
 			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationRepoFn:     fixUnusedFormationRepo,
 			reqBody: fm.RequestBody{
-				State: fm.ConfigurationStateReady,
+				State: model.ReadyAssignmentState,
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusBadRequest,
@@ -139,7 +137,7 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", mock.Anything, testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				faSvc.On("Update", mock.Anything, testFormationAssignmentID, faModelInput).Return(nil).Once()
-				faSvc.On("UpdateFormationAssignment", mock.Anything, testAssignmentPair).Return(nil).Once()
+				faSvc.On("ProcessFormationAssignmentPair", mock.Anything, testAssignmentPair).Return(nil).Once()
 				return faSvc
 			},
 			faConverterFn: func() *automock.FormationAssignmentConverter {
@@ -153,9 +151,8 @@ func Test_StatusUpdate(t *testing.T) {
 				faNotificationSvc.On("GenerateNotification", mock.Anything, reverseFAWithSourceRuntimeAndTargetApp).Return(fixEmptyNotificationRequest(), nil).Once()
 				return faNotificationSvc
 			},
-			formationRepoFn: fixUnusedFormationRepo,
 			reqBody: fm.RequestBody{
-				State:         fm.ConfigurationStateReady,
+				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			hasURLVars:         true,
@@ -180,13 +177,14 @@ func Test_StatusUpdate(t *testing.T) {
 			}
 			w := httptest.NewRecorder()
 
+			persist, transact := tCase.transactFn()
 			faSvc := tCase.faServiceFn()
 			faConv := tCase.faConverterFn()
 			faNotificationSvc := tCase.faNotificationSvcFn()
-			formationRepo := tCase.formationRepoFn()
-			defer mock.AssertExpectationsForObjects(t, faSvc, faConv, faNotificationSvc, formationRepo)
+			formationSvc := tCase.formationSvcFn()
+			defer mock.AssertExpectationsForObjects(t, persist, transact, faConv, faSvc, faNotificationSvc)
 
-			handler := fm.NewFormationMappingHandler(faSvc, faConv, faNotificationSvc)
+			handler := fm.NewFormationMappingHandler(transact, faConv, faSvc, faNotificationSvc, formationSvc)
 
 			// WHEN
 			handler.UpdateStatus(w, httpReq)

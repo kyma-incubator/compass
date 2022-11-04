@@ -1640,7 +1640,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 	}
 }
 
-func TestService_UpdateFormationAssignment(t *testing.T) {
+func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	// GIVEN
 	source := "source"
 	target := "target"
@@ -2137,7 +2137,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 			svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 			///WHEN
-			err := svc.UpdateFormationAssignment(testCase.Context, testCase.FormationAssignmentPair)
+			err := svc.ProcessFormationAssignmentPair(testCase.Context, testCase.FormationAssignmentPair)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -2220,7 +2220,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.UpdateFormationAssignment(ctxWithTenant, assignmentPair)
+		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.NoError(t, err)
 
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
@@ -2289,7 +2289,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.UpdateFormationAssignment(ctxWithTenant, assignmentPair)
+		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
 
@@ -2362,7 +2362,7 @@ func TestService_UpdateFormationAssignment(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.UpdateFormationAssignment(ctxWithTenant, assignmentPair)
+		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.NoError(t, err)
 
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)

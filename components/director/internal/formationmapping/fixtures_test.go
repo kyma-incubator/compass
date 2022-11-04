@@ -128,10 +128,6 @@ func fixUnusedFormationAssignmentNotificationSvc() *automock.FormationAssignment
 	return &automock.FormationAssignmentNotificationService{}
 }
 
-func fixUnusedFormationRepo() *automock.FormationRepository {
-	return &automock.FormationRepository{}
-}
-
 func fixUnusedRuntimeRepo() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
 }
