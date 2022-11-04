@@ -17,4 +17,6 @@ ALTER TABLE formation_assignments
 
 UPDATE formation_assignments SET last_operation = 'assign', last_operation_initiator = source, last_operation_initiator_type = source_type;
 
+ALTER TYPE webhook_mode ADD VALUE IF NOT EXISTS 'ASYNC_CALLBACK';
+
 COMMIT;

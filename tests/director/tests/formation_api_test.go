@@ -1752,7 +1752,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		mode := graphql.WebhookModeAsync
+		runtimeWebhookMode := graphql.WebhookModeAsyncCallback
 		providerRuntimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
@@ -1765,7 +1765,7 @@ func TestFormationAssignments(stdT *testing.T) {
 					Auth: &graphql.AuthInput{
 						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
 					},
-					Mode:           &mode,
+					Mode:           &runtimeWebhookMode,
 					URLTemplate:    &urlTemplateRuntime,
 					InputTemplate:  &inputTemplateRuntime,
 					OutputTemplate: &outputTemplateRuntime,
@@ -1887,6 +1887,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		appRegion := "test-app-region"
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
+		appWebhookMode := graphql.WebhookModeSync
 		t.Logf("Create application template for type %q", applicationType)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name:        applicationType,
@@ -1902,7 +1903,7 @@ func TestFormationAssignments(stdT *testing.T) {
 						Auth: &graphql.AuthInput{
 							AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
 						},
-						Mode:           &mode,
+						Mode:           &appWebhookMode,
 						URLTemplate:    &urlTemplateApplication,
 						InputTemplate:  &inputTemplateApplication,
 						OutputTemplate: &outputTemplateApplication,
@@ -2892,7 +2893,7 @@ func createFormationTemplate(t *testing.T, ctx context.Context, formationTemplat
 	formationTmplInput := graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
-		RuntimeType:            runtimeType,
+		RuntimeType:            &runtimeType,
 		RuntimeTypeDisplayName: formationTemplateName,
 		RuntimeArtifactKind:    runtimeArtifactKind,
 	}
@@ -2998,5 +2999,5 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 			result = result && assertResult
 		}
 		return result
-	}, time.Second*7, 50*time.Millisecond)
+	}, time.Second*7, time.Second)
 }

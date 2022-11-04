@@ -2,7 +2,6 @@ package formationmapping
 
 import (
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/pkg/errors"
 
@@ -97,6 +96,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	fa, err := h.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
+		log.C(ctx).Error(err)
 		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("while getting formation assignment with ID: %q and formation ID: %q globally", formationAssignmentID, formationID))
 		return
 	}
@@ -115,6 +115,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	if len(reqBody.Configuration) == 0 { // generate notifications only when configuration is provided
 		log.C(ctx).Infof("The formation assignment with ID: %q and formation ID: %q was successfully updated with state: %q", formationAssignmentID, formationID, fa.State)
 		httputils.Respond(w, http.StatusOK)
+		return
 	}
 
 	notificationReq, err := h.faNotificationService.GenerateNotification(ctx, fa)

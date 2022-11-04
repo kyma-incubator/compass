@@ -10,7 +10,7 @@ func FixFormationTemplateWithType(formationName string, runtimeType string) grap
 	return graphql.FormationTemplateInput{
 		Name:                   formationName,
 		ApplicationTypes:       []string{"app-type-1", "app-type-2"},
-		RuntimeType:            runtimeType,
+		RuntimeType:            &runtimeType,
 		RuntimeTypeDisplayName: "test-display-name",
 		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
 	}
@@ -24,13 +24,13 @@ func FixFormationTemplateWithApplicationTypes(formationName string, applicationT
 
 func FixFormationTemplateWithRuntimeType(formationName string, runtimeType string) graphql.FormationTemplateInput {
 	in := FixFormationTemplate(formationName)
-	in.RuntimeType = runtimeType
+	in.RuntimeType = &runtimeType
 	return in
 }
 
 func FixFormationTypeWithTypes(formationName string, runtimeType string, applicationTypes []string) graphql.FormationTemplateInput {
 	in := FixFormationTemplate(formationName)
-	in.RuntimeType = runtimeType
+	in.RuntimeType = &runtimeType
 	in.ApplicationTypes = applicationTypes
 	return in
 }

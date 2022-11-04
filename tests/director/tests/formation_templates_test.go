@@ -86,11 +86,12 @@ func TestUpdateFormationTemplate(t *testing.T) {
 
 	createdFormationTemplateName := "created-formation-template-name"
 	createdFormationTemplate := fixtures.FixFormationTemplate(createdFormationTemplateName)
+	runtimeType := "runtime-type-2"
 
 	var updatedFormationTemplateInput = graphql.FormationTemplateInput{
 		Name:                   "updated-formation-template-name",
 		ApplicationTypes:       []string{"app-type-3", "app-type-4"},
-		RuntimeType:            "runtime-type-2",
+		RuntimeType:            &runtimeType,
 		RuntimeTypeDisplayName: "test-display-name-2",
 		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
@@ -157,11 +158,11 @@ func TestQueryFormationTemplates(t *testing.T) {
 
 	formationTemplateName := "delete-formation-template-name"
 	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
-
+	runtimeType := "runtime-type-2"
 	secondFormationInput := graphql.FormationTemplateInput{
 		Name:                   "test-formation-template-2",
 		ApplicationTypes:       []string{"app-type-3", "app-type-5"},
-		RuntimeType:            "runtime-type-2",
+		RuntimeType:            &runtimeType,
 		RuntimeTypeDisplayName: "test-display-name-2",
 		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
