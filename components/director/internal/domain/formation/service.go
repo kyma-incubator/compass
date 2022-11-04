@@ -295,7 +295,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.ProcessFormationAssignmentPair); err != nil {
 			log.C(ctx).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 			return nil, err
 		}

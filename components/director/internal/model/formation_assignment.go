@@ -67,7 +67,7 @@ const (
 	ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
 	// CreateErrorAssignmentState indicates that an error occurred during the creation of the formation assignment
 	CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
-	// DeletingAssignmentState indicates that async unassing notification is sent and status report is expected from the reciever
+	// DeletingAssignmentState indicates that async unassing notification is sent and status report is expected from the receiver
 	DeletingAssignmentState FormationAssignmentState = "DELETING"
 	// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
