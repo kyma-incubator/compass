@@ -182,12 +182,49 @@ func TestWebhookInput_Validate_Mode(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         *graphql.WebhookMode
+		Type          *graphql.WebhookType
 		ExpectedValid bool
 	}{
 		{
-			Name:          "ExpectedValid",
+			Name:          "ExpectedValidMode",
 			Value:         webhookModePtr(graphql.WebhookModeSync),
 			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValidSyncModeAndConfigurationChangedType",
+			Value:         webhookModePtr(graphql.WebhookModeSync),
+			Type:          webhookTypePtr(graphql.WebhookTypeConfigurationChanged),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValidAsyncCallbackModeAndConfigurationChangedType",
+			Value:         webhookModePtr(graphql.WebhookModeAsyncCallback),
+			Type:          webhookTypePtr(graphql.WebhookTypeConfigurationChanged),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedValidAsyncCallbackModeAndAppTntMappingType",
+			Value:         webhookModePtr(graphql.WebhookModeAsyncCallback),
+			Type:          webhookTypePtr(graphql.WebhookTypeApplicationTenantMapping),
+			ExpectedValid: true,
+		},
+		{
+			Name:          "ExpectedInvalidAsyncModeAndConfigurationChangedType",
+			Value:         webhookModePtr(graphql.WebhookModeAsync),
+			Type:          webhookTypePtr(graphql.WebhookTypeConfigurationChanged),
+			ExpectedValid: false,
+		},
+		{
+			Name:          "ExpectedInvalidAsyncModeAndAppTntMappingType",
+			Value:         webhookModePtr(graphql.WebhookModeAsync),
+			Type:          webhookTypePtr(graphql.WebhookTypeApplicationTenantMapping),
+			ExpectedValid: false,
+		},
+		{
+			Name:          "ExpectedInvalidAsyncCallbackModeAndRegisterAppType",
+			Value:         webhookModePtr(graphql.WebhookModeAsyncCallback),
+			Type:          webhookTypePtr(graphql.WebhookTypeRegisterApplication),
+			ExpectedValid: false,
 		},
 		{
 			Name:          "Empty",
@@ -211,6 +248,9 @@ func TestWebhookInput_Validate_Mode(t *testing.T) {
 			//GIVEN
 			sut := fixValidWebhookInput(inputvalidationtest.ValidURL)
 			sut.Mode = testCase.Value
+			if testCase.Type != nil {
+				sut.Type = *testCase.Type
+			}
 			// WHEN
 			err := sut.Validate()
 			// THEN
@@ -504,12 +544,12 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name: "Invalid - missing location",
+			Name: "ExpectedValid - missing location when SYNC mode",
 			Value: stringPtr(`{
 			   "success_status_code": 202,
 			   "error": "{{.Body.error}}"
 			 }`),
-			ExpectedValid: false,
+			ExpectedValid: true,
 		},
 		{
 			Name: "Invalid - missing success status code",
@@ -789,4 +829,8 @@ func intPtr(n int) *int {
 
 func webhookModePtr(mode graphql.WebhookMode) *graphql.WebhookMode {
 	return &mode
+}
+
+func webhookTypePtr(whType graphql.WebhookType) *graphql.WebhookType {
+	return &whType
 }

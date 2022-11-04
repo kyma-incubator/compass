@@ -345,6 +345,7 @@ type ComplexityRoot struct {
 		RuntimeArtifactKind    func(childComplexity int) int
 		RuntimeType            func(childComplexity int) int
 		RuntimeTypeDisplayName func(childComplexity int) int
+		RuntimeTypes           func(childComplexity int) int
 	}
 
 	FormationTemplatePage struct {
@@ -2212,6 +2213,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationTemplate.RuntimeTypeDisplayName(childComplexity), true
+
+	case "FormationTemplate.runtimeTypes":
+		if e.complexity.FormationTemplate.RuntimeTypes == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.RuntimeTypes(childComplexity), true
 
 	case "FormationTemplatePage.data":
 		if e.complexity.FormationTemplatePage.Data == nil {
@@ -4455,6 +4463,12 @@ enum FetchRequestStatusCondition {
 	FAILED
 }
 
+enum FormationAssignmentType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+}
+
 enum FormationObjectType {
 	APPLICATION
 	TENANT
@@ -4516,6 +4530,7 @@ enum ViewerType {
 enum WebhookMode {
 	SYNC
 	ASYNC
+	ASYNC_CALLBACK
 }
 
 enum WebhookType {
@@ -4524,12 +4539,6 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
-}
-
-enum FormationAssignmentType {
-	APPLICATION
-	RUNTIME
-	RUNTIME_CONTEXT
 }
 
 interface OneTimeToken {
@@ -4937,7 +4946,8 @@ input FormationInput {
 input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
-	runtimeType: String!
+	runtimeType: String
+	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 }
@@ -5420,6 +5430,7 @@ type FormationTemplate {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeType: String!
+	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 }
@@ -6057,6 +6068,7 @@ type Mutation {
 	"""
 	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
+
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -15191,6 +15203,40 @@ func (ec *executionContext) _FormationTemplate_runtimeType(ctx context.Context, 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationTemplate_runtimeTypes(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeTypes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplate_runtimeTypeDisplayName(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
@@ -28044,7 +28090,13 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			}
 		case "runtimeType":
 			var err error
-			it.RuntimeType, err = ec.unmarshalNString2string(ctx, v)
+			it.RuntimeType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "runtimeTypes":
+			var err error
+			it.RuntimeTypes, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -30309,6 +30361,11 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			}
 		case "runtimeType":
 			out.Values[i] = ec._FormationTemplate_runtimeType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "runtimeTypes":
+			out.Values[i] = ec._FormationTemplate_runtimeTypes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
