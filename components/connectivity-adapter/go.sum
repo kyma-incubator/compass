@@ -224,6 +224,8 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20220104100601-c86
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220104100601-c864205e9ba5/go.mod h1:q77/43vmVtfh6V9cCsr5VdZsIAGijRaH54ci+/h4Z6U=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20221021075309-f6a4c48ab83f h1:6PDR0qXV3YfOW7oOuYE93T0Tgg7hIMrnfe6CNW89+bI=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20221021075309-f6a4c48ab83f/go.mod h1:2O9k8+ndYxpoHzISRZ6rApj9H+1Y4NwkVDWinRZCIPU=
+github.com/kyma-incubator/compass/components/connector v0.0.0-20221104123300-f202d6f6892d h1:JT90tw9n5qC1S+2SgUeq/sgUv5LNWPfZA3AV8yVFbS0=
+github.com/kyma-incubator/compass/components/connector v0.0.0-20221104123300-f202d6f6892d/go.mod h1:7eA6MT4AFTINzqUfx9wbsNlbcjyNBOhTetJLA8nfkbk=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221006144530-844f804814b8 h1:/CTpuiY7wVuGxKS0o01zX47QC7r7uoENIbZztN+c5J4=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221006144530-844f804814b8/go.mod h1:Gmso4VPdiEI3AQJ1QAsEPQQ0UOib+eYW/+gdQlBBH4U=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221021075309-f6a4c48ab83f h1:HaWuENu/mmjMSNU4SyOigdnGrbHq94Bx7mIdSRQCObI=
@@ -234,6 +236,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20221028144124-2180
 github.com/kyma-incubator/compass/components/director v0.0.0-20221028144124-218028ca3a05/go.mod h1:XKKfWWfWTAI53KZ5VtQkhoYgWdq94gazeKrTxs7dX8k=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221104122419-0030350dd1f0 h1:DwgI1Ozb63zQdb3Q7Sbqfh//4rLwoNEYeFpz32/ykwE=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221104122419-0030350dd1f0/go.mod h1:Jw0nS3jMD4kOk7700RBPaJncTWSGRHKQQ6pprCO/iqc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221104123300-f202d6f6892d h1:SYTIxdRNWdGgUkEvnUmszE515WdBu6LH983NZncjK+E=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221104123300-f202d6f6892d/go.mod h1:Jw0nS3jMD4kOk7700RBPaJncTWSGRHKQQ6pprCO/iqc=
 github.com/lib/pq v1.10.4 h1:SO9z7FRPzA03QhHKJrH5BXA6HU1rS4V2nIVrrNC1iYk=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 h1:guHWmqIKr4G+gQ4uYU5vcZjsUhhklRA2uOcGVfcfqis=
