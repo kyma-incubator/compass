@@ -700,6 +700,77 @@ func TestService_ListFormationAssignmentsForObjectID(t *testing.T) {
 	}
 }
 
+func TestService_ListFormationAssignmentsForObjectIDs(t *testing.T) {
+	// GIVEN
+
+	formationID := "formationID"
+	objectID := "objectID"
+	result := []*model.FormationAssignment{faModel}
+
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		ExpectedOutput          []*model.FormationAssignment
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formationID, []string{objectID}).Return(result, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   result,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:             "Error when loading tenant from context",
+			Context:          emptyCtx,
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: "while loading tenant from context: cannot read tenant from context",
+		},
+		{
+			Name:    "Error when listing formation assignment",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formationID, []string{objectID}).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			faRepo := &automock.FormationAssignmentRepository{}
+			if testCase.FormationAssignmentRepo != nil {
+				faRepo = testCase.FormationAssignmentRepo()
+			}
+
+			svc := formationassignment.NewService(faRepo, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			r, err := svc.ListFormationAssignmentsForObjectIDs(testCase.Context, formationID, []string{objectID})
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, faRepo)
+		})
+	}
+}
+
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
@@ -2304,9 +2375,18 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	ok := http.StatusOK
 	accepted := http.StatusNoContent
 	notFound := http.StatusNotFound
+	mode := graphql.WebhookModeAsyncCallback
 
 	req := &webhookclient.NotificationRequest{
 		Webhook:       graphql.Webhook{},
+		Object:        nil,
+		CorrelationID: "",
+	}
+
+	callbackReq := &webhookclient.NotificationRequest{
+		Webhook: graphql.Webhook{
+			Mode: &mode,
+		},
 		Object:        nil,
 		CorrelationID: "",
 	}
@@ -2332,6 +2412,20 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		Source:   source,
 		State:    string(model.ReadyAssignmentState),
 		Value:    []byte(config),
+	}
+
+	configAssignmentWithTenantAndIDInDeletingState := &model.FormationAssignment{
+		ID:       TestID,
+		TenantID: TestTenantID,
+		Source:   source,
+		State:    string(model.DeletingAssignmentState),
+		Value:    []byte(config),
+	}
+
+	configAssignmentInputInDeletingState := &model.FormationAssignmentInput{
+		Source: source,
+		State:  string(model.DeletingAssignmentState),
+		Value:  []byte(config),
 	}
 
 	marshaledErrClientError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
@@ -2461,6 +2555,28 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 				return svc
 			},
 			FormationAssignmentMappingPair: fixAssignmentMappingPairWithIDAndRequest(TestID, req),
+			ExpectedErrorMsg:               "",
+		},
+		{
+			Name:    "sets assignment in deleting state when webhook is async callback",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, configAssignmentWithTenantAndIDInDeletingState).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", configAssignmentWithTenantAndIDInDeletingState).Return(configAssignmentInputInDeletingState).Once()
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, callbackReq).Return(successResponse, nil).Once()
+				return svc
+			},
+			FormationAssignmentMappingPair: fixAssignmentMappingPairWithAssignmentAndRequest(configAssignmentWithTenantAndID.Clone(), callbackReq),
 			ExpectedErrorMsg:               "",
 		},
 		{

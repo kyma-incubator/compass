@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -429,20 +428,36 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
-		defer s.transact.RollbackUnlessCommitted(ctx, tx)
+		transactionCtx := persistence.SaveToContext(ctx, tx)
+		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		ctx = persistence.SaveToContext(ctx, tx)
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
 			}
 			return nil, err
 		}
+
+		// It is important to do the list in the inner transaction
+		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+		}
+
 		err = tx.Commit()
 		if err != nil {
 			return nil, errors.Wrapf(err, "while committing transaction")
 		}
+
+		if len(pendingAsyncAssignments) > 0 {
+			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification reciever", objectType, objectID, formation.Name)
+			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			if err != nil {
+				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+			}
+		}
+
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
@@ -495,10 +510,25 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
+		// It is important to do the list in the inner transaction
+		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+		}
+
 		err = tx.Commit()
 		if err != nil {
 			return nil, errors.Wrapf(err, "while committing transaction")
 		}
+
+		if len(pendingAsyncAssignments) > 0 {
+			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification reciever", objectType, objectID, formation.Name)
+			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			if err != nil {
+				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+			}
+		}
+
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeTenant:
@@ -516,7 +546,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 }
 
-func (s *service) listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx context.Context, formationID, objectID string, objectType graphql.FormationObjectType, ) ([]*model.FormationAssignment, error) {
+func (s *service) listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx context.Context, formationID, objectID string, objectType graphql.FormationObjectType) ([]*model.FormationAssignment, error) {
 	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
