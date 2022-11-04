@@ -11,12 +11,12 @@ const (
 	TenantFetcherJobName = TenantFetcherSubsystem
 	// InstanceIDKeyName missing godoc
 	InstanceIDKeyName = "instance"
-	// OrdAggregatorSubsystem missing godoc
+	// OrdAggregatorSubsystem is used in the metrics pusher configuration as value for key 'subsystem'
 	OrdAggregatorSubsystem = "ordaggregator"
-	// ErrorMetricLabel missing godoc
+	// ErrorMetricLabel is the error label used by metrics config for creating CounterVec for Prometheus
 	ErrorMetricLabel = "error"
-	// APIIDMetricLabel missing godoc
+	// APIIDMetricLabel is an additional label used by ord aggregator for creating CounterVec for Prometheus
 	APIIDMetricLabel = "api_id"
-	// CorrelationIDMetricLabel missing godoc
+	// CorrelationIDMetricLabel is an additional label used by ord aggregator for creating CounterVec for Prometheus
 	CorrelationIDMetricLabel = "x_request_id"
 )
