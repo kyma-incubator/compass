@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221026170340-d110c70ba3e0
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20221026170340-d110c70ba3e0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221028144124-218028ca3a05
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221104122419-0030350dd1f0
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221026170340-d110c70ba3e0
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20221026170340-d110c70ba3e0
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20221104102859-578b70a5e5e5
@@ -78,7 +78,7 @@ require (
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
-	sigs.k8s.io/controller-runtime v0.13.0 // indirect; DO NOT BUMP
+	sigs.k8s.io/controller-runtime v0.13.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
