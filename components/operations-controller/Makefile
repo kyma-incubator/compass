@@ -28,8 +28,12 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 include $(SCRIPTS_DIR)/generic_make_go.mk
 VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
+ifneq ($(strip $(ARTIFACTS)),)
+COVERAGE := -coverprofile=$$ARTIFACTS/filtered.cov; 
+endif
+
 test-local: generate manifests envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./...
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go $(COVERAGE) test ./... 
 
 build-local: generate
 	env go build -o bin/manager cmd/main.go

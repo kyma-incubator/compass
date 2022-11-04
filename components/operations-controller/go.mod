@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/components/operations-controller
 go 1.18
 
 require (
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.2.3
 	github.com/kyma-incubator/compass/components/director v0.0.0-20221028144124-218028ca3a05
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220725083431-c2155c720423
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
