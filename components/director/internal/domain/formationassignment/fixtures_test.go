@@ -228,6 +228,10 @@ func fixFormationAssignmentWithConfigAndStateInput(assignment *model.FormationAs
 }
 
 func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssignmentType, objectID, appID, rtmID, rtmCtxID string) []*model.FormationAssignment {
+	return fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(objectType, objectID, appID, rtmID, rtmCtxID, "assign")
+}
+
+func fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(objectType model.FormationAssignmentType, objectID, appID, rtmID, rtmCtxID string, lastOperation model.FormationOperation) []*model.FormationAssignment {
 	return []*model.FormationAssignment{
 		{
 			ID:                         "ID1",
@@ -237,7 +241,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 			SourceType:                 objectType,
 			Target:                     appID,
 			TargetType:                 model.FormationAssignmentTypeApplication,
-			LastOperation:              "assign",
+			LastOperation:              lastOperation,
 			LastOperationInitiator:     objectID,
 			LastOperationInitiatorType: objectType,
 			State:                      string(model.InitialAssignmentState),
@@ -251,7 +255,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 			SourceType:                 model.FormationAssignmentTypeApplication,
 			Target:                     objectID,
 			TargetType:                 objectType,
-			LastOperation:              "assign",
+			LastOperation:              lastOperation,
 			LastOperationInitiator:     objectID,
 			LastOperationInitiatorType: objectType,
 			State:                      string(model.InitialAssignmentState),
@@ -265,7 +269,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 			SourceType:                 objectType,
 			Target:                     rtmID,
 			TargetType:                 model.FormationAssignmentTypeRuntime,
-			LastOperation:              "assign",
+			LastOperation:              lastOperation,
 			LastOperationInitiator:     objectID,
 			LastOperationInitiatorType: objectType,
 			State:                      string(model.InitialAssignmentState),
@@ -279,7 +283,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 			SourceType:                 model.FormationAssignmentTypeRuntime,
 			Target:                     objectID,
 			TargetType:                 objectType,
-			LastOperation:              "assign",
+			LastOperation:              lastOperation,
 			LastOperationInitiator:     objectID,
 			LastOperationInitiatorType: objectType,
 			State:                      string(model.InitialAssignmentState),
@@ -307,7 +311,7 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 			SourceType:                 model.FormationAssignmentTypeRuntimeContext,
 			Target:                     objectID,
 			TargetType:                 objectType,
-			LastOperation:              "assign",
+			LastOperation:              lastOperation,
 			LastOperationInitiator:     objectID,
 			LastOperationInitiatorType: objectType,
 			State:                      string(model.InitialAssignmentState),
