@@ -29,7 +29,7 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 VERIFY_IGNORE := /vendor\|/automock\|/testdata
 
 ifneq ($(strip $(ARTIFACTS)),)
-COVERAGE := -coverprofile=$(ARTIFACTS)/filtered.cov; 
+COVERAGE := -coverprofile=$(ARTIFACTS)/filtered.cov
 endif
 
 test-local: generate manifests envtest
