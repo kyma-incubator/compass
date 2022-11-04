@@ -69,7 +69,7 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	ClientTimeout     time.Duration `envconfig:"default=60s"`
+	ClientTimeout     time.Duration `envconfig:"default=120s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
 	RetryConfig retry.Config
@@ -87,6 +87,8 @@ type config struct {
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+
+	MetricsConfig ord.MetricsConfig
 }
 
 func main() {
@@ -131,7 +133,7 @@ func main() {
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
 	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, accessStrategyExecutorProviderWithTenant, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor, ordWebhookMapping)
-	err = ordAggregator.SyncORDDocuments(ctx)
+	err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
 	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
 	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")

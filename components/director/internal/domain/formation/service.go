@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 
@@ -320,26 +319,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 }
 
-func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID string, formation *model.Formation) error {
-	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
-	}
-	runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
-		Key:        s.runtimeTypeLabelKey,
-		ObjectID:   runtimeID,
-		ObjectType: model.RuntimeLabelableObject,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, runtimeID)
-	}
-
-	if runtimeType, ok := runtimeTypeLabel.Value.(string); !ok || runtimeType != formationTemplate.RuntimeType {
-		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
-	}
-	return nil
-}
-
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
 	if err != nil {
@@ -613,12 +592,16 @@ func (s *service) RemoveAssignedScenario(ctx context.Context, in model.Automatic
 }
 
 func (s *service) processScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc processScenarioFunc, processingType model.FormationOperation) error {
-	runtimeType, err := s.getFormationTemplateRuntimeType(ctx, in.ScenarioName, in.Tenant)
+	runtimeTypes, err := s.getFormationTemplateRuntimeTypes(ctx, in.ScenarioName, in.Tenant)
 	if err != nil {
 		return err
 	}
 
-	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
+	lblFilters := make([]*labelfilter.LabelFilter, 0, len(runtimeTypes))
+	for _, runtimeType := range runtimeTypes {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
+		lblFilters = append(lblFilters, labelfilter.NewForKeyWithQuery(s.runtimeTypeLabelKey, query))
+	}
 
 	ownedRuntimes, err := s.runtimeRepo.ListOwnedRuntimes(ctx, in.TargetTenantID, lblFilters)
 	if err != nil {
@@ -789,12 +772,16 @@ func (s *service) getMatchingFuncByFormationObjectType(objType graphql.Formation
 }
 
 func (s *service) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {
-	runtimeType, err := s.getFormationTemplateRuntimeType(ctx, asa.ScenarioName, asa.Tenant)
+	runtimeTypes, err := s.getFormationTemplateRuntimeTypes(ctx, asa.ScenarioName, asa.Tenant)
 	if err != nil {
 		return false, err
 	}
 
-	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
+	lblFilters := make([]*labelfilter.LabelFilter, 0, len(runtimeTypes))
+	for _, runtimeType := range runtimeTypes {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
+		lblFilters = append(lblFilters, labelfilter.NewForKeyWithQuery(s.runtimeTypeLabelKey, query))
+	}
 
 	runtimeExists, err := s.runtimeRepo.OwnerExistsByFiltersAndID(ctx, asa.TargetTenantID, runtimeID, lblFilters)
 	if err != nil {
@@ -815,13 +802,16 @@ func (s *service) isASAMatchingRuntime(ctx context.Context, asa *model.Automatic
 }
 
 func (s *service) isASAMatchingRuntimeContext(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeContextID string) (bool, error) {
-	runtimeType, err := s.getFormationTemplateRuntimeType(ctx, asa.ScenarioName, asa.Tenant)
+	runtimeTypes, err := s.getFormationTemplateRuntimeTypes(ctx, asa.ScenarioName, asa.Tenant)
 	if err != nil {
 		return false, err
 	}
 
-	runtimeTypeKey := "runtimeType"
-	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(runtimeTypeKey, fmt.Sprintf("\"%s\"", runtimeType))}
+	lblFilters := make([]*labelfilter.LabelFilter, 0, len(runtimeTypes))
+	for _, runtimeType := range runtimeTypes {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
+		lblFilters = append(lblFilters, labelfilter.NewForKeyWithQuery(s.runtimeTypeLabelKey, query))
+	}
 
 	rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, asa.TargetTenantID, runtimeContextID)
 	if err != nil {
@@ -836,7 +826,7 @@ func (s *service) isASAMatchingRuntimeContext(ctx context.Context, asa *model.Au
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
 		}
-		return false, errors.Wrapf(err, "while getting runtime with ID: %q and label with key: %q and value: %q", rtmCtx.RuntimeID, runtimeTypeKey, runtimeType)
+		return false, errors.Wrapf(err, "while getting runtime with ID: %q and label with key: %q and value: %q", rtmCtx.RuntimeID, s.runtimeTypeLabelKey, runtimeTypes)
 	}
 
 	return true, nil
@@ -1046,20 +1036,51 @@ func (s *service) getFormationByName(ctx context.Context, formationName, tnt str
 	return f, nil
 }
 
-func (s *service) getFormationTemplateRuntimeType(ctx context.Context, scenarioName, tenant string) (string, error) {
+func (s *service) getFormationTemplateRuntimeTypes(ctx context.Context, scenarioName, tenant string) ([]string, error) {
 	log.C(ctx).Debugf("Getting formation with name: %q in tenant: %q", scenarioName, tenant)
 	formation, err := s.formationRepository.GetByName(ctx, scenarioName, tenant)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting formation by name %q", scenarioName)
+		return nil, errors.Wrapf(err, "while getting formation by name %q", scenarioName)
 	}
 
 	log.C(ctx).Debugf("Getting formation template with ID: %q", formation.FormationTemplateID)
 	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
 	if err != nil {
-		return "", errors.Wrapf(err, "while getting formation template by id %q", formation.FormationTemplateID)
+		return nil, errors.Wrapf(err, "while getting formation template by id %q", formation.FormationTemplateID)
 	}
 
-	return formationTemplate.RuntimeType, nil
+	return formationTemplate.RuntimeTypes, nil
+}
+
+func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID string, formation *model.Formation) error {
+	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
+	}
+	runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+		Key:        s.runtimeTypeLabelKey,
+		ObjectID:   runtimeID,
+		ObjectType: model.RuntimeLabelableObject,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, runtimeID)
+	}
+
+	runtimeType, ok := runtimeTypeLabel.Value.(string)
+	if !ok {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("missing runtimeType for formation template %q, allowing only %q", formationTemplate.Name, formationTemplate.RuntimeTypes))
+	}
+	isAllowed := false
+	for _, allowedType := range formationTemplate.RuntimeTypes {
+		if allowedType == runtimeType {
+			isAllowed = true
+			break
+		}
+	}
+	if !isAllowed {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeTypes))
+	}
+	return nil
 }
 
 func (s *service) isValidApplicationType(ctx context.Context, tnt string, applicationID string, formation *model.Formation) error {
