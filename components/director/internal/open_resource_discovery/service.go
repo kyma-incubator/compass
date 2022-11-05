@@ -269,6 +269,7 @@ func (s *Service) processSpecs(ctx context.Context, fetchRequests []*model.Fetch
 				ctx = addFieldToLogger(ctx, "fetch_request_id", fr.ID)
 				log.C(ctx).Infof("Will attempt to execute spec fetch request for spec with id %q and spec entity type %q", fr.ObjectID, fr.ObjectType)
 				data, status := s.fetchReqSvc.FetchSpec(ctx, &fr)
+				log.C(ctx).Infof("Finished executing spec fetch request for spec with id %q and spec entity type %q with result: %s. Adding to result queue...", fr.ObjectID, fr.ObjectType, status)
 				s.addFetchRequestResult(&fetchRequestResults, &fetchRequestResult{
 					fetchRequest: &fr,
 					data:         data,
