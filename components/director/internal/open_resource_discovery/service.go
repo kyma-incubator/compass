@@ -365,7 +365,7 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	frIdxToRemove := make([]int, 0)
+	frIdxToExclude := make([]int, 0)
 	for _, ts := range tombstonesFromDB {
 		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 			return packagesFromDB[i].OrdID == ts.OrdID
@@ -417,7 +417,7 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 
 		for i := range fetchRequests {
 			if equalStrings(&fetchRequests[i].refObjectOrdID, &ts.OrdID) {
-				frIdxToRemove = append(frIdxToRemove, i)
+				frIdxToExclude = append(frIdxToExclude, i)
 			}
 		}
 	}
@@ -425,7 +425,7 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 	finalFetchRequests := make([]*ordFetchRequest, 0)
 	for i := range fetchRequests {
 		shouldExclude := false
-		for _, idx := range frIdxToRemove {
+		for _, idx := range frIdxToExclude {
 			if i == idx {
 				shouldExclude = true
 				break
