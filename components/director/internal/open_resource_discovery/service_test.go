@@ -3289,7 +3289,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 			ordCfg := ord.NewServiceConfig(4, 100)
 			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
-			err := svc.SyncORDDocuments(context.TODO())
+			err := svc.SyncORDDocuments(context.TODO(), ord.MetricsConfig{})
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())

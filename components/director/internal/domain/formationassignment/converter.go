@@ -3,6 +3,8 @@ package formationassignment
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -22,11 +24,17 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 	if in == nil {
 		return nil, nil
 	}
-	marshalledValue, err := json.Marshal(in.Value)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting formation assignment to GraphQL")
+
+	var strValue *string
+	if in.Value == nil {
+		strValue = str.Ptr("")
+	} else {
+		marshalledValue, err := json.Marshal(in.Value)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting formation assignment to GraphQL")
+		}
+		strValue = str.Ptr(string(marshalledValue))
 	}
-	strValue := string(marshalledValue)
 
 	return &graphql.FormationAssignment{
 		ID:         in.ID,
@@ -35,7 +43,7 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 		Target:     in.Target,
 		TargetType: graphql.FormationAssignmentType(in.TargetType),
 		State:      in.State,
-		Value:      &strValue,
+		Value:      strValue,
 	}, nil
 }
 
