@@ -173,7 +173,7 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		time.Sleep(time.Second * 5)
-		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, `{"config": {"key": "value", "key2": {"key": "value2"}}}`, formationID, formationAssignmentID)
+		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, `{"key": "value", "key2": {"key": "value2"}}`, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}

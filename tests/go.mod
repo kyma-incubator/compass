@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221026170340-d110c70ba3e0
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20221026170340-d110c70ba3e0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221103130825-1adf7da0e4b3
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221104122703-36ec52b3a296
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221026170340-d110c70ba3e0
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20221026170340-d110c70ba3e0
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220718091245-0570e3e974e0
@@ -33,7 +33,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
 	github.com/go-logr/logr v0.4.0 // indirect

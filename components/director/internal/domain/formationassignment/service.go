@@ -3,7 +3,6 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -499,6 +498,8 @@ func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPai
 }
 
 func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPair, depth int) error {
+	fa := mappingPair.Assignment.FormationAssignment
+	log.C(ctx).Infof("Processing formation assignment %q for formation %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType, fa.State)
 	assignmentClone := mappingPair.Assignment.Clone()
 	var reverseClone *FormationAssignmentRequestMapping
 	if mappingPair.ReverseAssignment != nil {
@@ -512,10 +513,10 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	if assignmentClone.Request == nil {
 		assignment.State = string(model.ReadyAssignmentState)
+		log.C(ctx).Infof("There is no notification to be sent. Setting state for Assignmene with ID %s to %s", assignment.ID, assignment.State)
 		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
-			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
+			return errors.Wrapf(err, "while updating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
-		log.C(ctx).Infof("Assignment with ID %s was updated with %s state", assignment.ID, assignment.State)
 		return nil
 	}
 

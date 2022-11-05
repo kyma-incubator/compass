@@ -1724,7 +1724,7 @@ func TestFormationAssignments(stdT *testing.T) {
 
 		urlTemplateRuntime := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if and .ReverseAssignment .ReverseAssignment.Value}},\\\"config\\\":{{ .ReverseAssignment.Value }}{{end}},{{if and .Assignment .Assignment.ID}}\\\"formation-assignment-id\\\": \\\"{{ .Assignment.ID }}\\\",{{end}}\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
-		outputTemplateRuntime := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+		outputTemplateRuntime := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
 		urlTemplateApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/configuration/{{.Application.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.RuntimeContext.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\"{{if and .ReverseAssignment .ReverseAssignment.Value}},\\\"config\\\":{{ .ReverseAssignment.Value }}{{end}},\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
@@ -2977,11 +2977,11 @@ func checkRuntimeContextFormationLabels(t *testing.T, ctx context.Context, tenan
 }
 
 func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
-	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-	assignments := assignmentsPage.Data
-	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 	require.Eventually(t, func() bool {
+		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
+		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+		assignments := assignmentsPage.Data
+		require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 		result := true
 		for _, assignment := range assignments {
 			targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
@@ -2999,5 +2999,5 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 			result = result && assertResult
 		}
 		return result
-	}, time.Second*7, time.Second)
+	}, time.Second*8, time.Second*2)
 }
