@@ -29,6 +29,11 @@ type ServiceConfig struct {
 	maxParallelSpecificationProcessors int
 }
 
+type ordFetchRequest struct {
+	*model.FetchRequest
+	refObjectOrdID string
+}
+
 type fetchRequestResult struct {
 	fetchRequest *model.FetchRequest
 	data         *string
@@ -242,15 +247,16 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	if err := s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB); err != nil {
+	fetchRequests := append(apiFetchRequests, eventFetchRequests...)
+	fetchRequests, err = s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
+	if err != nil {
 		return err
 	}
 
-	fetchRequests := append(apiFetchRequests, eventFetchRequests...)
 	return s.processSpecs(ctx, fetchRequests)
 }
 
-func (s *Service) processSpecs(ctx context.Context, fetchRequests []*model.FetchRequest) error {
+func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetchRequest) error {
 	queue := make(chan *model.FetchRequest)
 
 	workers := s.config.maxParallelSpecificationProcessors
@@ -259,7 +265,7 @@ func (s *Service) processSpecs(ctx context.Context, fetchRequests []*model.Fetch
 
 	fetchReqMutex := sync.Mutex{}
 	fetchRequestResults := make([]*fetchRequestResult, 0)
-	log.C(ctx).Infof("Starting %d parallel specification processor workers to process %d fetch requests...", workers, len(fetchRequests))
+	log.C(ctx).Infof("Starting %d parallel specification processor workers to process %d fetch requests...", workers, len(ordFetchRequests))
 	for i := 0; i < workers; i++ {
 		go func() {
 			defer wg.Done()
@@ -279,8 +285,8 @@ func (s *Service) processSpecs(ctx context.Context, fetchRequests []*model.Fetch
 		}()
 	}
 
-	for _, fetchRequest := range fetchRequests {
-		queue <- fetchRequest
+	for _, ordFetchRequest := range ordFetchRequests {
+		queue <- ordFetchRequest.FetchRequest
 	}
 	close(queue)
 	wg.Wait()
@@ -350,60 +356,88 @@ func (s *Service) processFetchRequestResults(ctx context.Context, results []*fet
 	return tx.Commit()
 }
 
-func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone) error {
+func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	frIdxToRemove := make([]int, 0)
 	for _, ts := range tombstonesFromDB {
 		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 			return packagesFromDB[i].OrdID == ts.OrdID
 		}); found {
 			if err := s.packageSvc.Delete(ctx, packagesFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
 			return equalStrings(apisFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.apiSvc.Delete(ctx, apisFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
 			return equalStrings(eventsFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.eventSvc.Delete(ctx, eventsFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 			return equalStrings(bundlesFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 			return vendorsFromDB[i].OrdID == ts.OrdID
 		}); found {
 			if err := s.vendorSvc.Delete(ctx, vendorsFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 			return productsFromDB[i].OrdID == ts.OrdID
 		}); found {
 			if err := s.productSvc.Delete(ctx, productsFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		if i, found := searchInSlice(len(fetchRequests), func(i int) bool {
+			return equalStrings(&fetchRequests[i].refObjectOrdID, &ts.OrdID)
+		}); found {
+			fetchRequests = append(fetchRequests[:i], fetchRequests[i+1:]...)
+		}
+
+		for i := range fetchRequests {
+			if equalStrings(&fetchRequests[i].refObjectOrdID, &ts.OrdID) {
+				frIdxToRemove = append(frIdxToRemove, i)
 			}
 		}
 	}
-	return tx.Commit()
+
+	finalFetchRequests := make([]*ordFetchRequest, 0)
+	for i := range fetchRequests {
+		shouldExclude := false
+		for _, idx := range frIdxToRemove {
+			if i == idx {
+				shouldExclude = true
+				break
+			}
+		}
+
+		if !shouldExclude {
+			finalFetchRequests = append(finalFetchRequests, fetchRequests[i])
+		}
+	}
+
+	return finalFetchRequests, tx.Commit()
 }
 
 func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
@@ -603,20 +637,26 @@ func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFro
 	return tx.Commit()
 }
 
-func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, []*model.FetchRequest, error) {
+func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, []*ordFetchRequest, error) {
 	apisFromDB, err := s.listAPIsInTx(ctx, appID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	fetchRequests := make([]*model.FetchRequest, 0)
+	fetchRequests := make([]*ordFetchRequest, 0)
 	for _, api := range apis {
 		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
 		apiFetchRequests, err := s.resyncAPIInTx(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api, apiHash)
 		if err != nil {
 			return nil, nil, err
 		}
-		fetchRequests = append(fetchRequests, apiFetchRequests...)
+
+		for i := range apiFetchRequests {
+			fetchRequests = append(fetchRequests, &ordFetchRequest{
+				FetchRequest:   apiFetchRequests[i],
+				refObjectOrdID: *api.OrdID,
+			})
+		}
 	}
 
 	apisFromDB, err = s.listAPIsInTx(ctx, appID)
@@ -657,20 +697,27 @@ func (s *Service) resyncAPIInTx(ctx context.Context, appID string, apisFromDB []
 	return fetchRequests, tx.Commit()
 }
 
-func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, []*model.FetchRequest, error) {
+func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, []*ordFetchRequest, error) {
 	eventsFromDB, err := s.listEventsInTx(ctx, appID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	fetchRequests := make([]*model.FetchRequest, 0)
+	fetchRequests := make([]*ordFetchRequest, 0)
 	for _, event := range events {
 		eventHash := resourceHashes[str.PtrStrToStr(event.OrdID)]
 		eventFetchRequests, err := s.resyncEventInTx(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event, eventHash)
 		if err != nil {
 			return nil, nil, err
 		}
-		fetchRequests = append(fetchRequests, eventFetchRequests...)
+
+		for i := range eventFetchRequests {
+			fetchRequests = append(fetchRequests, &ordFetchRequest{
+				FetchRequest:   eventFetchRequests[i],
+				refObjectOrdID: *event.OrdID,
+			})
+		}
+
 	}
 
 	eventsFromDB, err = s.listEventsInTx(ctx, appID)
