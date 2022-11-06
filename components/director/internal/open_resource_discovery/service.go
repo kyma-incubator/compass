@@ -726,7 +726,6 @@ func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB
 				refObjectOrdID: *event.OrdID,
 			})
 		}
-
 	}
 
 	eventsFromDB, err = s.listEventsInTx(ctx, appID)
