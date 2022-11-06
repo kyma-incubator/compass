@@ -269,12 +269,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
 		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
-			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
 		expectedSpecToUpdate := testSpec
 		expectedSpecToUpdate.Data = &testSpecData
 		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
-			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
 		return specSvc
 	}
@@ -306,12 +306,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, event2ID).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
 		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
-			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
 		expectedSpecToUpdate := testSpec
 		expectedSpecToUpdate.Data = &testSpecData
 		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
-			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
 		return specSvc
 	}
@@ -333,11 +333,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(fixEvent2Specs(), nil).Once()
 		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
-		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).Times(4)
+		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).Times(3)
 
 		expectedSpecToUpdate := testSpec
 		expectedSpecToUpdate.Data = &testSpecData
-		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).Times(4)
+		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).Times(3)
 
 		return specSvc
 	}
@@ -374,12 +374,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulFetchRequestFetchAndUpdate := func() *automock.FetchRequestService {
 		fetchReqSvc := &automock.FetchRequestService{}
 		fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
-			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
 		fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
 			return actual.Status.Condition == model.FetchRequestStatusConditionSucceeded
 		})).Return(nil).
-			Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
 		return fetchReqSvc
 	}
@@ -1921,14 +1921,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
 				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
-					Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()))
+					Times(len(fixAPI1SpecInputs()))
 				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
 					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
 					return actual.Status.Condition == model.FetchRequestStatusConditionFailed
 				})).Return(nil).
-					Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()))
+					Times(len(fixAPI1SpecInputs()))
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
 					return actual.Status.Condition == model.FetchRequestStatusConditionSucceeded
 				})).Return(nil).
@@ -2415,12 +2415,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
 				specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
-					Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()))
+					Times(len(fixAPI1SpecInputs()))
 
 				expectedSpecToUpdate := testSpec
 				expectedSpecToUpdate.Data = &testSpecData
 				specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
-					Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()))
+					Times(len(fixAPI1SpecInputs()))
 
 				return specSvc
 			},
@@ -2434,14 +2434,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			fetchReqFn: func() *automock.FetchRequestService {
 				fetchReqSvc := &automock.FetchRequestService{}
 				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionSucceeded}).
-					Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()))
+					Times(len(fixAPI1SpecInputs()))
 				fetchReqSvc.On("FetchSpec", txtest.CtxWithDBMatcher(), mock.Anything).Return(&testSpecData, &model.FetchRequestStatus{Condition: model.FetchRequestStatusConditionFailed}).
 					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
 
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
 					return actual.Status.Condition == model.FetchRequestStatusConditionSucceeded
 				})).Return(nil).
-					Times(len(fixAPI1SpecInputs()) + len(fixAPI2SpecInputs()))
+					Times(len(fixAPI1SpecInputs()))
 				fetchReqSvc.On("Update", txtest.CtxWithDBMatcher(), mock.MatchedBy(func(actual *model.FetchRequest) bool {
 					return actual.Status.Condition == model.FetchRequestStatusConditionFailed
 				})).Return(nil).
