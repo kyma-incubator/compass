@@ -1,3 +1,5 @@
+ALTER TYPE webhook_mode ADD VALUE IF NOT EXISTS 'ASYNC_CALLBACK';
+
 BEGIN;
 
 ALTER TABLE formation_assignments
@@ -18,5 +20,3 @@ ALTER TABLE formation_assignments
 UPDATE formation_assignments SET last_operation = 'assign', last_operation_initiator = source, last_operation_initiator_type = source_type;
 
 COMMIT;
-
-ALTER TYPE webhook_mode ADD VALUE IF NOT EXISTS 'ASYNC_CALLBACK';
