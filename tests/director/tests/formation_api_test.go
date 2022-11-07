@@ -1029,7 +1029,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		//list assignments - expect 2
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app1.ID:          {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
-			runtimeContextID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}},
+			runtimeContextID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
 
@@ -1049,15 +1049,15 @@ func TestFormationNotifications(stdT *testing.T) {
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
 				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
-				app2.ID:          fixtures.AssignmentState{State: "READY", Config: str.Ptr("")},
+				app2.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 			runtimeContextID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")},
+				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 			app2.ID: {
 				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
-				app1.ID:          fixtures.AssignmentState{State: "READY", Config: str.Ptr("")},
+				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 6, expectedAssignments)
@@ -1087,7 +1087,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		//list assignments - expect 2
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app2.ID:          {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
-			runtimeContextID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}},
+			runtimeContextID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
 
@@ -1328,7 +1328,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 
 	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 		app1.ID: {
-			app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")},
+			app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 		},
 		app2.ID: {
 			app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
@@ -1646,7 +1646,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 
 		//list assignments - expect 2
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app.ID:   {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}},
+			app.ID:   {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 			rtCtx.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 		}
 
@@ -1687,7 +1687,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 
 		//list assignments - expect 2
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app.ID:   {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}},
+			app.ID:   {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 			rtCtx.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 		}
 
@@ -2303,7 +2303,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 
 		// target:source:state
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}},
+			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
@@ -2324,7 +2324,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}},
+			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
@@ -2605,7 +2605,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 
 		// target:source:state
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}}, // Should expect CONFIG_PENDING state when reverse notifications are implemented
+			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: nil}}, // Should expect CONFIG_PENDING state when reverse notifications are implemented
 			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 		}
 
