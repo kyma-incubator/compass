@@ -5152,7 +5152,7 @@ type Application {
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
 	healthCheckURL: String
-	bundles(first: Int = 200, after: PageCursor): BundlePage
+	bundles(first: Int = 1, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
