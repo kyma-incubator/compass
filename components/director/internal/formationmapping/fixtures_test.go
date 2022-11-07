@@ -157,7 +157,3 @@ func fixUnusedAppTemplateRepo() *automock.ApplicationTemplateRepository {
 func fixUnusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
 }
-
-func fixUnusedTenantRepo() *automock.TenantRepository {
-	return &automock.TenantRepository{}
-}

@@ -112,8 +112,8 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
 
-	log.C(ctx).Infof("Processing formation assignment asynchronous status update for %q operation...", model.UnassignFormation)
 	if fa.LastOperation == model.UnassignFormation {
+		log.C(ctx).Infof("Processing formation assignment asynchronous status update for %q operation...", model.UnassignFormation)
 		err = h.processFormationAssignmentAsynchronousUnassign(ctx, fa, reqBody)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("An error occurred while processing asynchronously formation assignment for %q operation", model.UnassignFormation)

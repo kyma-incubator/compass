@@ -32,19 +32,12 @@ import (
 )
 
 type RequestBody struct {
-	State         ConfigurationState `json:"state"`
-	Configuration json.RawMessage    `json:"configuration"`
-	Error         string             `json:"error"`
+	State         string          `json:"state"`
+	Configuration json.RawMessage `json:"configuration"`
+	Error         string          `json:"error"`
 }
 
-type ConfigurationState string
-
 const (
-	ReadyConfigurationState         ConfigurationState = "READY"
-	CreateErrorConfigurationState   ConfigurationState = "CREATE_ERROR"
-	DeleteErrorConfigurationState   ConfigurationState = "DELETE_ERROR"
-	ConfigPendingConfigurationState ConfigurationState = "CONFIG_PENDING"
-
 	formationIDPathParam           = "ucl-formation-id"
 	formationAssignmentIDPathParam = "ucl-assignment-id"
 )
@@ -76,8 +69,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		appName := "testAsyncApp"
 		appType := "async-app-type-1"
 		t.Logf("Register application with name: %q", appName)
-		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, parentTenantID)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, parentTenantID, &app)
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, subaccountID)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subaccountID, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
@@ -458,8 +451,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		appName := "testAsyncApp"
 		appType := "async-app-type-1"
 		t.Logf("Register application with name: %q", appName)
-		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, parentTenantID)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, parentTenantID, &app)
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, subaccountID)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subaccountID, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
@@ -523,7 +516,7 @@ func getHTTPCertClientWithCustomSubject(t *testing.T, ctx context.Context, conf 
 
 func executeStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, formationID, formationAssignmentID string, expectedStatusCode int) {
 	reqBody := RequestBody{
-		State:         ReadyConfigurationState,
+		State:         "READY",
 		Configuration: json.RawMessage(testConfig),
 	}
 	marshalBody, err := json.Marshal(reqBody)

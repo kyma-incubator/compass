@@ -23,7 +23,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 	emptyCtx := context.Background()
 	internalTntID := "testInternalID"
 	externalTntID := "testExternalID"
-	parentTntID := "parentTenantID"
 	faSourceID := "testSourceID"
 	faTargetID := "testTargetID"
 	testFormationID := "testFormationID"
@@ -40,24 +39,16 @@ func TestAuthenticator_Handler(t *testing.T) {
 		fm.FormationAssignmentIDParam: testFormationAssignmentID,
 	}
 
-	consumerTenant := &model.BusinessTenantMapping{
-		ID:             internalTntID,
-		ExternalTenant: externalTntID,
-		Parent:         parentTntID,
-	}
-
-	consumerTenantWithEmptyParent := &model.BusinessTenantMapping{
-		ID:             internalTntID,
-		ExternalTenant: externalTntID,
-	}
-
 	faWithSourceAppAndTargetRuntime := fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime)
 	faWithSourceRuntimeAndTargetApp := fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication)
 	faWithSourceAppAndTargetRuntimeContext := fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntimeContext)
 
 	intSysApp := &model.Application{
+		IntegrationSystemID: &faTargetID,
+	}
+
+	appWithAppTemplate := &model.Application{
 		ApplicationTemplateID: &appTemplateID,
-		IntegrationSystemID:   &faTargetID,
 	}
 
 	selfRegDistinguishLabelKey := "selfRegDistinguishLabelKey"
@@ -89,7 +80,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 		runtimeRepoFn              func() *automock.RuntimeRepository
 		runtimeContextRepoFn       func() *automock.RuntimeContextRepository
 		appRepoFn                  func() *automock.ApplicationRepository
-		tenantRepoFn               func() *automock.TenantRepository
 		appTemplateRepoFn          func() *automock.ApplicationTemplateRepository
 		labelRepoFn                func() *automock.LabelRepository
 		selfRegDistinguishLabelKey string
@@ -108,7 +98,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn:            fixUnusedAppRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -126,7 +115,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn:            fixUnusedAppRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -146,7 +134,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn:            fixUnusedAppRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -164,7 +151,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn:            fixUnusedAppRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -181,7 +167,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn:            fixUnusedAppRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -203,7 +188,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn:            fixUnusedAppRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -225,7 +209,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn:            fixUnusedAppRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -248,7 +231,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn:        fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn:            fixUnusedAppRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -272,44 +254,13 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(nil, testErr)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(nil, testErr)
 				return appRepo
 			},
-			tenantRepoFn:      fixUnusedTenantRepo,
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Application)
-				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
-			},
-			hasURLVars:         true,
-			expectedStatusCode: http.StatusInternalServerError,
-			expectedErrOutput:  "An unexpected error occurred while processing the request",
-		},
-		{
-			name:       "Authorization fail: error when getting application parent tenant",
-			transactFn: txGen.ThatDoesntExpectCommit,
-			faServiceFn: func() *automock.FormationAssignmentService {
-				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
-				return faSvc
-			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn: func() *automock.ApplicationRepository {
-				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(&model.Application{}, nil)
-				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(nil, testErr).Once()
-				return tenantRepo
-			},
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
-			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -328,14 +279,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(&model.Application{}, nil)
-				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), parentTntID, faTargetID).Return(false, testErr)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, testErr)
 				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenant, nil).Once()
-				return tenantRepo
 			},
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
@@ -359,13 +305,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(&model.Application{}, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenantWithEmptyParent, nil).Once()
-				return tenantRepo
 			},
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
@@ -389,13 +331,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(intSysApp, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenantWithEmptyParent, nil).Once()
-				return tenantRepo
 			},
 			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -423,13 +361,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(intSysApp, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenantWithEmptyParent, nil).Once()
-				return tenantRepo
 			},
 			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -457,13 +391,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(intSysApp, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenantWithEmptyParent, nil).Once()
-				return tenantRepo
 			},
 			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -495,13 +425,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(intSysApp, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenantWithEmptyParent, nil).Once()
-				return tenantRepo
 			},
 			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -535,13 +461,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(intSysApp, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenantWithEmptyParent, nil).Once()
-				return tenantRepo
 			},
 			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -564,7 +486,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
-			name:       "Authorization fail: when caller has NOT owner access to the FA with target type app that is made through subscription",
+			name:       "Authorization fail: when caller has NOT owner access to the target FA with type app that is made through subscription",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
@@ -575,13 +497,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(intSysApp, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return appRepo
-			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenantWithEmptyParent, nil).Once()
-				return tenantRepo
 			},
 			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -604,8 +522,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Authorization success: when the int system caller has owner access to the formation assignment with target type application",
-			transactFn: txGen.ThatDoesntExpectCommit,
+			name:       "Authorization success: when the int system caller has owner access to the target formation assignment with type application",
+			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
@@ -615,10 +533,9 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(intSysApp, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
 				return appRepo
 			},
-			tenantRepoFn:      fixUnusedTenantRepo,
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
@@ -630,8 +547,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Authorization success: when the caller has owner access to the formation assignment with target type application",
-			transactFn: txGen.ThatDoesntExpectCommit,
+			name:       "Authorization fail: when the int system caller has owner access to the target FA with type application but the transaction fail",
+			transactFn: txGen.ThatFailsOnCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
@@ -641,14 +558,34 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(&model.Application{}, nil)
-				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), parentTntID, faTargetID).Return(true, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
 				return appRepo
 			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenant, nil).Once()
-				return tenantRepo
+			appTemplateRepoFn: fixUnusedAppTemplateRepo,
+			labelRepoFn:       fixUnusedLabelRepo,
+			contextFn: func() context.Context {
+				c := fixGetConsumer(faTargetID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization success: when the caller has owner access to the formation assignment target with type application",
+			transactFn: txGen.ThatSucceeds,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				return faSvc
+			},
+			runtimeRepoFn:        fixUnusedRuntimeRepo,
+			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
+			appRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(true, nil)
+				return appRepo
 			},
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
@@ -661,8 +598,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Authorization success: when the caller has owner access to the FA with target type app that is made through subscription",
-			transactFn: txGen.ThatDoesntExpectCommit,
+			name:       "Authorization fail: when the caller has owner access to the target of the FA with type application but the transaction fail",
+			transactFn: txGen.ThatFailsOnCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
@@ -672,13 +609,35 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(intSysApp, nil)
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(true, nil)
 				return appRepo
 			},
-			tenantRepoFn: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", contextThatHasTenant(internalTntID), internalTntID).Return(consumerTenantWithEmptyParent, nil).Once()
-				return tenantRepo
+			appTemplateRepoFn: fixUnusedAppTemplateRepo,
+			labelRepoFn:       fixUnusedLabelRepo,
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization success: when the caller has owner access to the FA target's parent for type app that is made through subscription",
+			transactFn: txGen.ThatSucceeds,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				return faSvc
+			},
+			runtimeRepoFn:        fixUnusedRuntimeRepo,
+			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
+			appRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
+				return appRepo
 			},
 			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
@@ -700,6 +659,42 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 			expectedErrOutput:  "",
 		},
+		{
+			name:       "Authz fail: when caller has owner access to FA target's parent for type app that is made through subscription but transact fail",
+			transactFn: txGen.ThatFailsOnCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				return faSvc
+			},
+			runtimeRepoFn:        fixUnusedRuntimeRepo,
+			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
+			appRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
+				return appRepo
+			},
+			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Exists", contextThatHasTenant(internalTntID), appTemplateID).Return(true, nil)
+				return appTemplateRepo
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				lblRepo := &automock.LabelRepository{}
+				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLbls, nil)
+				return lblRepo
+			},
+			selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
+			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
 		// Runtime authorization checks
 		{
 			name:       "Authorization fail: error when runtime owner existence check fail",
@@ -718,7 +713,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appRepoFn:            fixUnusedAppRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -744,7 +738,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appRepoFn:            fixUnusedAppRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -754,8 +747,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Authorization success: when the caller has owner access to the formation assignment with target type runtime",
-			transactFn: txGen.ThatDoesntExpectCommit,
+			name:       "Authorization success: when the caller has owner access to the target of the formation assignment with type runtime",
+			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil)
@@ -770,7 +763,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appRepoFn:            fixUnusedAppRepo,
 			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
 			labelRepoFn:          fixUnusedLabelRepo,
-			tenantRepoFn:         fixUnusedTenantRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -778,6 +770,31 @@ func TestAuthenticator_Handler(t *testing.T) {
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
 			expectedErrOutput:  "OK",
+		},
+		{
+			name:       "Authorization fail: when the caller has owner access to the target of the FA with type runtime but transaction fail",
+			transactFn: txGen.ThatFailsOnCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil)
+				return faSvc
+			},
+			runtimeRepoFn: func() *automock.RuntimeRepository {
+				rtmRepo := &automock.RuntimeRepository{}
+				rtmRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(true, nil)
+				return rtmRepo
+			},
+			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
+			appRepoFn:            fixUnusedAppRepo,
+			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
+			labelRepoFn:          fixUnusedLabelRepo,
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		// Runtime context authorization checks
 		{
@@ -791,13 +808,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 			runtimeRepoFn: fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				rtmCtxRepo := &automock.RuntimeContextRepository{}
-				rtmCtxRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(nil, testErr)
+				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(nil, testErr)
 				return rtmCtxRepo
 			},
 			appRepoFn:         fixUnusedAppRepo,
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
-			tenantRepoFn:      fixUnusedTenantRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -821,13 +837,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			runtimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				rtmCtxRepo := &automock.RuntimeContextRepository{}
-				rtmCtxRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(rtmContext, nil).Once()
+				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(rtmContext, nil).Once()
 				return rtmCtxRepo
 			},
 			appRepoFn:         fixUnusedAppRepo,
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
-			tenantRepoFn:      fixUnusedTenantRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -851,13 +866,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			runtimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				rtmCtxRepo := &automock.RuntimeContextRepository{}
-				rtmCtxRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(rtmContext, nil)
+				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(rtmContext, nil)
 				return rtmCtxRepo
 			},
 			appRepoFn:         fixUnusedAppRepo,
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
-			tenantRepoFn:      fixUnusedTenantRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -867,8 +881,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Authorization success: when caller has owner access to the formation assignment with target type rtm context",
-			transactFn: txGen.ThatDoesntExpectCommit,
+			name:       "Authorization success: when caller has owner access to the target of the formation assignment with type rtm context",
+			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
@@ -881,13 +895,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			runtimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				rtmCtxRepo := &automock.RuntimeContextRepository{}
-				rtmCtxRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), faTargetID).Return(rtmContext, nil)
+				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(rtmContext, nil)
 				return rtmCtxRepo
 			},
 			appRepoFn:         fixUnusedAppRepo,
 			appTemplateRepoFn: fixUnusedAppTemplateRepo,
 			labelRepoFn:       fixUnusedLabelRepo,
-			tenantRepoFn:      fixUnusedTenantRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -895,6 +908,35 @@ func TestAuthenticator_Handler(t *testing.T) {
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
 			expectedErrOutput:  "",
+		},
+		{
+			name:       "Authorization fail: when caller has owner access to the target of the FA with type rtm context but transaction fail",
+			transactFn: txGen.ThatFailsOnCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
+				return faSvc
+			},
+			runtimeRepoFn: func() *automock.RuntimeRepository {
+				rtmRepo := &automock.RuntimeRepository{}
+				rtmRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, runtimeID).Return(true, nil)
+				return rtmRepo
+			},
+			runtimeContextRepoFn: func() *automock.RuntimeContextRepository {
+				rtmCtxRepo := &automock.RuntimeContextRepository{}
+				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(rtmContext, nil)
+				return rtmCtxRepo
+			},
+			appRepoFn:         fixUnusedAppRepo,
+			appTemplateRepoFn: fixUnusedAppTemplateRepo,
+			labelRepoFn:       fixUnusedLabelRepo,
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 	}
 
@@ -907,12 +949,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appRepo := tCase.appRepoFn()
 			appTemplateRepo := tCase.appTemplateRepoFn()
 			labelRepo := tCase.labelRepoFn()
-			tenantRepo := tCase.tenantRepoFn()
 
-			defer mock.AssertExpectationsForObjects(t, persist, transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, tenantRepo)
+			defer mock.AssertExpectationsForObjects(t, persist, transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, tenantRepo, appTemplateRepo, labelRepo, tCase.selfRegDistinguishLabelKey, tCase.consumerSubaccountLabelKey)
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, tCase.selfRegDistinguishLabelKey, tCase.consumerSubaccountLabelKey)
 			fmAuthMiddleware := fmAuthenticator.Handler()
 			rw := httptest.NewRecorder()
 
