@@ -127,6 +127,28 @@ func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formatio
 	return r.conv.FromEntity(&formationAssignmentEnt), nil
 }
 
+// GetBySourceAndTarget retrieves formation assignment by source and target
+func (r *repository) GetBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
+	var formationAssignmentEnt Entity
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("formation_id", formationID),
+		repo.NewEqualCondition("source", sourceID),
+		repo.NewEqualCondition("target", targetID),
+	}
+
+	if err := r.getter.Get(ctx, resource.FormationAssignment, tenantID, conditions, repo.NoOrderBy, &formationAssignmentEnt); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&formationAssignmentEnt), nil
+}
+
+// GetReverseBySourceAndTarget retrieves reverse formation assignment by source and target
+func (r *repository) GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
+	return r.GetBySourceAndTarget(ctx, tenantID, formationID, targetID, sourceID)
+}
+
 // List queries for all Formation Assignment sorted by ID and paginated by the pageSize and cursor parameters
 func (r *repository) List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error) {
 	var entityCollection EntityCollection

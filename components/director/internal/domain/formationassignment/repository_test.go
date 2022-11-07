@@ -168,6 +168,74 @@ func TestRepository_GetForFormation(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_GetBySourceAndTarget(t *testing.T) {
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Formation Assignment by Source and Target",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, last_operation, last_operation_initiator, last_operation_initiator_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND source = $3 AND target = $4`),
+				Args:     []driver.Value{TestTenantID, TestFormationID, TestSource, TestTarget},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, "assign", TestSource, TestSourceType, TestState, TestConfigValueStr),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		ExpectedModelEntity:       faModel,
+		ExpectedDBEntity:          faEntity,
+		MethodArgs:                []interface{}{TestTenantID, TestFormationID, TestSource, TestTarget},
+		MethodName:                "GetBySourceAndTarget",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_GetReverseBySourceAndTarget(t *testing.T) {
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Reverse Formation Assignment by Source and Target",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, last_operation, last_operation_initiator, last_operation_initiator_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND source = $3 AND target = $4`),
+				Args:     []driver.Value{TestTenantID, TestFormationID, TestTarget, TestSource},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, "assign", TestSource, TestSourceType, TestState, TestConfigValueStr),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{
+						sqlmock.NewRows(fixColumns),
+					}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		ExpectedModelEntity:       faModel,
+		ExpectedDBEntity:          faEntity,
+		MethodArgs:                []interface{}{TestTenantID, TestFormationID, TestSource, TestTarget},
+		MethodName:                "GetReverseBySourceAndTarget",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_List(t *testing.T) {
 	suite := testdb.RepoListPageableTestSuite{
 		Name:       "List Formations Assignments",

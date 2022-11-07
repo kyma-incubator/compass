@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -25,6 +26,7 @@ type FormationAssignmentRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
+	GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error)
@@ -111,11 +113,6 @@ type service struct {
 	runtimeContextRepo           runtimeContextRepository
 	formationAssignmentConverter formationAssignmentConverter
 	notificationService          notificationService
-}
-
-func (s *service) ProcessFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair) error {
-	//TODO implement me
-	panic("implement me")
 }
 
 // NewService creates a FormationTemplate service
@@ -221,6 +218,23 @@ func (s *service) GetForFormation(ctx context.Context, id, formationID string) (
 	}
 
 	return fa, nil
+}
+
+// GetReverseBySourceAndTarget retrieves the Formation Assignment with the provided `id` associated with Formation with id `formationID`
+func (s *service) GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Getting reverse formation assignment for formation ID: %q and source: %q and target: %q", formationID, sourceID, targetID)
+
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	reverseFA, err := s.repo.GetReverseBySourceAndTarget(ctx, tenantID, formationID, sourceID, targetID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting reverse formation assignment for formation ID: %q and source: %q and target: %q", formationID, sourceID, targetID)
+	}
+
+	return reverseFA, nil
 }
 
 // List pagination lists Formation Assignment based on `pageSize` and `cursor`

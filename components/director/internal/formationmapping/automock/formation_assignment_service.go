@@ -56,6 +56,29 @@ func (_m *FormationAssignmentService) GetGlobalByIDAndFormationID(ctx context.Co
 	return r0, r1
 }
 
+// GetReverseBySourceAndTarget provides a mock function with given fields: ctx, formationID, sourceID, targetID
+func (_m *FormationAssignmentService) GetReverseBySourceAndTarget(ctx context.Context, formationID string, sourceID string, targetID string) (*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, formationID, sourceID, targetID)
+
+	var r0 *model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.FormationAssignment); ok {
+		r0 = rf(ctx, formationID, sourceID, targetID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, formationID, sourceID, targetID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListFormationAssignmentsForObjectID provides a mock function with given fields: ctx, formationID, objectID
 func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx context.Context, formationID string, objectID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, formationID, objectID)

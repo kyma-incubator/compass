@@ -61,6 +61,7 @@ func NewFormationMappingHandler(transact persistence.Transactioner, faConverter 
 func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
 	var reqBody RequestBody
 	err := decodeJSONBody(w, r, &reqBody)
@@ -71,7 +72,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 			respondWithError(ctx, w, mr.status, mr)
 		} else {
 			log.C(ctx).Error(err.Error())
-			respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		}
 		return
 	}
@@ -96,7 +97,8 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	tx, err := h.transact.Begin()
 	if err != nil {
 		log.C(ctx).WithError(err).Error("unable to establish connection with database")
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
@@ -104,7 +106,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	fa, err := h.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
 		log.C(ctx).Error(err)
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("while getting formation assignment with ID: %q and formation ID: %q globally", formationAssignmentID, formationID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
@@ -115,9 +117,16 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		err = h.processFormationAssignmentAsynchronousUnassign(ctx, fa, reqBody)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("An error occurred while processing asynchronously formation assignment for %q operation", model.UnassignFormation)
-			respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
+
+		if err = tx.Commit(); err != nil {
+			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+
 		log.C(ctx).Infof("The formation assignment with ID: %q was successfully processed asynchronously for %q operation", formationAssignmentID, model.UnassignFormation)
 		httputils.Respond(w, http.StatusOK)
 		return
@@ -125,7 +134,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	if reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %s operation", reqBody.State, model.AssignFormation)
-		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("An invalid state: %q is provided for %s operation. X-Request-Id: %s", reqBody.State, model.AssignFormation, correlationID))
+		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", reqBody.State, model.AssignFormation, correlationID))
 		return
 	}
 
@@ -133,7 +142,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		err = h.faService.SetAssignmentToErrorState(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, formationAssignmentID)
-			respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
 	}
@@ -147,11 +156,16 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	err = h.faService.Update(ctx, formationAssignmentID, h.faConverter.ToInput(fa))
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q to state: %q", formationAssignmentID, formationID, reqBody.State)
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
 	if len(reqBody.Configuration) == 0 { // do not generate formation assignment notifications when configuration is not provided
+		if err = tx.Commit(); err != nil {
+			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		}
+
 		log.C(ctx).Infof("The formation assignment with ID: %q and formation ID: %q was successfully updated with state: %q", formationAssignmentID, formationID, reqBody.State)
 		httputils.Respond(w, http.StatusOK)
 		return
@@ -161,21 +175,22 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	notificationReq, err := h.faNotificationService.GenerateNotification(ctx, fa)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
-	reverseFA := fa.Clone()
-	reverseFA.Source = fa.Target
-	reverseFA.SourceType = fa.TargetType
-	reverseFA.Target = fa.Source
-	reverseFA.TargetType = fa.SourceType
+	reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting reverse formation assignment by source: %q and target: %q", fa.Source, fa.Target)
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
 
 	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q about last initiator ID: %q and type: %q", fa.ID, fa.FormationID, fa.LastOperationInitiator, fa.LastOperationInitiatorType)
 	reverseNotificationReq, err := h.faNotificationService.GenerateNotification(ctx, reverseFA)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
@@ -198,15 +213,16 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while processing formation assignment pairs and their notifications")
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
-		respondWithError(ctx, w, http.StatusInternalServerError, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 	}
 
+	log.C(ctx).Info("The formation assignment notifications are successfully processed")
 	httputils.Respond(w, http.StatusOK)
 }
 

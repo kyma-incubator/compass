@@ -14,6 +14,7 @@ import (
 )
 
 type formationAssignmentNotificationService struct {
+	formationAssignmentRepo       FormationAssignmentRepository
 	applicationRepository         applicationRepository
 	applicationTemplateRepository applicationTemplateRepository
 	runtimeRepo                   runtimeRepository
@@ -24,8 +25,9 @@ type formationAssignmentNotificationService struct {
 }
 
 // NewFormationAssignmentNotificationService creates formation assignment notifications service
-func NewFormationAssignmentNotificationService(applicationRepo applicationRepository, applicationTemplateRepository applicationTemplateRepository, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, labelRepository labelRepository, webhookRepository webhookRepository, webhookConverter webhookConverter) *formationAssignmentNotificationService {
+func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, applicationRepo applicationRepository, applicationTemplateRepository applicationTemplateRepository, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, labelRepository labelRepository, webhookRepository webhookRepository, webhookConverter webhookConverter) *formationAssignmentNotificationService {
 	return &formationAssignmentNotificationService{
+		formationAssignmentRepo:       formationAssignmentRepo,
 		applicationRepository:         applicationRepo,
 		applicationTemplateRepository: applicationTemplateRepository,
 		runtimeRepo:                   runtimeRepo,
@@ -81,6 +83,12 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
+		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+		if err != nil {
+			log.C(ctx).Error(err)
+			return nil, err
+		}
+
 		whInput := &webhook.ApplicationTenantMappingInput{
 			Operation:                 model.AssignFormation,
 			FormationID:               fa.FormationID,
@@ -89,7 +97,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			TargetApplicationTemplate: appTemplateWithLabels,
 			TargetApplication:         appWithLabels,
 			Assignment:                convertFormationAssignmentFromModel(fa),
-			ReverseAssignment:         convertFormationAssignmentFromModel(buildReverseFormationAssignment(fa)),
+			ReverseAssignment:         convertFormationAssignmentFromModel(reverseFA),
 		}
 
 		notificationReq, err := fan.createWebhookRequest(ctx, appWebhook, whInput)
@@ -115,6 +123,12 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
+		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+		if err != nil {
+			log.C(ctx).Error(err)
+			return nil, err
+		}
+
 		whInput := &webhook.FormationConfigurationChangeInput{
 			Operation:           model.AssignFormation,
 			FormationID:         fa.FormationID,
@@ -123,7 +137,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			Runtime:             runtimeWithLabels,
 			RuntimeContext:      runtimeContextWithLabels,
 			Assignment:          convertFormationAssignmentFromModel(fa),
-			ReverseAssignment:   convertFormationAssignmentFromModel(buildReverseFormationAssignment(fa)),
+			ReverseAssignment:   convertFormationAssignmentFromModel(reverseFA),
 		}
 
 		notificationReq, err := fan.createWebhookRequest(ctx, appWebhook, whInput)
@@ -156,6 +170,12 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
+		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+		if err != nil {
+			log.C(ctx).Error(err)
+			return nil, err
+		}
+
 		whInput := &webhook.FormationConfigurationChangeInput{
 			Operation:           model.AssignFormation,
 			FormationID:         fa.FormationID,
@@ -164,7 +184,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			Runtime:             runtimeWithLabels,
 			RuntimeContext:      runtimeContextWithLabels,
 			Assignment:          convertFormationAssignmentFromModel(fa),
-			ReverseAssignment:   convertFormationAssignmentFromModel(buildReverseFormationAssignment(fa)),
+			ReverseAssignment:   convertFormationAssignmentFromModel(reverseFA),
 		}
 
 		notificationReq, err := fan.createWebhookRequest(ctx, appWebhook, whInput)
@@ -210,6 +230,12 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 		return nil, err
 	}
 
+	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+	if err != nil {
+		log.C(ctx).Error(err)
+		return nil, err
+	}
+
 	whInput := &webhook.FormationConfigurationChangeInput{
 		Operation:           model.AssignFormation,
 		FormationID:         fa.FormationID,
@@ -218,7 +244,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 		Runtime:             runtimeWithLabels,
 		RuntimeContext:      nil,
 		Assignment:          convertFormationAssignmentFromModel(fa),
-		ReverseAssignment:   convertFormationAssignmentFromModel(buildReverseFormationAssignment(fa)),
+		ReverseAssignment:   convertFormationAssignmentFromModel(reverseFA),
 	}
 
 	notificationReq, err := fan.createWebhookRequest(ctx, runtimeWebhook, whInput)
@@ -271,6 +297,12 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 		return nil, err
 	}
 
+	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+	if err != nil {
+		log.C(ctx).Error(err)
+		return nil, err
+	}
+
 	whInput := &webhook.FormationConfigurationChangeInput{
 		Operation:           model.AssignFormation,
 		FormationID:         fa.FormationID,
@@ -279,7 +311,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 		Runtime:             runtimeWithLabels,
 		RuntimeContext:      runtimeContextWithLabels,
 		Assignment:          convertFormationAssignmentFromModel(fa),
-		ReverseAssignment:   convertFormationAssignmentFromModel(buildReverseFormationAssignment(fa)),
+		ReverseAssignment:   convertFormationAssignmentFromModel(reverseFA),
 	}
 
 	notificationReq, err := fan.createWebhookRequest(ctx, runtimeWebhook, whInput)
@@ -419,19 +451,5 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
 		Value:       string(formationAssignment.Value),
-	}
-}
-
-func buildReverseFormationAssignment(formationAssignment *model.FormationAssignment) *model.FormationAssignment {
-	return &model.FormationAssignment{
-		ID:          formationAssignment.ID,
-		FormationID: formationAssignment.FormationID,
-		TenantID:    formationAssignment.TenantID,
-		Source:      formationAssignment.Source,
-		SourceType:  formationAssignment.SourceType,
-		Target:      formationAssignment.Target,
-		TargetType:  formationAssignment.TargetType,
-		State:       formationAssignment.State,
-		Value:       formationAssignment.Value,
 	}
 }
