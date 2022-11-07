@@ -37,16 +37,16 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 	}
 
 	return &graphql.FormationAssignment{
-		ID:         in.ID,
-		Source:     in.Source,
-		SourceType: graphql.FormationAssignmentType(in.SourceType),
-		Target:     in.Target,
-		TargetType: graphql.FormationAssignmentType(in.TargetType),
+		ID:                         in.ID,
+		Source:                     in.Source,
+		SourceType:                 graphql.FormationAssignmentType(in.SourceType),
+		Target:                     in.Target,
+		TargetType:                 graphql.FormationAssignmentType(in.TargetType),
 		LastOperation:              string(in.LastOperation),
 		LastOperationInitiator:     in.LastOperationInitiator,
 		LastOperationInitiatorType: graphql.FormationAssignmentType(in.LastOperationInitiatorType),
-		State:      in.State,
-		Value:      strValue,
+		State:                      in.State,
+		Value:                      strValue,
 	}, nil
 }
 
