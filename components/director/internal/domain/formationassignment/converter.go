@@ -26,9 +26,7 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 	}
 
 	var strValue *string
-	if in.Value == nil {
-		strValue = str.Ptr("")
-	} else {
+	if in.Value != nil {
 		marshalledValue, err := json.Marshal(in.Value)
 		if err != nil {
 			return nil, errors.Wrap(err, "while converting formation assignment to GraphQL")
