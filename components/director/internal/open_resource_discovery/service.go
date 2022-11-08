@@ -418,12 +418,6 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
-		if i, found := searchInSlice(len(fetchRequests), func(i int) bool {
-			return equalStrings(&fetchRequests[i].refObjectOrdID, &ts.OrdID)
-		}); found {
-			fetchRequests = append(fetchRequests[:i], fetchRequests[i+1:]...)
-		}
-
 		for i := range fetchRequests {
 			if equalStrings(&fetchRequests[i].refObjectOrdID, &ts.OrdID) {
 				frIdxToExclude = append(frIdxToExclude, i)
@@ -431,22 +425,7 @@ func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB [
 		}
 	}
 
-	finalFetchRequests := make([]*ordFetchRequest, 0)
-	for i := range fetchRequests {
-		shouldExclude := false
-		for _, idx := range frIdxToExclude {
-			if i == idx {
-				shouldExclude = true
-				break
-			}
-		}
-
-		if !shouldExclude {
-			finalFetchRequests = append(finalFetchRequests, fetchRequests[i])
-		}
-	}
-
-	return finalFetchRequests, tx.Commit()
+	return excludeUnnecessaryFetchRequests(fetchRequests, frIdxToExclude), tx.Commit()
 }
 
 func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
@@ -1263,6 +1242,25 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 	}
 
 	return nil
+}
+
+func excludeUnnecessaryFetchRequests(fetchRequests []*ordFetchRequest, frIdxToExclude []int) []*ordFetchRequest {
+	finalFetchRequests := make([]*ordFetchRequest, 0)
+	for i := range fetchRequests {
+		shouldExclude := false
+		for _, idxToExclude := range frIdxToExclude {
+			if i == idxToExclude {
+				shouldExclude = true
+				break
+			}
+		}
+
+		if !shouldExclude {
+			finalFetchRequests = append(finalFetchRequests, fetchRequests[i])
+		}
+	}
+
+	return finalFetchRequests
 }
 
 func hashResources(docs Documents) (map[string]uint64, error) {

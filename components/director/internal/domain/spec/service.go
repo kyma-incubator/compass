@@ -72,12 +72,7 @@ func (s *service) GetByID(ctx context.Context, id string, objectType model.SpecR
 		return nil, err
 	}
 
-	spec, err := s.repo.GetByID(ctx, tnt, id, objectType)
-	if err != nil {
-		return nil, err
-	}
-
-	return spec, nil
+	return s.repo.GetByID(ctx, tnt, id, objectType)
 }
 
 // ListByReferenceObjectID missing godoc
