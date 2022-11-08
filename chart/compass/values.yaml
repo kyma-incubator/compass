@@ -115,7 +115,7 @@ global:
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2665"
+      version: "PR-2728"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
