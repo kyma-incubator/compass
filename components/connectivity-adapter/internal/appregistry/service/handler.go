@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
@@ -95,6 +96,10 @@ func (h *Handler) Create(writer http.ResponseWriter, request *http.Request) {
 		logger.Error(wrappedErr)
 		res.WriteError(writer, wrappedErr, apperrors.CodeInternal)
 		return
+	}
+
+	if serviceDetails.Api != nil && strings.Contains(serviceDetails.Api.TargetUrl, "backoffice") {
+		logger.Infof("Service details: %v", serviceDetails)
 	}
 
 	reqContext, err := h.loadRequestContext(request)
