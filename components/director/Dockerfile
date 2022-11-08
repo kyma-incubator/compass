@@ -27,7 +27,8 @@ RUN go build -v -o director ./cmd/director/main.go \
   && go build -v -o ordaggregator ./cmd/ordaggregator/main.go \
   && go build -v -o scopessynchronizer ./cmd/scopessynchronizer/main.go \
   && go build -v -o systemfetcher ./cmd/systemfetcher/main.go \
-  && go build -v -o destinationfetcher ./cmd/destinationfetcher-svc/main.go
+  && go build -v -o destinationfetcher ./cmd/destinationfetcher-svc/main.go \
+  && go build -v -o iceapoc ./cmd/icea-poc/main.go
 RUN mkdir /app && mv ./director /app/director \
   && mv ./ns-adapter /app/ns-adapter \
   && mv ./tenantfetcher-svc /app/tenantfetcher-svc \
@@ -35,7 +36,8 @@ RUN mkdir /app && mv ./director /app/director \
   && mv ./ordaggregator /app/ordaggregator \
   && mv ./scopessynchronizer /app/scopessynchronizer \
   && mv ./systemfetcher /app/systemfetcher \
-  && mv ./destinationfetcher /app/destinationfetcher
+  && mv ./destinationfetcher /app/destinationfetcher \
+  && mv ./iceapoc /app/iceapoc
 
 FROM alpine:3.16.2
 LABEL source = git@github.com:kyma-incubator/compass.git
