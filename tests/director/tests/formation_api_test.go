@@ -2981,7 +2981,6 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 		assignments := assignmentsPage.Data
-		require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 		result := true
 		for _, assignment := range assignments {
 			targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
@@ -3000,4 +2999,8 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 		}
 		return result
 	}, time.Second*8, time.Second*2)
+
+	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
+	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 }

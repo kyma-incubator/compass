@@ -173,7 +173,7 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		time.Sleep(time.Second * 5)
-		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, `{"key": "value", "key2": {"key": "value2"}}`, formationID, formationAssignmentID)
+		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, `{"key": "value", "key2": {"key": "value2"}}`, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
@@ -320,15 +320,18 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(writer, ctx)
-	//if err != nil {
-	//	httputils.RespondWithError(ctx, writer, 500, err)
-	//	return
-	//}
+	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(writer, ctx)
+	if err != nil {
+		httputils.RespondWithError(ctx, writer, 500, err)
+		return
+	}
 
 	go func() {
 		time.Sleep(time.Second * 5)
-		//TODO
+		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, "", formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
+		}
 	}()
 
 	writer.WriteHeader(http.StatusAccepted)
@@ -477,10 +480,12 @@ func clientCertPair(certChainBytes, privateKeyBytes []byte) (*rsa.PrivateKey, []
 	return privateKey, tlsCert.Certificate, nil
 }
 
-func (h *Handler) executeStatusUpdateRequest(certSecuredHTTPClient *http.Client, testConfig, formationID, formationAssignmentID string) error {
+func (h *Handler) executeStatusUpdateRequest(certSecuredHTTPClient *http.Client, state ConfigurationState, testConfig, formationID, formationAssignmentID string) error {
 	reqBody := RequestBody{
-		State:         ReadyConfigurationState,
-		Configuration: json.RawMessage(testConfig),
+		State: state,
+	}
+	if testConfig != "" {
+		reqBody.Configuration = json.RawMessage(testConfig)
 	}
 	marshalBody, err := json.Marshal(reqBody)
 	if err != nil {
