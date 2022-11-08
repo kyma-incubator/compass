@@ -166,7 +166,6 @@ check-gqlgen:
 		exit 1; \
 	fi;
 
-
 # Targets copying sources to buildpack
 COPY_TARGETS = test
 $(foreach t,$(COPY_TARGETS),$(eval $(call buildpack-cp-ro,$(t))))
