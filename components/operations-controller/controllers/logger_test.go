@@ -21,22 +21,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// mockedLogger is a mock implementation of the Logger interface to fit the controller tests use case
-type mockedLogger struct {
-	log.NullLogger
+// mockedLogSink is a mock implementation of the LogSink interface to fit the controller tests use case
+type mockedLogSink struct {
+	log.NullLogSink
 	AssertErrorExpectations func(err error, msg string)
 }
 
-func (ml *mockedLogger) Info(_ string, _ ...interface{}) {}
+func (ml *mockedLogSink) Info(level int, msg string, keysAndValues ...interface{}) {}
 
-func (ml *mockedLogger) Enabled() bool { return true }
+func (ml *mockedLogSink) Enabled(level int) bool { return true }
 
-func (ml *mockedLogger) V(_ int) logr.InfoLogger { return nil }
+func (ml *mockedLogSink) V(_ int) logr.LogSink { return nil }
 
-func (ml *mockedLogger) WithValues(_ ...interface{}) logr.Logger { return ml }
+func (ml *mockedLogSink) WithValues(_ ...interface{}) logr.LogSink { return ml }
 
-func (ml *mockedLogger) WithName(_ string) logr.Logger { return nil }
+func (ml *mockedLogSink) WithName(_ string) logr.LogSink { return nil }
 
-func (ml *mockedLogger) Error(err error, msg string, _ ...interface{}) {
+func (ml *mockedLogSink) Error(err error, msg string, _ ...interface{}) {
 	ml.AssertErrorExpectations(err, msg)
 }

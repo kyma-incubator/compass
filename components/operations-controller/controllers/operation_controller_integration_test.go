@@ -19,33 +19,32 @@ package controllers_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
 
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/kyma-incubator/compass/components/operations-controller/api/v1alpha1"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers/controllersfakes"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -91,6 +90,10 @@ func TestController_Scenarios(t *testing.T) {
 	testEnv := &envtest.Environment{
 		ErrorIfCRDPathMissing: true,
 		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+	}
+
+	if _, ok := os.LookupEnv("KUBEBUILDER_ASSETS"); !ok {
+		testEnv.BinaryAssetsDirectory = "../bin/k8s/1.25.0-darwin-amd64"
 	}
 
 	cfg, err := testEnv.Start()
@@ -1048,8 +1051,7 @@ func TestController_Scenarios(t *testing.T) {
 		stubLoggerNotLoggedAssertion(t, kubeerrors.NewNotFound(schema.GroupResource{}, operation.ObjectMeta.Name).Error(),
 			fmt.Sprintf("Unable to retrieve %s resource from API server", namespacedName),
 			fmt.Sprintf("%s resource was not found in API server", namespacedName))
-		defer func() { ctrl.Log = &originalLogger }()
-
+		defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
 		err = kubeClient.Delete(ctx, &operation)
 		require.NoError(t, err)
 

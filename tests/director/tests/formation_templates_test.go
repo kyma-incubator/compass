@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -90,7 +91,7 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	var updatedFormationTemplateInput = graphql.FormationTemplateInput{
 		Name:                   "updated-formation-template-name",
 		ApplicationTypes:       []string{"app-type-3", "app-type-4"},
-		RuntimeType:            "runtime-type-2",
+		RuntimeType:            str.Ptr("runtime-type-2"),
 		RuntimeTypeDisplayName: "test-display-name-2",
 		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
@@ -161,7 +162,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	secondFormationInput := graphql.FormationTemplateInput{
 		Name:                   "test-formation-template-2",
 		ApplicationTypes:       []string{"app-type-3", "app-type-5"},
-		RuntimeType:            "runtime-type-2",
+		RuntimeType:            str.Ptr("runtime-type-2"),
 		RuntimeTypeDisplayName: "test-display-name-2",
 		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}

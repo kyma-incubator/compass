@@ -2892,7 +2892,7 @@ func createFormationTemplate(t *testing.T, ctx context.Context, formationTemplat
 	formationTmplInput := graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
-		RuntimeType:            runtimeType,
+		RuntimeType:            str.Ptr(runtimeType),
 		RuntimeTypeDisplayName: formationTemplateName,
 		RuntimeArtifactKind:    runtimeArtifactKind,
 	}
