@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -68,6 +70,7 @@ const (
 )
 
 var (
+	uidSvc             = uid.NewService()
 	packageLinksFormat = removeWhitespace(`[
         {
           "type": "terms-of-service",
@@ -1152,6 +1155,11 @@ func fixFailedFetchRequest() *model.FetchRequest {
 			Condition: model.FetchRequestStatusConditionFailed,
 		},
 	}
+}
+
+func fixFetchRequestFromFetchRequestInput(fr *model.FetchRequestInput, objectType model.FetchRequestReferenceObjectType, specID string) *model.FetchRequest {
+	id := uidSvc.Generate()
+	return fr.ToFetchRequest(time.Now(), id, objectType, specID)
 }
 
 func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput {

@@ -111,15 +111,15 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2713"
+      version: "PR-2714"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2713"
+      version: "PR-2714"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2713"
+      version: "PR-2714"
       name: compass-pairing-adapter
     director:
       dir:
@@ -131,11 +131,11 @@ global:
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2713"
+      version: "PR-2714"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2713"
+      version: "PR-2714"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -147,7 +147,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2713"
+      version: "PR-2714"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -156,7 +156,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2713"
+      version: "PR-2714"
       name: compass-external-services-mock
     console:
       dir:
@@ -721,6 +721,7 @@ global:
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
+    maxParallelSpecificationProcessors: 100
     containerName: "ord-aggregator"
   systemFetcher:
     enabled: false

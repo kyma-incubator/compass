@@ -29,7 +29,7 @@ func AssertApplication(t *testing.T, in graphql.ApplicationRegisterInput, actual
 	AssertBundles(t, in.Bundles, actualApp.Bundles.Data)
 }
 
-//TODO: After fixing the 'Labels' scalar turn this back into regular assertion
+// TODO: After fixing the 'Labels' scalar turn this back into regular assertion
 func AssertLabels(t *testing.T, in graphql.Labels, actual graphql.Labels, app graphql.ApplicationExt) {
 	appNameNormalizier := normalizer.DefaultNormalizator{}
 
@@ -339,7 +339,7 @@ func AssertUpdateApplicationTemplate(t *testing.T, in graphql.ApplicationTemplat
 func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, actual *graphql.FormationTemplate) {
 	assert.Equal(t, in.Name, actual.Name)
 	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
-	assert.Equal(t, in.RuntimeType, actual.RuntimeType)
+	assert.Equal(t, *in.RuntimeType, actual.RuntimeType)
 	assert.Equal(t, in.RuntimeTypeDisplayName, actual.RuntimeTypeDisplayName)
 	assert.Equal(t, in.RuntimeArtifactKind, actual.RuntimeArtifactKind)
 }
