@@ -68,7 +68,7 @@ func TestHandler_Patch(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{"tenantId": testCase.TenantID})
 			}
 
-			h := NewHandler()
+			h := NewHandler(NotificationsConfiguration{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -151,7 +151,7 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{"tenantId": testCase.TenantID})
 			}
 
-			h := NewHandler()
+			h := NewHandler(NotificationsConfiguration{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -234,7 +234,7 @@ func TestHandler_Delete(t *testing.T) {
 			}
 			req = mux.SetURLVars(req, vars)
 
-			h := NewHandler()
+			h := NewHandler(NotificationsConfiguration{})
 			r := httptest.NewRecorder()
 
 			//WHEN
@@ -255,7 +255,7 @@ func TestGetResponses(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
 
-	h := NewHandler()
+	h := NewHandler(NotificationsConfiguration{})
 	h.mappings = map[string][]Response{
 		"tenantId": {
 			{
@@ -286,7 +286,7 @@ func TestCleanup(t *testing.T) {
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
-	h := NewHandler()
+	h := NewHandler(NotificationsConfiguration{})
 	h.mappings = map[string][]Response{
 		"tenantId": {
 			{
@@ -429,7 +429,7 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 				req = mux.SetURLVars(req, map[string]string{"tenantId": testCase.TenantID})
 			}
 
-			h := NewHandler()
+			h := NewHandler(NotificationsConfiguration{})
 			r := httptest.NewRecorder()
 
 			h.shouldReturnError = testCase.ShouldFail
@@ -453,7 +453,7 @@ func TestResetShouldFail(t *testing.T) {
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
-	h := NewHandler()
+	h := NewHandler(NotificationsConfiguration{})
 	h.shouldReturnError = false
 	r := httptest.NewRecorder()
 
