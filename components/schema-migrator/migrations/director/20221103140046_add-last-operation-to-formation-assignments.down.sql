@@ -1,5 +1,12 @@
 BEGIN;
 
+DROP TYPE webhook_mode;
+
+CREATE TYPE webhook_mode AS ENUM (
+    'ASYNC',
+    'SYNC'
+);
+
 ALTER TABLE formation_assignments
     DROP CONSTRAINT last_operation_initiator_type_check,
     DROP CONSTRAINT last_operation_check;

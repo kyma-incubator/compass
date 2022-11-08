@@ -1,6 +1,13 @@
-ALTER TYPE webhook_mode ADD VALUE IF NOT EXISTS 'ASYNC_CALLBACK';
 
 BEGIN;
+
+DROP TYPE webhook_mode;
+
+CREATE TYPE webhook_mode AS ENUM (
+    'ASYNC',
+    'SYNC',
+    'ASYNC_CALLBACK'
+);
 
 ALTER TABLE formation_assignments
     ADD COLUMN last_operation_initiator UUID,
