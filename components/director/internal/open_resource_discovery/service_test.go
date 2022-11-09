@@ -3287,7 +3287,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			ordCfg := ord.NewServiceConfig(4, 100, 0,"", false)
+			ordCfg := ord.NewServiceConfig(4, 100, 0, "", false)
 			svc := ord.NewAggregatorService(ordCfg, tx, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, fetchReqSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
 			err := svc.SyncORDDocuments(context.TODO(), ord.MetricsConfig{})
 			if test.ExpectedErr != nil {

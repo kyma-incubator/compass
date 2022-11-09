@@ -82,9 +82,9 @@ type config struct {
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
 	MaxParallelSpecificationProcessors int `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
 
-	ordWebhookPartialProcessURL string `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL"`
-	ordWebhookPartialProcessMaxDays int `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS"`
-	ordWebhookPartialProcessing bool `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESSING"`
+	ordWebhookPartialProcessURL     string `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL"`
+	ordWebhookPartialProcessMaxDays int    `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS"`
+	ordWebhookPartialProcessing     bool   `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESSING"`
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
