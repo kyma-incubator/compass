@@ -155,6 +155,9 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 		}()
 	}
 
+	if s.config.ordWebhookPartialProcessing {
+		log.C(ctx).Infof("Partial ord webhook processing is enabled for URL [%s] and max days [%d]", s.config.ordWebhookPartialProcessURL, s.config.ordWebhookPartialProcessMaxDays)
+	}
 	date := time.Now().AddDate(0, 0, -1*s.config.ordWebhookPartialProcessMaxDays)
 	for _, webhook := range ordWebhooks {
 		webhookURL := str.PtrStrToStr(webhook.URL)
