@@ -16,6 +16,8 @@ type Entity struct {
 	Name                string `db:"name" json:"name"`
 }
 
+const DIFormationTemplateID = "686d42be-d944-4b63-be72-047603df06e6"
+
 type FormationNotificationHandler struct {
 	Transact              persistence.Transactioner
 	DirectorGraphQLClient *gcli.Client
@@ -25,6 +27,11 @@ func (l *FormationNotificationHandler) HandleCreate(ctx context.Context, data []
 	entity := Entity{}
 	if err := json.Unmarshal(data, &entity); err != nil {
 		return errors.Errorf("could not unmarshal app: %s", err)
+	}
+
+	if entity.FormationTemplateID != DIFormationTemplateID {
+		log.C(ctx).Infof("Formation %v is not DI formation. Nothing to process.", entity)
+		return nil
 	}
 
 	log.C(ctx).Infof("Successfully handled create event for formation %v", entity)
