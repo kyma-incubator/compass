@@ -34,7 +34,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER formations_notify_event
-    AFTER INSERT OR UPDATE OR DELETE ON formation_assignments
+    AFTER INSERT OR UPDATE OR DELETE ON formations
     FOR EACH ROW EXECUTE PROCEDURE notify_event();
 
 CREATE TRIGGER formation_assignments_notify_event
