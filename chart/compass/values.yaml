@@ -722,6 +722,9 @@ global:
     maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     maxParallelSpecificationProcessors: 100
+    ordWebhookPartialProcessURL: ""
+    ordWebhookPartialProcessMaxDays: 0
+    ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
   systemFetcher:
     enabled: false

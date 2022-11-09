@@ -82,6 +82,10 @@ type config struct {
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
 	MaxParallelSpecificationProcessors int `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
 
+	ordWebhookPartialProcessURL string `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL"`
+	ordWebhookPartialProcessMaxDays int `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS"`
+	ordWebhookPartialProcessing bool `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESSING"`
+
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
@@ -232,7 +236,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor)
 
-	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors)
+	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors, config.ordWebhookPartialProcessMaxDays, config.ordWebhookPartialProcessURL, config.ordWebhookPartialProcessing)
 	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor)
 }
 

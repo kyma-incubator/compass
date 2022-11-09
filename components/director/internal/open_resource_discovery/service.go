@@ -29,6 +29,9 @@ const MultiErrorSeparator string = "* "
 type ServiceConfig struct {
 	maxParallelWebhookProcessors       int
 	maxParallelSpecificationProcessors int
+	ordWebhookPartialProcessMaxDays int
+	ordWebhookPartialProcessURL string
+	ordWebhookPartialProcessing bool
 }
 
 type ordFetchRequest struct {
@@ -50,10 +53,13 @@ type MetricsConfig struct {
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors int) ServiceConfig {
+func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool) ServiceConfig {
 	return ServiceConfig{
 		maxParallelWebhookProcessors:       maxParallelWebhookProcessors,
 		maxParallelSpecificationProcessors: maxParallelSpecificationProcessors,
+		ordWebhookPartialProcessMaxDays: ordWebhookPartialProcessMaxDays,
+		ordWebhookPartialProcessURL: ordWebhookPartialProcessURL,
+		ordWebhookPartialProcessing: ordWebhookPartialProcessing,
 	}
 }
 
@@ -149,8 +155,16 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 		}()
 	}
 
+	date := time.Now().AddDate(0, 0, -1 * s.config.ordWebhookPartialProcessMaxDays)
 	for _, webhook := range ordWebhooks {
-		queue <- webhook
+		webhookURL := str.PtrStrToStr(webhook.URL)
+		if s.config.ordWebhookPartialProcessing && strings.Contains(webhookURL, s.config.ordWebhookPartialProcessURL){
+			if webhook.CreatedAt.After(date){
+				queue <- webhook
+			}
+		} else{
+			queue <- webhook
+		}
 	}
 	close(queue)
 	wg.Wait()
