@@ -2,7 +2,7 @@ package fixtures
 
 import "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-func FixFormationTemplateInput (formationName string) graphql.FormationTemplateInput {
+func FixFormationTemplateInput(formationName string) graphql.FormationTemplateInput {
 	return FixFormationTemplateInputWithType(formationName, "runtime-type")
 }
 
