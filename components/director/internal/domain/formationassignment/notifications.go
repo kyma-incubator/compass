@@ -14,27 +14,19 @@ import (
 )
 
 type formationAssignmentNotificationService struct {
-	formationAssignmentRepo       FormationAssignmentRepository
-	applicationRepository         applicationRepository
-	applicationTemplateRepository applicationTemplateRepository
-	runtimeRepo                   runtimeRepository
-	runtimeContextRepo            runtimeContextRepository
-	labelRepository               labelRepository
-	webhookRepository             webhookRepository
-	webhookConverter              webhookConverter
+	formationAssignmentRepo FormationAssignmentRepository
+	webhookConverter        webhookConverter
+	webhookRepository       webhookRepository
+	webhookDataInputBuilder webhook.DataInputBuilder
 }
 
 // NewFormationAssignmentNotificationService creates formation assignment notifications service
-func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, applicationRepo applicationRepository, applicationTemplateRepository applicationTemplateRepository, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, labelRepository labelRepository, webhookRepository webhookRepository, webhookConverter webhookConverter) *formationAssignmentNotificationService {
+func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, webhookConverter webhookConverter, webhookRepository webhookRepository, webhookDataInputBuilder webhook.DataInputBuilder) *formationAssignmentNotificationService {
 	return &formationAssignmentNotificationService{
-		formationAssignmentRepo:       formationAssignmentRepo,
-		applicationRepository:         applicationRepo,
-		applicationTemplateRepository: applicationTemplateRepository,
-		runtimeRepo:                   runtimeRepo,
-		runtimeContextRepo:            runtimeContextRepo,
-		labelRepository:               labelRepository,
-		webhookRepository:             webhookRepository,
-		webhookConverter:              webhookConverter,
+		formationAssignmentRepo: formationAssignmentRepo,
+		webhookConverter:        webhookConverter,
+		webhookRepository:       webhookRepository,
+		webhookDataInputBuilder: webhookDataInputBuilder,
 	}
 }
 
@@ -71,13 +63,13 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		reverseAppID := fa.Source
 		log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeApplication, reverseAppID)
 
-		appWithLabels, appTemplateWithLabels, err := fan.prepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
+		appWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
 
-		reverseAppWithLabels, reverseAppTemplateWithLabels, err := fan.prepareApplicationAndAppTemplateWithLabels(ctx, tenant, reverseAppID)
+		reverseAppWithLabels, reverseAppTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, reverseAppID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
@@ -111,13 +103,13 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		runtimeID := fa.Source
 		log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeRuntime, runtimeID)
 
-		applicationWithLabels, appTemplateWithLabels, err := fan.prepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
+		applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
 
-		runtimeWithLabels, runtimeContextWithLabels, err := fan.prepareRuntimeAndRuntimeContextWithLabels(ctx, tenant, runtimeID)
+		runtimeWithLabels, runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeAndRuntimeContextWithLabels(ctx, tenant, runtimeID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
@@ -151,20 +143,20 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		runtimeCtxID := fa.Source
 		log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeRuntimeContext, runtimeCtxID)
 
-		applicationWithLabels, appTemplateWithLabels, err := fan.prepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
+		applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
 
-		runtimeContextWithLabels, err := fan.prepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
+		runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
 
 		runtimeID := runtimeContextWithLabels.RuntimeContext.RuntimeID
-		runtimeWithLabels, err := fan.prepareRuntimeWithLabels(ctx, tenant, runtimeID)
+		runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
@@ -218,13 +210,13 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	appID := fa.Source
 	log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeApplication, appID)
 
-	applicationWithLabels, appTemplateWithLabels, err := fan.prepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
+	applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
 
-	runtimeWithLabels, err := fan.prepareRuntimeWithLabels(ctx, tenant, runtimeID)
+	runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
@@ -261,7 +253,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	tenant := fa.TenantID
 	runtimeCtxID := fa.Target
 
-	runtimeContextWithLabels, err := fan.prepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
+	runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
@@ -285,13 +277,13 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	appID := fa.Source
 	log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeApplication, appID)
 
-	applicationWithLabels, appTemplateWithLabels, err := fan.prepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
+	applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
 
-	runtimeWithLabels, err := fan.prepareRuntimeWithLabels(ctx, tenant, runtimeID)
+	runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
@@ -320,112 +312,6 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	}
 
 	return notificationReq, nil
-}
-
-func (fan *formationAssignmentNotificationService) prepareApplicationAndAppTemplateWithLabels(ctx context.Context, tenant, appID string) (*webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, error) {
-	application, err := fan.applicationRepository.GetByID(ctx, tenant, appID)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting application with ID: %q", appID)
-	}
-	applicationLabels, err := fan.getLabelsForObject(ctx, tenant, appID, model.ApplicationLabelableObject)
-	if err != nil {
-		return nil, nil, err
-	}
-	applicationWithLabels := &webhook.ApplicationWithLabels{
-		Application: application,
-		Labels:      applicationLabels,
-	}
-
-	var appTemplateWithLabels *webhook.ApplicationTemplateWithLabels
-	if application.ApplicationTemplateID != nil {
-		appTemplate, err := fan.applicationTemplateRepository.Get(ctx, *application.ApplicationTemplateID)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "while getting application template with ID: %q", *application.ApplicationTemplateID)
-		}
-		applicationTemplateLabels, err := fan.getLabelsForObject(ctx, tenant, appTemplate.ID, model.AppTemplateLabelableObject)
-		if err != nil {
-			return nil, nil, err
-		}
-		appTemplateWithLabels = &webhook.ApplicationTemplateWithLabels{
-			ApplicationTemplate: appTemplate,
-			Labels:              applicationTemplateLabels,
-		}
-	}
-	return applicationWithLabels, appTemplateWithLabels, nil
-}
-
-func (fan *formationAssignmentNotificationService) prepareRuntimeWithLabels(ctx context.Context, tenant, runtimeID string) (*webhook.RuntimeWithLabels, error) {
-	runtime, err := fan.runtimeRepo.GetByID(ctx, tenant, runtimeID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtime by ID: %q", runtimeID)
-	}
-
-	runtimeLabels, err := fan.getLabelsForObject(ctx, tenant, runtimeID, model.RuntimeLabelableObject)
-	if err != nil {
-		return nil, err
-	}
-
-	runtimeWithLabels := &webhook.RuntimeWithLabels{
-		Runtime: runtime,
-		Labels:  runtimeLabels,
-	}
-
-	return runtimeWithLabels, nil
-}
-
-func (fan *formationAssignmentNotificationService) prepareRuntimeContextWithLabels(ctx context.Context, tenant, runtimeCtxID string) (*webhook.RuntimeContextWithLabels, error) {
-	runtimeCtx, err := fan.runtimeContextRepo.GetByID(ctx, tenant, runtimeCtxID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtime context by ID: %q", runtimeCtxID)
-	}
-
-	runtimeCtxLabels, err := fan.getLabelsForObject(ctx, tenant, runtimeCtx.ID, model.RuntimeContextLabelableObject)
-	if err != nil {
-		return nil, err
-	}
-
-	runtimeContextWithLabels := &webhook.RuntimeContextWithLabels{
-		RuntimeContext: runtimeCtx,
-		Labels:         runtimeCtxLabels,
-	}
-
-	return runtimeContextWithLabels, nil
-}
-
-func (fan *formationAssignmentNotificationService) prepareRuntimeAndRuntimeContextWithLabels(ctx context.Context, tenant, runtimeID string) (*webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, error) {
-	runtimeWithLabels, err := fan.prepareRuntimeWithLabels(ctx, tenant, runtimeID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	runtimeCtx, err := fan.runtimeContextRepo.GetByRuntimeID(ctx, tenant, runtimeID)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting runtime context for runtime with ID: %q", runtimeID)
-	}
-
-	runtimeCtxLabels, err := fan.getLabelsForObject(ctx, tenant, runtimeCtx.ID, model.RuntimeContextLabelableObject)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	runtimeContextWithLabels := &webhook.RuntimeContextWithLabels{
-		RuntimeContext: runtimeCtx,
-		Labels:         runtimeCtxLabels,
-	}
-
-	return runtimeWithLabels, runtimeContextWithLabels, nil
-}
-
-func (fan *formationAssignmentNotificationService) getLabelsForObject(ctx context.Context, tenant, objectID string, objectType model.LabelableObject) (map[string]interface{}, error) {
-	labels, err := fan.labelRepository.ListForObject(ctx, tenant, objectType, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing labels for %q with ID: %q", objectType, objectID)
-	}
-	labelsMap := make(map[string]interface{}, len(labels))
-	for _, l := range labels {
-		labelsMap[l.Key] = l.Value
-	}
-	return labelsMap, nil
 }
 
 func (fan *formationAssignmentNotificationService) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhook.FormationAssignmentTemplateInput) (*webhookclient.NotificationRequest, error) {

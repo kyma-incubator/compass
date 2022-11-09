@@ -5,9 +5,8 @@ package automock
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
+	mock "github.com/stretchr/testify/mock"
 
 	testing "testing"
 )
@@ -40,22 +39,22 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 	return r0, r1
 }
 
-// ListByScenarios provides a mock function with given fields: ctx, tenant, scenarios
-func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error) {
-	ret := _m.Called(ctx, tenant, scenarios)
+// GetByRuntimeID provides a mock function with given fields: ctx, tenant, runtimeID
+func (_m *RuntimeContextRepository) GetByRuntimeID(ctx context.Context, tenant string, runtimeID string) (*model.RuntimeContext, error) {
+	ret := _m.Called(ctx, tenant, runtimeID)
 
-	var r0 []*model.RuntimeContext
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.RuntimeContext); ok {
-		r0 = rf(ctx, tenant, scenarios)
+	var r0 *model.RuntimeContext
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
+		r0 = rf(ctx, tenant, runtimeID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.RuntimeContext)
+			r0 = ret.Get(0).(*model.RuntimeContext)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
-		r1 = rf(ctx, tenant, scenarios)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, runtimeID)
 	} else {
 		r1 = ret.Error(1)
 	}
