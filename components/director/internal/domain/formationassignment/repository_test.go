@@ -441,13 +441,13 @@ func TestRepository_ListAllForObjectIDs(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ? WHERE id = ? AND tenant_id = ?`)
+	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_assignments SET last_operation = ?, last_operation_initiator = ?, last_operation_initiator_type = ?, state = ?, value = ? WHERE id = ? AND tenant_id = ?`)
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Formation Assignment by ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmt,
-				Args:          []driver.Value{TestState, TestConfigValueStr, TestID, TestTenantID},
+				Args:          []driver.Value{model.AssignFormation, TestSource, TestSourceType, TestState, TestConfigValueStr, TestID, TestTenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
