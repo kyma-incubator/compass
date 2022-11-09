@@ -804,15 +804,18 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 	return &FormationAssignmentRequestMapping{
 		Request: request,
 		FormationAssignment: &model.FormationAssignment{
-			ID:          f.FormationAssignment.ID,
-			FormationID: f.FormationAssignment.FormationID,
-			TenantID:    f.FormationAssignment.TenantID,
-			Source:      f.FormationAssignment.Source,
-			SourceType:  f.FormationAssignment.SourceType,
-			Target:      f.FormationAssignment.Target,
-			TargetType:  f.FormationAssignment.TargetType,
-			State:       f.FormationAssignment.State,
-			Value:       f.FormationAssignment.Value,
+			ID:                         f.FormationAssignment.ID,
+			FormationID:                f.FormationAssignment.FormationID,
+			TenantID:                   f.FormationAssignment.TenantID,
+			Source:                     f.FormationAssignment.Source,
+			SourceType:                 f.FormationAssignment.SourceType,
+			Target:                     f.FormationAssignment.Target,
+			TargetType:                 f.FormationAssignment.TargetType,
+			LastOperation:              f.FormationAssignment.LastOperation,
+			LastOperationInitiator:     f.FormationAssignment.LastOperationInitiator,
+			LastOperationInitiatorType: f.FormationAssignment.LastOperationInitiatorType,
+			State:                      f.FormationAssignment.State,
+			Value:                      f.FormationAssignment.Value,
 		},
 	}
 }
