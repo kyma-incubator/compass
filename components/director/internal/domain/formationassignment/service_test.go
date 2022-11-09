@@ -2039,7 +2039,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhook),
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhook),
 			ExpectedErrorMsg:        "",
 		},
 		{
@@ -2060,7 +2060,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhook),
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhook),
 			ExpectedErrorMsg:        "",
 		},
 		{
@@ -2081,7 +2081,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhook),
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhook),
 			ExpectedErrorMsg:        "while fetching formation assignment with ID",
 		},
 		{
@@ -2108,7 +2108,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhook),
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhook),
 			ExpectedErrorMsg:        "",
 		},
 		{
@@ -2135,7 +2135,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhook),
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhook),
 			ExpectedErrorMsg:        testErr.Error(),
 		},
 		{
@@ -2246,7 +2246,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				}, nil)
 				return notificationSvc
 			},
-			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignment()), reqWebhookWithAsyncCallbackMode),
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhookWithAsyncCallbackMode),
 			ExpectedErrorMsg:        "",
 		},
 		{
@@ -3044,36 +3044,6 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, repo, conv, notificationSvc)
 		})
 	}
-}
-
-func unusedFormationAssignmentRepository() *automock.FormationAssignmentRepository {
-	repo := &automock.FormationAssignmentRepository{}
-	return repo
-}
-
-func unusedFormationAssignmentConverter() *automock.FormationAssignmentConverter {
-	repo := &automock.FormationAssignmentConverter{}
-	return repo
-}
-
-func unusedUIDService() *automock.UIDService {
-	svc := &automock.UIDService{}
-	return svc
-}
-
-func unusedNotificationService() *automock.NotificationService {
-	svc := &automock.NotificationService{}
-	return svc
-}
-
-func unusedRuntimeRepository() *automock.RuntimeRepository {
-	repo := &automock.RuntimeRepository{}
-	return repo
-}
-
-func unusedRuntimeContextRepository() *automock.RuntimeContextRepository {
-	repo := &automock.RuntimeContextRepository{}
-	return repo
 }
 
 type operationContainer struct {

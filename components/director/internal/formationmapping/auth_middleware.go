@@ -242,7 +242,7 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID,
 		return a.validateSubscriptionProvider(ctx, tx, app.ApplicationTemplateID, consumerExternalTenantID, fa.Target, string(fa.TargetType))
 	}
 
-	if fa.TargetType == model.FormationAssignmentTypeRuntime && (consumerType == consumer.Runtime || consumerType == consumer.ExternalCertificate || consumerType == consumer.SuperAdmin) { // consumer.SuperAdmin is needed for the local testing setup
+	if fa.TargetType == model.FormationAssignmentTypeRuntime {
 		exists, err := a.runtimeRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
 		if err != nil {
 			return false, http.StatusUnauthorized, errors.Wrapf(err, "while verifying caller with internal tenant ID: %q has owner access to the target of the formation assignment with ID: %q and type: %q that is being updated", consumerInternalTenantID, fa.Target, fa.TargetType)
