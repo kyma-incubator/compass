@@ -41,6 +41,7 @@ type NotificationsConfiguration struct {
 	ExternalClientCertCertKey               string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
 	ExternalClientCertKeyKey                string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
 	DirectorExternalCertFormationMappingURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL"`
+	FormationMappingAsyncResponseDelay      int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
 }
 
 type RequestBody struct {
@@ -172,8 +173,8 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		time.Sleep(time.Second * 5)
-		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, `{"key": "value", "key2": {"key": "value2"}}`, formationID, formationAssignmentID)
+		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
@@ -327,7 +328,7 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
 		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, "", formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())

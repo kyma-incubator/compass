@@ -157,6 +157,8 @@ spec:
                 value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
               - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationAsyncApi.pathPrefix }}{{ .Values.global.director.formationAsyncApi.path }}"
+              - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
+                value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds  | quote}}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

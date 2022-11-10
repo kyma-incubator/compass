@@ -1038,7 +1038,7 @@ func TestFormationNotifications(stdT *testing.T) {
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-		assertFormationNotification(t, assignNotificationForApp1, "assign", formation.ID, app1.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion)
 
 		t.Logf("Assign application 2 to formation %s", providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
@@ -1073,7 +1073,7 @@ func TestFormationNotifications(stdT *testing.T) {
 			t.Logf("Found notification for app %q", appIDFromNotification)
 			if appIDFromNotification == app2.ID {
 				notificationForApp2Found = true
-				assertFormationNotification(t, notification, "assign", formation.ID, app2.ID, localTenantID, appNamespace, appRegion)
+				assertFormationNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID, appNamespace, appRegion)
 			}
 		}
 		require.True(t, notificationForApp2Found, "notification for assign app2 not found")
@@ -1098,9 +1098,9 @@ func TestFormationNotifications(stdT *testing.T) {
 		unassignNotificationFound := false
 		for _, notification := range notificationsForConsumerTenant.Array() {
 			op := notification.Get("Operation").String()
-			if op == "unassign" {
+			if op == unassignOperation {
 				unassignNotificationFound = true
-				assertFormationNotification(t, notification, "unassign", formation.ID, app1.ID, localTenantID, appNamespace, appRegion)
+				assertFormationNotification(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion)
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app1 not found")
@@ -1122,9 +1122,9 @@ func TestFormationNotifications(stdT *testing.T) {
 			op := notification.Get("Operation").String()
 			appIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
 			t.Logf("Found %q notification for app %q", op, appIDFromNotification)
-			if appIDFromNotification == app2.ID && op == "unassign" {
+			if appIDFromNotification == app2.ID && op == unassignOperation {
 				unassignNotificationForApp2Found = true
-				assertFormationNotification(t, notification, "unassign", formation.ID, app2.ID, localTenantID, appNamespace, appRegion)
+				assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID, appNamespace, appRegion)
 			}
 		}
 		require.True(t, unassignNotificationForApp2Found, "notification for unassign app2 not found")
@@ -1341,7 +1341,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 
 	notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 	assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
-	assertFormationNotification(t, assignNotificationAboutApp2, "assign", formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
+	assertFormationNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
 
 	t.Logf("Unassign Application 1 from formation %s", formationName)
 	unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -1359,9 +1359,9 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	unassignNotificationFound := false
 	for _, notification := range notificationsForApp1.Array() {
 		op := notification.Get("Operation").String()
-		if op == "unassign" {
+		if op == unassignOperation {
 			unassignNotificationFound = true
-			assertFormationNotification(t, notification, "unassign", formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
+			assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
 		}
 	}
 	require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
@@ -1379,9 +1379,9 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	assignNotificationsFound := 0
 	for _, notification := range notificationsForApp1.Array() {
 		op := notification.Get("Operation").String()
-		if op == "assign" {
+		if op == assignOperation {
 			assignNotificationsFound++
-			assertFormationNotification(t, notification, "assign", formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
+			assertFormationNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
 		}
 	}
 	require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")
@@ -1399,9 +1399,9 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	unassignNotificationsFound := 0
 	for _, notification := range notificationsForApp1.Array() {
 		op := notification.Get("Operation").String()
-		if op == "unassign" {
+		if op == unassignOperation {
 			unassignNotificationsFound++
-			assertFormationNotification(t, notification, "unassign", formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
+			assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
 		}
 	}
 	require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")
@@ -1639,10 +1639,11 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 		//list assignments - expect 2
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
@@ -1659,7 +1660,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, localTenantID)
 		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
-		err = verifyFormationNotificationForApplication(assignNotificationForApp, "assign", formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "")
+		err = verifyFormationNotificationForApplication(assignNotificationForApp, assignOperation, formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "")
 		assert.NoError(t, err)
 
 		t.Logf("Unassign Application from formation %s", providerFormationName)
@@ -1700,7 +1701,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, assignOperation, 2)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
@@ -1960,6 +1961,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 		t.Logf("Assign application to formation %s", formation.Name)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
@@ -1968,11 +1970,11 @@ func TestFormationAssignments(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+		expectedAssignmentsBySourceID := map[string]map[string]fixtures.AssignmentState{
 			rtCtx.ID:     {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
-			actualApp.ID: {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
+			actualApp.ID: {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")}},
 		}
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
+		assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignmentsBySourceID)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -1980,27 +1982,29 @@ func TestFormationAssignments(stdT *testing.T) {
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-		assertFormationNotification(t, assignNotificationForApp1, "assign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 
 		// rtCtx -> App notifications
 		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertExpectationsForApplicationNotifications(t, notificationsForConsumerTenant.Array(), []*applicationFormationExpectations{{
-			op:                 assignOperation,
-			formationID:        formation.ID,
-			objectID:           rtCtx.ID,
-			subscribedTenantID: rtCtx.Value,
-			objectRegion:       regionLbl,
-			configuration:      "",
-		},
+		assertExpectationsForApplicationNotifications(t, notificationsForConsumerTenant.Array(), []*applicationFormationExpectations{
 			{
 				op:                 assignOperation,
 				formationID:        formation.ID,
 				objectID:           rtCtx.ID,
 				subscribedTenantID: rtCtx.Value,
 				objectRegion:       regionLbl,
-				configuration:      "{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}",
-			}})
+				configuration:      "",
+			},
+			{
+				op:                 assignOperation,
+				formationID:        formation.ID,
+				objectID:           rtCtx.ID,
+				subscribedTenantID: rtCtx.Value,
+				objectRegion:       regionLbl,
+				configuration:      "{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}",
+			},
+		})
 
 		var unassignFormation graphql.Formation
 		t.Logf("Unassign application from formation %s", formation.Name)
@@ -2018,16 +2022,16 @@ func TestFormationAssignments(stdT *testing.T) {
 		unassignNotificationFound := false
 		for _, notification := range notificationsForConsumerTenant.Array() {
 			op := notification.Get("Operation").String()
-			if op == "unassign" {
+			if op == unassignOperation {
 				appIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
 				t.Logf("Found notification for app %q", appIDFromNotification)
 				if appIDFromNotification == actualApp.ID {
 					unassignNotificationFound = true
-					assertFormationNotification(t, notification, "unassign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+					assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 				}
 			}
 		}
-		assert.True(t, unassignNotificationFound)
+		require.True(t, unassignNotificationFound)
 
 		// rtCtx -> App notifications
 		assertNotificationsCountForTenant(t, body, localTenantID, 3)
@@ -2035,7 +2039,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 1)
 
 		//list assignments - expect 0
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+		assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
@@ -2288,10 +2292,12 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		var assignedFormation graphql.Formation
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
+
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		// notification mock API should return error
@@ -2315,7 +2321,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
 
-		assertFormationNotification(t, assignNotificationForApp1, "assign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 
 		t.Logf("Assign application to formation %s should succeed on retry", formation.Name)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
@@ -2336,7 +2342,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
 
-		assertFormationNotification(t, assignNotificationForApp1, "assign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 
 		var unassignFormation graphql.Formation
 		t.Logf("Unassign application from formation %s", formation.Name)
@@ -2353,12 +2359,12 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		unassignNotificationFound := false
 		for _, notification := range notificationsForConsumerTenant.Array() {
 			op := notification.Get("Operation").String()
-			if op == "unassign" {
+			if op == unassignOperation {
 				appIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
 				t.Logf("Found notification for app %q", appIDFromNotification)
 				if appIDFromNotification == actualApp.ID {
 					unassignNotificationFound = true
-					assertFormationNotification(t, notification, "unassign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+					assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 				}
 			}
 		}
@@ -2366,7 +2372,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
@@ -2589,10 +2595,11 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		var assignedFormation graphql.Formation
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 		// Expect no formation assignments to be created
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
@@ -2618,7 +2625,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
 
-		assertFormationNotification(t, assignNotificationForApp1, "assign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 
 		var unassignFormation graphql.Formation
 		// notification mock api should return error
@@ -2638,7 +2645,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
 
-		assertFormationNotification(t, assignNotificationForApp1, "unassign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 
 		t.Logf("Unassign application from formation %s should succeed on retry", formation.Name)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
@@ -2653,12 +2660,12 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		unassignNotificationFound := false
 		for _, notification := range notificationsForConsumerTenant.Array() {
 			op := notification.Get("Operation").String()
-			if op == "unassign" {
+			if op == unassignOperation {
 				appIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
 				t.Logf("Found notification for app %q", appIDFromNotification)
 				if appIDFromNotification == actualApp.ID {
 					unassignNotificationFound = true
-					assertFormationNotification(t, notification, "unassign", formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+					assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
 				}
 			}
 		}
@@ -2666,7 +2673,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
+		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
@@ -2712,7 +2719,7 @@ func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []by
 
 func assertFormationNotification(t *testing.T, notification gjson.Result, op string, formationID string, expectedAppID string, expectedLocalTenantID string, expectedAppNamespace string, expectedAppRegion string) {
 	require.Equal(t, op, notification.Get("Operation").String())
-	if op == "unassign" {
+	if op == unassignOperation {
 		require.Equal(t, expectedAppID, notification.Get("ApplicationID").String())
 	}
 	require.Equal(t, formationID, notification.Get("RequestBody.ucl-formation-id").String())
@@ -2772,7 +2779,7 @@ func verifyFormationNotificationForApplication(notification gjson.Result, op str
 		return errors.Errorf("Operation does not match: expected %q, but got %q", op, actualOp)
 	}
 
-	if op == "unassign" {
+	if op == unassignOperation {
 		actualObjectID := notification.Get("ApplicationID").String()
 		if expectedObjectID != actualObjectID {
 			return errors.Errorf("ObjectID does not match: expected %q, but got %q", expectedObjectID, actualObjectID)
@@ -2977,30 +2984,41 @@ func checkRuntimeContextFormationLabels(t *testing.T, ctx context.Context, tenan
 }
 
 func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
-	require.Eventually(t, func() bool {
-		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-		assignments := assignmentsPage.Data
-		result := true
-		for _, assignment := range assignments {
-			targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-			assertResult := assert.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
-			result = result && assertResult
-
-			assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
-			assertResult = assert.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
-			result = result && assertResult
-
-			assertResult = assert.Equal(t, assignmentExpectation.State, assignment.State)
-			result = result && assertResult
-
-			assertResult = assert.Equal(t, str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Value))
-			result = result && assertResult
-		}
-		return result
-	}, time.Second*8, time.Second*2)
-
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+	assignments := assignmentsPage.Data
+	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
+
+	for _, assignment := range assignments {
+		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
+
+		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
+
+		require.Equal(t, assignmentExpectation.State, assignment.State)
+		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Value))
+	}
+}
+
+func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
+	t.Logf("Sleeping for %d seconds while the async formation assignment status is proccessed...", conf.FormationMappingAsyncResponseDelay+1)
+	time.Sleep(time.Second * time.Duration(conf.FormationMappingAsyncResponseDelay+1))
+	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
+	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+	assignments := assignmentsPage.Data
+
+	for _, assignment := range assignments {
+		targetAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q and source %q", assignment.ID, assignment.Source)
+
+		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
+		require.Truef(t, ok, "Could not find expectations for assignment with ID: %q, source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
+
+		require.Equal(t, assignmentExpectation.State, assignment.State, "Assignment with ID: %q has different state than expected", assignment.ID)
+
+		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Value))
+	}
+
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 }

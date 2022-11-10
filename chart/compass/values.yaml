@@ -929,6 +929,8 @@ global:
       skipPattern: ""
     externalServicesMock:
       skipPattern: ""
+      formationAsyncApi:
+        responseDelayInSeconds: 2
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
