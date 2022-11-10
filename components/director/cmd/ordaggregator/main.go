@@ -82,7 +82,7 @@ type config struct {
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
 	MaxParallelSpecificationProcessors int `envconfig:"APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS,default=100"`
 
-	OrdWebhookPartialProcessURL     string `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL"`
+	OrdWebhookPartialProcessURL     string `envconfig:"optional,APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL"`
 	OrdWebhookPartialProcessMaxDays int    `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS"`
 	OrdWebhookPartialProcessing     bool   `envconfig:"APP_ORD_WEBHOOK_PARTIAL_PROCESSING"`
 
