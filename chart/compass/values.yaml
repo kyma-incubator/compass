@@ -123,7 +123,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2709"
+      version: "PR-2729"
       name: compass-director
     hydrator:
       dir:
@@ -722,6 +722,9 @@ global:
     maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     maxParallelSpecificationProcessors: 100
+    ordWebhookPartialProcessURL: ""
+    ordWebhookPartialProcessMaxDays: 0
+    ordWebhookPartialProcessing: false
     containerName: "ord-aggregator"
   systemFetcher:
     enabled: false
