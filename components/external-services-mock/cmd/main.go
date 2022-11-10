@@ -6,12 +6,13 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"fmt"
-	"github.com/form3tech-oss/jwt-go"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/form3tech-oss/jwt-go"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
