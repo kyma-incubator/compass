@@ -436,8 +436,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 	})
 
 	t.Run("Unauthorized call", func(t *testing.T) {
-		parentTenantID := tenant.TestTenants.GetDefaultTenantID()
-		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+		parentTenantID := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
+		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestConsumerSubaccount)
 
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name:        "selfRegisterRuntimeAsync",

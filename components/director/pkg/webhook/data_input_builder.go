@@ -9,7 +9,6 @@ import (
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 }
 
@@ -67,7 +66,7 @@ func NewWebhookDataInputBuilder(applicationRepository applicationRepository, app
 func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx context.Context, tenant, appID string) (*ApplicationWithLabels, *ApplicationTemplateWithLabels, error) {
 	application, err := b.applicationRepository.GetByID(ctx, tenant, appID)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting application with ID: %q", appID)
+		return nil, nil, errors.Wrapf(err, "while getting application by ID: %q", appID)
 	}
 	applicationLabels, err := b.getLabelsForObject(ctx, tenant, appID, model.ApplicationLabelableObject)
 	if err != nil {
