@@ -53,7 +53,7 @@ type MetricsConfig struct {
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool) ServiceConfig {
+func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors int, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool) ServiceConfig {
 	return ServiceConfig{
 		maxParallelWebhookProcessors:       maxParallelWebhookProcessors,
 		maxParallelSpecificationProcessors: maxParallelSpecificationProcessors,
