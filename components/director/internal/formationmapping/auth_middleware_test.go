@@ -92,14 +92,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 	}{
 		// Common authorization checks
 		{
-			name:                 "Error when the http request method is not PATCH",
-			transactFn:           fixUnusedTransactioner,
-			faServiceFn:          fixUnusedFormationAssignmentSvc,
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
+			name:       "Error when the http request method is not PATCH",
+			transactFn: fixUnusedTransactioner,
 			contextFn: func() context.Context {
 				return emptyCtx
 			},
@@ -109,14 +103,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:                 "Error when required parameters are missing",
-			transactFn:           fixUnusedTransactioner,
-			faServiceFn:          fixUnusedFormationAssignmentSvc,
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
+			name: "Error when required parameters are missing",
 			contextFn: func() context.Context {
 				return emptyCtx
 			},
@@ -131,11 +118,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, "invalid", "invalid"), nil).Once()
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -145,14 +127,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:                 "Authorization fail: error when consumer info is missing in the context",
-			transactFn:           fixUnusedTransactioner,
-			faServiceFn:          fixUnusedFormationAssignmentSvc,
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
+			name: "Authorization fail: error when consumer info is missing in the context",
 			contextFn: func() context.Context {
 				return emptyCtx
 			},
@@ -161,14 +136,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
-			name:                 "Authorization fail: error when transaction begin fails",
-			transactFn:           txGen.ThatFailsOnBegin,
-			faServiceFn:          fixUnusedFormationAssignmentSvc,
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
+			name:       "Authorization fail: error when transaction begin fails",
+			transactFn: txGen.ThatFailsOnBegin,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -185,11 +154,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(nil, testErr)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -206,11 +170,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", mock.Anything, testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				ctxOnlyWithConsumer := consumer.SaveToContext(emptyCtx, c)
@@ -228,11 +187,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, "invalid", "invalid"), nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -250,15 +204,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(nil, testErr)
 				return appRepo
 			},
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Application)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -275,16 +225,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
 				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, testErr)
 				return appRepo
 			},
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -301,16 +247,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
 				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return appRepo
 			},
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -327,8 +269,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
@@ -340,7 +280,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				appTemplateRepo.On("Exists", contextThatHasTenant(internalTntID), appTemplateID).Return(false, testErr)
 				return appTemplateRepo
 			},
-			labelRepoFn: fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -357,8 +296,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
@@ -370,7 +307,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				appTemplateRepo.On("Exists", contextThatHasTenant(internalTntID), appTemplateID).Return(false, nil)
 				return appTemplateRepo
 			},
-			labelRepoFn: fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -387,8 +323,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
@@ -421,8 +355,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
@@ -457,8 +389,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
@@ -493,8 +423,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
@@ -529,15 +457,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
 				return appRepo
 			},
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(faTargetID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -554,15 +478,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
 				return appRepo
 			},
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(faTargetID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -579,16 +499,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
 				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(true, nil)
 				return appRepo
 			},
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -605,16 +521,12 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
 				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(true, nil)
 				return appRepo
 			},
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -631,8 +543,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
@@ -667,8 +577,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
 				return faSvc
 			},
-			runtimeRepoFn:        fixUnusedRuntimeRepo,
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
@@ -709,10 +617,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				rtmRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, testErr)
 				return rtmRepo
 			},
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -734,10 +638,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				rtmRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
 				return rtmRepo
 			},
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -759,10 +659,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				rtmRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(true, nil)
 				return rtmRepo
 			},
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -784,10 +680,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				rtmRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(true, nil)
 				return rtmRepo
 			},
-			runtimeContextRepoFn: fixUnusedRuntimeContextRepo,
-			appRepoFn:            fixUnusedAppRepo,
-			appTemplateRepoFn:    fixUnusedAppTemplateRepo,
-			labelRepoFn:          fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -805,15 +697,11 @@ func TestAuthenticator_Handler(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeContext, nil)
 				return faSvc
 			},
-			runtimeRepoFn: fixUnusedRuntimeRepo,
 			runtimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				rtmCtxRepo := &automock.RuntimeContextRepository{}
 				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(nil, testErr)
 				return rtmCtxRepo
 			},
-			appRepoFn:         fixUnusedAppRepo,
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -840,9 +728,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(rtmContext, nil).Once()
 				return rtmCtxRepo
 			},
-			appRepoFn:         fixUnusedAppRepo,
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -869,9 +754,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(rtmContext, nil)
 				return rtmCtxRepo
 			},
-			appRepoFn:         fixUnusedAppRepo,
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -898,9 +780,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(rtmContext, nil)
 				return rtmCtxRepo
 			},
-			appRepoFn:         fixUnusedAppRepo,
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -927,9 +806,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				rtmCtxRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(rtmContext, nil)
 				return rtmCtxRepo
 			},
-			appRepoFn:         fixUnusedAppRepo,
-			appTemplateRepoFn: fixUnusedAppTemplateRepo,
-			labelRepoFn:       fixUnusedLabelRepo,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.Runtime)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
@@ -942,13 +818,40 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
-			persist, transact := tCase.transactFn()
-			faSvc := tCase.faServiceFn()
-			rtmRepo := tCase.runtimeRepoFn()
-			rtmCtxRepo := tCase.runtimeContextRepoFn()
-			appRepo := tCase.appRepoFn()
-			appTemplateRepo := tCase.appTemplateRepoFn()
-			labelRepo := tCase.labelRepoFn()
+			persist, transact := fixUnusedTransactioner()
+			if tCase.transactFn != nil {
+				persist, transact = tCase.transactFn()
+			}
+
+			faSvc := fixUnusedFormationAssignmentSvc()
+			if tCase.faServiceFn != nil {
+				faSvc = tCase.faServiceFn()
+			}
+
+			rtmRepo := fixUnusedRuntimeRepo()
+			if tCase.runtimeRepoFn != nil {
+				rtmRepo = tCase.runtimeRepoFn()
+			}
+
+			rtmCtxRepo := fixUnusedRuntimeContextRepo()
+			if tCase.runtimeContextRepoFn != nil {
+				rtmCtxRepo = tCase.runtimeContextRepoFn()
+			}
+
+			appRepo := fixUnusedAppRepo()
+			if tCase.appRepoFn != nil {
+				appRepo = tCase.appRepoFn()
+			}
+
+			appTemplateRepo := fixUnusedAppTemplateRepo()
+			if tCase.appTemplateRepoFn != nil {
+				appTemplateRepo = tCase.appTemplateRepoFn()
+			}
+
+			labelRepo := fixUnusedLabelRepo()
+			if tCase.labelRepoFn != nil {
+				labelRepo = tCase.labelRepoFn()
+			}
 
 			defer mock.AssertExpectationsForObjects(t, persist, transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo)
 

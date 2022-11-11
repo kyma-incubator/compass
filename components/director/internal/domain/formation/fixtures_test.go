@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"fmt"
@@ -19,6 +21,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	webhookautomock "github.com/kyma-incubator/compass/components/director/pkg/webhook/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 )
@@ -114,6 +117,10 @@ func unusedRuntimeRepo() *automock.RuntimeRepository {
 
 func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
 	return &automock.RuntimeContextRepository{}
+}
+
+func unusedDataInputBuilder() *webhookautomock.DataInputBuilder {
+	return &webhookautomock.DataInputBuilder{}
 }
 
 func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {
@@ -294,30 +301,6 @@ func fixRuntimeContextLabelsMap() map[string]interface{} {
 	}
 }
 
-func fixApplicationLabels() map[string]*model.Label {
-	return map[string]*model.Label{
-		"app-label-key": {Key: "app-label-key", Value: "app-label-value"},
-	}
-}
-
-func fixApplicationTemplateLabels() map[string]*model.Label {
-	return map[string]*model.Label{
-		"apptemplate-label-key": {Key: "apptemplate-label-key", Value: "apptemplate-label-value"},
-	}
-}
-
-func fixRuntimeLabels() map[string]*model.Label {
-	return map[string]*model.Label{
-		"runtime-label-key": {Key: "runtime-label-key", Value: "runtime-label-value"},
-	}
-}
-
-func fixRuntimeContextLabels() map[string]*model.Label {
-	return map[string]*model.Label{
-		"runtime-context-label-key": {Key: "runtime-context-label-key", Value: "runtime-context-label-value"},
-	}
-}
-
 func fixConfigurationChangedWebhookModel(webhookID, objectID string, objectType model.WebhookReferenceObjectType) *model.Webhook {
 	return &model.Webhook{
 		ID:         webhookID,
@@ -375,6 +358,13 @@ func fixRuntimeModel(runtimeID string) *model.Runtime {
 		Name:              "runtime name",
 		Description:       str.Ptr("some description"),
 		CreationTimestamp: time.Time{},
+	}
+}
+
+func fixRuntimeWithLabels(runtimeID string) *webhook.RuntimeWithLabels {
+	return &webhook.RuntimeWithLabels{
+		Runtime: fixRuntimeModel(runtimeID),
+		Labels:  fixRuntimeLabelsMap(),
 	}
 }
 

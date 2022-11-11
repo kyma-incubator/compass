@@ -139,13 +139,9 @@ func Test_GenerateNotification(t *testing.T) {
 		expectedErrMsg          string
 	}{
 		{
-			name:                    "Error when formation assignment type is invalid",
-			formationAssignment:     faWithInvalidTypes,
-			webhookRepo:             unusedWebhookRepo,
-			webhookDataInputBuilder: unusedWebhookDataInputBuilder,
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          "Unknown formation assignment type:",
+			name:                "Error when formation assignment type is invalid",
+			formationAssignment: faWithInvalidTypes,
+			expectedErrMsg:      "Unknown formation assignment type:",
 		},
 		// application formation assignment notifications with source application
 		{
@@ -182,9 +178,6 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testNotFoundErr).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: unusedWebhookDataInputBuilder,
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
 		},
 		{
 			name:                "Error when getting application webhook by ID and type",
@@ -194,10 +187,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: unusedWebhookDataInputBuilder,
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          "while getting configuration changed webhook for runtime with ID:",
+			expectedErrMsg: "while getting configuration changed webhook for runtime with ID:",
 		},
 		{
 			name:                "Error when preparing app and app template with labels for source type application",
@@ -212,9 +202,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when preparing reverse app and app template with labels for source type application",
@@ -230,9 +218,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when getting reverse formation assignment by source and target for source type application",
@@ -253,8 +239,7 @@ func Test_GenerateNotification(t *testing.T) {
 				faRepo.On("GetReverseBySourceAndTarget", emptyCtx, TestTenantID, TestFormationID, TestSource, TestTarget).Return(nil, testErr).Once()
 				return faRepo
 			},
-			webhookConverver: unusedWebhookConverter,
-			expectedErrMsg:   testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when creating webhook request for source type application",
@@ -322,9 +307,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when preparing runtime and runtime context with labels for source type runtime",
@@ -340,9 +323,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when getting reverse formation assignment by source and target for source type runtime",
@@ -363,8 +344,7 @@ func Test_GenerateNotification(t *testing.T) {
 				faRepo.On("GetReverseBySourceAndTarget", emptyCtx, TestTenantID, TestFormationID, TestSource, TestTarget).Return(nil, testErr).Once()
 				return faRepo
 			},
-			webhookConverver: unusedWebhookConverter,
-			expectedErrMsg:   testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when creating webhook request for source type runtime",
@@ -433,9 +413,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when preparing runtime context with labels for source type runtime context",
@@ -451,9 +429,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when preparing runtime with labels for source type runtime context",
@@ -470,9 +446,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when getting reverse formation assignment by source and target for source type runtime context",
@@ -494,8 +468,7 @@ func Test_GenerateNotification(t *testing.T) {
 				faRepo.On("GetReverseBySourceAndTarget", emptyCtx, TestTenantID, TestFormationID, TestSource, TestTarget).Return(nil, testErr).Once()
 				return faRepo
 			},
-			webhookConverver: unusedWebhookConverter,
-			expectedErrMsg:   testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when creating webhook request for source type runtime",
@@ -559,9 +532,6 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testNotFoundErr).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: unusedWebhookDataInputBuilder,
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
 		},
 		{
 			name:                "Error when getting runtime webhook by ID and type for runtime target",
@@ -571,10 +541,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: unusedWebhookDataInputBuilder,
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          "while getting configuration changed webhook for runtime with ID:",
+			expectedErrMsg: "while getting configuration changed webhook for runtime with ID:",
 		},
 		{
 			name:                "Error when source type is different than application for runtime target",
@@ -584,10 +551,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: unusedWebhookDataInputBuilder,
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          fmt.Sprintf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", TestID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntime),
+			expectedErrMsg: fmt.Sprintf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", TestID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntime),
 		},
 		{
 			name:                "Error when preparing app and app template with labels for source type application and runtime target",
@@ -602,9 +566,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when preparing runtime with labels for source type application",
@@ -620,9 +582,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when getting reverse FA by application source and runtime target",
@@ -643,8 +603,7 @@ func Test_GenerateNotification(t *testing.T) {
 				faRepo.On("GetReverseBySourceAndTarget", emptyCtx, TestTenantID, TestFormationID, TestSource, TestTarget).Return(nil, testErr).Once()
 				return faRepo
 			},
-			webhookConverver: unusedWebhookConverter,
-			expectedErrMsg:   testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when creating webhook request for source type application and runtime target",
@@ -703,15 +662,12 @@ func Test_GenerateNotification(t *testing.T) {
 		{
 			name:                "Error when preparing runtime context with labels for source type application",
 			formationAssignment: faWithSourceAppCtxAndTargetRtmCtx,
-			webhookRepo:         unusedWebhookRepo,
 			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Success when runtime webhook is not found for runtime context target",
@@ -726,8 +682,6 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
 		},
 		{
 			name:                "Error when getting runtime webhook by ID and type for runtime context target",
@@ -742,9 +696,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          "while getting configuration changed webhook for runtime with ID:",
+			expectedErrMsg: "while getting configuration changed webhook for runtime with ID:",
 		},
 		{
 			name:                "Error when source type is different than application for runtime context target",
@@ -759,9 +711,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          fmt.Sprintf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", TestID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext),
+			expectedErrMsg: fmt.Sprintf("The formation assignmet with ID: %q and target type: %q has unsupported reverse(source) type: %q", TestID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext),
 		},
 		{
 			name:                "Error when preparing app and app template with labels for source type application and runtime ctx target",
@@ -777,9 +727,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when preparing runtime with labels for source type application and runtime ctx target",
@@ -796,9 +744,7 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
-			formationAssignmentRepo: unusedFormationAssignmentRepository,
-			webhookConverver:        unusedWebhookConverter,
-			expectedErrMsg:          testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when getting reverse FA by app source and runtime context target",
@@ -820,8 +766,7 @@ func Test_GenerateNotification(t *testing.T) {
 				faRepo.On("GetReverseBySourceAndTarget", emptyCtx, TestTenantID, TestFormationID, TestSource, TestTarget).Return(nil, testErr).Once()
 				return faRepo
 			},
-			webhookConverver: unusedWebhookConverter,
-			expectedErrMsg:   testErr.Error(),
+			expectedErrMsg: testErr.Error(),
 		},
 		{
 			name:                "Error when creating webhook request for source type application and runtime context target",
@@ -855,10 +800,26 @@ func Test_GenerateNotification(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// GIVEN
-			faRepo := tCase.formationAssignmentRepo()
-			webhookConv := tCase.webhookConverver()
-			webhookRepo := tCase.webhookRepo()
-			webhookDataInputBuilder := tCase.webhookDataInputBuilder()
+			faRepo := unusedFormationAssignmentRepository()
+			if tCase.formationAssignmentRepo != nil {
+				faRepo = tCase.formationAssignmentRepo()
+			}
+
+			webhookConv := unusedWebhookConverter()
+			if tCase.webhookConverver != nil {
+				webhookConv = tCase.webhookConverver()
+			}
+
+			webhookRepo := unusedWebhookRepo()
+			if tCase.webhookRepo != nil {
+				webhookRepo = tCase.webhookRepo()
+			}
+
+			webhookDataInputBuilder := unusedWebhookDataInputBuilder()
+			if tCase.webhookDataInputBuilder != nil {
+				webhookDataInputBuilder = tCase.webhookDataInputBuilder()
+			}
+
 			defer mock.AssertExpectationsForObjects(t, faRepo, webhookConv, webhookRepo, webhookDataInputBuilder)
 
 			faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(faRepo, webhookConv, webhookRepo, webhookDataInputBuilder)

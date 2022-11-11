@@ -104,23 +104,13 @@ func Test_StatusUpdate(t *testing.T) {
 	}{
 		// Request(+metadata) validation checks
 		{
-			name:                "Decode Error: Content-Type header is not application/json",
-			transactFn:          fixUnusedTransactioner,
-			faServiceFn:         fixUnusedFormationAssignmentSvc,
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
-			headers:             map[string][]string{httputils.HeaderContentTypeKey: {"invalidContentType"}},
-			expectedStatusCode:  http.StatusUnsupportedMediaType,
-			expectedErrOutput:   "Content-Type header is not application/json",
+			name:               "Decode Error: Content-Type header is not application/json",
+			headers:            map[string][]string{httputils.HeaderContentTypeKey: {"invalidContentType"}},
+			expectedStatusCode: http.StatusUnsupportedMediaType,
+			expectedErrOutput:  "Content-Type header is not application/json",
 		},
 		{
-			name:                "Error when one or more of the required path parameters are missing",
-			transactFn:          fixUnusedTransactioner,
-			faServiceFn:         fixUnusedFormationAssignmentSvc,
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
+			name: "Error when one or more of the required path parameters are missing",
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -130,12 +120,7 @@ func Test_StatusUpdate(t *testing.T) {
 		},
 		// Request body validation checks
 		{
-			name:                "Validate Error: error when we have ready state with config but also an error provided",
-			transactFn:          fixUnusedTransactioner,
-			faServiceFn:         fixUnusedFormationAssignmentSvc,
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
+			name: "Validate Error: error when we have ready state with config but also an error provided",
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -145,12 +130,7 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedErrOutput:  "Request Body contains invalid input:",
 		},
 		{
-			name:                "Validate Error: error when configuration is provided but the state is incorrect",
-			transactFn:          fixUnusedTransactioner,
-			faServiceFn:         fixUnusedFormationAssignmentSvc,
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
+			name: "Validate Error: error when configuration is provided but the state is incorrect",
 			reqBody: fm.RequestBody{
 				State:         model.CreateErrorAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -159,12 +139,7 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedErrOutput:  "Request Body contains invalid input:",
 		},
 		{
-			name:                "Validate Error: error when request body contains only state",
-			transactFn:          fixUnusedTransactioner,
-			faServiceFn:         fixUnusedFormationAssignmentSvc,
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
+			name: "Validate Error: error when request body contains only state",
 			reqBody: fm.RequestBody{
 				State: model.ReadyAssignmentState,
 			},
@@ -205,12 +180,8 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:                "Error when transaction fails to begin",
-			transactFn:          txGen.ThatFailsOnBegin,
-			faServiceFn:         fixUnusedFormationAssignmentSvc,
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
+			name:       "Error when transaction fails to begin",
+			transactFn: txGen.ThatFailsOnBegin,
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -227,9 +198,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(nil, testErr).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -246,9 +214,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State: model.DeleteErrorAssignmentState,
 				Error: configurationErr.Error(),
@@ -266,9 +231,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorAssignmentState).Return(testErr).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State: model.CreateErrorAssignmentState,
 				Error: configurationErr.Error(),
@@ -292,8 +254,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faConv.On("ToInput", faWithSourceAppAndTargetRuntimeWithCreateErrorState).Return(faModelInputWithCreateErrorState).Once()
 				return faConv
 			},
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State: model.CreateErrorAssignmentState,
 				Error: configurationErr.Error(),
@@ -317,8 +277,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faConv.On("ToInput", faWithSourceAppAndTargetRuntimeWithCreateErrorState).Return(faModelInputWithCreateErrorState).Once()
 				return faConv
 			},
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State: model.CreateErrorAssignmentState,
 				Error: configurationErr.Error(),
@@ -342,8 +300,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faConv.On("ToInput", faWithSourceAppAndTargetRuntimeWithCreateErrorState).Return(faModelInputWithCreateErrorState).Once()
 				return faConv
 			},
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State: model.CreateErrorAssignmentState,
 				Error: configurationErr.Error(),
@@ -371,7 +327,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faNotificationSvc.On("GenerateNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime).Return(nil, testErr).Once()
 				return faNotificationSvc
 			},
-			formationSvcFn: fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -400,7 +355,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faNotificationSvc.On("GenerateNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime).Return(fixEmptyNotificationRequest(), nil).Once()
 				return faNotificationSvc
 			},
-			formationSvcFn: fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -430,7 +384,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faNotificationSvc.On("GenerateNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp).Return(nil, testErr).Once()
 				return faNotificationSvc
 			},
-			formationSvcFn: fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -461,7 +414,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faNotificationSvc.On("GenerateNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp).Return(fixEmptyNotificationRequest(), nil).Once()
 				return faNotificationSvc
 			},
-			formationSvcFn: fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -492,7 +444,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faNotificationSvc.On("GenerateNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp).Return(fixEmptyNotificationRequest(), nil).Once()
 				return faNotificationSvc
 			},
-			formationSvcFn: fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -512,8 +463,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
@@ -535,9 +484,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State:         model.ConfigPendingAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -555,9 +501,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.DeleteErrorAssignmentState).Return(nil).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State: model.DeleteErrorAssignmentState,
 				Error: configurationErr.Error(),
@@ -575,9 +518,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("SetAssignmentToErrorState", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntimeForUnassingOpWithDeleteErrorState, configurationErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.DeleteErrorAssignmentState).Return(testErr).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
-			formationSvcFn:      fixUnusedFormationSvc,
 			reqBody: fm.RequestBody{
 				State: model.DeleteErrorAssignmentState,
 				Error: configurationErr.Error(),
@@ -595,8 +535,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("Delete", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(testErr).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
@@ -620,8 +558,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(nil, testErr).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
@@ -645,8 +581,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, testErr).Once()
@@ -670,8 +604,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(emptyFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(testFormation, nil).Once()
@@ -696,8 +628,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(emptyFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(testFormation, nil).Once()
@@ -722,8 +652,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
-			faConverterFn:       fixUnusedFormationAssignmentConverter,
-			faNotificationSvcFn: fixUnusedFormationAssignmentNotificationSvc,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
@@ -755,11 +683,31 @@ func Test_StatusUpdate(t *testing.T) {
 			}
 			w := httptest.NewRecorder()
 
-			persist, transact := tCase.transactFn()
-			faSvc := tCase.faServiceFn()
-			faConv := tCase.faConverterFn()
-			faNotificationSvc := tCase.faNotificationSvcFn()
-			formationSvc := tCase.formationSvcFn()
+			persist, transact := fixUnusedTransactioner()
+			if tCase.transactFn != nil {
+				persist, transact = tCase.transactFn()
+			}
+
+			faSvc := fixUnusedFormationAssignmentSvc()
+			if tCase.faServiceFn != nil {
+				faSvc = tCase.faServiceFn()
+			}
+
+			faConv := fixUnusedFormationAssignmentConverter()
+			if tCase.faConverterFn != nil {
+				faConv = tCase.faConverterFn()
+			}
+
+			faNotificationSvc := fixUnusedFormationAssignmentNotificationSvc()
+			if tCase.faNotificationSvcFn != nil {
+				faNotificationSvc = tCase.faNotificationSvcFn()
+			}
+
+			formationSvc := fixUnusedFormationSvc()
+			if tCase.formationSvcFn != nil {
+				formationSvc = tCase.formationSvcFn()
+			}
+
 			defer mock.AssertExpectationsForObjects(t, persist, transact, faConv, faSvc, faNotificationSvc)
 
 			handler := fm.NewFormationMappingHandler(transact, faConv, faSvc, faNotificationSvc, formationSvc)
