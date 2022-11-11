@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gqlizer "github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -12,9 +16,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"reflect"
-	"strings"
-	"time"
 )
 
 type Entity struct {

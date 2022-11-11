@@ -2,6 +2,7 @@ package notifications
 
 import (
 	"context"
+
 	"github.com/lib/pq"
 )
 

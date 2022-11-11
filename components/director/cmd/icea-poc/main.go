@@ -20,6 +20,10 @@ import (
 	"context"
 	"crypto"
 	"crypto/tls"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/icea-poc/directorclient"
 	"github.com/kyma-incubator/compass/components/director/internal/icea-poc/notifications"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -30,9 +34,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	"net/http"
-	"os"
-	"time"
 )
 
 const envPrefix = "APP"
