@@ -43,7 +43,7 @@ type config struct {
 	Director struct {
 		Certificate                    string
 		PrivateKey                     string
-		DirectorExternalCertSecuredURL string
+		DirectorExternalCertSecuredURL string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
 		InternalURL                    string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
 		ClientTimeout                  time.Duration `envconfig:"default=115s"`
 		SkipSSLValidation              bool          `envconfig:"default=false"`
