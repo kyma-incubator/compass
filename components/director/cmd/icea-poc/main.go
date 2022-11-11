@@ -18,14 +18,19 @@ package main
 
 import (
 	"context"
+	"crypto"
+	"crypto/tls"
 	"github.com/kyma-incubator/compass/components/director/internal/icea-poc/directorclient"
 	"github.com/kyma-incubator/compass/components/director/internal/icea-poc/notifications"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"net/http"
 	"os"
 	"time"
 )
@@ -36,9 +41,12 @@ type config struct {
 	Database persistence.DatabaseConfig
 	Log      log.Config
 	Director struct {
-		InternalURL       string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
-		ClientTimeout     time.Duration `envconfig:"default=115s"`
-		SkipSSLValidation bool          `envconfig:"default=false"`
+		Certificate                    string
+		PrivateKey                     string
+		DirectorExternalCertSecuredURL string
+		InternalURL                    string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+		ClientTimeout                  time.Duration `envconfig:"default=115s"`
+		SkipSSLValidation              bool          `envconfig:"default=false"`
 	}
 }
 
@@ -60,6 +68,11 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "")
 
+	parsedCert, err := cert.ParseCertificate(cfg.Director.Certificate, cfg.Director.PrivateKey)
+	exitOnError(err, "Failed to parse Certificate")
+
+	certSecuredGraphQLClient := NewCertAuthorizedGraphQLClientWithCustomURL(cfg.Director.DirectorExternalCertSecuredURL, parsedCert.PrivateKey, parsedCert.Certificate, cfg.Director.SkipSSLValidation)
+
 	internalDirectorClientProvider := directorclient.NewClientProvider(cfg.Director.InternalURL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
 
 	defer func() {
@@ -68,13 +81,15 @@ func main() {
 	}()
 
 	formationsHandler := &notifications.FormationNotificationHandler{
-		Transact:              transact,
-		DirectorGraphQLClient: internalDirectorClientProvider.Client(),
+		Transact:                         transact,
+		DirectorGraphQLClient:            internalDirectorClientProvider.Client(),
+		DirectorCertSecuredGraphQLClient: certSecuredGraphQLClient,
 	}
 
 	faHandler := &notifications.FANotificationHandler{
-		Transact:              transact,
-		DirectorGraphQLClient: internalDirectorClientProvider.Client(),
+		Transact:                         transact,
+		DirectorGraphQLClient:            internalDirectorClientProvider.Client(),
+		DirectorCertSecuredGraphQLClient: certSecuredGraphQLClient,
 	}
 
 	processor := notifications.NewNotificationProcessor(cfg.Database, map[notifications.HandlerKey]notifications.NotificationHandler{
@@ -98,4 +113,30 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.D().Fatal(wrappedError)
 	}
+}
+
+func NewCertAuthorizedGraphQLClientWithCustomURL(url string, key crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *gcli.Client {
+	certAuthorizedClient := NewCertAuthorizedHTTPClient(key, rawCertChain, skipSSLValidation)
+	return gcli.NewClient(url, gcli.WithHTTPClient(certAuthorizedClient))
+}
+
+func NewCertAuthorizedHTTPClient(key crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
+	tlsCert := tls.Certificate{
+		Certificate: rawCertChain,
+		PrivateKey:  key,
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates:       []tls.Certificate{tlsCert},
+		InsecureSkipVerify: skipSSLValidation,
+	}
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+		Timeout: time.Second * 30,
+	}
+
+	return httpClient
 }

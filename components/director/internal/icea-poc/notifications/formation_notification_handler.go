@@ -16,11 +16,14 @@ type Entity struct {
 	Name                string `db:"name" json:"name"`
 }
 
-const DIFormationTemplateID = "686d42be-d944-4b63-be72-047603df06e6"
+const (
+	DIFormationTemplateID = "686d42be-d944-4b63-be72-047603df06e6"
+)
 
 type FormationNotificationHandler struct {
-	Transact              persistence.Transactioner
-	DirectorGraphQLClient *gcli.Client
+	Transact                         persistence.Transactioner
+	DirectorGraphQLClient            *gcli.Client
+	DirectorCertSecuredGraphQLClient *gcli.Client
 }
 
 func (l *FormationNotificationHandler) HandleCreate(ctx context.Context, data []byte) error {

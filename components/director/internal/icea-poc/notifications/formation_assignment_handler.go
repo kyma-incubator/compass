@@ -21,8 +21,9 @@ type FAEntity struct {
 	Value       string `db:"value" json:"value"`
 }
 type FANotificationHandler struct {
-	Transact              persistence.Transactioner
-	DirectorGraphQLClient *gcli.Client
+	Transact                         persistence.Transactioner
+	DirectorGraphQLClient            *gcli.Client
+	DirectorCertSecuredGraphQLClient *gcli.Client
 }
 
 func (l *FANotificationHandler) HandleCreate(ctx context.Context, data []byte) error {
@@ -33,6 +34,19 @@ func (l *FANotificationHandler) HandleUpdate(ctx context.Context, data []byte) e
 	entity := FAEntity{}
 	if err := json.Unmarshal(data, &entity); err != nil {
 		return errors.Errorf("could not unmarshal app: %s", err)
+	}
+
+	tx, err := l.Transact.Begin()
+	if err != nil {
+		log.C(ctx).Errorf("Error while opening transaction in formation_assignment_handler when updating FA with ID: %q", entity.ID)
+		return err
+	}
+	defer l.Transact.RollbackUnlessCommitted(ctx, tx)
+
+	err = tx.Commit()
+	if err != nil {
+		log.C(ctx).Errorf("Error while committing transaction in formation_assignment_handler when updating FA with ID: %q", entity.ID)
+		return err
 	}
 
 	log.C(ctx).Infof("Successfully handled update event for formation assignment %v", entity)
