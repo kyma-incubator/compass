@@ -107,6 +107,12 @@ spec:
                   value: "{{ .Values.global.ordAggregator.maxParallelDocumentsPerApplication }}"
                 - name: APP_MAX_PARALLEL_SPECIFICATION_PROCESSORS
                   value: "{{ .Values.global.ordAggregator.maxParallelSpecificationProcessors }}"
+                - name: APP_ORD_WEBHOOK_PARTIAL_PROCESS_URL
+                  value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessURL }}"
+                - name: APP_ORD_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS
+                  value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessMaxDays }}"
+                - name: APP_ORD_WEBHOOK_PARTIAL_PROCESSING
+                  value: "{{ .Values.global.ordAggregator.ordWebhookPartialProcessing }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
                   value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
                 - name: APP_ORD_WEBHOOK_MAPPINGS
