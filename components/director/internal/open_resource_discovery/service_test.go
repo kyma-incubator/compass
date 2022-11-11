@@ -2679,7 +2679,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name: "Does not resync resources if vendor resource deletion due to tombstone fails",
+			Name: "Dsoes not resync resources if vendor resource deletion due to tombstone fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Times(27)
