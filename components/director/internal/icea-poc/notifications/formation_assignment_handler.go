@@ -38,14 +38,14 @@ func (l *FANotificationHandler) HandleUpdate(ctx context.Context, data []byte) e
 
 	tx, err := l.Transact.Begin()
 	if err != nil {
-		log.C(ctx).Errorf("Error while opening transaction in formation_assignment_handler when updating FA with ID: %q", entity.ID)
+		log.C(ctx).Errorf("Error while opening transaction in formation_assignment_handler when updating FA with ID: %q and error: %s", entity.ID, err)
 		return err
 	}
 	defer l.Transact.RollbackUnlessCommitted(ctx, tx)
 
 	err = tx.Commit()
 	if err != nil {
-		log.C(ctx).Errorf("Error while committing transaction in formation_assignment_handler when updating FA with ID: %q", entity.ID)
+		log.C(ctx).Errorf("Error while committing transaction in formation_assignment_handler when updating FA with ID: %q and error: %s", entity.ID, err)
 		return err
 	}
 
