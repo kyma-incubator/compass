@@ -41,12 +41,12 @@ type config struct {
 	Database persistence.DatabaseConfig
 	Log      log.Config
 	Director struct {
-		Certificate                    string
-		PrivateKey                     string
-		DirectorExternalCertSecuredURL string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
-		InternalURL                    string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
-		ClientTimeout                  time.Duration `envconfig:"default=115s"`
-		SkipSSLValidation              bool          `envconfig:"default=false"`
+		Certificate            string
+		PrivateKey             string
+		ExternalCertSecuredURL string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+		InternalURL            string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+		ClientTimeout          time.Duration `envconfig:"default=115s"`
+		SkipSSLValidation      bool          `envconfig:"default=false"`
 	}
 }
 
@@ -71,7 +71,7 @@ func main() {
 	parsedCert, err := cert.ParseCertificate(cfg.Director.Certificate, cfg.Director.PrivateKey)
 	exitOnError(err, "Failed to parse Certificate")
 
-	certSecuredGraphQLClient := NewCertAuthorizedGraphQLClientWithCustomURL(cfg.Director.DirectorExternalCertSecuredURL, parsedCert.PrivateKey, parsedCert.Certificate, cfg.Director.SkipSSLValidation)
+	certSecuredGraphQLClient := NewCertAuthorizedGraphQLClientWithCustomURL(cfg.Director.ExternalCertSecuredURL, parsedCert.PrivateKey, parsedCert.Certificate, cfg.Director.SkipSSLValidation)
 
 	internalDirectorClientProvider := directorclient.NewClientProvider(cfg.Director.InternalURL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
 
