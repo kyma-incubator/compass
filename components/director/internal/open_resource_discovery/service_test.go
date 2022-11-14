@@ -732,7 +732,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return persistTx, transact
 			},
 			webhookSvcFn:      successfulWebhookList,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -750,7 +749,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:          successfulAppGet,
 			tenantSvcFn:       successfulTenantSvc,
 			webhookSvcFn:      successfulWebhookList,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -770,7 +768,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -796,7 +793,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
 				return appSvc
 			},
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -818,7 +814,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn:      successfulWebhookList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when get tenant fails",
@@ -840,7 +835,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn:      successfulWebhookList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when application locking fails",
@@ -862,7 +856,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn:      successfulWebhookList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources when event list fails",
@@ -891,7 +884,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources when api list fails",
@@ -915,7 +907,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return apiSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when list all applications by app template id fails",
@@ -940,7 +931,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when get internal tenant id fails for ORD webhook for app template",
@@ -970,7 +960,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when get tenant id fails for ORD webhook for app template",
@@ -1001,7 +990,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when application locking fails for ORD webhook for app template",
@@ -1028,7 +1016,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Skips webhook when ORD documents fetch fails",
@@ -1051,7 +1038,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return client
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources for invalid ORD documents",
@@ -1079,7 +1065,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if vendor list fails",
@@ -1106,7 +1091,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Fails to list vendors after resync",
@@ -1136,7 +1120,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if vendor update fails",
@@ -1164,7 +1147,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if vendor create fails",
@@ -1192,7 +1174,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if product list fails",
@@ -1220,7 +1201,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Fails to list products after resync",
@@ -1251,7 +1231,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if product update fails",
@@ -1280,7 +1259,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if product create fails",
@@ -1309,7 +1287,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if package list fails",
@@ -1338,7 +1315,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn:          successfulEmptyAPIList,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Fails to list packages after resync",
@@ -1369,7 +1345,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn:          successfulEmptyAPIList,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if package update fails",
@@ -1399,7 +1374,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn:          successfulEmptyAPIList,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if package create fails",
@@ -1429,7 +1403,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn:          successfulEmptyAPIList,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if bundle list fails",
@@ -1458,7 +1431,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn:          successfulEmptyAPIList,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Fails to list bundles after resync",
@@ -1489,7 +1461,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn:          successfulEmptyAPIList,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if bundle update fails",
@@ -1519,7 +1490,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn:          successfulEmptyAPIList,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if bundle create fails",
@@ -1549,7 +1519,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			apiSvcFn:          successfulEmptyAPIList,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if api list fails",
@@ -1579,7 +1548,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Fails to list apis after resync",
@@ -1614,7 +1582,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if fetching bundle ids for api fails",
@@ -1651,7 +1618,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if api update fails",
@@ -1683,7 +1649,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if api create fails",
@@ -1714,7 +1679,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if api spec delete fails",
@@ -1751,7 +1715,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 			eventSvcFn:        successfulEmptyEventList,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if api spec create fails",
@@ -1789,7 +1752,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 			eventSvcFn:        successfulEmptyEventList,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if api spec list fails",
@@ -1825,7 +1787,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if api spec get fetch request fails",
@@ -1862,7 +1823,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Resync resources returns error if api spec refetch fails",
@@ -1954,7 +1914,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if event list fails",
@@ -1986,7 +1945,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Fails to list events after resync",
@@ -2038,7 +1996,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if fetching bundle ids for event fails",
@@ -2079,7 +2036,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if event update fails",
@@ -2112,7 +2068,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync specification resources if event create fails",
@@ -2175,7 +2130,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if event spec delete fails",
@@ -2220,7 +2174,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if event spec create fails",
@@ -2268,7 +2221,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if event spec list fails",
@@ -2313,7 +2265,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if event spec get fetch request fails",
@@ -2359,7 +2310,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Resync resources returns error if event spec refetch fails",
@@ -2458,7 +2408,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if tombstone list fails",
@@ -2490,7 +2439,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Fails to list tombstones after resync",
@@ -2524,7 +2472,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if tombstone update fails",
@@ -2557,7 +2504,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if tombstone create fails",
@@ -2589,7 +2535,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if api resource deletion due to tombstone fails",
@@ -2631,7 +2576,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if package resource deletion due to tombstone fails",
@@ -2682,7 +2626,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if event resource deletion due to tombstone fails",
@@ -2734,7 +2677,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if vendor resource deletion due to tombstone fails",
@@ -2785,7 +2727,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if product resource deletion due to tombstone fails",
@@ -2835,7 +2776,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Does not resync resources if bundle resource deletion due to tombstone fails",
@@ -2885,7 +2825,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhookForApplication).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			ExpectedErr: errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when failing to open final transaction to commit fetched specs",
@@ -2923,7 +2862,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when failing to find spec in final transaction when trying to update and persist fetched specs",
@@ -2988,7 +2926,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when failing to update spec in final transaction when trying to update and persist fetched specs",
@@ -3057,7 +2994,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Returns error when failing to update fetch request in final transaction when trying to update and persist fetched specs",
@@ -3136,7 +3072,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 		},
 		{
 			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
