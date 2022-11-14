@@ -430,15 +430,6 @@ func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getCertAuthorizedHTTPClient(ctx context.Context) (certAuthorizedHTTPClient *http.Client, err error) {
 	k8sClient, err := kubernetes.NewKubernetesClientSet(ctx, time.Second, time.Minute, time.Minute)
-
-	defer func() { // this secret is created from the E2E tests, and in particular cases it's not deleted, so it can be used here to call back with the data from it. After the cert client is build, delete the secret, so no leftover resources are left.
-		var gracePeriod int64 = 0
-		tmpErr := k8sClient.CoreV1().Secrets(h.config.ExternalClientCertTestSecretNamespace).Delete(ctx, h.config.ExternalClientCertTestSecretName, metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
-		if tmpErr != nil {
-			err = errors.Wrapf(tmpErr, "while deleting secret with name: %s in namespace: %s", h.config.ExternalClientCertTestSecretName, h.config.ExternalClientCertTestSecretNamespace)
-		}
-	}()
-
 	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(h.config.ExternalClientCertTestSecretNamespace).Get(ctx, h.config.ExternalClientCertTestSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting secret with name: %s in namespace: %s", h.config.ExternalClientCertTestSecretName, h.config.ExternalClientCertTestSecretNamespace)

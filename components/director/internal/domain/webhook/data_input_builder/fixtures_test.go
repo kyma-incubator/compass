@@ -1,6 +1,6 @@
-package webhook_test
+package data_input_builder_test
 
-import "github.com/kyma-incubator/compass/components/director/pkg/webhook/automock"
+import "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder/automock"
 
 func unusedAppRepo() *automock.ApplicationRepository {
 	return &automock.ApplicationRepository{}

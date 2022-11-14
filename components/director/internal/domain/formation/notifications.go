@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -52,7 +53,7 @@ type notificationsService struct {
 	webhookRepository             webhookRepository
 	webhookConverter              webhookConverter
 	webhookClient                 webhookClient
-	webhookDataInputBuilder       webhookdir.DataInputBuilder
+	webhookDataInputBuilder       databuilder.DataInputBuilder
 }
 
 // NewNotificationService creates notifications service for formation assignment and unassignment
@@ -65,7 +66,7 @@ func NewNotificationService(
 	webhookRepository webhookRepository,
 	webhookConverter webhookConverter,
 	webhookClient webhookClient,
-	webhookDataInputBuilder webhookdir.DataInputBuilder,
+	webhookDataInputBuilder databuilder.DataInputBuilder,
 ) *notificationsService {
 	return &notificationsService{
 		applicationRepository:         applicationRepository,

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder/automock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -21,7 +23,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	webhookautomock "github.com/kyma-incubator/compass/components/director/pkg/webhook/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 )
@@ -119,8 +120,8 @@ func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
 	return &automock.RuntimeContextRepository{}
 }
 
-func unusedDataInputBuilder() *webhookautomock.DataInputBuilder {
-	return &webhookautomock.DataInputBuilder{}
+func unusedDataInputBuilder() *databuilderautomock.DataInputBuilder {
+	return &databuilderautomock.DataInputBuilder{}
 }
 
 func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {

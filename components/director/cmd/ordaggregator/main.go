@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	pkgwebhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
@@ -221,7 +221,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
-	webhookDataInputBuilder := pkgwebhook.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
 	formationSvc := formation.NewService(transact, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)

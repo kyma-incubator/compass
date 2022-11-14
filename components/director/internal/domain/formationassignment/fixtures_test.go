@@ -3,13 +3,14 @@ package formationassignment_test
 import (
 	"encoding/json"
 
+	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	webhookautomock "github.com/kyma-incubator/compass/components/director/pkg/webhook/automock"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -519,8 +520,8 @@ func unusedRuntimeContextRepository() *automock.RuntimeContextRepository {
 	return &automock.RuntimeContextRepository{}
 }
 
-func unusedWebhookDataInputBuilder() *webhookautomock.DataInputBuilder {
-	return &webhookautomock.DataInputBuilder{}
+func unusedWebhookDataInputBuilder() *databuilderautomock.DataInputBuilder {
+	return &databuilderautomock.DataInputBuilder{}
 }
 
 func unusedWebhookRepo() *automock.WebhookRepository {

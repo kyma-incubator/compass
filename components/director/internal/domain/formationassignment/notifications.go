@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 
+	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -17,11 +18,11 @@ type formationAssignmentNotificationService struct {
 	formationAssignmentRepo FormationAssignmentRepository
 	webhookConverter        webhookConverter
 	webhookRepository       webhookRepository
-	webhookDataInputBuilder webhook.DataInputBuilder
+	webhookDataInputBuilder databuilder.DataInputBuilder
 }
 
 // NewFormationAssignmentNotificationService creates formation assignment notifications service
-func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, webhookConverter webhookConverter, webhookRepository webhookRepository, webhookDataInputBuilder webhook.DataInputBuilder) *formationAssignmentNotificationService {
+func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, webhookConverter webhookConverter, webhookRepository webhookRepository, webhookDataInputBuilder databuilder.DataInputBuilder) *formationAssignmentNotificationService {
 	return &formationAssignmentNotificationService{
 		formationAssignmentRepo: formationAssignmentRepo,
 		webhookConverter:        webhookConverter,

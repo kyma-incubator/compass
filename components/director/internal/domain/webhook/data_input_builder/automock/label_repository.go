@@ -5,8 +5,9 @@ package automock
 import (
 	context "context"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
+
+	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
 	testing "testing"
 )

@@ -1,7 +1,9 @@
-package webhook
+package data_input_builder
 
 import (
 	"context"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
@@ -36,10 +38,10 @@ type labelRepository interface {
 // DataInputBuilder is responsible to prepare and build different entity data needed for a webhook input
 //go:generate mockery --exported --name=DataInputBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DataInputBuilder interface {
-	PrepareApplicationAndAppTemplateWithLabels(ctx context.Context, tenant, appID string) (*ApplicationWithLabels, *ApplicationTemplateWithLabels, error)
-	PrepareRuntimeWithLabels(ctx context.Context, tenant, runtimeID string) (*RuntimeWithLabels, error)
-	PrepareRuntimeContextWithLabels(ctx context.Context, tenant, runtimeCtxID string) (*RuntimeContextWithLabels, error)
-	PrepareRuntimeAndRuntimeContextWithLabels(ctx context.Context, tenant, runtimeID string) (*RuntimeWithLabels, *RuntimeContextWithLabels, error)
+	PrepareApplicationAndAppTemplateWithLabels(ctx context.Context, tenant, appID string) (*webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, error)
+	PrepareRuntimeWithLabels(ctx context.Context, tenant, runtimeID string) (*webhook.RuntimeWithLabels, error)
+	PrepareRuntimeContextWithLabels(ctx context.Context, tenant, runtimeCtxID string) (*webhook.RuntimeContextWithLabels, error)
+	PrepareRuntimeAndRuntimeContextWithLabels(ctx context.Context, tenant, runtimeID string) (*webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, error)
 }
 
 // WebhookDataInputBuilder take cares to get and build different webhook input data such as application, runtime, runtime contexts
@@ -63,7 +65,7 @@ func NewWebhookDataInputBuilder(applicationRepository applicationRepository, app
 }
 
 // PrepareApplicationAndAppTemplateWithLabels construct ApplicationWithLabels and ApplicationTemplateWithLabels based on tenant and ID
-func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx context.Context, tenant, appID string) (*ApplicationWithLabels, *ApplicationTemplateWithLabels, error) {
+func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx context.Context, tenant, appID string) (*webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, error) {
 	application, err := b.applicationRepository.GetByID(ctx, tenant, appID)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while getting application by ID: %q", appID)
@@ -72,12 +74,12 @@ func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx
 	if err != nil {
 		return nil, nil, err
 	}
-	applicationWithLabels := &ApplicationWithLabels{
+	applicationWithLabels := &webhook.ApplicationWithLabels{
 		Application: application,
 		Labels:      applicationLabels,
 	}
 
-	var appTemplateWithLabels *ApplicationTemplateWithLabels
+	var appTemplateWithLabels *webhook.ApplicationTemplateWithLabels
 	if application.ApplicationTemplateID != nil {
 		appTemplate, err := b.applicationTemplateRepository.Get(ctx, *application.ApplicationTemplateID)
 		if err != nil {
@@ -87,7 +89,7 @@ func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx
 		if err != nil {
 			return nil, nil, err
 		}
-		appTemplateWithLabels = &ApplicationTemplateWithLabels{
+		appTemplateWithLabels = &webhook.ApplicationTemplateWithLabels{
 			ApplicationTemplate: appTemplate,
 			Labels:              applicationTemplateLabels,
 		}
@@ -96,7 +98,7 @@ func (b *WebhookDataInputBuilder) PrepareApplicationAndAppTemplateWithLabels(ctx
 }
 
 // PrepareRuntimeWithLabels construct RuntimeWithLabels based on tenant and runtimeID
-func (b *WebhookDataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, tenant, runtimeID string) (*RuntimeWithLabels, error) {
+func (b *WebhookDataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, tenant, runtimeID string) (*webhook.RuntimeWithLabels, error) {
 	runtime, err := b.runtimeRepo.GetByID(ctx, tenant, runtimeID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtime by ID: %q", runtimeID)
@@ -107,7 +109,7 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, 
 		return nil, err
 	}
 
-	runtimeWithLabels := &RuntimeWithLabels{
+	runtimeWithLabels := &webhook.RuntimeWithLabels{
 		Runtime: runtime,
 		Labels:  runtimeLabels,
 	}
@@ -116,7 +118,7 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, 
 }
 
 // PrepareRuntimeContextWithLabels construct RuntimeContextWithLabels based on tenant and runtimeCtxID
-func (b *WebhookDataInputBuilder) PrepareRuntimeContextWithLabels(ctx context.Context, tenant, runtimeCtxID string) (*RuntimeContextWithLabels, error) {
+func (b *WebhookDataInputBuilder) PrepareRuntimeContextWithLabels(ctx context.Context, tenant, runtimeCtxID string) (*webhook.RuntimeContextWithLabels, error) {
 	runtimeCtx, err := b.runtimeContextRepo.GetByID(ctx, tenant, runtimeCtxID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtime context by ID: %q", runtimeCtxID)
@@ -127,7 +129,7 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeContextWithLabels(ctx context.Co
 		return nil, err
 	}
 
-	runtimeContextWithLabels := &RuntimeContextWithLabels{
+	runtimeContextWithLabels := &webhook.RuntimeContextWithLabels{
 		RuntimeContext: runtimeCtx,
 		Labels:         runtimeCtxLabels,
 	}
@@ -136,7 +138,7 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeContextWithLabels(ctx context.Co
 }
 
 // PrepareRuntimeAndRuntimeContextWithLabels construct RuntimeWithLabels and RuntimeContextWithLabels based on tenant and runtimeID
-func (b *WebhookDataInputBuilder) PrepareRuntimeAndRuntimeContextWithLabels(ctx context.Context, tenant, runtimeID string) (*RuntimeWithLabels, *RuntimeContextWithLabels, error) {
+func (b *WebhookDataInputBuilder) PrepareRuntimeAndRuntimeContextWithLabels(ctx context.Context, tenant, runtimeID string) (*webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, error) {
 	runtimeWithLabels, err := b.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
 	if err != nil {
 		return nil, nil, err
@@ -152,7 +154,7 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeAndRuntimeContextWithLabels(ctx 
 		return nil, nil, err
 	}
 
-	runtimeContextWithLabels := &RuntimeContextWithLabels{
+	runtimeContextWithLabels := &webhook.RuntimeContextWithLabels{
 		RuntimeContext: runtimeCtx,
 		Labels:         runtimeCtxLabels,
 	}

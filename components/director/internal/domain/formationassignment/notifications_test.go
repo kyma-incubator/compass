@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	webhookautomock "github.com/kyma-incubator/compass/components/director/pkg/webhook/automock"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -132,7 +133,7 @@ func Test_GenerateNotification(t *testing.T) {
 		name                    string
 		formationAssignment     *model.FormationAssignment
 		webhookRepo             func() *automock.WebhookRepository
-		webhookDataInputBuilder func() *webhookautomock.DataInputBuilder
+		webhookDataInputBuilder func() *databuilderautomock.DataInputBuilder
 		formationAssignmentRepo func() *automock.FormationAssignmentRepository
 		webhookConverver        func() *automock.WebhookConverter
 		expectedNotification    *webhookclient.NotificationRequest
@@ -152,8 +153,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -197,8 +198,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
@@ -212,8 +213,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
@@ -228,8 +229,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -249,8 +250,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -276,8 +277,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -302,8 +303,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
@@ -317,8 +318,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
@@ -333,8 +334,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -354,8 +355,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -381,8 +382,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeCtxWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(testRuntimeWithLabels, nil).Once()
@@ -408,8 +409,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
@@ -423,8 +424,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, testErr).Once()
 				return webhookDataInputBuilder
@@ -439,8 +440,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeCtxWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(nil, testErr).Once()
@@ -456,8 +457,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeCtxWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(testRuntimeWithLabels, nil).Once()
@@ -478,8 +479,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(testAppWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeCtxWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(testRuntimeWithLabels, nil).Once()
@@ -506,8 +507,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -561,8 +562,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
@@ -576,8 +577,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, testErr).Once()
 				return webhookDataInputBuilder
@@ -592,8 +593,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -613,8 +614,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -640,8 +641,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(testRuntimeWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
@@ -662,8 +663,8 @@ func Test_GenerateNotification(t *testing.T) {
 		{
 			name:                "Error when preparing runtime context with labels for source type application",
 			formationAssignment: faWithSourceAppCtxAndTargetRtmCtx,
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
@@ -677,8 +678,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testNotFoundErr).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
@@ -691,8 +692,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
@@ -706,8 +707,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
@@ -721,8 +722,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, nil, testErr).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
 				return webhookDataInputBuilder
@@ -737,8 +738,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(nil, testErr).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
@@ -754,8 +755,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(testRuntimeWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()
@@ -776,8 +777,8 @@ func Test_GenerateNotification(t *testing.T) {
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(testRuntimeWebhook, nil).Once()
 				return webhookRepo
 			},
-			webhookDataInputBuilder: func() *webhookautomock.DataInputBuilder {
-				webhookDataInputBuilder := &webhookautomock.DataInputBuilder{}
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, testRuntimeID).Return(testRuntimeWithLabels, nil).Once()
 				webhookDataInputBuilder.On("PrepareRuntimeContextWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testRuntimeCtxWithLabels, nil).Once()

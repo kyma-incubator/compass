@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/k8s"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
@@ -1752,6 +1755,15 @@ func TestFormationAssignments(stdT *testing.T) {
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, false)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+		// external cert secret created by the NewExternalCertFromConfig above is used by the external-services-mock for the async API call,
+		// that's why in the function we don't delete it and add explicit defer deletion here
+		// so, the secret could be deleted at the end of the test. Otherwise, it will remain as leftover resource in the cluster
+		defer func() {
+			k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+			require.NoError(t, err)
+			k8s.DeleteSecret(t, ctx, k8sClient, conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName, conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace)
+		}()
 
 		runtimeWebhookMode := graphql.WebhookModeAsyncCallback
 		providerRuntimeInput := graphql.RuntimeRegisterInput{

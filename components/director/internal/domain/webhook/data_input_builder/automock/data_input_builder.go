@@ -4,9 +4,10 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	mock "github.com/stretchr/testify/mock"
+
+	testing "testing"
 
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
