@@ -51,7 +51,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 
 	t.Run("Caller successfully updates formation assignment for himself", func(t *testing.T) {
 		// Prepare provider external client certificate and secret, and build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		certSecuredHTTPClient := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		parentTenantID := conf.TestProviderAccountID
@@ -123,7 +123,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret, and build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		directorCertSecuredGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		// the package is gql but the client that is build is a "standard" http client, not a GraphQL one
@@ -335,7 +335,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		}
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
 		appProviderDirectorCertSecuredGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		appProviderCertSecuredHTTPClient := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
@@ -510,7 +510,7 @@ func getHTTPCertClientWithCustomSubject(t *testing.T, ctx context.Context, conf 
 		ExternalCertProvider:                  certprovider.CertificateService,
 	}
 
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
 	return gql.NewCertAuthorizedHTTPClient(pk, cert, conf.SkipSSLValidation)
 }
 

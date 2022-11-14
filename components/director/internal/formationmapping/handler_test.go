@@ -463,11 +463,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
-			formationSvcFn: func() *automock.FormationService {
-				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
-				return formationSvc
-			},
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -535,11 +530,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("Delete", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(testErr).Once()
 				return faSvc
 			},
-			formationSvcFn: func() *automock.FormationService {
-				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
-				return formationSvc
-			},
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -558,11 +548,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(nil, testErr).Once()
 				return faSvc
 			},
-			formationSvcFn: func() *automock.FormationService {
-				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
-				return formationSvc
-			},
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -578,7 +563,7 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
 				faSvc.On("Delete", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(nil).Once()
-				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
+				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(emptyFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
 			formationSvcFn: func() *automock.FormationService {
@@ -652,11 +637,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
-			formationSvcFn: func() *automock.FormationService {
-				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
-				return formationSvc
-			},
 			reqBody: fm.RequestBody{
 				State:         model.ReadyAssignmentState,
 				Configuration: json.RawMessage(testValidConfig),
@@ -708,7 +688,7 @@ func Test_StatusUpdate(t *testing.T) {
 				formationSvc = tCase.formationSvcFn()
 			}
 
-			defer mock.AssertExpectationsForObjects(t, persist, transact, faConv, faSvc, faNotificationSvc)
+			defer mock.AssertExpectationsForObjects(t, persist, transact, faConv, faSvc, faNotificationSvc, formationSvc)
 
 			handler := fm.NewFormationMappingHandler(transact, faConv, faSvc, faNotificationSvc, formationSvc)
 

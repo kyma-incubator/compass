@@ -167,7 +167,7 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(writer, ctx)
+	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(ctx)
 	if err != nil {
 		httputils.RespondWithError(ctx, writer, 500, err)
 		return
@@ -322,7 +322,7 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(writer, ctx)
+	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(ctx)
 	if err != nil {
 		httputils.RespondWithError(ctx, writer, 500, err)
 		return
@@ -428,28 +428,37 @@ func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) getCertAuthorizedHTTPClient(writer http.ResponseWriter, ctx context.Context) (*http.Client, error) {
+func (h *Handler) getCertAuthorizedHTTPClient(ctx context.Context) (certAuthorizedHTTPClient *http.Client, err error) {
 	k8sClient, err := kubernetes.NewKubernetesClientSet(ctx, time.Second, time.Minute, time.Minute)
+
+	defer func() { // this secret is created from the E2E tests, and in particular cases it's not deleted, so it can be used here to call back with the data from it. After the cert client is build, delete the secret, so no leftover resources are left.
+		var gracePeriod int64 = 0
+		tmpErr := k8sClient.CoreV1().Secrets(h.config.ExternalClientCertTestSecretNamespace).Delete(ctx, h.config.ExternalClientCertTestSecretName, metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
+		if tmpErr != nil {
+			err = errors.Wrapf(tmpErr, "while deleting secret with name: %s in namespace: %s", h.config.ExternalClientCertTestSecretName, h.config.ExternalClientCertTestSecretNamespace)
+		}
+	}()
+
 	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(h.config.ExternalClientCertTestSecretNamespace).Get(ctx, h.config.ExternalClientCertTestSecretName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting secret")
+		return nil, errors.Wrapf(err, "while getting secret with name: %s in namespace: %s", h.config.ExternalClientCertTestSecretName, h.config.ExternalClientCertTestSecretNamespace)
 	}
 
 	providerKeyBytes := providerExtCrtTestSecret.Data[h.config.ExternalClientCertKeyKey]
 	if len(providerKeyBytes) == 0 {
-		return nil, errors.New("Private key is empty")
+		return nil, errors.New("The private key could not be empty")
 	}
 
 	providerCertChainBytes := providerExtCrtTestSecret.Data[h.config.ExternalClientCertCertKey]
 	if len(providerCertChainBytes) == 0 {
-		return nil, errors.New("Certificate chain is empty")
+		return nil, errors.New("The certificate chain could not be empty")
 	}
 
 	privateKey, certChain, err := clientCertPair(providerCertChainBytes, providerKeyBytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "while generating client certificate pair")
 	}
-	certAuthorizedHTTPClient := gql.NewCertAuthorizedHTTPClient(privateKey, certChain, true)
+	certAuthorizedHTTPClient = gql.NewCertAuthorizedHTTPClient(privateKey, certChain, true)
 	return certAuthorizedHTTPClient, nil
 }
 

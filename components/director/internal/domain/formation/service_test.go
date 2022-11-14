@@ -1422,7 +1422,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				require.Equal(t, testCase.ExpectedASA, actual)
 			}
 
-			mock.AssertExpectationsForObjects(t, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, labelRepo, notificationSvc)
+			mock.AssertExpectationsForObjects(t, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, labelRepo, notificationSvc, formationAssignmentSvc)
 		})
 	}
 
@@ -2255,7 +2255,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, persist, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, notificationSvc)
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, notificationSvc, formationAssignmentSvc)
 		})
 	}
 
@@ -2853,7 +2853,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, labelRepo, notificationSvc)
+			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, labelRepo, notificationSvc, formationAssignmentSvc)
 		})
 	}
 }
@@ -3463,7 +3463,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, persist, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, asaRepo, notificationSvc)
+			mock.AssertExpectationsForObjects(t, persist, transact, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, asaRepo, notificationSvc, formationAssignmentSvc)
 		})
 	}
 }

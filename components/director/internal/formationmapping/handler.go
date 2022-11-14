@@ -271,12 +271,12 @@ func (h *Handler) processFormationAssignmentAsynchronousUnassign(ctx context.Con
 		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", lastOpInitiatorType, lastOpInitiatorID)
 	}
 
-	formation, err := h.formationService.Get(ctx, fa.FormationID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting formation from formation assignment with ID: %q", fa.FormationID)
-	}
-
 	if len(formationAssignmentsForObject) == 0 { // if there are no formation assignments left after the deletion, execute formation unassign for the last operation initiator
+		formation, err := h.formationService.Get(ctx, fa.FormationID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting formation from formation assignment with ID: %q", fa.FormationID)
+		}
+
 		log.C(ctx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, lastOpInitiatorID, lastOpInitiatorType)
 		f, err := h.formationService.UnassignFormation(ctx, fa.TenantID, lastOpInitiatorID, graphql.FormationObjectType(lastOpInitiatorType), *formation)
 		if err != nil {

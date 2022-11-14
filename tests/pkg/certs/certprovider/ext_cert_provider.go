@@ -43,16 +43,18 @@ type ExternalCertProviderConfig struct {
 	ExternalCertProvider                     ProviderType `envconfig:"-"`
 }
 
-func NewExternalCertFromConfig(t *testing.T, ctx context.Context, testConfig ExternalCertProviderConfig) (*rsa.PrivateKey, [][]byte) {
+func NewExternalCertFromConfig(t *testing.T, ctx context.Context, testConfig ExternalCertProviderConfig, shouldDeleteSecret bool) (*rsa.PrivateKey, [][]byte) {
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	require.NoError(t, err)
-	createExtCertJob(t, ctx, k8sClient, testConfig, testConfig.ExternalCertTestJobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
 	defer func() {
 		k8s.PrintJobLogs(t, ctx, k8sClient, testConfig.ExternalCertTestJobName, testConfig.ExternalClientCertTestSecretNamespace, testConfig.ExternalCertCronjobContainerName, false)
 
 		k8s.DeleteJob(t, ctx, k8sClient, testConfig.ExternalCertTestJobName, testConfig.ExternalClientCertTestSecretNamespace)
-		//k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
+		if shouldDeleteSecret {
+			k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
+		}
 	}()
+	require.NoError(t, err)
+	createExtCertJob(t, ctx, k8sClient, testConfig, testConfig.ExternalCertTestJobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, testConfig.ExternalCertTestJobName, testConfig.ExternalClientCertTestSecretNamespace)
 
 	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})

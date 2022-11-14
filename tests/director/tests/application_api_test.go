@@ -77,7 +77,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 func TestRegisterApplicationWithExternalCertificate(t *testing.T) {
 	ctx := context.Background()
 
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 
 	in := fixtures.FixSampleApplicationRegisterInputWithName("test", "register-app-with-external-cert")

@@ -241,7 +241,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -277,7 +277,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -312,7 +312,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -339,7 +339,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -534,7 +534,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -551,7 +551,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -563,7 +563,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if preparing runtime with labels fails",
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(nil, testErr).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(nil, testErr).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1247,8 +1247,8 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1257,7 +1257,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error when generating notifications for application when runtime context is assigned if fetching application template labels fails",
+			Name: "error when generating notifications for application when runtime context is assigned if fetching application template with labels fails",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
@@ -1284,8 +1284,8 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1320,8 +1320,8 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1348,8 +1348,8 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1558,8 +1558,8 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1576,8 +1576,8 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1589,7 +1589,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if preparing runtime context with labels fails",
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(nil, testErr).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(nil, testErr).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1601,8 +1601,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if preparing runtime with labels fails",
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, testErr).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(nil, testErr).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, testErr).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -3132,114 +3131,6 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
 		},
-		//{
-		//	Name: "error while generating app-to-app notifications: get assigned app's labels fails",
-		//	ApplicationRepoFN: func() *automock.ApplicationRepository {
-		//		repo := &automock.ApplicationRepository{}
-		//		repo.On("GetByID", ctx, Tnt, ApplicationID).Return(fixApplicationModel(ApplicationID), nil).Times(3)
-		//		return repo
-		//	},
-		//	LabelRepoFN: func() *automock.LabelRepository {
-		//		repo := &automock.LabelRepository{}
-		//		repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID).Return(fixApplicationLabels(), nil).Twice()
-		//		repo.On("ListForObject", ctx, Tnt, model.AppTemplateLabelableObject, ApplicationTemplateID).Return(fixApplicationTemplateLabels(), nil).Twice()
-		//		repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
-		//			RuntimeID:               fixRuntimeLabelsMap(),
-		//			RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
-		//		}, nil).Once()
-		//		repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
-		//			RuntimeContextID:  fixRuntimeContextLabelsMap(),
-		//			RuntimeContext2ID: fixRuntimeContextLabelsMap(),
-		//		}, nil).Once()
-		//		repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID).Return(nil, testErr).Once()
-		//		return repo
-		//	},
-		//	WebhookRepoFN: func() *automock.WebhookRepository {
-		//		repo := &automock.WebhookRepository{}
-		//		repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-		//		repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
-		//		return repo
-		//	},
-		//	WebhookConverterFN: func() *automock.WebhookConverter {
-		//		conv := &automock.WebhookConverter{}
-		//		conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(fixApplicationWebhookGQLModel(WebhookID, ApplicationID), nil).Twice()
-		//		return conv
-		//	},
-		//	ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
-		//		repo := &automock.ApplicationTemplateRepository{}
-		//		repo.On("Get", ctx, ApplicationTemplateID).Return(fixApplicationTemplateModel(), nil).Twice()
-		//		return repo
-		//	},
-		//	RuntimeRepoFN: func() *automock.RuntimeRepository {
-		//		repo := &automock.RuntimeRepository{}
-		//		repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-		//		repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-		//		return repo
-		//	},
-		//	RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-		//		repo := &automock.RuntimeContextRepository{}
-		//		repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
-		//		return repo
-		//	},
-		//	ObjectType:         graphql.FormationObjectTypeApplication,
-		//	ObjectID:           ApplicationID,
-		//	InputFormation:     inputFormation,
-		//	ExpectedErrMessage: testErr.Error(),
-		//},
-		//{
-		//	Name: "error while generating app-to-app notifications: get assigned app fails",
-		//	ApplicationRepoFN: func() *automock.ApplicationRepository {
-		//		repo := &automock.ApplicationRepository{}
-		//		repo.On("GetByID", ctx, Tnt, ApplicationID).Return(fixApplicationModel(ApplicationID), nil).Twice()
-		//		repo.On("GetByID", ctx, Tnt, ApplicationID).Return(nil, testErr).Once()
-		//		return repo
-		//	},
-		//	LabelRepoFN: func() *automock.LabelRepository {
-		//		repo := &automock.LabelRepository{}
-		//		repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID).Return(fixApplicationLabels(), nil).Twice()
-		//		repo.On("ListForObject", ctx, Tnt, model.AppTemplateLabelableObject, ApplicationTemplateID).Return(fixApplicationTemplateLabels(), nil).Twice()
-		//		repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
-		//			RuntimeID:               fixRuntimeLabelsMap(),
-		//			RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
-		//		}, nil).Once()
-		//		repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
-		//			RuntimeContextID:  fixRuntimeContextLabelsMap(),
-		//			RuntimeContext2ID: fixRuntimeContextLabelsMap(),
-		//		}, nil).Once()
-		//		return repo
-		//	},
-		//	WebhookRepoFN: func() *automock.WebhookRepository {
-		//		repo := &automock.WebhookRepository{}
-		//		repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-		//		repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
-		//		return repo
-		//	},
-		//	WebhookConverterFN: func() *automock.WebhookConverter {
-		//		conv := &automock.WebhookConverter{}
-		//		conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(fixApplicationWebhookGQLModel(WebhookID, ApplicationID), nil).Twice()
-		//		return conv
-		//	},
-		//	ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
-		//		repo := &automock.ApplicationTemplateRepository{}
-		//		repo.On("Get", ctx, ApplicationTemplateID).Return(fixApplicationTemplateModel(), nil).Twice()
-		//		return repo
-		//	},
-		//	RuntimeRepoFN: func() *automock.RuntimeRepository {
-		//		repo := &automock.RuntimeRepository{}
-		//		repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-		//		repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-		//		return repo
-		//	},
-		//	RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-		//		repo := &automock.RuntimeContextRepository{}
-		//		repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
-		//		return repo
-		//	},
-		//	ObjectType:         graphql.FormationObjectTypeApplication,
-		//	ObjectID:           ApplicationID,
-		//	InputFormation:     inputFormation,
-		//	ExpectedErrMessage: testErr.Error(),
-		//},
 		{
 			Name: "error for application when webhook conversion fails",
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -3288,7 +3179,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3341,7 +3232,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3393,7 +3284,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3444,7 +3335,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3492,7 +3383,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3539,7 +3430,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3585,7 +3476,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3676,7 +3567,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3713,7 +3604,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3746,7 +3637,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3774,7 +3665,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3801,7 +3692,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -3823,7 +3714,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4002,7 +3893,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			DataInputBuilder: func() *webhookautomock.DataInputBuilder {
 				dataInputBuilder := &webhookautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4075,7 +3966,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				require.Nil(t, actual)
 			}
 
-			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, applicationRepo, webhookRepo, webhookConverter, appTemplateRepo, labelRepo)
+			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, applicationRepo, webhookRepo, webhookConverter, appTemplateRepo, labelRepo, dataInputBuilder)
 		})
 	}
 }
