@@ -54,6 +54,30 @@ func (l *FormationNotificationHandler) HandleCreate(ctx context.Context, data []
 		return nil
 	}
 
+	tx, err := l.Transact.Begin()
+	if err != nil {
+		log.C(ctx).Errorf("Error while opening transaction in formation_notification_handler when creating formation with ID: %q and error: %s", formation.ID, err)
+		return err
+	}
+	defer l.Transact.RollbackUnlessCommitted(ctx, tx)
+
+	log.C(ctx).Infof("Getting external tenant ID for formation with ID: %q and internal tenant ID: %q", formation.ID, formation.TenantID)
+	var externalTenantID string
+	err = tx.GetContext(ctx, &externalTenantID, "SELECT external_tenant from business_tenant_mappings WHERE id = $1", formation.TenantID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting external tenant ID for Formation with ID: %q and internal tenant ID: %q", formation.ID, formation.TenantID)
+	}
+
+	if externalTenantID == "" {
+		return errors.Errorf("external tenant ID for Formation with ID: %q and internal tenant ID: %q can not be empty", formation.ID, formation.TenantID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.C(ctx).Errorf("Error while committing transaction in formation_notification_handler when creating formation with ID: %q and error: %s", formation.ID, err)
+		return err
+	}
+
 	appFromTmplSrc := graphql.ApplicationFromTemplateInput{
 		TemplateName: DIApplicationTemplateName, Values: []*graphql.TemplateValueInput{
 			{
@@ -76,7 +100,7 @@ func (l *FormationNotificationHandler) HandleCreate(ctx context.Context, data []
 
 	createAppFromTmplFirstRequest := l.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
 	outputSrcApp := graphql.ApplicationExt{}
-	err = RunOperationWithCustomTenant(ctx, l.DirectorCertSecuredGraphQLClient, formation.TenantID, createAppFromTmplFirstRequest, &outputSrcApp)
+	err = RunOperationWithCustomTenant(ctx, l.DirectorCertSecuredGraphQLClient, externalTenantID, createAppFromTmplFirstRequest, &outputSrcApp)
 	if err != nil {
 		log.C(ctx).Errorf("Error while registering Application: %s", err)
 		return err
@@ -88,7 +112,7 @@ func (l *FormationNotificationHandler) HandleCreate(ctx context.Context, data []
 
 	assignReq := l.FixAssignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), formation.Name)
 	var assignFormation graphql.Formation
-	err = RunOperationWithCustomTenant(ctx, l.DirectorCertSecuredGraphQLClient, formation.TenantID, assignReq, &assignFormation)
+	err = RunOperationWithCustomTenant(ctx, l.DirectorCertSecuredGraphQLClient, externalTenantID, assignReq, &assignFormation)
 	if err != nil {
 		log.C(ctx).Errorf("Error while assigning Application with ID: %q to Formation with ID: %q and error: %s", outputSrcApp.ID, formation.ID, err)
 		return err
