@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder"
+	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 

@@ -3,7 +3,7 @@ package formationassignment_test
 import (
 	"encoding/json"
 
-	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder/automock"
+	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment/automock"

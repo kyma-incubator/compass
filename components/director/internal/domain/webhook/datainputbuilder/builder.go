@@ -1,4 +1,4 @@
-package data_input_builder
+package datainputbuilder
 
 import (
 	"context"

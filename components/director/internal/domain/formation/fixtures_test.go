@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder/automock"
+	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 

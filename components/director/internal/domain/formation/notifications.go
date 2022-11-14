@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder"
+	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"

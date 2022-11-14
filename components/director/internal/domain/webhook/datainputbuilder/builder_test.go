@@ -1,12 +1,12 @@
-package data_input_builder_test
+package datainputbuilder_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/data_input_builder/automock"
+	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"

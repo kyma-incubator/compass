@@ -428,7 +428,7 @@ func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) getCertAuthorizedHTTPClient(ctx context.Context) (certAuthorizedHTTPClient *http.Client, err error) {
+func (h *Handler) getCertAuthorizedHTTPClient(ctx context.Context) (*http.Client, error) {
 	k8sClient, err := kubernetes.NewKubernetesClientSet(ctx, time.Second, time.Minute, time.Minute)
 	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(h.config.ExternalClientCertTestSecretNamespace).Get(ctx, h.config.ExternalClientCertTestSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -449,7 +449,7 @@ func (h *Handler) getCertAuthorizedHTTPClient(ctx context.Context) (certAuthoriz
 	if err != nil {
 		return nil, errors.Wrap(err, "while generating client certificate pair")
 	}
-	certAuthorizedHTTPClient = gql.NewCertAuthorizedHTTPClient(privateKey, certChain, true)
+	certAuthorizedHTTPClient := gql.NewCertAuthorizedHTTPClient(privateKey, certChain, true)
 	return certAuthorizedHTTPClient, nil
 }
 
