@@ -46,6 +46,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 	userCtxHeaderWithAllProperties := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"tenantid":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, consumerTenantID, consumerTenantID, authID)
 	userCtxHeaderWithoutClientID := fmt.Sprintf(`{"exp":1659618593,"tenantid":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, consumerTenantID, consumerTenantID, authID)
 	userCtxHeaderWithoutTenantID := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, consumerTenantID, authID)
+	userCtxHeaderWithInvalidASCIICharacter := `{"client_id":"invalid-id%","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test-user-name@sap.com","x-zid":""}`
 
 	reqDataFunc := func(userContextHeader string) oathkeeper.ReqData {
 		return oathkeeper.ReqData{
@@ -119,6 +120,12 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
 			ExpectedObjectContext: expectedObjectContextFunc(clientID, consumerInternalTenantID, testRegion),
+		},
+		{
+			Name:                  "Returns error fails to unescape user_context header",
+			ReqDataInput:          reqDataFunc(userCtxHeaderWithInvalidASCIICharacter),
+			ExpectedObjectContext: tenantmapping.ObjectContext{},
+			ExpectedErrMsg:        fmt.Sprintf("while getting user context data from %q header: invalid data [reason=could not decode %s header with value:", oathkeeper.UserContextKey, oathkeeper.UserContextKey),
 		},
 		{
 			Name:                  "Returns error when client_id property is missing from user_context header",
@@ -223,6 +230,9 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 
 	userCtxHeader := `{"client_id":"id-value!t12345","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test-user-name@sap.com","x-zid":""}`
 	userCtxHeaderWithoutUserNameProperty := `{"client_id":"id-value!t12345","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","x-zid":""}`
+	userCtxHeaderWithNonASCIICharacters := `{"client_id":"test nøn asçii chå®acte®","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test-user-name@sap.com","x-zid":""}`
+	userCtxHeaderWithEncodedNonASCIICharacters := `{"client_id":"test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test-user-name@sap.com","x-zid":""}`
+	userCtxHeaderWithInvalidASCIICharacter := `{"client_id":"invalid-id%","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test-user-name@sap.com","x-zid":""}`
 
 	testCases := []struct {
 		Name                string
@@ -242,6 +252,46 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 				},
 				Header: http.Header{
 					oathkeeper.UserContextKey: []string{userCtxHeader},
+				},
+			},
+			ExpectedMatch: true,
+			ExpectedAuthDetails: &oathkeeper.AuthDetails{
+				AuthID:   "test-user-name@sap.com",
+				AuthFlow: oathkeeper.ConsumerProviderFlow,
+			},
+			ExpectedErrMsg: "",
+		},
+		{
+			Name: "Success when user_context header contains non ascii characters",
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Header: http.Header{
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{certClientID},
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					},
+				},
+				Header: http.Header{
+					oathkeeper.UserContextKey: []string{userCtxHeaderWithNonASCIICharacters},
+				},
+			},
+			ExpectedMatch: true,
+			ExpectedAuthDetails: &oathkeeper.AuthDetails{
+				AuthID:   "test-user-name@sap.com",
+				AuthFlow: oathkeeper.ConsumerProviderFlow,
+			},
+			ExpectedErrMsg: "",
+		},
+		{
+			Name: "Success when user_context header contains encoded non ascii characters",
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Header: http.Header{
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{certClientID},
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					},
+				},
+				Header: http.Header{
+					oathkeeper.UserContextKey: []string{userCtxHeaderWithEncodedNonASCIICharacters},
 				},
 			},
 			ExpectedMatch: true,
@@ -310,6 +360,23 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			ExpectedMatch:       false,
 			ExpectedAuthDetails: nil,
 			ExpectedErrMsg:      "could not find user_name property",
+		},
+		{
+			Name: "Returns error when fails to unescape user_name header",
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Header: http.Header{
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{certClientID},
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					},
+				},
+				Header: http.Header{
+					oathkeeper.UserContextKey: []string{userCtxHeaderWithInvalidASCIICharacter},
+				},
+			},
+			ExpectedMatch:       false,
+			ExpectedAuthDetails: nil,
+			ExpectedErrMsg:      fmt.Sprintf("could not decode %s header with value", oathkeeper.UserContextKey),
 		},
 	}
 

@@ -127,7 +127,7 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2714"
+      version: "PR-2735"
       name: compass-hydrator
     gateway:
       dir:
@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2714"
+      version: "PR-2735"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
