@@ -37,7 +37,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 		ExternalCertProvider:                  certprovider.CertificateService,
 	}
 
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 
 	testCases := []struct {

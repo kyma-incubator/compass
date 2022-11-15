@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -18,9 +17,9 @@ func TestCreateFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "create-formation-template-name"
-	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
 
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplate)
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
 	require.NoError(t, err)
 
 	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -43,7 +42,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
-	assertions.AssertFormationTemplate(t, &formationTemplate, formationTemplateOutput)
+	assertions.AssertFormationTemplate(t, &formationTemplateInput, formationTemplateOutput)
 }
 
 func TestDeleteFormationTemplate(t *testing.T) {
@@ -51,12 +50,12 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "delete-formation-template-name"
-	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
 
-	createdFormationRequest := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationRequest.ID)
+	formationTemplateReq := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateReq.ID)
 
-	deleteFormationTemplateRequest := fixtures.FixDeleteFormationTemplateRequest(createdFormationRequest.ID)
+	deleteFormationTemplateRequest := fixtures.FixDeleteFormationTemplateRequest(formationTemplateReq.ID)
 	output := graphql.FormationTemplate{}
 
 	// WHEN
@@ -70,7 +69,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	require.NotEmpty(t, output.Name)
 	saveExample(t, deleteFormationTemplateRequest.Query(), "delete formation template")
 
-	t.Logf("Check if formation template with name %q and id %q was deleted", formationTemplateName, createdFormationRequest.ID)
+	t.Logf("Check if formation template with name: %q and ID: %q was deleted", formationTemplateName, formationTemplateReq.ID)
 
 	getFormationTemplateRequest := fixtures.FixQueryFormationTemplateRequest(output.ID)
 	formationTemplateOutput := graphql.FormationTemplate{}
@@ -86,12 +85,13 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	createdFormationTemplateName := "created-formation-template-name"
-	createdFormationTemplate := fixtures.FixFormationTemplate(createdFormationTemplateName)
+	createdFormationTemplateInput := fixtures.FixFormationTemplateInput(createdFormationTemplateName)
+	runtimeType := "runtime-type-2"
 
 	var updatedFormationTemplateInput = graphql.FormationTemplateInput{
 		Name:                   "updated-formation-template-name",
 		ApplicationTypes:       []string{"app-type-3", "app-type-4"},
-		RuntimeType:            str.Ptr("runtime-type-2"),
+		RuntimeType:            &runtimeType,
 		RuntimeTypeDisplayName: "test-display-name-2",
 		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
@@ -99,14 +99,14 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(updatedFormationTemplateInput)
 	require.NoError(t, err)
 
-	createdFormationRequest := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationTemplate)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationRequest.ID)
+	formationTemplateReq := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationTemplateInput)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateReq.ID)
 
-	updateFormationTemplateRequest := fixtures.FixUpdateFormationTemplateRequest(createdFormationRequest.ID, updatedFormationTemplateInputGQLString)
+	updateFormationTemplateRequest := fixtures.FixUpdateFormationTemplateRequest(formationTemplateReq.ID, updatedFormationTemplateInputGQLString)
 	output := graphql.FormationTemplate{}
 
 	// WHEN
-	t.Logf("Update formation template with name %q and id %q", createdFormationTemplateName, createdFormationRequest.ID)
+	t.Logf("Update formation template with name: %q and ID: %q", createdFormationTemplateName, formationTemplateReq.ID)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateFormationTemplateRequest, &output)
 
 	//THEN
@@ -116,7 +116,7 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	require.NotEmpty(t, output.Name)
 	saveExample(t, updateFormationTemplateRequest.Query(), "update formation template")
 
-	t.Logf("Check if formation template with id %q and old name %q (new name %q) was updated", createdFormationRequest.ID, createdFormationTemplateName, updatedFormationTemplateInput.Name)
+	t.Logf("Check if formation template with ID: %q and old name: %q was successully updated to: %q", formationTemplateReq.ID, createdFormationTemplateName, updatedFormationTemplateInput.Name)
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
@@ -128,16 +128,16 @@ func TestQueryFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "query-formation-template-name"
-	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
 
-	createdFormationRequest := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
+	createdFormationRequest := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationRequest.ID)
 
 	queryFormationTemplateRequest := fixtures.FixQueryFormationTemplateRequest(createdFormationRequest.ID)
 	output := graphql.FormationTemplate{}
 
 	// WHEN
-	t.Logf("Query formation template with name %q and id %q", formationTemplate.Name, createdFormationRequest.ID)
+	t.Logf("Query formation template with name %q and id %q", formationTemplateName, createdFormationRequest.ID)
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryFormationTemplateRequest, &output)
 
 	//THEN
@@ -149,7 +149,7 @@ func TestQueryFormationTemplate(t *testing.T) {
 
 	t.Logf("Check if formation template with name %q and ID %q was received", formationTemplateName, createdFormationRequest.ID)
 
-	assertions.AssertFormationTemplate(t, &formationTemplate, &output)
+	assertions.AssertFormationTemplate(t, &formationTemplateInput, &output)
 }
 
 func TestQueryFormationTemplates(t *testing.T) {
@@ -157,12 +157,12 @@ func TestQueryFormationTemplates(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "delete-formation-template-name"
-	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
-
+	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+	runtimeType := "runtime-type-2"
 	secondFormationInput := graphql.FormationTemplateInput{
 		Name:                   "test-formation-template-2",
 		ApplicationTypes:       []string{"app-type-3", "app-type-5"},
-		RuntimeType:            str.Ptr("runtime-type-2"),
+		RuntimeType:            &runtimeType,
 		RuntimeTypeDisplayName: "test-display-name-2",
 		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
@@ -171,7 +171,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	first := 100
 	currentFormationPage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, certSecuredGraphQLClient, first)
 
-	createdFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
+	createdFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationTemplate.ID)
 	secondCreatedFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationInput)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, secondCreatedFormationTemplate.ID)

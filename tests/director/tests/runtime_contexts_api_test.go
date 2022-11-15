@@ -172,7 +172,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		providerRuntimeInput := graphql.RuntimeRegisterInput{

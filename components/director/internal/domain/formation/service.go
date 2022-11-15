@@ -295,7 +295,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.UpdateFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.ProcessFormationAssignmentPair); err != nil {
 			log.C(ctx).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
@@ -415,7 +415,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
+		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -429,20 +429,36 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
-		defer s.transact.RollbackUnlessCommitted(ctx, tx)
+		transactionCtx := persistence.SaveToContext(ctx, tx)
+		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		ctx = persistence.SaveToContext(ctx, tx)
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
 			}
 			return nil, err
 		}
+
+		// It is important to do the list in the inner transaction
+		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+		}
+
 		err = tx.Commit()
 		if err != nil {
 			return nil, errors.Wrapf(err, "while committing transaction")
 		}
+
+		if len(pendingAsyncAssignments) > 0 {
+			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
+			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			if err != nil {
+				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+			}
+		}
+
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
@@ -469,7 +485,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
+		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -495,10 +511,25 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
+		// It is important to do the list in the inner transaction
+		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+		}
+
 		err = tx.Commit()
 		if err != nil {
 			return nil, errors.Wrapf(err, "while committing transaction")
 		}
+
+		if len(pendingAsyncAssignments) > 0 {
+			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
+			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			if err != nil {
+				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+			}
+		}
+
 		return formationFromDB, nil
 
 	case graphql.FormationObjectTypeTenant:
@@ -514,6 +545,21 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
+}
+
+func (s *service) listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx context.Context, formationID, objectID string, objectType graphql.FormationObjectType) ([]*model.FormationAssignment, error) {
+	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+	}
+
+	for i := range formationAssignmentsForObject {
+		formationAssignmentsForObject[i].LastOperation = model.UnassignFormation
+		formationAssignmentsForObject[i].LastOperationInitiator = objectID
+		formationAssignmentsForObject[i].LastOperationInitiatorType = model.FormationAssignmentType(objectType)
+	}
+
+	return formationAssignmentsForObject, nil
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {

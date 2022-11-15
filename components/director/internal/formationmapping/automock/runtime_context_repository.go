@@ -17,13 +17,13 @@ type RuntimeContextRepository struct {
 	mock.Mock
 }
 
-// GetGlobalByID provides a mock function with given fields: ctx, id
-func (_m *RuntimeContextRepository) GetGlobalByID(ctx context.Context, id string) (*model.RuntimeContext, error) {
-	ret := _m.Called(ctx, id)
+// GetByID provides a mock function with given fields: ctx, tenant, id
+func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, id string) (*model.RuntimeContext, error) {
+	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.RuntimeContext
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.RuntimeContext); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
+		r0 = rf(ctx, tenant, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.RuntimeContext)
@@ -31,8 +31,8 @@ func (_m *RuntimeContextRepository) GetGlobalByID(ctx context.Context, id string
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -66,6 +66,8 @@ const (
 	WebhookModeSync WebhookMode = "SYNC"
 	// WebhookModeAsync represents a webhook that is called asynchronously.
 	WebhookModeAsync WebhookMode = "ASYNC"
+	// WebhookModeAsyncCallback represents a webhook that is called asynchronously and status is expected via callback on a status API.
+	WebhookModeAsyncCallback WebhookMode = "ASYNC_CALLBACK"
 )
 
 // WebhookReferenceObjectType represents the type of the object that is referenced by the webhook.
