@@ -200,6 +200,8 @@ spec:
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
             - name: APP_CONSUMER_TOKEN_URL
               value: {{ .Values.global.tests.subscription.consumerTokenURL }}
+            - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
+              value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds | quote}}
             - name: APP_PROVIDER_CLIENT_ID
               valueFrom:
                 secretKeyRef:

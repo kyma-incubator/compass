@@ -23,6 +23,7 @@ spec:
             imagePullSecrets:
             - name: {{ .Values.global.portieris.imagePullSecretName }}
             {{ end }}
+            serviceAccountName: {{ template "fullname" . }}
             containers:
             - name: {{ .Chart.Name }}
               image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.external_services_mock.dir }}compass-external-services-mock:{{ .Values.global.images.external_services_mock.version }}
@@ -146,6 +147,18 @@ spec:
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
               - name: APP_DESTINATION_SENSITIVE_DATA_ENDPOINT
                 value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
+              - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
+                value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
+              - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
+                value: {{ .Values.global.tests.subscription.externalClientCertTestSecretNamespace }}
+              - name: APP_EXTERNAL_CLIENT_CERT_KEY
+                value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+              - name: APP_EXTERNAL_CLIENT_KEY_KEY
+                value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+              - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL
+                value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationAsyncApi.pathPrefix }}{{ .Values.global.director.formationAsyncApi.path }}"
+              - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
+                value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds  | quote}}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}

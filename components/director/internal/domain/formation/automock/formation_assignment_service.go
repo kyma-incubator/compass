@@ -143,13 +143,13 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 	return r0, r1
 }
 
-// ProcessFormationAssignments provides a mock function with given fields: ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation
-func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) error) error {
-	ret := _m.Called(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation)
+// ProcessFormationAssignmentPair provides a mock function with given fields: ctx, mappingPair
+func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error {
+	ret := _m.Called(ctx, mappingPair)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*model.FormationAssignment, map[string]string, []*webhookclient.NotificationRequest, func(context.Context, *formationassignment.AssignmentMappingPair) error) error); ok {
-		r0 = rf(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation)
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPair) error); ok {
+		r0 = rf(ctx, mappingPair)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -157,13 +157,13 @@ func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Co
 	return r0
 }
 
-// UpdateFormationAssignment provides a mock function with given fields: ctx, mappingPair
-func (_m *FormationAssignmentService) UpdateFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error {
-	ret := _m.Called(ctx, mappingPair)
+// ProcessFormationAssignments provides a mock function with given fields: ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation
+func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) error) error {
+	ret := _m.Called(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPair) error); ok {
-		r0 = rf(ctx, mappingPair)
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.FormationAssignment, map[string]string, []*webhookclient.NotificationRequest, func(context.Context, *formationassignment.AssignmentMappingPair) error) error); ok {
+		r0 = rf(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests, operation)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -32,7 +32,7 @@ func TestTechnicalClient(stdT *testing.T) {
 			ExternalCertProvider:                  certprovider.Atom,
 		}
 
-		pk, cert := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig)
+		pk, cert := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 
 		tenants, err := fixtures.GetTenants(directorCertSecuredClient)
