@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	specificationsColumns = []string{"id", apiDefIDColumn, eventAPIDefIDColumn, "spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}
+	specificationsColumns = []string{"id", apiDefIDColumn, eventAPIDefIDColumn, "spec_data", "spec_data_hash", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type", "custom_type"}
 	orderByColumns        = repo.OrderByParams{repo.NewAscOrderBy("created_at"), repo.NewAscOrderBy("id")}
 )
 
@@ -31,21 +31,23 @@ type Converter interface {
 }
 
 type repository struct {
-	creator      repo.Creator
-	lister       repo.Lister
-	unionLister  repo.UnionLister
-	getter       repo.SingleGetter
-	deleter      repo.Deleter
-	updater      repo.Updater
-	existQuerier repo.ExistQuerier
-	conv         Converter
+	creator        repo.Creator
+	lister         repo.Lister
+	unionLister    repo.UnionLister
+	getter         repo.SingleGetter
+	dataHashGetter repo.SingleGetter
+	deleter        repo.Deleter
+	updater        repo.Updater
+	existQuerier   repo.ExistQuerier
+	conv           Converter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		creator: repo.NewCreator(specificationsTable, specificationsColumns),
-		getter:  repo.NewSingleGetter(specificationsTable, specificationsColumns),
+		creator:        repo.NewCreator(specificationsTable, specificationsColumns),
+		getter:         repo.NewSingleGetter(specificationsTable, specificationsColumns),
+		dataHashGetter: repo.NewSingleGetter(specificationsTable, []string{"spec_data_hash"}),
 		lister: repo.NewListerWithOrderBy(specificationsTable, specificationsColumns, repo.OrderByParams{
 			{
 				Field: "created_at",
@@ -54,7 +56,7 @@ func NewRepository(conv Converter) *repository {
 		}),
 		unionLister:  repo.NewUnionLister(specificationsTable, specificationsColumns),
 		deleter:      repo.NewDeleter(specificationsTable),
-		updater:      repo.NewUpdater(specificationsTable, []string{"spec_data", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
+		updater:      repo.NewUpdater(specificationsTable, []string{"spec_data", "spec_data_hash", "api_spec_format", "api_spec_type", "event_spec_format", "event_spec_type"}, []string{"id"}),
 		existQuerier: repo.NewExistQuerier(specificationsTable),
 		conv:         conv,
 	}
@@ -74,6 +76,17 @@ func (r *repository) GetByID(ctx context.Context, tenantID string, id string, ob
 	}
 
 	return specModel, nil
+}
+
+// GetDataHashByID missing godoc
+func (r *repository) GetDataHashByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*string, error) {
+	var specEntity Entity
+	err := r.dataHashGetter.Get(ctx, objectType.GetResourceType(), tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &specEntity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting data hash for Specification with id %q", id)
+	}
+
+	return repo.StringPtrFromNullableString(specEntity.SpecDataHash), nil
 }
 
 // Create missing godoc

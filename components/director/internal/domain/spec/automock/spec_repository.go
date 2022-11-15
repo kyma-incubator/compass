@@ -102,6 +102,29 @@ func (_m *SpecRepository) GetByID(ctx context.Context, tenantID string, id strin
 	return r0, r1
 }
 
+// GetDataHashByID provides a mock function with given fields: ctx, tenantID, id, objectType
+func (_m *SpecRepository) GetDataHashByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*string, error) {
+	ret := _m.Called(ctx, tenantID, id, objectType)
+
+	var r0 *string
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.SpecReferenceObjectType) *string); ok {
+		r0 = rf(ctx, tenantID, id, objectType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.SpecReferenceObjectType) error); ok {
+		r1 = rf(ctx, tenantID, id, objectType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByReferenceObjectID provides a mock function with given fields: ctx, tenant, objectType, objectID
 func (_m *SpecRepository) ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID)

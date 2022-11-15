@@ -61,6 +61,7 @@ type SpecService interface {
 	CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error
 	GetByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	GetDataHashByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*string, error)
 	GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error)
 	UpdateSpecOnly(ctx context.Context, spec model.Spec) error
 	ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)

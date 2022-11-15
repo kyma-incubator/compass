@@ -2,6 +2,8 @@ package ord
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -361,15 +363,27 @@ func (s *Service) processFetchRequestResults(ctx context.Context, results []*fet
 		}
 
 		if result.status.Condition == model.FetchRequestStatusConditionSucceeded {
-			spec, err := s.specSvc.GetByID(ctx, result.fetchRequest.ObjectID, specReferenceType)
+			dbDataHash, err := s.specSvc.GetDataHashByID(ctx, result.fetchRequest.ObjectID, specReferenceType)
 			if err != nil {
 				return err
 			}
 
-			spec.Data = result.data
+			resultDataHash := sha256.Sum256([]byte(str.PtrStrToStr(result.data)))
+			resultDataHashStr := hex.EncodeToString(resultDataHash[:])
 
-			if err = s.specSvc.UpdateSpecOnly(ctx, *spec); err != nil {
-				return err
+			if str.PtrStrToStr(dbDataHash) != resultDataHashStr {
+				log.C(ctx).Infof("DB DATA HASH [%s] RESULT DATA HASH [%s]", str.PtrStrToStr(dbDataHash), resultDataHashStr)
+				spec, err := s.specSvc.GetByID(ctx, result.fetchRequest.ObjectID, specReferenceType)
+				if err != nil {
+					return err
+				}
+
+				spec.Data = result.data
+				spec.DataHash = &resultDataHashStr
+
+				if err = s.specSvc.UpdateSpecOnly(ctx, *spec); err != nil {
+					return err
+				}
 			}
 		}
 

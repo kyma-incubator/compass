@@ -12,6 +12,7 @@ type Spec struct {
 	ObjectID   string
 
 	Data       *string
+	DataHash   *string
 	Format     SpecFormat
 	APIType    *APISpecType
 	EventType  *EventSpecType
@@ -113,6 +114,7 @@ const (
 // SpecInput is an input for creating/updating specification.
 type SpecInput struct {
 	Data       *string
+	DataHash   *string
 	Format     SpecFormat
 	APIType    *APISpecType
 	EventType  *EventSpecType
@@ -140,6 +142,7 @@ func (s *SpecInput) ToSpec(id string, objectType SpecReferenceObjectType, object
 		ObjectType: objectType,
 		ObjectID:   objectID,
 		Data:       s.Data,
+		DataHash:   s.DataHash,
 		Format:     s.Format,
 		APIType:    s.APIType,
 		EventType:  s.EventType,

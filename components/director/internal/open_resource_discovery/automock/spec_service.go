@@ -104,6 +104,29 @@ func (_m *SpecService) GetByID(ctx context.Context, id string, objectType model.
 	return r0, r1
 }
 
+// GetDataHashByID provides a mock function with given fields: ctx, id, objectType
+func (_m *SpecService) GetDataHashByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*string, error) {
+	ret := _m.Called(ctx, id, objectType)
+
+	var r0 *string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType) *string); ok {
+		r0 = rf(ctx, id, objectType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType) error); ok {
+		r1 = rf(ctx, id, objectType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFetchRequest provides a mock function with given fields: ctx, specID, objectType
 func (_m *SpecService) GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error) {
 	ret := _m.Called(ctx, specID, objectType)

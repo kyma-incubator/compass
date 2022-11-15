@@ -22,7 +22,7 @@ func TestRepository_GetByID(t *testing.T) {
 		Name: "Get API Spec By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, spec_data_hash, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{specID, tenant},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -46,7 +46,7 @@ func TestRepository_GetByID(t *testing.T) {
 		Name: "Get Event Spec By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, spec_data_hash, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{specID, tenant},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -153,7 +153,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		Name: "List API Specs By Ref Object ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE api_def_id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, spec_data_hash, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE api_def_id = $1 AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{apiID, tenant},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -183,7 +183,7 @@ func TestRepository_ListByReferenceObjectID(t *testing.T) {
 		Name: "List Event Specs By Ref Object ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE event_def_id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, api_def_id, event_def_id, spec_data, spec_data_hash, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications WHERE event_def_id = $1 AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{apiID, tenant},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -223,10 +223,10 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		Name: "List API Specifications by Object IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, spec_data, spec_data_hash, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
 												WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $1)) AND api_def_id = $2 ORDER BY created_at ASC, id ASC LIMIT $3 OFFSET $4)
  											   UNION
-												(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+												(SELECT id, api_def_id, event_def_id, spec_data, spec_data_hash, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
 												WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $5)) AND api_def_id = $6 ORDER BY created_at ASC, id ASC LIMIT $7 OFFSET $8)`),
 				Args:     []driver.Value{tenant, firstRefID, 1, 0, tenant, secondRefID, 1, 0},
 				IsSelect: true,
@@ -268,10 +268,10 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 		Name: "List Event Specifications by Object IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+				Query: regexp.QuoteMeta(`(SELECT id, api_def_id, event_def_id, spec_data, spec_data_hash, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
 												WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $1)) AND event_def_id = $2 ORDER BY created_at ASC, id ASC LIMIT $3 OFFSET $4)
  											   UNION
-												(SELECT id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
+												(SELECT id, api_def_id, event_def_id, spec_data, spec_data_hash, api_spec_format, api_spec_type, event_spec_format, event_spec_type, custom_type FROM public.specifications 
 												WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $5)) AND event_def_id = $6 ORDER BY created_at ASC, id ASC LIMIT $7 OFFSET $8)`),
 				Args:     []driver.Value{tenant, firstRefID, 1, 0, tenant, secondRefID, 1, 0},
 				IsSelect: true,
@@ -401,8 +401,8 @@ func TestRepository_Update(t *testing.T) {
 		Name: "Update API Spec",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
-				Args:          []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.ID, tenant},
+				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, spec_data_hash = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{apiSpecEntity.SpecData, apiSpecEntity.SpecDataHash, apiSpecEntity.APISpecFormat, apiSpecEntity.APISpecType, apiSpecEntity.EventSpecFormat, apiSpecEntity.EventSpecType, apiSpecEntity.ID, tenant},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -422,8 +422,8 @@ func TestRepository_Update(t *testing.T) {
 		Name: "Update Event Spec",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
-				Args:          []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.ID, tenant},
+				Query:         regexp.QuoteMeta(`UPDATE public.specifications SET spec_data = ?, spec_data_hash = ?, api_spec_format = ?, api_spec_type = ?, event_spec_format = ?, event_spec_type = ? WHERE id = ? AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{eventSpecEntity.SpecData, eventSpecEntity.SpecDataHash, eventSpecEntity.APISpecFormat, eventSpecEntity.APISpecType, eventSpecEntity.EventSpecFormat, eventSpecEntity.EventSpecType, eventSpecEntity.ID, tenant},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

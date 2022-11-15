@@ -12,6 +12,7 @@ type Entity struct {
 	APIDefID      sql.NullString `db:"api_def_id"`
 	EventAPIDefID sql.NullString `db:"event_def_id"`
 	SpecData      sql.NullString `db:"spec_data"`
+	SpecDataHash  sql.NullString `db:"spec_data_hash"`
 
 	APISpecFormat sql.NullString `db:"api_spec_format"`
 	APISpecType   sql.NullString `db:"api_spec_type"`

@@ -231,11 +231,11 @@ func fixEventSpecRowWithIDs(id, eventDefID string) []driver.Value {
 }
 
 func fixAPISpecCreateArgs(spec *model.Spec) []driver.Value {
-	return []driver.Value{specID, spec.ObjectID, nil, spec.Data, spec.Format, spec.APIType, nil, spec.EventType, spec.CustomType}
+	return []driver.Value{specID, spec.ObjectID, nil, spec.Data, spec.DataHash, spec.Format, spec.APIType, nil, spec.EventType, spec.CustomType}
 }
 
 func fixEventSpecCreateArgs(spec *model.Spec) []driver.Value {
-	return []driver.Value{specID, nil, spec.ObjectID, spec.Data, nil, spec.APIType, spec.Format, spec.EventType, spec.CustomType}
+	return []driver.Value{specID, nil, spec.ObjectID, spec.Data, spec.DataHash, nil, spec.APIType, spec.Format, spec.EventType, spec.CustomType}
 }
 
 func fixAPISpecEntity() *spec.Entity {
