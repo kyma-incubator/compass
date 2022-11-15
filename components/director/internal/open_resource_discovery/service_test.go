@@ -2,6 +2,8 @@ package ord_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -268,11 +270,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
+		emptyDataHash := ""
+		specSvc.On("GetDataHashByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&emptyDataHash, nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
 			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
 		expectedSpecToUpdate := testSpec
 		expectedSpecToUpdate.Data = &testSpecData
+		testSpecDataHash := sha256.Sum256([]byte(testSpecData))
+		testSpecDataHashStr := hex.EncodeToString(testSpecDataHash[:])
+		expectedSpecToUpdate.DataHash = &testSpecDataHashStr
 		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
 			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
@@ -305,11 +313,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(nil).Once()
 		specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, event2ID).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
+		emptyDataHash := ""
+		specSvc.On("GetDataHashByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&emptyDataHash, nil).
+			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstone
 		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
 			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
 		expectedSpecToUpdate := testSpec
 		expectedSpecToUpdate.Data = &testSpecData
+		testSpecDataHash := sha256.Sum256([]byte(testSpecData))
+		testSpecDataHashStr := hex.EncodeToString(testSpecDataHash[:])
+		expectedSpecToUpdate.DataHash = &testSpecDataHashStr
 		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
 			Times(len(fixAPI1SpecInputs()) + len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs())) // len(fixAPI2SpecInputs()) is excluded because it's API is part of tombstones
 
@@ -333,10 +347,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		specSvc.On("ListByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, event2ID).Return(fixEvent2Specs(), nil).Once()
 		specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
+		emptyDataHash := ""
+		specSvc.On("GetDataHashByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&emptyDataHash, nil).Times(3)
 		specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).Times(3)
 
 		expectedSpecToUpdate := testSpec
 		expectedSpecToUpdate.Data = &testSpecData
+
+		testSpecDataHash := sha256.Sum256([]byte(testSpecData))
+		testSpecDataHashStr := hex.EncodeToString(testSpecDataHash[:])
+		expectedSpecToUpdate.DataHash = &testSpecDataHashStr
 		specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).Times(3)
 
 		return specSvc
@@ -1868,11 +1888,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
+				emptyDataHash := ""
+				specSvc.On("GetDataHashByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&emptyDataHash, nil).
+					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
 				specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
 					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
 
 				expectedSpecToUpdate := testSpec
 				expectedSpecToUpdate.Data = &testSpecData
+				testSpecDataHash := sha256.Sum256([]byte(testSpecData))
+				testSpecDataHashStr := hex.EncodeToString(testSpecDataHash[:])
+				expectedSpecToUpdate.DataHash = &testSpecDataHashStr
 				specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
 					Times(len(fixEvent1SpecInputs()) + len(fixEvent2SpecInputs()))
 
@@ -2364,11 +2390,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event1specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 				specSvc.On("GetFetchRequest", txtest.CtxWithDBMatcher(), event2specID, model.EventSpecReference).Return(fixFailedFetchRequest(), nil).Once()
 
+				emptyDataHash := ""
+				specSvc.On("GetDataHashByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&emptyDataHash, nil).
+					Times(len(fixAPI1SpecInputs()))
 				specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).
 					Times(len(fixAPI1SpecInputs()))
 
 				expectedSpecToUpdate := testSpec
 				expectedSpecToUpdate.Data = &testSpecData
+				testSpecDataHash := sha256.Sum256([]byte(testSpecData))
+				testSpecDataHashStr := hex.EncodeToString(testSpecDataHash[:])
+				expectedSpecToUpdate.DataHash = &testSpecDataHashStr
 				specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).
 					Times(len(fixAPI1SpecInputs()))
 
@@ -2909,6 +2941,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
+				emptyDataHash := ""
+				specSvc.On("GetDataHashByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&emptyDataHash, nil).Once()
 				specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(nil, testErr).Once()
 
 				return specSvc
@@ -2973,10 +3007,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
+				emptyDataHash := ""
+				specSvc.On("GetDataHashByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&emptyDataHash, nil).Once()
 				specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).Once()
 
 				expectedSpecToUpdate := testSpec
 				expectedSpecToUpdate.Data = &testSpecData
+				testSpecDataHash := sha256.Sum256([]byte(testSpecData))
+				testSpecDataHashStr := hex.EncodeToString(testSpecDataHash[:])
+				expectedSpecToUpdate.DataHash = &testSpecDataHashStr
 				specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(testErr).Once()
 
 				return specSvc
@@ -3041,10 +3080,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event1Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event1Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 				specSvc.On("CreateByReferenceObjectIDWithDelayedFetchRequest", txtest.CtxWithDBMatcher(), *event2Spec, model.EventSpecReference, mock.Anything).Return("", fixFetchRequestFromFetchRequestInput(event2Spec.FetchRequest, model.EventSpecFetchRequestReference, ""), nil).Once()
 
+				emptyDataHash := ""
+				specSvc.On("GetDataHashByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&emptyDataHash, nil).Once()
 				specSvc.On("GetByID", txtest.CtxWithDBMatcher(), mock.Anything, mock.Anything).Return(&testSpec, nil).Once()
 
 				expectedSpecToUpdate := testSpec
 				expectedSpecToUpdate.Data = &testSpecData
+				testSpecDataHash := sha256.Sum256([]byte(testSpecData))
+				testSpecDataHashStr := hex.EncodeToString(testSpecDataHash[:])
+				expectedSpecToUpdate.DataHash = &testSpecDataHashStr
 				specSvc.On("UpdateSpecOnly", txtest.CtxWithDBMatcher(), expectedSpecToUpdate).Return(nil).Once()
 
 				return specSvc
