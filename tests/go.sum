@@ -209,6 +209,8 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20221104124533-0b5
 github.com/kyma-incubator/compass/components/connector v0.0.0-20221104124533-0b535193e6dd/go.mod h1:StZfWVWNZ9dOZywTyg+tpWWJrMmdXBVHnbfY9cumra8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221104124533-0b535193e6dd h1:w5i6qkHed3OffyoHi/GX/8a7PCqFtnFarDfSWnJ7Shg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221104124533-0b535193e6dd/go.mod h1:Jw0nS3jMD4kOk7700RBPaJncTWSGRHKQQ6pprCO/iqc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221115141525-36077da98d24 h1:dF8FOjEMiXcqHOF1R5Iu5R29/d6GOhIVFRk/wITp2L0=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221115141525-36077da98d24/go.mod h1:cFi6TofHZ41WBLo2yQARo3oVkeWLx9569kvJn/hsKl8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221104124533-0b535193e6dd h1:PpSjFrW5scBbzHjpCh7o5fVwGc3ZcluSXYrB/owLjV8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221104124533-0b535193e6dd/go.mod h1:SHsqsGkyZzkuXGskb1EkuXWaRmdOmqz6iOy/UL/POLs=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20221104124533-0b535193e6dd h1:TeheuypGoDLLeLpaEpJ0g9+PgLTVgsj1o40x86pyHJk=
@@ -217,6 +219,7 @@ github.com/kyma-incubator/compass/components/operations-controller v0.0.0-202211
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20221104124533-0b535193e6dd/go.mod h1:5LVdIKNC8D8nTsj2+uw8bBSrspl9y+dJF0qCvzf5GiQ=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221104123300-f202d6f6892d h1:ou2oHnSoFlNqJciIOBhzUWwRN1859V2eLqKQyriYhOo=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221104123300-f202d6f6892d/go.mod h1:KqqIPz+7861l/LSXy5WfpRc//IE5u4ELHkq8drtbAcs=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221104124533-0b535193e6dd/go.mod h1:3S90t9iZTCLAVwxexlLGWNgQTb6+gqRDsKJ+iIOFXTw=
 github.com/lib/pq v1.10.4 h1:SO9z7FRPzA03QhHKJrH5BXA6HU1rS4V2nIVrrNC1iYk=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 h1:guHWmqIKr4G+gQ4uYU5vcZjsUhhklRA2uOcGVfcfqis=
