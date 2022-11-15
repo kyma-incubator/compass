@@ -158,6 +158,52 @@ func (_m *FormationAssignmentRepository) GetGlobalByID(ctx context.Context, id s
 	return r0, r1
 }
 
+// GetGlobalByIDAndFormationID provides a mock function with given fields: ctx, id, formationID
+func (_m *FormationAssignmentRepository) GetGlobalByIDAndFormationID(ctx context.Context, id string, formationID string) (*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, id, formationID)
+
+	var r0 *model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.FormationAssignment); ok {
+		r0 = rf(ctx, id, formationID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, id, formationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetReverseBySourceAndTarget provides a mock function with given fields: ctx, tenantID, formationID, sourceID, targetID
+func (_m *FormationAssignmentRepository) GetReverseBySourceAndTarget(ctx context.Context, tenantID string, formationID string, sourceID string, targetID string) (*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, tenantID, formationID, sourceID, targetID)
+
+	var r0 *model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) *model.FormationAssignment); ok {
+		r0 = rf(ctx, tenantID, formationID, sourceID, targetID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
+		r1 = rf(ctx, tenantID, formationID, sourceID, targetID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // List provides a mock function with given fields: ctx, pageSize, cursor, tenantID
 func (_m *FormationAssignmentRepository) List(ctx context.Context, pageSize int, cursor string, tenantID string) (*model.FormationAssignmentPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor, tenantID)
@@ -197,6 +243,29 @@ func (_m *FormationAssignmentRepository) ListAllForObject(ctx context.Context, t
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, tenant, formationID, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListAllForObjectIDs provides a mock function with given fields: ctx, tenant, formationID, objectIDs
+func (_m *FormationAssignmentRepository) ListAllForObjectIDs(ctx context.Context, tenant string, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, tenant, formationID, objectIDs)
+
+	var r0 []*model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) []*model.FormationAssignment); ok {
+		r0 = rf(ctx, tenant, formationID, objectIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string) error); ok {
+		r1 = rf(ctx, tenant, formationID, objectIDs)
 	} else {
 		r1 = ret.Error(1)
 	}

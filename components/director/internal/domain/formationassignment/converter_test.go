@@ -186,13 +186,16 @@ func TestConverter_FromInput(t *testing.T) {
 		{
 			Name: "Success",
 			Expected: &model.FormationAssignment{
-				FormationID: TestFormationID,
-				Source:      TestSource,
-				SourceType:  TestSourceType,
-				Target:      TestTarget,
-				TargetType:  TestTargetType,
-				State:       TestState,
-				Value:       TestConfigValueRawJSON,
+				FormationID:                TestFormationID,
+				Source:                     TestSource,
+				SourceType:                 TestSourceType,
+				Target:                     TestTarget,
+				TargetType:                 TestTargetType,
+				LastOperation:              "assign",
+				LastOperationInitiator:     TestSource,
+				LastOperationInitiatorType: TestSourceType,
+				State:                      TestState,
+				Value:                      TestConfigValueRawJSON,
 			},
 			Input: fixFormationAssignmentModelInput(TestConfigValueRawJSON),
 		}, {
