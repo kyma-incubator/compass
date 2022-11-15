@@ -447,13 +447,16 @@ type FetchRequestStatus struct {
 }
 
 type FormationAssignment struct {
-	ID         string                  `json:"id"`
-	Source     string                  `json:"source"`
-	SourceType FormationAssignmentType `json:"sourceType"`
-	Target     string                  `json:"target"`
-	TargetType FormationAssignmentType `json:"targetType"`
-	State      string                  `json:"state"`
-	Value      *string                 `json:"value"`
+	ID                         string                  `json:"id"`
+	Source                     string                  `json:"source"`
+	SourceType                 FormationAssignmentType `json:"sourceType"`
+	Target                     string                  `json:"target"`
+	TargetType                 FormationAssignmentType `json:"targetType"`
+	LastOperation              string                  `json:"lastOperation"`
+	LastOperationInitiator     string                  `json:"lastOperationInitiator"`
+	LastOperationInitiatorType FormationAssignmentType `json:"lastOperationInitiatorType"`
+	State                      string                  `json:"state"`
+	Value                      *string                 `json:"value"`
 }
 
 type FormationAssignmentPage struct {

@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	fm "github.com/kyma-incubator/compass/components/director/internal/formationmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/formationmapping/automock"
@@ -46,15 +49,55 @@ func fixContextWithTenantAndConsumer(c consumer.Consumer, internalTntID, externa
 	return consumerAndTenantCtx
 }
 
-func fixFormationAssignmentModel(testFormationID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType) *model.FormationAssignment {
+func fixFormationAssignmentModel(testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          "ID",
 		FormationID: testFormationID,
-		TenantID:    "tenant",
+		TenantID:    testTenantID,
 		Source:      sourceID,
 		SourceType:  sourceFAType,
 		Target:      targetID,
 		TargetType:  targetFAType,
+	}
+}
+
+func fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, lastOperation model.FormationOperation, state model.FormationAssignmentState, config string) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:                         testFormationAssignmentID,
+		FormationID:                testFormationID,
+		TenantID:                   testTenantID,
+		Source:                     sourceID,
+		SourceType:                 sourceFAType,
+		Target:                     targetID,
+		TargetType:                 targetFAType,
+		LastOperation:              lastOperation,
+		LastOperationInitiator:     sourceID,
+		LastOperationInitiatorType: sourceFAType,
+		State:                      string(state),
+		Value:                      json.RawMessage(config),
+	}
+}
+
+func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, lastOperation model.FormationOperation, state model.FormationAssignmentState, config string) *model.FormationAssignmentInput {
+	return &model.FormationAssignmentInput{
+		FormationID:                testFormationID,
+		Source:                     sourceID,
+		SourceType:                 sourceFAType,
+		Target:                     targetID,
+		TargetType:                 targetFAType,
+		LastOperation:              lastOperation,
+		LastOperationInitiator:     sourceID,
+		LastOperationInitiatorType: sourceFAType,
+		State:                      string(state),
+		Value:                      json.RawMessage(config),
+	}
+}
+
+func fixEmptyNotificationRequest() *webhookclient.NotificationRequest {
+	return &webhookclient.NotificationRequest{
+		Webhook:       graphql.Webhook{},
+		Object:        nil,
+		CorrelationID: "",
 	}
 }
 
@@ -83,6 +126,18 @@ func fixUnusedFormationAssignmentSvc() *automock.FormationAssignmentService {
 	return &automock.FormationAssignmentService{}
 }
 
+func fixUnusedFormationAssignmentConverter() *automock.FormationAssignmentConverter {
+	return &automock.FormationAssignmentConverter{}
+}
+
+func fixUnusedFormationAssignmentNotificationSvc() *automock.FormationAssignmentNotificationService {
+	return &automock.FormationAssignmentNotificationService{}
+}
+
+func fixUnusedFormationSvc() *automock.FormationService {
+	return &automock.FormationService{}
+}
+
 func fixUnusedRuntimeRepo() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
 }
@@ -101,8 +156,4 @@ func fixUnusedAppTemplateRepo() *automock.ApplicationTemplateRepository {
 
 func fixUnusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
-}
-
-func fixUnusedTenantRepo() *automock.TenantRepository {
-	return &automock.TenantRepository{}
 }

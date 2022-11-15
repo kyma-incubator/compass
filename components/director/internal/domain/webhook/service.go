@@ -124,9 +124,9 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 	webhook := in.ToWebhook(id, owningResourceID, objectType)
 
 	if err = s.webhookRepo.Create(ctx, tnt, webhook); err != nil {
-		return "", errors.Wrapf(err, "while creating Webhook with type: %q and ID: %q for Application with ID: %q", webhook.Type, id, owningResourceID)
+		return "", errors.Wrapf(err, "while creating %s with type: %q and ID: %q for: %q", objectType, webhook.Type, id, owningResourceID)
 	}
-	log.C(ctx).Infof("Successfully created Webhook with type: %q and ID: %q for Application with ID: %q", webhook.Type, id, owningResourceID)
+	log.C(ctx).Infof("Successfully created %s with type: %q and ID: %q for: %q", objectType, webhook.Type, id, owningResourceID)
 
 	return webhook.ID, nil
 }

@@ -164,7 +164,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 	for _, webhook := range ordWebhooks {
 		webhookURL := str.PtrStrToStr(webhook.URL)
 		if s.config.ordWebhookPartialProcessing && strings.Contains(webhookURL, s.config.ordWebhookPartialProcessURL) {
-			if webhook.CreatedAt.After(date) {
+			if webhook.CreatedAt == nil || webhook.CreatedAt.After(date) {
 				queue <- webhook
 			}
 		} else {
@@ -175,7 +175,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 	wg.Wait()
 
 	if webhookErrors != 0 {
-		return errors.Errorf("failed to process %d webhooks", webhookErrors)
+		log.C(ctx).Errorf("failed to process %d webhooks", webhookErrors)
 	}
 
 	return nil
