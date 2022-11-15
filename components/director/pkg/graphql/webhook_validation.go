@@ -17,6 +17,8 @@ var emptyApplicationLifecycleWebhookRequestObject = &webhook.ApplicationLifecycl
 }
 
 var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChangeInput{
+	Assignment:        &webhook.FormationAssignment{},
+	ReverseAssignment: &webhook.FormationAssignment{},
 	ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]interface{}{},
@@ -38,6 +40,8 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 }
 
 var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
+	Assignment:        &webhook.FormationAssignment{},
+	ReverseAssignment: &webhook.FormationAssignment{},
 	SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]interface{}{},
