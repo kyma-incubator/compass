@@ -93,6 +93,7 @@ mutation {
           }
         }
       }
+      createdAt
     }
     healthCheckURL
     bundles {

@@ -71,6 +71,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [register application with status](./register-application/register-application-with-status.graphql)
 - [register application with webhooks](./register-application/register-application-with-webhooks.graphql)
 - [register application](./register-application/register-application.graphql)
+- [register application from template with placeholder payload](./register-application-from-template/register-application-from-template-with-placeholder-payload.graphql)
 - [register application from template](./register-application-from-template/register-application-from-template.graphql)
 - [register integration system](./register-integration-system/register-integration-system.graphql)
 - [register runtime with webhooks](./register-runtime/register-runtime-with-webhooks.graphql)

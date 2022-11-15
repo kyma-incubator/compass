@@ -13,6 +13,7 @@ import (
 
 var (
 	testDescription    = "{{display-name}}"
+	testJSONPath       = ".displayName"
 	testProviderName   = "provider-display-name"
 	testURL            = "http://valid.url"
 	appInputJSONString = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
@@ -67,14 +68,17 @@ func fixModelRuntime(name string) *model.Runtime {
 
 func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	placeholderDesc := testDescription
+	placeholderJSONPath := testJSONPath
 	return []model.ApplicationTemplatePlaceholder{
 		{
 			Name:        "name",
 			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
 		},
 		{
 			Name:        "display-name",
 			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
 		},
 	}
 }
@@ -88,6 +92,13 @@ func fixModelApplicationFromTemplateInput(name, subscribedAppName, subdomain, re
 			{Placeholder: "subdomain", Value: subdomain},
 			{Placeholder: "region", Value: region},
 		},
+	}
+}
+
+func fixModelApplicationFromTemplateInputWithPlaceholderPayload(name, subscribedAppName, tenantId, mainUrl, externalSystemId string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName:        name,
+		PlaceholdersPayload: str.Ptr(fmt.Sprintf("{\"displayName\":\"%s\",\"systemNumber\":\"%s\",\"additionalUrls\":{\"mainUrl\":\"%s\"},\"externalResourceId\":\"%s\"}", subscribedAppName, tenantId, mainUrl, externalSystemId)),
 	}
 }
 

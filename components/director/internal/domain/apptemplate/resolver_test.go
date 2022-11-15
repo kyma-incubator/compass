@@ -1474,10 +1474,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 					{
 						Name:        "name",
 						Description: &testDescription,
+						JSONPath:    &testJSONPath,
 					},
 					{
 						Name:        "display-name",
 						Description: &testDescription,
+						JSONPath:    &testJSONPath,
 					},
 				}
 				modelAppTemplate := fixModelAppTemplateWithAppInputJSONAndPlaceholders(testID, "SAP app-template", appInputJSONString, fixModelApplicationTemplateWebhooks(testWebhookID, testID), placeholders)
@@ -1494,10 +1496,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 					{
 						Name:        "name",
 						Description: &testDescription,
+						JSONPath:    &testJSONPath,
 					},
 					{
 						Name:        "display-name",
 						Description: &testDescription,
+						JSONPath:    &testJSONPath,
 					},
 				}
 				modelAppTemplate := fixModelAppTemplateWithAppInputJSONAndPlaceholders(testID, "SAP app-template", appInputJSONString, fixModelApplicationTemplateWebhooks(testWebhookID, testID), placeholders)
@@ -1657,10 +1661,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 						{
 							Name:        "test",
 							Description: &testDescription,
+							JSONPath:    &testJSONPath,
 						},
 						{
 							Name:        "test2",
 							Description: &testDescription,
+							JSONPath:    &testJSONPath,
 						},
 					},
 					AccessLevel: model.GlobalApplicationTemplateAccessLevel,
@@ -1695,10 +1701,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 						{
 							Name:        "name",
 							Description: &testDescription,
+							JSONPath:    &testJSONPath,
 						},
 						{
 							Name:        "display-name",
 							Description: &testDescription,
+							JSONPath:    &testJSONPath,
 						},
 					},
 					AccessLevel: model.GlobalApplicationTemplateAccessLevel,

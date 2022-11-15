@@ -25,7 +25,7 @@ func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) 
 		{
 			Name: "Valid",
 			Value: []*graphql.PlaceholderDefinitionInput{
-				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
+				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr(".displayName")},
 			},
 			Valid: true,
 		},
@@ -37,15 +37,15 @@ func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) 
 		{
 			Name: "Invalid - not unique",
 			Value: []*graphql.PlaceholderDefinitionInput{
-				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
-				{Name: testPlaceholderName, Description: str.Ptr("Different description")},
+				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr(".displayName")},
+				{Name: testPlaceholderName, Description: str.Ptr("Different description"), JSONPath: str.Ptr(".displayName2")},
 			},
 			Valid: false,
 		},
 		{
 			Name: "Invalid - not used",
 			Value: []*graphql.PlaceholderDefinitionInput{
-				{Name: "notused", Description: str.Ptr("Test description")},
+				{Name: "notused", Description: str.Ptr("Test description"), JSONPath: str.Ptr(".displayName")},
 			},
 			Valid: false,
 		},
@@ -219,7 +219,7 @@ func TestApplicationTemplateInput_Validate_Placeholders(t *testing.T) {
 		{
 			Name: "Valid",
 			Value: []*graphql.PlaceholderDefinitionInput{
-				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
+				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr(".displayName")},
 			},
 			Valid: true,
 		},
@@ -375,7 +375,7 @@ func TestApplicationTemplateUpdateInput_Validate_Rule_ValidPlaceholders(t *testi
 		{
 			Name: "Valid",
 			Value: []*graphql.PlaceholderDefinitionInput{
-				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
+				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr(".displayName")},
 			},
 			Valid: true,
 		},
@@ -387,15 +387,15 @@ func TestApplicationTemplateUpdateInput_Validate_Rule_ValidPlaceholders(t *testi
 		{
 			Name: "Invalid - not unique",
 			Value: []*graphql.PlaceholderDefinitionInput{
-				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
-				{Name: testPlaceholderName, Description: str.Ptr("Different description")},
+				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr(".displayName")},
+				{Name: testPlaceholderName, Description: str.Ptr("Different description"), JSONPath: str.Ptr(".displayName2")},
 			},
 			Valid: false,
 		},
 		{
 			Name: "Invalid - not used",
 			Value: []*graphql.PlaceholderDefinitionInput{
-				{Name: "notused", Description: str.Ptr("Test description")},
+				{Name: "notused", Description: str.Ptr("Test description"), JSONPath: str.Ptr(".displayName")},
 			},
 			Valid: false,
 		},
@@ -524,7 +524,7 @@ func TestApplicationTemplateUpdateInput_Validate_Placeholders(t *testing.T) {
 		{
 			Name: "Valid",
 			Value: []*graphql.PlaceholderDefinitionInput{
-				{Name: testPlaceholderName, Description: str.Ptr("Test description")},
+				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr(".displayName")},
 			},
 			Valid: true,
 		},

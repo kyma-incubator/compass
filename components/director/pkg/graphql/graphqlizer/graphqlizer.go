@@ -527,6 +527,9 @@ func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefi
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
+		{{- if .JSONPath }}
+		jsonPath: "{{.JSONPath}}",
+		{{- end }}
 	}`)
 }
 

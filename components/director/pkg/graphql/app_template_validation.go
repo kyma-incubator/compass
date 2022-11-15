@@ -44,6 +44,7 @@ func (i PlaceholderDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
+		validation.Field(&i.JSONPath, validation.RuneLength(0, jsonPathStringLengthLimit)),
 	)
 }
 
