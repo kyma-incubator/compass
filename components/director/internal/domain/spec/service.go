@@ -86,6 +86,16 @@ func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.
 	return s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
+// ListIDByReferenceObjectID retrieves all spec ids by objectType and objectID
+func (s *service) ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListIDByReferenceObjectID(ctx, tnt, objectType, objectID)
+}
+
 // GetByReferenceObjectID
 // Until now APIs and Events had embedded specification in them, we will model this behavior by relying that the first created spec is the one which GraphQL expects
 func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
@@ -104,16 +114,6 @@ func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.S
 	}
 
 	return nil, nil
-}
-
-// ListIDByReferenceObjectID missing godoc
-func (s *service) ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.repo.ListIDByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
 // ListByReferenceObjectIDs missing godoc

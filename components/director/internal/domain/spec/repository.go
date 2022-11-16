@@ -94,7 +94,7 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Spec
 	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
-// ListIDByReferenceObjectID missing godoc
+// ListIDByReferenceObjectID retrieves all spec ids by objectType and objectID
 func (r *repository) ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
 	fieldName, err := r.referenceObjectFieldName(objectType)
 	if err != nil {

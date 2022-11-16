@@ -17,6 +17,7 @@ type RepoListTestSuite struct {
 	Name                      string
 	SQLQueryDetails           []SQLQueryDetails
 	ConverterMockProvider     func() Mock
+	ShouldSkipMockFromEntity  bool
 	RepoConstructorFunc       interface{}
 	ExpectedModelEntities     []interface{}
 	ExpectedDBEntities        []interface{}
@@ -53,8 +54,10 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 			configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
-			for i := range suite.ExpectedDBEntities {
-				convMock.On("FromEntity", append([]interface{}{suite.ExpectedDBEntities[i]}, suite.AdditionalConverterArgs...)...).Return(suite.ExpectedModelEntities[i], nil).Once()
+			if !suite.ShouldSkipMockFromEntity {
+				for i := range suite.ExpectedDBEntities {
+					convMock.On("FromEntity", append([]interface{}{suite.ExpectedDBEntities[i]}, suite.AdditionalConverterArgs...)...).Return(suite.ExpectedModelEntities[i], nil).Once()
+				}
 			}
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			// WHEN
