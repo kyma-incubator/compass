@@ -98,6 +98,10 @@ func (rd *FormationConfigurationChangeInput) GetParticipantsIDs() []string {
 
 // SetAssignment sets the assignment for the FormationConfigurationChangeInput to the provided one
 func (rd *FormationConfigurationChangeInput) SetAssignment(assignment *model.FormationAssignment) {
+	config := string(assignment.Value)
+	if config == "" {
+		config = "\"\""
+	}
 	rd.Assignment = &FormationAssignment{
 		ID:          assignment.ID,
 		FormationID: assignment.FormationID,
@@ -107,12 +111,16 @@ func (rd *FormationConfigurationChangeInput) SetAssignment(assignment *model.For
 		Target:      assignment.Target,
 		TargetType:  assignment.TargetType,
 		State:       assignment.State,
-		Value:       string(assignment.Value),
+		Value:       config,
 	}
 }
 
 // SetReverseAssignment sets the reverse assignment for the FormationConfigurationChangeInput to the provided one
 func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
+	config := string(reverseAssignment.Value)
+	if config == "" {
+		config = "\"\""
+	}
 	rd.ReverseAssignment = &FormationAssignment{
 		ID:          reverseAssignment.ID,
 		FormationID: reverseAssignment.FormationID,
@@ -122,7 +130,7 @@ func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignm
 		Target:      reverseAssignment.Target,
 		TargetType:  reverseAssignment.TargetType,
 		State:       reverseAssignment.State,
-		Value:       string(reverseAssignment.Value),
+		Value:       config,
 	}
 }
 
