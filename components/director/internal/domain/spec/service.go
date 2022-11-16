@@ -17,6 +17,7 @@ import (
 type SpecRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType) error
@@ -103,6 +104,16 @@ func (s *service) GetByReferenceObjectID(ctx context.Context, objectType model.S
 	}
 
 	return nil, nil
+}
+
+// ListIDByReferenceObjectID missing godoc
+func (s *service) ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListIDByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
 // ListByReferenceObjectIDs missing godoc

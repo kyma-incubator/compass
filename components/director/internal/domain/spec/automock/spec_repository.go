@@ -148,6 +148,29 @@ func (_m *SpecRepository) ListByReferenceObjectIDs(ctx context.Context, tenant s
 	return r0, r1
 }
 
+// ListIDByReferenceObjectID provides a mock function with given fields: ctx, tenant, objectType, objectID
+func (_m *SpecRepository) ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+	ret := _m.Called(ctx, tenant, objectType, objectID)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.SpecReferenceObjectType, string) []string); ok {
+		r0 = rf(ctx, tenant, objectType, objectID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.SpecReferenceObjectType, string) error); ok {
+		r1 = rf(ctx, tenant, objectType, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, tenant, item
 func (_m *SpecRepository) Update(ctx context.Context, tenant string, item *model.Spec) error {
 	ret := _m.Called(ctx, tenant, item)
