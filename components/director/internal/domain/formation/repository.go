@@ -83,7 +83,8 @@ func (r *repository) GetByName(ctx context.Context, name, tenantID string) (*mod
 		return nil, errors.Wrapf(err, "An error occurred while getting formation with name: %q", name)
 	}
 
-	return r.conv.FromEntity(&entity), nil
+	return nil, nil
+	//return r.conv.FromEntity(&entity), nil
 }
 
 // List returns all Formations sorted by id and paginated by the pageSize and cursor parameters

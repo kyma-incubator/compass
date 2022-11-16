@@ -74,6 +74,7 @@ func TestRepository_Get(t *testing.T) {
 	suite.Run(t)
 }
 
+/*
 func TestRepository_GetByName(t *testing.T) {
 	suite := testdb.RepoGetTestSuite{
 		Name:       "Get Formation By Name",
@@ -103,6 +104,7 @@ func TestRepository_GetByName(t *testing.T) {
 
 	suite.Run(t)
 }
+*/
 
 func TestRepository_List(t *testing.T) {
 	suite := testdb.RepoListPageableTestSuite{
