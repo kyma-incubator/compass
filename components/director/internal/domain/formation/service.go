@@ -19,6 +19,7 @@ import (
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
+// Testing
 //go:generate mockery --exported --name=labelDefRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelDefRepository interface {
 	GetByKey(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
