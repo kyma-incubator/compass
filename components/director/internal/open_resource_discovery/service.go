@@ -371,6 +371,7 @@ func (s *Service) processFetchRequestResults(ctx context.Context, results []*fet
 			resultDataHash := sha256.Sum256([]byte(str.PtrStrToStr(result.data)))
 			resultDataHashStr := hex.EncodeToString(resultDataHash[:])
 
+			log.C(ctx).Infof("DUMMY LOG [%s]", str.PtrStrToStr(dbDataHash))
 			if str.PtrStrToStr(dbDataHash) != resultDataHashStr {
 				log.C(ctx).Infof("DB DATA HASH [%s] RESULT DATA HASH [%s]", str.PtrStrToStr(dbDataHash), resultDataHashStr)
 				spec, err := s.specSvc.GetByID(ctx, result.fetchRequest.ObjectID, specReferenceType)
@@ -384,6 +385,8 @@ func (s *Service) processFetchRequestResults(ctx context.Context, results []*fet
 				if err = s.specSvc.UpdateSpecOnly(ctx, *spec); err != nil {
 					return err
 				}
+			} else {
+				log.C(ctx).Infof("MATCH123 [%s] [%s]", str.PtrStrToStr(dbDataHash), resultDataHashStr)
 			}
 		}
 
@@ -1033,14 +1036,15 @@ func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenc
 }
 
 func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.FetchRequest, error) {
-	specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, objectType, objectID)
+	specIDsFromDB, err := s.specSvc.ListIDByReferenceObjectID(ctx, objectType, objectID)
 	if err != nil {
 		return nil, err
 	}
-
+	log.C(ctx).Infof("LOGG Spec IDS %v", specIDsFromDB)
 	fetchRequests := make([]*model.FetchRequest, 0)
-	for _, spec := range specsFromDB {
-		fr, err := s.specSvc.GetFetchRequest(ctx, spec.ID, objectType)
+	//TODO
+	for _, specID := range specIDsFromDB {
+		fr, err := s.specSvc.GetFetchRequest(ctx, specID, objectType)
 		if err != nil {
 			return nil, err
 		}

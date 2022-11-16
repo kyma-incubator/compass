@@ -19,6 +19,7 @@ type SpecRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	GetDataHashByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*string, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType) error
 	DeleteByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) error
@@ -95,6 +96,16 @@ func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.
 	}
 
 	return s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
+}
+
+// ListIDByReferenceObjectID missing godoc
+func (s *service) ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListIDByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
 // GetByReferenceObjectID

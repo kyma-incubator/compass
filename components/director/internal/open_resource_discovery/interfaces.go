@@ -64,7 +64,7 @@ type SpecService interface {
 	GetDataHashByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*string, error)
 	GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error)
 	UpdateSpecOnly(ctx context.Context, spec model.Spec) error
-	ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 }
 
