@@ -3,7 +3,7 @@ package destinationfetchersvc_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -96,7 +96,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 
 			// THEN
 			resp := w.Result()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			assert.NoError(t, err)
 
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -193,7 +193,7 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 
 			// THEN
 			resp := w.Result()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			assert.NoError(t, err)
 
 			if len(testCase.ExpectedErrorOutput) > 0 {

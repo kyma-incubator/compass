@@ -20,7 +20,7 @@ package packagetobundles
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -76,7 +76,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			reqBody, err := ioutil.ReadAll(r.Body)
+			reqBody, err := io.ReadAll(r.Body)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Error reading request body: %v", err)
 				appErr := apperrors.InternalErrorFrom(err, "while reading request body")
@@ -123,7 +123,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			reqPackageModeGraphQLPattern := regexp.MustCompile(`([\s\\n]*)mode([\s\\n]*):([\s\\n]*)PACKAGE([\s\\n]*)`) // matches ` mode: PACKAGE `
 			body = reqPackageModeGraphQLPattern.ReplaceAllString(body, "${1}mode${2}:${3}BUNDLE${4}")
 
-			r.Body = ioutil.NopCloser(strings.NewReader(body))
+			r.Body = io.NopCloser(strings.NewReader(body))
 			r.ContentLength = int64(len(body))
 
 			usingBundles := unmodifiedBody == body
@@ -160,7 +160,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 				}
 			}
 
-			respBody, err := ioutil.ReadAll(recorder.Body)
+			respBody, err := io.ReadAll(recorder.Body)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Error reading response body: %v", err)
 				appErr := apperrors.InternalErrorFrom(err, "while reading response body")

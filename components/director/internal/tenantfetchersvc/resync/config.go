@@ -3,7 +3,7 @@ package resync
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -236,7 +236,7 @@ func (j *job) getJobSecret(jc JobConfig) (string, error) {
 	if path == "" {
 		return "", errors.New("job secret path cannot be empty")
 	}
-	secret, err := ioutil.ReadFile(path)
+	secret, err := os.ReadFile(path)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to read job secret file")
 	}

@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -80,7 +80,7 @@ func (suite *TokenAuthorizationProviderTestSuite) TestTokenAuthorizationProvider
 	fakeClient := &httputilsfakes.FakeClient{}
 	fakeClient.DoReturns(&http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(`{"access_token": "%s"}`, fakeTkn)))),
+		Body:       io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(`{"access_token": "%s"}`, fakeTkn)))),
 	}, nil)
 
 	provider := auth.NewTokenAuthorizationProvider(fakeClient)

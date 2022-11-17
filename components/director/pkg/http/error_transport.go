@@ -18,7 +18,7 @@ package http
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -70,7 +70,7 @@ func handleResponseError(ctx context.Context, response *http.Response) error {
 		}
 	}()
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return errors.Wrap(err, "while reading response body bytes")
 	}

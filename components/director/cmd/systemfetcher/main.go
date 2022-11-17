@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
@@ -244,7 +244,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	}
 
 	dataLoader := systemfetcher.NewDataLoader(tx, appTemplateSvc, intSysSvc)
-	if err := dataLoader.LoadData(ctx, ioutil.ReadDir, ioutil.ReadFile); err != nil {
+	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
 		return nil, err
 	}
 
