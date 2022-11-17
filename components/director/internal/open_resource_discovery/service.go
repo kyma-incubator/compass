@@ -1136,8 +1136,13 @@ func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecR
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Info("CHECKKKK")
 	fetchRequestsFromDB, err := s.specSvc.ListFetchRequestsByReferenceObjectIDsTst(ctx, specIDsFromDB, objectType)
+	log.C(ctx).Infof("CHECKKKK [%d]", len(fetchRequestsFromDB))
+	if fetchRequestsFromDB[0] != nil{
+		log.C(ctx).Infof("CHECKKKK [%s]", fetchRequestsFromDB[0].ObjectID)
+		log.C(ctx).Infof("CHECKKKK SPEC [%s]", objectID)
+	}
+
 	if err != nil {
 		return nil, err
 	}
