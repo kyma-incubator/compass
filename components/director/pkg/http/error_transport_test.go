@@ -3,7 +3,7 @@ package http_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -18,7 +18,7 @@ func TestErrorHandlerTransport_RoundTripReturnsAnErrorOnBadRequest(t *testing.T)
 	transport := &httpfakes.FakeHTTPRoundTripper{}
 	transport.RoundTripReturns(&http.Response{
 		StatusCode: http.StatusBadRequest,
-		Body:       ioutil.NopCloser(bytes.NewBufferString(failedResponseBody)),
+		Body:       io.NopCloser(bytes.NewBufferString(failedResponseBody)),
 	}, nil)
 
 	errTransport := httputil.NewErrorHandlerTransport(transport)
@@ -33,7 +33,7 @@ func TestErrorHandlerTransport_RoundTripReturnsAValidResponseOnSuccessRequest(t 
 	transport := &httpfakes.FakeHTTPRoundTripper{}
 	transport.RoundTripReturns(&http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(&bytes.Buffer{}),
+		Body:       io.NopCloser(&bytes.Buffer{}),
 	}, nil)
 
 	errTransport := httputil.NewErrorHandlerTransport(transport)
@@ -42,7 +42,7 @@ func TestErrorHandlerTransport_RoundTripReturnsAValidResponseOnSuccessRequest(t 
 	require.NotNil(t, resp)
 	require.NoError(t, err)
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
 	bodyString := string(bodyBytes)
