@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
@@ -58,7 +58,7 @@ func TestLoadData(t *testing.T) {
 		mockTransactioner func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
 		appTmplSvc        func() *automock.AppTmplService
 		intSysSvc         func() *automock.IntSysSvc
-		readDirFunc       func(path string) ([]fs.FileInfo, error)
+		readDirFunc       func(path string) ([]os.DirEntry, error)
 		readFileFunc      func(path string) ([]byte, error)
 		expectedErr       error
 	}
@@ -70,7 +70,7 @@ func TestLoadData(t *testing.T) {
 			},
 			appTmplSvc: mockAppTmplService,
 			intSysSvc:  mockIntSysService,
-			readDirFunc: func(path string) ([]fs.FileInfo, error) {
+			readDirFunc: func(path string) ([]os.DirEntry, error) {
 				return nil, testErr
 			},
 			readFileFunc: mockReadFile,
@@ -83,9 +83,9 @@ func TestLoadData(t *testing.T) {
 			},
 			appTmplSvc: mockAppTmplService,
 			intSysSvc:  mockIntSysService,
-			readDirFunc: func(path string) ([]fs.FileInfo, error) {
+			readDirFunc: func(path string) ([]os.DirEntry, error) {
 				file := FakeFile{name: "test.txt"}
-				return []fs.FileInfo{&file}, nil
+				return []os.DirEntry{&file}, nil
 			},
 			readFileFunc: mockReadFile,
 			expectedErr:  fmt.Errorf("unsupported file format \".txt\", supported format: json"),
@@ -484,9 +484,9 @@ func mockReadFile(_ string) ([]byte, error) {
 	return []byte("[]"), nil
 }
 
-func mockReadDir(_ string) ([]fs.FileInfo, error) {
+func mockReadDir(_ string) ([]os.DirEntry, error) {
 	file := FakeFile{name: tempFileName}
-	return []fs.FileInfo{&file}, nil
+	return []os.DirEntry{&file}, nil
 }
 
 func mockAppTmplService() *automock.AppTmplService {
@@ -501,26 +501,18 @@ type FakeFile struct {
 	name string
 }
 
+func (f *FakeFile) Type() fs.FileMode {
+	return 0
+}
+
+func (f *FakeFile) Info() (fs.FileInfo, error) {
+	return nil, nil
+}
+
 func (f *FakeFile) Name() string {
 	return f.name
 }
 
-func (f *FakeFile) Size() int64 {
-	return 0
-}
-
-func (f *FakeFile) Mode() fs.FileMode {
-	return 0
-}
-
-func (f *FakeFile) ModTime() time.Time {
-	return time.Time{}
-}
-
 func (f *FakeFile) IsDir() bool {
 	return false
-}
-
-func (f *FakeFile) Sys() any {
-	return nil
 }

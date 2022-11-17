@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -1684,7 +1683,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 }
 
 func Verify(t *testing.T, resp *http.Response, expectedStatusCode int, expectedContentType string, expectedBody string) {
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	respBody := strings.TrimSuffix(string(body), "\n")
 	if nil != err {
 		t.Fatalf("Failed to read the response body: %v", err)

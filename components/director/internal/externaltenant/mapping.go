@@ -3,7 +3,7 @@ package externaltenant
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -17,7 +17,7 @@ import (
 
 // MapTenants missing godoc
 func MapTenants(tenantsDirectoryPath, defaultTenantRegion string) ([]model.BusinessTenantMappingInput, error) {
-	files, err := ioutil.ReadDir(tenantsDirectoryPath)
+	files, err := os.ReadDir(tenantsDirectoryPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while reading directory with tenant files [%s]", tenantsDirectoryPath)
 	}
@@ -28,7 +28,7 @@ func MapTenants(tenantsDirectoryPath, defaultTenantRegion string) ([]model.Busin
 			return nil, apperrors.NewInternalError(fmt.Sprintf("unsupported file format [%s]", filepath.Ext(f.Name())))
 		}
 
-		bytes, err := ioutil.ReadFile(tenantsDirectoryPath + f.Name())
+		bytes, err := os.ReadFile(tenantsDirectoryPath + f.Name())
 		if err != nil {
 			return nil, errors.Wrapf(err, "while reading tenants file [%s]", tenantsDirectoryPath+f.Name())
 		}

@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -60,7 +60,7 @@ func (rt *mockRoundTripper) RoundTrip(*http.Request) (*http.Response, error) {
 		Header: map[string][]string{
 			"Location": {"somewhere.else.gone"},
 		},
-		Body: ioutil.NopCloser(bytes.NewBufferString("")),
+		Body: io.NopCloser(bytes.NewBufferString("")),
 	}, nil
 }
 

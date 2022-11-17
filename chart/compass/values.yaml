@@ -127,7 +127,7 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2736"
+      version: "PR-2735"
       name: compass-hydrator
     gateway:
       dir:
