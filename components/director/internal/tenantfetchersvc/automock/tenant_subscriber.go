@@ -4,7 +4,6 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	tenantfetchersvc "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	mock "github.com/stretchr/testify/mock"
@@ -43,8 +42,13 @@ func (_m *TenantSubscriber) Unsubscribe(ctx context.Context, tenantSubscriptionR
 	return r0
 }
 
-// NewTenantSubscriber creates a new instance of TenantSubscriber. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantSubscriber(t testing.TB) *TenantSubscriber {
+type mockConstructorTestingTNewTenantSubscriber interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewTenantSubscriber creates a new instance of TenantSubscriber. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewTenantSubscriber(t mockConstructorTestingTNewTenantSubscriber) *TenantSubscriber {
 	mock := &TenantSubscriber{}
 	mock.Mock.Test(t)
 
