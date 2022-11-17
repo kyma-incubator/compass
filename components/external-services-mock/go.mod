@@ -35,7 +35,7 @@ require (
 require (
 	github.com/kyma-incubator/compass/tests v0.0.0-20221108085423-9a9cda294159
 	github.com/tidwall/sjson v1.2.4
-	k8s.io/apimachinery v0.25.0
+	k8s.io/apimachinery v0.25.1
 )
 
 require (

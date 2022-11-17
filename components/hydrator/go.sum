@@ -308,8 +308,8 @@ github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852/go.mod h1:eqOVx
 github.com/onrik/logrus v0.9.0 h1:oT7VstCUxWBoX7fswYK61fi9bzRBSpROq5CR2b7wxQo=
 github.com/onrik/logrus v0.9.0/go.mod h1:qfe9NeZVAJfIxviw3cYkZo3kvBtLoPRJriAO8zl7qTk=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
-github.com/onsi/ginkgo/v2 v2.1.4 h1:GNapqRSid3zijZ9H77KrgVG4/8KqiyRsxcSxe+7ApXY=
-github.com/onsi/gomega v1.19.0 h1:4ieX6qQjPP/BfC3mpsAtIGGlxTWPeA3Inl/7DtXw1tw=
+github.com/onsi/ginkgo/v2 v2.1.6 h1:Fx2POJZfKRQcM1pH49qSZiYeu319wji004qX+GDovrU=
+github.com/onsi/gomega v1.20.1 h1:PA/3qinGoukvymdIDV8pii6tiZgC8kbmJO6Z5+b002Q=
 github.com/opentracing/basictracer-go v1.0.0/go.mod h1:QfBfYuafItcjQuMwinw9GhYKwFXS9KnPs5lxoYwgW74=
 github.com/opentracing/opentracing-go v1.0.2/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
@@ -735,8 +735,8 @@ honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9
 k8s.io/api v0.25.0 h1:H+Q4ma2U/ww0iGB78ijZx6DRByPz6/733jIuFpX70e0=
 k8s.io/api v0.25.0/go.mod h1:ttceV1GyV1i1rnmvzT3BST08N6nGt+dudGrquzVQWPk=
 k8s.io/apiextensions-apiserver v0.25.0 h1:CJ9zlyXAbq0FIW8CD7HHyozCMBpDSiH7EdrSTCZcZFY=
-k8s.io/apimachinery v0.25.0 h1:MlP0r6+3XbkUG2itd6vp3oxbtdQLQI94fD5gCS+gnoU=
-k8s.io/apimachinery v0.25.0/go.mod h1:qMx9eAk0sZQGsXGu86fab8tZdffHbwUfsvzqKn4mfB0=
+k8s.io/apimachinery v0.25.1 h1:t0XrnmCEHVgJlR2arwO8Awp9ylluDic706WePaYCBTI=
+k8s.io/apimachinery v0.25.1/go.mod h1:hqqA1X0bsgsxI6dXsJ4HnNTBOmJNxyPp8dw3u2fSHwA=
 k8s.io/client-go v0.25.0 h1:CVWIaCETLMBNiTUta3d5nzRbXvY5Hy9Dpl+VvREpu5E=
 k8s.io/client-go v0.25.0/go.mod h1:lxykvypVfKilxhTklov0wz1FoaUZ8X4EwbhS6rpRfN8=
 k8s.io/klog/v2 v2.0.0/go.mod h1:PBfzABfn139FHAV07az/IF9Wp1bkk3vpT2XSJ76fSDE=
