@@ -32,19 +32,12 @@ import (
 )
 
 type RequestBody struct {
-	State         ConfigurationState `json:"state"`
-	Configuration json.RawMessage    `json:"configuration"`
-	Error         string             `json:"error"`
+	State         string          `json:"state"`
+	Configuration json.RawMessage `json:"configuration"`
+	Error         string          `json:"error"`
 }
 
-type ConfigurationState string
-
 const (
-	ReadyConfigurationState         ConfigurationState = "READY"
-	CreateErrorConfigurationState   ConfigurationState = "CREATE_ERROR"
-	DeleteErrorConfigurationState   ConfigurationState = "DELETE_ERROR"
-	ConfigPendingConfigurationState ConfigurationState = "CONFIG_PENDING"
-
 	formationIDPathParam           = "ucl-formation-id"
 	formationAssignmentIDPathParam = "ucl-assignment-id"
 )
@@ -58,7 +51,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 
 	t.Run("Caller successfully updates formation assignment for himself", func(t *testing.T) {
 		// Prepare provider external client certificate and secret, and build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		certSecuredHTTPClient := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		parentTenantID := conf.TestProviderAccountID
@@ -76,8 +69,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		appName := "testAsyncApp"
 		appType := "async-app-type-1"
 		t.Logf("Register application with name: %q", appName)
-		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, parentTenantID)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, parentTenantID, &app)
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, subaccountID)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subaccountID, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
@@ -130,7 +123,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret, and build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		directorCertSecuredGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		// the package is gql but the client that is build is a "standard" http client, not a GraphQL one
@@ -342,7 +335,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		}
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
 		appProviderDirectorCertSecuredGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		appProviderCertSecuredHTTPClient := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
@@ -443,8 +436,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 	})
 
 	t.Run("Unauthorized call", func(t *testing.T) {
-		parentTenantID := tenant.TestTenants.GetDefaultTenantID()
-		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+		parentTenantID := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
+		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestConsumerSubaccount)
 
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name:        "selfRegisterRuntimeAsync",
@@ -458,8 +451,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		appName := "testAsyncApp"
 		appType := "async-app-type-1"
 		t.Logf("Register application with name: %q", appName)
-		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, parentTenantID)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, parentTenantID, &app)
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, subaccountID)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subaccountID, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
@@ -517,13 +510,13 @@ func getHTTPCertClientWithCustomSubject(t *testing.T, ctx context.Context, conf 
 		ExternalCertProvider:                  certprovider.CertificateService,
 	}
 
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
 	return gql.NewCertAuthorizedHTTPClient(pk, cert, conf.SkipSSLValidation)
 }
 
 func executeStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, formationID, formationAssignmentID string, expectedStatusCode int) {
 	reqBody := RequestBody{
-		State:         ReadyConfigurationState,
+		State:         "READY",
 		Configuration: json.RawMessage(testConfig),
 	}
 	marshalBody, err := json.Marshal(reqBody)

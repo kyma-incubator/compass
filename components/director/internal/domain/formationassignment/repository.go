@@ -18,8 +18,8 @@ const tableName string = `public.formation_assignments`
 
 var (
 	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"state", "value"}
-	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value"}
+	updatableTableColumns = []string{"last_operation", "last_operation_initiator", "last_operation_initiator_type", "state", "value"}
+	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "last_operation", "last_operation_initiator", "last_operation_initiator_type", "state", "value"}
 	tenantColumn          = "tenant_id"
 )
 
@@ -101,6 +101,16 @@ func (r *repository) GetGlobalByID(ctx context.Context, id string) (*model.Forma
 	return r.conv.FromEntity(&entity), nil
 }
 
+// GetGlobalByIDAndFormationID retrieves formation assignment matching ID `id` and formation ID `formationID` globally, without tenant parameter
+func (r *repository) GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error) {
+	var entity Entity
+	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), repo.NewEqualCondition("formation_id", formationID)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&entity), nil
+}
+
 // GetForFormation retrieves Formation Assignment with the provided `id` associated to Formation with id `formationID` from the database if it exists
 func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error) {
 	var formationAssignmentEnt Entity
@@ -115,6 +125,28 @@ func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formatio
 	}
 
 	return r.conv.FromEntity(&formationAssignmentEnt), nil
+}
+
+// GetBySourceAndTarget retrieves formation assignment by source and target
+func (r *repository) GetBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
+	var formationAssignmentEnt Entity
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("formation_id", formationID),
+		repo.NewEqualCondition("source", sourceID),
+		repo.NewEqualCondition("target", targetID),
+	}
+
+	if err := r.getter.Get(ctx, resource.FormationAssignment, tenantID, conditions, repo.NoOrderBy, &formationAssignmentEnt); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&formationAssignmentEnt), nil
+}
+
+// GetReverseBySourceAndTarget retrieves reverse formation assignment by source and target
+func (r *repository) GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
+	return r.GetBySourceAndTarget(ctx, tenantID, formationID, targetID, sourceID)
 }
 
 // List queries for all Formation Assignment sorted by ID and paginated by the pageSize and cursor parameters
@@ -175,7 +207,7 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 	return faPages, nil
 }
 
-// ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID`that have objectID as `target` or `source` from the database that are visible for `tenant`
+// ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID` that have objectID as `target` or `source` from the database that are visible for `tenant`
 func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error) {
 	var entities EntityCollection
 	conditions := repo.And(
@@ -183,6 +215,23 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
 			repo.NewEqualCondition("source", objectID),
 			repo.NewEqualCondition("target", objectID),
+		})...))
+
+	if err := r.conditionLister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entities, conditions); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListAllForObjectIDs retrieves all FormationAssignment objects for formation with ID `formationID` that have any of the objectIDs as `target` or `source` from the database that are visible for `tenant`
+func (r *repository) ListAllForObjectIDs(ctx context.Context, tenant, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
+	var entities EntityCollection
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
+		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewInConditionForStringValues("source", objectIDs),
+			repo.NewInConditionForStringValues("target", objectIDs),
 		})...))
 
 	if err := r.conditionLister.ListConditionTree(ctx, resource.FormationAssignment, tenant, &entities, conditions); err != nil {

@@ -5,6 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -22,10 +27,34 @@ const (
 	FormationAssignmentIDParam = "ucl-assignment-id"
 )
 
+//go:generate mockery --exported --name=formationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationAssignmentConverter interface {
+	ToInput(assignment *model.FormationAssignment) *model.FormationAssignmentInput
+}
+
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
-	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
+	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
+	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
+	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
+	Delete(ctx context.Context, id string) error
+	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
+	SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationAssignmentState) error
+}
+
+// FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
+//go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationAssignmentNotificationService interface {
+	GenerateNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.NotificationRequest, error)
+}
+
+// formationService is responsible for the service-layer Formation operations
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	Get(ctx context.Context, id string) (*model.Formation, error)
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations
@@ -37,13 +66,13 @@ type RuntimeRepository interface {
 // RuntimeContextRepository is responsible for the repo-layer runtime context operations
 //go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextRepository interface {
-	GetGlobalByID(ctx context.Context, id string) (*model.RuntimeContext, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 }
 
 // ApplicationRepository is responsible for the repo-layer application operations
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
-	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
 
@@ -77,7 +106,6 @@ type Authenticator struct {
 	runtimeRepo                RuntimeRepository
 	runtimeContextRepo         RuntimeContextRepository
 	appRepo                    ApplicationRepository
-	tenantRepo                 TenantRepository
 	appTemplateRepo            ApplicationTemplateRepository
 	labelRepo                  LabelRepository
 	selfRegDistinguishLabelKey string
@@ -91,7 +119,6 @@ func NewFormationMappingAuthenticator(
 	runtimeRepo RuntimeRepository,
 	runtimeContextRepo RuntimeContextRepository,
 	appRepo ApplicationRepository,
-	tenantRepo TenantRepository,
 	appTemplateRepo ApplicationTemplateRepository,
 	labelRepo LabelRepository,
 	selfRegDistinguishLabelKey,
@@ -103,7 +130,6 @@ func NewFormationMappingAuthenticator(
 		runtimeRepo:                runtimeRepo,
 		runtimeContextRepo:         runtimeContextRepo,
 		appRepo:                    appRepo,
-		tenantRepo:                 tenantRepo,
 		appTemplateRepo:            appTemplateRepo,
 		labelRepo:                  labelRepo,
 		selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
@@ -132,7 +158,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			isAuthorized, statusCode, err := a.isAuthorized(ctx, formationAssignmentID)
+			isAuthorized, statusCode, err := a.isAuthorized(ctx, formationAssignmentID, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
 				respondWithError(ctx, w, statusCode, errors.New("An unexpected error occurred while processing the request"))
@@ -150,7 +176,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 }
 
 // isAuthorized verify through custom logic the caller is authorized to update the formation assignment status
-func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID string) (bool, int, error) {
+func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID, formationID string) (bool, int, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
@@ -165,9 +191,9 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	fa, err := a.faService.GetGlobalByID(ctx, formationAssignmentID)
+	fa, err := a.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
-		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation assignment with ID: %q globally", formationAssignmentID)
+		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation assignment with ID: %q and formation ID: %q globally", formationAssignmentID, formationID)
 	}
 
 	consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
@@ -177,78 +203,82 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 	consumerInternalTenantID := consumerTenantPair.InternalID
 	consumerExternalTenantID := consumerTenantPair.ExternalID
 
-	log.C(ctx).Infof("Consumer with internal ID: %q and external ID: %q with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerExternalTenantID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
+	log.C(ctx).Infof("Tenant with internal ID: %q and external ID: %q for consumer with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerExternalTenantID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
 	if fa.TargetType == model.FormationAssignmentTypeApplication {
-		log.C(ctx).Infof("The formation assignment that is being updated has type: %s and ID: %q", model.FormationAssignmentTypeApplication, fa.Target)
-
-		app, err := a.appRepo.GetGlobalByID(ctx, fa.Target)
+		app, err := a.appRepo.GetByID(ctx, fa.TenantID, fa.Target)
 		if err != nil {
-			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting application with ID: %q globally", fa.Target)
+			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting application with ID: %q", fa.Target)
 		}
-		log.C(ctx).Infof("Successfully got application with ID: %q globally", fa.Target)
+		log.C(ctx).Infof("Successfully got application with ID: %q", fa.Target)
 
 		// If the consumer is integration system validate the formation assignment type is application that can be managed by the integration system caller
 		if consumerType == consumer.IntegrationSystem && app.IntegrationSystemID != nil && *app.IntegrationSystemID == consumerID {
-			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
+			if err := tx.Commit(); err != nil {
+				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+			}
+
+			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the target of the formation assignment with ID: %q and type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
 			return true, http.StatusOK, nil
 		}
 
-		// Verify if the caller has owner access to the formation assignment with type application that is being updated
-		log.C(ctx).Infof("Getting parent tenant of the caller with ID: %q and type: %q", consumerID, consumerType)
-		tnt, err := a.tenantRepo.Get(ctx, consumerInternalTenantID)
+		// Verify if the caller has owner access to the target of the formation assignment with type application that is being updated
+		exists, err := a.appRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
 		if err != nil {
-			return false, http.StatusInternalServerError, errors.Wrapf(err, "an error occurred while getting tenant from ID: %q", consumerInternalTenantID)
-		}
-
-		if tnt.Parent != "" {
-			exists, err := a.appRepo.OwnerExists(ctx, tnt.Parent, fa.Target)
-			if err != nil {
-				return false, http.StatusInternalServerError, errors.Wrapf(err, "an error occurred while verifying caller with ID: %q and type: %q has owner access to formation assignment with type: %q and target ID: %q", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
-			}
-
-			if exists {
-				log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerInternalTenantID, consumerType, fa.Target, fa.TargetType)
-				return true, http.StatusOK, nil
-			}
-		}
-		log.C(ctx).Warningf("The caller with ID: %q and type: %q has NOT direct owner access to formation assignment with type: %q and target ID: %q. Checking if the application is made through subscription...", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
-
-		// Validate if the application is registered through subscription and the caller has owner access to that application
-		return a.validateSubscriptionProvider(ctx, app.ApplicationTemplateID, consumerExternalTenantID, string(consumerType), fa.Target, string(fa.TargetType))
-	}
-
-	if fa.TargetType == model.FormationAssignmentTypeRuntime && (consumerType == consumer.Runtime || consumerType == consumer.ExternalCertificate || consumerType == consumer.SuperAdmin) { // consumer.SuperAdmin is needed for the local testing setup
-		log.C(ctx).Infof("The formation assignment that is being updated has type: %s and ID: %q", model.FormationAssignmentTypeRuntime, fa.Target)
-
-		exists, err := a.runtimeRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
-		if err != nil {
-			return false, http.StatusUnauthorized, errors.Wrapf(err, "while verifying caller with ID: %q and type: %q has owner access to formation assignment with type: %q and target ID: %q", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
+			return false, http.StatusInternalServerError, errors.Wrapf(err, "an error occurred while verifying caller with internal tenant ID: %q has owner access to the target of the formation assignment with ID: %q and type: %q that is being updated", consumerInternalTenantID, fa.Target, fa.TargetType)
 		}
 
 		if exists {
-			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerInternalTenantID, consumerType, fa.Target, fa.TargetType)
+			if err := tx.Commit(); err != nil {
+				log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
+				return false, http.StatusInternalServerError, errors.Wrap(err, "Unable to finalize database operation")
+			}
+
+			log.C(ctx).Infof("The caller with internal tenant ID: %q has owner access to the target of the formation assignment with ID: %q and type: %q that is being updated", consumerInternalTenantID, fa.Target, fa.TargetType)
+			return true, http.StatusOK, nil
+		}
+		log.C(ctx).Warningf("The caller with internal tenant ID: %q has NOT direct owner access to the target of the formation assignment with ID: %q and type: %q that is being updated. Checking if the application is made through subscription...", consumerInternalTenantID, fa.Target, fa.TargetType)
+
+		// Validate if the application is registered through subscription and the caller has owner access to the application template of that application
+		return a.validateSubscriptionProvider(ctx, tx, app.ApplicationTemplateID, consumerExternalTenantID, fa.Target, string(fa.TargetType))
+	}
+
+	if fa.TargetType == model.FormationAssignmentTypeRuntime {
+		exists, err := a.runtimeRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
+		if err != nil {
+			return false, http.StatusUnauthorized, errors.Wrapf(err, "while verifying caller with internal tenant ID: %q has owner access to the target of the formation assignment with ID: %q and type: %q that is being updated", consumerInternalTenantID, fa.Target, fa.TargetType)
+		}
+
+		if exists {
+			if err := tx.Commit(); err != nil {
+				log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
+				return false, http.StatusInternalServerError, errors.Wrap(err, "Unable to finalize database operation")
+			}
+
+			log.C(ctx).Infof("The caller with internal tenant ID: %q has owner access to the target of the formation assignment with ID: %q and type: %q that is being updated", consumerInternalTenantID, fa.Target, fa.TargetType)
 			return true, http.StatusOK, nil
 		}
 
 		return false, http.StatusUnauthorized, nil
 	}
 
-	if fa.TargetType == model.FormationAssignmentTypeRuntimeContext && (consumerType == consumer.Runtime || consumerType == consumer.ExternalCertificate || consumerType == consumer.SuperAdmin) { // consumer.SuperAdmin is needed for the local testing setup
-		log.C(ctx).Infof("The formation assignment that is being updated has type: %s and ID: %q", model.FormationAssignmentTypeRuntimeContext, fa.Target)
-
-		log.C(ctx).Debugf("Getting runtime context with ID: %q from formation assignment with ID: %q", fa.Target, fa.ID)
-		rtmCtx, err := a.runtimeContextRepo.GetGlobalByID(ctx, fa.Target)
+	if fa.TargetType == model.FormationAssignmentTypeRuntimeContext {
+		rtmCtx, err := a.runtimeContextRepo.GetByID(ctx, fa.TenantID, fa.Target)
 		if err != nil {
-			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting runtime context with ID: %q globally", fa.Target)
+			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting runtime context with ID: %q", fa.Target)
 		}
 
 		exists, err := a.runtimeRepo.OwnerExists(ctx, consumerInternalTenantID, rtmCtx.RuntimeID)
 		if err != nil {
-			return false, http.StatusUnauthorized, errors.Wrapf(err, "while verifying caller with ID: %q and type: %q has owner access to the parent of the formation assignment with type: %q and target ID: %q", consumerInternalTenantID, consumerType, fa.TargetType, fa.Target)
+			return false, http.StatusUnauthorized, errors.Wrapf(err, "while verifying caller with internal tenant ID: %q has owner access to the target's parent of the formation assignment with ID: %q and type: %q that is being updated", consumerInternalTenantID, fa.Target, fa.TargetType)
 		}
 
 		if exists {
-			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the parent of the formation assignment with target: %q and target type: %q that is being updated", consumerInternalTenantID, consumerType, fa.Target, fa.TargetType)
+			if err := tx.Commit(); err != nil {
+				log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
+				return false, http.StatusInternalServerError, errors.Wrap(err, "Unable to finalize database operation")
+			}
+
+			log.C(ctx).Infof("The caller with internal tenant ID: %q has owner access to the target's parent of the formation assignment with ID: %q and type: %q that is being updated", consumerInternalTenantID, fa.Target, fa.TargetType)
 			return true, http.StatusOK, nil
 		}
 
@@ -263,8 +293,8 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID 
 	return false, http.StatusUnauthorized, nil
 }
 
-// validateSubscriptionProvider validates if the application is registered through subscription and the caller has owner access to that application
-func (a *Authenticator) validateSubscriptionProvider(ctx context.Context, appTemplateID *string, consumerExternalTenantID, consumerType, faTarget, faTargetType string) (bool, int, error) {
+// validateSubscriptionProvider validates if the application is registered through subscription and the caller has owner access to the application template
+func (a *Authenticator) validateSubscriptionProvider(ctx context.Context, tx persistence.PersistenceTx, appTemplateID *string, consumerExternalTenantID, faTarget, faTargetType string) (bool, int, error) {
 	if appTemplateID == nil || (appTemplateID != nil && *appTemplateID == "") {
 		log.C(ctx).Warning("Application template ID should not be nil or empty")
 		return false, http.StatusUnauthorized, nil
@@ -297,7 +327,12 @@ func (a *Authenticator) validateSubscriptionProvider(ctx context.Context, appTem
 	}
 
 	if consumerExternalTenantID == consumerSubaccountLblValue {
-		log.C(ctx).Infof("The caller with external ID: %q and type: %q has owner access to the formation assignment with target: %q and target type: %q that is being updated", consumerExternalTenantID, consumerType, faTarget, faTargetType)
+		if err := tx.Commit(); err != nil {
+			log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
+			return false, http.StatusInternalServerError, errors.Wrap(err, "Unable to finalize database operation")
+		}
+
+		log.C(ctx).Infof("The caller with external ID: %q has owner access to the target's parent of the formation assignment with ID: %q and type: %q that is being updated", consumerExternalTenantID, faTarget, faTargetType)
 		return true, http.StatusOK, nil
 	}
 
@@ -306,7 +341,7 @@ func (a *Authenticator) validateSubscriptionProvider(ctx context.Context, appTem
 
 // respondWithError writes a http response using with the JSON encoded error wrapped in an ErrorResponse struct
 func respondWithError(ctx context.Context, w http.ResponseWriter, status int, err error) {
-	log.C(ctx).WithError(err).Errorf("Responding with error: %v", err)
+	log.C(ctx).Errorf("Responding with error: %v", err)
 	w.Header().Add(httputils.HeaderContentTypeKey, httputils.ContentTypeApplicationJSON)
 	w.WriteHeader(status)
 	errorResponse := ErrorResponse{Message: err.Error()}

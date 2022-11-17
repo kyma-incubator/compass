@@ -20,26 +20,32 @@ const (
 
 // FormationAssignment represent structure for FormationAssignment
 type FormationAssignment struct {
-	ID          string                  `json:"id"`
-	FormationID string                  `json:"formation_id"`
-	TenantID    string                  `json:"tenant_id"`
-	Source      string                  `json:"source"`
-	SourceType  FormationAssignmentType `json:"source_type"`
-	Target      string                  `json:"target"`
-	TargetType  FormationAssignmentType `json:"target_type"`
-	State       string                  `json:"state"`
-	Value       json.RawMessage         `json:"value"`
+	ID                         string                  `json:"id"`
+	FormationID                string                  `json:"formation_id"`
+	TenantID                   string                  `json:"tenant_id"`
+	Source                     string                  `json:"source"`
+	SourceType                 FormationAssignmentType `json:"source_type"`
+	Target                     string                  `json:"target"`
+	TargetType                 FormationAssignmentType `json:"target_type"`
+	LastOperation              FormationOperation      `json:"last_operation"`
+	LastOperationInitiator     string                  `json:"last_operation_initiator"`
+	LastOperationInitiatorType FormationAssignmentType `json:"last_operation_initiator_type"`
+	State                      string                  `json:"state"`
+	Value                      json.RawMessage         `json:"value"`
 }
 
 // FormationAssignmentInput is an input for creating a new FormationAssignment
 type FormationAssignmentInput struct {
-	FormationID string                  `json:"formation_id"`
-	Source      string                  `json:"source"`
-	SourceType  FormationAssignmentType `json:"source_type"`
-	Target      string                  `json:"target"`
-	TargetType  FormationAssignmentType `json:"target_type"`
-	State       string                  `json:"state"`
-	Value       json.RawMessage         `json:"value"`
+	FormationID                string                  `json:"formation_id"`
+	Source                     string                  `json:"source"`
+	SourceType                 FormationAssignmentType `json:"source_type"`
+	Target                     string                  `json:"target"`
+	TargetType                 FormationAssignmentType `json:"target_type"`
+	LastOperation              FormationOperation      `json:"last_operation"`
+	LastOperationInitiator     string                  `json:"last_operation_initiator"`
+	LastOperationInitiatorType FormationAssignmentType `json:"last_operation_initiator_type"`
+	State                      string                  `json:"state"`
+	Value                      json.RawMessage         `json:"value"`
 }
 
 // FormationAssignmentPage missing godoc
@@ -61,6 +67,8 @@ const (
 	ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
 	// CreateErrorAssignmentState indicates that an error occurred during the creation of the formation assignment
 	CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
+	// DeletingAssignmentState indicates that async unassing notification is sent and status report is expected from the receiver
+	DeletingAssignmentState FormationAssignmentState = "DELETING"
 	// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 	// NotificationRecursionDepthLimit is the maximum count of configuration exchanges during assigning an object to formation
@@ -74,14 +82,35 @@ func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssign
 	}
 
 	return &FormationAssignment{
-		ID:          id,
-		FormationID: i.FormationID,
-		TenantID:    tenantID,
-		Source:      i.Source,
-		SourceType:  i.SourceType,
-		Target:      i.Target,
-		TargetType:  i.TargetType,
-		State:       i.State,
-		Value:       i.Value,
+		ID:                         id,
+		FormationID:                i.FormationID,
+		TenantID:                   tenantID,
+		Source:                     i.Source,
+		SourceType:                 i.SourceType,
+		Target:                     i.Target,
+		TargetType:                 i.TargetType,
+		LastOperation:              i.LastOperation,
+		LastOperationInitiator:     i.LastOperationInitiator,
+		LastOperationInitiatorType: i.LastOperationInitiatorType,
+		State:                      i.State,
+		Value:                      i.Value,
+	}
+}
+
+// Clone clones the formation assignment
+func (f *FormationAssignment) Clone() *FormationAssignment {
+	return &FormationAssignment{
+		ID:                         f.ID,
+		FormationID:                f.FormationID,
+		TenantID:                   f.TenantID,
+		Source:                     f.Source,
+		SourceType:                 f.SourceType,
+		Target:                     f.Target,
+		TargetType:                 f.TargetType,
+		LastOperation:              f.LastOperation,
+		LastOperationInitiator:     f.LastOperationInitiator,
+		LastOperationInitiatorType: f.LastOperationInitiatorType,
+		State:                      f.State,
+		Value:                      f.Value,
 	}
 }

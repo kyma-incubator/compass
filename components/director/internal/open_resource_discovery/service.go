@@ -5,8 +5,10 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -25,13 +27,39 @@ const MultiErrorSeparator string = "* "
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
-	maxParallelWebhookProcessors int
+	maxParallelWebhookProcessors       int
+	maxParallelSpecificationProcessors int
+	ordWebhookPartialProcessMaxDays    int
+	ordWebhookPartialProcessURL        string
+	ordWebhookPartialProcessing        bool
+}
+
+type ordFetchRequest struct {
+	*model.FetchRequest
+	refObjectOrdID string
+}
+
+type fetchRequestResult struct {
+	fetchRequest *model.FetchRequest
+	data         *string
+	status       *model.FetchRequestStatus
+}
+
+// MetricsConfig is the ord aggregator configuration for pushing metrics to Prometheus
+type MetricsConfig struct {
+	PushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	ClientTimeout time.Duration `envconfig:"default=60s"`
+	JobName       string        `envconfig:"default=compass-ord-aggregator"`
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelWebhookProcessors int) ServiceConfig {
+func NewServiceConfig(maxParallelWebhookProcessors, maxParallelSpecificationProcessors, ordWebhookPartialProcessMaxDays int, ordWebhookPartialProcessURL string, ordWebhookPartialProcessing bool) ServiceConfig {
 	return ServiceConfig{
-		maxParallelWebhookProcessors: maxParallelWebhookProcessors,
+		maxParallelWebhookProcessors:       maxParallelWebhookProcessors,
+		maxParallelSpecificationProcessors: maxParallelSpecificationProcessors,
+		ordWebhookPartialProcessMaxDays:    ordWebhookPartialProcessMaxDays,
+		ordWebhookPartialProcessURL:        ordWebhookPartialProcessURL,
+		ordWebhookPartialProcessing:        ordWebhookPartialProcessing,
 	}
 }
 
@@ -48,6 +76,7 @@ type Service struct {
 	apiSvc             APIService
 	eventSvc           EventService
 	specSvc            SpecService
+	fetchReqSvc        FetchRequestService
 	packageSvc         PackageService
 	productSvc         ProductService
 	vendorSvc          VendorService
@@ -59,7 +88,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
 	return &Service{
 		config:             config,
 		transact:           transact,
@@ -70,6 +99,7 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 		apiSvc:             apiSvc,
 		eventSvc:           eventSvc,
 		specSvc:            specSvc,
+		fetchReqSvc:        fetchReqSvc,
 		packageSvc:         packageSvc,
 		productSvc:         productSvc,
 		vendorSvc:          vendorSvc,
@@ -81,7 +111,7 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 }
 
 // SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
-func (s *Service) SyncORDDocuments(ctx context.Context) error {
+func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error {
 	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
@@ -95,19 +125,20 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 		globalResourcesOrdIDs = make(map[string]bool)
 	}
 
-	queue := make(chan *model.Webhook)
-	var webhookErrors = int32(0)
-
-	wg := &sync.WaitGroup{}
-	wg.Add(s.config.maxParallelWebhookProcessors)
-
 	ordWebhooks, err := s.getWebhooksWithOrdType(ctx)
 	if err != nil {
 		return err
 	}
 
-	log.C(ctx).Infof("Starting %d workers...", s.config.maxParallelWebhookProcessors)
-	for i := 0; i < s.config.maxParallelWebhookProcessors; i++ {
+	queue := make(chan *model.Webhook)
+	var webhookErrors = int32(0)
+
+	workers := s.config.maxParallelWebhookProcessors
+	wg := &sync.WaitGroup{}
+	wg.Add(workers)
+
+	log.C(ctx).Infof("Starting %d parallel webhook processor workers...", workers)
+	for i := 0; i < workers; i++ {
 		go func() {
 			defer wg.Done()
 
@@ -116,7 +147,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 				entry = entry.WithField(log.FieldRequestID, uuid.New().String())
 				ctx = log.ContextWithLogger(ctx, entry)
 
-				if err := s.processWebhook(ctx, webhook, globalResourcesOrdIDs); err != nil {
+				if err := s.processWebhook(ctx, cfg, webhook, globalResourcesOrdIDs); err != nil {
 					log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
 					atomic.AddInt32(&webhookErrors, 1)
 				}
@@ -124,20 +155,31 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 		}()
 	}
 
+	if s.config.ordWebhookPartialProcessing {
+		log.C(ctx).Infof("Partial ord webhook processing is enabled for URL [%s] and max days [%d]", s.config.ordWebhookPartialProcessURL, s.config.ordWebhookPartialProcessMaxDays)
+	}
+	date := time.Now().AddDate(0, 0, -1*s.config.ordWebhookPartialProcessMaxDays)
 	for _, webhook := range ordWebhooks {
-		queue <- webhook
+		webhookURL := str.PtrStrToStr(webhook.URL)
+		if s.config.ordWebhookPartialProcessing && strings.Contains(webhookURL, s.config.ordWebhookPartialProcessURL) {
+			if webhook.CreatedAt == nil || webhook.CreatedAt.After(date) {
+				queue <- webhook
+			}
+		} else {
+			queue <- webhook
+		}
 	}
 	close(queue)
 	wg.Wait()
 
 	if webhookErrors != 0 {
-		return errors.Errorf("failed to process %d webhooks", webhookErrors)
+		log.C(ctx).Errorf("failed to process %d webhooks", webhookErrors)
 	}
 
 	return nil
 }
 
-func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
 		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
@@ -146,13 +188,13 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 		}
 
 		for _, app := range apps {
-			if err := s.processApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
+			if err := s.processApplicationWebhook(ctx, cfg, webhook, app.ID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 		}
 	} else if webhook.ObjectType == model.ApplicationWebhookReference {
 		appID := webhook.ObjectID
-		if err := s.processApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
+		if err := s.processApplicationWebhook(ctx, cfg, webhook, appID, globalResourcesOrdIDs); err != nil {
 			return err
 		}
 	}
@@ -216,12 +258,12 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	apisFromDB, err := s.processAPIs(ctx, appID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
+	apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, appID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	eventsFromDB, err := s.processEvents(ctx, appID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
+	eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, appID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
 	if err != nil {
 		return err
 	}
@@ -231,63 +273,176 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	return s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB)
-}
-
-func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone) error {
-	tx, err := s.transact.Begin()
+	fetchRequests := append(apiFetchRequests, eventFetchRequests...)
+	fetchRequests, err = s.deleteTombstonedResources(ctx, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, tombstonesFromDB, fetchRequests)
 	if err != nil {
 		return err
+	}
+
+	return s.processSpecs(ctx, fetchRequests)
+}
+
+func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetchRequest) error {
+	queue := make(chan *model.FetchRequest)
+
+	workers := s.config.maxParallelSpecificationProcessors
+	wg := &sync.WaitGroup{}
+	wg.Add(workers)
+
+	fetchReqMutex := sync.Mutex{}
+	fetchRequestResults := make([]*fetchRequestResult, 0)
+	log.C(ctx).Infof("Starting %d parallel specification processor workers to process %d fetch requests...", workers, len(ordFetchRequests))
+	for i := 0; i < workers; i++ {
+		go func() {
+			defer wg.Done()
+
+			for fetchRequest := range queue {
+				fr := *fetchRequest
+				ctx = addFieldToLogger(ctx, "fetch_request_id", fr.ID)
+				log.C(ctx).Infof("Will attempt to execute spec fetch request for spec with id %q and spec entity type %q", fr.ObjectID, fr.ObjectType)
+				data, status := s.fetchReqSvc.FetchSpec(ctx, &fr)
+				log.C(ctx).Infof("Finished executing spec fetch request for spec with id %q and spec entity type %q with result: %s. Adding to result queue...", fr.ObjectID, fr.ObjectType, status.Condition)
+				s.addFetchRequestResult(&fetchRequestResults, &fetchRequestResult{
+					fetchRequest: &fr,
+					data:         data,
+					status:       status,
+				}, &fetchReqMutex)
+			}
+		}()
+	}
+
+	for _, ordFetchRequest := range ordFetchRequests {
+		queue <- ordFetchRequest.FetchRequest
+	}
+	close(queue)
+	wg.Wait()
+
+	if err := s.processFetchRequestResults(ctx, fetchRequestResults); err != nil {
+		errMsg := "error while processing fetch request results"
+		log.C(ctx).WithError(err).Error(errMsg)
+		return errors.Errorf(errMsg)
+	} else {
+		log.C(ctx).Info("Successfully processed fetch request results")
+	}
+
+	fetchRequestErrors := 0
+	for _, fr := range fetchRequestResults {
+		if fr.status.Condition == model.FetchRequestStatusConditionFailed {
+			fetchRequestErrors += 1
+		}
+	}
+
+	if fetchRequestErrors != 0 {
+		return errors.Errorf("failed to process %d specification fetch requests", fetchRequestErrors)
+	}
+
+	return nil
+}
+
+func (s *Service) addFetchRequestResult(fetchReqResults *[]*fetchRequestResult, result *fetchRequestResult, mutex *sync.Mutex) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	*fetchReqResults = append(*fetchReqResults, result)
+}
+
+func (s *Service) processFetchRequestResults(ctx context.Context, results []*fetchRequestResult) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("error while opening transaction to process fetch request results")
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	for _, result := range results {
+		specReferenceType := model.APISpecReference
+		if result.fetchRequest.ObjectType == model.EventSpecFetchRequestReference {
+			specReferenceType = model.EventSpecReference
+		}
+
+		if result.status.Condition == model.FetchRequestStatusConditionSucceeded {
+			spec, err := s.specSvc.GetByID(ctx, result.fetchRequest.ObjectID, specReferenceType)
+			if err != nil {
+				return err
+			}
+
+			spec.Data = result.data
+
+			if err = s.specSvc.UpdateSpecOnly(ctx, *spec); err != nil {
+				return err
+			}
+		}
+
+		result.fetchRequest.Status = result.status
+		if err = s.fetchReqSvc.Update(ctx, result.fetchRequest); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (s *Service) deleteTombstonedResources(ctx context.Context, vendorsFromDB []*model.Vendor, productsFromDB []*model.Product, packagesFromDB []*model.Package, bundlesFromDB []*model.Bundle, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, tombstonesFromDB []*model.Tombstone, fetchRequests []*ordFetchRequest) ([]*ordFetchRequest, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	frIdxToExclude := make([]int, 0)
 	for _, ts := range tombstonesFromDB {
 		if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
 			return packagesFromDB[i].OrdID == ts.OrdID
 		}); found {
 			if err := s.packageSvc.Delete(ctx, packagesFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(apisFromDB), func(i int) bool {
 			return equalStrings(apisFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.apiSvc.Delete(ctx, apisFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(eventsFromDB), func(i int) bool {
 			return equalStrings(eventsFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.eventSvc.Delete(ctx, eventsFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 			return equalStrings(bundlesFromDB[i].OrdID, &ts.OrdID)
 		}); found {
 			if err := s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool {
 			return vendorsFromDB[i].OrdID == ts.OrdID
 		}); found {
 			if err := s.vendorSvc.Delete(ctx, vendorsFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
 			}
 		}
 		if i, found := searchInSlice(len(productsFromDB), func(i int) bool {
 			return productsFromDB[i].OrdID == ts.OrdID
 		}); found {
 			if err := s.productSvc.Delete(ctx, productsFromDB[i].ID); err != nil {
-				return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+				return nil, errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+			}
+		}
+		for i := range fetchRequests {
+			if equalStrings(&fetchRequests[i].refObjectOrdID, &ts.OrdID) {
+				frIdxToExclude = append(frIdxToExclude, i)
 			}
 		}
 	}
-	return tx.Commit()
+
+	return excludeUnnecessaryFetchRequests(fetchRequests, frIdxToExclude), tx.Commit()
 }
 
 func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) {
@@ -487,24 +642,33 @@ func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFro
 	return tx.Commit()
 }
 
-func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, error) {
+func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, []*ordFetchRequest, error) {
 	apisFromDB, err := s.listAPIsInTx(ctx, appID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
+	fetchRequests := make([]*ordFetchRequest, 0)
 	for _, api := range apis {
 		apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
-		if err := s.resyncAPIInTx(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api, apiHash); err != nil {
-			return nil, err
+		apiFetchRequests, err := s.resyncAPIInTx(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, api, apiHash)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for i := range apiFetchRequests {
+			fetchRequests = append(fetchRequests, &ordFetchRequest{
+				FetchRequest:   apiFetchRequests[i],
+				refObjectOrdID: *api.OrdID,
+			})
 		}
 	}
 
 	apisFromDB, err = s.listAPIsInTx(ctx, appID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return apisFromDB, nil
+	return apisFromDB, fetchRequests, nil
 }
 
 func (s *Service) listAPIsInTx(ctx context.Context, appID string) ([]*model.APIDefinition, error) {
@@ -523,38 +687,48 @@ func (s *Service) listAPIsInTx(ctx context.Context, appID string) ([]*model.APID
 	return apisFromDB, tx.Commit()
 }
 
-func (s *Service) resyncAPIInTx(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api *model.APIDefinitionInput, apiHash uint64) error {
+func (s *Service) resyncAPIInTx(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api *model.APIDefinitionInput, apiHash uint64) ([]*model.FetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, *api, apiHash); err != nil {
-		return errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
+	fetchRequests, err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, *api, apiHash)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
 	}
-	return tx.Commit()
+	return fetchRequests, tx.Commit()
 }
 
-func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, error) {
+func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, []*ordFetchRequest, error) {
 	eventsFromDB, err := s.listEventsInTx(ctx, appID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
+	fetchRequests := make([]*ordFetchRequest, 0)
 	for _, event := range events {
 		eventHash := resourceHashes[str.PtrStrToStr(event.OrdID)]
-		if err := s.resyncEventInTx(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event, eventHash); err != nil {
-			return nil, err
+		eventFetchRequests, err := s.resyncEventInTx(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, event, eventHash)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for i := range eventFetchRequests {
+			fetchRequests = append(fetchRequests, &ordFetchRequest{
+				FetchRequest:   eventFetchRequests[i],
+				refObjectOrdID: *event.OrdID,
+			})
 		}
 	}
 
 	eventsFromDB, err = s.listEventsInTx(ctx, appID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return eventsFromDB, nil
+	return eventsFromDB, fetchRequests, nil
 }
 
 func (s *Service) listEventsInTx(ctx context.Context, appID string) ([]*model.EventDefinition, error) {
@@ -573,18 +747,19 @@ func (s *Service) listEventsInTx(ctx context.Context, appID string) ([]*model.Ev
 	return eventsFromDB, tx.Commit()
 }
 
-func (s *Service) resyncEventInTx(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event *model.EventDefinitionInput, eventHash uint64) error {
+func (s *Service) resyncEventInTx(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event *model.EventDefinitionInput, eventHash uint64) ([]*model.FetchRequest, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, *event, eventHash); err != nil {
-		return errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
+	fetchRequests, err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, *event, eventHash)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
 	}
-	return tx.Commit()
+	return fetchRequests, tx.Commit()
 }
 
 func (s *Service) processTombstones(ctx context.Context, appID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) {
@@ -680,7 +855,7 @@ func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB 
 	return err
 }
 
-func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput, apiHash uint64) error {
+func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput, apiHash uint64) ([]*model.FetchRequest, error) {
 	ctx = addFieldToLogger(ctx, "api_ord_id", *api.OrdID)
 	i, isAPIFound := searchInSlice(len(apisFromDB), func(i int) bool {
 		return equalStrings(apisFromDB[i].OrdID, api.OrdID)
@@ -702,13 +877,16 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	}
 
 	if !isAPIFound {
-		_, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
-		return err
+		apiID, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, nil, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
+		if err != nil {
+			return nil, err
+		}
+		return s.createSpecs(ctx, model.APISpecReference, apiID, specs)
 	}
 
 	allBundleIDsForAPI, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &apisFromDB[i].ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// in case of API update, we need to filter which ConsumptionBundleReferences should be deleted - those that are stored in db but not present in the input anymore
@@ -718,21 +896,25 @@ func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*mod
 	defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
 
 	if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID); err != nil {
-		return err
+		return nil, err
 	}
+
+	var fetchRequests []*model.FetchRequest
 	if api.VersionInput.Value != apisFromDB[i].Version.Value {
-		if err := s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs); err != nil {
-			return err
+		fetchRequests, err = s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs)
+		if err != nil {
+			return nil, err
 		}
 	} else {
-		if err := s.refetchFailedSpecs(ctx, model.APISpecReference, apisFromDB[i].ID); err != nil {
-			return err
+		fetchRequests, err = s.refetchFailedSpecs(ctx, model.APISpecReference, apisFromDB[i].ID)
+		if err != nil {
+			return nil, err
 		}
 	}
-	return nil
+	return fetchRequests, nil
 }
 
-func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput, eventHash uint64) error {
+func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput, eventHash uint64) ([]*model.FetchRequest, error) {
 	ctx = addFieldToLogger(ctx, "event_ord_id", *event.OrdID)
 	i, isEventFound := searchInSlice(len(eventsFromDB), func(i int) bool {
 		return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
@@ -762,13 +944,16 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 	}
 
 	if !isEventFound {
-		_, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
-		return err
+		eventID, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, nil, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
+		if err != nil {
+			return nil, err
+		}
+		return s.createSpecs(ctx, model.EventSpecReference, eventID, specs)
 	}
 
 	allBundleIDsForEvent, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleEventReference, &eventsFromDB[i].ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// in case of Event update, we need to filter which ConsumptionBundleReferences(bundle IDs) should be deleted - those that are stored in db but not present in the input anymore
@@ -792,33 +977,64 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 	}
 
 	if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID); err != nil {
-		return err
+		return nil, err
 	}
+
+	var fetchRequests []*model.FetchRequest
 	if event.VersionInput.Value != eventsFromDB[i].Version.Value {
-		if err := s.resyncSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID, specs); err != nil {
-			return err
+		fetchRequests, err = s.resyncSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID, specs)
+		if err != nil {
+			return nil, err
 		}
 	} else {
-		if err := s.refetchFailedSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID); err != nil {
-			return err
+		fetchRequests, err = s.refetchFailedSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID)
+		if err != nil {
+			return nil, err
 		}
 	}
-	return nil
+
+	return fetchRequests, nil
 }
 
-func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput) error {
-	if err := s.specSvc.DeleteByReferenceObjectID(ctx, objectType, objectID); err != nil {
-		return err
-	}
+func (s *Service) createSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput) ([]*model.FetchRequest, error) {
+	fetchRequests := make([]*model.FetchRequest, 0)
 	for _, spec := range specs {
 		if spec == nil {
 			continue
 		}
-		if _, err := s.specSvc.CreateByReferenceObjectID(ctx, *spec, objectType, objectID); err != nil {
-			return err
+		_, fr, err := s.specSvc.CreateByReferenceObjectIDWithDelayedFetchRequest(ctx, *spec, objectType, objectID)
+		if err != nil {
+			return nil, err
+		}
+		fetchRequests = append(fetchRequests, fr)
+	}
+	return fetchRequests, nil
+}
+
+func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput) ([]*model.FetchRequest, error) {
+	if err := s.specSvc.DeleteByReferenceObjectID(ctx, objectType, objectID); err != nil {
+		return nil, err
+	}
+	return s.createSpecs(ctx, objectType, objectID, specs)
+}
+
+func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.FetchRequest, error) {
+	specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, objectType, objectID)
+	if err != nil {
+		return nil, err
+	}
+
+	fetchRequests := make([]*model.FetchRequest, 0)
+	for _, spec := range specsFromDB {
+		fr, err := s.specSvc.GetFetchRequest(ctx, spec.ID, objectType)
+		if err != nil {
+			return nil, err
+		}
+		if fr.Status != nil && fr.Status.Condition != model.FetchRequestStatusConditionSucceeded {
+			fetchRequests = append(fetchRequests, fr)
 		}
 	}
-	return nil
+	return fetchRequests, nil
 }
 
 func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesFromDB []*model.Tombstone, tombstone model.TombstoneInput) error {
@@ -829,25 +1045,6 @@ func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesF
 	}
 	_, err := s.tombstoneSvc.Create(ctx, appID, tombstone)
 	return err
-}
-
-func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error {
-	specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, objectType, objectID)
-	if err != nil {
-		return err
-	}
-	for _, spec := range specsFromDB {
-		fr, err := s.specSvc.GetFetchRequest(ctx, spec.ID, objectType)
-		if err != nil {
-			return err
-		}
-		if fr.Status != nil && fr.Status.Condition == model.FetchRequestStatusConditionFailed {
-			if _, err := s.specSvc.RefetchSpec(ctx, spec.ID, objectType); err != nil {
-				return errors.Wrapf(err, "while refetching spec %s", spec.ID)
-			}
-		}
-	}
-	return nil
 }
 
 func (s *Service) fetchAPIDefFromDB(ctx context.Context, appID string) (map[string]*model.APIDefinition, error) {
@@ -924,15 +1121,27 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 	return apiDataFromDB, eventDataFromDB, packageDataFromDB, tx.Commit()
 }
 
-func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
 	var documents Documents
 	var baseURL string
 	var err error
+
+	metricsCfg := metrics.PusherConfig{
+		Enabled:    len(cfg.PushEndpoint) > 0,
+		Endpoint:   cfg.PushEndpoint,
+		MetricName: strings.ReplaceAll(strings.ToLower(cfg.JobName), "-", "_") + "_job_sync_failure_number",
+		Timeout:    cfg.ClientTimeout,
+		Subsystem:  metrics.OrdAggregatorSubsystem,
+		Labels:     []string{metrics.ErrorMetricLabel, metrics.APIIDMetricLabel, metrics.CorrelationIDMetricLabel},
+	}
 
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
 		ctx = addFieldToLogger(ctx, "app_id", app.ID)
 		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook)
 		if err != nil {
+			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
+
 			return errors.Wrapf(err, "error fetching ORD document for webhook with id %q: %v", webhook.ID, err)
 		}
 	}
@@ -945,12 +1154,19 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 
 				// the first item in the slice is the message 'invalid documents' for the wrapped errors
 				validationErrors = validationErrors[1:]
+
+				metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+
 				for i := range validationErrors {
 					validationErrors[i] = strings.TrimSpace(validationErrors[i])
+					metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
 				}
 
 				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
 			} else {
+				metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+				metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
+
 				log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
 			}
 			return errors.Wrapf(err, "error processing ORD documents")
@@ -1017,7 +1233,7 @@ func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID stri
 	return ctx, nil
 }
 
-func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -1038,11 +1254,30 @@ func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.
 		return err
 	}
 
-	if err = s.processWebhookAndDocuments(ctx, webhook, app, globalResourcesOrdIDs); err != nil {
+	if err = s.processWebhookAndDocuments(ctx, cfg, webhook, app, globalResourcesOrdIDs); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func excludeUnnecessaryFetchRequests(fetchRequests []*ordFetchRequest, frIdxToExclude []int) []*ordFetchRequest {
+	finalFetchRequests := make([]*ordFetchRequest, 0)
+	for i := range fetchRequests {
+		shouldExclude := false
+		for _, idxToExclude := range frIdxToExclude {
+			if i == idxToExclude {
+				shouldExclude = true
+				break
+			}
+		}
+
+		if !shouldExclude {
+			finalFetchRequests = append(finalFetchRequests, fetchRequests[i])
+		}
+	}
+
+	return finalFetchRequests
 }
 
 func hashResources(docs Documents) (map[string]uint64, error) {

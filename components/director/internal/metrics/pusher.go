@@ -20,7 +20,6 @@ import (
 
 const (
 	maxErrMessageLength = 50
-	errorMetricLabel    = "error"
 )
 
 // PusherConfig is used to provide configuration options for AggregationFailurePusher.
@@ -30,6 +29,7 @@ type PusherConfig struct {
 	MetricName string
 	Timeout    time.Duration
 	Subsystem  string
+	Labels     []string
 }
 
 // AggregationFailurePusher is used for pushing metrics to Prometheus related to failed aggregation.
@@ -52,9 +52,10 @@ func NewAggregationFailurePusher(cfg PusherConfig) AggregationFailurePusher {
 		Subsystem: cfg.Subsystem,
 		Name:      cfg.MetricName,
 		Help:      fmt.Sprintf("Aggregation status for %s", cfg.Subsystem),
-	}, []string{errorMetricLabel})
+	}, cfg.Labels)
 
 	pusher := newPusher(cfg, aggregationFailuresCounter)
+
 	return AggregationFailurePusher{
 		aggregationFailuresCounter: aggregationFailuresCounter,
 		pusher:                     pusher,
@@ -70,7 +71,26 @@ func (p AggregationFailurePusher) ReportAggregationFailure(ctx context.Context, 
 	}
 
 	log.C(ctx).WithFields(logrus.Fields{InstanceIDKeyName: p.instanceID}).Info("Reporting failed aggregation...")
+
 	p.aggregationFailuresCounter.WithLabelValues(errorDescription(err)).Inc()
+
+	p.push(ctx)
+}
+
+// ReportAggregationFailureORD reports failed aggregation with the provided error. copy
+func (p AggregationFailurePusher) ReportAggregationFailureORD(ctx context.Context, err string) {
+	if p.pusher == nil {
+		log.C(ctx).Error("Metrics pusher is not configured, skipping report...")
+		return
+	}
+
+	log.C(ctx).WithFields(logrus.Fields{InstanceIDKeyName: p.instanceID}).Info("Reporting failed aggregation...")
+
+	currentAppID := log.C(ctx).Data["app_id"]
+	currentCorrelationID := log.C(ctx).Data["x-request-id"]
+
+	p.aggregationFailuresCounter.WithLabelValues(err, currentAppID.(string), currentCorrelationID.(string)).Inc()
+
 	p.push(ctx)
 }
 

@@ -47,5 +47,5 @@ fmt:
 check-fmt:
 	@echo ${SKIP_CHECK_FMT_MESSAGE}
 
-deploy-on-k3d:
+deploy-on-k3d: build-for-k3d
 	@echo ${SKIP_DEPLOY_MESSAGE}

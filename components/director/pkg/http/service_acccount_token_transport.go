@@ -36,6 +36,15 @@ func NewServiceAccountTokenTransportWithPath(roundTripper HTTPRoundTripper, path
 	}
 }
 
+// NewServiceAccountTokenTransportWithPathAndHeader constructs a serviceAccountTokenTransport with a given path and configurable header name
+func NewServiceAccountTokenTransportWithPathAndHeader(roundTripper HTTPRoundTripper, path, headerName string) *serviceAccountTokenTransport {
+	return &serviceAccountTokenTransport{
+		roundTripper: roundTripper,
+		path:         path,
+		headerName:   headerName,
+	}
+}
+
 // serviceAccountTokenTransport is transport that attaches a kubernetes service account token in the X-Authorization header for internal authentication.
 type serviceAccountTokenTransport struct {
 	roundTripper HTTPRoundTripper

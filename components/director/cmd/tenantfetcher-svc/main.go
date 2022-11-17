@@ -264,6 +264,7 @@ func tenantSynchronizers(ctx context.Context, taConfig tenantfetcher.HandlerConf
 			MetricName: strings.ReplaceAll(strings.ToLower(jobConfig.JobName), "-", "_") + "_job_sync_failure_number",
 			Timeout:    taConfig.ClientTimeout,
 			Subsystem:  metrics.TenantFetcherSubsystem,
+			Labels:     []string{metrics.ErrorMetricLabel},
 		}
 		metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 		builder := resync.NewSynchronizerBuilder(jobConfig, featuresConfig, transact, directorClient, metricsPusher)
