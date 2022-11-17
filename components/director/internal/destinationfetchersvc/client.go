@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -284,7 +284,7 @@ func (c *Client) FetchDestinationSensitiveData(ctx context.Context, destinationN
 			res.StatusCode, destinationName)
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read body of response")
@@ -311,7 +311,7 @@ func (c *Client) sendRequestWithRetry(req *http.Request) (*http.Response, error)
 				log.C(req.Context()).WithError(err).Error("Unable to close response body")
 			}
 		}()
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 
 		if err != nil {
 			return errors.Wrap(err, "failed to read response body")

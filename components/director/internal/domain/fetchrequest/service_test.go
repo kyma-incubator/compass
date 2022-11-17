@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -200,7 +200,7 @@ func TestService_HandleSpec(t *testing.T) {
 				return NewTestClient(func(req *http.Request) *http.Response {
 					return &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 					}
 				})
 			},
@@ -238,7 +238,7 @@ func TestService_HandleSpec(t *testing.T) {
 				executor := &accessstrategyautomock.Executor{}
 				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, "").Return(&http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+					Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 				}, nil).Once()
 
 				executorProvider := &accessstrategyautomock.ExecutorProvider{}
@@ -291,7 +291,7 @@ func TestService_HandleSpec(t *testing.T) {
 					assert.Equal(t, password, actualPassword)
 					return &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 					}
 				})
 			},
@@ -338,13 +338,13 @@ func TestService_HandleSpec(t *testing.T) {
 						assert.Equal(t, secret, actualSecret)
 						return &http.Response{
 							StatusCode: http.StatusOK,
-							Body:       ioutil.NopCloser(bytes.NewBufferString(`{"access_token":"token"}`)),
+							Body:       io.NopCloser(bytes.NewBufferString(`{"access_token":"token"}`)),
 						}
 					}
 
 					return &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 					}
 				})
 			},
@@ -361,7 +361,7 @@ func TestService_HandleSpec(t *testing.T) {
 						assert.Equal(t, clientID, actualClientID)
 						assert.Equal(t, secret, actualSecret)
 					} else {
-						credentials, err := ioutil.ReadAll(req.Body)
+						credentials, err := io.ReadAll(req.Body)
 						assert.NoError(t, err)
 						assert.Contains(t, string(credentials), fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", clientID, secret))
 					}
@@ -384,13 +384,13 @@ func TestService_HandleSpec(t *testing.T) {
 						assert.Equal(t, secret, actualSecret)
 						return &http.Response{
 							StatusCode: http.StatusOK,
-							Body:       ioutil.NopCloser(bytes.NewBufferString(`{"access_token":"token"}`)),
+							Body:       io.NopCloser(bytes.NewBufferString(`{"access_token":"token"}`)),
 						}
 					}
 
 					return &http.Response{
 						StatusCode: http.StatusInternalServerError,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 					}
 				})
 			},
@@ -440,7 +440,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	svc := fetchrequest.NewService(frRepo, NewTestClient(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBufferString("spec")),
+			Body:       io.NopCloser(bytes.NewBufferString("spec")),
 		}
 	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
@@ -485,7 +485,7 @@ func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T)
 
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+			Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 		}
 	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName), retry.NewHTTPExecutor(retryConfig))
 	svc.SetTimestampGen(func() time.Time { return timestamp })

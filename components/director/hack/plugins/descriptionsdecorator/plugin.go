@@ -2,7 +2,6 @@ package descriptionsdecorator
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -90,7 +89,7 @@ func (p *descriptionsDecoratorPlugin) MutateConfig(cfg *config.Config) error {
 
 func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, opType GraphqlOperationType) error {
 	f.Description = deletePrevious(f.Description)
-	dirs, err := ioutil.ReadDir(p.examplesDirectory)
+	dirs, err := os.ReadDir(p.examplesDirectory)
 	if err != nil {
 		log.D().Infof("no examples under %s directory, skipping adding description", p.examplesDirectory)
 		//lint:ignore nilerr can proceed
@@ -103,7 +102,7 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 		if sanitizeName(f.Name, opType) != dir.Name() {
 			continue
 		}
-		files, err := ioutil.ReadDir(path.Join(p.examplesDirectory, dir.Name()))
+		files, err := os.ReadDir(path.Join(p.examplesDirectory, dir.Name()))
 		if err != nil {
 			return errors.Wrap(err, "while reading the examples subdirectory")
 		}

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
@@ -12,7 +12,7 @@ func ReadConfigFile(path string) (string, error) {
 	if path == "" {
 		return "", errors.New("config path cannot be empty")
 	}
-	config, err := ioutil.ReadFile(path)
+	config, err := os.ReadFile(path)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to read config file")
 	}

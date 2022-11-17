@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/tidwall/sjson"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -500,7 +501,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-		headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
+		consumerClaimsWithEncodedValue, err:= sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
+		require.NoError(t, err)
+		headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
 
 		stdT.Log("Calling director to verify claims validation is successful...")
 		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)
