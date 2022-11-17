@@ -315,6 +315,16 @@ func (s *service) GetFetchRequest(ctx context.Context, specID string, objectType
 	return fetchRequest, nil
 }
 
+// ListFetchRequestsByReferenceObjectIDsTst missing godoc
+func (s *service) ListFetchRequestsByReferenceObjectIDsTst(ctx context.Context, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tnt, getFetchRequestObjectTypeBySpecObjectType(objectType), objectIDs)
+}
+
 // ListFetchRequestsByReferenceObjectIDs missing godoc
 func (s *service) ListFetchRequestsByReferenceObjectIDs(ctx context.Context, tenant string, objectIDs []string, objectType model.SpecReferenceObjectType) ([]*model.FetchRequest, error) {
 	return s.fetchRequestRepo.ListByReferenceObjectIDs(ctx, tenant, getFetchRequestObjectTypeBySpecObjectType(objectType), objectIDs)

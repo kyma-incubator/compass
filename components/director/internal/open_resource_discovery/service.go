@@ -1136,13 +1136,14 @@ func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecR
 	if err != nil {
 		return nil, err
 	}
+	log.C(ctx).Info("CHECKKKK")
+	fetchRequestsFromDB, err := s.specSvc.ListFetchRequestsByReferenceObjectIDsTst(ctx, specIDsFromDB, objectType)
+	if err != nil {
+		return nil, err
+	}
 
 	fetchRequests := make([]*model.FetchRequest, 0)
-	for _, specID := range specIDsFromDB {
-		fr, err := s.specSvc.GetFetchRequest(ctx, specID, objectType)
-		if err != nil {
-			return nil, err
-		}
+	for _, fr := range fetchRequestsFromDB {
 		if fr.Status != nil && fr.Status.Condition != model.FetchRequestStatusConditionSucceeded {
 			fetchRequests = append(fetchRequests, fr)
 		}
