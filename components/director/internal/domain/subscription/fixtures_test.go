@@ -95,10 +95,10 @@ func fixModelApplicationFromTemplateInput(name, subscribedAppName, subdomain, re
 	}
 }
 
-func fixModelApplicationFromTemplateInputWithPlaceholderPayload(name, subscribedAppName, tenantID, mainUrl, externalSystemId string) model.ApplicationFromTemplateInput {
+func fixModelApplicationFromTemplateInputWithPlaceholderPayload(name, subscribedAppName, tenantID, mainURL, externalSystemID string) model.ApplicationFromTemplateInput {
 	return model.ApplicationFromTemplateInput{
 		TemplateName:        name,
-		PlaceholdersPayload: str.Ptr(fmt.Sprintf("{\"displayName\":\"%s\",\"systemNumber\":\"%s\",\"additionalUrls\":{\"mainUrl\":\"%s\"},\"externalResourceId\":\"%s\"}", subscribedAppName, tenantID, mainUrl, externalSystemId)),
+		PlaceholdersPayload: str.Ptr(fmt.Sprintf("{\"displayName\":\"%s\",\"systemNumber\":\"%s\",\"additionalUrls\":{\"mainUrl\":\"%s\"},\"externalResourceId\":\"%s\"}", subscribedAppName, tenantID, mainURL, externalSystemID)),
 	}
 }
 
