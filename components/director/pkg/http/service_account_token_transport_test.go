@@ -1,7 +1,6 @@
 package http_test
 
 import (
-	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
@@ -29,7 +28,7 @@ func TestServiceAccountTokenTransport_RoundTrip(t *testing.T) {
 
 	t.Run("sets service account token", func(t *testing.T) {
 		tokenFileName := "token"
-		err := ioutil.WriteFile(tokenFileName, []byte(tokenValue), os.ModePerm)
+		err := os.WriteFile(tokenFileName, []byte(tokenValue), os.ModePerm)
 		require.NoError(t, err)
 
 		defer func() {

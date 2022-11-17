@@ -3,7 +3,7 @@ package fetchrequest
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -147,7 +147,7 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 	}()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error has occurred while reading Spec: %v", err)
 		return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While reading Spec: %s", err.Error())), s.timestampGen())
