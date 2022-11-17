@@ -51,21 +51,17 @@ func TestAuthenticator_Handler(t *testing.T) {
 		ApplicationTemplateID: &appTemplateID,
 	}
 
-	selfRegDistinguishLabelKey := "selfRegDistinguishLabelKey"
 	consumerSubaccountLabelKey := "consumerSubaccountLabelKey"
 
 	appTemplateLbls := map[string]*model.Label{
-		selfRegDistinguishLabelKey: {Key: selfRegDistinguishLabelKey, Value: "selfRegDistinguishLabelValue"},
 		consumerSubaccountLabelKey: {Key: consumerSubaccountLabelKey, Value: externalTntID},
 	}
 
 	appTemplateLblsWithInvalidConsumerSubaccount := map[string]*model.Label{
-		selfRegDistinguishLabelKey: {Key: selfRegDistinguishLabelKey, Value: "selfRegDistinguishLabelValue"},
 		consumerSubaccountLabelKey: {Key: consumerSubaccountLabelKey, Value: "invalidConsumerSubaccountID"},
 	}
 
 	appTemplateLblsWithIncorrectType := map[string]*model.Label{
-		selfRegDistinguishLabelKey: {Key: selfRegDistinguishLabelKey, Value: "selfRegDistinguishLabelValue"},
 		consumerSubaccountLabelKey: {Key: consumerSubaccountLabelKey, Value: model.FormationAssignmentTypeRuntime},
 	}
 
@@ -82,7 +78,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 		appRepoFn                  func() *automock.ApplicationRepository
 		appTemplateRepoFn          func() *automock.ApplicationTemplateRepository
 		labelRepoFn                func() *automock.LabelRepository
-		selfRegDistinguishLabelKey string
 		consumerSubaccountLabelKey string
 		hasURLVars                 bool
 		contextFn                  func() context.Context
@@ -348,40 +343,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
-			name:       "Authorization fail: error when either self register or consumer subaccount label is missing",
-			transactFn: txGen.ThatDoesntExpectCommit,
-			faServiceFn: func() *automock.FormationAssignmentService {
-				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
-				return faSvc
-			},
-			appRepoFn: func() *automock.ApplicationRepository {
-				appRepo := &automock.ApplicationRepository{}
-				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
-				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(false, nil)
-				return appRepo
-			},
-			appTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("Exists", contextThatHasTenant(internalTntID), appTemplateID).Return(true, nil)
-				return appTemplateRepo
-			},
-			labelRepoFn: func() *automock.LabelRepository {
-				lblRepo := &automock.LabelRepository{}
-				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLbls, nil)
-				return lblRepo
-			},
-			selfRegDistinguishLabelKey: "nonExistingLabel",
-			consumerSubaccountLabelKey: "nonExistingLabel",
-			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
-				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
-			},
-			hasURLVars:         true,
-			expectedStatusCode: http.StatusUnauthorized,
-			expectedErrOutput:  "An unexpected error occurred while processing the request",
-		},
-		{
 			name:       "Authorization fail: error when consumer subaccount label is not of type string",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
@@ -405,7 +366,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLblsWithIncorrectType, nil)
 				return lblRepo
 			},
-			selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
@@ -439,7 +399,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLblsWithInvalidConsumerSubaccount, nil)
 				return lblRepo
 			},
-			selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
@@ -559,7 +518,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLbls, nil)
 				return lblRepo
 			},
-			selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
@@ -593,7 +551,6 @@ func TestAuthenticator_Handler(t *testing.T) {
 				lblRepo.On("ListForGlobalObject", contextThatHasTenant(internalTntID), model.AppTemplateLabelableObject, appTemplateID).Return(appTemplateLbls, nil)
 				return lblRepo
 			},
-			selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
 				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
@@ -856,7 +813,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, tCase.selfRegDistinguishLabelKey, tCase.consumerSubaccountLabelKey)
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, tCase.consumerSubaccountLabelKey)
 			fmAuthMiddleware := fmAuthenticator.Handler()
 			rw := httptest.NewRecorder()
 
