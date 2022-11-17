@@ -5742,11 +5742,11 @@ type Query {
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
 	runtimeByTokenIssuer(issuer: String!): Runtime
-	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	"""
 	**Examples**
-	- [query label definition](examples/query-label-definition/query-label-definition.graphql)
+	- [query label definitions](examples/query-label-definitions/query-label-definitions.graphql)
 	"""
+	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	bundleByInstanceAuth(authID: ID!): Bundle @hasScopes(path: "graphql.query.bundleByInstanceAuth")
 	bundleInstanceAuth(id: ID!): BundleInstanceAuth @hasScopes(path: "graphql.query.bundleInstanceAuth")

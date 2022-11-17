@@ -58,7 +58,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query formations](./query-formations/query-formations.graphql)
 - [query integration system](./query-integration-system/query-integration-system.graphql)
 - [query integration systems](./query-integration-systems/query-integration-systems.graphql)
-- [query label definition](./query-label-definition/query-label-definition.graphql)
+- [query label definitions](./query-label-definitions/query-label-definitions.graphql)
 - [query runtime](./query-runtime/query-runtime.graphql)
 - [query runtime contexts](./query-runtime-contexts/query-runtime-contexts.graphql)
 - [query runtimecontext](./query-runtimecontext/query-runtimecontext.graphql)

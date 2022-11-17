@@ -243,6 +243,8 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 	namePlaceholder := "name-placeholder"
 	displayNamePlaceholder := "display-name-placeholder"
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 
 	testCases := []struct {
 		Name                    string
@@ -258,10 +260,12 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
 				},
 				{
 					Name:        "display-name",
 					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNameJSONPath,
 				},
 			},
 			AppInputDescription: nil,
@@ -274,6 +278,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
 				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
@@ -405,6 +410,8 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 	namePlaceholder := "name-placeholder"
 	displayNamePlaceholder := "display-name-placeholder"
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 
 	testCases := []struct {
 		Name                       string
@@ -420,10 +427,12 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
 				},
 				{
 					Name:        "display-name",
 					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNameJSONPath,
 				},
 			},
 			AppInputDescription: ptr.String("test {{display-name}}"),
@@ -436,6 +445,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
 				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
@@ -595,6 +605,8 @@ func TestQueryApplicationTemplates(t *testing.T) {
 func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 	appTemplateName := createAppTemplateName("template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
@@ -602,10 +614,12 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 		{
 			Name:        "name",
 			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
 		},
 		{
 			Name:        "display-name",
 			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
 		},
 	}
 
@@ -644,6 +658,8 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 	appTemplateName := createAppTemplateName("template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
@@ -651,10 +667,12 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 		{
 			Name:        "name",
 			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
 		},
 		{
 			Name:        "display-name",
 			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
 		},
 	}
 
