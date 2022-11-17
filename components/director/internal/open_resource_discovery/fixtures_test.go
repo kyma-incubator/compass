@@ -12,7 +12,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
@@ -550,40 +549,40 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 	}
 }
 
-func fixApplicationPage() *model.ApplicationPage {
-	return &model.ApplicationPage{
-		Data: []*model.Application{
-			{
-				Name: "testApp",
-				BaseEntity: &model.BaseEntity{
-					ID:    appID,
-					Ready: true,
-				},
-				Type:                  testApplicationType,
-				ApplicationTemplateID: str.Ptr(appTemplateID),
-			},
-		},
-		PageInfo: &pagination.Page{
-			StartCursor: cursor,
-			EndCursor:   cursor,
-			HasNextPage: false,
-		},
-		TotalCount: 1,
-	}
-}
-func fixApplications() []*model.Application {
-	return []*model.Application{
-		{
-			Name: "testApp",
-			BaseEntity: &model.BaseEntity{
-				ID:    appID,
-				Ready: true,
-			},
-			Type:                  testApplicationType,
-			ApplicationTemplateID: str.Ptr(appTemplateID),
-		},
-	}
-}
+//func fixApplicationPage() *model.ApplicationPage {
+//	return &model.ApplicationPage{
+//		Data: []*model.Application{
+//			{
+//				Name: "testApp",
+//				BaseEntity: &model.BaseEntity{
+//					ID:    appID,
+//					Ready: true,
+//				},
+//				Type:                  testApplicationType,
+//				ApplicationTemplateID: str.Ptr(appTemplateID),
+//			},
+//		},
+//		PageInfo: &pagination.Page{
+//			StartCursor: cursor,
+//			EndCursor:   cursor,
+//			HasNextPage: false,
+//		},
+//		TotalCount: 1,
+//	}
+//}
+//func fixApplications() []*model.Application {
+//	return []*model.Application{
+//		{
+//			Name: "testApp",
+//			BaseEntity: &model.BaseEntity{
+//				ID:    appID,
+//				Ready: true,
+//			},
+//			Type:                  testApplicationType,
+//			ApplicationTemplateID: str.Ptr(appTemplateID),
+//		},
+//	}
+//}
 
 func fixWebhooksForApplication() []*model.Webhook {
 	return []*model.Webhook{
