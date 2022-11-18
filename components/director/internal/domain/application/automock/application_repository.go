@@ -10,8 +10,6 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	testing "testing"
-
 	uuid "github.com/google/uuid"
 )
 
@@ -473,8 +471,13 @@ func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 
 	return r0, r1
 }
 
-// NewApplicationRepository creates a new instance of ApplicationRepository. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationRepository(t testing.TB) *ApplicationRepository {
+type mockConstructorTestingTNewApplicationRepository interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewApplicationRepository(t mockConstructorTestingTNewApplicationRepository) *ApplicationRepository {
 	mock := &ApplicationRepository{}
 	mock.Mock.Test(t)
 

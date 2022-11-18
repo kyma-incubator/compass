@@ -36,3 +36,18 @@ func (_m *EventAPIClient) FetchTenantEventsPage(ctx context.Context, eventsType 
 
 	return r0, r1
 }
+
+type mockConstructorTestingTNewEventAPIClient interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewEventAPIClient creates a new instance of EventAPIClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewEventAPIClient(t mockConstructorTestingTNewEventAPIClient) *EventAPIClient {
+	mock := &EventAPIClient{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

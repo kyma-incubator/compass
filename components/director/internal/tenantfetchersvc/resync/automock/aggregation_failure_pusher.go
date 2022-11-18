@@ -17,3 +17,18 @@ type AggregationFailurePusher struct {
 func (_m *AggregationFailurePusher) ReportAggregationFailure(ctx context.Context, err error) {
 	_m.Called(ctx, err)
 }
+
+type mockConstructorTestingTNewAggregationFailurePusher interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewAggregationFailurePusher creates a new instance of AggregationFailurePusher. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewAggregationFailurePusher(t mockConstructorTestingTNewAggregationFailurePusher) *AggregationFailurePusher {
+	mock := &AggregationFailurePusher{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}
