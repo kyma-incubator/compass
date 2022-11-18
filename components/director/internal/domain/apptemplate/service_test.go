@@ -1188,6 +1188,25 @@ func TestService_Update(t *testing.T) {
 			ExpectedError: errors.New("\"applicationType\" label value does not match the application template name"),
 		},
 		{
+			Name: "No error in func enriching app input json with applicationType label when application type value does not match the application template name for Other System Type",
+			Input: func() *model.ApplicationTemplateUpdateInput {
+				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+				return fixModelAppTemplateUpdateInput("Other System Type", appInputJSON)
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: UnusedWebhookRepo,
+			LabelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(&model.Label{Value: "eu-1"}, nil).Once()
+				return labelRepo
+			},
+			ExpectedError: nil,
+		},
+		{
 			Name: "Error when updating application template - retrieve region failed",
 			Input: func() *model.ApplicationTemplateUpdateInput {
 				return fixModelAppTemplateUpdateInput(testName+"test", appInputJSON)

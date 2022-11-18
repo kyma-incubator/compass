@@ -24,8 +24,10 @@ import (
 )
 
 const applicationTypeLabelKey = "applicationType"
+const otherSystemType = "Other System Type"
 
 // ApplicationTemplateRepository missing godoc
+//
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
@@ -40,24 +42,28 @@ type ApplicationTemplateRepository interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // WebhookRepository missing godoc
+//
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
 // LabelUpsertService missing godoc
+//
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 }
 
 // LabelRepository missing godoc
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -351,7 +357,7 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 			if !ok {
 				return "", fmt.Errorf("%q label value must be string", applicationTypeLabelKey)
 			}
-			if appTypeValue != applicationType {
+			if applicationType != otherSystemType && appTypeValue != applicationType {
 				return "", fmt.Errorf("%q label value does not match the application template name", applicationTypeLabelKey)
 			}
 			return applicationInputJSON, nil
