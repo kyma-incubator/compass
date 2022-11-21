@@ -359,7 +359,6 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 			if applicationType != otherSystemType && appTypeValue != applicationType {
 				return "", fmt.Errorf("%q label value does not match the application template name", applicationTypeLabelKey)
 			}
-			fmt.Println("AFTER IF")
 			return applicationInputJSON, nil
 		}
 

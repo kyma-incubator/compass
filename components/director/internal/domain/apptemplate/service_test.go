@@ -36,9 +36,10 @@ func TestService_Create(t *testing.T) {
 	predefinedID := "123-465-789"
 
 	appInputJSON := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName)
-	//appInputJSONOtherSystemType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testNameOtherSystemType)
+	appInputJSONOtherSystemType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, "random-name")
+
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, []*model.Webhook{})
-	//modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSONOtherSystemType, []*model.Webhook{})
+	modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSONOtherSystemType, []*model.Webhook{})
 
 	appTemplateInputWithWebhooks := fixModelAppTemplateInput(testName, appInputJSONString)
 	appTemplateInputWithWebhooks.Webhooks = []*model.WebhookInput{
@@ -213,24 +214,30 @@ func TestService_Create(t *testing.T) {
 			LabelRepoFn:       UnusedLabelRepo,
 			ExpectedError:     errors.New("\"applicationType\" label value does not match the application template name"),
 		},
-		//{
-		//	Name: "No error when checking application type label - application type does not match the application template name",
-		//	Input: func() *model.ApplicationTemplateInput {
-		//		return fixModelAppTemplateInput(testNameOtherSystemType, fmt.Sprintf(appInputJSONWithAppTypeLabelString, "random-name"))
-		//	},
-		//	AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-		//		appTemplateRepo := &automock.ApplicationTemplateRepository{}
-		//		appTemplateRepo.On("ListByName", ctx, testNameOtherSystemType).Return([]*model.ApplicationTemplate{}, nil).Once()
-		//		appTemplateRepo.On("Create", ctx, *modelAppTemplateOtherSystemType).Return(nil).Once()
-		//		//appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
-		//		//appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(nil).Once()
-		//		return appTemplateRepo
-		//	},
-		//	WebhookRepoFn:    UnusedWebhookRepo,
-		//	LabelUpsertSvcFn: UnusedLabelUpsertSvc,
-		//	LabelRepoFn:      UnusedLabelRepo,
-		//	ExpectedError:    nil,
-		//},
+		{
+			Name: "No error when checking application type label - application type does not match the application template name",
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(testNameOtherSystemType, fmt.Sprintf(appInputJSONWithAppTypeLabelString, "random-name"))
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("ListByName", ctx, testNameOtherSystemType).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("Create", ctx, *modelAppTemplateOtherSystemType).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
+				return webhookRepo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				labelUpsertService := &automock.LabelUpsertService{}
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, "foo", map[string]interface{}{"test": "test"}).Return(nil).Once()
+				return labelUpsertService
+			},
+			LabelRepoFn:    UnusedLabelRepo,
+			ExpectedOutput: testID,
+		},
 		{
 			Name: "Error when checking if application template already exists - GetByName returns error",
 			Input: func() *model.ApplicationTemplateInput {
