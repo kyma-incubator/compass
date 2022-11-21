@@ -90,37 +90,16 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 		return nil, err
 	}
 
-	var region string
-	var consumerID string
-	consumerRegionExists := consumerInfo.Region != ""
-	labelsRegionExists := labels[RegionLabel] != nil
-	consumerIDExists := consumerInfo.ConsumerID != ""
-	labelsSubaccountExists := labels[scenarioassignment.SubaccountIDKey] != nil
-
-	if consumerRegionExists && labelsRegionExists {
-		if consumerInfo.Region == labels[RegionLabel] {
-			region = consumerInfo.Region
-		} else {
-			return nil, errors.Errorf("cunsumer %s value %q does not match the label %s value %q", RegionLabel, consumerInfo.Region, RegionLabel, labels[RegionLabel])
-		}
-	} else if consumerRegionExists && !labelsRegionExists {
-		region = consumerInfo.Region
-	} else if !consumerRegionExists && labelsRegionExists {
-		region = labels[RegionLabel].(string)
-	} else {
-		errors.Errorf("missing %s value in consumer context and app template labels", RegionLabel)
+	region, err := s.determineRegion(consumerInfo.Region, labels)
+	if err != nil {
+		return nil, err
 	}
 
-	if consumerIDExists && labelsSubaccountExists {
-		if consumerInfo.ConsumerID == labels[scenarioassignment.SubaccountIDKey] {
-			consumerID = consumerInfo.ConsumerID
-		}
-	} else if consumerIDExists && !labelsSubaccountExists {
-		consumerID = consumerInfo.ConsumerID
-	} else if !consumerIDExists && labelsSubaccountExists {
-		consumerID = labels[scenarioassignment.SubaccountIDKey].(string)
-	} else {
-		errors.New("missing consumerID value in consumer context and app template labels")
+	labels[RegionLabel] = region
+
+	consumerID, err := s.determineConsumerID(consumerInfo.ConsumerID, labels)
+	if err != nil {
+		return nil, err
 	}
 
 	instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
