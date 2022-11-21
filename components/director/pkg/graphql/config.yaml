@@ -143,6 +143,8 @@ models:
   APIDefinition:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.APIDefinition"
     fields:
+      spec:
+        resolver: true
       auth:
         resolver: true
       auths:

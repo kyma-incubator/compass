@@ -47,10 +47,10 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		return nil, nil
 	}
 
-	s, err := c.specConverter.ToGraphQLAPISpec(spec)
-	if err != nil {
-		return nil, err
-	}
+	//s, err := c.specConverter.ToGraphQLAPISpec(spec)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	var bundleID string
 	if bundleRef.BundleID != nil {
@@ -61,10 +61,10 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		BundleID:    bundleID,
 		Name:        in.Name,
 		Description: in.Description,
-		Spec:        s,
-		TargetURL:   str.PtrStrToStr(bundleRef.APIDefaultTargetURL),
-		Group:       in.Group,
-		Version:     c.version.ToGraphQL(in.Version),
+		//Spec:        s,
+		TargetURL: str.PtrStrToStr(bundleRef.APIDefaultTargetURL),
+		Group:     in.Group,
+		Version:   c.version.ToGraphQL(in.Version),
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -78,7 +78,7 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 
 // MultipleToGraphQL converts the provided service-layer representations of an APIDefinition to the graphql-layer ones.
 func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error) {
-	if len(in) != len(specs) || len(in) != len(bundleRefs) || len(bundleRefs) != len(specs) {
+	if len(in) != len(bundleRefs) {
 		return nil, errors.New("different apis, specs and bundleRefs count provided")
 	}
 
@@ -88,7 +88,7 @@ func (c *converter) MultipleToGraphQL(in []*model.APIDefinition, specs []*model.
 			continue
 		}
 
-		api, err := c.ToGraphQL(a, specs[i], bundleRefs[i])
+		api, err := c.ToGraphQL(a, nil, bundleRefs[i])
 		if err != nil {
 			return nil, err
 		}

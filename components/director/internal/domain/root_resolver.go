@@ -270,6 +270,11 @@ func (r *RootResolver) FetchRequestAPIDefDataloader(ids []dataloader.ParamFetchR
 	return r.api.FetchRequestAPIDefDataLoader(ids)
 }
 
+// SpecAPIDefDataloader is a resolver for the APIDefinition's Spec dataloader
+func (r *RootResolver) SpecAPIDefDataloader(ids []dataloader.ParamSpecAPIDef) ([]*graphql.APISpec, []error) {
+	return r.api.SpecAPIDefDataLoader(ids)
+}
+
 // FetchRequestEventDefDataloader missing godoc
 func (r *RootResolver) FetchRequestEventDefDataloader(ids []dataloader.ParamFetchRequestEventDef) ([]*graphql.FetchRequest, []error) {
 	return r.eventAPI.FetchRequestEventDefDataLoader(ids)
@@ -328,6 +333,10 @@ func (r *RootResolver) Formation() graphql.FormationResolver {
 // APISpec missing godoc
 func (r *RootResolver) APISpec() graphql.APISpecResolver {
 	return &apiSpecResolver{r}
+}
+
+func (r *RootResolver) APIDefinition() graphql.APIDefinitionResolver {
+	return &apiDefinitionResolver{r}
 }
 
 // Document missing godoc
@@ -978,6 +987,13 @@ type apiSpecResolver struct{ *RootResolver }
 // FetchRequest missing godoc
 func (r *apiSpecResolver) FetchRequest(ctx context.Context, obj *graphql.APISpec) (*graphql.FetchRequest, error) {
 	return r.api.FetchRequest(ctx, obj)
+}
+
+type apiDefinitionResolver struct{ *RootResolver }
+
+// Spec missing godoc
+func (r *apiDefinitionResolver) Spec(ctx context.Context, obj *graphql.APIDefinition) (*graphql.APISpec, error) {
+	return r.api.Spec(ctx, obj)
 }
 
 type documentResolver struct{ *RootResolver }

@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	APIDefinition() APIDefinitionResolver
 	APISpec() APISpecResolver
 	Application() ApplicationResolver
 	ApplicationTemplate() ApplicationTemplateResolver
@@ -656,6 +657,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type APIDefinitionResolver interface {
+	Spec(ctx context.Context, obj *APIDefinition) (*APISpec, error)
+}
 type APISpecResolver interface {
 	FetchRequest(ctx context.Context, obj *APISpec) (*FetchRequest, error)
 }
@@ -9009,13 +9013,13 @@ func (ec *executionContext) _APIDefinition_spec(ctx context.Context, field graph
 		Object:   "APIDefinition",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Spec, nil
+		return ec.resolvers.APIDefinition().Spec(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -28966,21 +28970,30 @@ func (ec *executionContext) _APIDefinition(ctx context.Context, sel ast.Selectio
 		case "id":
 			out.Values[i] = ec._APIDefinition_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._APIDefinition_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._APIDefinition_description(ctx, field, obj)
 		case "spec":
-			out.Values[i] = ec._APIDefinition_spec(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._APIDefinition_spec(ctx, field, obj)
+				return res
+			})
 		case "targetURL":
 			out.Values[i] = ec._APIDefinition_targetURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "group":
 			out.Values[i] = ec._APIDefinition_group(ctx, field, obj)

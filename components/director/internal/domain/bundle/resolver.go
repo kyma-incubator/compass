@@ -2,7 +2,6 @@ package bundle
 
 import (
 	"context"
-
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -463,11 +462,6 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 		}
 	}
 
-	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
-	if err != nil {
-		return nil, []error{err}
-	}
-
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
@@ -478,17 +472,10 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 		refsByBundleID[*ref.BundleID] = append(refsByBundleID[*ref.BundleID], ref)
 	}
 
-	apiDefIDtoSpec := make(map[string]*model.Spec)
-	for _, spec := range specs {
-		apiDefIDtoSpec[spec.ObjectID] = spec
-	}
-
 	gqlAPIDefs := make([]*graphql.APIDefinitionPage, 0, len(apiDefPages))
 	for i, apisPage := range apiDefPages {
-		apiSpecs := make([]*model.Spec, 0, len(apisPage.Data))
 		apiBundleRefs := make([]*model.BundleReference, 0, len(apisPage.Data))
 		for _, api := range apisPage.Data {
-			apiSpecs = append(apiSpecs, apiDefIDtoSpec[api.ID])
 			br, err := getBundleReferenceForAPI(api.ID, refsByBundleID[bundleIDs[i]])
 			if err != nil {
 				return nil, []error{err}
@@ -496,7 +483,7 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 			apiBundleRefs = append(apiBundleRefs, br)
 		}
 
-		gqlAPIs, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, apiSpecs, apiBundleRefs)
+		gqlAPIs, err := r.apiConverter.MultipleToGraphQL(apisPage.Data, nil, apiBundleRefs)
 		if err != nil {
 			return nil, []error{errors.Wrapf(err, "while converting api definitions")}
 		}

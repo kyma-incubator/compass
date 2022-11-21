@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -343,4 +342,60 @@ func (r *Resolver) FetchRequestAPIDefDataLoader(keys []dataloader.ParamFetchRequ
 
 	log.C(ctx).Infof("Successfully fetched requests for Specifications %v", specIDs)
 	return gqlFetchRequests, nil
+}
+
+// Spec returns a APISpec by a given APIDefinition via dataloaders.
+func (r *Resolver) Spec(ctx context.Context, obj *graphql.APIDefinition) (*graphql.APISpec, error) {
+	params := dataloader.ParamSpecAPIDef{ID: obj.ID, Ctx: ctx}
+	return dataloader.ForSpecAPIDef(ctx).SpecAPIDefByID.Load(params)
+}
+
+// SpecAPIDefDataLoader is the dataloader implementation.
+func (r *Resolver) SpecAPIDefDataLoader(keys []dataloader.ParamSpecAPIDef) ([]*graphql.APISpec, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No APIDef specs found")}
+	}
+
+	ctx := keys[0].Ctx
+
+	apiDefIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if key.ID == "" {
+			return nil, []error{apperrors.NewInternalError("Cannot fetch Spec. APIDefinition ID is empty")}
+		}
+		apiDefIDs = append(apiDefIDs, key.ID)
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	if specs == nil {
+		return nil, nil
+	}
+
+	gqlSpecs := make([]*graphql.APISpec, 0, len(specs))
+	for _, spec := range specs {
+		gqlSpec, err := r.specConverter.ToGraphQLAPISpec(spec)
+		if err != nil {
+			return nil, []error{err}
+		}
+		gqlSpecs = append(gqlSpecs, gqlSpec)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
+	log.C(ctx).Infof("Successfully fetched specs for apiDefs %v", apiDefIDs)
+	return nil, nil
 }
