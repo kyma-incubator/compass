@@ -298,7 +298,6 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	}
 
 	appTemplate := in.ToApplicationTemplate(id)
-
 	err = s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
@@ -360,6 +359,7 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 			if applicationType != otherSystemType && appTypeValue != applicationType {
 				return "", fmt.Errorf("%q label value does not match the application template name", applicationTypeLabelKey)
 			}
+			fmt.Println("AFTER IF")
 			return applicationInputJSON, nil
 		}
 

@@ -36,7 +36,9 @@ func TestService_Create(t *testing.T) {
 	predefinedID := "123-465-789"
 
 	appInputJSON := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName)
+	//appInputJSONOtherSystemType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testNameOtherSystemType)
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, []*model.Webhook{})
+	//modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSONOtherSystemType, []*model.Webhook{})
 
 	appTemplateInputWithWebhooks := fixModelAppTemplateInput(testName, appInputJSONString)
 	appTemplateInputWithWebhooks.Webhooks = []*model.WebhookInput{
@@ -211,6 +213,24 @@ func TestService_Create(t *testing.T) {
 			LabelRepoFn:       UnusedLabelRepo,
 			ExpectedError:     errors.New("\"applicationType\" label value does not match the application template name"),
 		},
+		//{
+		//	Name: "No error when checking application type label - application type does not match the application template name",
+		//	Input: func() *model.ApplicationTemplateInput {
+		//		return fixModelAppTemplateInput(testNameOtherSystemType, fmt.Sprintf(appInputJSONWithAppTypeLabelString, "random-name"))
+		//	},
+		//	AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+		//		appTemplateRepo := &automock.ApplicationTemplateRepository{}
+		//		appTemplateRepo.On("ListByName", ctx, testNameOtherSystemType).Return([]*model.ApplicationTemplate{}, nil).Once()
+		//		appTemplateRepo.On("Create", ctx, *modelAppTemplateOtherSystemType).Return(nil).Once()
+		//		//appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
+		//		//appTemplateRepo.On("Update", ctx, *modelAppTemplate).Return(nil).Once()
+		//		return appTemplateRepo
+		//	},
+		//	WebhookRepoFn:    UnusedWebhookRepo,
+		//	LabelUpsertSvcFn: UnusedLabelUpsertSvc,
+		//	LabelRepoFn:      UnusedLabelRepo,
+		//	ExpectedError:    nil,
+		//},
 		{
 			Name: "Error when checking if application template already exists - GetByName returns error",
 			Input: func() *model.ApplicationTemplateInput {
@@ -1069,7 +1089,10 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	appInputJSON := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName)
+	//appInputJSONOtherSystemType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testNameOtherSystemType)
+
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, nil)
+	modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
 
 	testCases := []struct {
 		Name              string
@@ -1191,20 +1214,25 @@ func TestService_Update(t *testing.T) {
 			Name: "No error in func enriching app input json with applicationType label when application type value does not match the application template name for Other System Type",
 			Input: func() *model.ApplicationTemplateUpdateInput {
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInput("Other System Type", appInputJSON)
+				return fixModelAppTemplateUpdateInput(testNameOtherSystemType, appInputJSON)
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
+				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+
+				m := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
+				appTemplateRepo.On("Get", ctx, modelAppTemplateOtherSystemType.ID).Return(modelAppTemplateOtherSystemType, nil).Once()
+				appTemplateRepo.On("Update", ctx, *m).Return(nil).Once()
 				return appTemplateRepo
 			},
 			WebhookRepoFn: UnusedWebhookRepo,
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(&model.Label{Value: "eu-1"}, nil).Once()
+
 				return labelRepo
 			},
-			ExpectedError: nil,
+			ExpectedError: nil, // nil
 		},
 		{
 			Name: "Error when updating application template - retrieve region failed",
