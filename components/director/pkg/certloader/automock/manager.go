@@ -4,10 +4,8 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	mock "github.com/stretchr/testify/mock"
-
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -41,8 +39,13 @@ func (_m *Manager) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 	return r0, r1
 }
 
-// NewManager creates a new instance of Manager. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewManager(t testing.TB) *Manager {
+type mockConstructorTestingTNewManager interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewManager creates a new instance of Manager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewManager(t mockConstructorTestingTNewManager) *Manager {
 	mock := &Manager{}
 	mock.Mock.Test(t)
 

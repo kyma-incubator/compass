@@ -7,8 +7,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	testing "testing"
-
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -42,8 +40,13 @@ func (_m *Watcher) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 	return r0, r1
 }
 
-// NewWatcher creates a new instance of Watcher. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWatcher(t testing.TB) *Watcher {
+type mockConstructorTestingTNewWatcher interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewWatcher creates a new instance of Watcher. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewWatcher(t mockConstructorTestingTNewWatcher) *Watcher {
 	mock := &Watcher{}
 	mock.Mock.Test(t)
 

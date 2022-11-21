@@ -85,6 +85,72 @@ func TestService_GetByID(t *testing.T) {
 	}
 }
 
+func TestService_ListIDByReferenceObjectID(t *testing.T) {
+	// GIVEN
+	specIDs := []string{specID}
+
+	ctx := context.TODO()
+	ctx = tnt.SaveToContext(ctx, tenant, externalTenant)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.SpecRepository
+		ExpectedResult     []string
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.SpecRepository {
+				repo := &automock.SpecRepository{}
+				repo.On("ListIDByReferenceObjectID", ctx, tenant, model.APISpecReference, apiID).Return(specIDs, nil).Once()
+				return repo
+			},
+			ExpectedResult:     specIDs,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when APIDefinition listing failed",
+			RepositoryFn: func() *automock.SpecRepository {
+				repo := &automock.SpecRepository{}
+				repo.On("ListIDByReferenceObjectID", ctx, tenant, model.APISpecReference, apiID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := spec.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			ids, err := svc.ListIDByReferenceObjectID(ctx, model.APISpecReference, apiID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, ids)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+	t.Run("Error when tenant not in context", func(t *testing.T) {
+		svc := spec.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListIDByReferenceObjectID(context.TODO(), model.APISpecReference, apiID)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+}
+
 func TestService_ListByReferenceObjectID(t *testing.T) {
 	// GIVEN
 	specs := []*model.Spec{

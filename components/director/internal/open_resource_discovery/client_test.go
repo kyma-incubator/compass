@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -45,7 +45,7 @@ var successfulRoundTripFunc = func(t *testing.T, bothBaseURLsProvided, noBaseURL
 		var err error
 		var reqBody []byte
 		if req.Body != nil {
-			reqBody, err = ioutil.ReadAll(req.Body)
+			reqBody, err = io.ReadAll(req.Body)
 			require.NoError(t, err)
 		}
 		statusCode := http.StatusOK
@@ -87,7 +87,7 @@ var successfulRoundTripFunc = func(t *testing.T, bothBaseURLsProvided, noBaseURL
 		}
 		return &http.Response{
 			StatusCode: statusCode,
-			Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+			Body:       io.NopCloser(bytes.NewBuffer(data)),
 		}
 	}
 }
@@ -182,7 +182,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				executor := &automock.Executor{}
 				executor.On("Execute", context.TODO(), mock.Anything, baseURL+ord.WellKnownEndpoint, "").Return(&http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}, nil).Once()
 
 				executorProvider := &automock.ExecutorProvider{}
@@ -268,7 +268,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 				return &http.Response{
 					StatusCode: statusCode,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration: status code 500"),
@@ -284,7 +284,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 				return &http.Response{
 					StatusCode: statusCode,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
 			ExpectedErr: errors.New("error unmarshaling json body"),
@@ -308,7 +308,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 				return &http.Response{
 					StatusCode: statusCode,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
 			ExpectedResult:  ord.Documents{},
@@ -331,7 +331,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 				return &http.Response{
 					StatusCode: statusCode,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
 			ExpectedResult: ord.Documents{},
@@ -353,7 +353,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 				return &http.Response{
 					StatusCode: statusCode,
-					Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+					Body:       io.NopCloser(bytes.NewBuffer(data)),
 				}
 			},
 			ExpectedResult: ord.Documents{},
