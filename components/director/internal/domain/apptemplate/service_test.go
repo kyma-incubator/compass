@@ -1096,7 +1096,6 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	appInputJSON := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName)
-	//appInputJSONOtherSystemType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testNameOtherSystemType)
 
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, nil)
 	modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
@@ -1227,9 +1226,9 @@ func TestService_Update(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 
-				m := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
+				modelOtherSystemTypeUpdate := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSON, nil)
 				appTemplateRepo.On("Get", ctx, modelAppTemplateOtherSystemType.ID).Return(modelAppTemplateOtherSystemType, nil).Once()
-				appTemplateRepo.On("Update", ctx, *m).Return(nil).Once()
+				appTemplateRepo.On("Update", ctx, *modelOtherSystemTypeUpdate).Return(nil).Once()
 				return appTemplateRepo
 			},
 			WebhookRepoFn: UnusedWebhookRepo,
@@ -1239,7 +1238,7 @@ func TestService_Update(t *testing.T) {
 
 				return labelRepo
 			},
-			ExpectedError: nil, // nil
+			ExpectedError: nil,
 		},
 		{
 			Name: "Error when updating application template - retrieve region failed",
