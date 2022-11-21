@@ -397,5 +397,5 @@ func (r *Resolver) SpecAPIDefDataLoader(keys []dataloader.ParamSpecAPIDef) ([]*g
 	}
 
 	log.C(ctx).Infof("Successfully fetched specs for apiDefs %v", apiDefIDs)
-	return nil, nil
+	return gqlSpecs, nil
 }

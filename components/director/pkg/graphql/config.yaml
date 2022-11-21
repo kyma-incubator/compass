@@ -103,6 +103,8 @@ models:
   EventDefinition:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.EventDefinition"
     fields:
+      spec:
+        resolver: true
       eventSpec:
         resolver: true
 

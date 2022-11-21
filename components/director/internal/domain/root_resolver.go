@@ -275,6 +275,11 @@ func (r *RootResolver) SpecAPIDefDataloader(ids []dataloader.ParamSpecAPIDef) ([
 	return r.api.SpecAPIDefDataLoader(ids)
 }
 
+// SpecEventDefDataloader is a resolver for the EventDefinition's Spec dataloader
+func (r *RootResolver) SpecEventDefDataloader(ids []dataloader.ParamSpecEventDef) ([]*graphql.EventSpec, []error) {
+	return r.eventAPI.SpecEventDefDataLoader(ids)
+}
+
 // FetchRequestEventDefDataloader missing godoc
 func (r *RootResolver) FetchRequestEventDefDataloader(ids []dataloader.ParamFetchRequestEventDef) ([]*graphql.FetchRequest, []error) {
 	return r.eventAPI.FetchRequestEventDefDataLoader(ids)
@@ -335,8 +340,14 @@ func (r *RootResolver) APISpec() graphql.APISpecResolver {
 	return &apiSpecResolver{r}
 }
 
+// APIDefinition resolver for APIDefinition
 func (r *RootResolver) APIDefinition() graphql.APIDefinitionResolver {
 	return &apiDefinitionResolver{r}
+}
+
+// EventDefinition resolver for EventDefinition
+func (r *RootResolver) EventDefinition() graphql.EventDefinitionResolver {
+	return &eventDefinitionResolver{r}
 }
 
 // Document missing godoc
@@ -994,6 +1005,13 @@ type apiDefinitionResolver struct{ *RootResolver }
 // Spec missing godoc
 func (r *apiDefinitionResolver) Spec(ctx context.Context, obj *graphql.APIDefinition) (*graphql.APISpec, error) {
 	return r.api.Spec(ctx, obj)
+}
+
+type eventDefinitionResolver struct{ *RootResolver }
+
+// Spec missing godoc
+func (r *eventDefinitionResolver) Spec(ctx context.Context, obj *graphql.EventDefinition) (*graphql.EventSpec, error) {
+	return r.eventAPI.Spec(ctx, obj)
 }
 
 type documentResolver struct{ *RootResolver }

@@ -594,20 +594,20 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		}
 	}
 
-	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
-	if err != nil {
-		return nil, []error{err}
-	}
-
+	//specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
+	//if err != nil {
+	//	return nil, []error{err}
+	//}
+	//
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
 	}
 
-	eventAPIDefIDtoSpec := make(map[string]*model.Spec)
-	for _, spec := range specs {
-		eventAPIDefIDtoSpec[spec.ObjectID] = spec
-	}
+	//eventAPIDefIDtoSpec := make(map[string]*model.Spec)
+	//for _, spec := range specs {
+	//	eventAPIDefIDtoSpec[spec.ObjectID] = spec
+	//}
 
 	eventAPIDefIDtoRef := make(map[string]*model.BundleReference)
 	for _, reference := range references {
@@ -619,7 +619,7 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		eventSpecs := make([]*model.Spec, 0, len(eventPage.Data))
 		eventBundleRefs := make([]*model.BundleReference, 0, len(eventPage.Data))
 		for _, event := range eventPage.Data {
-			eventSpecs = append(eventSpecs, eventAPIDefIDtoSpec[event.ID])
+			//eventSpecs = append(eventSpecs, eventAPIDefIDtoSpec[event.ID])
 			eventBundleRefs = append(eventBundleRefs, eventAPIDefIDtoRef[event.ID])
 		}
 

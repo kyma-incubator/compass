@@ -326,3 +326,59 @@ func (r *Resolver) FetchRequestEventDefDataLoader(keys []dataloader.ParamFetchRe
 	log.C(ctx).Infof("Successfully fetched requests for Specifications %v", specIDs)
 	return gqlFetchRequests, nil
 }
+
+// Spec returns a EventSpec by a given EventDefinition via dataloaders.
+func (r *Resolver) Spec(ctx context.Context, obj *graphql.EventDefinition) (*graphql.EventSpec, error) {
+	params := dataloader.ParamSpecEventDef{ID: obj.ID, Ctx: ctx}
+	return dataloader.ForSpecEventDef(ctx).SpecEventDefByID.Load(params)
+}
+
+// SpecEventDefDataLoader is the dataloader implementation.
+func (r *Resolver) SpecEventDefDataLoader(keys []dataloader.ParamSpecEventDef) ([]*graphql.EventSpec, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No EventDef specs found")}
+	}
+
+	ctx := keys[0].Ctx
+
+	apiDefIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if key.ID == "" {
+			return nil, []error{apperrors.NewInternalError("Cannot fetch Spec. EventDefinition ID is empty")}
+		}
+		apiDefIDs = append(apiDefIDs, key.ID)
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, apiDefIDs)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	if specs == nil {
+		return nil, nil
+	}
+
+	gqlSpecs := make([]*graphql.EventSpec, 0, len(specs))
+	for _, spec := range specs {
+		gqlSpec, err := r.specConverter.ToGraphQLEventSpec(spec)
+		if err != nil {
+			return nil, []error{err}
+		}
+		gqlSpecs = append(gqlSpecs, gqlSpec)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
+	log.C(ctx).Infof("Successfully fetched specs for eventDefs %v", apiDefIDs)
+	return gqlSpecs, nil
+}
