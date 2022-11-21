@@ -35,6 +35,7 @@ mutation {
     placeholders {
       name
       description
+      jsonPath
     }
     webhooks {
       id
