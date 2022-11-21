@@ -986,38 +986,8 @@ func fixAPI1SpecInputs() []*model.SpecInput {
 	}
 }
 
-func fixAPI1Specs() []*model.Spec {
-	openAPIType := model.APISpecTypeOpenAPIV3
-	edmxAPIType := model.APISpecTypeEDMX
-	return []*model.Spec{
-		{
-			ID:         api1spec1ID,
-			Format:     "application/json",
-			APIType:    &openAPIType,
-			CustomType: str.Ptr(""),
-			ObjectType: model.APISpecReference,
-			ObjectID:   api1ID,
-			Data:       str.Ptr("data"),
-		},
-		{
-			ID:         api1spec2ID,
-			Format:     "text/yaml",
-			APIType:    &openAPIType,
-			CustomType: str.Ptr(""),
-			ObjectType: model.APISpecReference,
-			ObjectID:   api1ID,
-			Data:       str.Ptr("data"),
-		},
-		{
-			ID:         api1spec3ID,
-			Format:     "application/xml",
-			APIType:    &edmxAPIType,
-			CustomType: str.Ptr(""),
-			ObjectType: model.APISpecReference,
-			ObjectID:   api1ID,
-			Data:       str.Ptr("data"),
-		},
-	}
+func fixAPI1IDs() []string {
+	return []string{api1spec1ID, api1spec2ID, api1spec3ID}
 }
 
 func fixAPI2SpecInputs() []*model.SpecInput {
@@ -1045,29 +1015,8 @@ func fixAPI2SpecInputs() []*model.SpecInput {
 	}
 }
 
-func fixAPI2Specs() []*model.Spec {
-	edmxAPIType := model.APISpecTypeEDMX
-	openAPIType := model.APISpecTypeOpenAPIV3
-	return []*model.Spec{
-		{
-			ID:         api2spec1ID,
-			Format:     "application/xml",
-			APIType:    &edmxAPIType,
-			CustomType: str.Ptr(""),
-			ObjectType: model.APISpecReference,
-			ObjectID:   api2ID,
-			Data:       str.Ptr("data"),
-		},
-		{
-			ID:         api2spec2ID,
-			Format:     "application/json",
-			APIType:    &openAPIType,
-			CustomType: str.Ptr(""),
-			ObjectType: model.APISpecReference,
-			ObjectID:   api2ID,
-			Data:       str.Ptr("data"),
-		},
-	}
+func fixAPI2IDs() []string {
+	return []string{api2spec1ID, api2spec2ID}
 }
 
 func fixEvent1SpecInputs() []*model.SpecInput {
@@ -1085,19 +1034,8 @@ func fixEvent1SpecInputs() []*model.SpecInput {
 	}
 }
 
-func fixEvent1Specs() []*model.Spec {
-	eventType := model.EventSpecTypeAsyncAPIV2
-	return []*model.Spec{
-		{
-			ID:         event1specID,
-			Format:     "application/json",
-			EventType:  &eventType,
-			CustomType: str.Ptr(""),
-			ObjectType: model.EventSpecReference,
-			ObjectID:   event1ID,
-			Data:       str.Ptr("data"),
-		},
-	}
+func fixEvent1IDs() []string {
+	return []string{event1specID}
 }
 
 func fixEvent2SpecInputs() []*model.SpecInput {
@@ -1115,19 +1053,8 @@ func fixEvent2SpecInputs() []*model.SpecInput {
 	}
 }
 
-func fixEvent2Specs() []*model.Spec {
-	eventType := model.EventSpecTypeAsyncAPIV2
-	return []*model.Spec{
-		{
-			ID:         event2specID,
-			Format:     "application/json",
-			EventType:  &eventType,
-			CustomType: str.Ptr(""),
-			ObjectType: model.EventSpecReference,
-			ObjectID:   event2ID,
-			Data:       str.Ptr("data"),
-		},
-	}
+func fixEvent2IDs() []string {
+	return []string{event2specID}
 }
 
 func fixTombstones() []*model.Tombstone {
