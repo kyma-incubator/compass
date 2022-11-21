@@ -31,6 +31,7 @@ const (
 	globalSubaccountIDLabelKey = "global_subaccount_id"
 	namePlaceholder            = "name"
 	displayNamePlaceholder     = "display-name"
+	sapProviderName            = "SAP"
 )
 
 // ApplicationTemplateService missing godoc
@@ -210,6 +211,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	if err := validateAppTemplateNameBasedOnProvider(in.Name, in.ApplicationInput); err != nil {
+		return nil, err
+	}
+
 	convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
 	if err != nil {
 		return nil, err
@@ -222,7 +227,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
 	validate := func() error {
-		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders)
+		return validateAppTemplateForSelfReg(convertedIn.Placeholders)
 	}
 
 	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
@@ -410,6 +415,10 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
+	if err := validateAppTemplateNameBasedOnProvider(in.Name, in.ApplicationInput); err != nil {
+		return nil, err
+	}
+
 	convertedIn, err := r.appTemplateConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
 		return nil, err
@@ -430,7 +439,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 	if isSelfRegFlow {
-		if err := validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders); err != nil {
+		if err := validateAppTemplateForSelfReg(convertedIn.Placeholders); err != nil {
 			return nil, err
 		}
 	}
@@ -603,7 +612,7 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 	return templates[0], nil
 }
 
-func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder) error {
+func validateAppTemplateForSelfReg(placeholders []model.ApplicationTemplatePlaceholder) error {
 	var namePlaceholderExists bool
 	var displayNameExists bool
 	for _, placeholder := range placeholders {
@@ -619,6 +628,14 @@ func validateAppTemplateForSelfReg(name string, placeholders []model.Application
 
 	if !namePlaceholderExists || !displayNameExists {
 		return errors.Errorf("%q or %q placeholder is missing. They must be present in order to proceed.", namePlaceholder, displayNamePlaceholder)
+	}
+
+	return nil
+}
+
+func validateAppTemplateNameBasedOnProvider(name string, appInput *graphql.ApplicationRegisterInput) error {
+	if appInput == nil || appInput.ProviderName == nil || str.PtrStrToStr(appInput.ProviderName) != sapProviderName {
+		return nil
 	}
 
 	// Matches the following pattern - "SAP <product name>"
