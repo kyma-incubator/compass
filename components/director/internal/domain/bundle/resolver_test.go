@@ -32,11 +32,11 @@ func TestResolver_API(t *testing.T) {
 		modelAPI := fixModelAPIDefinition(id, "name", "bar", "test")
 
 		// TODO Revert when specs are fetched via subresolvers
-		//modelSpec := &model.Spec{
+		// modelSpec := &model.Spec{
 		//	ID:         id,
 		//	ObjectType: model.APISpecReference,
 		//	ObjectID:   id,
-		//}
+		// }
 		var modelSpec *model.Spec
 
 		modelBundleRef := &model.BundleReference{
