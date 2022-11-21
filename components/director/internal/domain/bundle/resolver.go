@@ -391,17 +391,18 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
-	}
+	// TODO Revert when specs are fetched via subresolvers
+	//spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	//if err != nil {
+	//	return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
+	//}
 
 	bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting bundle reference for APIDefinition with id %q", api.ID)
 	}
 
-	gqlAPI, err := r.apiConverter.ToGraphQL(api, spec, bndlRef)
+	gqlAPI, err := r.apiConverter.ToGraphQL(api, nil, bndlRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting APIDefinition with id %q to graphQL", api.ID)
 	}
@@ -463,10 +464,12 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 		}
 	}
 
-	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
-	if err != nil {
-		return nil, []error{err}
-	}
+	// TODO Revert when specs are fetched via subresolvers
+	//specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
+	//if err != nil {
+	//	return nil, []error{err}
+	//}
+	specs := make([]*model.Spec, 0)
 
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, *first, cursor)
 	if err != nil {
@@ -535,17 +538,18 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id 
 		return nil, err
 	}
 
-	spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPI.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPI.ID)
-	}
+	// TODO Revert when specs are fetched via subresolvers
+	//spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPI.ID)
+	//if err != nil {
+	//	return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPI.ID)
+	//}
 
 	bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleEventReference, &eventAPI.ID, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting bundle reference for EventDefinition with id %q", eventAPI.ID)
 	}
 
-	gqlEvent, err := r.eventConverter.ToGraphQL(eventAPI, spec, bndlRef)
+	gqlEvent, err := r.eventConverter.ToGraphQL(eventAPI, nil, bndlRef)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting EventDefinition with id %q to graphQL", eventAPI.ID)
 	}
@@ -607,10 +611,12 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 		}
 	}
 
-	specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
-	if err != nil {
-		return nil, []error{err}
-	}
+	// TODO Revert when specs are fetched via subresolvers
+	//specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
+	//if err != nil {
+	//	return nil, []error{err}
+	//}
+	specs := make([]*model.Spec, 0)
 
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, *first, cursor)
 	if err != nil {
