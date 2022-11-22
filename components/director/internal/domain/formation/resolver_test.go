@@ -1101,6 +1101,16 @@ func TestResolver_Status(t *testing.T) {
 
 	gqlStatuses := []*graphql.FormationStatus{&gqlStatusFirst, &gqlStatusSecond, &gqlStatusThird}
 
+	emptyFaPage := []*model.FormationAssignmentPage{{
+		Data: nil,
+		PageInfo: &pagination.Page{
+			StartCursor: "",
+			EndCursor:   "",
+			HasNextPage: false,
+		},
+		TotalCount: 0,
+	}}
+
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -1117,6 +1127,17 @@ func TestResolver_Status(t *testing.T) {
 				return faSvc
 			},
 			ExpectedResult: gqlStatuses,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Success with status READY when there are no formation assignments",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(emptyFaPage, nil).Once()
+				return faSvc
+			},
+			ExpectedResult: []*graphql.FormationStatus{&gqlStatusFirst},
 			ExpectedErr:    nil,
 		},
 		{

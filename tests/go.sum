@@ -209,6 +209,14 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20221104124533-0b5
 github.com/kyma-incubator/compass/components/connector v0.0.0-20221104124533-0b535193e6dd/go.mod h1:StZfWVWNZ9dOZywTyg+tpWWJrMmdXBVHnbfY9cumra8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221109144200-25121de3a6a3 h1:FfluuiTyPmDEjQHzCsmgHlf0+9DPmjiHVeTGsCLpqp4=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221109144200-25121de3a6a3/go.mod h1:cFi6TofHZ41WBLo2yQARo3oVkeWLx9569kvJn/hsKl8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221122083326-bd466ae250d8 h1:PLUgWKaeVsK4VMV/sDwTvL/kgKRnigtfyHtPf7UUlv0=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221122083326-bd466ae250d8/go.mod h1:cFi6TofHZ41WBLo2yQARo3oVkeWLx9569kvJn/hsKl8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221122091008-71d8169d53f1 h1:+zOkZvclcj8lqlT9fZ+8QZWxCtEmmuIIPfKuqDNBERM=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221122091008-71d8169d53f1/go.mod h1:cFi6TofHZ41WBLo2yQARo3oVkeWLx9569kvJn/hsKl8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221122103419-ac7f2cc233eb h1:43MzIQNg2+S4qjG2ATVmgkGlTkM5h92ipPnp4H6XXJg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221122103419-ac7f2cc233eb/go.mod h1:cFi6TofHZ41WBLo2yQARo3oVkeWLx9569kvJn/hsKl8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221122104240-db299a8f1fa9 h1:QNgEzwCe/EwFNzZUV6lBrYc0dAP5s9TGyKGvKKC6l9U=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221122104240-db299a8f1fa9/go.mod h1:cFi6TofHZ41WBLo2yQARo3oVkeWLx9569kvJn/hsKl8=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221109144200-25121de3a6a3 h1:CP9E++Rll+WLeDUViQ0mAUOWJEdoTVul0C8F2GtkaIY=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221109144200-25121de3a6a3/go.mod h1:FxNFtM1KaUkPm0RhFihqXLGniINhPe2HqQX7l39t+68=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20221104124533-0b535193e6dd h1:TeheuypGoDLLeLpaEpJ0g9+PgLTVgsj1o40x86pyHJk=
