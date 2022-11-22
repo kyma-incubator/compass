@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -156,7 +155,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 	}
 
 	resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading document body")
 	}
@@ -214,7 +213,7 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 
 	defer closeBody(ctx, resp.Body)
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "error reading response body")
 	}

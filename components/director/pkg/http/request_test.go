@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -132,7 +132,7 @@ func TestRequestWithCredentials_SuccessWithOAuth(t *testing.T) {
 		require.NoError(t, err)
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBuffer(data)),
+			Body:       io.NopCloser(bytes.NewBuffer(data)),
 		}
 	})
 

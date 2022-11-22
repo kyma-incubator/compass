@@ -3,7 +3,7 @@ package securehttp_test
 import (
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -145,7 +145,7 @@ func requireClientCredentialsFromHeader(t *testing.T, req *http.Request) {
 }
 
 func requireClientCredentialsFromBody(t *testing.T, req *http.Request) {
-	requestBody, err := ioutil.ReadAll(req.Body)
+	requestBody, err := io.ReadAll(req.Body)
 	require.NoError(t, err)
 	require.Equal(t, testClientIDKey+"="+testClientID+"&"+testGrantTypeKey+"="+testGrantType+"&"+testScopesKey+"="+testScopes, string(requestBody))
 }

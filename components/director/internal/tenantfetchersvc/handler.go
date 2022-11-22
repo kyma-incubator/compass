@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -202,7 +202,7 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 		return
 	}
 
-	body, err := ioutil.ReadAll(request.Body)
+	body, err := io.ReadAll(request.Body)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to read tenant information from request body: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
