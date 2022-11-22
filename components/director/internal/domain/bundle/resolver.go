@@ -392,10 +392,10 @@ func (r *Resolver) APIDefinition(ctx context.Context, obj *graphql.Bundle, id st
 	}
 
 	// TODO Revert when specs are fetched via subresolvers
-	//spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
-	//if err != nil {
+	// spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
+	// if err != nil {
 	//	return nil, errors.Wrapf(err, "while getting spec for APIDefinition with id %q", api.ID)
-	//}
+	// }
 
 	bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleAPIReference, &api.ID, nil)
 	if err != nil {
@@ -465,10 +465,10 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 	}
 
 	// TODO Revert when specs are fetched via subresolvers
-	//specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
-	//if err != nil {
+	// specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.APISpecReference, apiDefIDs)
+	// if err != nil {
 	//	return nil, []error{err}
-	//}
+	// }
 	specs := make([]*model.Spec, 0)
 
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, *first, cursor)
@@ -539,10 +539,10 @@ func (r *Resolver) EventDefinition(ctx context.Context, obj *graphql.Bundle, id 
 	}
 
 	// TODO Revert when specs are fetched via subresolvers
-	//spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPI.ID)
-	//if err != nil {
+	// spec, err := r.specService.GetByReferenceObjectID(ctx, model.EventSpecReference, eventAPI.ID)
+	// if err != nil {
 	//	return nil, errors.Wrapf(err, "while getting spec for EventDefinition with id %q", eventAPI.ID)
-	//}
+	// }
 
 	bndlRef, err := r.bundleReferenceSvc.GetForBundle(ctx, model.BundleEventReference, &eventAPI.ID, nil)
 	if err != nil {
@@ -612,10 +612,10 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 	}
 
 	// TODO Revert when specs are fetched via subresolvers
-	//specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
-	//if err != nil {
+	// specs, err := r.specService.ListByReferenceObjectIDs(ctx, model.EventSpecReference, eventAPIDefIDs)
+	// if err != nil {
 	//	return nil, []error{err}
-	//}
+	// }
 	specs := make([]*model.Spec, 0)
 
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, *first, cursor)

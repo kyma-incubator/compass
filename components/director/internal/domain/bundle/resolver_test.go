@@ -32,11 +32,11 @@ func TestResolver_API(t *testing.T) {
 		modelAPI := fixModelAPIDefinition(id, "name", "bar", "test")
 
 		// TODO Revert when specs are fetched via subresolvers
-		//modelSpec := &model.Spec{
+		// modelSpec := &model.Spec{
 		//	ID:         id,
 		//	ObjectType: model.APISpecReference,
 		//	ObjectID:   id,
-		//}
+		// }
 		var modelSpec *model.Spec
 
 		modelBundleRef := &model.BundleReference{
@@ -74,7 +74,7 @@ func TestResolver_API(t *testing.T) {
 				SpecServiceFn: func() *automock.SpecService {
 					svc := &automock.SpecService{}
 					// TODO Revert when specs are fetched via subresolvers
-					//svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPI.ID).Return(modelSpec, nil).Once()
+					// svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPI.ID).Return(modelSpec, nil).Once()
 					return svc
 				},
 				BundleReferenceServiceFn: func() *automock.BundleReferenceService {
@@ -138,7 +138,7 @@ func TestResolver_API(t *testing.T) {
 				ExpectedErr: nil,
 			},
 			// TODO Revert when specs are fetched via subresolvers
-			//{
+			// {
 			//	Name:            "Returns error when Spec retrieval failed",
 			//	TransactionerFn: txGen.ThatDoesntExpectCommit,
 			//	ServiceFn: func() *automock.APIService {
@@ -162,7 +162,7 @@ func TestResolver_API(t *testing.T) {
 			//	Bundle:      app,
 			//	ExpectedAPI: nil,
 			//	ExpectedErr: testErr,
-			//},
+			// },
 			{
 				Name:            "Returns error when BundleReference retrieval failed",
 				TransactionerFn: txGen.ThatDoesntExpectCommit,
@@ -175,7 +175,7 @@ func TestResolver_API(t *testing.T) {
 				SpecServiceFn: func() *automock.SpecService {
 					svc := &automock.SpecService{}
 					// TODO Revert when specs are fetched via subresolvers
-					//svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPI.ID).Return(modelSpec, nil).Once()
+					// svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPI.ID).Return(modelSpec, nil).Once()
 					return svc
 				},
 				BundleReferenceServiceFn: func() *automock.BundleReferenceService {
@@ -203,7 +203,7 @@ func TestResolver_API(t *testing.T) {
 				SpecServiceFn: func() *automock.SpecService {
 					svc := &automock.SpecService{}
 					// TODO Revert when specs are fetched via subresolvers
-					//svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPI.ID).Return(modelSpec, nil).Once()
+					// svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPI.ID).Return(modelSpec, nil).Once()
 					return svc
 				},
 				BundleReferenceServiceFn: func() *automock.BundleReferenceService {
@@ -253,7 +253,7 @@ func TestResolver_API(t *testing.T) {
 				SpecServiceFn: func() *automock.SpecService {
 					svc := &automock.SpecService{}
 					// TODO Revert when specs are fetched via subresolvers
-					//svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPI.ID).Return(modelSpec, nil).Once()
+					// svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, modelAPI.ID).Return(modelSpec, nil).Once()
 					return svc
 				},
 				BundleReferenceServiceFn: func() *automock.BundleReferenceService {
@@ -319,9 +319,9 @@ func TestResolver_APIs(t *testing.T) {
 	firstAPIID := "apiID"
 	secondAPIID := "apiID2"
 	// TODO Revert when specs are fetched via subresolvers
-	//apiIDs := []string{firstAPIID, secondAPIID}
-	//firstSpecID := "specID"
-	//secondSpecID := "specID2"
+	// apiIDs := []string{firstAPIID, secondAPIID}
+	// firstSpecID := "specID"
+	// secondSpecID := "specID2"
 
 	// model APIDefs
 	apiDefFirstBundle := fixModelAPIDefinition(firstAPIID, "Foo", "Lorem Ipsum", group)
@@ -357,9 +357,9 @@ func TestResolver_APIs(t *testing.T) {
 
 	// API Specs
 	// TODO Revert when specs are fetched via subresolvers
-	//apiDefFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.APISpecReference, ObjectID: firstAPIID}
-	//apiDefSecondSpec := &model.Spec{ID: secondSpecID, ObjectType: model.APISpecReference, ObjectID: secondAPIID}
-	//specs := []*model.Spec{nil}
+	// apiDefFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.APISpecReference, ObjectID: firstAPIID}
+	// apiDefSecondSpec := &model.Spec{ID: secondSpecID, ObjectType: model.APISpecReference, ObjectID: secondAPIID}
+	// specs := []*model.Spec{nil}
 	specsFirstAPI := []*model.Spec{nil}
 	specsSecondAPI := []*model.Spec{nil}
 
@@ -390,7 +390,7 @@ func TestResolver_APIs(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -446,7 +446,7 @@ func TestResolver_APIs(t *testing.T) {
 			ExpectedErr:    []error{testErr},
 		},
 		// TODO Revert when specs are fetched via subresolvers
-		//{
+		// {
 		//	Name:            "Returns error when Specs retrieval failed",
 		//	TransactionerFn: txGen.ThatDoesntExpectCommit,
 		//	ServiceFn: func() *automock.APIService {
@@ -467,7 +467,7 @@ func TestResolver_APIs(t *testing.T) {
 		//	},
 		//	ExpectedResult: nil,
 		//	ExpectedErr:    []error{testErr},
-		//},
+		// },
 		{
 			Name:            "Returns error when BundleReferences retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
@@ -479,7 +479,7 @@ func TestResolver_APIs(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -504,7 +504,7 @@ func TestResolver_APIs(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -531,7 +531,7 @@ func TestResolver_APIs(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -558,7 +558,7 @@ func TestResolver_APIs(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.APISpecReference, apiIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -641,11 +641,11 @@ func TestResolver_Event(t *testing.T) {
 		var nilBundleID *string
 		modelEvent := fixModelEventAPIDefinition(id, "name", "bar", "test")
 		// TODO Revert when specs are fetched via subresolvers
-		//modelSpec := &model.Spec{
+		// modelSpec := &model.Spec{
 		//	ID:         id,
 		//	ObjectType: model.EventSpecReference,
 		//	ObjectID:   id,
-		//}
+		// }
 		var modelSpec *model.Spec
 
 		modelBundleRef := &model.BundleReference{
@@ -682,7 +682,7 @@ func TestResolver_Event(t *testing.T) {
 				SpecServiceFn: func() *automock.SpecService {
 					svc := &automock.SpecService{}
 					// TODO Revert when specs are fetched via subresolvers
-					//svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEvent.ID).Return(modelSpec, nil).Once()
+					// svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEvent.ID).Return(modelSpec, nil).Once()
 					return svc
 				},
 				BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -746,7 +746,7 @@ func TestResolver_Event(t *testing.T) {
 				ExpectedErr:   nil,
 			},
 			// TODO Revert when specs are fetched via subresolvers
-			//{
+			// {
 			//	Name:            "Returns error when Spec retrieval failed",
 			//	TransactionerFn: txGen.ThatDoesntExpectCommit,
 			//	ServiceFn: func() *automock.EventService {
@@ -770,7 +770,7 @@ func TestResolver_Event(t *testing.T) {
 			//	Bundle:        app,
 			//	ExpectedEvent: nil,
 			//	ExpectedErr:   testErr,
-			//},
+			// },
 			{
 				Name:            "Returns error when BundleReference retrieval failed",
 				TransactionerFn: txGen.ThatDoesntExpectCommit,
@@ -783,7 +783,7 @@ func TestResolver_Event(t *testing.T) {
 				SpecServiceFn: func() *automock.SpecService {
 					svc := &automock.SpecService{}
 					// TODO Revert when specs are fetched via subresolvers
-					//svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEvent.ID).Return(modelSpec, nil).Once()
+					// svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEvent.ID).Return(modelSpec, nil).Once()
 					return svc
 				},
 				BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -811,7 +811,7 @@ func TestResolver_Event(t *testing.T) {
 				SpecServiceFn: func() *automock.SpecService {
 					svc := &automock.SpecService{}
 					// TODO Revert when specs are fetched via subresolvers
-					//svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEvent.ID).Return(modelSpec, nil).Once()
+					// svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEvent.ID).Return(modelSpec, nil).Once()
 					return svc
 				},
 				BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -861,7 +861,7 @@ func TestResolver_Event(t *testing.T) {
 				SpecServiceFn: func() *automock.SpecService {
 					svc := &automock.SpecService{}
 					// TODO Revert when specs are fetched via subresolvers
-					//svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEvent.ID).Return(modelSpec, nil).Once()
+					// svc.On("GetByReferenceObjectID", txtest.CtxWithDBMatcher(), model.EventSpecReference, modelEvent.ID).Return(modelSpec, nil).Once()
 					return svc
 				},
 				BundleRefServiceFn: func() *automock.BundleReferenceService {
@@ -927,9 +927,9 @@ func TestResolver_Events(t *testing.T) {
 	firstEventID := "eventID"
 	secondEventID := "eventID2"
 	// TODO Revert when specs are fetched via subresolvers
-	//eventIDs := []string{firstEventID, secondEventID}
-	//firstSpecID := "specID"
-	//secondSpecID := "specID2"
+	// eventIDs := []string{firstEventID, secondEventID}
+	// firstSpecID := "specID"
+	// secondSpecID := "specID2"
 
 	// model Events
 	eventFirstBundle := fixModelEventAPIDefinition(firstEventID, "Foo", "Lorem Ipsum", group)
@@ -965,11 +965,11 @@ func TestResolver_Events(t *testing.T) {
 
 	// Event Specs
 	// TODO Revert when specs are fetched via subresolvers
-	//eventFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.EventSpecReference, ObjectID: firstEventID}
-	//eventSecondSpec := &model.Spec{ID: secondSpecID, ObjectType: model.EventSpecReference, ObjectID: secondEventID}
-	//specsFirstEvent := []*model.Spec{eventFirstSpec}
-	//specsSecondEvent := []*model.Spec{eventSecondSpec}
-	//specs := []*model.Spec{eventFirstSpec, eventSecondSpec}
+	// eventFirstSpec := &model.Spec{ID: firstSpecID, ObjectType: model.EventSpecReference, ObjectID: firstEventID}
+	// eventSecondSpec := &model.Spec{ID: secondSpecID, ObjectType: model.EventSpecReference, ObjectID: secondEventID}
+	// specsFirstEvent := []*model.Spec{eventFirstSpec}
+	// specsSecondEvent := []*model.Spec{eventSecondSpec}
+	// specs := []*model.Spec{eventFirstSpec, eventSecondSpec}
 	specsFirstEvent := []*model.Spec{nil}
 	specsSecondEvent := []*model.Spec{nil}
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -999,7 +999,7 @@ func TestResolver_Events(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -1055,7 +1055,7 @@ func TestResolver_Events(t *testing.T) {
 			ExpectedErr:    []error{testErr},
 		},
 		// TODO Revert when specs are fetched via subresolvers
-		//{
+		// {
 		//	Name:            "Returns error when Specs retrieval failed",
 		//	TransactionerFn: txGen.ThatDoesntExpectCommit,
 		//	ServiceFn: func() *automock.EventService {
@@ -1076,7 +1076,7 @@ func TestResolver_Events(t *testing.T) {
 		//	},
 		//	ExpectedResult: nil,
 		//	ExpectedErr:    []error{testErr},
-		//},
+		// },
 		{
 			Name:            "Returns error when BundleReferences retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
@@ -1088,7 +1088,7 @@ func TestResolver_Events(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -1113,7 +1113,7 @@ func TestResolver_Events(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
@@ -1140,7 +1140,7 @@ func TestResolver_Events(t *testing.T) {
 			SpecServiceFn: func() *automock.SpecService {
 				svc := &automock.SpecService{}
 				// TODO Revert when specs are fetched via subresolvers
-				//svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
+				// svc.On("ListByReferenceObjectIDs", txtest.CtxWithDBMatcher(), model.EventSpecReference, eventIDs).Return(specs, nil).Once()
 				return svc
 			},
 			BundleReferenceFn: func() *automock.BundleReferenceService {
