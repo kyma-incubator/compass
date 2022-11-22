@@ -754,6 +754,60 @@ func TestPlaceholderDefinitionInput_Validate_Description(t *testing.T) {
 	}
 }
 
+func TestApplicationFromTemplateInput_Validate_Rule_EitherPlaceholdersOrPlaceholdersPayloadExists(t *testing.T) {
+	testPlaceholderName := "test"
+	testPlacehoderPayload := "{\"a\":\"b\"}"
+
+	testCases := []struct {
+		Name                string
+		Value               []*graphql.TemplateValueInput
+		PlaceholdersPayload *string
+		Valid               bool
+	}{
+		{
+			Name: "Valid - only Value",
+			Value: []*graphql.TemplateValueInput{
+				{Placeholder: testPlaceholderName, Value: "abc"},
+			},
+			Valid: true,
+		},
+		{
+			Name:                "Valid - only PlaceholdersPayload",
+			PlaceholdersPayload: &testPlacehoderPayload,
+			Valid:               true,
+		},
+		{
+			Name: "Invalid - both Value and PlaceholdersPayload",
+			Value: []*graphql.TemplateValueInput{
+				{Placeholder: testPlaceholderName, Value: "abc"},
+			},
+			PlaceholdersPayload: &testPlacehoderPayload,
+			Valid:               false,
+		},
+		{
+			Name:  "Invalid - neither Value nor PlaceholdersPayload",
+			Valid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationFromTemplateInput()
+			sut.Values = testCase.Value
+			sut.PlaceholdersPayload = testCase.PlaceholdersPayload
+			// WHEN
+			err := sut.Validate()
+			// THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 // ApplicationFromTemplateInput
 
 func TestApplicationFromTemplateInput_Validate_Rule_UniquePlaceholders(t *testing.T) {
@@ -769,11 +823,6 @@ func TestApplicationFromTemplateInput_Validate_Rule_UniquePlaceholders(t *testin
 			Value: []*graphql.TemplateValueInput{
 				{Placeholder: testPlaceholderName, Value: ""},
 			},
-			Valid: true,
-		},
-		{
-			Name:  "Valid - no placeholders",
-			Value: []*graphql.TemplateValueInput{},
 			Valid: true,
 		},
 		{
@@ -804,6 +853,7 @@ func TestApplicationFromTemplateInput_Validate_Rule_UniquePlaceholders(t *testin
 }
 
 func TestApplicationFromTemplateInput_Validate_TemplateName(t *testing.T) {
+	testPlacehoderPayload := "{\"a\":\"b\"}"
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -841,6 +891,7 @@ func TestApplicationFromTemplateInput_Validate_TemplateName(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationFromTemplateInput()
 			sut.TemplateName = testCase.Value
+			sut.PlaceholdersPayload = &testPlacehoderPayload
 			// WHEN
 			err := sut.Validate()
 			// THEN
@@ -853,7 +904,7 @@ func TestApplicationFromTemplateInput_Validate_TemplateName(t *testing.T) {
 	}
 }
 
-func TestApplicationTemplateInput_Validate_Values(t *testing.T) {
+func TestApplicationTemplateInput_Validate_Value(t *testing.T) {
 	testPlaceholderName := "test"
 	testCases := []struct {
 		Name  string
@@ -865,16 +916,6 @@ func TestApplicationTemplateInput_Validate_Values(t *testing.T) {
 			Value: []*graphql.TemplateValueInput{
 				{Placeholder: testPlaceholderName, Value: "valid"},
 			},
-			Valid: true,
-		},
-		{
-			Name:  "Valid - Empty",
-			Value: []*graphql.TemplateValueInput{},
-			Valid: true,
-		},
-		{
-			Name:  "Valid - Nil",
-			Value: nil,
 			Valid: true,
 		},
 		{
