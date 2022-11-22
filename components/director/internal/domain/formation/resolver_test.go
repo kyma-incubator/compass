@@ -2,6 +2,7 @@ package formation_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -749,8 +750,8 @@ func TestResolver_FormationAssignment(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	gqlFormation := fixGqlFormation()
-	gqlFormationAssignment := fixGqlFormationAssignment(&TestConfigValueStr)
-	formationAssignmentModel := fixFormationAssignmentModel(TestConfigValueRawJSON)
+	gqlFormationAssignment := fixGqlFormationAssignment(FormationAssignmentState, &TestConfigValueStr)
+	formationAssignmentModel := fixFormationAssignmentModel(FormationAssignmentState, TestConfigValueRawJSON)
 
 	testCases := []struct {
 		Name                        string
@@ -899,8 +900,8 @@ func TestResolver_FormationAssignments(t *testing.T) {
 	formationIDs := []string{FormationID, FormationID + "2"}
 
 	// Formation Assignments model fixtures
-	faModelFirst := fixFormationAssignmentModel(TestConfigValueRawJSON)
-	faModelSecond := fixFormationAssignmentModelWithSuffix(TestConfigValueRawJSON, "-2")
+	faModelFirst := fixFormationAssignmentModel(FormationAssignmentState, TestConfigValueRawJSON)
+	faModelSecond := fixFormationAssignmentModelWithSuffix(FormationAssignmentState, TestConfigValueRawJSON, "-2")
 
 	fasFirst := []*model.FormationAssignment{faModelFirst}
 	fasSecond := []*model.FormationAssignment{faModelSecond}
@@ -910,8 +911,8 @@ func TestResolver_FormationAssignments(t *testing.T) {
 	faPages := []*model.FormationAssignmentPage{faPageFirst, faPageSecond}
 
 	// Formation Assignments GraphQL fixtures
-	gqlFormationAssignmentFirst := fixGqlFormationAssignment(&TestConfigValueStr)
-	gqlFormationAssignmentSecond := fixGqlFormationAssignmentWithSuffix(&TestConfigValueStr, "-2")
+	gqlFormationAssignmentFirst := fixGqlFormationAssignment(FormationAssignmentState, &TestConfigValueStr)
+	gqlFormationAssignmentSecond := fixGqlFormationAssignmentWithSuffix(FormationAssignmentState, &TestConfigValueStr, "-2")
 
 	gqlFAFist := []*graphql.FormationAssignment{gqlFormationAssignmentFirst}
 	gqlFASecond := []*graphql.FormationAssignment{gqlFormationAssignmentSecond}
@@ -1051,6 +1052,152 @@ func TestResolver_FormationAssignments(t *testing.T) {
 		// THEN
 		require.Error(t, errs[0])
 		require.EqualError(t, errs[0], apperrors.NewInvalidDataError("missing required parameter 'first'").Error())
+	})
+}
+
+func TestResolver_Status(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+
+	testErr := errors.New("test error")
+
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	first := 200
+	after := ""
+
+	formationIDs := []string{FormationID, FormationID + "2", FormationID + "3"}
+
+	// Formation Assignments model fixtures
+	faModelReady := fixFormationAssignmentModel(string(model.ReadyAssignmentState), TestConfigValueRawJSON)
+	faModelInitial := fixFormationAssignmentModelWithSuffix(string(model.InitialAssignmentState), TestConfigValueRawJSON, "-2")
+	faModelError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), json.RawMessage(`{"error": {"message": "failure", "errorCode": 1}}`), "-3")
+
+	fasReady := []*model.FormationAssignment{faModelReady}                               // all are READY -> READY condition
+	fasInProgress := []*model.FormationAssignment{faModelInitial, faModelReady}          // no errors, but one is INITIAL -> IN_PROGRESS condition
+	fasError := []*model.FormationAssignment{faModelReady, faModelError, faModelInitial} // have error -> ERROR condition
+
+	faPageFirst := fixFormationAssignmentPage(fasReady)
+	faPageSecond := fixFormationAssignmentPage(fasInProgress)
+	faPageThird := fixFormationAssignmentPage(fasError)
+	faPages := []*model.FormationAssignmentPage{faPageFirst, faPageSecond, faPageThird}
+
+	fasUnmarshallable := []*model.FormationAssignment{fixFormationAssignmentModelWithSuffix(string(model.DeleteErrorAssignmentState), json.RawMessage(`unmarshallable structure`), "-4")}
+
+	faPagesWithUnmarshallableError := []*model.FormationAssignmentPage{fixFormationAssignmentPage(fasUnmarshallable)}
+
+	// Formation Assignments GraphQL fixtures
+
+	gqlStatusFirst := graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil}
+	gqlStatusSecond := graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil}
+	gqlStatusThird := graphql.FormationStatus{
+		Condition: graphql.FormationStatusConditionError,
+		Errors: []*graphql.FormationAssignmentError{{
+			AssignmentID: FormationAssignmentID + "-3",
+			Message:      "failure",
+			ErrorCode:    1,
+		}},
+	}
+
+	gqlStatuses := []*graphql.FormationStatus{&gqlStatusFirst, &gqlStatusSecond, &gqlStatusThird}
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn       func() *automock.FormationAssignmentService
+		ExpectedResult  []*graphql.FormationStatus
+		ExpectedErr     error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(faPages, nil).Once()
+				return faSvc
+			},
+			ExpectedResult: gqlStatuses,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Returns error when transaction begin failed",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ExpectedResult:  nil,
+			ExpectedErr:     testErr,
+		},
+		{
+			Name:            "Returns error when listing formations",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(nil, testErr).Once()
+				return faSvc
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when can't unmarshal assignment value",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(faPagesWithUnmarshallableError, nil).Once()
+				return faSvc
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    errors.New("while unmarshalling formation assignment error with assignment ID \"FormationAssignmentID-4\""),
+		},
+		{
+			Name:            "Returns error when transaction commit failed",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(faPages, nil).Once()
+				return faSvc
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			persist, transact := testCase.TransactionerFn()
+
+			faSvc := &automock.FormationAssignmentService{}
+			if testCase.ServiceFn != nil {
+				faSvc = testCase.ServiceFn()
+			}
+
+			resolver := formation.NewResolver(transact, nil, nil, faSvc, nil, nil)
+			firstFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID, Ctx: ctx}
+			secondFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID + "2", Ctx: ctx}
+			thirdFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID + "3", Ctx: ctx}
+			keys := []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams}
+
+			// WHEN
+			result, errs := resolver.StatusDataLoader(keys)
+
+			// THEN
+			require.EqualValues(t, testCase.ExpectedResult, result)
+			if errs != nil {
+				require.Contains(t, errs[0].Error(), testCase.ExpectedErr.Error())
+			}
+
+			mock.AssertExpectationsForObjects(t, faSvc, transact, persist)
+		})
+	}
+
+	t.Run("Returns error when there are no formations IDs", func(t *testing.T) {
+		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil)
+
+		// WHEN
+		_, errs := resolver.StatusDataLoader([]dataloader.ParamFormationStatus{})
+
+		// THEN
+		require.Error(t, errs[0])
+		require.EqualError(t, errs[0], apperrors.NewInternalError("No Formations found").Error())
 	})
 }
 

@@ -2,7 +2,7 @@ package formation
 
 import (
 	"context"
-
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -351,4 +351,81 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 	}
 
 	return r.formationAssignmentConv.ToGraphQL(formationAssignment)
+}
+
+// Status missing godoc
+func (r *Resolver) Status(ctx context.Context, obj *graphql.Formation) (*graphql.FormationStatus, error) {
+	param := dataloader.ParamFormationStatus{ID: obj.ID, Ctx: ctx}
+	return dataloader.FormationStatusFor(ctx).FormationStatusByID.Load(param)
+}
+
+// StatusDataLoader missing godoc
+func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*graphql.FormationStatus, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Formations found")}
+	}
+
+	ctx := keys[0].Ctx
+	formationIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		formationIDs = append(formationIDs, key.ID)
+	}
+
+	var (
+		cursor = ""
+		first  = 200
+	)
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	formationAssignmentPages, err := r.formationAssignmentSvc.ListByFormationIDs(ctx, formationIDs, first, cursor)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentPages))
+	for _, page := range formationAssignmentPages {
+		condition := graphql.FormationStatusConditionReady
+		var formationAssignmentErrors []*graphql.FormationAssignmentError
+
+		for _, fa := range page.Data {
+			if fa.State == string(model.CreateErrorAssignmentState) || fa.State == string(model.DeleteErrorAssignmentState) {
+				condition = graphql.FormationStatusConditionError
+
+				var assignmentError formationassignment.AssignmentErrorWrapper
+
+				if err = json.Unmarshal(fa.Value, &assignmentError); err != nil {
+					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
+				}
+
+				formationAssignmentErrors = append(formationAssignmentErrors, &graphql.FormationAssignmentError{
+					AssignmentID: fa.ID,
+					Message:      assignmentError.Error.Message,
+					ErrorCode:    int(assignmentError.Error.ErrorCode),
+				})
+			} else if condition != graphql.FormationStatusConditionError &&
+				(fa.State == string(model.InitialAssignmentState) ||
+					fa.State == string(model.DeletingAssignmentState) ||
+					fa.State == string(model.ConfigPendingAssignmentState)) {
+				condition = graphql.FormationStatusConditionInProgress
+			}
+		}
+
+		gqlFormationStatuses = append(gqlFormationStatuses, &graphql.FormationStatus{
+			Condition: condition,
+			Errors:    formationAssignmentErrors,
+		})
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
+	return gqlFormationStatuses, nil
 }

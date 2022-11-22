@@ -165,6 +165,25 @@ func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 	`
 }
 
+// ForFormationStatus missing godoc
+func (fp *GqlFieldsProvider) ForFormationStatus() string {
+	return fmt.Sprintf(`
+			condition
+			errors {
+				%s
+			}
+	`, fp.ForFormationStatusErrors)
+}
+
+// ForFormationStatusErrors missing godoc
+func (fp *GqlFieldsProvider) ForFormationStatusErrors() string {
+	return `
+        	assignmentID
+        	message
+        	errorCode
+	`
+}
+
 // OmitForWebhooks missing godoc
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
 	return buildProperties(map[string]string{
