@@ -140,6 +140,16 @@ func (fp *GqlFieldsProvider) ForFormation() string {
 	`
 }
 
+// ForFormationWithStatus missing godoc
+func (fp *GqlFieldsProvider) ForFormationWithStatus() string {
+	return fmt.Sprintf(`
+		id
+		name
+		formationTemplateId
+		status {%s}
+	`, fp.ForFormationStatus())
+}
+
 // ForFormationTemplate missing godoc
 func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 	return `
