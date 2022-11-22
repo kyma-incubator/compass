@@ -59,7 +59,7 @@ type repository struct {
 	conv               BundleReferenceConverter
 }
 
-// NewRepository returns a new entity responsible for repo-layer BundleReference operations.
+// NewRepository returns a new entity responsible for repo layer BundleReference operations.
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
 		creator:            repo.NewCreatorGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
