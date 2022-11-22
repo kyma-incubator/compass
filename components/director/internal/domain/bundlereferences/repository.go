@@ -2,7 +2,6 @@ package bundlereferences
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -49,25 +48,27 @@ type BundleReferenceConverter interface {
 }
 
 type repository struct {
-	creator     repo.CreatorGlobal
-	unionLister repo.UnionListerGlobal
-	lister      repo.ListerGlobal
-	getter      repo.SingleGetterGlobal
-	deleter     repo.DeleterGlobal
-	updater     repo.UpdaterGlobal
-	conv        BundleReferenceConverter
+	creator      repo.CreatorGlobal
+	unionLister  repo.UnionListerGlobal
+	lister       repo.ListerGlobal
+	getter       repo.SingleGetterGlobal
+	deleter      repo.DeleterGlobal
+	updater      repo.UpdaterGlobal
+	queryBuilder repo.QueryBuilderGlobal
+	conv         BundleReferenceConverter
 }
 
 // NewRepository returns a new entity responsible for repo-layer BundleReference operations.
 func NewRepository(conv BundleReferenceConverter) *repository {
 	return &repository{
-		creator:     repo.NewCreatorGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
-		unionLister: repo.NewUnionListerGlobal(resource.BundleReference, BundleReferenceTable, []string{}),
-		lister:      repo.NewListerGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
-		getter:      repo.NewSingleGetterGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
-		deleter:     repo.NewDeleterGlobal(resource.BundleReference, BundleReferenceTable),
-		updater:     repo.NewUpdaterGlobal(resource.BundleReference, BundleReferenceTable, updatableColumns, []string{}),
-		conv:        conv,
+		creator:      repo.NewCreatorGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		unionLister:  repo.NewUnionListerGlobal(resource.BundleReference, BundleReferenceTable, []string{}),
+		lister:       repo.NewListerGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		getter:       repo.NewSingleGetterGlobal(resource.BundleReference, BundleReferenceTable, bundleReferencesColumns),
+		deleter:      repo.NewDeleterGlobal(resource.BundleReference, BundleReferenceTable),
+		updater:      repo.NewUpdaterGlobal(resource.BundleReference, BundleReferenceTable, updatableColumns, []string{}),
+		queryBuilder: repo.NewQueryBuilderGlobal(resource.API, APIDefTable, []string{"id"}),
+		conv:         conv,
 	}
 }
 
@@ -190,7 +191,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, bundleID str
 
 // ListByBundleIDs retrieves all BundleReferences matching an array of bundleIDs from the Compass storage.
 func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
-	objectTable, objectIDCol, columns, err := getDetailsByObjectType(objectType)
+	_, _, columns, err := getDetailsByObjectType(objectType)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -209,11 +210,15 @@ func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.Bundl
 		isInternalVisibilityScopePresent = true
 	}
 
-	visibilityFilteringSubquery := fmt.Sprintf("(SELECT %s FROM %s WHERE %s.id = %s.%s)", visibilityColumn, objectTable, objectTable, BundleReferenceTable, objectIDCol)
 	var conditions repo.Conditions
 	if !isInternalVisibilityScopePresent {
 		log.C(ctx).Infof("No internal visibility scope is present in the context. Processing only public %ss...", objectType)
-		conditions = append(conditions, repo.NewEqualCondition(visibilityFilteringSubquery, publicVisibilityValue))
+
+		query, args, err := r.queryBuilder.BuildQueryGlobal(false, repo.NewEqualCondition(visibilityColumn, publicVisibilityValue))
+		if err != nil {
+			return nil, nil, err
+		}
+		conditions = append(conditions, repo.NewInConditionForSubQuery(APIDefIDColumn, query, args))
 	}
 
 	log.C(ctx).Infof("Internal visibility scope is present in the context. Processing %ss without visibility check...", objectType)
