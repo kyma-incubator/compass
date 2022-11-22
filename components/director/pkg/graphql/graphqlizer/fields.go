@@ -182,7 +182,7 @@ func (fp *GqlFieldsProvider) ForFormationStatus() string {
 			errors {
 				%s
 			}
-	`, fp.ForFormationStatusErrors)
+	`, fp.ForFormationStatusErrors())
 }
 
 // ForFormationStatusErrors missing godoc
