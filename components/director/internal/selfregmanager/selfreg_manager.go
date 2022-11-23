@@ -237,7 +237,6 @@ func (s *selfRegisterManager) determineRegion(consumerInfoRegion string, labels 
 			return consumerInfoRegion, nil
 		}
 		return "", errors.Errorf("consumer %s value %q does not match the label %s value %q", RegionLabel, consumerInfoRegion, RegionLabel, labels[RegionLabel])
-
 	}
 	if consumerRegionExists && !labelsRegionExists {
 		return consumerInfoRegion, nil
