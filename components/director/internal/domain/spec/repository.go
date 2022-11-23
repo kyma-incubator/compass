@@ -33,6 +33,7 @@ type Converter interface {
 type repository struct {
 	creator      repo.Creator
 	lister       repo.Lister
+	idLister     repo.Lister
 	unionLister  repo.UnionLister
 	getter       repo.SingleGetter
 	deleter      repo.Deleter
@@ -47,6 +48,12 @@ func NewRepository(conv Converter) *repository {
 		creator: repo.NewCreator(specificationsTable, specificationsColumns),
 		getter:  repo.NewSingleGetter(specificationsTable, specificationsColumns),
 		lister: repo.NewListerWithOrderBy(specificationsTable, specificationsColumns, repo.OrderByParams{
+			{
+				Field: "created_at",
+				Dir:   repo.AscOrderBy,
+			},
+		}),
+		idLister: repo.NewListerWithOrderBy(specificationsTable, []string{"id"}, repo.OrderByParams{
 			{
 				Field: "created_at",
 				Dir:   repo.AscOrderBy,
@@ -85,6 +92,31 @@ func (r *repository) Create(ctx context.Context, tenant string, item *model.Spec
 	entity := r.conv.ToEntity(item)
 
 	return r.creator.Create(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+}
+
+// ListIDByReferenceObjectID retrieves all spec ids by objectType and objectID
+func (r *repository) ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+	fieldName, err := r.referenceObjectFieldName(objectType)
+	if err != nil {
+		return nil, err
+	}
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(fieldName, objectID),
+	}
+
+	var specCollection SpecCollection
+	err = r.idLister.List(ctx, objectType.GetResourceType(), tenant, &specCollection, conditions...)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]string, 0, len(specCollection))
+
+	for _, specEnt := range specCollection {
+		items = append(items, specEnt.ID)
+	}
+
+	return items, nil
 }
 
 // ListByReferenceObjectID missing godoc

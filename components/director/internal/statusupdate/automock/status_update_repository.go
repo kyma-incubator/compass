@@ -4,7 +4,6 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	statusupdate "github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	mock "github.com/stretchr/testify/mock"
@@ -50,8 +49,13 @@ func (_m *StatusUpdateRepository) UpdateStatus(ctx context.Context, id string, o
 	return r0
 }
 
-// NewStatusUpdateRepository creates a new instance of StatusUpdateRepository. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewStatusUpdateRepository(t testing.TB) *StatusUpdateRepository {
+type mockConstructorTestingTNewStatusUpdateRepository interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewStatusUpdateRepository creates a new instance of StatusUpdateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewStatusUpdateRepository(t mockConstructorTestingTNewStatusUpdateRepository) *StatusUpdateRepository {
 	mock := &StatusUpdateRepository{}
 	mock.Mock.Test(t)
 

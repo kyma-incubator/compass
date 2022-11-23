@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -395,7 +395,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				mockHTTPClient := &automock.HTTPDoer{}
 				response := &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(respBody),
+					Body:       io.NopCloser(respBody),
 				}
 				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
 					b, err := req.GetBody()
@@ -468,7 +468,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				mockHTTPClient := &automock.HTTPDoer{}
 				response := &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(respBody),
+					Body:       io.NopCloser(respBody),
 				}
 				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
 					b, err := req.GetBody()
@@ -540,7 +540,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				mockHTTPClient := &automock.HTTPDoer{}
 				response := &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(respBody),
+					Body:       io.NopCloser(respBody),
 				}
 				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
 					b, err := req.GetBody()
@@ -611,7 +611,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				mockHTTPClient := &automock.HTTPDoer{}
 				response := &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(respBody),
+					Body:       io.NopCloser(respBody),
 				}
 				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
 					b, err := req.GetBody()
@@ -719,7 +719,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				mockHTTPClient := &automock.HTTPDoer{}
 				response := &http.Response{
 					StatusCode: http.StatusInternalServerError,
-					Body:       ioutil.NopCloser(&bytes.Buffer{}),
+					Body:       io.NopCloser(&bytes.Buffer{}),
 				}
 				mockHTTPClient.On("Do", mock.MatchedBy(func(req *http.Request) bool {
 					b, err := req.GetBody()

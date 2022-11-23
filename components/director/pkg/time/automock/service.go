@@ -5,8 +5,6 @@ package automock
 import (
 	mock "github.com/stretchr/testify/mock"
 
-	testing "testing"
-
 	time "time"
 )
 
@@ -29,8 +27,13 @@ func (_m *Service) Now() time.Time {
 	return r0
 }
 
-// NewService creates a new instance of Service. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewService(t testing.TB) *Service {
+type mockConstructorTestingTNewService interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewService(t mockConstructorTestingTNewService) *Service {
 	mock := &Service{}
 	mock.Mock.Test(t)
 

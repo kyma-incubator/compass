@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/formationmapping"
 
@@ -398,7 +400,7 @@ func main() {
 	asyncFARouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
 	asyncFARouter.Use(authMiddleware.Handler(), fmAuthMiddleware.Handler()) // order is important
 
-	fmHandler := formationmapping.NewFormationMappingHandler()
+	fmHandler := createFormationMappingHandler(transact, appRepo, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
 	logger.Infof("Registering formation tenant mapping endpoints...")
 	asyncFARouter.HandleFunc(cfg.FormationMappingCfg.AsyncAPIEndpoint, fmHandler.UpdateStatus).Methods(http.MethodPatch)
 
@@ -676,11 +678,13 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, securedHTTPClien
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
-	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, appRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
 	formationSvc := formation.NewService(transact, labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
@@ -729,7 +733,8 @@ func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPCl
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
-	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
+	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, appRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
 	formationSvc := formation.NewService(transact, labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
@@ -833,7 +838,8 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
-	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
+	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
 	formationSvc := formation.NewService(transact, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
@@ -859,7 +865,6 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
-	tenantConverter := tenant.NewConverter()
 
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelRepo := label.NewRepository(label.NewConverter())
@@ -867,12 +872,62 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
 	runtimeRepo := runtime.NewRepository(runtime.NewConverter(webhook.NewConverter(auth.NewConverter())))
 	webhookRepo := webhook.NewRepository(webhookConverter)
+
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
+
+	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
+
+	return formationmapping.NewFormationMappingAuthenticator(transact, formationAssignmentSvc, runtimeRepo, runtimeContextRepo, appRepo, appTemplateRepo, labelRepo, cfg.SubscriptionConfig.ConsumerSubaccountLabelKey)
+}
+
+func createFormationMappingHandler(transact persistence.Transactioner, appRepo application.ApplicationRepository, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) *formationmapping.Handler {
+	formationAssignmentConv := formationassignment.NewConverter()
+	authConverter := auth.NewConverter()
+	webhookConverter := webhook.NewConverter(authConverter)
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	specConverter := spec.NewConverter(frConverter)
+	docConverter := document.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
+	labelDefinitionConverter := labeldef.NewConverter()
+	asaConverter := scenarioassignment.NewConverter()
+	tenantConverter := tenant.NewConverter()
+
+	labelRepo := label.NewRepository(label.NewConverter())
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	runtimeRepo := runtime.NewRepository(runtime.NewConverter(webhook.NewConverter(auth.NewConverter())))
+	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
+	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
+	asaRepo := scenarioassignment.NewRepository(asaConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
 
-	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient)
+	uidSvc := uid.NewService()
+	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, webhookDataInputBuilder)
+	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
+	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
+	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(transact, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 
-	return formationmapping.NewFormationMappingAuthenticator(transact, formationAssignmentSvc, runtimeRepo, runtimeContextRepo, appRepo, tenantRepo, appTemplateRepo, labelRepo, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey, cfg.SubscriptionConfig.ConsumerSubaccountLabelKey)
+	fmHandler := formationmapping.NewFormationMappingHandler(transact, formationAssignmentConv, formationAssignmentSvc, faNotificationSvc, formationSvc)
+
+	return fmHandler
 }

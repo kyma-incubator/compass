@@ -8,8 +8,6 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	testing "testing"
-
 	version "github.com/kyma-incubator/compass/components/director/internal/domain/version"
 )
 
@@ -80,8 +78,13 @@ func (_m *VersionConverter) ToGraphQL(in *model.Version) *graphql.Version {
 	return r0
 }
 
-// NewVersionConverter creates a new instance of VersionConverter. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewVersionConverter(t testing.TB) *VersionConverter {
+type mockConstructorTestingTNewVersionConverter interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewVersionConverter creates a new instance of VersionConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewVersionConverter(t mockConstructorTestingTNewVersionConverter) *VersionConverter {
 	mock := &VersionConverter{}
 	mock.Mock.Test(t)
 

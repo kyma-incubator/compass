@@ -17,6 +17,7 @@ import (
 type SpecRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+	ListIDByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	ListByReferenceObjectID(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
 	ListByReferenceObjectIDs(ctx context.Context, tenant string, objectType model.SpecReferenceObjectType, objectIDs []string) ([]*model.Spec, error)
 	Delete(ctx context.Context, tenant, id string, objectType model.SpecReferenceObjectType) error
@@ -65,6 +66,16 @@ func NewService(repo SpecRepository, fetchRequestRepo FetchRequestRepository, ui
 	}
 }
 
+// GetByID takes care of retrieving a specific spec entity from db based on a provided id and objectType (API or Event)
+func (s *service) GetByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetByID(ctx, tnt, id, objectType)
+}
+
 // ListByReferenceObjectID missing godoc
 func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -73,6 +84,16 @@ func (s *service) ListByReferenceObjectID(ctx context.Context, objectType model.
 	}
 
 	return s.repo.ListByReferenceObjectID(ctx, tnt, objectType, objectID)
+}
+
+// ListIDByReferenceObjectID retrieves all spec ids by objectType and objectID
+func (s *service) ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.ListIDByReferenceObjectID(ctx, tnt, objectType, objectID)
 }
 
 // GetByReferenceObjectID
@@ -140,6 +161,34 @@ func (s *service) CreateByReferenceObjectID(ctx context.Context, in model.SpecIn
 	return id, nil
 }
 
+// CreateByReferenceObjectIDWithDelayedFetchRequest identical to CreateByReferenceObjectID with the only difference that the spec and fetch request entities are only persisted in DB and the fetch request itself is not executed
+func (s *service) CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", nil, err
+	}
+
+	id := s.uidService.Generate()
+	spec, err := in.ToSpec(id, objectType, objectID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if err = s.repo.Create(ctx, tnt, spec); err != nil {
+		return "", nil, errors.Wrapf(err, "while creating spec for %q with id %q", objectType, objectID)
+	}
+
+	var fr *model.FetchRequest
+	if in.Data == nil && in.FetchRequest != nil {
+		fr, err = s.createFetchRequest(ctx, tnt, *in.FetchRequest, id, objectType)
+		if err != nil {
+			return "", nil, errors.Wrapf(err, "while creating FetchRequest for %s Specification with id %q", objectType, id)
+		}
+	}
+
+	return id, fr, nil
+}
+
 // UpdateByReferenceObjectID missing godoc
 func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -171,6 +220,20 @@ func (s *service) UpdateByReferenceObjectID(ctx context.Context, id string, in m
 
 	if err = s.repo.Update(ctx, tnt, spec); err != nil {
 		return errors.Wrapf(err, "while updating %s Specification with id %q", objectType, id)
+	}
+
+	return nil
+}
+
+// UpdateSpecOnly takes care of simply updating a single spec entity in db without looking and executing corresponding fetch requests that may be related to it
+func (s *service) UpdateSpecOnly(ctx context.Context, spec model.Spec) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err = s.repo.Update(ctx, tnt, &spec); err != nil {
+		return errors.Wrapf(err, "while updating %s Specification with id %q", spec.ObjectType, spec.ID)
 	}
 
 	return nil

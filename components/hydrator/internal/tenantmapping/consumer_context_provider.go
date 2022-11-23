@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -87,6 +88,10 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 		return false, nil, nil
 	}
 
+	if decodedUserContextHeader, err := url.QueryUnescape(userContextHeader); err == nil {
+		userContextHeader = decodedUserContextHeader
+	}
+
 	authID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.UserNameKey).String()
 	if authID == "" {
 		return false, nil, apperrors.NewInvalidDataError(fmt.Sprintf("could not find %s property", c.consumerClaimsKeysConfig.UserNameKey))
@@ -96,6 +101,10 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 }
 
 func (c *consumerContextProvider) getUserContextData(userContextHeader string) (*userContextData, error) {
+	if decodedUserContextHeader, err := url.QueryUnescape(userContextHeader); err == nil {
+		userContextHeader = decodedUserContextHeader
+	}
+
 	clientID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ClientIDKey)
 	if !clientID.Exists() {
 		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.ClientIDKey))

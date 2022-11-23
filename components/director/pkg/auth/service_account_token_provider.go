@@ -18,7 +18,7 @@ package auth
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 )
@@ -60,7 +60,7 @@ func (u serviceAccountTokenAuthorizationProvider) GetAuthorization(_ context.Con
 	if len(path) == 0 {
 		path = DefaultServiceAccountTokenPath
 	}
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", errors.Wrapf(err, "Unable to read service account token file")
 	}

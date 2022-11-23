@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -213,7 +213,7 @@ func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.
 }
 
 func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

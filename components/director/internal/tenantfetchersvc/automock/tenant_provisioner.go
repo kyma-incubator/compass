@@ -4,7 +4,6 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	tenantfetchersvc "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	mock "github.com/stretchr/testify/mock"
@@ -29,8 +28,13 @@ func (_m *TenantProvisioner) ProvisionTenants(_a0 context.Context, _a1 *tenantfe
 	return r0
 }
 
-// NewTenantProvisioner creates a new instance of TenantProvisioner. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantProvisioner(t testing.TB) *TenantProvisioner {
+type mockConstructorTestingTNewTenantProvisioner interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewTenantProvisioner creates a new instance of TenantProvisioner. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewTenantProvisioner(t mockConstructorTestingTNewTenantProvisioner) *TenantProvisioner {
 	mock := &TenantProvisioner{}
 	mock.Mock.Test(t)
 

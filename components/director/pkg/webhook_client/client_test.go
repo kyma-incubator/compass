@@ -21,7 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -241,7 +241,7 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				StatusCode: http.StatusAccepted,
 			},
 		},
@@ -274,7 +274,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
+				Body:       io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusAccepted,
 			},
@@ -311,7 +311,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": %s}", mockedJSONObjectError)))),
+				Body:       io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": %s}", mockedJSONObjectError)))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusAccepted,
 			},
@@ -347,7 +347,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusNotFound,
 			},
@@ -382,7 +382,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusInternalServerError,
 			},
@@ -416,7 +416,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsIncomplete_ShouldBeSuccessful(
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusNoContent,
 			},
@@ -456,7 +456,7 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusAccepted,
 			},
@@ -505,7 +505,7 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusAccepted,
 			},
@@ -547,7 +547,7 @@ func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 	mtlsClient := &http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusAccepted,
 			},
@@ -590,7 +590,7 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusAccepted,
 			},
@@ -723,7 +723,7 @@ func TestClient_Poll_WhenParseStatusTemplateFails_ShouldReturnError(t *testing.T
 
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
-			resp: &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))},
+			resp: &http.Response{Body: io.NopCloser(bytes.NewReader([]byte("{}")))},
 		},
 	}, nil, nil)
 
@@ -752,7 +752,7 @@ func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *t
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
+				Body:       io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
 				StatusCode: http.StatusOK,
 			},
 		},
@@ -784,7 +784,7 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				StatusCode: http.StatusInternalServerError,
 			},
 		},
@@ -822,7 +822,7 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				StatusCode: http.StatusOK,
 			},
 			roundTripExpectations: func(r *http.Request) {
@@ -868,7 +868,7 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				StatusCode: http.StatusOK,
 			},
 			roundTripExpectations: func(r *http.Request) {
@@ -911,7 +911,7 @@ func TestClient_Poll_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) 
 	mtlsClient := &http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				Header:     http.Header{"Location": []string{mockedLocationURL}},
 				StatusCode: http.StatusOK,
 			},
@@ -948,7 +948,7 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsNullErrorField_Sho
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{\"error\":null}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{\"error\":null}"))),
 				StatusCode: http.StatusOK,
 			},
 		},
@@ -977,7 +977,7 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsEmptyErrorField_Sh
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{\"error\":\"\"}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{\"error\":\"\"}"))),
 				StatusCode: http.StatusOK,
 			},
 		},
@@ -1010,7 +1010,7 @@ func TestClient_Poll_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 	client := webhookclient.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
-				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
 				StatusCode: http.StatusOK,
 			},
 			roundTripExpectations: func(r *http.Request) {

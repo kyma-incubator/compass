@@ -24,10 +24,13 @@ type FormationAssignmentRepository interface {
 	GetByTargetAndSource(ctx context.Context, target, source, tenantID string) (*model.FormationAssignment, error)
 	Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
+	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
+	GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error)
+	ListAllForObjectIDs(ctx context.Context, tenant, formationID string, objectIDs []string) ([]*model.FormationAssignment, error)
 	ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error)
 	Update(ctx context.Context, model *model.FormationAssignment) error
 	Delete(ctx context.Context, id, tenantID string) error
@@ -53,6 +56,16 @@ type runtimeContextRepository interface {
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
+}
+
+//go:generate mockery --exported --name=webhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookRepository interface {
+	GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
+}
+
+//go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookConverter interface {
+	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 }
 
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -165,6 +178,18 @@ func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.Formatio
 	return fa, nil
 }
 
+// GetGlobalByIDAndFormationID retrieves the formation assignment matching ID `id` and formation ID `formationID` globally, without tenant parameter
+func (s *service) GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Getting formation assignment with ID: %q and formation ID: %q globally", id, formationID)
+
+	fa, err := s.repo.GetGlobalByIDAndFormationID(ctx, id, formationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation assignment with ID: %q and formation ID: %q globally", id, formationID)
+	}
+
+	return fa, nil
+}
+
 // GetForFormation retrieves the Formation Assignment with the provided `id` associated with Formation with id `formationID`
 func (s *service) GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error) {
 	log.C(ctx).Infof("Getting formation assignment for ID: %q and formationID: %q", id, formationID)
@@ -180,6 +205,23 @@ func (s *service) GetForFormation(ctx context.Context, id, formationID string) (
 	}
 
 	return fa, nil
+}
+
+// GetReverseBySourceAndTarget retrieves the Formation Assignment with the provided `id` associated with Formation with id `formationID`
+func (s *service) GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Getting reverse formation assignment for formation ID: %q and source: %q and target: %q", formationID, sourceID, targetID)
+
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	reverseFA, err := s.repo.GetReverseBySourceAndTarget(ctx, tenantID, formationID, sourceID, targetID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting reverse formation assignment for formation ID: %q and source: %q and target: %q", formationID, sourceID, targetID)
+	}
+
+	return reverseFA, nil
 }
 
 // List pagination lists Formation Assignment based on `pageSize` and `cursor`
@@ -216,12 +258,23 @@ func (s *service) ListByFormationIDs(ctx context.Context, formationIDs []string,
 
 // ListFormationAssignmentsForObjectID retrieves all Formation Assignment objects for formation with ID `formationID` that have `objectID` as source or target
 func (s *service) ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Listing formation assignments for object ID: %q and formation ID: %q", objectID, formationID)
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
 	return s.repo.ListAllForObject(ctx, tnt, formationID, objectID)
+}
+
+// ListFormationAssignmentsForObjectIDs retrieves all Formation Assignment objects for formation with ID `formationID` that have any of the `objectIDs` as source or target
+func (s *service) ListFormationAssignmentsForObjectIDs(ctx context.Context, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.repo.ListAllForObjectIDs(ctx, tnt, formationID, objectIDs)
 }
 
 // Update updates a Formation Assignment matching ID `id` using `in`
@@ -298,14 +351,50 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		return nil, err
 	}
 
+	allIDs := make([]string, 0, len(applications)+len(runtimes)+len(runtimeContexts))
+	appIDs := make(map[string]struct{}, len(applications))
+	rtIDs := make(map[string]struct{}, len(runtimes))
+	rtCtxIDs := make(map[string]struct{}, len(runtimeContexts))
+	for _, app := range applications {
+		allIDs = append(allIDs, app.ID)
+		appIDs[app.ID] = struct{}{}
+	}
+	for _, rt := range runtimes {
+		allIDs = append(allIDs, rt.ID)
+		rtIDs[rt.ID] = struct{}{}
+	}
+	for _, rtCtx := range runtimeContexts {
+		allIDs = append(allIDs, rtCtx.ID)
+		rtCtxIDs[rtCtx.ID] = struct{}{}
+	}
+
+	allAssignments, err := s.ListFormationAssignmentsForObjectIDs(ctx, formation.ID, allIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// We should not generate notifications for formation participants that are being unassigned asynchronously
+	for _, assignment := range allAssignments {
+		if assignment.LastOperation == model.UnassignFormation {
+			switch assignment.LastOperationInitiatorType {
+			case model.FormationAssignmentTypeApplication:
+				delete(appIDs, assignment.LastOperationInitiator)
+			case model.FormationAssignmentTypeRuntime:
+				delete(rtIDs, assignment.LastOperationInitiator)
+			case model.FormationAssignmentTypeRuntimeContext:
+				delete(rtCtxIDs, assignment.LastOperationInitiator)
+			}
+		}
+	}
+
 	// When assigning an object to a formation we need to create two formation assignments per participant.
 	// In the first formation assignment the object we're assigning will be the source and in the second it will be the target
 	assignments := make([]*model.FormationAssignmentInput, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2)
-	for _, app := range applications {
-		if app.ID == objectID {
+	for appID := range appIDs {
+		if appID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeApplication, app)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeApplication, appID)...)
 	}
 
 	// When runtime context is assigned to formation its parent runtime is unassigned from the formation.
@@ -321,18 +410,18 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		}
 		parentID = rtmCtx.RuntimeID
 	}
-	for _, runtime := range runtimes {
-		if runtime.ID == objectID || runtime.ID == parentID {
+	for runtimeID := range rtIDs {
+		if runtimeID == objectID || runtimeID == parentID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntime, runtime)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntime, runtimeID)...)
 	}
 
-	for _, runtimeCtx := range runtimeContexts {
-		if runtimeCtx.ID == objectID {
+	for runtimeCtxID := range rtCtxIDs {
+		if runtimeCtxID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtx)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtxID)...)
 	}
 
 	ids := make([]string, 0, len(assignments))
@@ -353,25 +442,31 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 }
 
 // GenerateAssignmentsForParticipant creates in-memory the assignments for two participants in the initial state
-func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participant model.Identifiable) []*model.FormationAssignmentInput {
+func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participantID string) []*model.FormationAssignmentInput {
 	assignments := make([]*model.FormationAssignmentInput, 0, 2)
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID: formation.ID,
-		Source:      objectID,
-		SourceType:  model.FormationAssignmentType(objectType),
-		Target:      participant.GetID(),
-		TargetType:  participantType,
-		State:       string(model.InitialAssignmentState),
-		Value:       nil,
+		FormationID:                formation.ID,
+		Source:                     objectID,
+		SourceType:                 model.FormationAssignmentType(objectType),
+		Target:                     participantID,
+		TargetType:                 participantType,
+		LastOperation:              model.AssignFormation,
+		LastOperationInitiator:     objectID,
+		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
+		State:                      string(model.InitialAssignmentState),
+		Value:                      nil,
 	})
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID: formation.ID,
-		Source:      participant.GetID(),
-		SourceType:  participantType,
-		Target:      objectID,
-		TargetType:  model.FormationAssignmentType(objectType),
-		State:       string(model.InitialAssignmentState),
-		Value:       nil,
+		FormationID:                formation.ID,
+		Source:                     participantID,
+		SourceType:                 participantType,
+		Target:                     objectID,
+		TargetType:                 model.FormationAssignmentType(objectType),
+		LastOperation:              model.AssignFormation,
+		LastOperationInitiator:     objectID,
+		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
+		State:                      string(model.InitialAssignmentState),
+		Value:                      nil,
 	})
 	return assignments
 }
@@ -398,12 +493,14 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssi
 	return errs.ErrorOrNil()
 }
 
-// UpdateFormationAssignment prepares the `State` and `Config` of the formation assignment based on the response and saves it in the database
-func (s *service) UpdateFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair) error {
-	return s.updateFormationAssignmentsWithReverseNotification(ctx, mappingPair, 0)
+// ProcessFormationAssignmentPair prepares and update the `State` and `Config` of the formation assignment based on the response and process the notifications
+func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *AssignmentMappingPair) error {
+	return s.processFormationAssignmentsWithReverseNotification(ctx, mappingPair, 0)
 }
 
-func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPair, depth int) error {
+func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPair, depth int) error {
+	fa := mappingPair.Assignment.FormationAssignment
+	log.C(ctx).Infof("Processing formation assignment %q for formation %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType, fa.State)
 	assignmentClone := mappingPair.Assignment.Clone()
 	var reverseClone *FormationAssignmentRequestMapping
 	if mappingPair.ReverseAssignment != nil {
@@ -417,16 +514,16 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 
 	if assignmentClone.Request == nil {
 		assignment.State = string(model.ReadyAssignmentState)
+		log.C(ctx).Infof("There is no notification to be sent. Setting state for Assignmene with ID %s to %s", assignment.ID, assignment.State)
 		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
-			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
+			return errors.Wrapf(err, "while updating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
-		log.C(ctx).Infof("Assignment with ID %s was updated with %s state", assignment.ID, assignment.State)
 		return nil
 	}
 
 	response, err := s.notificationService.SendNotification(ctx, assignmentClone.Request)
 	if err != nil {
-		updateError := s.setAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.CreateErrorAssignmentState)
+		updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.CreateErrorAssignmentState)
 		if updateError != nil {
 			return errors.Wrapf(
 				updateError,
@@ -438,7 +535,7 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		err = s.setAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.CreateErrorAssignmentState)
+		err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.CreateErrorAssignmentState)
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
@@ -507,7 +604,7 @@ func (s *service) updateFormationAssignmentsWithReverseNotification(ctx context.
 			ReverseAssignment: newReverseAssignment,
 		}
 
-		if err = s.updateFormationAssignmentsWithReverseNotification(ctx, newAssignmentMappingPair, depth+1); err != nil {
+		if err = s.processFormationAssignmentsWithReverseNotification(ctx, newAssignmentMappingPair, depth+1); err != nil {
 			return errors.Wrap(err, "while sending reverse notification")
 		}
 	}
@@ -525,7 +622,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	if mappingPair.Assignment.Request == nil {
 		if err := s.Delete(ctx, assignment.ID); err != nil {
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
-			updateError := s.setAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
+			updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
 			if updateError != nil {
 				return errors.Wrapf(
 					updateError,
@@ -541,7 +638,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
 	if err != nil {
-		updateError := s.setAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
+		updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
 		if updateError != nil {
 			return errors.Wrapf(
 				updateError,
@@ -550,10 +647,21 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		}
 		return errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID)
 	}
+
+	requestWebhookMode := mappingPair.Assignment.Request.Webhook.Mode
+	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
+		log.C(ctx).Infof("The Webhook in the notification is in %s mode. Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
+		assignment.State = string(model.DeletingAssignmentState)
+		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
+		}
+		return nil
+	}
+
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
 		if err = s.Delete(ctx, assignment.ID); err != nil {
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
-			updateError := s.setAssignmentToErrorState(ctx, assignment, "error while deleting assignment", TechnicalError, model.DeleteErrorAssignmentState)
+			updateError := s.SetAssignmentToErrorState(ctx, assignment, "error while deleting assignment", TechnicalError, model.DeleteErrorAssignmentState)
 			if updateError != nil {
 				return errors.Wrapf(
 					updateError,
@@ -569,7 +677,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 
 	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 		err = errors.New("Error while deleting assignment: config propagation is not supported on unassign notifications")
-		updateErr := s.setAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState)
+		updateErr := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState)
 		if updateErr != nil {
 			return errors.Wrapf(updateErr, "while updating error state for formation with ID %q", assignment.ID)
 		}
@@ -577,7 +685,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		err = s.setAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState)
+		err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState)
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
@@ -587,7 +695,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	return nil
 }
 
-func (s *service) setAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState) error {
+func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState) error {
 	assignment.State = string(state)
 	assignmentError := AssignmentErrorWrapper{AssignmentError{
 		Message:   errorMessage,
@@ -644,6 +752,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		}
 		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
 	}
+
 	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments), len(requests), len(assignments)-len(requests))
 	sourceToTargetToMapping := make(map[string]map[string]*FormationAssignmentRequestMapping)
 	for _, mapping := range formationAssignmentMapping {
@@ -695,15 +804,18 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 	return &FormationAssignmentRequestMapping{
 		Request: request,
 		FormationAssignment: &model.FormationAssignment{
-			ID:          f.FormationAssignment.ID,
-			FormationID: f.FormationAssignment.FormationID,
-			TenantID:    f.FormationAssignment.TenantID,
-			Source:      f.FormationAssignment.Source,
-			SourceType:  f.FormationAssignment.SourceType,
-			Target:      f.FormationAssignment.Target,
-			TargetType:  f.FormationAssignment.TargetType,
-			State:       f.FormationAssignment.State,
-			Value:       f.FormationAssignment.Value,
+			ID:                         f.FormationAssignment.ID,
+			FormationID:                f.FormationAssignment.FormationID,
+			TenantID:                   f.FormationAssignment.TenantID,
+			Source:                     f.FormationAssignment.Source,
+			SourceType:                 f.FormationAssignment.SourceType,
+			Target:                     f.FormationAssignment.Target,
+			TargetType:                 f.FormationAssignment.TargetType,
+			LastOperation:              f.FormationAssignment.LastOperation,
+			LastOperationInitiator:     f.FormationAssignment.LastOperationInitiator,
+			LastOperationInitiatorType: f.FormationAssignment.LastOperationInitiatorType,
+			State:                      f.FormationAssignment.State,
+			Value:                      f.FormationAssignment.Value,
 		},
 	}
 }

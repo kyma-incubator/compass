@@ -27,6 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -141,7 +143,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	}
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig)
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	t.Run("ConsumerProvider flow", func(stdT *testing.T) {
@@ -500,7 +502,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-		headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
+		consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
+		require.NoError(t, err)
+		headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
 
 		stdT.Log("Calling director to verify claims validation is successful...")
 		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)

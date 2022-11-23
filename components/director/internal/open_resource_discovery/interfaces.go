@@ -58,10 +58,20 @@ type EventService interface {
 //go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
+	CreateByReferenceObjectIDWithDelayedFetchRequest(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, *model.FetchRequest, error)
 	DeleteByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error
+	GetByID(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
 	GetFetchRequest(ctx context.Context, specID string, objectType model.SpecReferenceObjectType) (*model.FetchRequest, error)
-	ListByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.Spec, error)
+	UpdateSpecOnly(ctx context.Context, spec model.Spec) error
+	ListIDByReferenceObjectID(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]string, error)
 	RefetchSpec(ctx context.Context, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
+}
+
+// FetchRequestService is responsible for executing specification fetch requests.
+//go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FetchRequestService interface {
+	FetchSpec(ctx context.Context, fr *model.FetchRequest) (*string, *model.FetchRequestStatus)
+	Update(ctx context.Context, fr *model.FetchRequest) error
 }
 
 // PackageService is responsible for the service-layer Package operations.

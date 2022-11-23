@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -26,7 +26,7 @@ type Provider struct {
 
 // Load missing godoc
 func (p *Provider) Load() error {
-	b, err := ioutil.ReadFile(p.fileName)
+	b, err := os.ReadFile(p.fileName)
 	if err != nil {
 		return errors.Wrapf(err, "while reading file %s", p.fileName)
 	}

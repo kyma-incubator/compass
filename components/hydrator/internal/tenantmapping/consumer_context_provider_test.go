@@ -29,6 +29,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 	consumerInternalTenantID := "9a4d24e6-3ff6-464f-8efb-b167d1bdfcb6"
 	tenantName := "test-tenant-name"
 	clientID := "id-value!t12345"
+	invalidClientID := "invalid-id%"
 	authID := "test-user-name@sap.com"
 	testRegion := "eu-1"
 
@@ -43,9 +44,12 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 
 	authDetails := oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.ConsumerProviderFlow}
 
-	userCtxHeaderWithAllProperties := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"tenantid":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, consumerTenantID, consumerTenantID, authID)
-	userCtxHeaderWithoutClientID := fmt.Sprintf(`{"exp":1659618593,"tenantid":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, consumerTenantID, consumerTenantID, authID)
-	userCtxHeaderWithoutTenantID := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, consumerTenantID, authID)
+	userCtxHeaderWithAllProperties := fmt.Sprintf(`{"client_id":"%s","tenantid":"%s","user_name":"%s"}`, clientID, consumerTenantID, authID)
+	userCtxHeaderWithoutClientID := fmt.Sprintf(`{"tenantid":"%s","user_name":"%s"}`, consumerTenantID, authID)
+	userCtxHeaderWithoutTenantID := fmt.Sprintf(`{"client_id":"%s","user_name":"%s"}`, clientID, authID)
+	userCtxHeaderWithInvalidASCIICharacter := fmt.Sprintf(`{"client_id":"%s","tenantid":"%s","user_name":"%s"}`, invalidClientID, consumerTenantID, authID)
+	userCtxHeaderWithInvalidASCIICharacterAndMissingClientID := `{"tenantid":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test%UserName@sap.com"}`
+	userCtxHeaderWithInvalidASCIICharacterAndMissingTenantID := fmt.Sprintf(`{"client_id":"%s","user_name":"%s"}`, invalidClientID, authID)
 
 	reqDataFunc := func(userContextHeader string) oathkeeper.ReqData {
 		return oathkeeper.ReqData{
@@ -61,7 +65,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 		}
 	}
 
-	expectedObjectContextFunc := func(externalTenantID, internalTenantID, region string) tenantmapping.ObjectContext {
+	expectedObjectContextFunc := func(externalTenantID, internalTenantID, region, oauthClientID string) tenantmapping.ObjectContext {
 		return tenantmapping.ObjectContext{
 			TenantContext: tenantmapping.NewTenantContext(externalTenantID, internalTenantID),
 			KeysExtra: tenantmapping.KeysExtra{
@@ -71,7 +75,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 			Scopes:              "",
 			ScopesMergeStrategy: mergeWithOtherScopes,
 			Region:              region,
-			OauthClientID:       clientID,
+			OauthClientID:       oauthClientID,
 			ConsumerID:          authID,
 			AuthFlow:            oathkeeper.ConsumerProviderFlow,
 			ConsumerType:        consumer.User,
@@ -118,19 +122,41 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(clientID, consumerInternalTenantID, testRegion),
+			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, testRegion, clientID),
+		},
+		{
+			Name: "Success when unescape fails and the original header value is used successfully",
+			DirectorClient: func() *automock.DirectorClient {
+				client := &automock.DirectorClient{}
+				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testTenant, nil).Once()
+				return client
+			},
+			ReqDataInput:          reqDataFunc(userCtxHeaderWithInvalidASCIICharacter),
+			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, testRegion, invalidClientID),
+		},
+		{
+			Name:                  "Returns error when unescape fails and the client_id property from the original header value is empty",
+			ReqDataInput:          reqDataFunc(userCtxHeaderWithInvalidASCIICharacterAndMissingClientID),
+			ExpectedObjectContext: tenantmapping.ObjectContext{},
+			ExpectedErrMsg:        fmt.Sprintf("while getting user context data from %q header: invalid data [reason=property %q is mandatory", oathkeeper.UserContextKey, consumerClaimsKeysConfig.ClientIDKey),
+		},
+		{
+			Name:                  "Returns error when unescape fails and the tenantid property from the original header value is empty",
+			ReqDataInput:          reqDataFunc(userCtxHeaderWithInvalidASCIICharacterAndMissingTenantID),
+			ExpectedObjectContext: tenantmapping.ObjectContext{},
+			ExpectedErrMsg:        fmt.Sprintf("while getting user context data from %q header: invalid data [reason=property %q is mandatory", oathkeeper.UserContextKey, consumerClaimsKeysConfig.TenantIDKey),
 		},
 		{
 			Name:                  "Returns error when client_id property is missing from user_context header",
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithoutClientID),
 			ExpectedObjectContext: tenantmapping.ObjectContext{},
-			ExpectedErrMsg:        "while getting user context data from \"user_context\" header: invalid data [reason=property \"client_id\" is mandatory",
+			ExpectedErrMsg:        fmt.Sprintf("while getting user context data from %q header: invalid data [reason=property %q is mandatory", oathkeeper.UserContextKey, consumerClaimsKeysConfig.ClientIDKey),
 		},
 		{
 			Name:                  "Returns error when tenantid property is missing from user_context header",
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithoutTenantID),
 			ExpectedObjectContext: tenantmapping.ObjectContext{},
-			ExpectedErrMsg:        "while getting user context data from \"user_context\" header: invalid data [reason=property \"tenantid\" is mandatory",
+			ExpectedErrMsg:        fmt.Sprintf("while getting user context data from %q header: invalid data [reason=property %q is mandatory", oathkeeper.UserContextKey, consumerClaimsKeysConfig.TenantIDKey),
 		},
 		{
 			Name: "Returns error while getting tenant by external ID",
@@ -151,7 +177,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, "", ""),
+			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, "", "", clientID),
 		},
 		{
 			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
@@ -161,7 +187,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, ""),
+			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, "", clientID),
 		},
 		{
 			Name: "Returns error when region label type is not the expected one",
@@ -195,7 +221,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, consumer.User, objectCtx.ConsumerType)
 				require.Equal(t, authID, objectCtx.ConsumerID)
-				require.Equal(t, clientID, objectCtx.OauthClientID)
+				require.Equal(t, testCase.ExpectedObjectContext.OauthClientID, objectCtx.OauthClientID)
 				require.Equal(t, oathkeeper.ConsumerProviderFlow, objectCtx.AuthFlow)
 				require.Equal(t, testCase.ExpectedObjectContext.TenantContext.TenantID, objectCtx.TenantContext.TenantID)
 				require.Equal(t, consumerTenantID, objectCtx.TenantContext.ExternalTenantID)
@@ -221,8 +247,12 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 	}
 	provider := tenantmapping.NewConsumerContextProvider(nil, consumerClaimsKeysConfig)
 
-	userCtxHeader := `{"client_id":"id-value!t12345","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test-user-name@sap.com","x-zid":""}`
-	userCtxHeaderWithoutUserNameProperty := `{"client_id":"id-value!t12345","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","x-zid":""}`
+	userCtxHeader := `{"client_id":"id-value!t12345","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
+	userCtxHeaderWithoutUserNameProperty := `{"client_id":"id-value!t12345","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd"}`
+	userCtxHeaderWithNonASCIICharacters := `{"client_id":"test nøn asçii chå®acte®","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
+	userCtxHeaderWithEncodedNonASCIICharacters := `{"client_id":"test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
+	userCtxHeaderWithInvalidASCIICharacter := `{"client_id":"invalid-id%","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","user_name":"test-user-name@sap.com"}`
+	userCtxHeaderWithInvalidASCIICharacterAndMissingUserNameProperty := `{"client_id":"invalid-id%","tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd"}`
 
 	testCases := []struct {
 		Name                string
@@ -252,13 +282,53 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			ExpectedErrMsg: "",
 		},
 		{
+			Name: "Success when user_context header contains non ascii characters",
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Header: http.Header{
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{certClientID},
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					},
+				},
+				Header: http.Header{
+					oathkeeper.UserContextKey: []string{userCtxHeaderWithNonASCIICharacters},
+				},
+			},
+			ExpectedMatch: true,
+			ExpectedAuthDetails: &oathkeeper.AuthDetails{
+				AuthID:   "test-user-name@sap.com",
+				AuthFlow: oathkeeper.ConsumerProviderFlow,
+			},
+			ExpectedErrMsg: "",
+		},
+		{
+			Name: "Success when user_context header contains encoded non ascii characters",
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Header: http.Header{
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{certClientID},
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					},
+				},
+				Header: http.Header{
+					oathkeeper.UserContextKey: []string{userCtxHeaderWithEncodedNonASCIICharacters},
+				},
+			},
+			ExpectedMatch: true,
+			ExpectedAuthDetails: &oathkeeper.AuthDetails{
+				AuthID:   "test-user-name@sap.com",
+				AuthFlow: oathkeeper.ConsumerProviderFlow,
+			},
+			ExpectedErrMsg: "",
+		},
+		{
 			Name: "Returns error when user_context header is missing",
 			ReqDataInput: oathkeeper.ReqData{
 				Header: http.Header{},
 			},
 			ExpectedMatch:       false,
 			ExpectedAuthDetails: nil,
-			ExpectedErrMsg:      "the key does not exist in the source object [key=User_context]",
+			ExpectedErrMsg:      fmt.Sprintf("the key does not exist in the source object [key=%s]", oathkeeper.UserContextKey),
 		},
 		{
 			Name: "Do not match when cert ID is empty",
@@ -309,7 +379,44 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 			},
 			ExpectedMatch:       false,
 			ExpectedAuthDetails: nil,
-			ExpectedErrMsg:      "could not find user_name property",
+			ExpectedErrMsg:      fmt.Sprintf("could not find %s property", consumerClaimsKeysConfig.UserNameKey),
+		},
+		{
+			Name: "Success when unescape fails and the original header value is used successfully",
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Header: http.Header{
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{certClientID},
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					},
+				},
+				Header: http.Header{
+					oathkeeper.UserContextKey: []string{userCtxHeaderWithInvalidASCIICharacter},
+				},
+			},
+			ExpectedMatch: true,
+			ExpectedAuthDetails: &oathkeeper.AuthDetails{
+				AuthID:   "test-user-name@sap.com",
+				AuthFlow: oathkeeper.ConsumerProviderFlow,
+			},
+			ExpectedErrMsg: "",
+		},
+		{
+			Name: "Error when unescape fails and the user_name property from the original header value is empty",
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Header: http.Header{
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{certClientID},
+						textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+					},
+				},
+				Header: http.Header{
+					oathkeeper.UserContextKey: []string{userCtxHeaderWithInvalidASCIICharacterAndMissingUserNameProperty},
+				},
+			},
+			ExpectedMatch:       false,
+			ExpectedAuthDetails: nil,
+			ExpectedErrMsg:      fmt.Sprintf("could not find %s property", consumerClaimsKeysConfig.UserNameKey),
 		},
 	}
 

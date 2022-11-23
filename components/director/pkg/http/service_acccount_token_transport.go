@@ -1,8 +1,8 @@
 package http
 
 import (
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/pkg/errors"
 )
@@ -36,6 +36,15 @@ func NewServiceAccountTokenTransportWithPath(roundTripper HTTPRoundTripper, path
 	}
 }
 
+// NewServiceAccountTokenTransportWithPathAndHeader constructs a serviceAccountTokenTransport with a given path and configurable header name
+func NewServiceAccountTokenTransportWithPathAndHeader(roundTripper HTTPRoundTripper, path, headerName string) *serviceAccountTokenTransport {
+	return &serviceAccountTokenTransport{
+		roundTripper: roundTripper,
+		path:         path,
+		headerName:   headerName,
+	}
+}
+
 // serviceAccountTokenTransport is transport that attaches a kubernetes service account token in the X-Authorization header for internal authentication.
 type serviceAccountTokenTransport struct {
 	roundTripper HTTPRoundTripper
@@ -49,7 +58,7 @@ func (tr *serviceAccountTokenTransport) RoundTrip(r *http.Request) (*http.Respon
 	if len(path) == 0 {
 		path = DefaultServiceAccountTokenPath
 	}
-	token, err := ioutil.ReadFile(path)
+	token, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to read service account token file")
 	}

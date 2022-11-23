@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -26,6 +26,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,6 +34,8 @@ const (
 	externalClientCertSecretName = "resource-name1"
 	extSvcClientCertSecretName   = "resource-name2"
 )
+
+var testErr = errors.New("test")
 
 type RoundTripFunc func(req *http.Request) *http.Response
 
@@ -50,9 +53,64 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 	}
 }
 
-func TestService_HandleSpec(t *testing.T) {
-	testErr := errors.New("test")
+func TestService_Update(t *testing.T) {
+	fetchReq := &model.FetchRequest{
+		ID:   "test",
+		Mode: model.FetchModeSingle,
+	}
 
+	testCases := []struct {
+		Name                 string
+		Context              context.Context
+		FetchRequest         *model.FetchRequest
+		FetchRequestRepoMock *automock.FetchRequestRepository
+		ExpectedError        error
+	}{
+
+		{
+			Name:         "Success",
+			Context:      tenant.SaveToContext(context.TODO(), tenantID, tenantID),
+			FetchRequest: fetchReq,
+			FetchRequestRepoMock: func() *automock.FetchRequestRepository {
+				fetchReqRepoMock := automock.FetchRequestRepository{}
+				fetchReqRepoMock.On("Update", mock.Anything, tenantID, fetchReq).Return(nil).Once()
+				return &fetchReqRepoMock
+			}(),
+			ExpectedError: nil,
+		},
+		{
+			Name:                 "Fails when tenant is missing in context",
+			Context:              context.TODO(),
+			FetchRequest:         fetchReq,
+			FetchRequestRepoMock: &automock.FetchRequestRepository{},
+			ExpectedError:        apperrors.NewCannotReadTenantError(),
+		},
+		{
+			Name:         "Fails when repo update fails",
+			Context:      tenant.SaveToContext(context.TODO(), tenantID, tenantID),
+			FetchRequest: fetchReq,
+			FetchRequestRepoMock: func() *automock.FetchRequestRepository {
+				fetchReqRepoMock := automock.FetchRequestRepository{}
+				fetchReqRepoMock.On("Update", mock.Anything, tenantID, fetchReq).Return(testErr).Once()
+				return &fetchReqRepoMock
+			}(),
+			ExpectedError: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.FetchRequestRepoMock
+			svc := fetchrequest.NewService(repo, nil, nil)
+			resultErr := svc.Update(testCase.Context, testCase.FetchRequest)
+			assert.Equal(t, testCase.ExpectedError, resultErr)
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_HandleSpec(t *testing.T) {
 	const username = "username"
 	const password = "password"
 	const clientID = "clId"
@@ -142,7 +200,7 @@ func TestService_HandleSpec(t *testing.T) {
 				return NewTestClient(func(req *http.Request) *http.Response {
 					return &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 					}
 				})
 			},
@@ -180,7 +238,7 @@ func TestService_HandleSpec(t *testing.T) {
 				executor := &accessstrategyautomock.Executor{}
 				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, "").Return(&http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+					Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 				}, nil).Once()
 
 				executorProvider := &accessstrategyautomock.ExecutorProvider{}
@@ -233,7 +291,7 @@ func TestService_HandleSpec(t *testing.T) {
 					assert.Equal(t, password, actualPassword)
 					return &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 					}
 				})
 			},
@@ -280,13 +338,13 @@ func TestService_HandleSpec(t *testing.T) {
 						assert.Equal(t, secret, actualSecret)
 						return &http.Response{
 							StatusCode: http.StatusOK,
-							Body:       ioutil.NopCloser(bytes.NewBufferString(`{"access_token":"token"}`)),
+							Body:       io.NopCloser(bytes.NewBufferString(`{"access_token":"token"}`)),
 						}
 					}
 
 					return &http.Response{
 						StatusCode: http.StatusOK,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 					}
 				})
 			},
@@ -303,7 +361,7 @@ func TestService_HandleSpec(t *testing.T) {
 						assert.Equal(t, clientID, actualClientID)
 						assert.Equal(t, secret, actualSecret)
 					} else {
-						credentials, err := ioutil.ReadAll(req.Body)
+						credentials, err := io.ReadAll(req.Body)
 						assert.NoError(t, err)
 						assert.Contains(t, string(credentials), fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=client_credentials", clientID, secret))
 					}
@@ -326,13 +384,13 @@ func TestService_HandleSpec(t *testing.T) {
 						assert.Equal(t, secret, actualSecret)
 						return &http.Response{
 							StatusCode: http.StatusOK,
-							Body:       ioutil.NopCloser(bytes.NewBufferString(`{"access_token":"token"}`)),
+							Body:       io.NopCloser(bytes.NewBufferString(`{"access_token":"token"}`)),
 						}
 					}
 
 					return &http.Response{
 						StatusCode: http.StatusInternalServerError,
-						Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 					}
 				})
 			},
@@ -382,7 +440,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	svc := fetchrequest.NewService(frRepo, NewTestClient(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBufferString("spec")),
+			Body:       io.NopCloser(bytes.NewBufferString("spec")),
 		}
 	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
@@ -427,7 +485,7 @@ func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T)
 
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+			Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 		}
 	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName), retry.NewHTTPExecutor(retryConfig))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
