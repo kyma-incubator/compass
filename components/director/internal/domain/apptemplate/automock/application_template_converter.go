@@ -14,18 +14,25 @@ type ApplicationTemplateConverter struct {
 	mock.Mock
 }
 
-// ApplicationFromTemplateInputFromGraphQL provides a mock function with given fields: in
-func (_m *ApplicationTemplateConverter) ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput {
-	ret := _m.Called(in)
+// ApplicationFromTemplateInputFromGraphQL provides a mock function with given fields: appTemplate, in
+func (_m *ApplicationTemplateConverter) ApplicationFromTemplateInputFromGraphQL(appTemplate *model.ApplicationTemplate, in graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error) {
+	ret := _m.Called(appTemplate, in)
 
 	var r0 model.ApplicationFromTemplateInput
-	if rf, ok := ret.Get(0).(func(graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput); ok {
-		r0 = rf(in)
+	if rf, ok := ret.Get(0).(func(*model.ApplicationTemplate, graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput); ok {
+		r0 = rf(appTemplate, in)
 	} else {
 		r0 = ret.Get(0).(model.ApplicationFromTemplateInput)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.ApplicationTemplate, graphql.ApplicationFromTemplateInput) error); ok {
+		r1 = rf(appTemplate, in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // InputFromGraphQL provides a mock function with given fields: in

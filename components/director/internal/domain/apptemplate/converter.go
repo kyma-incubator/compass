@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -16,6 +17,7 @@ import (
 )
 
 // AppConverter missing godoc
+//
 //go:generate mockery --name=AppConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AppConverter interface {
 	CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error)
@@ -135,20 +137,35 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 }
 
 // ApplicationFromTemplateInputFromGraphQL missing godoc
-func (c *converter) ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput {
+func (c *converter) ApplicationFromTemplateInputFromGraphQL(appTemplate *model.ApplicationTemplate, in graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error) {
 	values := make([]*model.ApplicationTemplateValueInput, 0, len(in.Values))
-	for _, value := range in.Values {
-		valueInput := model.ApplicationTemplateValueInput{
-			Placeholder: value.Placeholder,
-			Value:       value.Value,
+	if (in.PlaceholdersPayload != nil) && (len(in.Values) == 0) {
+		for _, placeholder := range appTemplate.Placeholders {
+			if len(*placeholder.JSONPath) > 0 {
+				value := gjson.Get(*in.PlaceholdersPayload, *placeholder.JSONPath)
+				valueInput := model.ApplicationTemplateValueInput{
+					Placeholder: placeholder.Name,
+					Value:       value.String(),
+				}
+				values = append(values, &valueInput)
+			} else {
+				return model.ApplicationFromTemplateInput{}, errors.Errorf("error occurred while converting GraphQL input to Application From Template model. Placeholder with name %s, do not have the JSONPath.", placeholder.Name)
+			}
 		}
-		values = append(values, &valueInput)
+	} else {
+		for _, value := range in.Values {
+			valueInput := model.ApplicationTemplateValueInput{
+				Placeholder: value.Placeholder,
+				Value:       value.Value,
+			}
+			values = append(values, &valueInput)
+		}
 	}
 
 	return model.ApplicationFromTemplateInput{
 		TemplateName: in.TemplateName,
 		Values:       values,
-	}
+	}, nil
 }
 
 // ToEntity missing godoc
