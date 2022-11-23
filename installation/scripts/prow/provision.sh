@@ -41,3 +41,22 @@ else
     sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB
 fi
 
+# Patch deployment imagePullPolicy to always pull image on subsequent executions of update-compass.sh
+DEPLOYMENTS=$(kubectl get deployment -n compass-system | cut -d ' ' -f 1 | sed 1d)
+namespace="compass-system"
+
+for DEPLOYMENT in $DEPLOYMENTS; do
+    if [ "$DEPLOYMENT" = "compass-pairing-adapter-adapter-local-mtls" ]; then
+       	kubectl patch -n $namespace "deployment/$DEPLOYMENT" -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"pairing-adapter\",\"imagePullPolicy\":\"Always\"}]}}}}"
+	    kubectl rollout restart -n $namespace "deployment/$DEPLOYMENT"
+        continue
+    fi
+    CONTAINER_NAME=$(echo "$DEPLOYMENT" | cut -d '-' -f2-)
+   	kubectl patch -n $namespace "deployment/$DEPLOYMENT" -p "{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"$CONTAINER_NAME\",\"imagePullPolicy\":\"Always\"}]}}}}"
+	kubectl rollout restart -n $namespace "deployment/$DEPLOYMENT"
+done
+
+kubectl patch -n $namespace cronjob/compass-ord-aggregator -p '{"spec":{"jobTemplate":{"spec":{"template":{"spec":{"containers":[{"name":"ord-aggregator","imagePullPolicy":"Always"}]}}}}}}'
+kubectl patch -n $namespace cronjob/compass-system-fetcher -p '{"spec":{"jobTemplate":{"spec":{"template":{"spec":{"containers":[{"name":"system-fetcher","imagePullPolicy":"Always"}]}}}}}}'
+kubectl patch -n $namespace cronjob/compass-director-tenant-loader-external -p '{"spec":{"jobTemplate":{"spec":{"template":{"spec":{"containers":[{"name":"loader","imagePullPolicy":"Always"}]}}}}}}'
+
