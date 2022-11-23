@@ -20,7 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -145,7 +145,7 @@ func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentia
 		}
 	}()
 
-	respBody, err := ioutil.ReadAll(response.Body)
+	respBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return httputils.Token{}, errors.Wrapf(err, "while reading token response body from %q", credentials.TokenURL)
 	}

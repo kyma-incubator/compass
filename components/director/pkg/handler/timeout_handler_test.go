@@ -3,7 +3,7 @@ package handler_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -39,7 +39,7 @@ func TestHandlerWithTimeout_ReturnsTimeoutMessage(t *testing.T) {
 
 	require.Equal(t, handler.HeaderContentTypeValue, resp.Header.Get(handler.HeaderContentTypeKey))
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
 	actualError := getErrorMessage(t, respBody)

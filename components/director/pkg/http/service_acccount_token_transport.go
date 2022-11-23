@@ -1,8 +1,8 @@
 package http
 
 import (
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/pkg/errors"
 )
@@ -58,7 +58,7 @@ func (tr *serviceAccountTokenTransport) RoundTrip(r *http.Request) (*http.Respon
 	if len(path) == 0 {
 		path = DefaultServiceAccountTokenPath
 	}
-	token, err := ioutil.ReadFile(path)
+	token, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Unable to read service account token file")
 	}

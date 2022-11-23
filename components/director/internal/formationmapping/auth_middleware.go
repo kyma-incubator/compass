@@ -108,7 +108,6 @@ type Authenticator struct {
 	appRepo                    ApplicationRepository
 	appTemplateRepo            ApplicationTemplateRepository
 	labelRepo                  LabelRepository
-	selfRegDistinguishLabelKey string
 	consumerSubaccountLabelKey string
 }
 
@@ -121,7 +120,6 @@ func NewFormationMappingAuthenticator(
 	appRepo ApplicationRepository,
 	appTemplateRepo ApplicationTemplateRepository,
 	labelRepo LabelRepository,
-	selfRegDistinguishLabelKey,
 	consumerSubaccountLabelKey string,
 ) *Authenticator {
 	return &Authenticator{
@@ -132,7 +130,6 @@ func NewFormationMappingAuthenticator(
 		appRepo:                    appRepo,
 		appTemplateRepo:            appTemplateRepo,
 		labelRepo:                  labelRepo,
-		selfRegDistinguishLabelKey: selfRegDistinguishLabelKey,
 		consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 	}
 }
@@ -314,11 +311,10 @@ func (a *Authenticator) validateSubscriptionProvider(ctx context.Context, tx per
 		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting labels for application template with ID: %q", *appTemplateID)
 	}
 
-	_, selfRegLblExists := labels[a.selfRegDistinguishLabelKey]
 	consumerSubaccountLbl, consumerSubaccountLblExists := labels[a.consumerSubaccountLabelKey]
 
-	if !selfRegLblExists || !consumerSubaccountLblExists {
-		return false, http.StatusUnauthorized, errors.Errorf("both %q and %q labels should be provided as part of the provider's application template", a.selfRegDistinguishLabelKey, a.consumerSubaccountLabelKey)
+	if !consumerSubaccountLblExists {
+		return false, http.StatusUnauthorized, errors.Errorf("%q label should exist as part of the provider's application template", a.consumerSubaccountLabelKey)
 	}
 
 	consumerSubaccountLblValue, ok := consumerSubaccountLbl.Value.(string)

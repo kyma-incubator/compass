@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -207,7 +207,7 @@ func (c *Client) FetchTenantEventsPage(ctx context.Context, eventsType EventsTyp
 		}
 	}()
 
-	bytes, err := ioutil.ReadAll(res.Body)
+	bytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, bndlErrors.Wrap(err, "while reading response body")
 	}

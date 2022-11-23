@@ -9,8 +9,6 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	testing "testing"
-
 	uuid "github.com/google/uuid"
 )
 
@@ -65,8 +63,13 @@ func (_m *EventingService) UnsetForApplication(ctx context.Context, app model.Ap
 	return r0, r1
 }
 
-// NewEventingService creates a new instance of EventingService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventingService(t testing.TB) *EventingService {
+type mockConstructorTestingTNewEventingService interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewEventingService creates a new instance of EventingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewEventingService(t mockConstructorTestingTNewEventingService) *EventingService {
 	mock := &EventingService{}
 	mock.Mock.Test(t)
 

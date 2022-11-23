@@ -4,7 +4,6 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -35,8 +34,13 @@ func (_m *IntegrationSystemService) Exists(_a0 context.Context, _a1 string) (boo
 	return r0, r1
 }
 
-// NewIntegrationSystemService creates a new instance of IntegrationSystemService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewIntegrationSystemService(t testing.TB) *IntegrationSystemService {
+type mockConstructorTestingTNewIntegrationSystemService interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewIntegrationSystemService creates a new instance of IntegrationSystemService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewIntegrationSystemService(t mockConstructorTestingTNewIntegrationSystemService) *IntegrationSystemService {
 	mock := &IntegrationSystemService{}
 	mock.Mock.Test(t)
 

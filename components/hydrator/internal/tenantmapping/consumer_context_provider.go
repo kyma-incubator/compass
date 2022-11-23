@@ -88,17 +88,11 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 		return false, nil, nil
 	}
 
-	decodedUserContextHeader, err := url.QueryUnescape(userContextHeader)
-	if err != nil {
-		authID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.UserNameKey).String()
-		if authID == "" {
-			return false, nil, apperrors.NewInvalidDataError(fmt.Sprintf("could not find %s property", c.consumerClaimsKeysConfig.UserNameKey))
-		}
-
-		return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.ConsumerProviderFlow}, nil
+	if decodedUserContextHeader, err := url.QueryUnescape(userContextHeader); err == nil {
+		userContextHeader = decodedUserContextHeader
 	}
 
-	authID := gjson.Get(decodedUserContextHeader, c.consumerClaimsKeysConfig.UserNameKey).String()
+	authID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.UserNameKey).String()
 	if authID == "" {
 		return false, nil, apperrors.NewInvalidDataError(fmt.Sprintf("could not find %s property", c.consumerClaimsKeysConfig.UserNameKey))
 	}
@@ -107,30 +101,16 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 }
 
 func (c *consumerContextProvider) getUserContextData(userContextHeader string) (*userContextData, error) {
-	decodedUserContextHeader, err := url.QueryUnescape(userContextHeader)
-	if err != nil {
-		clientID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ClientIDKey)
-		if !clientID.Exists() {
-			return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.ClientIDKey))
-		}
-
-		externalTenantID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.TenantIDKey)
-		if !externalTenantID.Exists() {
-			return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.TenantIDKey))
-		}
-
-		return &userContextData{
-			clientID:         clientID.String(),
-			externalTenantID: externalTenantID.String(),
-		}, nil
+	if decodedUserContextHeader, err := url.QueryUnescape(userContextHeader); err == nil {
+		userContextHeader = decodedUserContextHeader
 	}
 
-	clientID := gjson.Get(decodedUserContextHeader, c.consumerClaimsKeysConfig.ClientIDKey)
+	clientID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ClientIDKey)
 	if !clientID.Exists() {
 		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.ClientIDKey))
 	}
 
-	externalTenantID := gjson.Get(decodedUserContextHeader, c.consumerClaimsKeysConfig.TenantIDKey)
+	externalTenantID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.TenantIDKey)
 	if !externalTenantID.Exists() {
 		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.TenantIDKey))
 	}

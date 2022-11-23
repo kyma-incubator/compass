@@ -7,8 +7,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	testing "testing"
-
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )
 
@@ -127,8 +125,13 @@ func (_m *DataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, tenant
 	return r0, r1
 }
 
-// NewDataInputBuilder creates a new instance of DataInputBuilder. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDataInputBuilder(t testing.TB) *DataInputBuilder {
+type mockConstructorTestingTNewDataInputBuilder interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewDataInputBuilder creates a new instance of DataInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewDataInputBuilder(t mockConstructorTestingTNewDataInputBuilder) *DataInputBuilder {
 	mock := &DataInputBuilder{}
 	mock.Mock.Test(t)
 

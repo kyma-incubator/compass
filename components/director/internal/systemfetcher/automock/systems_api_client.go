@@ -4,7 +4,6 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	systemfetcher "github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	mock "github.com/stretchr/testify/mock"
@@ -38,8 +37,13 @@ func (_m *SystemsAPIClient) FetchSystemsForTenant(ctx context.Context, tenant st
 	return r0, r1
 }
 
-// NewSystemsAPIClient creates a new instance of SystemsAPIClient. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewSystemsAPIClient(t testing.TB) *SystemsAPIClient {
+type mockConstructorTestingTNewSystemsAPIClient interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewSystemsAPIClient creates a new instance of SystemsAPIClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewSystemsAPIClient(t mockConstructorTestingTNewSystemsAPIClient) *SystemsAPIClient {
 	mock := &SystemsAPIClient{}
 	mock.Mock.Test(t)
 

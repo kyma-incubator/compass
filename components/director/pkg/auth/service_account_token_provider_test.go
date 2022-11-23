@@ -18,7 +18,6 @@ package auth_test
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -71,7 +70,7 @@ func (suite *ServiceAccountTokenAuthorizationProviderTestSuite) TestServiceAccou
 func (suite *ServiceAccountTokenAuthorizationProviderTestSuite) TestServiceAccountTokenAuthorizationProvider_GetAuthorization() {
 	tokenContent := "test-token"
 	tokenFileName := "token"
-	err := ioutil.WriteFile(tokenFileName, []byte(tokenContent), os.ModePerm)
+	err := os.WriteFile(tokenFileName, []byte(tokenContent), os.ModePerm)
 	suite.Require().NoError(err)
 
 	defer func() {

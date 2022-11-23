@@ -19,7 +19,7 @@ package operation
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -158,7 +158,7 @@ func (h *updateOperationHandler) ServeHTTP(writer http.ResponseWriter, request *
 }
 
 func operationRequestFromBody(ctx context.Context, request *http.Request) (*OperationRequest, *errResponse) {
-	bytes, err := ioutil.ReadAll(request.Body)
+	bytes, err := io.ReadAll(request.Body)
 	if err != nil {
 		return nil, &errResponse{apperrors.NewInternalError("Unable to read request body"), http.StatusInternalServerError}
 	}

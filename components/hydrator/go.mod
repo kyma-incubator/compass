@@ -8,21 +8,21 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221104124533-0b535193e6dd
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20221104124533-0b535193e6dd
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221109144200-25121de3a6a3
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221104124533-0b535193e6dd // indirect
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221118122529-e8addcff40e5
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20221118122529-e8addcff40e5
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221118122529-e8addcff40e5
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221118122529-e8addcff40e5 // indirect
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/tidwall/gjson v1.14.0
 	github.com/vrischmann/envconfig v1.3.0
 	k8s.io/api v0.25.0
-	k8s.io/apimachinery v0.25.0
+	k8s.io/apimachinery v0.25.1
 )
 
 require (
@@ -38,7 +38,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/agnivade/levenshtein v1.1.0 // indirect
+	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
