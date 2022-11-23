@@ -400,7 +400,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 
 				var assignmentError formationassignment.AssignmentErrorWrapper
 				if err = json.Unmarshal(fa.Value, &assignmentError); err != nil {
-					return nil, []error{errors.Wrapf(err, "while unmarshalling formation status error with assignment ID %q", fa.ID)}
+					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
 				}
 
 				formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
