@@ -290,7 +290,7 @@ func (r *RootResolver) FormationAssignmentsDataLoader(ids []dataloader.ParamForm
 	return r.formation.FormationAssignmentsDataLoader(ids)
 }
 
-// StatusDataLoader missing godoc
+// StatusDataLoader is the FormationStatus dataloader used in the graphql API router
 func (r *RootResolver) StatusDataLoader(ids []dataloader.ParamFormationStatus) ([]*graphql.FormationStatus, []error) {
 	return r.formation.StatusDataLoader(ids)
 }

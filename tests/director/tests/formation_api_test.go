@@ -3080,7 +3080,7 @@ func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationI
 
 	if expectedFormationStatus.Errors == nil {
 		require.Nil(t, gotFormation.Status.Errors)
-	} else { // don't assert the assignmentID
+	} else { // assert only the Message and ErrorCode
 		for i := range expectedFormationStatus.Errors {
 			require.Equal(t, expectedFormationStatus.Errors[i].Message, gotFormation.Status.Errors[i].Message)
 			require.Equal(t, expectedFormationStatus.Errors[i].ErrorCode, gotFormation.Status.Errors[i].ErrorCode)
