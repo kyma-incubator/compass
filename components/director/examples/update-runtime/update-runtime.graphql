@@ -155,6 +155,7 @@ mutation {
           }
         }
       }
+      createdAt
     }
     eventingConfiguration {
       defaultURL

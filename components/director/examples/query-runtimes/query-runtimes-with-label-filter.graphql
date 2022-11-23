@@ -148,6 +148,7 @@ query {
             }
           }
         }
+        createdAt
       }
       eventingConfiguration {
         defaultURL
