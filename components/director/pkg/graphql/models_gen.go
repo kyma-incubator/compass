@@ -459,12 +459,6 @@ type FormationAssignment struct {
 	Value                      *string                 `json:"value"`
 }
 
-type FormationAssignmentError struct {
-	AssignmentID string `json:"assignmentID"`
-	Message      string `json:"message"`
-	ErrorCode    int    `json:"errorCode"`
-}
-
 type FormationAssignmentPage struct {
 	Data       []*FormationAssignment `json:"data"`
 	PageInfo   *PageInfo              `json:"pageInfo"`
@@ -487,8 +481,14 @@ type FormationPage struct {
 func (FormationPage) IsPageable() {}
 
 type FormationStatus struct {
-	Condition FormationStatusCondition    `json:"condition"`
-	Errors    []*FormationAssignmentError `json:"errors"`
+	Condition FormationStatusCondition `json:"condition"`
+	Errors    []*FormationStatusError  `json:"errors"`
+}
+
+type FormationStatusError struct {
+	AssignmentID string `json:"assignmentID"`
+	Message      string `json:"message"`
+	ErrorCode    int    `json:"errorCode"`
 }
 
 type FormationTemplate struct {

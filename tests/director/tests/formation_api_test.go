@@ -1021,7 +1021,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
@@ -1036,7 +1036,7 @@ func TestFormationNotifications(stdT *testing.T) {
 			runtimeContextID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
@@ -1066,7 +1066,7 @@ func TestFormationNotifications(stdT *testing.T) {
 			},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 6, expectedAssignments)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
@@ -1096,7 +1096,7 @@ func TestFormationNotifications(stdT *testing.T) {
 			runtimeContextID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 3)
@@ -1119,7 +1119,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 4)
@@ -1327,7 +1327,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.Equal(t, formationName, assignedFormation.Name)
 
 	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
-	assertFormationState(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	t.Logf("Assign application 2 to formation %s", formationName)
 	assignReq = fixtures.FixAssignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -1344,7 +1344,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 		},
 	}
 	assertFormationAssignments(t, ctx, tnt, formation.ID, 2, expectedAssignments)
-	assertFormationState(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	assertNotificationsCountForTenant(t, body, app1.ID, 1)
@@ -1361,7 +1361,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.Equal(t, formationName, unassignFormation.Name)
 
 	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
-	assertFormationState(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	assertNotificationsCountForTenant(t, body, app1.ID, 2)
@@ -1648,7 +1648,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 
 		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
@@ -1705,7 +1705,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		}
 
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, localTenantID, 3)
@@ -1888,7 +1888,7 @@ func TestFormationAssignments(stdT *testing.T) {
 
 		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-template")
@@ -1998,7 +1998,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			actualApp.ID: {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")}},
 		}
 		assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignmentsBySourceID)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -2064,7 +2064,7 @@ func TestFormationAssignments(stdT *testing.T) {
 
 		//list assignments - expect 0
 		assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
@@ -2324,7 +2324,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		// notification mock API should return error
 		t.Logf("Assign application to formation %s should fail", formation.Name)
@@ -2340,7 +2340,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
 			Errors: []*graphql.FormationAssignmentError{{
 				Message:   "failed to parse request",
@@ -2368,7 +2368,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
@@ -2404,7 +2404,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		}
 		require.True(t, unassignNotificationFound)
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
@@ -2638,7 +2638,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 
 		// Expect no formation assignments to be created
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Assign application to formation %s", formation.Name)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
@@ -2654,7 +2654,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		}
 
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
@@ -2675,7 +2675,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 			actualApp.ID: {runtimeContextID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
 			Errors: []*graphql.FormationAssignmentError{{
 				Message:   "failed to parse request",
@@ -2715,7 +2715,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		}
 		require.True(t, unassignNotificationFound)
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationState(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
@@ -3068,7 +3068,7 @@ func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context,
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 }
 
-func assertFormationState(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
+func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
 	// Get the formation with its status
 	var gotFormation graphql.FormationWithStatus
 	getFormationReq := fixtures.FixGetFormationRequest(formationID)

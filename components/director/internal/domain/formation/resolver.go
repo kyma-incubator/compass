@@ -392,7 +392,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentPages))
 	for _, page := range formationAssignmentPages {
 		condition := graphql.FormationStatusConditionReady
-		var formationAssignmentErrors []*graphql.FormationAssignmentError
+		var formationStatusErrors []*graphql.FormationStatusError
 
 		for _, fa := range page.Data {
 			if fa.State == string(model.CreateErrorAssignmentState) || fa.State == string(model.DeleteErrorAssignmentState) {
@@ -404,7 +404,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
 				}
 
-				formationAssignmentErrors = append(formationAssignmentErrors, &graphql.FormationAssignmentError{
+				formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
 					AssignmentID: fa.ID,
 					Message:      assignmentError.Error.Message,
 					ErrorCode:    int(assignmentError.Error.ErrorCode),
@@ -419,7 +419,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 
 		gqlFormationStatuses = append(gqlFormationStatuses, &graphql.FormationStatus{
 			Condition: condition,
-			Errors:    formationAssignmentErrors,
+			Errors:    formationStatusErrors,
 		})
 	}
 

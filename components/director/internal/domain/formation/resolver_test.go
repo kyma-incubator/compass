@@ -1092,7 +1092,7 @@ func TestResolver_Status(t *testing.T) {
 	gqlStatusSecond := graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil}
 	gqlStatusThird := graphql.FormationStatus{
 		Condition: graphql.FormationStatusConditionError,
-		Errors: []*graphql.FormationAssignmentError{{
+		Errors: []*graphql.FormationStatusError{{
 			AssignmentID: FormationAssignmentID + "-3",
 			Message:      "failure",
 			ErrorCode:    1,

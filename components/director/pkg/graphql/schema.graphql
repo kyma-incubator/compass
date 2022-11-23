@@ -1076,12 +1076,6 @@ type FormationAssignment {
 	value: String
 }
 
-type FormationAssignmentError {
-	assignmentID: ID!
-	message: String!
-	errorCode: Int!
-}
-
 type FormationAssignmentPage implements Pageable {
 	data: [FormationAssignment!]!
 	pageInfo: PageInfo!
@@ -1096,7 +1090,13 @@ type FormationPage implements Pageable {
 
 type FormationStatus {
 	condition: FormationStatusCondition!
-	errors: [FormationAssignmentError!]
+	errors: [FormationStatusError!]
+}
+
+type FormationStatusError {
+	assignmentID: ID!
+	message: String!
+	errorCode: Int!
 }
 
 type FormationTemplate {
