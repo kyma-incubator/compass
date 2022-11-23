@@ -4,8 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/require"
@@ -190,7 +188,6 @@ func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         []string
-		RuntimeType   *string
 		ExpectedValid bool
 	}{
 		{
@@ -199,21 +196,9 @@ func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "Success with both runtimeType and runtimeTypes",
-			Value:         []string{"normal-type", "another-normal-type"},
-			RuntimeType:   str.Ptr("some-other-runtime-type"),
-			ExpectedValid: true,
-		},
-		{
 			Name:          "Empty slice",
 			Value:         []string{},
 			ExpectedValid: false,
-		},
-		{
-			Name:          "Empty slice with runtime type",
-			Value:         []string{},
-			RuntimeType:   str.Ptr("some-type"),
-			ExpectedValid: true,
 		},
 		{
 			Name:          "Nil slice",
@@ -232,7 +217,6 @@ func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
 			//GIVEN
 			formationTemplateInput := fixValidFormationTemplateInput()
 			formationTemplateInput.RuntimeTypes = testCase.Value
-			formationTemplateInput.RuntimeType = testCase.RuntimeType
 			// WHEN
 			err := formationTemplateInput.Validate()
 			// THEN
