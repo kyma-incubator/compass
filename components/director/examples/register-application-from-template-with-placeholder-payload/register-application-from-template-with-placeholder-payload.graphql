@@ -2,8 +2,8 @@
 mutation {
   result: registerApplicationFromTemplate(
     in: {
-      templateName: "SAP app-template-name"
-      placeholdersPayload: "{\"displayName\":\"app name\",\"systemNumber\":\"tenant-id\",\"additionalUrls\":{\"mainUrl\":\"base-url\"},\"externalResourceId\":\"id\"}"
+      templateName: "SAP templateForPlaceholdersPayload"
+      placeholdersPayload: "{\"name\": \"appName\", \"displayName\":\"appDisplayName\"}"
     }
   ) {
     id
@@ -90,6 +90,7 @@ mutation {
           }
         }
       }
+      createdAt
     }
     healthCheckURL
     bundles {
