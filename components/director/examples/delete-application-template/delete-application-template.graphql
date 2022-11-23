@@ -78,6 +78,7 @@ mutation {
           }
         }
       }
+      createdAt
     }
     labels
     accessLevel
