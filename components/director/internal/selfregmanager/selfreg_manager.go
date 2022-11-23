@@ -97,14 +97,14 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 
 	labels[RegionLabel] = region
 
-	consumerID, err := s.determineConsumerID(consumerInfo.ConsumerID, labels)
-	if err != nil {
-		return nil, err
-	}
-
 	instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
 	if !exists {
 		return nil, errors.Errorf("missing configuration for region: %s", region)
+	}
+
+	consumerID, err := s.determineConsumerID(consumerInfo.ConsumerID, labels)
+	if err != nil {
+		return nil, err
 	}
 
 	request, err := s.createSelfRegPrepRequest(id, consumerID, instanceConfig.URL)
@@ -211,14 +211,15 @@ func (s *selfRegisterManager) determineConsumerID(consumerInfoID string, labels 
 	consumerIDExists := consumerInfoID != ""
 
 	if consumerIDExists && labelsSubaccountExists {
-		if consumerInfoID == labels[scenarioassignment.SubaccountIDKey] {
+		if consumerInfoID == labels[scenarioassignment.SubaccountIDKey].(string) {
 			return consumerInfoID, nil
-		} else {
-			return "", errors.Errorf("consumer %s value %q does not match the label %s value %q", scenarioassignment.SubaccountIDKey, consumerInfoID, scenarioassignment.SubaccountIDKey, labels[scenarioassignment.SubaccountIDKey])
 		}
-	} else if consumerIDExists && !labelsSubaccountExists {
+		return "", errors.Errorf("consumer %s value %q does not match the label %s value %q", scenarioassignment.SubaccountIDKey, consumerInfoID, scenarioassignment.SubaccountIDKey, labels[scenarioassignment.SubaccountIDKey])
+	}
+	if consumerIDExists && !labelsSubaccountExists {
 		return consumerInfoID, nil
-	} else if !consumerIDExists && labelsSubaccountExists {
+	}
+	if !consumerIDExists && labelsSubaccountExists {
 		return labels[scenarioassignment.SubaccountIDKey].(string), nil
 	}
 
@@ -230,14 +231,16 @@ func (s *selfRegisterManager) determineRegion(consumerInfoRegion string, labels 
 	labelsRegionExists := labels[RegionLabel] != nil
 
 	if consumerRegionExists && labelsRegionExists {
-		if consumerInfoRegion == labels[RegionLabel] {
+		if consumerInfoRegion == labels[RegionLabel].(string) {
 			return consumerInfoRegion, nil
-		} else {
-			return "", errors.Errorf("consumer %s value %q does not match the label %s value %q", RegionLabel, consumerInfoRegion, RegionLabel, labels[RegionLabel])
 		}
-	} else if consumerRegionExists && !labelsRegionExists {
+		return "", errors.Errorf("consumer %s value %q does not match the label %s value %q", RegionLabel, consumerInfoRegion, RegionLabel, labels[RegionLabel])
+
+	}
+	if consumerRegionExists && !labelsRegionExists {
 		return consumerInfoRegion, nil
-	} else if !consumerRegionExists && labelsRegionExists {
+	}
+	if !consumerRegionExists && labelsRegionExists {
 		return labels[RegionLabel].(string), nil
 	}
 

@@ -30,6 +30,7 @@ const (
 	missingSaaSAppRegion            = "missing-saas-app-region"
 	emptySaaSAppRegion              = "empty-saas-app-region"
 	consumerID                      = "test-consumer-id"
+	fakeConsumerID                  = "fake-consumer-id"
 	testSaaSAppName                 = "testSaaSAppName-1"
 	secondTestSaaSAppName           = "testSaaSAppName-2"
 )
@@ -119,6 +120,17 @@ var (
 		Region:     fakeRegion,
 	}
 
+	certConsumerWithFakeConsumerID = consumer.Consumer{
+		ConsumerID: fakeConsumerID,
+		Flow:       oathkeeper.CertificateFlow,
+		Region:     testRegion,
+	}
+
+	certConsumerWithoutConsumerID = consumer.Consumer{
+		Flow:   oathkeeper.CertificateFlow,
+		Region: testRegion,
+	}
+
 	certConsumerWithMissingSaaSAppRegion = consumer.Consumer{
 		ConsumerID: consumerID,
 		Flow:       oathkeeper.CertificateFlow,
@@ -201,10 +213,11 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 }
 
 func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
-	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
 	ctxWithCertConsumerWithoutRegion := consumer.SaveToContext(context.TODO(), certConsumerWithoutRegion)
 	ctxWithCertConsumerWithFakeRegion := consumer.SaveToContext(context.TODO(), certConsumerWithFakeRegion)
+	ctxWithCertConsumerWithoutConsumerID := consumer.SaveToContext(context.TODO(), certConsumerWithoutConsumerID)
+	ctxWithCertConsumerWithFakeConsumerID := consumer.SaveToContext(context.TODO(), certConsumerWithFakeConsumerID)
 	ctxWithCertConsumerWithMissingSaaSAppRegion := consumer.SaveToContext(context.TODO(), certConsumerWithMissingSaaSAppRegion)
 	ctxWithCertConsumerWithEmptySaaSAppRegion := consumer.SaveToContext(context.TODO(), certConsumerWithEmptySaaSAppRegion)
 
@@ -233,6 +246,54 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ExpectedOutput: fixLblInputAfterPrep(),
 		},
 		{
+			Name:           "Success matching regions",
+			Config:         testConfig,
+			InputLabels:    fixLblInput(),
+			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
+			Region:         testRegion,
+			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
+			ExpectedErr:    nil,
+			ExpectedOutput: fixLblInputAfterPrep(),
+		},
+		{
+			Name:           "Success without consumer region",
+			Config:         testConfig,
+			InputLabels:    fixLblInput(),
+			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
+			Region:         testRegion,
+			Context:        ctxWithCertConsumerWithoutRegion,
+			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
+			ExpectedErr:    nil,
+			ExpectedOutput: fixLblInputAfterPrep(),
+		},
+		{
+			Name:           "Success matching consumer ids",
+			Config:         testConfig,
+			InputLabels:    fixLblInputWithSubaccount(),
+			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
+			Region:         testRegion,
+			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
+			ExpectedErr:    nil,
+			ExpectedOutput: fixLblInputAfterPrepWithSubaccountAndSaas(),
+		},
+		{
+			Name:           "Success without consumer id",
+			Config:         testConfig,
+			InputLabels:    fixLblInputWithSubaccount(),
+			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
+			Region:         testRegion,
+			Context:        ctxWithCertConsumerWithoutConsumerID,
+			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
+			ExpectedErr:    nil,
+			ExpectedOutput: fixLblInputAfterPrepWithSubaccountAndSaas(),
+		},
+		{
 			Name:           "Success with subaccount label for application templates",
 			Config:         testConfig,
 			InputLabels:    fixLblWithoutRegion(),
@@ -243,18 +304,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
 			ExpectedOutput: fixLblInputAfterPrepWithSubaccount(),
-		},
-		{
-			Name:           "Success for non-matching consumer",
-			Config:         testConfig,
-			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			Region:         testRegion,
-			InputLabels:    fixLblWithoutRegion(),
-			Context:        ctxWithTokenConsumer,
-			ResourceType:   resource.Runtime,
-			Validation:     func() error { return nil },
-			ExpectedErr:    nil,
-			ExpectedOutput: fixLblWithDistinguish(),
 		},
 		{
 			Name:           "Success for missing distinguished label but resource is Runtime",
@@ -281,18 +330,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ExpectedOutput: nil,
 		},
 		{
-			Name:           "Error for missing distinguished label and resource is App Template",
-			Config:         testConfig,
-			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			Region:         testRegion,
-			InputLabels:    map[string]interface{}{},
-			Context:        ctxWithCertConsumer,
-			ResourceType:   resource.ApplicationTemplate,
-			Validation:     func() error { return nil },
-			ExpectedErr:    fmt.Errorf("missing %q label", selfRegisterDistinguishLabelKey),
-			ExpectedOutput: nil,
-		},
-		{
 			Name:           "Error during region check when tenant region is unable to be retrieved from context",
 			Config:         testConfig,
 			InputLabels:    fixLblWithoutRegion(),
@@ -305,15 +342,39 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ExpectedOutput: nil,
 		},
 		{
-			Name:           "Error when region label is provided",
+			Name:           "Error when consumer region value does not match the label region value",
 			Config:         testConfig,
 			InputLabels:    fixLblInput(),
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Context:        ctxWithCertConsumer,
+			Context:        ctxWithCertConsumerWithFakeRegion,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
-			ExpectedErr:    fmt.Errorf("providing %q label and value is forbidden", selfregmanager.RegionLabel),
+			ExpectedErr:    fmt.Errorf("consumer %s value \"%s\" does not match the label %s value \"%s\"", selfregmanager.RegionLabel, fakeRegion, selfregmanager.RegionLabel, testRegion),
+			ExpectedOutput: nil,
+		},
+		{
+			Name:           "Error when consumer subaccount value does not match the label subaccount value",
+			Config:         testConfig,
+			InputLabels:    fixLblInputAfterPrepWithSubaccount(),
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
+			Region:         testRegion,
+			Context:        ctxWithCertConsumerWithFakeConsumerID,
+			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
+			ExpectedErr:    fmt.Errorf("consumer %s value \"%s\" does not match the label %s value \"%s\"", scenarioassignment.SubaccountIDKey, fakeConsumerID, scenarioassignment.SubaccountIDKey, consumerID),
+			ExpectedOutput: nil,
+		},
+		{
+			Name:           "Error when missing consumer id",
+			Config:         testConfig,
+			InputLabels:    fixLblInput(),
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
+			Region:         testRegion,
+			Context:        ctxWithCertConsumerWithoutConsumerID,
+			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
+			ExpectedErr:    fmt.Errorf("missing consumerID value in consumer context and app template labels"),
 			ExpectedOutput: nil,
 		},
 		{
@@ -563,6 +624,16 @@ func fixLblInputAfterPrepWithSubaccount() map[string]interface{} {
 	}
 }
 
+func fixLblInputAfterPrepWithSubaccountAndSaas() map[string]interface{} {
+	return map[string]interface{}{
+		testConfig.SelfRegisterLabelKey:    selfregmngrtest.ResponseLabelValue,
+		scenarioassignment.SubaccountIDKey: consumerID,
+		selfregmanager.RegionLabel:         testRegion,
+		selfRegisterDistinguishLabelKey:    distinguishLblVal,
+		testConfig.SaaSAppNameLabelKey:     testSaaSAppName,
+	}
+}
+
 func fixLblWithDistinguish() map[string]interface{} {
 	return map[string]interface{}{
 		selfRegisterDistinguishLabelKey: distinguishLblVal,
@@ -573,6 +644,14 @@ func fixLblInput() map[string]interface{} {
 	return map[string]interface{}{
 		selfRegisterDistinguishLabelKey: distinguishLblVal,
 		selfregmanager.RegionLabel:      testRegion,
+	}
+}
+
+func fixLblInputWithSubaccount() map[string]interface{} {
+	return map[string]interface{}{
+		scenarioassignment.SubaccountIDKey: consumerID,
+		selfRegisterDistinguishLabelKey:    distinguishLblVal,
+		selfregmanager.RegionLabel:         testRegion,
 	}
 }
 

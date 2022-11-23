@@ -187,6 +187,23 @@ func fixGQLAppTemplateInputWithPlaceholder(name string) *graphql.ApplicationTemp
 	}
 }
 
+func fixGQLAppTemplateInputWithPlaceholderAndProvider(name string) *graphql.ApplicationTemplateInput {
+	desc := testDescriptionWithPlaceholder
+
+	return &graphql.ApplicationTemplateInput{
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:         "foo",
+			Description:  &desc,
+			ProviderName: str.Ptr("SAP"),
+		},
+		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
 func fixGQLAppTemplateInputInvalidAppInputURLTemplateMethod(name string) *graphql.ApplicationTemplateInput {
 	desc := testDescriptionWithPlaceholder
 

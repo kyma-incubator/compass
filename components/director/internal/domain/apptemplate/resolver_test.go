@@ -430,6 +430,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	modelAppTemplateInput.ID = &testUUID
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
+	gqlAppTemplateInputWithProvider := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
 
 	modelAppTemplateInputWithSelRegLabels := fixModelAppTemplateInput(testName, appInputJSONString)
 	modelAppTemplateInputWithSelRegLabels.ID = &testUUID
@@ -491,14 +492,14 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithProvider).Return(*modelAppTemplateInput, nil).Once()
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
-			Input:            gqlAppTemplateInput,
+			Input:            gqlAppTemplateInputWithProvider,
 			ExpectedOutput:   gqlAppTemplate,
 		},
 		{
@@ -856,6 +857,17 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatInitiatesCleanupButNotFinishIt(labels),
 			Input:            gqlAppTemplateInput,
 			ExpectedOutput:   gqlAppTemplate,
+		},
+		{
+			Name:              "Returns error when validating app template name",
+			TxFn:              txGen.ThatDoesntStartTransaction,
+			AppTemplateSvcFn:  UnusedAppTemplateSvc,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			SelfRegManagerFn:  UnusedSelfRegManager,
+			Input:             fixGQLAppTemplateInputWithPlaceholderAndProvider(testName),
+			ExpectedError:     errors.New("application template name \"bar\" does not comply with the following naming convention: \"SAP <product name>\""),
 		},
 	}
 
