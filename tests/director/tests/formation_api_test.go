@@ -2342,7 +2342,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
-			Errors: []*graphql.FormationAssignmentError{{
+			Errors: []*graphql.FormationStatusError{{
 				Message:   "failed to parse request",
 				ErrorCode: 2,
 			}},
@@ -2677,7 +2677,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
-			Errors: []*graphql.FormationAssignmentError{{
+			Errors: []*graphql.FormationStatusError{{
 				Message:   "failed to parse request",
 				ErrorCode: 2,
 			}},
