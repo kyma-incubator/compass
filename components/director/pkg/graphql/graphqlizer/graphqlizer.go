@@ -572,10 +572,10 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 			{{- range $i, $e := .Values }}
 				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
 			{{- end }} ],
-		{{- end }},
+		{{- end }}
 		{{- if .PlaceholdersPayload }}
 		placeholdersPayload:  "{{.PlaceholdersPayload}}"
-		{{- end }},
+		{{- end }}
 	}`)
 }
 
