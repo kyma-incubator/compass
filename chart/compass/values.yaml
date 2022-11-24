@@ -438,7 +438,7 @@ global:
   ingress:
     domainName: "local.kyma.dev"
     discoveryDomain:
-      name: "local.discovery.api.sap"
+      name: "local.discovery.api"
       tlsCert: ""
       tlsKey: ""
   database:
