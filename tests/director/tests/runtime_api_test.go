@@ -824,6 +824,11 @@ func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
 
 func TestRuntimeTypeImmutability(t *testing.T) {
 	ctx := context.Background()
+
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
 	testRuntimeType := "testRuntimeTypeValue"
 	testSaaSAppName := "testSaaSAppNameValue"
 
@@ -835,8 +840,8 @@ func TestRuntimeTypeImmutability(t *testing.T) {
 	}
 
 	t.Logf("Registering runtime with the following labels: %q:%q, %q:%q and %q:%q", conf.RuntimeTypeLabelKey, testRuntimeType, conf.SaaSAppNameLabelKey, testSaaSAppName, tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion)
-	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
-	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
 
 	require.Equal(t, len(runtime.Labels), 2)
@@ -864,8 +869,8 @@ func TestRuntimeTypeImmutability(t *testing.T) {
 	updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(runtime.ID, runtimeUpdateInGQL)
 	t.Logf("Updating runtime with the following labels: %q:%q, %q:%q and %q:%q", conf.RuntimeTypeLabelKey, testRuntimeType, conf.SaaSAppNameLabelKey, testSaaSAppName, tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion)
 	updatedRuntime := graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateRuntimeReq, &updatedRuntime)
-	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &updatedRuntime)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, updateRuntimeReq, &updatedRuntime)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &updatedRuntime)
 
 	require.NoError(t, err)
 	require.Equal(t, "immutable-runtime-labels-updated", updatedRuntime.Name)
