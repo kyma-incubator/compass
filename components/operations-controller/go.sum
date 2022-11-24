@@ -65,8 +65,6 @@ github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 h1:d+Bc7a5rLufV
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/agnivade/levenshtein v1.0.3/go.mod h1:4SFRZbbXWLF4MU1T9Qg0pGgH3Pjs+t6ie5efyrwRJXs=
-github.com/agnivade/levenshtein v1.1.0 h1:n6qGwyHG61v3ABce1rPVZklEYRT8NFpCMrpZdBUbYGM=
-github.com/agnivade/levenshtein v1.1.0/go.mod h1:veldBMzWxcCG2ZvUTKD2kJNRdCk5hVbJomOvKkmgYbo=
 github.com/agnivade/levenshtein v1.1.1 h1:QY8M92nrzkmr798gCo3kmMyqXFzdQVpxLlGPRBij0P8=
 github.com/agnivade/levenshtein v1.1.1/go.mod h1:veldBMzWxcCG2ZvUTKD2kJNRdCk5hVbJomOvKkmgYbo=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -331,12 +329,8 @@ github.com/kr/text v0.0.0-20160504234017-7cafcd837844/go.mod h1:sjUstKUATFIcff4q
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-github.com/kyma-incubator/compass/components/director v0.0.0-20221104124533-0b535193e6dd h1:w5i6qkHed3OffyoHi/GX/8a7PCqFtnFarDfSWnJ7Shg=
-github.com/kyma-incubator/compass/components/director v0.0.0-20221104124533-0b535193e6dd/go.mod h1:Jw0nS3jMD4kOk7700RBPaJncTWSGRHKQQ6pprCO/iqc=
-github.com/kyma-incubator/compass/components/director v0.0.0-20221118121726-08b41b5f37c4 h1:skhKfpx/bAlGh6BzpjI3ZzMuBO0FuDEqLs3f3LPxFLo=
-github.com/kyma-incubator/compass/components/director v0.0.0-20221118121726-08b41b5f37c4/go.mod h1:2z7uhtEXpIMdUiZBOioO/Can29rFOMIcA5K64S6EM2g=
-github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221104124533-0b535193e6dd h1:tl6C9uIvhG8/eo4zwwYEj339JDFJFzmCCO9+3cQHjLg=
-github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221104124533-0b535193e6dd/go.mod h1:3S90t9iZTCLAVwxexlLGWNgQTb6+gqRDsKJ+iIOFXTw=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221123144206-b120b9c3794f h1:L8DRvkQ/TofGLm6BsyaV9Ddqw/A9DLpdSXSfMJ+Da5c=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221123144206-b120b9c3794f/go.mod h1:2z7uhtEXpIMdUiZBOioO/Can29rFOMIcA5K64S6EM2g=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221118121726-08b41b5f37c4 h1:V2t3WtyjdK1M/4ydNVLAIHIk328/2fmGNWNMKxdtGqY=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221118121726-08b41b5f37c4/go.mod h1:8ZDJpY0uxXEcBMA1tI4aMppE+i+VwnrS7n5La4Rfk+c=
 github.com/lib/pq v1.10.4 h1:SO9z7FRPzA03QhHKJrH5BXA6HU1rS4V2nIVrrNC1iYk=
@@ -504,7 +498,6 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMTY=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
