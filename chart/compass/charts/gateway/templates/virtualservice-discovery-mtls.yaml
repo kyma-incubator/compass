@@ -1,0 +1,40 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ template "fullname" . }}-discovery-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+spec:
+  hosts:
+    - '{{ .Values.global.istio.discoveryMtlsGateway.host }}.{{ .Values.global.ingress.discoveryDomain.name }}'
+  gateways:
+    - {{ .Values.global.istio.discoveryMtlsGateway.namespace }}/{{ .Values.global.istio.discoveryMtlsGateway.name }}
+  http:
+    - match:
+        - uri:
+            prefix: {{ .Values.global.ordService.prefix }}
+        - uri:
+            prefix: {{ .Values.global.ordService.staticPrefix }}
+      route:
+        - destination:
+            host: {{ .Values.global.oathkeeper.host }}
+            port:
+              number: {{ .Values.global.oathkeeper.port }}
+    - match:
+        - uri:
+            regex: /.*
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
+      route:
+        - destination:
+            host: {{ .Values.global.oathkeeper.host }}
+            port:
+              number: {{ .Values.global.oathkeeper.port }}
