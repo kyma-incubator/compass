@@ -46,31 +46,33 @@ type config struct {
 	CertLoaderConfig   certloader.Config
 	SubscriptionConfig subscription.Config
 	certprovider.ExternalCertProviderConfig
-	ExternalServicesMockBaseURL      string
-	DirectorExternalCertSecuredURL   string
-	ORDServiceURL                    string
-	ORDExternalCertSecuredServiceURL string
-	ORDServiceStaticPrefix           string
-	ORDServiceDefaultResponseType    string
-	ConsumerTokenURL                 string
-	TokenPath                        string
-	ProviderClientID                 string
-	ProviderClientSecret             string
-	SkipSSLValidation                bool
-	BasicUsername                    string
-	BasicPassword                    string
-	AccountTenantID                  string
-	SubaccountTenantID               string
-	TestConsumerAccountID            string
-	TestProviderSubaccountID         string
-	TestConsumerSubaccountID         string
-	TestConsumerTenantID             string
-	ApplicationTypeLabelKey          string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
-	SaaSAppNameLabelKey              string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
-	DestinationAPIConfig             clients.DestinationServiceAPIConfig
-	DestinationsConfig               cfg.DestinationsConfig
-	DestinationConsumerSubdomain     string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
-	ExternalClientCertSecretName     string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExternalCertCommonName                 string `envconfig:"EXTERNAL_CERT_COMMON_NAME,default=compass"`
+	ExternalServicesMockBaseURL            string
+	DirectorExternalCertSecuredURL         string
+	ORDServiceURL                          string
+	ORDExternalCertSecuredServiceURL       string
+	ORDServiceStaticPrefix                 string
+	ORDServiceDefaultResponseType          string
+	ConsumerTokenURL                       string
+	TokenPath                              string
+	ProviderClientID                       string
+	ProviderClientSecret                   string
+	SkipSSLValidation                      bool
+	BasicUsername                          string
+	BasicPassword                          string
+	AccountTenantID                        string
+	SubaccountTenantID                     string
+	TestConsumerAccountID                  string
+	TestProviderSubaccountID               string
+	TestConsumerSubaccountID               string
+	TestConsumerTenantID                   string
+	CertSvcInstanceTestIntSystemSecretName string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
+	ApplicationTypeLabelKey                string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	SaaSAppNameLabelKey                    string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
+	DestinationAPIConfig                   clients.DestinationServiceAPIConfig
+	DestinationsConfig                     cfg.DestinationsConfig
+	DestinationConsumerSubdomain           string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	ExternalClientCertSecretName           string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 }
 
 var conf config
