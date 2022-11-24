@@ -243,6 +243,8 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 	namePlaceholder := "name-placeholder"
 	displayNamePlaceholder := "display-name-placeholder"
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 
 	testCases := []struct {
 		Name                    string
@@ -258,10 +260,12 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
 				},
 				{
 					Name:        "display-name",
 					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNameJSONPath,
 				},
 			},
 			AppInputDescription: nil,
@@ -274,6 +278,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
 				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
@@ -405,6 +410,8 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 	namePlaceholder := "name-placeholder"
 	displayNamePlaceholder := "display-name-placeholder"
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 
 	testCases := []struct {
 		Name                       string
@@ -420,10 +427,12 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
 				},
 				{
 					Name:        "display-name",
 					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNameJSONPath,
 				},
 			},
 			AppInputDescription: ptr.String("test {{display-name}}"),
@@ -436,6 +445,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 				{
 					Name:        "name",
 					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
 				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
@@ -595,6 +605,8 @@ func TestQueryApplicationTemplates(t *testing.T) {
 func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 	appTemplateName := createAppTemplateName("template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
@@ -602,10 +614,12 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 		{
 			Name:        "name",
 			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
 		},
 		{
 			Name:        "display-name",
 			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
 		},
 	}
 
@@ -641,9 +655,57 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
 
+func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	nameJSONPath := "name"
+	displayNameJSONPath := "displayName"
+	placeholdersPayload := `{\"name\": \"appName\", \"displayName\":\"appDisplayName\"}`
+	appTemplateName := createAppTemplateName("templateForPlaceholdersPayload")
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        "name",
+			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
+		},
+		{
+			Name:        "display-name",
+			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
+		},
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
+	require.NoError(t, err)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, PlaceholdersPayload: &placeholdersPayload}
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+	outputApp := graphql.ApplicationExt{}
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+
+	//THEN
+	require.NoError(t, err)
+	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
+	require.NotEmpty(t, outputApp)
+	require.NotNil(t, outputApp.Application.Description)
+	require.Equal(t, "appName", outputApp.Application.Name)
+	require.Equal(t, "test appDisplayName", *outputApp.Application.Description)
+	saveExample(t, createAppFromTmplRequest.Query(), "register application from template with placeholder payload")
+}
+
 func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 	appTemplateName := createAppTemplateName("template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
@@ -651,10 +713,12 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 		{
 			Name:        "name",
 			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
 		},
 		{
 			Name:        "display-name",
 			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
 		},
 	}
 
