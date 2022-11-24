@@ -257,10 +257,10 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 	countQueryForAPIs := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
 
 	selectQueryWithVisibilityCheckForAPIs := `^\(SELECT (.+) FROM public\.bundle_references 
-		WHERE \(SELECT visibility FROM api_definitions WHERE api_definitions.id = public.bundle_references.api_def_id\) = \$1 AND api_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$3 OFFSET \$4\) UNION 
-		\(SELECT (.+) FROM public\.bundle_references WHERE \(SELECT visibility FROM api_definitions WHERE api_definitions.id = public.bundle_references.api_def_id\) = \$5 AND api_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$7 OFFSET \$8\)`
+		WHERE api_def_id IN \(SELECT id FROM api_definitions WHERE visibility = \$1\) AND api_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$3 OFFSET \$4\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE api_def_id IN \(SELECT id FROM api_definitions WHERE visibility = \$5\) AND api_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY api_def_id ASC, bundle_id ASC, api_def_url ASC LIMIT \$7 OFFSET \$8\)`
 
-	countQueryWithVisibilityCheckForAPIs := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE \(SELECT visibility FROM api_definitions WHERE api_definitions.id = public.bundle_references.api_def_id\) = \$1 AND api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+	countQueryWithVisibilityCheckForAPIs := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE api_def_id IN \(SELECT id FROM api_definitions WHERE visibility = \$1\) AND api_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
 
 	// queries for Events
 
@@ -271,10 +271,10 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 	countQueryForEvents := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
 
 	selectQueryWithVisibilityCheckForEvents := `^\(SELECT (.+) FROM public\.bundle_references 
-		WHERE \(SELECT visibility FROM event_api_definitions WHERE event_api_definitions.id = public.bundle_references.event_def_id\) = \$1 AND event_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$3 OFFSET \$4\) UNION 
-		\(SELECT (.+) FROM public\.bundle_references WHERE \(SELECT visibility FROM event_api_definitions WHERE event_api_definitions.id = public.bundle_references.event_def_id\) = \$5 AND event_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$7 OFFSET \$8\)`
+		WHERE event_def_id IN \(SELECT id FROM event_api_definitions WHERE visibility = \$1\) AND event_def_id IS NOT NULL AND bundle_id = \$2 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$3 OFFSET \$4\) UNION 
+		\(SELECT (.+) FROM public\.bundle_references WHERE event_def_id IN \(SELECT id FROM event_api_definitions WHERE visibility = \$5\) AND event_def_id IS NOT NULL AND bundle_id = \$6 ORDER BY event_def_id ASC, bundle_id ASC LIMIT \$7 OFFSET \$8\)`
 
-	countQueryWithVisibilityCheckForEvents := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE \(SELECT visibility FROM event_api_definitions WHERE event_api_definitions.id = public.bundle_references.event_def_id\) = \$1 AND event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
+	countQueryWithVisibilityCheckForEvents := `SELECT bundle_id AS id, COUNT\(\*\) AS total_count FROM public.bundle_references WHERE event_def_id IN \(SELECT id FROM event_api_definitions WHERE visibility = \$1\) AND event_def_id IS NOT NULL GROUP BY bundle_id ORDER BY bundle_id ASC`
 
 	t.Run("success when everything is returned for APIs when there is internal_visibility scope", func(t *testing.T) {
 		ExpectedLimit := 1
