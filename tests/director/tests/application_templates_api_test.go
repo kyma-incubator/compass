@@ -65,48 +65,6 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})
 
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		ctx := context.Background()
-		appTemplateName := createAppTemplateName("app-template-name")
-		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
-		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
-		require.NoError(t, err)
-
-		createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
-		output := graphql.ApplicationTemplate{}
-
-		// WHEN
-		t.Log("Create application template")
-		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), output)
-
-		//THEN
-		require.NoError(t, err)
-		require.NotEmpty(t, output.ID)
-
-		require.NotEmpty(t, output.Name)
-		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, output.Labels[tenantfetcher.RegionKey])
-		saveExample(t, createApplicationTemplateRequest.Query(), "create application template")
-
-		t.Log("Check if application template was created")
-
-		getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(output.ID)
-		appTemplateOutput := graphql.ApplicationTemplate{}
-
-		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
-
-		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
-		appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
-		appTemplateInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
-
-		require.NoError(t, err)
-		require.NotEmpty(t, appTemplateOutput)
-		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
-		saveExample(t, getApplicationTemplateRequest.Query(), "query application template")
-	})
-
 	t.Run("Error when Self Registered Application Template already exists for a given region and distinguished label key", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
@@ -127,7 +85,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		output2 := graphql.ApplicationTemplate{}
 
 		t.Log("Create first application template")
-		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest1, &output1)
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest1, &output1)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), output1)
 
 		require.NoError(t, err)
@@ -136,7 +94,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		// WHEN
 		t.Log("Create second application template")
-		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest2, &output2)
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest2, &output2)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), output2)
 
 		//THEN

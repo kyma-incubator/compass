@@ -489,29 +489,12 @@ func Test_UpdateStatus(baseT *testing.T) {
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntime, app.ID)
 		t.Logf("successfully listed FAs for formation ID: %q", formationID)
 
-		certSecuredHTTPClientWithDifferentTenant := getHTTPCertClientWithCustomSubject(t, ctx, conf, conf.ExternalCertTestIntSystemOUSubaccount, conf.ExternalCertTestIntSystemCommonName)
+		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
+		certSecuredHTTPClientWithDifferentTenant := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClientWithDifferentTenant, testConfig, formation.ID, formationAssignmentID, http.StatusUnauthorized)
 	})
-}
-
-func getHTTPCertClientWithCustomSubject(t *testing.T, ctx context.Context, conf *DirectorConfig, certTenant, commonName string) *http.Client {
-	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, certTenant, conf.ExternalCertCommonName, commonName)
-
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestIntSystemSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
-
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
-	return gql.NewCertAuthorizedHTTPClient(pk, cert, conf.SkipSSLValidation)
 }
 
 func executeStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, formationID, formationAssignmentID string, expectedStatusCode int) {
