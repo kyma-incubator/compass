@@ -335,10 +335,14 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20221104124533-0b53
 github.com/kyma-incubator/compass/components/director v0.0.0-20221104124533-0b535193e6dd/go.mod h1:Jw0nS3jMD4kOk7700RBPaJncTWSGRHKQQ6pprCO/iqc=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221118121726-08b41b5f37c4 h1:skhKfpx/bAlGh6BzpjI3ZzMuBO0FuDEqLs3f3LPxFLo=
 github.com/kyma-incubator/compass/components/director v0.0.0-20221118121726-08b41b5f37c4/go.mod h1:2z7uhtEXpIMdUiZBOioO/Can29rFOMIcA5K64S6EM2g=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221124093556-55d40ede25e6 h1:j9Q40roUv0/hdBv7riHX3RdowaNvEcyxcMJQJOklPWs=
+github.com/kyma-incubator/compass/components/director v0.0.0-20221124093556-55d40ede25e6/go.mod h1:2z7uhtEXpIMdUiZBOioO/Can29rFOMIcA5K64S6EM2g=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221104124533-0b535193e6dd h1:tl6C9uIvhG8/eo4zwwYEj339JDFJFzmCCO9+3cQHjLg=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221104124533-0b535193e6dd/go.mod h1:3S90t9iZTCLAVwxexlLGWNgQTb6+gqRDsKJ+iIOFXTw=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221118121726-08b41b5f37c4 h1:V2t3WtyjdK1M/4ydNVLAIHIk328/2fmGNWNMKxdtGqY=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221118121726-08b41b5f37c4/go.mod h1:8ZDJpY0uxXEcBMA1tI4aMppE+i+VwnrS7n5La4Rfk+c=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221124093556-55d40ede25e6 h1:S4VB9HTh2ZQnukL/vAWU08L8oNuNOVzxW7lsAWXkKNM=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221124093556-55d40ede25e6/go.mod h1:GuKPcdHnacYBbC0Yc7tByww1xdbvzMPqkZy20xuECmA=
 github.com/lib/pq v1.10.4 h1:SO9z7FRPzA03QhHKJrH5BXA6HU1rS4V2nIVrrNC1iYk=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 h1:guHWmqIKr4G+gQ4uYU5vcZjsUhhklRA2uOcGVfcfqis=
