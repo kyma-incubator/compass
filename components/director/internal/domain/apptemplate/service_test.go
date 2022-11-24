@@ -1422,7 +1422,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{Name: "name", Description: str.Ptr("Application name")},
+					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr(".displayName")},
 				},
 			},
 			InputValues: []*model.ApplicationTemplateValueInput{
@@ -1436,7 +1436,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{Name: "name", Description: str.Ptr("Application name")},
+					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr(".displayName")},
 				},
 			},
 			InputValues:    []*model.ApplicationTemplateValueInput{},
