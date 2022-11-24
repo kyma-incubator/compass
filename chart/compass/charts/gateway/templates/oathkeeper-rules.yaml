@@ -364,7 +364,7 @@ spec:
     url: "http://{{ .Values.global.ordService.host }}:{{ .Values.global.ordService.port }}"
   match:
     methods: ["GET"]
-    url: <http|https>://<{{ .Values.global.istio.discoveryMtlsGateway.host }}.{{ .Values.global.ingress.discoveryDomain.name }}>|<{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}><(:(80|443))?><{{ .Values.global.ordService.prefix }}|{{ .Values.global.ordService.staticPrefix }}>/<.*>
+    url: <http|https>://<{{ .Values.global.istio.discoveryMtlsGateway.host }}.{{ .Values.global.ingress.discoveryDomain.name }}|{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}><(:(80|443))?><{{ .Values.global.ordService.prefix }}|{{ .Values.global.ordService.staticPrefix }}>/<.*>
   authenticators:
   - handler: noop
   authorizer:

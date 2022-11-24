@@ -15,5 +15,5 @@ metadata:
   namespace: {{ .Values.global.istio.discoveryMtlsGateway.CA.namespace }}
 type: Opaque
 data:
-  "cacert": {{ .Values.global.istio.discoveryMtlsGateway.CA.certificate | b64enc | quote }} # On local setup a self-signed discovery domain CA certificate is used
+  "cacert": {{ .Values.global.istio.discoveryMtlsGateway.CA.certificate | quote }} # On local setup a self-signed discovery domain CA certificate is used
 {{- end -}}

@@ -59,7 +59,7 @@ spec:
         mode: MUTUAL
         credentialName: {{ .Values.global.istio.discoveryMtlsGateway.certSecretName }}
       hosts:
-        - "*.{{ .Values.global.ingress.discoveryDomain.name }}"
+        - "{{ .Values.global.istio.discoveryMtlsGateway.host }}.{{ .Values.global.ingress.discoveryDomain.name }}"
 ---
 {{- if .Values.gateway.enabled }}
 apiVersion: networking.istio.io/v1alpha3
