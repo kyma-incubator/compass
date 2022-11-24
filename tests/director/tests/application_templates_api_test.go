@@ -30,6 +30,41 @@ import (
 )
 
 func TestCreateApplicationTemplate(t *testing.T) {
+	t.Run("Success for global template", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		appTemplateName := createAppTemplateName("app-template-name")
+		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
+		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+		require.NoError(t, err)
+
+		createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
+		output := graphql.ApplicationTemplate{}
+
+		// WHEN
+		t.Log("Create application template")
+		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", output)
+
+		//THEN
+		require.NoError(t, err)
+		require.NotEmpty(t, output.ID)
+		require.NotEmpty(t, output.Name)
+
+		t.Log("Check if application template was created")
+
+		getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(output.ID)
+		appTemplateOutput := graphql.ApplicationTemplate{}
+
+		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
+
+		appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
+
+		require.NoError(t, err)
+		require.NotEmpty(t, appTemplateOutput)
+		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
+	})
+
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()

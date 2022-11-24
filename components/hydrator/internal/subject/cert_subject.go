@@ -18,6 +18,8 @@ const (
 	ApplicationType       = "Application"
 	SuperAdminType        = "Super Admin"
 	TechnicalClient       = "Technical Client"
+
+	GlobalAccessLevel = "global"
 )
 
 type CSRSubjectConfig struct {
@@ -55,20 +57,21 @@ func (s *subjectConsumerTypeMapping) validate() error {
 		TechnicalClient:       true,
 	}
 
-	supportedTenantTypes := map[string]bool{
+	supportedAccessLevels := map[string]bool{
 		string(tenantEntity.Customer):      true,
 		string(tenantEntity.Account):       true,
 		string(tenantEntity.Subaccount):    true,
 		string(tenantEntity.Organization):  true,
 		string(tenantEntity.Folder):        true,
 		string(tenantEntity.ResourceGroup): true,
+		string(GlobalAccessLevel):          true,
 	}
 
 	if !supportedConsumerTypes[s.ConsumerType] {
 		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
 	}
 	for _, al := range s.TenantAccessLevels {
-		if !supportedTenantTypes[al] {
+		if !supportedAccessLevels[al] {
 			return fmt.Errorf("tenant access level %s is not valid", al)
 		}
 	}
