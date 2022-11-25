@@ -82,79 +82,82 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 		return nil, errors.Wrapf(err, "while loading consumer")
 	}
 
-	distinguishLabel, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
-	if !exists {
-		log.C(ctx).Infof("Missing %q label. Will not prepare resource for self registration", s.cfg.SelfRegisterDistinguishLabelKey)
-		return labels, nil
-	}
-
-	if err := validate(); err != nil {
-		return nil, err
-	}
-
-	region, err := s.determineRegion(consumerInfo.Region, labels)
-	if err != nil {
-		return nil, err
-	}
-
-	labels[RegionLabel] = region
-
-	instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
-	if !exists {
-		return nil, errors.Errorf("missing configuration for region: %s", region)
-	}
-
-	consumerID, err := s.determineConsumerID(consumerInfo.ConsumerID, labels)
-	if err != nil {
-		return nil, err
-	}
-
-	request, err := s.createSelfRegPrepRequest(id, consumerID, instanceConfig.URL)
-	if err != nil {
-		return nil, err
-	}
-
-	caller, err := s.callerProvider.GetCaller(s.cfg, region)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting caller")
-	}
-
-	response, err := caller.Call(request)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while executing preparation of self registered resource")
-	}
-	defer httputils.Close(ctx, response.Body)
-
-	respBytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while reading response body")
-	}
-
-	if response.StatusCode != http.StatusCreated {
-		return nil, apperrors.NewCustomErrorWithCode(response.StatusCode, fmt.Sprintf("received unexpected status %d while preparing self-registered resource: %s", response.StatusCode, string(respBytes)))
-	}
-
-	selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
-	labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
-
-	if resourceType == resource.Runtime {
-		saasAppName, exists := s.cfg.RegionToSaaSAppName[region]
+	if consumerInfo.Flow.IsCertFlow() {
+		distinguishLabel, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
 		if !exists {
-			return nil, errors.Errorf("missing SaaS application name for region: %q", region)
+			if resourceType == resource.Runtime {
+				return labels, nil
+			}
+			return nil, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
 
-		if saasAppName == "" {
-			return nil, errors.Errorf("SaaS application name for region: %q could not be empty", region)
+		if err := validate(); err != nil {
+			return nil, err
 		}
 
-		labels[s.cfg.SaaSAppNameLabelKey] = saasAppName
-	}
+		if labels[RegionLabel] != nil {
+			return nil, errors.Errorf("providing %q label and value is forbidden", RegionLabel)
+		}
 
-	if resourceType == resource.ApplicationTemplate {
-		labels[scenarioassignment.SubaccountIDKey] = consumerID
-	}
+		region := consumerInfo.Region
+		if region == "" {
+			return nil, errors.Errorf("missing %s value in consumer context", RegionLabel)
+		}
 
-	log.C(ctx).Infof("Successfully executed prep for self-registration with distinguishing label value %s", str.CastOrEmpty(distinguishLabel))
+		labels[RegionLabel] = region
+
+		instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
+		if !exists {
+			return nil, errors.Errorf("missing configuration for region: %s", region)
+		}
+
+		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig.URL)
+		if err != nil {
+			return nil, err
+		}
+
+		caller, err := s.callerProvider.GetCaller(s.cfg, region)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting caller")
+		}
+
+		response, err := caller.Call(request)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while executing preparation of self registered resource")
+		}
+		defer httputils.Close(ctx, response.Body)
+
+		respBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while reading response body")
+		}
+
+		if response.StatusCode != http.StatusCreated {
+			return nil, apperrors.NewCustomErrorWithCode(response.StatusCode, fmt.Sprintf("received unexpected status %d while preparing self-registered resource: %s", response.StatusCode, string(respBytes)))
+		}
+
+		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
+		labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
+
+		if resourceType == resource.Runtime {
+			saasAppName, exists := s.cfg.RegionToSaaSAppName[region]
+			if !exists {
+				return nil, errors.Errorf("missing SaaS application name for region: %q", region)
+			}
+
+			if saasAppName == "" {
+				return nil, errors.Errorf("SaaS application name for region: %q could not be empty", region)
+			}
+
+			labels[s.cfg.SaaSAppNameLabelKey] = saasAppName
+		}
+
+		if resourceType == resource.ApplicationTemplate {
+			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+		}
+
+		log.C(ctx).Infof("Successfully executed prep for self-registration with distinguishing label value %s", str.CastOrEmpty(distinguishLabel))
+	}
 
 	return labels, nil
 }
@@ -206,46 +209,6 @@ func (s *selfRegisterManager) CleanupSelfRegistration(ctx context.Context, resou
 // is being self-registered.
 func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return s.cfg.SelfRegisterDistinguishLabelKey
-}
-
-func (s *selfRegisterManager) determineConsumerID(consumerInfoID string, labels map[string]interface{}) (string, error) {
-	labelsSubaccountExists := labels[scenarioassignment.SubaccountIDKey] != nil
-	consumerIDExists := consumerInfoID != ""
-
-	if consumerIDExists && labelsSubaccountExists {
-		if consumerInfoID == labels[scenarioassignment.SubaccountIDKey].(string) {
-			return consumerInfoID, nil
-		}
-		return "", errors.Errorf("consumer %s value %q does not match the label %s value %q", scenarioassignment.SubaccountIDKey, consumerInfoID, scenarioassignment.SubaccountIDKey, labels[scenarioassignment.SubaccountIDKey])
-	}
-	if consumerIDExists && !labelsSubaccountExists {
-		return consumerInfoID, nil
-	}
-	if !consumerIDExists && labelsSubaccountExists {
-		return labels[scenarioassignment.SubaccountIDKey].(string), nil
-	}
-
-	return "", errors.New("missing consumerID value in consumer context and app template labels")
-}
-
-func (s *selfRegisterManager) determineRegion(consumerInfoRegion string, labels map[string]interface{}) (string, error) {
-	consumerRegionExists := consumerInfoRegion != ""
-	labelsRegionExists := labels[RegionLabel] != nil
-
-	if consumerRegionExists && labelsRegionExists {
-		if consumerInfoRegion == labels[RegionLabel].(string) {
-			return consumerInfoRegion, nil
-		}
-		return "", errors.Errorf("consumer %s value %q does not match the label %s value %q", RegionLabel, consumerInfoRegion, RegionLabel, labels[RegionLabel])
-	}
-	if consumerRegionExists && !labelsRegionExists {
-		return consumerInfoRegion, nil
-	}
-	if !consumerRegionExists && labelsRegionExists {
-		return labels[RegionLabel].(string), nil
-	}
-
-	return "", errors.Errorf("missing %s value in consumer context and app template labels", RegionLabel)
 }
 
 func (s *selfRegisterManager) createSelfRegPrepRequest(id, tenant, targetURL string) (*http.Request, error) {
