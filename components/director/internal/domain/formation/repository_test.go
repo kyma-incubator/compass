@@ -2,11 +2,10 @@ package formation_test
 
 import (
 	"database/sql/driver"
-	"regexp"
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"regexp"
+	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -74,7 +73,6 @@ func TestRepository_Get(t *testing.T) {
 	suite.Run(t)
 }
 
-/*
 func TestRepository_GetByName(t *testing.T) {
 	suite := testdb.RepoGetTestSuite{
 		Name:       "Get Formation By Name",
@@ -104,7 +102,6 @@ func TestRepository_GetByName(t *testing.T) {
 
 	suite.Run(t)
 }
-*/
 
 func TestRepository_List(t *testing.T) {
 	suite := testdb.RepoListPageableTestSuite{
