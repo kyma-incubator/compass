@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -40,6 +41,7 @@ type Converter interface {
 type formationAssignmentService interface {
 	Delete(ctx context.Context, id string) error
 	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
+	ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) error) error
@@ -371,11 +373,6 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		formationIDs = append(formationIDs, key.ID)
 	}
 
-	var ( // These are the default values for listing
-		cursor = ""
-		first  = 200
-	)
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, []error{err}
@@ -384,17 +381,16 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formationAssignmentPages, err := r.formationAssignmentSvc.ListByFormationIDs(ctx, formationIDs, first, cursor)
+	formationAssignmentsPerFormation, err := r.formationAssignmentSvc.ListByFormationIDsNoPaging(ctx, formationIDs)
 	if err != nil {
 		return nil, []error{err}
 	}
-
-	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentPages))
-	for _, page := range formationAssignmentPages {
+	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentsPerFormation))
+	for _, formationAssignments := range formationAssignmentsPerFormation {
 		condition := graphql.FormationStatusConditionReady
 		var formationStatusErrors []*graphql.FormationStatusError
 
-		for _, fa := range page.Data {
+		for _, fa := range formationAssignments {
 			if isInErrorState(fa.State) {
 				condition = graphql.FormationStatusConditionError
 

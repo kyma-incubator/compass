@@ -1063,9 +1063,6 @@ func TestResolver_Status(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	first := 200
-	after := ""
-
 	formationIDs := []string{FormationID, FormationID + "2", FormationID + "3"}
 
 	// Formation Assignments model fixtures
@@ -1077,14 +1074,11 @@ func TestResolver_Status(t *testing.T) {
 	fasInProgress := []*model.FormationAssignment{faModelInitial, faModelReady}          // no errors, but one is INITIAL -> IN_PROGRESS condition
 	fasError := []*model.FormationAssignment{faModelReady, faModelError, faModelInitial} // have error -> ERROR condition
 
-	faPageFirst := fixFormationAssignmentPage(fasReady)
-	faPageSecond := fixFormationAssignmentPage(fasInProgress)
-	faPageThird := fixFormationAssignmentPage(fasError)
-	faPages := []*model.FormationAssignmentPage{faPageFirst, faPageSecond, faPageThird}
+	fasPerFormation := [][]*model.FormationAssignment{fasReady, fasInProgress, fasError}
 
 	fasUnmarshallable := []*model.FormationAssignment{fixFormationAssignmentModelWithSuffix(string(model.DeleteErrorAssignmentState), json.RawMessage(`unmarshallable structure`), "-4")}
 
-	faPagesWithUnmarshallableError := []*model.FormationAssignmentPage{fixFormationAssignmentPage(fasUnmarshallable)}
+	faPagesWithUnmarshallableError := [][]*model.FormationAssignment{fasUnmarshallable}
 
 	// Formation Assignments GraphQL fixtures
 
@@ -1101,15 +1095,7 @@ func TestResolver_Status(t *testing.T) {
 
 	gqlStatuses := []*graphql.FormationStatus{&gqlStatusFirst, &gqlStatusSecond, &gqlStatusThird}
 
-	emptyFaPage := []*model.FormationAssignmentPage{{
-		Data: nil,
-		PageInfo: &pagination.Page{
-			StartCursor: "",
-			EndCursor:   "",
-			HasNextPage: false,
-		},
-		TotalCount: 0,
-	}}
+	emptyFaPage := [][]*model.FormationAssignment{nil}
 
 	testCases := []struct {
 		Name            string
@@ -1123,7 +1109,7 @@ func TestResolver_Status(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(faPages, nil).Once()
+				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(fasPerFormation, nil).Once()
 				return faSvc
 			},
 			ExpectedResult: gqlStatuses,
@@ -1134,7 +1120,7 @@ func TestResolver_Status(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(emptyFaPage, nil).Once()
+				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(emptyFaPage, nil).Once()
 				return faSvc
 			},
 			ExpectedResult: []*graphql.FormationStatus{&gqlStatusFirst},
@@ -1151,7 +1137,7 @@ func TestResolver_Status(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(nil, testErr).Once()
+				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(nil, testErr).Once()
 				return faSvc
 			},
 			ExpectedResult: nil,
@@ -1162,7 +1148,7 @@ func TestResolver_Status(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(faPagesWithUnmarshallableError, nil).Once()
+				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(faPagesWithUnmarshallableError, nil).Once()
 				return faSvc
 			},
 			ExpectedResult: nil,
@@ -1173,7 +1159,7 @@ func TestResolver_Status(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("ListByFormationIDs", txtest.CtxWithDBMatcher(), formationIDs, first, after).Return(faPages, nil).Once()
+				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(fasPerFormation, nil).Once()
 				return faSvc
 			},
 			ExpectedResult: nil,
