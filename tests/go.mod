@@ -7,10 +7,10 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221118125809-e4efdd5d02e0
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20221118125809-e4efdd5d02e0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221123081719-12619da372c7
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221125101511-955d50c154bc
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221118125809-e4efdd5d02e0
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20221118120709-bbf52ca7af9a
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20221118125809-e4efdd5d02e0
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20221124094752-6c05d6172c4c
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron/v3 v3.0.1
@@ -55,7 +55,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221124093556-55d40ede25e6 // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221124094431-09cd07be3530 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
