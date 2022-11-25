@@ -1,11 +1,12 @@
 package formation_test
 
 import (
+	"regexp"
+	"testing"
+
 	"database/sql/driver"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"regexp"
-	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
