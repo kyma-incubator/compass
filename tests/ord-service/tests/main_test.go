@@ -46,7 +46,6 @@ type config struct {
 	CertLoaderConfig   certloader.Config
 	SubscriptionConfig subscription.Config
 	certprovider.ExternalCertProviderConfig
-	ExternalCertCommonName                 string `envconfig:"EXTERNAL_CERT_COMMON_NAME,default=compass"`
 	ExternalServicesMockBaseURL            string
 	DirectorExternalCertSecuredURL         string
 	ORDServiceURL                          string

@@ -142,7 +142,7 @@ func TestORDService(t *testing.T) {
 	require.NoError(t, err)
 
 	commonName := "anotherCommonName"
-	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, subTenantID, conf.ExternalCertCommonName, commonName)
+	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, subTenantID, conf.TestExternalCertCN, commonName)
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
 		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,

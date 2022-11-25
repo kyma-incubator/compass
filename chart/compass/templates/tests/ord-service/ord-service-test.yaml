@@ -149,8 +149,6 @@ spec:
               value: {{ .Values.global.tests.subscription.certSvcInstanceTestRegion2SecretName }}
             - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
               value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
-            - name: EXTERNAL_CERT_COMMON_NAME
-              value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: BASIC_USERNAME
               valueFrom:
                 secretKeyRef:
