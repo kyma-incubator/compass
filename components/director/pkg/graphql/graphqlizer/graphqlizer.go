@@ -527,6 +527,9 @@ func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefi
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
+		{{- if .JSONPath }}
+		jsonPath: "{{.JSONPath}}",
+		{{- end }}
 	}`)
 }
 
@@ -554,7 +557,10 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 			{{- range $i, $e := .ApplicationTypes}}
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
-		runtimeType: "{{.RuntimeType}}"
+		runtimeTypes:  [
+			{{- range $i, $e := .RuntimeTypes}}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
 		runtimeArtifactKind: {{.RuntimeArtifactKind}}
 	}`)
@@ -569,7 +575,10 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 			{{- range $i, $e := .Values }}
 				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
 			{{- end }} ],
-		{{- end }},
+		{{- end }}
+		{{- if .PlaceholdersPayload }}
+		placeholdersPayload:  "{{.PlaceholdersPayload}}"
+		{{- end }}
 	}`)
 }
 

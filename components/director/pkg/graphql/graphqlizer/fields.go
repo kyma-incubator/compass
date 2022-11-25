@@ -146,7 +146,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 		id
 		name
         applicationTypes
-	    runtimeType
+	    runtimeTypes
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
 	`
@@ -529,7 +529,8 @@ func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
 func (fp *GqlFieldsProvider) ForPlaceholders() string {
 	return `
 		name
-		description`
+		description
+		jsonPath`
 }
 
 // ForEventingConfiguration missing godoc

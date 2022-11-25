@@ -379,7 +379,7 @@ func TestListLabelDefinitions(t *testing.T) {
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID)
-	saveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definition")
+	saveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definitions")
 
 	//THEN
 	require.NoError(t, err)

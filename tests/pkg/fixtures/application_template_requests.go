@@ -12,7 +12,9 @@ import (
 func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	appTemplateDesc := "app-template-desc"
 	placeholderDisplayName := "new-placeholder-display-name"
+	placeholderDisplayNameJSONPath := "new-placeholder-display-name-json-path"
 	appInputName := "app"
+	placeholderNameJSONPath := "new-placeholder-name-json-path"
 	providerName := "compass-tests"
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name:        name,
@@ -35,10 +37,12 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 			{
 				Name:        "name",
 				Description: &appInputName,
+				JSONPath:    &placeholderNameJSONPath,
 			},
 			{
 				Name:        "display-name",
 				Description: &placeholderDisplayName,
+				JSONPath:    &placeholderDisplayNameJSONPath,
 			},
 		},
 		Labels: graphql.Labels{
@@ -52,6 +56,8 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 func FixApplicationTemplateWithoutWebhooks(name string) graphql.ApplicationTemplateInput {
 	appTemplateDesc := "app-template-without-webhook-desc"
 	placeholderDisplayName := "placeholder-display-name"
+	placeholderNameJSONPath := "placeholder-name-json-path"
+	placeholderDisplayNameJSONPath := "placeholder-display-name-json-path"
 	appInputName := "app"
 	providerName := "compass-tests"
 	appNamespace := "compass.ns.test"
@@ -73,10 +79,12 @@ func FixApplicationTemplateWithoutWebhooks(name string) graphql.ApplicationTempl
 			{
 				Name:        "name",
 				Description: &appInputName,
+				JSONPath:    &placeholderNameJSONPath,
 			},
 			{
 				Name:        "display-name",
 				Description: &placeholderDisplayName,
+				JSONPath:    &placeholderDisplayNameJSONPath,
 			},
 		},
 		Labels: graphql.Labels{
