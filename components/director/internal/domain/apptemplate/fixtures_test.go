@@ -38,6 +38,7 @@ const (
 var (
 	testUUID                       = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testDescription                = "Lorem ipsum"
+	testJSONPath                   = ".displayName"
 	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
 	testProviderName               = "provider-display-name"
 	testURL                        = "http://valid.url"
@@ -318,10 +319,12 @@ func fixEntityApplicationTemplate(t *testing.T, id, name string) *apptemplate.En
 
 func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	placeholderDesc := testDescription
+	placeholderJSONPath := testJSONPath
 	return []model.ApplicationTemplatePlaceholder{
 		{
 			Name:        "test",
 			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
 		},
 	}
 }
@@ -354,20 +357,24 @@ func fixModelApplicationTemplateWebhooks(webhookID, applicationTemplateID string
 
 func fixGQLPlaceholderDefinitionInput() []*graphql.PlaceholderDefinitionInput {
 	placeholderDesc := testDescription
+	placeholderJSONPath := testJSONPath
 	return []*graphql.PlaceholderDefinitionInput{
 		{
 			Name:        "test",
 			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
 		},
 	}
 }
 
 func fixGQLPlaceholders() []*graphql.PlaceholderDefinition {
 	placeholderDesc := testDescription
+	placeholderJSONPath := testJSONPath
 	return []*graphql.PlaceholderDefinition{
 		{
 			Name:        "test",
 			Description: &placeholderDesc,
+			JSONPath:    &placeholderJSONPath,
 		},
 	}
 }

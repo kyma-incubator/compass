@@ -1084,7 +1084,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			AppSvcFn: func() *automock.ApplicationService {
@@ -1127,7 +1127,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
 			AppSvcFn:       UnusedAppSvc,
@@ -1148,7 +1147,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
 			AppSvcFn:       UnusedAppSvc,
@@ -1170,7 +1168,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
 			AppSvcFn:       UnusedAppSvc,
@@ -1191,7 +1188,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
 			AppSvcFn:       UnusedAppSvc,
@@ -1213,7 +1209,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
 			AppSvcFn:       UnusedAppSvc,
@@ -1234,7 +1229,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			AppSvcFn:       UnusedAppSvc,
@@ -1255,7 +1250,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			AppSvcFn: UnusedAppSvc,
@@ -1280,7 +1275,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			AppSvcFn: UnusedAppSvc,
@@ -1305,7 +1300,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			AppSvcFn: func() *automock.ApplicationService {
@@ -1335,7 +1330,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			AppSvcFn: func() *automock.ApplicationService {
@@ -1366,7 +1361,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
 				return appTemplateConv
 			},
 			AppSvcFn: func() *automock.ApplicationService {
@@ -1489,10 +1484,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 					{
 						Name:        "name",
 						Description: &testDescription,
+						JSONPath:    &testJSONPath,
 					},
 					{
 						Name:        "display-name",
 						Description: &testDescription,
+						JSONPath:    &testJSONPath,
 					},
 				}
 				modelAppTemplate := fixModelAppTemplateWithAppInputJSONAndPlaceholders(testID, "SAP app-template", appInputJSONString, fixModelApplicationTemplateWebhooks(testWebhookID, testID), placeholders)
@@ -1509,10 +1506,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 					{
 						Name:        "name",
 						Description: &testDescription,
+						JSONPath:    &testJSONPath,
 					},
 					{
 						Name:        "display-name",
 						Description: &testDescription,
+						JSONPath:    &testJSONPath,
 					},
 				}
 				modelAppTemplate := fixModelAppTemplateWithAppInputJSONAndPlaceholders(testID, "SAP app-template", appInputJSONString, fixModelApplicationTemplateWebhooks(testWebhookID, testID), placeholders)
@@ -1679,10 +1678,12 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 						{
 							Name:        "test",
 							Description: &testDescription,
+							JSONPath:    &testJSONPath,
 						},
 						{
 							Name:        "test2",
 							Description: &testDescription,
+							JSONPath:    &testJSONPath,
 						},
 					},
 					AccessLevel: model.GlobalApplicationTemplateAccessLevel,

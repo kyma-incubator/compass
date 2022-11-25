@@ -17,8 +17,8 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 	testDescription := str.Ptr("desc")
 	testAppInputJSON := `{"Name": "app"}`
 	testPlaceholders := []model.ApplicationTemplatePlaceholder{
-		{Name: "a", Description: str.Ptr("c")},
-		{Name: "b", Description: str.Ptr("d")},
+		{Name: "a", Description: str.Ptr("c"), JSONPath: str.Ptr("e")},
+		{Name: "b", Description: str.Ptr("d"), JSONPath: str.Ptr("f")},
 	}
 	testAccessLevel := model.GlobalApplicationTemplateAccessLevel
 

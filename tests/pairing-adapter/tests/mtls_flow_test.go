@@ -202,6 +202,8 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	namePlaceholderDescription := "name-description"
 	displayNamePlaceholderDescription := "display-name-description"
 	integrationSystemID := newIntSysID
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        templateName,
@@ -216,10 +218,12 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 			{
 				Name:        namePlaceholderKey,
 				Description: &namePlaceholderDescription,
+				JSONPath:    &nameJSONPath,
 			},
 			{
 				Name:        displayNamePlaceholderKey,
 				Description: &displayNamePlaceholderDescription,
+				JSONPath:    &displayNameJSONPath,
 			},
 		},
 		Labels: directorSchema.Labels{

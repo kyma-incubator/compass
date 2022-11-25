@@ -262,10 +262,12 @@ func enrichApplicationTemplateInput(appTemplateInputs []model.ApplicationTemplat
 				{
 					Name:        "name",
 					Description: str.Ptr("Application’s technical name"),
+					JSONPath:    str.Ptr("Path to technical name in system information"),
 				},
 				{
 					Name:        "display-name",
 					Description: str.Ptr("Application’s display name"),
+					JSONPath:    str.Ptr("Path to display name in system information"),
 				},
 			}
 		}

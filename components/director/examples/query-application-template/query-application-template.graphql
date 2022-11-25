@@ -8,6 +8,7 @@ query {
     placeholders {
       name
       description
+      jsonPath
     }
     webhooks {
       id
@@ -76,6 +77,7 @@ query {
           }
         }
       }
+      createdAt
     }
     labels
     accessLevel
