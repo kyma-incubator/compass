@@ -13,7 +13,7 @@ import (
 
 var (
 	testDescription    = "{{display-name}}"
-	testJSONPath       = ".displayName"
+	testJSONPath       = "displayName"
 	testProviderName   = "provider-display-name"
 	testURL            = "http://valid.url"
 	appInputJSONString = `{"Name":"foo","ProviderName":"compass","Description":"Lorem ipsum","Labels":{"test":["val","val2"]},"HealthCheckURL":"https://foo.bar","Webhooks":[{"Type":"","URL":"webhook1.foo.bar","Auth":null},{"Type":"","URL":"webhook2.foo.bar","Auth":null}],"IntegrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
