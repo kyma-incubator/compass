@@ -19,7 +19,7 @@ type FormationTemplate struct {
 	ID                     string              `json:"id"`
 	Name                   string              `json:"name"`
 	ApplicationTypes       []string            `json:"applicationTypes"`
-	RuntimeTypes           []string            `json:"runtimeType"`
+	RuntimeTypes           []string            `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string              `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
 }
@@ -28,7 +28,7 @@ type FormationTemplate struct {
 type FormationTemplateInput struct {
 	Name                   string              `json:"name"`
 	ApplicationTypes       []string            `json:"applicationTypes"`
-	RuntimeTypes           []string            `json:"runtimeType"`
+	RuntimeTypes           []string            `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string              `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
 }
