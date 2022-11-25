@@ -13,8 +13,16 @@ mutation {
         healthCheckURL: "http://url.valid"
       }
       placeholders: [
-        { name: "name", description: "app" }
-        { name: "display-name", description: "new-placeholder-display-name" }
+        {
+          name: "name"
+          description: "app"
+          jsonPath: "new-placeholder-name-json-path"
+        }
+        {
+          name: "display-name"
+          description: "new-placeholder-display-name"
+          jsonPath: "new-placeholder-display-name-json-path"
+        }
       ]
       accessLevel: GLOBAL
       labels: { subscriptionProviderId: "id-value!t12345", test: ["test"] }
@@ -27,6 +35,7 @@ mutation {
     placeholders {
       name
       description
+      jsonPath
     }
     webhooks {
       id

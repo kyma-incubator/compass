@@ -527,6 +527,9 @@ func (g *Graphqlizer) PlaceholderDefinitionInputToGQL(in graphql.PlaceholderDefi
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
+		{{- if .JSONPath }}
+		jsonPath: "{{.JSONPath}}",
+		{{- end }}
 	}`)
 }
 
@@ -572,7 +575,10 @@ func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFr
 			{{- range $i, $e := .Values }}
 				{{- if $i}}, {{- end}} {{ TemplateValueInput $e }}
 			{{- end }} ],
-		{{- end }},
+		{{- end }}
+		{{- if .PlaceholdersPayload }}
+		placeholdersPayload:  "{{.PlaceholdersPayload}}"
+		{{- end }}
 	}`)
 }
 

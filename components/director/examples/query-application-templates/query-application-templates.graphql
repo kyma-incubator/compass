@@ -9,6 +9,7 @@ query {
       placeholders {
         name
         description
+        jsonPath
       }
       webhooks {
         id
