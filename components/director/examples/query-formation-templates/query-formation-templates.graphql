@@ -5,7 +5,7 @@ query {
       id
       name
       applicationTypes
-      runtimeType
+      runtimeTypes
       runtimeTypeDisplayName
       runtimeArtifactKind
     }

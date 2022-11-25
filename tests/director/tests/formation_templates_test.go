@@ -28,11 +28,10 @@ func TestCreateFormationTemplate(t *testing.T) {
 	// WHEN
 	t.Logf("Create formation template with name: %q", formationTemplateName)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
+	require.NoError(t, err)
 
 	//THEN
-	require.NoError(t, err)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
-
 	require.NotEmpty(t, output.ID)
 	require.NotEmpty(t, output.Name)
 
@@ -91,7 +90,7 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	var updatedFormationTemplateInput = graphql.FormationTemplateInput{
 		Name:                   "updated-formation-template-name",
 		ApplicationTypes:       []string{"app-type-3", "app-type-4"},
-		RuntimeType:            &runtimeType,
+		RuntimeTypes:           []string{runtimeType},
 		RuntimeTypeDisplayName: "test-display-name-2",
 		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
@@ -162,7 +161,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	secondFormationInput := graphql.FormationTemplateInput{
 		Name:                   "test-formation-template-2",
 		ApplicationTypes:       []string{"app-type-3", "app-type-5"},
-		RuntimeType:            &runtimeType,
+		RuntimeTypes:           []string{runtimeType},
 		RuntimeTypeDisplayName: "test-display-name-2",
 		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
