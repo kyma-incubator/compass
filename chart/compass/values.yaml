@@ -1012,6 +1012,13 @@ global:
   # and scopes mapped to a consumer with the given type, then that consumer is using a client certificate
   scopes:
     scopesPerConsumerType:
+      business_integration:
+        - "application_template:read"
+        - "application_template:write"
+        - "formation:read"
+        - "formation:write"
+        - "formation_template:read"
+        - "formation_template:write"
       technical_client:
         - "tenant:read"
         - "tenant:write"
