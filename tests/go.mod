@@ -55,7 +55,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221118121726-08b41b5f37c4 // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221124093556-55d40ede25e6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect

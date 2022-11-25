@@ -44,15 +44,17 @@ func (i PlaceholderDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, inputvalidation.DNSName),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
+		validation.Field(&i.JSONPath, validation.RuneLength(0, jsonPathStringLengthLimit)),
 	)
 }
 
 // Validate missing godoc
 func (i ApplicationFromTemplateInput) Validate() error {
 	return validation.Errors{
-		"Rule.UniquePlaceholders": i.ensureUniquePlaceholders(),
-		"templateName":            validation.Validate(i.TemplateName, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
-		"values":                  validation.Validate(i.Values, validation.Each(validation.Required)),
+		"Rule.EitherPlaceholdersOrPlaceholdersPayloadExists": i.ensureEitherPlaceholdersOrPlaceholdersPayloadExists(),
+		"Rule.UniquePlaceholders":                            i.ensureUniquePlaceholders(),
+		"templateName":                                       validation.Validate(i.TemplateName, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
+		"values":                                             validation.Validate(i.Values, validation.Each(validation.Required)),
 	}.Filter()
 }
 
@@ -67,6 +69,13 @@ func (i ApplicationFromTemplateInput) ensureUniquePlaceholders() error {
 		}
 
 		keys[item.Placeholder] = struct{}{}
+	}
+	return nil
+}
+
+func (i ApplicationFromTemplateInput) ensureEitherPlaceholdersOrPlaceholdersPayloadExists() error {
+	if (i.PlaceholdersPayload != nil) == (len(i.Values) != 0) {
+		return errors.Errorf("one of values or placeholdersPayload should be provided")
 	}
 	return nil
 }

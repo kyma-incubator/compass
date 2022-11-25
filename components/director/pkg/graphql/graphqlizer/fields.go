@@ -558,7 +558,8 @@ func (fp *GqlFieldsProvider) ForIntegrationSystem() string {
 func (fp *GqlFieldsProvider) ForPlaceholders() string {
 	return `
 		name
-		description`
+		description
+		jsonPath`
 }
 
 // ForEventingConfiguration missing godoc

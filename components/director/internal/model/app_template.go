@@ -50,8 +50,9 @@ const (
 
 // ApplicationFromTemplateInput missing godoc
 type ApplicationFromTemplateInput struct {
-	TemplateName string
-	Values       ApplicationFromTemplateInputValues
+	TemplateName        string
+	Values              ApplicationFromTemplateInputValues
+	PlaceholdersPayload *string
 }
 
 // ApplicationFromTemplateInputValues missing godoc
@@ -71,6 +72,7 @@ func (in ApplicationFromTemplateInputValues) FindPlaceholderValue(name string) (
 type ApplicationTemplatePlaceholder struct {
 	Name        string
 	Description *string
+	JSONPath    *string
 }
 
 // ApplicationTemplateValueInput missing godoc

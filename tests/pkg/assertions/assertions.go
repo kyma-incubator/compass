@@ -345,9 +345,10 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 }
 
 func AssertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
-	for i, _ := range in {
+	for i := range in {
 		assert.Equal(t, in[i].Name, actualPlaceholders[i].Name)
 		assert.Equal(t, in[i].Description, actualPlaceholders[i].Description)
+		assert.Equal(t, in[i].JSONPath, actualPlaceholders[i].JSONPath)
 	}
 }
 

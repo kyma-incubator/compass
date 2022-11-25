@@ -128,6 +128,7 @@ enum ApplicationTemplateAccessLevel {
 input PlaceholderDefinitionInput {
     name: String!
     description: String
+    jsonPath: String
 }
 
 input TemplateValueInput {
@@ -176,6 +177,7 @@ query  {
         data {
             name
             description
+            jsonPath
         }
     }
 }
@@ -227,7 +229,8 @@ mutation {
         placeholders: [
         {
             name:"application-name",
-            description:"Name of the application"
+            description:"Name of the application",
+            jsonPath:".path.to.applicationName"
         }],
         }) {
            name
@@ -273,6 +276,7 @@ mutation {
         {
             name:"application-name",
             description:"Name of the application"
+            jsonPath:".new.path.to.applicationName"
         },
         ],
         }) {

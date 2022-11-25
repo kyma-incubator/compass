@@ -76,8 +76,11 @@ type ApplicationEventingConfiguration struct {
 // **Validation:** provided placeholders' names are unique
 type ApplicationFromTemplateInput struct {
 	// **Validation:** ASCII printable characters, max=100
-	TemplateName string                `json:"templateName"`
-	Values       []*TemplateValueInput `json:"values"`
+	TemplateName string `json:"templateName"`
+	// **Validation:** if provided, placeholdersPayload not required
+	Values []*TemplateValueInput `json:"values"`
+	// **Validation:** if provided, values not required
+	PlaceholdersPayload *string `json:"placeholdersPayload"`
 }
 
 type ApplicationPage struct {
@@ -631,6 +634,7 @@ type PageInfo struct {
 type PlaceholderDefinition struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
+	JSONPath    *string `json:"jsonPath"`
 }
 
 type PlaceholderDefinitionInput struct {
@@ -638,6 +642,8 @@ type PlaceholderDefinitionInput struct {
 	Name string `json:"name"`
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
+	// **Validation:**  max=2000
+	JSONPath *string `json:"jsonPath"`
 }
 
 type RuntimeContextInput struct {
