@@ -38,7 +38,7 @@ const (
 var (
 	testUUID                       = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testDescription                = "Lorem ipsum"
-	testJSONPath                   = ".displayName"
+	testJSONPath                   = "test"
 	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
 	testProviderName               = "provider-display-name"
 	testURL                        = "http://valid.url"
@@ -55,6 +55,22 @@ func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *mo
 		ApplicationNamespace: str.Ptr("ns"),
 		ApplicationInputJSON: appInputJSONString,
 		Placeholders:         fixModelPlaceholders(),
+		Webhooks:             modelPtrsToWebhooks(webhooks),
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+	}
+
+	return &out
+}
+
+func fixModelApplicationTemplateWithPlaceholdersPayload(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
+	desc := testDescription
+	out := model.ApplicationTemplate{
+		ID:                   id,
+		Name:                 name,
+		Description:          &desc,
+		ApplicationNamespace: str.Ptr("ns"),
+		ApplicationInputJSON: appInputJSONString,
+		Placeholders:         fixModelPlaceholdersWithPayload(),
 		Webhooks:             modelPtrsToWebhooks(webhooks),
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
@@ -329,6 +345,25 @@ func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	}
 }
 
+func fixModelPlaceholdersWithPayload() []model.ApplicationTemplatePlaceholder {
+	placeholderTestDesc := testDescription
+	placeholderTestJSONPath := testJSONPath
+	placeholderNameDesc := "Application Name placeholder"
+	placeholderNameJSONPath := "name"
+	return []model.ApplicationTemplatePlaceholder{
+		{
+			Name:        "test",
+			Description: &placeholderTestDesc,
+			JSONPath:    &placeholderTestJSONPath,
+		},
+		{
+			Name:        "name",
+			Description: &placeholderNameDesc,
+			JSONPath:    &placeholderNameJSONPath,
+		},
+	}
+}
+
 func fixModelApplicationWebhooks(webhookID, applicationID string) []*model.Webhook {
 	return []*model.Webhook{
 		{
@@ -419,6 +454,24 @@ func fixModelApplicationFromTemplateInput(name string) model.ApplicationFromTemp
 		Values: []*model.ApplicationTemplateValueInput{
 			{Placeholder: "a", Value: "b"},
 			{Placeholder: "c", Value: "d"},
+		},
+	}
+}
+
+func fixGQLApplicationFromTemplateInputWithPlaceholderPayload(name string) graphql.ApplicationFromTemplateInput {
+	placeholdersPayload := `{"name": "appName", "test":"testValue"}`
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName:        name,
+		PlaceholdersPayload: &placeholdersPayload,
+	}
+}
+
+func fixModelApplicationFromTemplateInputWithPlaceholderPayload(name string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*model.ApplicationTemplateValueInput{
+			{Placeholder: "test", Value: "testValue"},
+			{Placeholder: "name", Value: "appName"},
 		},
 	}
 }
