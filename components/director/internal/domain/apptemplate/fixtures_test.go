@@ -314,7 +314,7 @@ func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 func fixModelPlaceholdersWithPayload() []model.ApplicationTemplatePlaceholder {
 	placeholderTestDesc := testDescription
 	placeholderTestJSONPath := testJSONPath
-	placeholderNameDesc := "Applicaiton Name placeholder"
+	placeholderNameDesc := "Application Name placeholder"
 	placeholderNameJSONPath := "name"
 	return []model.ApplicationTemplatePlaceholder{
 		{
