@@ -21,15 +21,10 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 		return nil
 	}
 
-	runtimeTypes := in.RuntimeTypes
-	if in.RuntimeTypes == nil {
-		runtimeTypes = []string{*in.RuntimeType}
-	}
-
 	return &model.FormationTemplateInput{
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
-		RuntimeTypes:           runtimeTypes,
+		RuntimeTypes:           in.RuntimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
 	}
@@ -59,7 +54,6 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) *graphql.FormationTem
 		ID:                     in.ID,
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
-		RuntimeType:            in.RuntimeTypes[0],
 		RuntimeTypes:           in.RuntimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    graphql.ArtifactType(in.RuntimeArtifactKind),

@@ -156,7 +156,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 		id
 		name
         applicationTypes
-	    runtimeType
+	    runtimeTypes
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
 	`

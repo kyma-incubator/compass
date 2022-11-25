@@ -498,7 +498,6 @@ type FormationTemplate struct {
 	ID                     string       `json:"id"`
 	Name                   string       `json:"name"`
 	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeType            string       `json:"runtimeType"`
 	RuntimeTypes           []string     `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
@@ -507,7 +506,6 @@ type FormationTemplate struct {
 type FormationTemplateInput struct {
 	Name                   string       `json:"name"`
 	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeType            *string      `json:"runtimeType"`
 	RuntimeTypes           []string     `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
