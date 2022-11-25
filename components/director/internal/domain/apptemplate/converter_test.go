@@ -386,6 +386,22 @@ func TestConverter_ApplicationFromTemplateInputFromGraphQL(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+func TestConverter_ApplicationFromTemplateInputFromGraphQLWithPlaceholderPayload(t *testing.T) {
+	// GIVEN
+	conv := apptemplate.NewConverter(nil, nil)
+	appTemplateModel := fixModelApplicationTemplateWithPlaceholdersPayload(testID, testName, fixModelApplicationTemplateWebhooks("webhook-id-1", testID))
+
+	in := fixGQLApplicationFromTemplateInputWithPlaceholderPayload(testName)
+	expected := fixModelApplicationFromTemplateInputWithPlaceholderPayload(testName)
+
+	// WHEN
+	result, err := conv.ApplicationFromTemplateInputFromGraphQL(appTemplateModel, in)
+
+	// THEN
+	require.NoError(t, err)
+	assert.Equal(t, expected, result)
+}
+
 func TestConverter_ToEntity(t *testing.T) {
 	// GIVEN
 	appTemplateModel := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks("webhook-id-1", testID))
