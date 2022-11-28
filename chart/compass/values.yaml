@@ -127,7 +127,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2763"
+      version: "PR-2755"
       name: compass-director
     hydrator:
       dir:
@@ -168,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2763"
+      version: "PR-2755"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
