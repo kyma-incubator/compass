@@ -6,7 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.11.3
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221124072530-ed0f99e91f80
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221125103024-5011f14bb6b7
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1

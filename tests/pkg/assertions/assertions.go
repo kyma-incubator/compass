@@ -339,7 +339,7 @@ func AssertUpdateApplicationTemplate(t *testing.T, in graphql.ApplicationTemplat
 func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, actual *graphql.FormationTemplate) {
 	assert.Equal(t, in.Name, actual.Name)
 	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
-	assert.Equal(t, *in.RuntimeType, actual.RuntimeType)
+	assert.ElementsMatch(t, in.RuntimeTypes, actual.RuntimeTypes)
 	assert.Equal(t, in.RuntimeTypeDisplayName, actual.RuntimeTypeDisplayName)
 	assert.Equal(t, in.RuntimeArtifactKind, actual.RuntimeArtifactKind)
 }
