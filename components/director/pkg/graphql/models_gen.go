@@ -483,6 +483,17 @@ type FormationPage struct {
 
 func (FormationPage) IsPageable() {}
 
+type FormationStatus struct {
+	Condition FormationStatusCondition `json:"condition"`
+	Errors    []*FormationStatusError  `json:"errors"`
+}
+
+type FormationStatusError struct {
+	AssignmentID string `json:"assignmentID"`
+	Message      string `json:"message"`
+	ErrorCode    int    `json:"errorCode"`
+}
+
 type FormationTemplate struct {
 	ID                     string       `json:"id"`
 	Name                   string       `json:"name"`
@@ -1303,6 +1314,49 @@ func (e *FormationObjectType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e FormationObjectType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FormationStatusCondition string
+
+const (
+	FormationStatusConditionInProgress FormationStatusCondition = "IN_PROGRESS"
+	FormationStatusConditionError      FormationStatusCondition = "ERROR"
+	FormationStatusConditionReady      FormationStatusCondition = "READY"
+)
+
+var AllFormationStatusCondition = []FormationStatusCondition{
+	FormationStatusConditionInProgress,
+	FormationStatusConditionError,
+	FormationStatusConditionReady,
+}
+
+func (e FormationStatusCondition) IsValid() bool {
+	switch e {
+	case FormationStatusConditionInProgress, FormationStatusConditionError, FormationStatusConditionReady:
+		return true
+	}
+	return false
+}
+
+func (e FormationStatusCondition) String() string {
+	return string(e)
+}
+
+func (e *FormationStatusCondition) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FormationStatusCondition(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FormationStatusCondition", str)
+	}
+	return nil
+}
+
+func (e FormationStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

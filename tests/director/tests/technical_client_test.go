@@ -23,7 +23,7 @@ func TestTechnicalClient(stdT *testing.T) {
 		externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 			ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
 			ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-			CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestIntSystemSecretName,
+			CertSvcInstanceTestSecretName:         conf.CertSvcInstanceSecretName,
 			ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 			ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
 			TestAtomExternalCertSubject:           replacer.Replace(conf.ExternalCertProviderConfig.TestAtomExternalCertSubject),

@@ -7,6 +7,12 @@ type Formation struct {
 	FormationTemplateID string `json:"formationTemplateId"`
 }
 
+// FormationWithStatus is an extended Formation with FormationStatus in it
+type FormationWithStatus struct {
+	Formation
+	Status FormationStatus `json:"status"`
+}
+
 // FormationPageExt is an extended types used by external API
 type FormationPageExt struct {
 	FormationPage
