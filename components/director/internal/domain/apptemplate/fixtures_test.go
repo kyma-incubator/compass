@@ -25,14 +25,16 @@ const (
 	testID             = "foo"
 	testConsumerID     = "consumer-id"
 
-	testWebhookID                      = "webhook-id-1"
-	testName                           = "bar"
-	testNameOtherSystemType            = "Other System Type"
-	testPageSize                       = 3
-	testCursor                         = ""
-	appInputJSONString                 = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-	appInputJSONWithAppTypeLabelString = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"%s","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-	appInputGQLString                  = `{name: "foo",providerName: "compass",description: "Lorem ipsum",labels: {test:["val","val2"],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
+	testWebhookID                             = "webhook-id-1"
+	testName                                  = "bar"
+	testNameOtherSystemType                   = "Other System Type"
+	testPageSize                              = 3
+	testCursor                                = ""
+	appInputJSONString                        = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"displayName":"bar","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputJSONWithoutNamePropertyString     = `{"providerName":"compass","description":"Lorem ipsum","labels":{"displayName":"bar","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputJSONWithoutDisplayNameLabelString = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputJSONWithAppTypeLabelString        = `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"%s","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	appInputGQLString                         = `{name: "foo",providerName: "compass",description: "Lorem ipsum",labels: {displayName:"bar",test:["val","val2"],},webhooks: [ {type: ,url: "webhook1.foo.bar",}, {type: ,url: "webhook2.foo.bar",} ],healthCheckURL: "https://foo.bar",integrationSystemID: "iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii",}`
 )
 
 var (
@@ -316,7 +318,7 @@ func fixGQLAppTemplateUpdateInputInvalidAppInput(name string) *graphql.Applicati
 }
 
 func fixEntityApplicationTemplate(t *testing.T, id, name string) *apptemplate.Entity {
-	marshalledAppInput := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+	marshalledAppInput := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"displayName":"bar","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
 
 	placeholders := fixModelPlaceholders()
 	marshalledPlaceholders, err := json.Marshal(placeholders)

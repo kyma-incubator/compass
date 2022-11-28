@@ -631,8 +631,12 @@ func validateAppTemplateForSelfReg(applicationInputJSON string) error {
 		return errors.Wrapf(err, "while unmarshaling application input json")
 	}
 
-	if appInput["name"] != "" {
-		appNameExists = true
+	if appName, ok := appInput["name"]; ok {
+		appNameValue, ok := appName.(string)
+		if !ok {
+			return fmt.Errorf("'name' property value must be string")
+		}
+		appNameExists = appNameValue != ""
 	}
 
 	labels, ok := appInput["labels"]
@@ -647,14 +651,12 @@ func validateAppTemplateForSelfReg(applicationInputJSON string) error {
 			if !ok {
 				return fmt.Errorf("%q label value must be string", displayNameLabelKey)
 			}
-			if displayNameValue != "" {
-				appDisplayNameLabelExists = true
-			}
+			appDisplayNameLabelExists = displayNameValue != ""
 		}
 	}
 
 	if !appNameExists || !appDisplayNameLabelExists {
-		return errors.Errorf("applicationInput name or applicationInput displayName label is missing. They must be present in order to proceed.")
+		return errors.Errorf("applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed.")
 	}
 
 	return nil

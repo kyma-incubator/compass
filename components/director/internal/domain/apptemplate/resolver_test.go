@@ -1639,7 +1639,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			ExpectedError: testError,
 		},
 		{
-			Name: "Returns error when validating app template placeholders length",
+			Name: "Returns error when appInputJSON name property is missing",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
@@ -1648,7 +1648,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONWithoutNamePropertyString), nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1659,10 +1659,10 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
 			Input:         gqlAppTemplateUpdateInput,
-			ExpectedError: errors.New("\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed."),
+			ExpectedError: errors.New("applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed."),
 		},
 		{
-			Name: "Returns error when validating app template placeholders",
+			Name: "Returns error when appInputJSON displayName label is missing",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
@@ -1670,26 +1670,8 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				modelAppTemplateInput := &model.ApplicationTemplateUpdateInput{
-					Name:                 "SAP app-template",
-					Description:          &testDescription,
-					ApplicationInputJSON: appInputJSONString,
-					Placeholders: []model.ApplicationTemplatePlaceholder{
-						{
-							Name:        "test",
-							Description: &testDescription,
-							JSONPath:    &testJSONPath,
-						},
-						{
-							Name:        "test2",
-							Description: &testDescription,
-							JSONPath:    &testJSONPath,
-						},
-					},
-					AccessLevel: model.GlobalApplicationTemplateAccessLevel,
-				}
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONWithoutDisplayNameLabelString), nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1700,7 +1682,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
 			Input:         gqlAppTemplateUpdateInput,
-			ExpectedError: errors.New("\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed."),
+			ExpectedError: errors.New("applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed."),
 		},
 		{
 			Name:              "Returns error when validating app template name",
