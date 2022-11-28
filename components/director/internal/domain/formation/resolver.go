@@ -2,6 +2,7 @@ package formation
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
@@ -40,6 +41,7 @@ type Converter interface {
 type formationAssignmentService interface {
 	Delete(ctx context.Context, id string) error
 	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
+	ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPair) error) error
@@ -351,4 +353,81 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 	}
 
 	return r.formationAssignmentConv.ToGraphQL(formationAssignment)
+}
+
+// Status retrieves a Status for the specified Formation
+func (r *Resolver) Status(ctx context.Context, obj *graphql.Formation) (*graphql.FormationStatus, error) {
+	param := dataloader.ParamFormationStatus{ID: obj.ID, Ctx: ctx}
+	return dataloader.FormationStatusFor(ctx).FormationStatusByID.Load(param)
+}
+
+// StatusDataLoader retrieves a Status for each Formation ID in the keys argument
+func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*graphql.FormationStatus, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Formations found")}
+	}
+
+	ctx := keys[0].Ctx
+	formationIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		formationIDs = append(formationIDs, key.ID)
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	formationAssignmentsPerFormation, err := r.formationAssignmentSvc.ListByFormationIDsNoPaging(ctx, formationIDs)
+	if err != nil {
+		return nil, []error{err}
+	}
+	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentsPerFormation))
+	for _, formationAssignments := range formationAssignmentsPerFormation {
+		condition := graphql.FormationStatusConditionReady
+		var formationStatusErrors []*graphql.FormationStatusError
+
+		for _, fa := range formationAssignments {
+			if isInErrorState(fa.State) {
+				condition = graphql.FormationStatusConditionError
+
+				var assignmentError formationassignment.AssignmentErrorWrapper
+				if err = json.Unmarshal(fa.Value, &assignmentError); err != nil {
+					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
+				}
+
+				formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
+					AssignmentID: fa.ID,
+					Message:      assignmentError.Error.Message,
+					ErrorCode:    int(assignmentError.Error.ErrorCode),
+				})
+			} else if condition != graphql.FormationStatusConditionError && isInProgressState(fa.State) {
+				condition = graphql.FormationStatusConditionInProgress
+			}
+		}
+
+		gqlFormationStatuses = append(gqlFormationStatuses, &graphql.FormationStatus{
+			Condition: condition,
+			Errors:    formationStatusErrors,
+		})
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
+	return gqlFormationStatuses, nil
+}
+
+func isInErrorState(state string) bool {
+	return state == string(model.CreateErrorAssignmentState) || state == string(model.DeleteErrorAssignmentState)
+}
+
+func isInProgressState(state string) bool {
+	return state == string(model.InitialAssignmentState) ||
+		state == string(model.DeletingAssignmentState) ||
+		state == string(model.ConfigPendingAssignmentState)
 }

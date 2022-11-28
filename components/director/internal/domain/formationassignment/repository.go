@@ -207,6 +207,33 @@ func (r *repository) ListByFormationIDs(ctx context.Context, tenantID string, fo
 	return faPages, nil
 }
 
+// ListByFormationIDsNoPaging retrieves all Formation Assignment objects for each formationID from the database that are visible for `tenantID`
+func (r *repository) ListByFormationIDsNoPaging(ctx context.Context, tenantID string, formationIDs []string) ([][]*model.FormationAssignment, error) {
+	if len(formationIDs) == 0 {
+		return nil, nil
+	}
+
+	var formationAssignmentCollection EntityCollection
+
+	conditions := repo.NewInConditionForStringValues("formation_id", formationIDs)
+
+	if err := r.lister.List(ctx, resource.FormationAssignment, tenantID, &formationAssignmentCollection, conditions); err != nil {
+		return nil, err
+	}
+
+	formationAssignmentByFormationID := map[string][]*model.FormationAssignment{}
+	for _, faEntity := range formationAssignmentCollection {
+		formationAssignmentByFormationID[faEntity.FormationID] = append(formationAssignmentByFormationID[faEntity.FormationID], r.conv.FromEntity(faEntity))
+	}
+
+	formationAssignmentsPerFormation := make([][]*model.FormationAssignment, 0, len(formationIDs))
+	for _, formationID := range formationIDs {
+		formationAssignmentsPerFormation = append(formationAssignmentsPerFormation, formationAssignmentByFormationID[formationID])
+	}
+
+	return formationAssignmentsPerFormation, nil
+}
+
 // ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID` that have objectID as `target` or `source` from the database that are visible for `tenant`
 func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error) {
 	var entities EntityCollection
