@@ -19,6 +19,7 @@ package controllers_test
 import (
 	"context"
 	"fmt"
+	directoroperation "github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"testing"
 	"time"
 
@@ -1260,6 +1261,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	operation := *initializedMockedOperation
 	typeUpdate := v1alpha1.OperationTypeUpdate
 	operation.Spec.OperationType = typeUpdate
+	operation.Spec.OperationCategory = directoroperation.OperationCategoryUnpairApplication
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}
