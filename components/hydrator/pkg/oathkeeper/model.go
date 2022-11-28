@@ -11,7 +11,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -110,7 +109,7 @@ type ReqData struct {
 type ExtraData struct {
 	InternalConsumerID string
 	ConsumerType       model.SystemAuthReferenceObjectType
-	AccessLevels       []tenantEntity.Type
+	AccessLevels       []string
 }
 
 // NewReqData missing godoc
@@ -267,7 +266,7 @@ func (d *ReqData) IsIntegrationSystemFlow() bool {
 }
 
 // TenantAccessLevels gets the granted tenant access levels from body extra if they exist.
-func (d *ReqData) TenantAccessLevels() []tenantEntity.Type {
+func (d *ReqData) TenantAccessLevels() []string {
 	if d.Body.Extra == nil {
 		return nil
 	}
@@ -278,9 +277,9 @@ func (d *ReqData) TenantAccessLevels() []tenantEntity.Type {
 	if !ok {
 		return nil
 	}
-	accessLevels := make([]tenantEntity.Type, 0)
+	accessLevels := make([]string, 0)
 	for _, al := range accessLevelsRaw {
-		accessLevels = append(accessLevels, tenantEntity.Type(fmt.Sprintf("%s", al)))
+		accessLevels = append(accessLevels, fmt.Sprintf("%s", al))
 	}
 	return accessLevels
 }

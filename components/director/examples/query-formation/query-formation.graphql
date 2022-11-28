@@ -4,5 +4,13 @@ query {
     id
     name
     formationTemplateId
+    status {
+      condition
+      errors {
+        assignmentID
+        message
+        errorCode
+      }
+    }
   }
 }

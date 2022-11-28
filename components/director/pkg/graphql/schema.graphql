@@ -129,6 +129,12 @@ enum FormationObjectType {
 	RUNTIME_CONTEXT
 }
 
+enum FormationStatusCondition {
+	IN_PROGRESS
+	ERROR
+	READY
+}
+
 enum HealthCheckStatusCondition {
 	SUCCEEDED
 	FAILED
@@ -268,7 +274,14 @@ input ApplicationFromTemplateInput {
 	**Validation:** ASCII printable characters, max=100
 	"""
 	templateName: String!
-	values: [TemplateValueInput!]
+	"""
+	**Validation:** if provided, placeholdersPayload not required
+	"""
+	values: [TemplateValueInput]
+	"""
+	**Validation:** if provided, values not required
+	"""
+	placeholdersPayload: String
 }
 
 input ApplicationRegisterInput {
@@ -599,7 +612,6 @@ input FormationInput {
 input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
-	runtimeType: String
 	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
@@ -679,6 +691,10 @@ input PlaceholderDefinitionInput {
 	**Validation:**  max=2000
 	"""
 	description: String
+	"""
+	**Validation:**  max=2000
+	"""
+	jsonPath: String
 }
 
 input RuntimeContextInput {
@@ -1054,6 +1070,7 @@ type Formation {
 	formationTemplateId: ID!
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
+	status: FormationStatus!
 }
 
 type FormationAssignment {
@@ -1081,11 +1098,21 @@ type FormationPage implements Pageable {
 	totalCount: Int!
 }
 
+type FormationStatus {
+	condition: FormationStatusCondition!
+	errors: [FormationStatusError!]
+}
+
+type FormationStatusError {
+	assignmentID: ID!
+	message: String!
+	errorCode: Int!
+}
+
 type FormationTemplate {
 	id: ID!
 	name: String!
 	applicationTypes: [String!]!
-	runtimeType: String!
 	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
@@ -1185,6 +1212,7 @@ type PageInfo {
 type PlaceholderDefinition {
 	name: String!
 	description: String
+	jsonPath: String
 }
 
 type Runtime {
@@ -1351,11 +1379,11 @@ type Query {
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
 	runtimeByTokenIssuer(issuer: String!): Runtime
-	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	"""
 	**Examples**
-	- [query label definition](examples/query-label-definition/query-label-definition.graphql)
+	- [query label definitions](examples/query-label-definitions/query-label-definitions.graphql)
 	"""
+	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	labelDefinition(key: String!): LabelDefinition @hasScopes(path: "graphql.query.labelDefinition")
 	bundleByInstanceAuth(authID: ID!): Bundle @hasScopes(path: "graphql.query.bundleByInstanceAuth")
 	bundleInstanceAuth(id: ID!): BundleInstanceAuth @hasScopes(path: "graphql.query.bundleInstanceAuth")
@@ -1451,6 +1479,7 @@ type Mutation {
 	createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
 	"""
 	**Examples**
+	- [register application from template with placeholder payload](examples/register-application-from-template/register-application-from-template-with-placeholder-payload.graphql)
 	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
 	"""
 	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
