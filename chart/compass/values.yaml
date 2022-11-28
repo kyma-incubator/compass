@@ -127,7 +127,7 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2762"
+      version: "PR-2770"
       name: compass-hydrator
     gateway:
       dir:
@@ -135,7 +135,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2762"
+      version: "PR-2770"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -156,7 +156,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2762"
+      version: "PR-2770"
       name: compass-external-services-mock
     console:
       dir:
@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2762"
+      version: "PR-2770"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
