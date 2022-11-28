@@ -1806,6 +1806,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 			JSONPath:    ptr.String(displayNameJSONPath),
 		},
 	}
+	appTmplInput.Labels["displayName"] = []interface{}{"{{display-name}}"}
 
 	// Create Application Template
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)

@@ -124,6 +124,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 			},
 			Labels: graphql.Labels{
 				testConfig.AppSelfRegDistinguishLabelKey: testConfig.AppSelfRegDistinguishLabelValue,
+				"displayName":                            "{{display-name}}",
 			},
 			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
@@ -202,6 +203,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 			},
 			Labels: graphql.Labels{
 				testConfig.AppSelfRegDistinguishLabelKey: testConfig.AppSelfRegDistinguishLabelValue,
+				"displayName":                            "{{display-name}}",
 			},
 			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},

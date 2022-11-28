@@ -230,6 +230,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 		},
 		Labels: directorSchema.Labels{
 			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
+			"displayName":                   []interface{}{"{{display-name}}"},
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 	}

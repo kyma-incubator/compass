@@ -276,7 +276,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
-			ExpectedErrMessage:  "\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed.",
+			ExpectedErrMessage:  "applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed.",
 		},
 	}
 
@@ -619,6 +619,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 			JSONPath:    &displayNameJSONPath,
 		},
 	}
+	appTmplInput.Labels["displayName"] = []interface{}{"{{display-name}}"}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -672,6 +673,7 @@ func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
 			JSONPath:    &displayNameJSONPath,
 		},
 	}
+	appTmplInput.Labels["displayName"] = []interface{}{"{{display-name}}"}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -718,6 +720,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 			JSONPath:    &displayNameJSONPath,
 		},
 	}
+	appTmplInput.Labels["displayName"] = []interface{}{"{{display-name}}"}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
