@@ -146,7 +146,7 @@ func TestORDService(t *testing.T) {
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
 		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestIntSystemSecretName,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceSecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
 		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
