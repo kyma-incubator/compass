@@ -120,9 +120,10 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if !operation.HasPollURL() {
 		log.C(ctx).Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
 		request := webhookclient.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
+		isDeleteOrUpdateType := operation.Spec.OperationType == v1alpha1.OperationTypeDelete || operation.Spec.OperationType == v1alpha1.OperationTypeUpdate
 
 		response, err := r.webhookClient.Do(ctx, request)
-		if errors.IsWebhookStatusGoneErr(err) && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
+		if errors.IsWebhookStatusGoneErr(err) && isDeleteOrUpdateType {
 			log.C(ctx).Info(fmt.Sprintf("%s webhook initial request returned gone status %d", *(webhookEntity.Mode), *response.GoneStatusCode))
 			return r.finalizeStatusSuccess(ctx, operation, webhookEntity)
 		}
