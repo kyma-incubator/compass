@@ -139,7 +139,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2762"
+      version: "PR-2766"
       name: compass-operations-controller
     ord_service:
       dir:
