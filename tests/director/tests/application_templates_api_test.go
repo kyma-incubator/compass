@@ -243,6 +243,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 	namePlaceholder := "name-placeholder"
 	displayNamePlaceholder := "display-name-placeholder"
+	sapProvider := "SAP"
 	nameJSONPath := "name-json-path"
 	displayNameJSONPath := "display-name-json-path"
 
@@ -294,6 +295,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 				appTemplateInput.ApplicationInput.Description = testCase.AppInputDescription
 			}
 			appTemplateInput.Placeholders = testCase.AppTemplatePlaceholders
+			appTemplateInput.ApplicationInput.ProviderName = &sapProvider
 			appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 			require.NoError(t, err)
 
@@ -410,6 +412,7 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 	namePlaceholder := "name-placeholder"
 	displayNamePlaceholder := "display-name-placeholder"
+	sapProvider := "SAP"
 	nameJSONPath := "name-json-path"
 	displayNameJSONPath := "display-name-json-path"
 
@@ -483,6 +486,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 				HealthCheckURL: ptr.String("http://url.valid"),
 			}
 			appRegisterInput.Description = testCase.AppInputDescription
+			appRegisterInput.ProviderName = &sapProvider
 			appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: testCase.NewAppTemplateName, ApplicationInput: appRegisterInput, Placeholders: testCase.NewAppTemplatePlaceholders, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 			appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
 
