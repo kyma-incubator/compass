@@ -19,9 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
-	directoroperation "github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"strings"
 	"time"
+
+	directoroperation "github.com/kyma-incubator/compass/components/director/pkg/operation"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
