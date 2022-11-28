@@ -133,7 +133,7 @@ spec:
       {{- end }}
         - alert: ORDAggregationValidationErrors
           annotations:
-            description: Aggregation for api_id = {{`{{`}} $labels.api_id {{`}}`}}, x-request-id = {{`{{`}} $labels.x_request_id {{`}}`}} failed with error = {{`{{`}} $labels.error {{`}}`}}
+            description: Aggregation for app_id = {{`{{`}} $labels.app_id {{`}}`}}, x-request-id = {{`{{`}} $labels.x_request_id {{`}}`}} failed with error = {{`{{`}} $labels.error {{`}}`}}
           expr: delta(compass_ordaggregator_compass_ord_aggregator_job_sync_failure_number[1m]) >= 0
           for: 0m
           labels:
