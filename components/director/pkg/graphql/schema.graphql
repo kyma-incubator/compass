@@ -304,6 +304,7 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	baseUrl: String
+	applicationNamespace: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
@@ -362,6 +363,7 @@ input ApplicationUpdateInput {
 	"""
 	healthCheckURL: String
 	baseUrl: String
+	applicationNamespace: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
@@ -835,6 +837,7 @@ type Application {
 	bundle(id: ID!): Bundle
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
+	applicationNamespace: String
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -1461,7 +1464,6 @@ type Mutation {
 	createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
 	"""
 	**Examples**
-	- [register application from template with placeholder payload](examples/register-application-from-template/register-application-from-template-with-placeholder-payload.graphql)
 	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
 	"""
 	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
