@@ -85,7 +85,7 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 		return errors.Wrapf(err, "while validating claims")
 	}
 
-	if claims.Tenant[tenantmapping.ConsumerTenantKey] == "" && claims.Tenant[tenantmapping.ExternalTenantKey] != "" && claims.ConsumerType != consumer.TechnicalClient {
+	if claims.Tenant[tenantmapping.ConsumerTenantKey] == "" && claims.Tenant[tenantmapping.ExternalTenantKey] != "" {
 		return apperrors.NewTenantNotFoundError(claims.Tenant[tenantmapping.ExternalTenantKey])
 	}
 

@@ -10,11 +10,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
+
+const GlobalAccessLevel = "global"
 
 type accessLevelContextProvider struct {
 	directorClient DirectorClient
@@ -43,6 +44,16 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 
 	externalTenantID, err := reqData.GetExternalTenantID()
 	if err != nil {
+		if apperrors.IsKeyDoesNotExist(err) {
+			log.C(ctx).Infof("No tenant provided, will proceed with empty tenant context...")
+			if err := p.verifyTenantAccessLevels(GlobalAccessLevel, authDetails, reqData); err != nil {
+				log.C(ctx).WithError(err).Errorf("Failed to verify tenant access level: %v", err)
+				return ObjectContext{}, err
+			}
+
+			return NewObjectContext(NewTenantContext("", ""), p.tenantKeys, "", mergeWithOtherScopes,
+				"", "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
+		}
 		return ObjectContext{}, err
 	}
 
@@ -86,23 +97,24 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 	}
 
 	if _, err := data.GetExternalTenantID(); err != nil {
-		if apperrors.IsKeyDoesNotExist(err) {
-			return false, nil, nil
+		if !apperrors.IsKeyDoesNotExist(err) {
+			return false, nil, err
 		}
-		return false, nil, err
 	}
 
 	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
 }
 
-func (p *accessLevelContextProvider) verifyTenantAccessLevels(tenantType string, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {
+func (p *accessLevelContextProvider) verifyTenantAccessLevels(accessLevel string, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {
 	grantedAccessLevels := reqData.TenantAccessLevels()
-	var accessLevelExists bool
 	for _, al := range grantedAccessLevels {
-		if tenantEntity.Type(tenantType) == al {
-			accessLevelExists = true
-			break
+		if accessLevel == al {
+			return nil
 		}
+	}
+
+	if accessLevel == GlobalAccessLevel {
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s does not have global access", authDetails.AuthID))
 	}
 
 	externalTenantID, err := reqData.GetExternalTenantID()
@@ -110,9 +122,5 @@ func (p *accessLevelContextProvider) verifyTenantAccessLevels(tenantType string,
 		return err
 	}
 
-	if !accessLevelExists {
-		return apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s tenant with ID %s", authDetails.AuthID, tenantType, externalTenantID))
-	}
-
-	return nil
+	return apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s tenant with ID %s", authDetails.AuthID, accessLevel, externalTenantID))
 }
