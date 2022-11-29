@@ -55,6 +55,9 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .BaseURL }}
 		baseUrl: "{{ .BaseURL }}"
 		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{ .ApplicationNamespace }}"
+		{{- end }}
 	}`)
 }
 
@@ -81,6 +84,9 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		{{- end }}
 		{{- if .StatusCondition }}
 		statusCondition: {{ .StatusCondition }}
+		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{ .ApplicationNamespace }}"
 		{{- end }}
 	}`)
 }

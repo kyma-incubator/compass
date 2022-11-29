@@ -98,6 +98,7 @@ type ComplexityRoot struct {
 	}
 
 	Application struct {
+		ApplicationNamespace  func(childComplexity int) int
 		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
 		BaseURL               func(childComplexity int) int
@@ -1023,6 +1024,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AppSystemAuth.Type(childComplexity), true
+
+	case "Application.applicationNamespace":
+		if e.complexity.Application.ApplicationNamespace == nil {
+			break
+		}
+
+		return e.complexity.Application.ApplicationNamespace(childComplexity), true
 
 	case "Application.applicationTemplateID":
 		if e.complexity.Application.ApplicationTemplateID == nil {
@@ -4736,6 +4744,7 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	baseUrl: String
+	applicationNamespace: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
@@ -4794,6 +4803,7 @@ input ApplicationUpdateInput {
 	"""
 	healthCheckURL: String
 	baseUrl: String
+	applicationNamespace: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
@@ -5267,6 +5277,7 @@ type Application {
 	bundle(id: ID!): Bundle
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
+	applicationNamespace: String
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -10384,6 +10395,37 @@ func (ec *executionContext) _Application_eventingConfiguration(ctx context.Conte
 	res := resTmp.(*ApplicationEventingConfiguration)
 	fc.Result = res
 	return ec.marshalOApplicationEventingConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationEventingConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_applicationNamespace(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_createdAt(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -27583,6 +27625,12 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "applicationNamespace":
+			var err error
+			it.ApplicationNamespace, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "integrationSystemID":
 			var err error
 			it.IntegrationSystemID, err = ec.unmarshalOID2ᚖstring(ctx, v)
@@ -27767,6 +27815,12 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 		case "baseUrl":
 			var err error
 			it.BaseURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "applicationNamespace":
+			var err error
+			it.ApplicationNamespace, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -29523,6 +29577,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 				res = ec._Application_eventingConfiguration(ctx, field, obj)
 				return res
 			})
+		case "applicationNamespace":
+			out.Values[i] = ec._Application_applicationNamespace(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._Application_createdAt(ctx, field, obj)
 		case "updatedAt":

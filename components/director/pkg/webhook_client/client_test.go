@@ -101,7 +101,7 @@ func TestClient_Do_WhenOutputTemplateIsNil_ShouldReturnError(t *testing.T) {
 }
 
 func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	invalidInputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"group\": \"{{.Application.Group}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
@@ -123,7 +123,7 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 }
 
 func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
 	webhookReq := &webhookclient.Request{
@@ -146,7 +146,7 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 }
 
 func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
@@ -171,7 +171,7 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 }
 
 func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
@@ -196,7 +196,7 @@ func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T
 }
 
 func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
@@ -222,7 +222,7 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 }
 
 func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
@@ -255,7 +255,7 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 }
 
 func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
@@ -290,7 +290,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 }
 
 func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldParseErrorSuccessfully(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
@@ -328,7 +328,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 
 func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_ShouldReturnWebhookStatusGoneError(t *testing.T) {
 	goneCodeString := "404"
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := fmt.Sprintf("{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"gone_status_code\": %s,\"error\": \"{{.Body.error}}\"}", goneCodeString)
@@ -363,7 +363,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 }
 
 func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
@@ -397,7 +397,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 }
 
 func TestClient_Do_WhenWebhookResponseStatusCodeIsIncomplete_ShouldBeSuccessful(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
@@ -430,7 +430,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsIncomplete_ShouldBeSuccessful(
 }
 
 func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
@@ -478,7 +478,7 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 }
 
 func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
@@ -528,7 +528,7 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 }
 
 func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
 	mtlsCalled := false
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
@@ -567,7 +567,7 @@ func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 }
 
 func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
-	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"

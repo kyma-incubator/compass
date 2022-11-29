@@ -29,6 +29,7 @@ var (
 	systemNumber       = "123"
 	localTenantID      = "1337"
 	appName            = "appName"
+	appNamespace       = "appNamespace"
 )
 
 func stringPtr(s string) *string {
@@ -64,26 +65,28 @@ func fixModelApplication(id, tenant, name, description string) *model.Applicatio
 		Status: &model.ApplicationStatus{
 			Condition: model.ApplicationStatusConditionInitial,
 		},
-		Name:        name,
-		Description: &description,
-		BaseEntity:  &model.BaseEntity{ID: id},
+		Name:                 name,
+		Description:          &description,
+		BaseEntity:           &model.BaseEntity{ID: id},
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
-func fixModelApplicationWithAllUpdatableFields(id, name, description, url string, baseURL *string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
+func fixModelApplicationWithAllUpdatableFields(id, name, description, url string, baseURL *string, applicaitonNamespace *string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
 	return &model.Application{
 		Status: &model.ApplicationStatus{
 			Condition: conditionStatus,
 			Timestamp: conditionTimestamp,
 		},
-		IntegrationSystemID: &intSysID,
-		Name:                name,
-		LocalTenantID:       &localTenantID,
-		Description:         &description,
-		HealthCheckURL:      &url,
-		ProviderName:        &providerName,
-		BaseEntity:          &model.BaseEntity{ID: id},
-		BaseURL:             baseURL,
+		IntegrationSystemID:  &intSysID,
+		Name:                 name,
+		LocalTenantID:        &localTenantID,
+		Description:          &description,
+		HealthCheckURL:       &url,
+		ProviderName:         &providerName,
+		BaseEntity:           &model.BaseEntity{ID: id},
+		BaseURL:              baseURL,
+		ApplicationNamespace: applicaitonNamespace,
 	}
 }
 
@@ -95,8 +98,9 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 		Status: &graphql.ApplicationStatus{
 			Condition: graphql.ApplicationStatusConditionInitial,
 		},
-		Name:        name,
-		Description: &description,
+		Name:                 name,
+		Description:          &description,
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
@@ -112,15 +116,16 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 			Condition: model.ApplicationStatusConditionInitial,
 			Timestamp: appStatusTimestamp,
 		},
-		HealthCheckURL:      &testURL,
-		SystemNumber:        &systemNumber,
-		LocalTenantID:       &localTenantID,
-		IntegrationSystemID: &intSysID,
-		BaseURL:             str.Ptr("base_url"),
-		OrdLabels:           json.RawMessage("[]"),
-		CorrelationIDs:      json.RawMessage("[]"),
-		SystemStatus:        str.Ptr("reachable"),
-		DocumentationLabels: json.RawMessage("[]"),
+		HealthCheckURL:       &testURL,
+		SystemNumber:         &systemNumber,
+		LocalTenantID:        &localTenantID,
+		IntegrationSystemID:  &intSysID,
+		BaseURL:              str.Ptr("base_url"),
+		ApplicationNamespace: &appNamespace,
+		OrdLabels:            json.RawMessage("[]"),
+		CorrelationIDs:       json.RawMessage("[]"),
+		SystemStatus:         str.Ptr("reachable"),
+		DocumentationLabels:  json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -141,15 +146,16 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 			Condition: graphql.ApplicationStatusConditionInitial,
 			Timestamp: graphql.Timestamp(appStatusTimestamp),
 		},
-		Name:                name,
-		SystemNumber:        &systemNumber,
-		LocalTenantID:       &localTenantID,
-		Description:         &description,
-		HealthCheckURL:      &testURL,
-		IntegrationSystemID: &intSysID,
-		ProviderName:        str.Ptr("provider name"),
-		BaseURL:             str.Ptr("base_url"),
-		SystemStatus:        str.Ptr("reachable"),
+		Name:                 name,
+		SystemNumber:         &systemNumber,
+		LocalTenantID:        &localTenantID,
+		Description:          &description,
+		HealthCheckURL:       &testURL,
+		IntegrationSystemID:  &intSysID,
+		ProviderName:         str.Ptr("provider name"),
+		BaseURL:              str.Ptr("base_url"),
+		ApplicationNamespace: &appNamespace,
+		SystemStatus:         str.Ptr("reachable"),
 		BaseEntity: &graphql.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -166,20 +172,21 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 	require.NoError(t, err)
 
 	return &application.Entity{
-		Name:                name,
-		ProviderName:        repo.NewNullableString(&providerName),
-		Description:         repo.NewValidNullableString(description),
-		StatusCondition:     string(model.ApplicationStatusConditionInitial),
-		StatusTimestamp:     ts,
-		SystemNumber:        repo.NewValidNullableString(systemNumber),
-		LocalTenantID:       repo.NewValidNullableString(localTenantID),
-		HealthCheckURL:      repo.NewValidNullableString(testURL),
-		IntegrationSystemID: repo.NewNullableString(&intSysID),
-		BaseURL:             repo.NewValidNullableString("base_url"),
-		OrdLabels:           repo.NewValidNullableString("[]"),
-		CorrelationIDs:      repo.NewValidNullableString("[]"),
-		SystemStatus:        repo.NewValidNullableString("reachable"),
-		DocumentationLabels: repo.NewValidNullableString("[]"),
+		Name:                 name,
+		ProviderName:         repo.NewNullableString(&providerName),
+		Description:          repo.NewValidNullableString(description),
+		StatusCondition:      string(model.ApplicationStatusConditionInitial),
+		StatusTimestamp:      ts,
+		SystemNumber:         repo.NewValidNullableString(systemNumber),
+		LocalTenantID:        repo.NewValidNullableString(localTenantID),
+		HealthCheckURL:       repo.NewValidNullableString(testURL),
+		IntegrationSystemID:  repo.NewNullableString(&intSysID),
+		BaseURL:              repo.NewValidNullableString("base_url"),
+		ApplicationNamespace: repo.NewValidNullableString(appNamespace),
+		OrdLabels:            repo.NewValidNullableString("[]"),
+		CorrelationIDs:       repo.NewValidNullableString("[]"),
+		SystemStatus:         repo.NewValidNullableString("reachable"),
+		DocumentationLabels:  repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -228,15 +235,16 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 	}
 }
 
-func fixModelApplicationUpdateInput(name, description, healthCheckURL, baseURL string, statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
+func fixModelApplicationUpdateInput(name, description, healthCheckURL, baseURL string, appNamespace string, statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
-		Description:         &description,
-		HealthCheckURL:      &healthCheckURL,
-		IntegrationSystemID: &intSysID,
-		ProviderName:        &providerName,
-		StatusCondition:     &statusCondition,
-		LocalTenantID:       &localTenantID,
-		BaseURL:             &baseURL,
+		Description:          &description,
+		HealthCheckURL:       &healthCheckURL,
+		IntegrationSystemID:  &intSysID,
+		ProviderName:         &providerName,
+		StatusCondition:      &statusCondition,
+		LocalTenantID:        &localTenantID,
+		BaseURL:              &baseURL,
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
@@ -284,15 +292,16 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 	}
 }
 
-func fixGQLApplicationUpdateInput(name, description, healthCheckURL, baseURL string, statusCondition graphql.ApplicationStatusCondition) graphql.ApplicationUpdateInput {
+func fixGQLApplicationUpdateInput(name, description, healthCheckURL, baseURL string, appNamespace string, statusCondition graphql.ApplicationStatusCondition) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
-		Description:         &description,
-		HealthCheckURL:      &healthCheckURL,
-		IntegrationSystemID: &intSysID,
-		LocalTenantID:       &localTenantID,
-		ProviderName:        &providerName,
-		StatusCondition:     &statusCondition,
-		BaseURL:             &baseURL,
+		Description:          &description,
+		HealthCheckURL:       &healthCheckURL,
+		IntegrationSystemID:  &intSysID,
+		LocalTenantID:        &localTenantID,
+		ProviderName:         &providerName,
+		StatusCondition:      &statusCondition,
+		BaseURL:              &baseURL,
+		ApplicationNamespace: &appNamespace,
 	}
 }
 
@@ -395,7 +404,7 @@ func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 }
 
 func fixAppColumns() []string {
-	return []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
+	return []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
 }
 
 func fixApplicationLabels(appID, labelKey1, labelKey2 string, labelValue1 []interface{}, labelValue2 string) map[string]*model.Label {
