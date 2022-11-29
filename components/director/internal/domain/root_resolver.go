@@ -290,6 +290,11 @@ func (r *RootResolver) FormationAssignmentsDataLoader(ids []dataloader.ParamForm
 	return r.formation.FormationAssignmentsDataLoader(ids)
 }
 
+// StatusDataLoader is the FormationStatus dataloader used in the graphql API router
+func (r *RootResolver) StatusDataLoader(ids []dataloader.ParamFormationStatus) ([]*graphql.FormationStatus, []error) {
+	return r.formation.StatusDataLoader(ids)
+}
+
 // Mutation missing godoc
 func (r *RootResolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
@@ -1046,6 +1051,11 @@ func (r *formationResolver) FormationAssignment(ctx context.Context, obj *graphq
 // FormationAssignments missing godoc
 func (r *formationResolver) FormationAssignments(ctx context.Context, obj *graphql.Formation, first *int, after *graphql.PageCursor) (*graphql.FormationAssignmentPage, error) {
 	return r.formation.FormationAssignments(ctx, obj, first, after)
+}
+
+// Status missing godoc
+func (r *formationResolver) Status(ctx context.Context, obj *graphql.Formation) (*graphql.FormationStatus, error) {
+	return r.formation.Status(ctx, obj)
 }
 
 // BundleResolver missing godoc
