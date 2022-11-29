@@ -88,6 +88,8 @@ And then start the Kyma installation by using the following command:
 kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
 ```
 
+> **NOTE:** After the Kyma installation completes successfully, you will have to trigger manually the `oathkeeper-jwks-rotator` cronjob once.
+
 #### Install Compass
 
 > **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply the overrides to Compass as well.
@@ -350,6 +352,8 @@ And then, start the Kyma installation by using the following command:
 ```bash
 kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
 ```
+
+> **NOTE:** After the Kyma installation completes successfully, you will have to trigger manually the `oathkeeper-jwks-rotator` cronjob once.
 
 #### Install Compass
 
