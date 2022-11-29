@@ -703,7 +703,6 @@ func TestORDService(t *testing.T) {
 		expectedProductType := fmt.Sprintf("SAP %s", "productType")
 		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
 		appTmplInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
-		appTmplInput.Labels["displayName"] = []interface{}{"{{display-name}}"}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmpl)
