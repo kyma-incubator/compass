@@ -46,7 +46,7 @@ Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be 
 
 > **NOTE:** During the installation of Compass, the installed Kyma version (as a basis to Compass) must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
-If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/10ae3a8acf7d57a329efa605890d11f9a9b40991/docs/03-tutorials/sec-01-tls-certificates-security.md#L1-L0) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
+If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.2.0/docs/03-tutorials/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
 Save the following .yaml code with installation overrides into a file (for example: additionalKymaOverrides.yaml)
 ```yaml
@@ -306,9 +306,9 @@ To install the Compass and Runtime components on a single cluster, perform the f
 
 > **NOTE:** During the installation of Kyma, the installed version must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
-You must have a Kyma installation with an enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.0.4/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the compass-system namespace to the list of [minimal compass components file](../../installation/resources/kyma/kyma-overrides-minimal.yaml).
+You must have a Kyma installation with an enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.2.0/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the compass-system namespace to the list of [minimal compass components file](../../installation/resources/kyma/kyma-overrides-minimal.yaml).
 
-If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/10ae3a8acf7d57a329efa605890d11f9a9b40991/docs/03-tutorials/sec-01-tls-certificates-security.md#L1-L0) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
+If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.2.0/docs/03-tutorials/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
 Save the following .yaml code with installation overrides to a file (for example: additionalKymaOverrides.yaml)
 ```yaml
