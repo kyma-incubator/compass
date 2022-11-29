@@ -104,11 +104,12 @@ type ApplicationRegisterInput struct {
 	// **Validation:** valid URL, max=256
 	HealthCheckURL *string `json:"healthCheckURL"`
 	// **Validation:** valid URL, max=256
-	BaseURL             *string                     `json:"baseUrl"`
-	IntegrationSystemID *string                     `json:"integrationSystemID"`
-	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
-	LocalTenantID       *string                     `json:"localTenantID"`
-	Bundles             []*BundleCreateInput        `json:"bundles"`
+	BaseURL              *string                     `json:"baseUrl"`
+	ApplicationNamespace *string                     `json:"applicationNamespace"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID        *string                     `json:"localTenantID"`
+	Bundles              []*BundleCreateInput        `json:"bundles"`
 }
 
 type ApplicationStatus struct {
@@ -156,11 +157,12 @@ type ApplicationUpdateInput struct {
 	// **Validation:** max=2000
 	Description *string `json:"description"`
 	// **Validation:** valid URL, max=256
-	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	BaseURL             *string                     `json:"baseUrl"`
-	IntegrationSystemID *string                     `json:"integrationSystemID"`
-	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
-	LocalTenantID       *string                     `json:"localTenantID"`
+	HealthCheckURL       *string                     `json:"healthCheckURL"`
+	BaseURL              *string                     `json:"baseUrl"`
+	ApplicationNamespace *string                     `json:"applicationNamespace"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID        *string                     `json:"localTenantID"`
 }
 
 type Auth struct {
