@@ -180,6 +180,11 @@ func (in *Operation) TimeoutReached(timeout time.Duration) bool {
 	return time.Now().After(operationEndTime)
 }
 
+// IsInProgress checks if the Operation's Phase is StateInProgress
+func (in *Operation) IsInProgress() bool {
+	return in.Status.Phase == StateInProgress
+}
+
 // RequestObject parses and returns the request object associated with
 // the current operation. The request object is essential for the processing of
 // webhook templates as part of the Operation Controller reconcile logic.

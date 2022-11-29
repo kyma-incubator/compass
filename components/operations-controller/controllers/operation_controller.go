@@ -114,7 +114,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return r.finalizeStatusWithError(ctx, operation, err, nil)
 	}
 
-	if operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
+	if operation.IsInProgress() && operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
 		log.C(ctx).Info("Reconciliation timeout reached")
 		return r.finalizeStatusWithError(ctx, operation, errors.ErrWebhookTimeoutReached, webhookEntity)
 	}
