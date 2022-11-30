@@ -533,7 +533,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Application                             func(childComplexity int, id string) int
+		Application                             func(childComplexity int, id *string, name *string, systemNumber *string) int
 		ApplicationTemplate                     func(childComplexity int, id string) int
 		ApplicationTemplates                    func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		Applications                            func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
@@ -797,7 +797,7 @@ type OneTimeTokenForRuntimeResolver interface {
 }
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
-	Application(ctx context.Context, id string) (*Application, error)
+	Application(ctx context.Context, id *string, name *string, systemNumber *string) (*Application, error)
 	ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *PageCursor) (*ApplicationPage, error)
 	ApplicationTemplates(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationTemplatePage, error)
 	ApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
@@ -3560,7 +3560,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Application(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.Application(childComplexity, args["id"].(*string), args["name"].(*string), args["systemNumber"].(*string)), true
 
 	case "Query.applicationTemplate":
 		if e.complexity.Query.ApplicationTemplate == nil {
@@ -5781,7 +5781,7 @@ type Query {
 	**Examples**
 	- [query application](examples/query-application/query-application.graphql)
 	"""
-	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
+	application(id: ID, name: String, systemNumber: String): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
@@ -8390,14 +8390,30 @@ func (ec *executionContext) field_Query_applicationTemplates_args(ctx context.Co
 func (ec *executionContext) field_Query_application_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["systemNumber"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["systemNumber"] = arg2
 	return args, nil
 }
 
@@ -22407,7 +22423,7 @@ func (ec *executionContext) _Query_application(ctx context.Context, field graphq
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Application(rctx, args["id"].(string))
+			return ec.resolvers.Query().Application(rctx, args["id"].(*string), args["name"].(*string), args["systemNumber"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			applicationProvider, err := ec.unmarshalNString2string(ctx, "GetApplicationID")

@@ -847,22 +847,27 @@ func TestResolver_MergeApplications(t *testing.T) {
 
 func TestResolver_Application(t *testing.T) {
 	// GIVEN
-	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Bar")
-	gqlApplication := fixGQLApplication("foo", "Foo", "Bar")
+	gqlInputID := "foo"
+	gqlAppName := "Foo"
+	gqlSystemNumber := "17"
+	modelApplication := fixModelApplication(gqlInputID, "tenant-foo", gqlAppName, "Bar")
+	gqlApplication := fixGQLApplication(gqlInputID, gqlAppName, "Bar")
 	testErr := errors.New("Test error")
 
 	testCases := []struct {
 		Name                string
+		InputSystemNumber   *string
+		InputAppName        *string
 		PersistenceFn       func() *persistenceautomock.PersistenceTx
 		TransactionerFn     func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
-		InputID             string
+		InputID             *string
 		ExpectedApplication *graphql.Application
 		ExpectedErr         error
 	}{
 		{
-			Name:            "Success",
+			Name:            "Success with application ID",
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.ApplicationService {
@@ -876,9 +881,32 @@ func TestResolver_Application(t *testing.T) {
 				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
 				return conv
 			},
-			InputID:             "foo",
+			InputID:             &gqlInputID,
 			ExpectedApplication: gqlApplication,
 			ExpectedErr:         nil,
+			InputAppName:        nil,
+			InputSystemNumber:   nil,
+		},
+		{
+			Name:            "Success with system number and application name",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("GetByNameAndSystemNumber", contextParam, gqlAppName, gqlSystemNumber).Return(modelApplication, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
+				return conv
+			},
+			InputID:             nil,
+			ExpectedApplication: gqlApplication,
+			ExpectedErr:         nil,
+			InputAppName:        &gqlAppName,
+			InputSystemNumber:   &gqlSystemNumber,
 		},
 		{
 			Name:            "Success returns nil when application not found",
@@ -894,9 +922,11 @@ func TestResolver_Application(t *testing.T) {
 				conv := &automock.ApplicationConverter{}
 				return conv
 			},
-			InputID:             "foo",
+			InputID:             &gqlInputID,
 			ExpectedApplication: nil,
 			ExpectedErr:         nil,
+			InputAppName:        nil,
+			InputSystemNumber:   nil,
 		},
 		{
 			Name:            "Returns error when application retrieval failed",
@@ -912,9 +942,11 @@ func TestResolver_Application(t *testing.T) {
 				conv := &automock.ApplicationConverter{}
 				return conv
 			},
-			InputID:             "foo",
+			InputID:             &gqlInputID,
 			ExpectedApplication: nil,
 			ExpectedErr:         testErr,
+			InputAppName:        nil,
+			InputSystemNumber:   nil,
 		},
 	}
 
@@ -929,7 +961,8 @@ func TestResolver_Application(t *testing.T) {
 			resolver.SetConverter(converter)
 
 			// WHEN
-			result, err := resolver.Application(context.TODO(), testCase.InputID)
+			result, err := resolver.Application(context.TODO(), testCase.InputID,
+				testCase.InputAppName, testCase.InputSystemNumber)
 
 			// then
 			assert.Equal(t, testCase.ExpectedApplication, result)

@@ -411,8 +411,8 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.Labe
 }
 
 // Application missing godoc
-func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
-	return r.app.Application(ctx, id)
+func (r *queryResolver) Application(ctx context.Context, id, name, systemNumber *string) (*graphql.Application, error) {
+	return r.app.Application(ctx, id, name, systemNumber)
 }
 
 // ApplicationTemplates missing godoc

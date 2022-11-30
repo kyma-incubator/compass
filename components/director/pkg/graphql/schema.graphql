@@ -1347,7 +1347,7 @@ type Query {
 	**Examples**
 	- [query application](examples/query-application/query-application.graphql)
 	"""
-	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
+	application(id: ID, name: String, systemNumber: String): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum `first` parameter value is 100
 	

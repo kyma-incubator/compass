@@ -38,6 +38,7 @@ type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	Get(ctx context.Context, id string) (*model.Application, error)
+	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
@@ -266,7 +267,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 }
 
 // Application missing godoc
-func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
+func (r *Resolver) Application(ctx context.Context, id, name, systemNumber *string) (*graphql.Application, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -274,8 +275,16 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+	var app *model.Application
 
-	app, err := r.appSvc.Get(ctx, id)
+	if id != nil {
+		app, err = r.appSvc.Get(ctx, *id)
+	} else if name != nil && systemNumber != nil {
+		app, err = r.appSvc.GetByNameAndSystemNumber(ctx, *name, *systemNumber)
+	} else {
+		return nil, errors.New("You need to pass either the application id or the name and systemNumber")
+	}
+
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
