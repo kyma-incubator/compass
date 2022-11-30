@@ -109,6 +109,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name:        "{{name}}",
 				Description: ptr.String("test {{display-name}}"),
+				Labels:      graphql.Labels{"displayName": "{{display-name}}"},
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
@@ -124,7 +125,6 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 			},
 			Labels: graphql.Labels{
 				testConfig.AppSelfRegDistinguishLabelKey: testConfig.AppSelfRegDistinguishLabelValue,
-				"displayName":                            "{{display-name}}",
 			},
 			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
@@ -188,6 +188,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name:        "{{name}}",
 				Description: ptr.String("test {{display-name}}"),
+				Labels:      graphql.Labels{"displayName": "{{display-name}}"},
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
