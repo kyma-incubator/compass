@@ -1427,6 +1427,14 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	modelAppTemplateInput := fixModelAppTemplateUpdateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
+	gqlAppTemplateUpdateInputWithoutNameProperty := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
+	gqlAppTemplateUpdateInputWithoutNameProperty.ApplicationInput.Name = ""
+	gqlAppTemplateUpdateInputWithoutDisplayNameLabel := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
+	gqlAppTemplateUpdateInputWithoutDisplayNameLabel.ApplicationInput.Labels = graphql.Labels{}
+	gqlAppTemplateUpdateInputWithNonStringDisplayLabel := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
+	gqlAppTemplateUpdateInputWithNonStringDisplayLabel.ApplicationInput.Labels = graphql.Labels{
+		"displayName": false,
+	}
 	gqlAppTemplateUpdateInputWithProvider := fixGQLAppTemplateUpdateInputWithPlaceholderAndProvider(testName)
 
 	labels := map[string]*model.Label{
@@ -1639,96 +1647,24 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			ExpectedError: testError,
 		},
 		{
-			Name: "Returns error when appInputJSON unmarshaling fails",
-			TxFn: txGen.ThatDoesntExpectCommit,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONNonMapString), nil).Once()
-				return appTemplateConv
-			},
-			SelfRegManagerFn: func() *automock.SelfRegisterManager {
-				srm := &automock.SelfRegisterManager{}
-				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(true, nil).Once()
-				return srm
-			},
-			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
-			ExpectedError: errors.New("while unmarshaling application input json"),
-		},
-		{
 			Name: "Returns error when appInputJSON name property is missing",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONWithoutNamePropertyString), nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
 				srm := &automock.SelfRegisterManager{}
-				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(true, nil).Once()
 				return srm
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
-			ExpectedError: errors.New("applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed."),
-		},
-		{
-			Name: "Returns error when appInputJSON name property is not string",
-			TxFn: txGen.ThatDoesntExpectCommit,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONNonStringNamePropertyString), nil).Once()
-				return appTemplateConv
-			},
-			SelfRegManagerFn: func() *automock.SelfRegisterManager {
-				srm := &automock.SelfRegisterManager{}
-				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(true, nil).Once()
-				return srm
-			},
-			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
-			ExpectedError: errors.New("'name' property value must be string"),
-		},
-		{
-			Name: "Returns error when appInputJSON labels are not map",
-			TxFn: txGen.ThatDoesntExpectCommit,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONNonMapLabelsString), nil).Once()
-				return appTemplateConv
-			},
-			SelfRegManagerFn: func() *automock.SelfRegisterManager {
-				srm := &automock.SelfRegisterManager{}
-				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(true, nil).Once()
-				return srm
-			},
-			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
-			ExpectedError: errors.New("app input json labels are type map[string]interface {} instead of map[string]interface{}. false"),
+			Input:         gqlAppTemplateUpdateInputWithoutNameProperty,
+			ExpectedError: errors.New("appInput: (name: cannot be blank.)"),
 		},
 		{
 			Name: "Returns error when appInputJSON displayName label is missing",
@@ -1740,7 +1676,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONWithoutDisplayNameLabelString), nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInputWithoutDisplayNameLabel).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONWithoutDisplayNameLabelString), nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1750,7 +1686,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
+			Input:         gqlAppTemplateUpdateInputWithoutDisplayNameLabel,
 			ExpectedError: errors.New("applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed."),
 		},
 		{
@@ -1763,7 +1699,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONNonStringDisplayNameLabelString), nil).Once()
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInputWithNonStringDisplayLabel).Return(*fixModelAppTemplateUpdateInput(testName, appInputJSONNonStringDisplayNameLabelString), nil).Once()
 				return appTemplateConv
 			},
 			SelfRegManagerFn: func() *automock.SelfRegisterManager {
@@ -1773,7 +1709,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn: UnusedWebhookConv,
 			WebhookSvcFn:  UnusedWebhookSvc,
-			Input:         gqlAppTemplateUpdateInput,
+			Input:         gqlAppTemplateUpdateInputWithNonStringDisplayLabel,
 			ExpectedError: errors.New("\"displayName\" label value must be string"),
 		},
 		{

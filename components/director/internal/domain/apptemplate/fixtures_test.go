@@ -278,6 +278,9 @@ func fixGQLAppTemplateUpdateInputWithPlaceholder(name string) *graphql.Applicati
 		ApplicationInput: &graphql.ApplicationRegisterInput{
 			Name:        "foo",
 			Description: &desc,
+			Labels: graphql.Labels{
+				"displayName": "test",
+			},
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
