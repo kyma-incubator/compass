@@ -19,7 +19,8 @@ const (
 	SuperAdminType          = "Super Admin"
 	BusinessIntegrationType = "Business Integration"
 	TechnicalClient         = "Technical Client"
-	GlobalAccessLevel       = "global"
+
+	GlobalAccessLevel = "global"
 )
 
 type CSRSubjectConfig struct {
