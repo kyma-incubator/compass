@@ -10,7 +10,7 @@ metadata:
     release: {{ .Release.Name }}
 spec:
   hosts:
-    - '{{ .Values.global.istio.discoveryMtlsGateway.host }}.{{ .Values.global.ingress.discoveryDomain.name }}'
+    - '{{ .Values.global.ingress.discoveryDomain.name }}'
   gateways:
     - {{ .Values.global.istio.discoveryMtlsGateway.namespace }}/{{ .Values.global.istio.discoveryMtlsGateway.name }}
   http:
