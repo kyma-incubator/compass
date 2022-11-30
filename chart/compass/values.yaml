@@ -404,7 +404,7 @@ global:
       name: "compass-discovery-gateway"
       namespace: "compass-system"
       certSecretName: compass-discovery-gateway-certs
-      CA: # the CA property and its nested fields are used only in local setup
+      localCA: # the CA property and its nested fields are used only in local setup
         secretName: compass-discovery-gateway-certs-cacert
         namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
         certificate: ""
