@@ -10,6 +10,7 @@ mutation {
     placeholders {
       name
       description
+      jsonPath
     }
     webhooks {
       id
@@ -78,6 +79,7 @@ mutation {
           }
         }
       }
+      createdAt
     }
     labels
     accessLevel

@@ -76,8 +76,11 @@ type ApplicationEventingConfiguration struct {
 // **Validation:** provided placeholders' names are unique
 type ApplicationFromTemplateInput struct {
 	// **Validation:** ASCII printable characters, max=100
-	TemplateName string                `json:"templateName"`
-	Values       []*TemplateValueInput `json:"values"`
+	TemplateName string `json:"templateName"`
+	// **Validation:** if provided, placeholdersPayload not required
+	Values []*TemplateValueInput `json:"values"`
+	// **Validation:** if provided, values not required
+	PlaceholdersPayload *string `json:"placeholdersPayload"`
 }
 
 type ApplicationPage struct {
@@ -101,11 +104,12 @@ type ApplicationRegisterInput struct {
 	// **Validation:** valid URL, max=256
 	HealthCheckURL *string `json:"healthCheckURL"`
 	// **Validation:** valid URL, max=256
-	BaseURL             *string                     `json:"baseUrl"`
-	IntegrationSystemID *string                     `json:"integrationSystemID"`
-	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
-	LocalTenantID       *string                     `json:"localTenantID"`
-	Bundles             []*BundleCreateInput        `json:"bundles"`
+	BaseURL              *string                     `json:"baseUrl"`
+	ApplicationNamespace *string                     `json:"applicationNamespace"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID        *string                     `json:"localTenantID"`
+	Bundles              []*BundleCreateInput        `json:"bundles"`
 }
 
 type ApplicationStatus struct {
@@ -153,11 +157,12 @@ type ApplicationUpdateInput struct {
 	// **Validation:** max=2000
 	Description *string `json:"description"`
 	// **Validation:** valid URL, max=256
-	HealthCheckURL      *string                     `json:"healthCheckURL"`
-	BaseURL             *string                     `json:"baseUrl"`
-	IntegrationSystemID *string                     `json:"integrationSystemID"`
-	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
-	LocalTenantID       *string                     `json:"localTenantID"`
+	HealthCheckURL       *string                     `json:"healthCheckURL"`
+	BaseURL              *string                     `json:"baseUrl"`
+	ApplicationNamespace *string                     `json:"applicationNamespace"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID        *string                     `json:"localTenantID"`
 }
 
 type Auth struct {
@@ -480,11 +485,21 @@ type FormationPage struct {
 
 func (FormationPage) IsPageable() {}
 
+type FormationStatus struct {
+	Condition FormationStatusCondition `json:"condition"`
+	Errors    []*FormationStatusError  `json:"errors"`
+}
+
+type FormationStatusError struct {
+	AssignmentID string `json:"assignmentID"`
+	Message      string `json:"message"`
+	ErrorCode    int    `json:"errorCode"`
+}
+
 type FormationTemplate struct {
 	ID                     string       `json:"id"`
 	Name                   string       `json:"name"`
 	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeType            string       `json:"runtimeType"`
 	RuntimeTypes           []string     `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
@@ -493,7 +508,6 @@ type FormationTemplate struct {
 type FormationTemplateInput struct {
 	Name                   string       `json:"name"`
 	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeType            *string      `json:"runtimeType"`
 	RuntimeTypes           []string     `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
@@ -620,6 +634,7 @@ type PageInfo struct {
 type PlaceholderDefinition struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
+	JSONPath    *string `json:"jsonPath"`
 }
 
 type PlaceholderDefinitionInput struct {
@@ -627,6 +642,8 @@ type PlaceholderDefinitionInput struct {
 	Name string `json:"name"`
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
+	// **Validation:**  max=2000
+	JSONPath *string `json:"jsonPath"`
 }
 
 type RuntimeContextInput struct {
@@ -1299,6 +1316,49 @@ func (e *FormationObjectType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e FormationObjectType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FormationStatusCondition string
+
+const (
+	FormationStatusConditionInProgress FormationStatusCondition = "IN_PROGRESS"
+	FormationStatusConditionError      FormationStatusCondition = "ERROR"
+	FormationStatusConditionReady      FormationStatusCondition = "READY"
+)
+
+var AllFormationStatusCondition = []FormationStatusCondition{
+	FormationStatusConditionInProgress,
+	FormationStatusConditionError,
+	FormationStatusConditionReady,
+}
+
+func (e FormationStatusCondition) IsValid() bool {
+	switch e {
+	case FormationStatusConditionInProgress, FormationStatusConditionError, FormationStatusConditionReady:
+		return true
+	}
+	return false
+}
+
+func (e FormationStatusCondition) String() string {
+	return string(e)
+}
+
+func (e *FormationStatusCondition) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FormationStatusCondition(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FormationStatusCondition", str)
+	}
+	return nil
+}
+
+func (e FormationStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

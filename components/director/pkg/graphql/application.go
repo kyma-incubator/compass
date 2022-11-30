@@ -15,6 +15,7 @@ type Application struct {
 	LocalTenantID         *string            `json:"localTenantID"`
 	SystemStatus          *string            `json:"systemStatus"`
 	BaseURL               *string            `json:"baseUrl"`
+	ApplicationNamespace  *string            `json:"applicationNamespace"`
 	*BaseEntity
 }
 

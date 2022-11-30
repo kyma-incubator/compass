@@ -2,9 +2,9 @@
 query {
   result: tenants(searchTerm: "test", first: 3) {
     data {
-      id
       internalID
       name
+      id
     }
     pageInfo {
       startCursor

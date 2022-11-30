@@ -40,4 +40,3 @@ if [[ ${DUMP_DB} ]]; then
 else
     sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB
 fi
-

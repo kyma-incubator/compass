@@ -31,9 +31,11 @@ const (
 	globalSubaccountIDLabelKey = "global_subaccount_id"
 	namePlaceholder            = "name"
 	displayNamePlaceholder     = "display-name"
+	sapProviderName            = "SAP"
 )
 
 // ApplicationTemplateService missing godoc
+//
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
@@ -52,16 +54,18 @@ type ApplicationTemplateService interface {
 }
 
 // ApplicationTemplateConverter missing godoc
+//
 //go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 	MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error)
 	InputFromGraphQL(in graphql.ApplicationTemplateInput) (model.ApplicationTemplateInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateInput) (model.ApplicationTemplateUpdateInput, error)
-	ApplicationFromTemplateInputFromGraphQL(in graphql.ApplicationFromTemplateInput) model.ApplicationFromTemplateInput
+	ApplicationFromTemplateInputFromGraphQL(appTemplate *model.ApplicationTemplate, in graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error)
 }
 
 // ApplicationConverter missing godoc
+//
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
@@ -70,6 +74,7 @@ type ApplicationConverter interface {
 }
 
 // ApplicationService missing godoc
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
@@ -78,12 +83,14 @@ type ApplicationService interface {
 }
 
 // WebhookService missing godoc
+//
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 }
 
 // WebhookConverter missing godoc
+//
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
@@ -91,6 +98,7 @@ type WebhookConverter interface {
 }
 
 // SelfRegisterManager missing godoc
+//
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
 	IsSelfRegistrationFlow(ctx context.Context, labels map[string]interface{}) (bool, error)
@@ -210,6 +218,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	if err := validateAppTemplateNameBasedOnProvider(in.Name, in.ApplicationInput); err != nil {
+		return nil, err
+	}
+
 	convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
 	if err != nil {
 		return nil, err
@@ -222,7 +234,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
 	validate := func() error {
-		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders)
+		return validateAppTemplateForSelfReg(convertedIn.Placeholders)
 	}
 
 	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
@@ -335,11 +347,14 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.C(ctx).Infof("Registering an Application from Application Template with name %s", in.TemplateName)
-	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
-
 	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id %q from GraphQL input", in.TemplateName, consumerInfo.ConsumerID)
-	appTemplate, err := r.retrieveAppTemplate(ctx, convertedIn.TemplateName, consumerInfo.ConsumerID)
+	appTemplate, err := r.retrieveAppTemplate(ctx, in.TemplateName, consumerInfo.ConsumerID)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Registering an Application from Application Template with name %s", in.TemplateName)
+	convertedIn, err := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(appTemplate, in)
 	if err != nil {
 		return nil, err
 	}
@@ -410,6 +425,10 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
+	if err := validateAppTemplateNameBasedOnProvider(in.Name, in.ApplicationInput); err != nil {
+		return nil, err
+	}
+
 	convertedIn, err := r.appTemplateConverter.UpdateInputFromGraphQL(in)
 	if err != nil {
 		return nil, err
@@ -430,7 +449,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 	if isSelfRegFlow {
-		if err := validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders); err != nil {
+		if err := validateAppTemplateForSelfReg(convertedIn.Placeholders); err != nil {
 			return nil, err
 		}
 	}
@@ -603,7 +622,7 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 	return templates[0], nil
 }
 
-func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder) error {
+func validateAppTemplateForSelfReg(placeholders []model.ApplicationTemplatePlaceholder) error {
 	var namePlaceholderExists bool
 	var displayNameExists bool
 	for _, placeholder := range placeholders {
@@ -619,6 +638,14 @@ func validateAppTemplateForSelfReg(name string, placeholders []model.Application
 
 	if !namePlaceholderExists || !displayNameExists {
 		return errors.Errorf("%q or %q placeholder is missing. They must be present in order to proceed.", namePlaceholder, displayNamePlaceholder)
+	}
+
+	return nil
+}
+
+func validateAppTemplateNameBasedOnProvider(name string, appInput *graphql.ApplicationRegisterInput) error {
+	if appInput == nil || appInput.ProviderName == nil || str.PtrStrToStr(appInput.ProviderName) != sapProviderName {
+		return nil
 	}
 
 	// Matches the following pattern - "SAP <product name>"

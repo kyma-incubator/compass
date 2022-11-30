@@ -86,6 +86,7 @@ query {
             }
           }
         }
+        createdAt
       }
       healthCheckURL
       bundles {
