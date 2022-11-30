@@ -929,6 +929,60 @@ func TestResolver_Application(t *testing.T) {
 			InputSystemNumber:   nil,
 		},
 		{
+			Name:            "Returns error when only application name is given",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			InputID:             nil,
+			ExpectedApplication: nil,
+			ExpectedErr:         errors.New("You need to pass either the application id or the name and systemNumber"),
+			InputAppName:        &gqlAppName,
+			InputSystemNumber:   nil,
+		},
+		{
+			Name:            "Returns error when only systemNumber is given",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			InputID:             nil,
+			ExpectedApplication: nil,
+			ExpectedErr:         errors.New("You need to pass either the application id or the name and systemNumber"),
+			InputAppName:        nil,
+			InputSystemNumber:   &gqlSystemNumber,
+		},
+		{
+			Name:            "Returns error when all fields are null",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				return conv
+			},
+			InputID:             nil,
+			ExpectedApplication: nil,
+			ExpectedErr:         errors.New("You need to pass either the application id or the name and systemNumber"),
+			InputAppName:        nil,
+			InputSystemNumber:   nil,
+		},
+		{
 			Name:            "Returns error when application retrieval failed",
 			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
 			TransactionerFn: txtest.TransactionerThatSucceeds,
@@ -962,11 +1016,13 @@ func TestResolver_Application(t *testing.T) {
 
 			// WHEN
 			result, err := resolver.Application(context.TODO(), testCase.InputID,
-				testCase.InputAppName, testCase.InputSystemNumber)
+				 testCase.InputAppName, testCase.InputSystemNumber)
 
 			// then
 			assert.Equal(t, testCase.ExpectedApplication, result)
-			assert.Equal(t, testCase.ExpectedErr, err)
+			if testCase.ExpectedErr != nil {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
 
 			svc.AssertExpectations(t)
 			converter.AssertExpectations(t)
