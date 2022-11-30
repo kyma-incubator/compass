@@ -13,11 +13,12 @@ import (
 )
 
 const (
-	RuntimeType           = "Runtime"
-	IntegrationSystemType = "Integration System"
-	ApplicationType       = "Application"
-	SuperAdminType        = "Super Admin"
-	TechnicalClient       = "Technical Client"
+	RuntimeType             = "Runtime"
+	IntegrationSystemType   = "Integration System"
+	ApplicationType         = "Application"
+	SuperAdminType          = "Super Admin"
+	BusinessIntegrationType = "Business Integration"
+	TechnicalClient         = "Technical Client"
 
 	GlobalAccessLevel = "global"
 )
@@ -50,11 +51,12 @@ func (s *subjectConsumerTypeMapping) validate() error {
 	}
 
 	supportedConsumerTypes := map[string]bool{
-		RuntimeType:           true,
-		IntegrationSystemType: true,
-		ApplicationType:       true,
-		SuperAdminType:        true,
-		TechnicalClient:       true,
+		RuntimeType:             true,
+		IntegrationSystemType:   true,
+		ApplicationType:         true,
+		SuperAdminType:          true,
+		BusinessIntegrationType: true,
+		TechnicalClient:         true,
 	}
 
 	supportedAccessLevels := map[string]bool{
