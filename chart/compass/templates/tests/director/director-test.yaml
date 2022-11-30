@@ -190,7 +190,7 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.director.skipPattern }}
-            - name: CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME
+            - name: CERT_SVC_INSTANCE_SECRET_NAME
               value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
             - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT
               value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}

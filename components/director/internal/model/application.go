@@ -21,6 +21,7 @@ type Application struct {
 	SystemNumber          *string
 	LocalTenantID         *string
 	BaseURL               *string         `json:"baseUrl"`
+	ApplicationNamespace  *string         `json:"applicationNamespace"`
 	OrdLabels             json.RawMessage `json:"labels"`
 	CorrelationIDs        json.RawMessage `json:"correlationIds,omitempty"`
 	Type                  string          `json:"-"`
@@ -58,6 +59,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	if update.BaseURL != nil {
 		app.BaseURL = update.BaseURL
+	}
+	if update.ApplicationNamespace != nil {
+		app.ApplicationNamespace = update.ApplicationNamespace
 	}
 	if update.OrdLabels != nil {
 		app.OrdLabels = update.OrdLabels
@@ -125,22 +129,23 @@ type ApplicationPage struct {
 
 // ApplicationRegisterInput missing godoc
 type ApplicationRegisterInput struct {
-	Name                string
-	ProviderName        *string
-	Description         *string
-	Labels              map[string]interface{}
-	HealthCheckURL      *string
-	Webhooks            []*WebhookInput
-	Bundles             []*BundleCreateInput
-	IntegrationSystemID *string
-	StatusCondition     *ApplicationStatusCondition
-	BaseURL             *string
-	SystemNumber        *string
-	OrdLabels           json.RawMessage
-	CorrelationIDs      json.RawMessage
-	SystemStatus        *string
-	DocumentationLabels json.RawMessage
-	LocalTenantID       *string
+	Name                 string
+	ProviderName         *string
+	Description          *string
+	Labels               map[string]interface{}
+	HealthCheckURL       *string
+	Webhooks             []*WebhookInput
+	Bundles              []*BundleCreateInput
+	IntegrationSystemID  *string
+	StatusCondition      *ApplicationStatusCondition
+	BaseURL              *string
+	ApplicationNamespace *string
+	SystemNumber         *string
+	OrdLabels            json.RawMessage
+	CorrelationIDs       json.RawMessage
+	SystemStatus         *string
+	DocumentationLabels  json.RawMessage
+	LocalTenantID        *string
 }
 
 // ApplicationRegisterInputWithTemplate missing godoc
@@ -165,13 +170,14 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 			Condition: getApplicationStatusConditionOrDefault(i.StatusCondition),
 			Timestamp: timestamp,
 		},
-		BaseURL:             i.BaseURL,
-		OrdLabels:           i.OrdLabels,
-		CorrelationIDs:      i.CorrelationIDs,
-		SystemNumber:        i.SystemNumber,
-		LocalTenantID:       i.LocalTenantID,
-		SystemStatus:        i.SystemStatus,
-		DocumentationLabels: i.DocumentationLabels,
+		BaseURL:              i.BaseURL,
+		ApplicationNamespace: i.ApplicationNamespace,
+		OrdLabels:            i.OrdLabels,
+		CorrelationIDs:       i.CorrelationIDs,
+		SystemNumber:         i.SystemNumber,
+		LocalTenantID:        i.LocalTenantID,
+		SystemStatus:         i.SystemStatus,
+		DocumentationLabels:  i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
 			ID:    id,
 			Ready: true,
@@ -190,17 +196,18 @@ func getApplicationStatusConditionOrDefault(in *ApplicationStatusCondition) Appl
 
 // ApplicationUpdateInput missing godoc
 type ApplicationUpdateInput struct {
-	ProviderName        *string
-	Description         *string
-	HealthCheckURL      *string
-	IntegrationSystemID *string
-	StatusCondition     *ApplicationStatusCondition
-	BaseURL             *string
-	OrdLabels           json.RawMessage
-	CorrelationIDs      json.RawMessage
-	SystemStatus        *string
-	DocumentationLabels json.RawMessage
-	LocalTenantID       *string
+	ProviderName         *string
+	Description          *string
+	HealthCheckURL       *string
+	IntegrationSystemID  *string
+	StatusCondition      *ApplicationStatusCondition
+	BaseURL              *string
+	ApplicationNamespace *string
+	OrdLabels            json.RawMessage
+	CorrelationIDs       json.RawMessage
+	SystemStatus         *string
+	DocumentationLabels  json.RawMessage
+	LocalTenantID        *string
 }
 
 // ApplicationWithLabel missing godoc

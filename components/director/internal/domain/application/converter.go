@@ -46,6 +46,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
 		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
 		BaseURL:               repo.NewNullableString(in.BaseURL),
+		ApplicationNamespace:  repo.NewNullableString(in.ApplicationNamespace),
 		SystemNumber:          repo.NewNullableString(in.SystemNumber),
 		LocalTenantID:         repo.NewNullableString(in.LocalTenantID),
 		OrdLabels:             repo.NewNullableStringFromJSONRawMessage(in.OrdLabels),
@@ -83,6 +84,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		IntegrationSystemID:   repo.StringPtrFromNullableString(entity.IntegrationSystemID),
 		ApplicationTemplateID: repo.StringPtrFromNullableString(entity.ApplicationTemplateID),
 		BaseURL:               repo.StringPtrFromNullableString(entity.BaseURL),
+		ApplicationNamespace:  repo.StringPtrFromNullableString(entity.ApplicationNamespace),
 		OrdLabels:             repo.JSONRawMessageFromNullableString(entity.OrdLabels),
 		CorrelationIDs:        repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		SystemStatus:          repo.StringPtrFromNullableString(entity.SystemStatus),
@@ -110,6 +112,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		Description:           in.Description,
 		HealthCheckURL:        in.HealthCheckURL,
 		BaseURL:               in.BaseURL,
+		ApplicationNamespace:  in.ApplicationNamespace,
 		IntegrationSystemID:   in.IntegrationSystemID,
 		ApplicationTemplateID: in.ApplicationTemplateID,
 		ProviderName:          in.ProviderName,
@@ -166,17 +169,18 @@ func (c *converter) CreateInputFromGraphQL(ctx context.Context, in graphql.Appli
 		statusCondition = &condition
 	}
 	return model.ApplicationRegisterInput{
-		Name:                in.Name,
-		Description:         in.Description,
-		Labels:              labels,
-		LocalTenantID:       in.LocalTenantID,
-		BaseURL:             in.BaseURL,
-		HealthCheckURL:      in.HealthCheckURL,
-		IntegrationSystemID: in.IntegrationSystemID,
-		StatusCondition:     statusCondition,
-		ProviderName:        in.ProviderName,
-		Webhooks:            webhooks,
-		Bundles:             bundles,
+		Name:                 in.Name,
+		Description:          in.Description,
+		Labels:               labels,
+		LocalTenantID:        in.LocalTenantID,
+		BaseURL:              in.BaseURL,
+		ApplicationNamespace: in.ApplicationNamespace,
+		HealthCheckURL:       in.HealthCheckURL,
+		IntegrationSystemID:  in.IntegrationSystemID,
+		StatusCondition:      statusCondition,
+		ProviderName:         in.ProviderName,
+		Webhooks:             webhooks,
+		Bundles:              bundles,
 	}, nil
 }
 
@@ -188,13 +192,14 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 		statusCondition = &condition
 	}
 	return model.ApplicationUpdateInput{
-		Description:         in.Description,
-		HealthCheckURL:      in.HealthCheckURL,
-		IntegrationSystemID: in.IntegrationSystemID,
-		LocalTenantID:       in.LocalTenantID,
-		ProviderName:        in.ProviderName,
-		StatusCondition:     statusCondition,
-		BaseURL:             in.BaseURL,
+		Description:          in.Description,
+		HealthCheckURL:       in.HealthCheckURL,
+		IntegrationSystemID:  in.IntegrationSystemID,
+		LocalTenantID:        in.LocalTenantID,
+		ProviderName:         in.ProviderName,
+		StatusCondition:      statusCondition,
+		BaseURL:              in.BaseURL,
+		ApplicationNamespace: in.ApplicationNamespace,
 	}
 }
 
@@ -235,14 +240,15 @@ func (c *converter) GraphQLToModel(obj *graphql.Application, tenantID string) *m
 	}
 
 	return &model.Application{
-		ProviderName:        obj.ProviderName,
-		Name:                obj.Name,
-		Description:         obj.Description,
-		LocalTenantID:       obj.LocalTenantID,
-		Status:              c.statusGraphQLToModel(obj.Status),
-		HealthCheckURL:      obj.HealthCheckURL,
-		IntegrationSystemID: obj.IntegrationSystemID,
-		SystemNumber:        obj.SystemNumber,
+		ProviderName:         obj.ProviderName,
+		Name:                 obj.Name,
+		Description:          obj.Description,
+		LocalTenantID:        obj.LocalTenantID,
+		Status:               c.statusGraphQLToModel(obj.Status),
+		HealthCheckURL:       obj.HealthCheckURL,
+		IntegrationSystemID:  obj.IntegrationSystemID,
+		SystemNumber:         obj.SystemNumber,
+		ApplicationNamespace: obj.ApplicationNamespace,
 		BaseEntity: &model.BaseEntity{
 			ID: obj.ID,
 		},
