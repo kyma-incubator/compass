@@ -233,7 +233,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
 	validate := func() error {
-		return validateAppTemplateForSelfReg(convertedIn.ApplicationInputJSON)
+		return validateAppTemplateForSelfReg(in.ApplicationInput)
 	}
 
 	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
@@ -448,7 +448,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 	if isSelfRegFlow {
-		if err := validateAppTemplateForSelfReg(convertedIn.ApplicationInputJSON); err != nil {
+		if err := validateAppTemplateForSelfReg(in.ApplicationInput); err != nil {
 			return nil, err
 		}
 	}
@@ -621,38 +621,16 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 	return templates[0], nil
 }
 
-func validateAppTemplateForSelfReg(applicationInputJSON string) error {
-	var appNameExists bool
+func validateAppTemplateForSelfReg(applicationInput *graphql.ApplicationRegisterInput) error {
+	appNameExists := applicationInput.Name != ""
 	var appDisplayNameLabelExists bool
 
-	var appInput map[string]interface{}
-
-	if err := json.Unmarshal([]byte(applicationInputJSON), &appInput); err != nil {
-		return errors.Wrapf(err, "while unmarshaling application input json")
-	}
-
-	if appName, ok := appInput["name"]; ok {
-		appNameValue, ok := appName.(string)
+	if displayName, ok := applicationInput.Labels[displayNameLabelKey]; ok {
+		displayNameValue, ok := displayName.(string)
 		if !ok {
-			return fmt.Errorf("'name' property value must be string")
+			return fmt.Errorf("%q label value must be string", displayNameLabelKey)
 		}
-		appNameExists = appNameValue != ""
-	}
-
-	labels, ok := appInput["labels"]
-	if ok && labels != nil {
-		labelsMap, ok := labels.(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("app input json labels are type %T instead of map[string]interface{}. %v", labelsMap, labels)
-		}
-
-		if displayName, ok := labelsMap[displayNameLabelKey]; ok {
-			displayNameValue, ok := displayName.(string)
-			if !ok {
-				return fmt.Errorf("%q label value must be string", displayNameLabelKey)
-			}
-			appDisplayNameLabelExists = displayNameValue != ""
-		}
+		appDisplayNameLabelExists = displayNameValue != ""
 	}
 
 	if !appNameExists || !appDisplayNameLabelExists {
