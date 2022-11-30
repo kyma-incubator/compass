@@ -674,7 +674,6 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 			JSONPath:    &displayNameJSONPath,
 		},
 	}
-	appTmplInput.Labels["displayName"] = []interface{}{"{{display-name}}"}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -728,7 +727,6 @@ func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
 			JSONPath:    &displayNameJSONPath,
 		},
 	}
-	appTmplInput.Labels["displayName"] = []interface{}{"{{display-name}}"}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -775,7 +773,6 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 			JSONPath:    &displayNameJSONPath,
 		},
 	}
-	appTmplInput.Labels["displayName"] = []interface{}{"{{display-name}}"}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
