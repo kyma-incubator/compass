@@ -14,7 +14,7 @@ func FixGetFormationRequest(formationID string) *gcli.Request {
 				  result: formation(id: "%s"){
 					%s
 				  }
-				}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormation()))
+				}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
 func FixListFormationsRequestWithPageSize(pageSize int) *gcli.Request {
@@ -23,7 +23,7 @@ func FixListFormationsRequestWithPageSize(pageSize int) *gcli.Request {
 				  result: formations(first:%d, after:"") {
     					%s
 					}
-				}`, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormation())))
+				}`, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationWithStatus())))
 }
 
 func FixCreateFormationRequest(formationName string) *gcli.Request {

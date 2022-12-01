@@ -1864,14 +1864,15 @@ func TestService_Update(t *testing.T) {
 		updatedDescription := "updatedd"
 		updatedHealthCheckURL := "updatedhcu"
 		updatedBaseURL := "updatedbu"
-		updateInput = fixModelApplicationUpdateInput(appName, updatedDescription, updatedHealthCheckURL, updatedBaseURL, model.ApplicationStatusConditionConnected)
-		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, initialDescrription, initialURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
-		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, updatedDescription, updatedHealthCheckURL, &updatedBaseURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		updatedApplicationNamespace := "updatedappns"
+		updateInput = fixModelApplicationUpdateInput(appName, updatedDescription, updatedHealthCheckURL, updatedBaseURL, updatedApplicationNamespace, model.ApplicationStatusConditionConnected)
+		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, initialDescrription, initialURL, nil, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, updatedDescription, updatedHealthCheckURL, &updatedBaseURL, &updatedApplicationNamespace, model.ApplicationStatusConditionConnected, conditionTimestamp)
 		intSysLabel = fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
 		intSysLabel.Version = 0
 		nameLabel = fixLabelInput("name", "mp-"+appName, id, model.ApplicationLabelableObject)
 		updateInputStatusOnly = fixModelApplicationUpdateInputStatus(model.ApplicationStatusConditionConnected)
-		applicationModelAfterStatusUpdate = fixModelApplicationWithAllUpdatableFields(id, appName, initialDescrription, initialURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfterStatusUpdate = fixModelApplicationWithAllUpdatableFields(id, appName, initialDescrription, initialURL, nil, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
 	}
 
 	resetModels()
@@ -2305,8 +2306,8 @@ func TestService_UpdateBaseURL(t *testing.T) {
 		description := "description"
 		updatedBaseURL := "http://compass.kyma.local"
 		url := "url.com"
-		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
-		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, &updatedBaseURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, nil, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, &updatedBaseURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
 	}
 
 	resetModels()

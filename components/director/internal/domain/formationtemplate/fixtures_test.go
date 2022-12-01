@@ -55,7 +55,6 @@ var (
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
-		RuntimeType:            runtimeTypes[0],
 		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,

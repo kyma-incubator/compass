@@ -12,7 +12,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221124072530-ed0f99e91f80
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221128141611-18b9a15c9a4b
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/onrik/logrus v0.9.0 // indirect
 	github.com/pkg/errors v0.9.1

@@ -18,6 +18,7 @@ type Entity struct {
 	HealthCheckURL        sql.NullString `db:"healthcheck_url"`
 	IntegrationSystemID   sql.NullString `db:"integration_system_id"`
 	BaseURL               sql.NullString `db:"base_url"`
+	ApplicationNamespace  sql.NullString `db:"application_namespace"`
 	SystemNumber          sql.NullString `db:"system_number"`
 	LocalTenantID         sql.NullString `db:"local_tenant_id"`
 	OrdLabels             sql.NullString `db:"labels"`

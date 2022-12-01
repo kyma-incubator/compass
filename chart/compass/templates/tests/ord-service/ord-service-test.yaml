@@ -187,6 +187,8 @@ spec:
               value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
+            - name: CERT_SVC_INSTANCE_SECRET_NAME
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
             - name: APP_APPLICATION_TYPE_LABEL_KEY
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY

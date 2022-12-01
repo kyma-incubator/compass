@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
@@ -133,8 +135,9 @@ var (
 )
 
 func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
-	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
-	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
+	contextWithTenant := tenant.SaveToContext(context.TODO(), "internalTenantID", "externalTenantID")
+	ctxWithTokenConsumer := consumer.SaveToContext(contextWithTenant, tokenConsumer)
+	ctxWithCertConsumer := consumer.SaveToContext(contextWithTenant, certConsumer)
 
 	testCases := []struct {
 		Name           string
@@ -181,6 +184,15 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 			ExpectedErr:    consumer.NoConsumerError,
 			ExpectedOutput: false,
 		},
+		{
+			Name:           "False when context does not contain tenant",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{},
+			Context:        consumer.SaveToContext(context.TODO(), tokenConsumer),
+			ExpectedErr:    nil,
+			ExpectedOutput: false,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -201,12 +213,13 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 }
 
 func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
-	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
-	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
-	ctxWithCertConsumerWithoutRegion := consumer.SaveToContext(context.TODO(), certConsumerWithoutRegion)
-	ctxWithCertConsumerWithFakeRegion := consumer.SaveToContext(context.TODO(), certConsumerWithFakeRegion)
-	ctxWithCertConsumerWithMissingSaaSAppRegion := consumer.SaveToContext(context.TODO(), certConsumerWithMissingSaaSAppRegion)
-	ctxWithCertConsumerWithEmptySaaSAppRegion := consumer.SaveToContext(context.TODO(), certConsumerWithEmptySaaSAppRegion)
+	contextWithTenant := tenant.SaveToContext(context.TODO(), "internalTenantID", "externalTenantID")
+	ctxWithTokenConsumer := consumer.SaveToContext(contextWithTenant, tokenConsumer)
+	ctxWithCertConsumer := consumer.SaveToContext(contextWithTenant, certConsumer)
+	ctxWithCertConsumerWithoutRegion := consumer.SaveToContext(contextWithTenant, certConsumerWithoutRegion)
+	ctxWithCertConsumerWithFakeRegion := consumer.SaveToContext(contextWithTenant, certConsumerWithFakeRegion)
+	ctxWithCertConsumerWithMissingSaaSAppRegion := consumer.SaveToContext(contextWithTenant, certConsumerWithMissingSaaSAppRegion)
+	ctxWithCertConsumerWithEmptySaaSAppRegion := consumer.SaveToContext(contextWithTenant, certConsumerWithEmptySaaSAppRegion)
 
 	testCases := []struct {
 		Name           string
@@ -432,8 +445,9 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 		Flow:       oathkeeper.CertificateFlow,
 	}
 
-	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
-	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
+	contextWithTenant := tenant.SaveToContext(context.TODO(), "internalTenantID", "externalTenantID")
+	ctxWithTokenConsumer := consumer.SaveToContext(contextWithTenant, tokenConsumer)
+	ctxWithCertConsumer := consumer.SaveToContext(contextWithTenant, certConsumer)
 
 	testCases := []struct {
 		Name                                string

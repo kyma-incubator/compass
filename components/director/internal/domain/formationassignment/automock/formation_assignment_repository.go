@@ -294,6 +294,29 @@ func (_m *FormationAssignmentRepository) ListByFormationIDs(ctx context.Context,
 	return r0, r1
 }
 
+// ListByFormationIDsNoPaging provides a mock function with given fields: ctx, tenantID, formationIDs
+func (_m *FormationAssignmentRepository) ListByFormationIDsNoPaging(ctx context.Context, tenantID string, formationIDs []string) ([][]*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, tenantID, formationIDs)
+
+	var r0 [][]*model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) [][]*model.FormationAssignment); ok {
+		r0 = rf(ctx, tenantID, formationIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([][]*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, tenantID, formationIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListForIDs provides a mock function with given fields: ctx, tenant, ids
 func (_m *FormationAssignmentRepository) ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenant, ids)

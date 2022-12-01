@@ -62,6 +62,10 @@ global:
       id: 0d597250-6b2d-4d89-9c54-e23cb497cd01
       type: account
     - name: TestProviderSubaccount
+      id: 47b4575a-f102-414a-8398-2d973ad65f3a
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestCompassProviderSubaccount
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
@@ -111,15 +115,15 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2741"
+      version: "PR-2770"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2741"
+      version: "PR-2770"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2741"
+      version: "PR-2770"
       name: compass-pairing-adapter
     director:
       dir:
@@ -127,15 +131,15 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2741"
+      version: "PR-2772"
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2741"
+      version: "PR-2770"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2741"
+      version: "PR-2766"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -143,11 +147,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2754"
+      version: "PR-2770"
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2741"
+      version: "PR-2770"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -156,7 +160,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2741"
+      version: "PR-2770"
       name: compass-external-services-mock
     console:
       dir:
@@ -164,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2741"
+      version: "PR-2768"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -350,7 +354,7 @@ global:
         oauth:
           host: compass-gateway-auth-oauth
     mtls:
-      manageCerts: true
+      manageCerts: false
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
       external:
@@ -368,7 +372,7 @@ global:
     host: compass-hydrator.compass-system.svc.cluster.local
     port: 3000
     prefix: /hydrators
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}]'
     certificateDataHeader: "Certificate-Data"
     consumerClaimsKeys:
       clientIDKey: "client_id"
@@ -396,6 +400,15 @@ global:
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
   istio:
+    discoveryMtlsGateway:
+      name: "discovery-gateway"
+      namespace: "compass-system"
+      certSecretName: discovery-gateway-certs
+      localCA: # the CA property and its nested fields are used only in local setup
+        secretName: discovery-gateway-certs-cacert
+        namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
+        certificate: ""
+        key: ""
     externalMtlsGateway:
       name: "compass-gateway-external-mtls"
       namespace: "compass-system"
@@ -427,6 +440,10 @@ global:
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
   ingress:
     domainName: "local.kyma.dev"
+    discoveryDomain:
+      name: "discovery.api.local"
+      tlsCert: ""
+      tlsKey: ""
   database:
     sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
@@ -943,7 +960,7 @@ global:
       consumerSubdomain: "compass-external-services-mock-sap-mtls"
       tenants:
         providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
-        providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
+        providerSubaccountID: "47b4575a-f102-414a-8398-2d973ad65f3a" # TestProviderSubaccount from our testing tenants
         consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
         consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
         consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
@@ -1012,6 +1029,13 @@ global:
   # and scopes mapped to a consumer with the given type, then that consumer is using a client certificate
   scopes:
     scopesPerConsumerType:
+      business_integration:
+        - "application_template:read"
+        - "application_template:write"
+        - "formation:read"
+        - "formation:write"
+        - "formation_template:read"
+        - "formation_template:write"
       technical_client:
         - "tenant:read"
         - "tenant:write"
