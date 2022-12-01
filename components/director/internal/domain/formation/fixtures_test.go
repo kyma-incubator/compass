@@ -413,31 +413,31 @@ func fixGqlFormation() *graphql.Formation {
 	}
 }
 
-func fixGqlFormationAssignment(configValue *string) *graphql.FormationAssignment {
+func fixGqlFormationAssignment(state string, configValue *string) *graphql.FormationAssignment {
 	return &graphql.FormationAssignment{
 		ID:         FormationAssignmentID,
 		Source:     FormationAssignmentSource,
 		SourceType: FormationAssignmentSourceType,
 		Target:     FormationAssignmentTarget,
 		TargetType: FormationAssignmentTargetType,
-		State:      FormationAssignmentState,
+		State:      state,
 		Value:      configValue,
 	}
 }
 
-func fixGqlFormationAssignmentWithSuffix(configValue *string, suffix string) *graphql.FormationAssignment {
+func fixGqlFormationAssignmentWithSuffix(state string, configValue *string, suffix string) *graphql.FormationAssignment {
 	return &graphql.FormationAssignment{
 		ID:         FormationAssignmentID + suffix,
 		Source:     FormationAssignmentSource + suffix,
 		SourceType: graphql.FormationAssignmentType(FormationAssignmentSourceType + suffix),
 		Target:     FormationAssignmentTarget + suffix,
 		TargetType: graphql.FormationAssignmentType(FormationAssignmentTargetType + suffix),
-		State:      FormationAssignmentState + suffix,
+		State:      state,
 		Value:      configValue,
 	}
 }
 
-func fixFormationAssignmentModel(configValue json.RawMessage) *model.FormationAssignment {
+func fixFormationAssignmentModel(state string, configValue json.RawMessage) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          FormationAssignmentID,
 		FormationID: FormationAssignmentFormationID,
@@ -446,12 +446,12 @@ func fixFormationAssignmentModel(configValue json.RawMessage) *model.FormationAs
 		SourceType:  FormationAssignmentSourceType,
 		Target:      FormationAssignmentTarget,
 		TargetType:  FormationAssignmentTargetType,
-		State:       FormationAssignmentState,
+		State:       state,
 		Value:       configValue,
 	}
 }
 
-func fixFormationAssignmentModelWithSuffix(configValue json.RawMessage, suffix string) *model.FormationAssignment {
+func fixFormationAssignmentModelWithSuffix(state string, configValue json.RawMessage, suffix string) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          FormationAssignmentID + suffix,
 		FormationID: FormationAssignmentFormationID + suffix,
@@ -460,7 +460,7 @@ func fixFormationAssignmentModelWithSuffix(configValue json.RawMessage, suffix s
 		SourceType:  model.FormationAssignmentType(FormationAssignmentSourceType + suffix),
 		Target:      FormationAssignmentTarget + suffix,
 		TargetType:  model.FormationAssignmentType(FormationAssignmentTargetType + suffix),
-		State:       FormationAssignmentState + suffix,
+		State:       state,
 		Value:       configValue,
 	}
 }

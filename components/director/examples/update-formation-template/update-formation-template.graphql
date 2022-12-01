@@ -5,7 +5,7 @@ mutation {
     in: {
       name: "updated-formation-template-name"
       applicationTypes: ["app-type-3", "app-type-4"]
-      runtimeType: "runtime-type-2"
+      runtimeTypes: ["runtime-type-2"]
       runtimeTypeDisplayName: "test-display-name-2"
       runtimeArtifactKind: SERVICE_INSTANCE
     }
@@ -13,7 +13,7 @@ mutation {
     id
     name
     applicationTypes
-    runtimeType
+    runtimeTypes
     runtimeTypeDisplayName
     runtimeArtifactKind
   }

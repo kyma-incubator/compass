@@ -6,6 +6,9 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -587,6 +590,66 @@ func TestRepository_ListForIDs(t *testing.T) {
 
 		// THEN
 		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	})
+}
+
+func TestRepository_ListByFormationIDsNoPaging(t *testing.T) {
+	testErr := errors.New("test error")
+
+	t.Run("success", func(t *testing.T) {
+		converterMock := &automock.EntityConverter{}
+		defer converterMock.AssertExpectations(t)
+		converterMock.On("FromEntity", faEntity).Return(faModel).Once()
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, last_operation, last_operation_initiator, last_operation_initiator_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id IN ($2)`)).
+			WithArgs(TestTenantID, TestFormationID).WillReturnRows(sqlmock.NewRows(fixColumns).
+			AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, "assign", TestSource, TestSourceType, TestState, TestConfigValueStr))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		expected := [][]*model.FormationAssignment{{faModel}}
+		repository := formationassignment.NewRepository(converterMock)
+
+		// WHEN
+		actual, err := repository.ListByFormationIDsNoPaging(ctx, TestTenantID, []string{TestFormationID})
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("success - returns empty slice given no scenarios", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		repository := formationassignment.NewRepository(nil)
+
+		// WHEN
+		actual, err := repository.ListByFormationIDsNoPaging(ctx, TestTenantID, []string{})
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	})
+
+	t.Run("returns error when listing fails", func(t *testing.T) {
+		converterMock := &automock.EntityConverter{}
+		defer converterMock.AssertExpectations(t)
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		sqlMock.AssertExpectations(t)
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, last_operation, last_operation_initiator, last_operation_initiator_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id IN ($2)`)).
+			WithArgs(TestTenantID, TestFormationID).WillReturnError(testErr)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		repository := formationassignment.NewRepository(converterMock)
+
+		// WHEN
+		actual, err := repository.ListByFormationIDsNoPaging(ctx, TestTenantID, []string{TestFormationID})
+
+		// THEN
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 		assert.Nil(t, actual)
 	})
 }

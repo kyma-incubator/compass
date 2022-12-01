@@ -129,6 +129,12 @@ enum FormationObjectType {
 	RUNTIME_CONTEXT
 }
 
+enum FormationStatusCondition {
+	IN_PROGRESS
+	ERROR
+	READY
+}
+
 enum HealthCheckStatusCondition {
 	SUCCEEDED
 	FAILED
@@ -304,6 +310,7 @@ input ApplicationRegisterInput {
 	**Validation:** valid URL, max=256
 	"""
 	baseUrl: String
+	applicationNamespace: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
@@ -362,6 +369,7 @@ input ApplicationUpdateInput {
 	"""
 	healthCheckURL: String
 	baseUrl: String
+	applicationNamespace: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
@@ -606,7 +614,6 @@ input FormationInput {
 input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
-	runtimeType: String
 	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
@@ -836,6 +843,7 @@ type Application {
 	bundle(id: ID!): Bundle
 	auths: [AppSystemAuth!]
 	eventingConfiguration: ApplicationEventingConfiguration
+	applicationNamespace: String
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
@@ -1065,6 +1073,7 @@ type Formation {
 	formationTemplateId: ID!
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
+	status: FormationStatus!
 }
 
 type FormationAssignment {
@@ -1092,11 +1101,21 @@ type FormationPage implements Pageable {
 	totalCount: Int!
 }
 
+type FormationStatus {
+	condition: FormationStatusCondition!
+	errors: [FormationStatusError!]
+}
+
+type FormationStatusError {
+	assignmentID: ID!
+	message: String!
+	errorCode: Int!
+}
+
 type FormationTemplate {
 	id: ID!
 	name: String!
 	applicationTypes: [String!]!
-	runtimeType: String!
 	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!

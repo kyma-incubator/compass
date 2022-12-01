@@ -55,6 +55,9 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .BaseURL }}
 		baseUrl: "{{ .BaseURL }}"
 		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{ .ApplicationNamespace }}"
+		{{- end }}
 	}`)
 }
 
@@ -81,6 +84,9 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		{{- end }}
 		{{- if .StatusCondition }}
 		statusCondition: {{ .StatusCondition }}
+		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{ .ApplicationNamespace }}"
 		{{- end }}
 	}`)
 }
@@ -557,7 +563,10 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 			{{- range $i, $e := .ApplicationTypes}}
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
-		runtimeType: "{{.RuntimeType}}"
+		runtimeTypes:  [
+			{{- range $i, $e := .RuntimeTypes}}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
 		runtimeArtifactKind: {{.RuntimeArtifactKind}}
 	}`)

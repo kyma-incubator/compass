@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	directoroperation "github.com/kyma-incubator/compass/components/director/pkg/operation"
+
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
@@ -112,7 +114,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return r.finalizeStatusWithError(ctx, operation, err, nil)
 	}
 
-	if operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
+	if operation.IsInProgress() && operation.TimeoutReached(r.determineTimeout(webhookEntity)) {
 		log.C(ctx).Info("Reconciliation timeout reached")
 		return r.finalizeStatusWithError(ctx, operation, errors.ErrWebhookTimeoutReached, webhookEntity)
 	}
@@ -120,9 +122,10 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if !operation.HasPollURL() {
 		log.C(ctx).Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
 		request := webhookclient.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
-
+		isDeleteOrUnpair := operation.Spec.OperationType == v1alpha1.OperationTypeDelete ||
+			(operation.Spec.OperationType == v1alpha1.OperationTypeUpdate && operation.Spec.OperationCategory == directoroperation.OperationCategoryUnpairApplication)
 		response, err := r.webhookClient.Do(ctx, request)
-		if errors.IsWebhookStatusGoneErr(err) && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
+		if errors.IsWebhookStatusGoneErr(err) && isDeleteOrUnpair {
 			log.C(ctx).Info(fmt.Sprintf("%s webhook initial request returned gone status %d", *(webhookEntity.Mode), *response.GoneStatusCode))
 			return r.finalizeStatusSuccess(ctx, operation, webhookEntity)
 		}

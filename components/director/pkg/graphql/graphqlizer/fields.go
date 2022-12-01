@@ -140,13 +140,23 @@ func (fp *GqlFieldsProvider) ForFormation() string {
 	`
 }
 
+// ForFormationWithStatus missing godoc
+func (fp *GqlFieldsProvider) ForFormationWithStatus() string {
+	return fmt.Sprintf(`
+		id
+		name
+		formationTemplateId
+		status {%s}
+	`, fp.ForFormationStatus())
+}
+
 // ForFormationTemplate missing godoc
 func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 	return `
 		id
 		name
         applicationTypes
-	    runtimeType
+	    runtimeTypes
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
 	`
@@ -162,6 +172,25 @@ func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 			targetType
 			state
 			value
+	`
+}
+
+// ForFormationStatus missing godoc
+func (fp *GqlFieldsProvider) ForFormationStatus() string {
+	return fmt.Sprintf(`
+			condition
+			errors {
+				%s
+			}
+	`, fp.ForFormationStatusErrors())
+}
+
+// ForFormationStatusErrors missing godoc
+func (fp *GqlFieldsProvider) ForFormationStatusErrors() string {
+	return `
+        	assignmentID
+        	message
+        	errorCode
 	`
 }
 
