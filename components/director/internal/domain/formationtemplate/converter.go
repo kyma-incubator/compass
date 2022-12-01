@@ -22,7 +22,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 	}
 
 	runtimeTypes := in.RuntimeTypes
-	if in.RuntimeTypes == nil {
+	if in.RuntimeTypes == nil || (len(in.RuntimeTypes) == 0 && in.RuntimeType != nil) {
 		runtimeTypes = []string{*in.RuntimeType}
 	}
 
