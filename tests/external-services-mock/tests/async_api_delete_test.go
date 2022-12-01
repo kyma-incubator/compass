@@ -102,20 +102,25 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
 		appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
 		appTemplateName = fmt.Sprintf("SAP %s", appTemplateName)
+		nameJSONPath := "name-json-path"
+		displayNameJSONPath := "display-name-json-path"
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name:        "{{name}}",
 				Description: ptr.String("test {{display-name}}"),
+				Labels:      graphql.Labels{"displayName": "{{display-name}}"},
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
 					Description: &appName,
+					JSONPath:    &nameJSONPath,
 				},
 				{
 					Name:        "display-name",
 					Description: ptr.String("display-name"),
+					JSONPath:    &displayNameJSONPath,
 				},
 			},
 			Labels: graphql.Labels{
@@ -176,20 +181,25 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
 		appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
 		appTemplateName = fmt.Sprintf("SAP %s", appTemplateName)
+		nameJSONPath := "name-json-path"
+		displayNameJSONPath := "display-name-json-path"
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name:        "{{name}}",
 				Description: ptr.String("test {{display-name}}"),
+				Labels:      graphql.Labels{"displayName": "{{display-name}}"},
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
 					Description: &appName,
+					JSONPath:    &nameJSONPath,
 				},
 				{
 					Name:        "display-name",
 					Description: ptr.String("display-name"),
+					JSONPath:    &displayNameJSONPath,
 				},
 			},
 			Labels: graphql.Labels{

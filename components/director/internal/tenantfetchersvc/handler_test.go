@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -291,7 +291,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 
 			// THEN
 			resp := w.Result()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			assert.NoError(t, err)
 
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -329,7 +329,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 
 		// THEN
 		resp := w.Result()
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 
 		assert.Contains(t, string(body), tenantfetchersvc.InternalServerError)
@@ -438,7 +438,7 @@ func TestService_Dependencies(t *testing.T) {
 
 			// THEN
 			resp := w.Result()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			assert.NoError(t, err)
 
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -545,7 +545,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 
 			// THEN
 			resp := w.Result()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			assert.NoError(t, err)
 
 			if len(testCase.ExpectedErrorOutput) > 0 {

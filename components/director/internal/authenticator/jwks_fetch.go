@@ -2,7 +2,7 @@ package authenticator
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -63,7 +63,7 @@ func FetchJWK(ctx context.Context, urlstring string, options ...jwk.FetchOption)
 			}
 		}()
 
-		buf, err := ioutil.ReadAll(f)
+		buf, err := io.ReadAll(f)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed read content from jwk file")
 		}

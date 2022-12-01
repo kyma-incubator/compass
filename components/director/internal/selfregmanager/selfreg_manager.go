@@ -9,6 +9,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -27,12 +29,14 @@ import (
 )
 
 // ExternalSvcCaller is used to call external services with given authentication
+//
 //go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalSvcCaller interface {
 	Call(*http.Request) (*http.Response, error)
 }
 
 // ExternalSvcCallerProvider provides ExternalSvcCaller based on the provided SelfRegConfig and region
+//
 //go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalSvcCallerProvider interface {
 	GetCaller(config.SelfRegConfig, string) (ExternalSvcCaller, error)
@@ -62,7 +66,7 @@ func (s *selfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, labels
 		return false, errors.Wrapf(err, "while loading consumer")
 	}
 
-	if consumerInfo.Flow.IsCertFlow() {
+	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
 		if _, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]; !exists {
 			return false, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
@@ -80,7 +84,7 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 		return nil, errors.Wrapf(err, "while loading consumer")
 	}
 
-	if consumerInfo.Flow.IsCertFlow() {
+	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
 		distinguishLabel, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
 		if !exists {
 			if resourceType == resource.Runtime {

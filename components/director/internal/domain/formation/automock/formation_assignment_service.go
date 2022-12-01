@@ -13,8 +13,6 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	testing "testing"
-
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -120,6 +118,29 @@ func (_m *FormationAssignmentService) ListByFormationIDs(ctx context.Context, fo
 	return r0, r1
 }
 
+// ListByFormationIDsNoPaging provides a mock function with given fields: ctx, formationIDs
+func (_m *FormationAssignmentService) ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, formationIDs)
+
+	var r0 [][]*model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, []string) [][]*model.FormationAssignment); ok {
+		r0 = rf(ctx, formationIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([][]*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, formationIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListFormationAssignmentsForObjectID provides a mock function with given fields: ctx, formationID, objectID
 func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx context.Context, formationID string, objectID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, formationID, objectID)
@@ -171,8 +192,13 @@ func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Co
 	return r0
 }
 
-// NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentService(t testing.TB) *FormationAssignmentService {
+type mockConstructorTestingTNewFormationAssignmentService interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewFormationAssignmentService(t mockConstructorTestingTNewFormationAssignmentService) *FormationAssignmentService {
 	mock := &FormationAssignmentService{}
 	mock.Mock.Test(t)
 

@@ -27,6 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -47,6 +49,11 @@ import (
 
 func TestSelfRegisterFlow(t *testing.T) {
 	ctx := context.Background()
+
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
 	accountTenantID := conf.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
 
 	// Register application
@@ -84,8 +91,8 @@ func TestSelfRegisterFlow(t *testing.T) {
 		Description: ptr.String("selfRegisterRuntime-description"),
 		Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue},
 	}
-	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
-	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
 	strLbl, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
@@ -102,7 +109,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	// Verify that the label returned cannot be modified
 	setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, conf.SubscriptionConfig.SelfRegisterLabelKey, "value")
 	label := graphql.Label{}
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, setLabelRequest, &label)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", conf.SubscriptionConfig.SelfRegisterLabelKey))
 
@@ -500,7 +507,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-		headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
+		consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
+		require.NoError(t, err)
+		headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
 
 		stdT.Log("Calling director to verify claims validation is successful...")
 		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)

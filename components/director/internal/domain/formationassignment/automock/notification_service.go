@@ -7,8 +7,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	testing "testing"
-
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -42,8 +40,13 @@ func (_m *NotificationService) SendNotification(ctx context.Context, notificatio
 	return r0, r1
 }
 
-// NewNotificationService creates a new instance of NotificationService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationService(t testing.TB) *NotificationService {
+type mockConstructorTestingTNewNotificationService interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewNotificationService creates a new instance of NotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewNotificationService(t mockConstructorTestingTNewNotificationService) *NotificationService {
 	mock := &NotificationService{}
 	mock.Mock.Test(t)
 

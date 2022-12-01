@@ -65,6 +65,8 @@ const (
 	SuperAdminReference SystemAuthReferenceObjectType = "Super Admin"
 	// TechnicalClientReference missing godoc
 	TechnicalClientReference SystemAuthReferenceObjectType = "Technical Client"
+	// BusinessIntegrationReference missing godoc
+	BusinessIntegrationReference SystemAuthReferenceObjectType = "Business Integration"
 )
 
 // IsIntegrationSystemNoTenantFlow missing godoc

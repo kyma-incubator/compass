@@ -41,6 +41,8 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	newIntSys := &directorSchema.IntegrationSystemExt{}
 
 	if conf.IsLocalEnv {
+		updateAdaptersConfigmapWithDefaultValues(t, ctx, conf) // pre-clean-up
+
 		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
 		defer func() {
 			fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
@@ -202,6 +204,8 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	namePlaceholderDescription := "name-description"
 	displayNamePlaceholderDescription := "display-name-description"
 	integrationSystemID := newIntSysID
+	nameJSONPath := "name-json-path"
+	displayNameJSONPath := "display-name-json-path"
 
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        templateName,
@@ -211,15 +215,20 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 			ProviderName:        &providerName,
 			Description:         ptr.String(fmt.Sprintf("test {{%s}}", displayNamePlaceholderKey)),
 			IntegrationSystemID: &integrationSystemID,
+			Labels: directorSchema.Labels{
+				"displayName": fmt.Sprintf("{{%s}}", displayNamePlaceholderKey),
+			},
 		},
 		Placeholders: []*directorSchema.PlaceholderDefinitionInput{
 			{
 				Name:        namePlaceholderKey,
 				Description: &namePlaceholderDescription,
+				JSONPath:    &nameJSONPath,
 			},
 			{
 				Name:        displayNamePlaceholderKey,
 				Description: &displayNamePlaceholderDescription,
+				JSONPath:    &displayNameJSONPath,
 			},
 		},
 		Labels: directorSchema.Labels{
@@ -245,8 +254,8 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 
 	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
 	appTemplateInput.Labels[tenantfetcher.RegionKey] = appTemplateOutput.Labels[tenantfetcher.RegionKey]
-	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
-	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": templateName}
+	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestCompassProviderSubaccount)
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": templateName, "displayName": fmt.Sprintf("{{%s}}", displayNamePlaceholderKey)}
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 
 	t.Logf("Successfully registered application template with name %q", templateName)

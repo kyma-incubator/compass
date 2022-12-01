@@ -29,6 +29,7 @@ type FormationAssignmentRepository interface {
 	GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
+	ListByFormationIDsNoPaging(ctx context.Context, tenantID string, formationIDs []string) ([][]*model.FormationAssignment, error)
 	ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error)
 	ListAllForObjectIDs(ctx context.Context, tenant, formationID string, objectIDs []string) ([]*model.FormationAssignment, error)
 	ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error)
@@ -254,6 +255,17 @@ func (s *service) ListByFormationIDs(ctx context.Context, formationIDs []string,
 	}
 
 	return s.repo.ListByFormationIDs(ctx, tnt, formationIDs, pageSize, cursor)
+}
+
+func (s *service) ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error) {
+	log.C(ctx).Infof("Listing all formation assignment for formation with IDs: %q", formationIDs)
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.repo.ListByFormationIDsNoPaging(ctx, tnt, formationIDs)
 }
 
 // ListFormationAssignmentsForObjectID retrieves all Formation Assignment objects for formation with ID `formationID` that have `objectID` as source or target

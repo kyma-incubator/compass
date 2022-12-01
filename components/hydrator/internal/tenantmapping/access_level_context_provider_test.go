@@ -33,7 +33,6 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
-	tenantKeyNotFoundErr := apperrors.NewKeyDoesNotExistError(string(resource.Tenant))
 
 	authDetails := oathkeeper.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
@@ -43,6 +42,15 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				cert.ConsumerTypeExtraField:  model.IntegrationSystemReference,
 				cert.AccessLevelsExtraField:  []interface{}{tenantEntity.Subaccount},
 				oathkeeper.ExternalTenantKey: consumerTenantID,
+			},
+		},
+	}
+
+	noTenantReqData := oathkeeper.ReqData{
+		Body: oathkeeper.ReqBody{
+			Extra: map[string]interface{}{
+				cert.ConsumerTypeExtraField: model.IntegrationSystemReference,
+				cert.AccessLevelsExtraField: []interface{}{tenantmapping.GlobalAccessLevel},
 			},
 		},
 	}
@@ -72,7 +80,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 		ReqDataInput       oathkeeper.ReqData
 		AuthDetailsInput   oathkeeper.AuthDetails
 		ExpectedInternalID string
-		ExpectedConsumerID string
+		ExpectedExternalID string
 		ExpectedErr        error
 	}{
 		{
@@ -85,6 +93,18 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ReqDataInput:       reqData,
 			AuthDetailsInput:   authDetails,
 			ExpectedInternalID: "",
+			ExpectedExternalID: consumerTenantID,
+			ExpectedErr:        nil,
+		},
+		{
+			Name: "Success on global calls without tenant",
+			DirectorClient: func() *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			ReqDataInput:       noTenantReqData,
+			AuthDetailsInput:   authDetails,
+			ExpectedInternalID: "",
+			ExpectedExternalID: "",
 			ExpectedErr:        nil,
 		},
 		{
@@ -97,6 +117,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ReqDataInput:       reqData,
 			AuthDetailsInput:   authDetails,
 			ExpectedInternalID: "",
+			ExpectedExternalID: consumerTenantID,
 			ExpectedErr:        testError,
 		},
 		{
@@ -109,18 +130,8 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ReqDataInput:       reqData,
 			AuthDetailsInput:   authDetails,
 			ExpectedInternalID: internalSubaccount,
+			ExpectedExternalID: consumerTenantID,
 			ExpectedErr:        nil,
-		},
-		{
-			Name: "Error when can't extract external tenant id",
-			DirectorClient: func() *automock.DirectorClient {
-				client := &automock.DirectorClient{}
-				client.AssertNotCalled(t, "GetTenantByExternalID")
-				return client
-			},
-			ReqDataInput:     oathkeeper.ReqData{},
-			AuthDetailsInput: authDetails,
-			ExpectedErr:      tenantKeyNotFoundErr,
 		},
 		{
 			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
@@ -132,6 +143,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ReqDataInput:       reqData,
 			AuthDetailsInput:   authDetails,
 			ExpectedInternalID: internalSubaccount,
+			ExpectedExternalID: consumerTenantID,
 			ExpectedErr:        nil,
 		},
 		{
@@ -144,6 +156,22 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ReqDataInput:     reqData,
 			AuthDetailsInput: authDetails,
 			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s has no access to %s tenant with ID %s", authDetails.AuthID, testAccount.Type, consumerTenantID)),
+		},
+		{
+			Name: "Error when consumer don't have global access",
+			DirectorClient: func() *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+			ReqDataInput: oathkeeper.ReqData{
+				Body: oathkeeper.ReqBody{
+					Extra: map[string]interface{}{
+						cert.ConsumerTypeExtraField: model.IntegrationSystemReference,
+						cert.AccessLevelsExtraField: []interface{}{tenantEntity.Subaccount},
+					},
+				},
+			},
+			AuthDetailsInput: authDetails,
+			ExpectedErr:      apperrors.NewUnauthorizedError(fmt.Sprintf("Certificate with auth ID %s does not have global access", authDetails.AuthID)),
 		},
 	}
 	for _, testCase := range testCases {
@@ -160,7 +188,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				require.Equal(t, consumer.IntegrationSystem, objectCtx.ConsumerType)
 				require.Equal(t, providerTenantID, objectCtx.ConsumerID)
 				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
-				require.Equal(t, consumerTenantID, objectCtx.TenantContext.ExternalTenantID)
+				require.Equal(t, testCase.ExpectedExternalID, objectCtx.TenantContext.ExternalTenantID)
 				require.Equal(t, "", objectCtx.Scopes)
 				if objectCtx.TenantID != "" {
 					require.Equal(t, region, objectCtx.Region)
@@ -238,7 +266,7 @@ func TestAccessLevelContextProvider_Match(t *testing.T) {
 		require.Nil(t, authDetails)
 		require.NoError(t, err)
 	})
-	t.Run("does not match when tenant header is missing", func(t *testing.T) {
+	t.Run("matches when tenant header is missing", func(t *testing.T) {
 		reqData := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Header: http.Header{
@@ -246,15 +274,16 @@ func TestAccessLevelContextProvider_Match(t *testing.T) {
 					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
 				},
 				Extra: map[string]interface{}{
-					cert.ConsumerTypeExtraField: accessLevels,
+					cert.AccessLevelsExtraField: accessLevels,
 				},
 			},
 		}
 
 		match, authDetails, err := provider.Match(context.TODO(), reqData)
 
-		require.False(t, match)
-		require.Nil(t, authDetails)
+		require.True(t, match)
 		require.NoError(t, err)
+		require.Equal(t, oathkeeper.CertificateFlow, authDetails.AuthFlow)
+		require.Equal(t, clientID, authDetails.AuthID)
 	})
 }

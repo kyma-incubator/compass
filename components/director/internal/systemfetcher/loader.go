@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/fs"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -58,7 +58,7 @@ func NewDataLoader(tx persistence.Transactioner, appTmplSvc appTmplService, intS
 }
 
 // LoadData loads and creates all the necessary data needed by system-fetcher
-func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) ([]fs.FileInfo, error), readFile func(filename string) ([]byte, error)) error {
+func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) ([]os.DirEntry, error), readFile func(filename string) ([]byte, error)) error {
 	appTemplateInputsMap, err := d.loadAppTemplates(ctx, readDir, readFile)
 	if err != nil {
 		return errors.Wrap(err, "failed while loading application templates")
@@ -87,7 +87,7 @@ func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) 
 	return nil
 }
 
-func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname string) ([]fs.FileInfo, error), readFile func(filename string) ([]byte, error)) ([]map[string]interface{}, error) {
+func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname string) ([]os.DirEntry, error), readFile func(filename string) ([]byte, error)) ([]map[string]interface{}, error) {
 	files, err := readDir(applicationTemplatesDirectoryPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while reading directory with application templates files [%s]", applicationTemplatesDirectoryPath)
@@ -262,10 +262,12 @@ func enrichApplicationTemplateInput(appTemplateInputs []model.ApplicationTemplat
 				{
 					Name:        "name",
 					Description: str.Ptr("Application’s technical name"),
+					JSONPath:    str.Ptr("Path to technical name in system information"),
 				},
 				{
 					Name:        "display-name",
 					Description: str.Ptr("Application’s display name"),
+					JSONPath:    str.Ptr("Path to display name in system information"),
 				},
 			}
 		}

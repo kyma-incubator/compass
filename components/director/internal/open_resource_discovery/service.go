@@ -1019,14 +1019,14 @@ func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenc
 }
 
 func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) ([]*model.FetchRequest, error) {
-	specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, objectType, objectID)
+	specIDsFromDB, err := s.specSvc.ListIDByReferenceObjectID(ctx, objectType, objectID)
 	if err != nil {
 		return nil, err
 	}
 
 	fetchRequests := make([]*model.FetchRequest, 0)
-	for _, spec := range specsFromDB {
-		fr, err := s.specSvc.GetFetchRequest(ctx, spec.ID, objectType)
+	for _, specID := range specIDsFromDB {
+		fr, err := s.specSvc.GetFetchRequest(ctx, specID, objectType)
 		if err != nil {
 			return nil, err
 		}
@@ -1132,7 +1132,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 		MetricName: strings.ReplaceAll(strings.ToLower(cfg.JobName), "-", "_") + "_job_sync_failure_number",
 		Timeout:    cfg.ClientTimeout,
 		Subsystem:  metrics.OrdAggregatorSubsystem,
-		Labels:     []string{metrics.ErrorMetricLabel, metrics.APIIDMetricLabel, metrics.CorrelationIDMetricLabel},
+		Labels:     []string{metrics.ErrorMetricLabel, metrics.AppIDMetricLabel, metrics.CorrelationIDMetricLabel},
 	}
 
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
