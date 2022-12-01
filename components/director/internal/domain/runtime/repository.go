@@ -72,7 +72,7 @@ func (r *pgRepository) OwnerExists(ctx context.Context, tenant, id string) (bool
 	return r.ownerExistQuerier.Exists(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// OwnerExistsByFiltersAndID checks if runtime with given id and filters in given tenant exists and has owner access
+// OwnerExistsByFiltersAndID checks if runtime with given id and filters in given tenant exists and has owner access. The results from the filter subqueries are combined using UNION
 func (r *pgRepository) OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error) {
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
@@ -136,7 +136,7 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 	return runtimeModel, nil
 }
 
-// GetByFiltersAndIDUsingUnion missing godoc
+// GetByFiltersAndIDUsingUnion retrieves runtime by its ID if it matches the provided filters. The results from the filter subqueries are combined sing UNION
 func (r *pgRepository) GetByFiltersAndIDUsingUnion(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
