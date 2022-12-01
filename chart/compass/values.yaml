@@ -131,7 +131,7 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2770"
+      version: "PR-2772"
       name: compass-hydrator
     gateway:
       dir:
@@ -139,7 +139,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2770"
+      version: "PR-2766"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -168,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2770"
+      version: "PR-2768"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -354,7 +354,7 @@ global:
         oauth:
           host: compass-gateway-auth-oauth
     mtls:
-      manageCerts: true
+      manageCerts: false
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
       external:
@@ -400,6 +400,15 @@ global:
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
   istio:
+    discoveryMtlsGateway:
+      name: "discovery-gateway"
+      namespace: "compass-system"
+      certSecretName: discovery-gateway-certs
+      localCA: # the CA property and its nested fields are used only in local setup
+        secretName: discovery-gateway-certs-cacert
+        namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
+        certificate: ""
+        key: ""
     externalMtlsGateway:
       name: "compass-gateway-external-mtls"
       namespace: "compass-system"
@@ -431,6 +440,10 @@ global:
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
   ingress:
     domainName: "local.kyma.dev"
+    discoveryDomain:
+      name: "discovery.api.local"
+      tlsCert: ""
+      tlsKey: ""
   database:
     sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
@@ -1016,6 +1029,13 @@ global:
   # and scopes mapped to a consumer with the given type, then that consumer is using a client certificate
   scopes:
     scopesPerConsumerType:
+      business_integration:
+        - "application_template:read"
+        - "application_template:write"
+        - "formation:read"
+        - "formation:write"
+        - "formation_template:read"
+        - "formation_template:write"
       technical_client:
         - "tenant:read"
         - "tenant:write"

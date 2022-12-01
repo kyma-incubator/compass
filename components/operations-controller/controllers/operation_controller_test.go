@@ -19,6 +19,7 @@ package controllers_test
 import (
 	"context"
 	"fmt"
+	directoroperation "github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"testing"
 	"time"
 
@@ -1208,6 +1209,59 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	operation := *initializedMockedOperation
 	typeDelete := v1alpha1.OperationTypeDelete
 	operation.Spec.OperationType = typeDelete
+	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
+
+	k8sClient := &controllersfakes.FakeKubernetesClient{}
+	k8sClient.GetReturns(&operation, nil)
+
+	statusMgrClient := &controllersfakes.FakeStatusManager{}
+	statusMgrClient.InitializeReturns(nil)
+
+	application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &webhookMode})
+
+	directorClient := &controllersfakes.FakeDirectorClient{}
+	directorClient.FetchApplicationReturns(application, nil)
+	directorClient.UpdateOperationReturns(nil)
+
+	webhookClient := &controllersfakes.FakeWebhookClient{}
+	webhookClient.DoReturns(&web_hook.Response{GoneStatusCode: &goneStatusCode}, expectedErr)
+
+	// WHEN:
+	controller := controllers.NewOperationReconciler(webhook.DefaultConfig(), statusMgrClient, k8sClient, directorClient, webhookClient, collector.NewCollector())
+	res, err := controller.Reconcile(context.Background(), ctrlRequest)
+
+	// THEN:
+	// GENERAL ASSERTIONS:
+	require.False(t, res.Requeue)
+	require.Zero(t, res.RequeueAfter)
+
+	require.NoError(t, err)
+
+	// SPECIFIC CLIENT ASSERTIONS:
+	assertK8sGetCalledWithName(t, k8sClient, ctrlRequest.NamespacedName)
+	assertStatusManagerInitializeCalledWithOperation(t, statusMgrClient, &operation)
+	assertStatusManagerSuccessStatusCalledWithOperation(t, statusMgrClient, &operation)
+	assertDirectorFetchApplicationCalled(t, directorClient, operation.Spec.ResourceID, tenantGUID)
+	assertDirectorUpdateOperationCalled(t, directorClient, &operation)
+	assertWebhookDoCalled(t, webhookClient, &operation, &application.Result.Webhooks[0])
+	assertZeroInvocations(t, k8sClient.DeleteCallCount, statusMgrClient.InProgressWithPollURLCallCount,
+		statusMgrClient.InProgressWithPollURLAndLastPollTimestampCallCount, statusMgrClient.FailedStatusCallCount,
+		webhookClient.PollCallCount)
+}
+
+func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_WebhookStatusGoneErrorReturned_When_OperationTypeIsUpdate_ShouldResultNoRequeueNoError(t *testing.T) {
+	// GIVEN:
+	goneStatusCode := 410
+	webhookMode := graphql.WebhookModeAsync
+	expectedErr := webhookclient.NewWebhookStatusGoneErr(goneStatusCode)
+
+	stubLoggerAssertion(t, expectedErr.Error(), "gone response status")
+	defer func() { ctrl.Log = ctrl.Log.WithSink(originalLogSink) }()
+
+	operation := *initializedMockedOperation
+	typeUpdate := v1alpha1.OperationTypeUpdate
+	operation.Spec.OperationType = typeUpdate
+	operation.Spec.OperationCategory = directoroperation.OperationCategoryUnpairApplication
 	operation.ObjectMeta.CreationTimestamp = metav1.Time{Time: time.Now()} // This is necessary because later in the test we rely on ROT to not be reached by the time the Webhook is to be executed
 
 	k8sClient := &controllersfakes.FakeKubernetesClient{}

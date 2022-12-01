@@ -42,6 +42,25 @@ spec:
         - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{.Values.global.ingress.domainName}}"
         {{- end }}
 ---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: {{ .Values.global.istio.discoveryMtlsGateway.name }}
+  namespace: {{ .Values.global.istio.discoveryMtlsGateway.namespace }}
+spec:
+  selector:
+    istio: ingressgateway # use istio default ingress gateway
+  servers:
+    - port:
+        number: 443
+        name: https-mtls
+        protocol: HTTPS
+      tls:
+        mode: MUTUAL
+        credentialName: {{ .Values.global.istio.discoveryMtlsGateway.certSecretName }}
+      hosts:
+        - "{{ .Values.global.ingress.discoveryDomain.name }}"
+---
 {{- if .Values.gateway.enabled }}
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
