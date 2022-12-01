@@ -27,6 +27,7 @@ import (
 )
 
 // SystemAuthService missing godoc
+//
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
 	Create(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
@@ -36,12 +37,14 @@ type SystemAuthService interface {
 }
 
 // ApplicationConverter missing godoc
+//
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 }
 
 // ApplicationService missing godoc
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
@@ -49,12 +52,14 @@ type ApplicationService interface {
 }
 
 // ExternalTenantsService missing godoc
+//
 //go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalTenantsService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // HTTPDoer missing godoc
+//
 //go:generate mockery --name=HTTPDoer --output=automock --outpkg=automock --case=underscore --disable-version-string
 type HTTPDoer interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -179,6 +184,11 @@ func (s *service) createToken(ctx context.Context, tokenType pkgmodel.SystemAuth
 		return nil, err
 	}
 	oneTimeToken.ExpiresAt = oneTimeToken.CreatedAt.Add(expiresAfter)
+
+	oneTimeToken.ScenarioGroups = []string{}
+	if sg := ctx.Value("scenarioGroups"); sg != nil {
+		oneTimeToken.ScenarioGroups = []string{sg.(string)}
+	}
 
 	return oneTimeToken, nil
 }
@@ -352,13 +362,14 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 	}
 
 	rawEnc, err := rawEncoded(&graphql.TokenWithURL{
-		Token:        oneTimeToken.Token,
-		ConnectorURL: oneTimeToken.ConnectorURL,
-		Used:         oneTimeToken.Used,
-		Type:         graphql.OneTimeTokenTypeApplication,
-		ExpiresAt:    (*graphql.Timestamp)(&oneTimeToken.ExpiresAt),
-		CreatedAt:    (*graphql.Timestamp)(&oneTimeToken.CreatedAt),
-		UsedAt:       (*graphql.Timestamp)(&oneTimeToken.UsedAt),
+		Token:          oneTimeToken.Token,
+		ConnectorURL:   oneTimeToken.ConnectorURL,
+		Used:           oneTimeToken.Used,
+		Type:           graphql.OneTimeTokenTypeApplication,
+		ExpiresAt:      (*graphql.Timestamp)(&oneTimeToken.ExpiresAt),
+		CreatedAt:      (*graphql.Timestamp)(&oneTimeToken.CreatedAt),
+		UsedAt:         (*graphql.Timestamp)(&oneTimeToken.UsedAt),
+		ScenarioGroups: oneTimeToken.ScenarioGroups,
 	})
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to generade raw encoded one time token for application, will continue with actual token: %v", err)

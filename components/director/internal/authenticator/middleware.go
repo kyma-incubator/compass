@@ -36,6 +36,7 @@ const (
 )
 
 // ClaimsValidator missing godoc
+//
 //go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClaimsValidator interface {
 	Validate(context.Context, claims.Claims) error
@@ -127,6 +128,11 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
 				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeaderKey, clientUser)
 				ctx = client.SaveToContext(ctx, clientUser)
+			}
+
+			if scenarioGroups := r.Header.Get("ScenarioGroups"); scenarioGroups != "" {
+				log.C(ctx).Infof("Found %s header in request with value: %s", "ScenarioGroups", scenarioGroups)
+				ctx = context.WithValue(ctx, "scenarioGroups", scenarioGroups)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))

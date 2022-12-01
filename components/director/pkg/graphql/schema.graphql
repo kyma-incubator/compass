@@ -1173,6 +1173,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	raw: String
 	rawEncoded: String
 	type: OneTimeTokenType
+	scenarioGroups: [String]
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
@@ -1463,7 +1464,6 @@ type Mutation {
 	createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
 	"""
 	**Examples**
-	- [register application from template with placeholder payload](examples/register-application-from-template/register-application-from-template-with-placeholder-payload.graphql)
 	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
 	"""
 	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")

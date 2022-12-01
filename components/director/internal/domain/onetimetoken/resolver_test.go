@@ -221,14 +221,13 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 
 func TestResolver_RawEncoded(t *testing.T) {
 	ctx := context.TODO()
-	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Used: false, Type: graphql.OneTimeTokenTypeApplication}, LegacyConnectorURL: "legacyConnectorURL"}
+	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Used: false, Type: graphql.OneTimeTokenTypeApplication, ScenarioGroups: []string{"test_scenario_group"}}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
-		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null,\"createdAt\":null,\"usedAt\":null,\"type\":\"Application\"}"
+		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null,\"createdAt\":null,\"usedAt\":null,\"type\":\"Application\",\"scenario_groups\":[\"test_scenario_group\"]}"
 	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		r := onetimetoken.NewTokenResolver(nil, nil, nil, "")
-
 		// WHEN
 		baseEncodedToken, err := r.RawEncoded(ctx, &tokenGraphql.TokenWithURL)
 
@@ -251,9 +250,9 @@ func TestResolver_RawEncoded(t *testing.T) {
 
 func TestResolver_Raw(t *testing.T) {
 	ctx := context.TODO()
-	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Type: graphql.OneTimeTokenTypeApplication}, LegacyConnectorURL: "legacyConnectorURL"}
+	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Type: graphql.OneTimeTokenTypeApplication, ScenarioGroups: []string{"test_scenario_group"}}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
-		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null,\"createdAt\":null,\"usedAt\":null,\"type\":\"Application\"}"
+		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null,\"createdAt\":null,\"usedAt\":null,\"type\":\"Application\",\"scenario_groups\":[\"test_scenario_group\"]}"
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
