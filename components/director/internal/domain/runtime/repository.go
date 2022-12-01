@@ -81,7 +81,7 @@ func (r *pgRepository) OwnerExistsByFiltersAndID(ctx context.Context, tenant, id
 
 	additionalConditions := repo.Conditions{repo.NewEqualCondition("id", id)}
 
-	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.UnionSet, tenantID, filter)
 	if err != nil {
 		return false, errors.Wrap(err, "while building filter query")
 	}
@@ -119,6 +119,33 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 	additionalConditions := repo.Conditions{repo.NewEqualCondition("id", id)}
 
 	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	var runtimeEnt Runtime
+	if err := r.singleGetter.Get(ctx, resource.Runtime, tenant, additionalConditions, repo.NoOrderBy, &runtimeEnt); err != nil {
+		return nil, err
+	}
+
+	runtimeModel := r.conv.FromEntity(&runtimeEnt)
+
+	return runtimeModel, nil
+}
+
+// GetByFiltersAndIDUsingUnion missing godoc
+func (r *pgRepository) GetByFiltersAndIDUsingUnion(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	additionalConditions := repo.Conditions{repo.NewEqualCondition("id", id)}
+
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.UnionSet, tenantID, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
@@ -206,14 +233,19 @@ func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filters []*label
 	return r.multipleFromEntities(entities), nil
 }
 
-// ListAll returns all runtimes in a tenant that match given label filter and owner check to false
+// ListAll returns all runtimes in a tenant that match given label filter and owner check to false. The results from the separate filters are combined using 'INTERSECT'.
 func (r *pgRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	return r.listRuntimes(ctx, tenant, filter, false)
+	return r.listRuntimes(ctx, tenant, filter, label.IntersectSet, false)
 }
 
-// ListOwnedRuntimes returns all runtimes in a tenant that match given label filter and owner check to true
+// ListAllWithUnionSetCombination returns all runtimes in a tenant that match given label filter and owner check to false. The results from the separate filters are combined using 'UNION'.
+func (r *pgRepository) ListAllWithUnionSetCombination(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	return r.listRuntimes(ctx, tenant, filter, label.UnionSet, false)
+}
+
+// ListOwnedRuntimes returns all runtimes in a tenant that match given label filter and owner check to true, The results from the separate filters are combined using 'UNION'.
 func (r *pgRepository) ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	return r.listRuntimes(ctx, tenant, filter, true)
+	return r.listRuntimes(ctx, tenant, filter, label.UnionSet, true)
 }
 
 // RuntimeCollection missing godoc
@@ -397,7 +429,7 @@ func (r *pgRepository) ListByIDs(ctx context.Context, tenant string, ids []strin
 	return r.multipleFromEntities(entities), nil
 }
 
-func (r *pgRepository) listRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, ownerCheck bool) ([]*model.Runtime, error) {
+func (r *pgRepository) listRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, setCombination label.SetCombination, ownerCheck bool) ([]*model.Runtime, error) {
 	var entities RuntimeCollection
 
 	tenantID, err := uuid.Parse(tenant)
@@ -405,7 +437,7 @@ func (r *pgRepository) listRuntimes(ctx context.Context, tenant string, filter [
 		return nil, errors.Wrap(err, "while parsing tenant as UUID")
 	}
 
-	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, setCombination, tenantID, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}

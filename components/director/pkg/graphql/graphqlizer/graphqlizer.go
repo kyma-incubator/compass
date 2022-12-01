@@ -555,6 +555,10 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
 		runtimeType: "{{.RuntimeType}}"
+        runtimeTypes: [
+			{{- range $i, $e := .RuntimeTypes}}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
 		runtimeArtifactKind: {{.RuntimeArtifactKind}}
 	}`)
