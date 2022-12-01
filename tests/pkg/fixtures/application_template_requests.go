@@ -24,8 +24,9 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 			ProviderName: &providerName,
 			Description:  ptr.String("test {{display-name}}"),
 			Labels: graphql.Labels{
-				"a": []string{"b", "c"},
-				"d": []string{"e", "f"},
+				"a":           []string{"b", "c"},
+				"d":           []string{"e", "f"},
+				"displayName": "{{display-name}}",
 			},
 			Webhooks: []*graphql.WebhookInput{{
 				Type: graphql.WebhookTypeConfigurationChanged,
@@ -70,8 +71,9 @@ func FixApplicationTemplateWithoutWebhooks(name string) graphql.ApplicationTempl
 			ProviderName: &providerName,
 			Description:  ptr.String("test {{display-name}}"),
 			Labels: graphql.Labels{
-				"a": []string{"b", "c"},
-				"d": []string{"e", "f"},
+				"a":           []string{"b", "c"},
+				"d":           []string{"e", "f"},
+				"displayName": "{{display-name}}",
 			},
 			HealthCheckURL: ptr.String("http://url.valid"),
 		},

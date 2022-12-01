@@ -109,6 +109,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name:        "{{name}}",
 				Description: ptr.String("test {{display-name}}"),
+				Labels:      graphql.Labels{"displayName": "{{display-name}}"},
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
@@ -187,6 +188,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name:        "{{name}}",
 				Description: ptr.String("test {{display-name}}"),
+				Labels:      graphql.Labels{"displayName": "{{display-name}}"},
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{

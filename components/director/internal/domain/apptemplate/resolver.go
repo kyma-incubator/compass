@@ -29,9 +29,8 @@ import (
 
 const (
 	globalSubaccountIDLabelKey = "global_subaccount_id"
-	namePlaceholder            = "name"
-	displayNamePlaceholder     = "display-name"
 	sapProviderName            = "SAP"
+	displayNameLabelKey        = "displayName"
 )
 
 // ApplicationTemplateService missing godoc
@@ -234,7 +233,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
 	validate := func() error {
-		return validateAppTemplateForSelfReg(convertedIn.Placeholders)
+		return validateAppTemplateForSelfReg(in.ApplicationInput)
 	}
 
 	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
@@ -449,7 +448,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 	if isSelfRegFlow {
-		if err := validateAppTemplateForSelfReg(convertedIn.Placeholders); err != nil {
+		if err := validateAppTemplateForSelfReg(in.ApplicationInput); err != nil {
 			return nil, err
 		}
 	}
@@ -622,22 +621,20 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 	return templates[0], nil
 }
 
-func validateAppTemplateForSelfReg(placeholders []model.ApplicationTemplatePlaceholder) error {
-	var namePlaceholderExists bool
-	var displayNameExists bool
-	for _, placeholder := range placeholders {
-		if placeholder.Name == namePlaceholder {
-			namePlaceholderExists = true
-			continue
-		}
+func validateAppTemplateForSelfReg(applicationInput *graphql.ApplicationRegisterInput) error {
+	appNameExists := applicationInput.Name != ""
+	var appDisplayNameLabelExists bool
 
-		if placeholder.Name == displayNamePlaceholder {
-			displayNameExists = true
+	if displayName, ok := applicationInput.Labels[displayNameLabelKey]; ok {
+		displayNameValue, ok := displayName.(string)
+		if !ok {
+			return fmt.Errorf("%q label value must be string", displayNameLabelKey)
 		}
+		appDisplayNameLabelExists = displayNameValue != ""
 	}
 
-	if !namePlaceholderExists || !displayNameExists {
-		return errors.Errorf("%q or %q placeholder is missing. They must be present in order to proceed.", namePlaceholder, displayNamePlaceholder)
+	if !appNameExists || !appDisplayNameLabelExists {
+		return errors.Errorf("applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed.")
 	}
 
 	return nil
