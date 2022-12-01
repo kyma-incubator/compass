@@ -53,6 +53,11 @@ type Authenticator struct {
 	claimsValidator     ClaimsValidator
 }
 
+type key string
+
+// CtxScenarioGroupsKey missing godoc
+const CtxScenarioGroupsKey key = "scenarioGroups"
+
 // New missing godoc
 func New(httpClient *http.Client, jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string, claimsValidator ClaimsValidator) *Authenticator {
 	return &Authenticator{
@@ -132,7 +137,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 
 			if scenarioGroups := r.Header.Get("ScenarioGroups"); scenarioGroups != "" {
 				log.C(ctx).Infof("Found %s header in request with value: %s", "ScenarioGroups", scenarioGroups)
-				ctx = context.WithValue(ctx, "scenarioGroups", scenarioGroups)
+				ctx = context.WithValue(ctx, CtxScenarioGroupsKey, scenarioGroups)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
