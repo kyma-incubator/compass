@@ -1794,6 +1794,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	appTmplInput.ApplicationInput.ProviderName = nil
 	appTmplInput.ApplicationInput.Description = ptr.String("{{display-name}}")
 	appTmplInput.ApplicationInput.HealthCheckURL = nil
+	appTmplInput.ApplicationInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
 			Name:        namePlaceholder,
@@ -1806,7 +1807,6 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 			JSONPath:    ptr.String(displayNameJSONPath),
 		},
 	}
-
 	// Create Application Template
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)

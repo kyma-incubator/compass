@@ -241,15 +241,19 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 	displayNameJSONPath := "display-name-json-path"
 
 	testCases := []struct {
-		Name                    string
-		AppTemplateName         string
-		AppTemplatePlaceholders []*graphql.PlaceholderDefinitionInput
-		AppInputDescription     *string
-		ExpectedErrMessage      string
+		Name                                  string
+		AppTemplateName                       string
+		AppTemplateAppInputJSONNameProperty   *string
+		AppTemplateAppInputJSONLabelsProperty *map[string]interface{}
+		AppTemplatePlaceholders               []*graphql.PlaceholderDefinitionInput
+		AppInputDescription                   *string
+		ExpectedErrMessage                    string
 	}{
 		{
-			Name:            "not compliant name",
-			AppTemplateName: "not-compliant-name",
+			Name:                                  "not compliant name",
+			AppTemplateName:                       "not-compliant-name",
+			AppTemplateAppInputJSONNameProperty:   str.Ptr("not-compliant-name"),
+			AppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"applicationType": fmt.Sprintf("SAP %s", "app-template-name"), "name": "{{name}}", "displayName": "{{display-name}}"},
 			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
@@ -266,17 +270,28 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 			ExpectedErrMessage:  "application template name \"not-compliant-name\" does not comply with the following naming convention",
 		},
 		{
-			Name:            "missing mandatory placeholders",
-			AppTemplateName: fmt.Sprintf("SAP %s", "app-template-name"),
+			Name:                                  "missing mandatory applicationInput name property",
+			AppTemplateName:                       fmt.Sprintf("SAP %s", "app-template-name"),
+			AppTemplateAppInputJSONNameProperty:   str.Ptr(""),
+			AppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"applicationType": fmt.Sprintf("SAP %s", "app-template-name"), "displayName": "{{display-name}}"},
 			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
-					Name:        "name",
-					Description: &namePlaceholder,
-					JSONPath:    &nameJSONPath,
+					Name:        "display-name",
+					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNamePlaceholder,
 				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
-			ExpectedErrMessage:  "\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed.",
+			ExpectedErrMessage:  "Invalid data ApplicationTemplateInput [appInput=name: cannot be blank.]",
+		},
+		{
+			Name:                                  "missing mandatory applicationInput displayName label property",
+			AppTemplateName:                       fmt.Sprintf("SAP %s", "app-template-name"),
+			AppTemplateAppInputJSONNameProperty:   str.Ptr("test-app"),
+			AppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"applicationType": fmt.Sprintf("SAP %s", "app-template-name")},
+			AppTemplatePlaceholders:               []*graphql.PlaceholderDefinitionInput{},
+			AppInputDescription:                   ptr.String("test {{not-compliant}}"),
+			ExpectedErrMessage:                    "applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed.",
 		},
 	}
 
@@ -288,7 +303,14 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 				appTemplateInput.ApplicationInput.Description = testCase.AppInputDescription
 			}
 			appTemplateInput.Placeholders = testCase.AppTemplatePlaceholders
+			if testCase.AppTemplateAppInputJSONNameProperty != nil {
+				appTemplateInput.ApplicationInput.Name = *testCase.AppTemplateAppInputJSONNameProperty
+			}
 			appTemplateInput.ApplicationInput.ProviderName = &sapProvider
+
+			if testCase.AppTemplateAppInputJSONLabelsProperty != nil {
+				appTemplateInput.ApplicationInput.Labels = *testCase.AppTemplateAppInputJSONLabelsProperty
+			}
 			appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 			require.NoError(t, err)
 
@@ -330,6 +352,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 
+	newAppCreateInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
 	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
@@ -347,7 +370,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	// WHEN
 	t.Log("Update application template")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
-	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName}
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
 
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
@@ -410,11 +433,13 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 	displayNameJSONPath := "display-name-json-path"
 
 	testCases := []struct {
-		Name                       string
-		NewAppTemplateName         string
-		NewAppTemplatePlaceholders []*graphql.PlaceholderDefinitionInput
-		AppInputDescription        *string
-		ExpectedErrMessage         string
+		Name                                     string
+		NewAppTemplateName                       string
+		NewAppTemplateAppInputJSONNameProperty   *string
+		NewAppTemplateAppInputJSONLabelsProperty *map[string]interface{}
+		NewAppTemplatePlaceholders               []*graphql.PlaceholderDefinitionInput
+		AppInputDescription                      *string
+		ExpectedErrMessage                       string
 	}{
 		{
 			Name:               "not compliant name",
@@ -435,8 +460,30 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 			ExpectedErrMessage:  "application template name \"not-compliant-name\" does not comply with the following naming convention",
 		},
 		{
-			Name:               "missing mandatory placeholder",
-			NewAppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SubscriptionConfig.SelfRegRegion),
+			Name:                                     "missing mandatory applicationInput name property",
+			NewAppTemplateName:                       fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SubscriptionConfig.SelfRegRegion),
+			NewAppTemplateAppInputJSONNameProperty:   str.Ptr(""),
+			NewAppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"name": "{{name}}", "displayName": "{{display-name}}"},
+			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "name",
+					Description: &namePlaceholder,
+					JSONPath:    &nameJSONPath,
+				},
+				{
+					Name:        "display-name",
+					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNameJSONPath,
+				},
+			},
+			AppInputDescription: ptr.String("test {{not-compliant}}"),
+			ExpectedErrMessage:  "Invalid data ApplicationTemplateUpdateInput [appInput=name: cannot be blank.]",
+		},
+		{
+			Name:                                     "missing mandatory applicationInput displayName label property",
+			NewAppTemplateName:                       fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SubscriptionConfig.SelfRegRegion),
+			NewAppTemplateAppInputJSONNameProperty:   str.Ptr("test-app"),
+			NewAppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"name": "{{name}}"},
 			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
@@ -445,7 +492,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 				},
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
-			ExpectedErrMessage:  "\"name\" or \"display-name\" placeholder is missing. They must be present in order to proceed.",
+			ExpectedErrMessage:  "applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed.",
 		},
 	}
 
@@ -478,8 +525,16 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 				}},
 				HealthCheckURL: ptr.String("http://url.valid"),
 			}
+
+			if testCase.NewAppTemplateAppInputJSONNameProperty != nil {
+				appRegisterInput.Name = *testCase.NewAppTemplateAppInputJSONNameProperty
+			}
 			appRegisterInput.Description = testCase.AppInputDescription
 			appRegisterInput.ProviderName = &sapProvider
+			if testCase.NewAppTemplateAppInputJSONLabelsProperty != nil {
+				appRegisterInput.Labels = *testCase.NewAppTemplateAppInputJSONLabelsProperty
+			}
+
 			appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: testCase.NewAppTemplateName, ApplicationInput: appRegisterInput, Placeholders: testCase.NewAppTemplatePlaceholders, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 			appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
 

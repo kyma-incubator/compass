@@ -215,6 +215,9 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 			ProviderName:        &providerName,
 			Description:         ptr.String(fmt.Sprintf("test {{%s}}", displayNamePlaceholderKey)),
 			IntegrationSystemID: &integrationSystemID,
+			Labels: directorSchema.Labels{
+				"displayName": fmt.Sprintf("{{%s}}", displayNamePlaceholderKey),
+			},
 		},
 		Placeholders: []*directorSchema.PlaceholderDefinitionInput{
 			{
@@ -252,7 +255,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
 	appTemplateInput.Labels[tenantfetcher.RegionKey] = appTemplateOutput.Labels[tenantfetcher.RegionKey]
 	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestCompassProviderSubaccount)
-	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": templateName}
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": templateName, "displayName": fmt.Sprintf("{{%s}}", displayNamePlaceholderKey)}
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 
 	t.Logf("Successfully registered application template with name %q", templateName)
