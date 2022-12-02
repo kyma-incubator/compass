@@ -17,6 +17,9 @@ global:
   pairingAdapter:
     configMap:
       manage: true
+  gateway:
+    mtls:
+      manageCerts: true
   externalCertConfiguration:
     secrets:
       externalCertSvcSecret:
