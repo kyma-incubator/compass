@@ -8,21 +8,21 @@ RUN go mod download -x
 
 COPY . ${BASE_TEST_DIR}
 
-RUN CGO_ENABLED=0 go test -c ./connectivity-adapter/tests -o connectivity-adapter.test && \
-    CGO_ENABLED=0 go test -c ./connector/tests -o connector.test && \
-    CGO_ENABLED=0 go test -c ./director/tests -o director.test && \
-    CGO_ENABLED=0 go test -c ./ns-adapter/tests -o ns-adapter.test && \
-    CGO_ENABLED=0 go test -c ./external-services-mock/tests -o external-services-mock.test && \
-    CGO_ENABLED=0 go test -c ./gateway/tests -o gateway.test && \
-    CGO_ENABLED=0 go test -c ./ord-aggregator/tests -o ord-aggregator.test && \
-    CGO_ENABLED=0 go test -c ./ord-service/tests -o ord-service.test && \
-    CGO_ENABLED=0 go test -c ./system-broker/tests -o system-broker.test && \
-    CGO_ENABLED=0 go test -c ./tenant-fetcher/tests -o tenant-fetcher.test && \
-    CGO_ENABLED=0 go test -c ./system-fetcher/tests -o system-fetcher.test && \
-    CGO_ENABLED=0 go test -c ./istio/tests -o istio.test && \
-    CGO_ENABLED=0 go test -c ./director/bench -o director.bench && \
-    CGO_ENABLED=0 go test -c ./ord-service/bench -o ord-service.bench && \
-    CGO_ENABLED=0 go test -c ./pairing-adapter/tests -o pairing-adapter.test
+RUN CGO_ENABLED=0 GOWORK=off go test -c ./connectivity-adapter/tests -o connectivity-adapter.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./connector/tests -o connector.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./director/tests -o director.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./ns-adapter/tests -o ns-adapter.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./external-services-mock/tests -o external-services-mock.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./gateway/tests -o gateway.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./ord-aggregator/tests -o ord-aggregator.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./ord-service/tests -o ord-service.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./system-broker/tests -o system-broker.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./tenant-fetcher/tests -o tenant-fetcher.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./system-fetcher/tests -o system-fetcher.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./istio/tests -o istio.test && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./director/bench -o director.bench && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./ord-service/bench -o ord-service.bench && \
+    CGO_ENABLED=0 GOWORK=off go test -c ./pairing-adapter/tests -o pairing-adapter.test
 
 FROM alpine:3.16.2
 

@@ -5523,12 +5523,6 @@ type FormationAssignment {
 	value: String
 }
 
-type FormationStatusError {
-	assignmentID: ID!
-	message: String!
-	errorCode: Int!
-}
-
 type FormationAssignmentPage implements Pageable {
 	data: [FormationAssignment!]!
 	pageInfo: PageInfo!
@@ -5544,6 +5538,12 @@ type FormationPage implements Pageable {
 type FormationStatus {
 	condition: FormationStatusCondition!
 	errors: [FormationStatusError!]
+}
+
+type FormationStatusError {
+	assignmentID: ID!
+	message: String!
+	errorCode: Int!
 }
 
 type FormationTemplate {
@@ -5916,7 +5916,6 @@ type Mutation {
 	createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
 	"""
 	**Examples**
-	- [register application from template with placeholder payload](examples/register-application-from-template/register-application-from-template-with-placeholder-payload.graphql)
 	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
 	"""
 	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
