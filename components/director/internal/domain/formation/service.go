@@ -34,8 +34,9 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
-	GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
+	GetByFiltersAndIDUsingUnion(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	ListAllWithUnionSetCombination(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error)
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
@@ -274,12 +275,15 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+	log.C(ctx).Infof("Assigning object with ID %q of type %q to formation %q", objectID, objectType, formation)
+
 	switch objectType {
 	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
 		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
 		if err != nil {
 			return nil, err
 		}
+
 		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, err
@@ -674,7 +678,7 @@ func (s *service) processScenario(ctx context.Context, in model.AutomaticScenari
 
 	// The part below covers the "multi-tenant" runtime case that we skipped above and
 	// gets all runtimes(with and without owner access) and assign every runtime context(if there is any) for each of the runtimes to formation.
-	runtimes, err := s.runtimeRepo.ListAll(ctx, in.TargetTenantID, lblFilters)
+	runtimes, err := s.runtimeRepo.ListAllWithUnionSetCombination(ctx, in.TargetTenantID, lblFilters)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
 	}
@@ -867,7 +871,7 @@ func (s *service) isASAMatchingRuntimeContext(ctx context.Context, asa *model.Au
 		return false, errors.Wrapf(err, "while getting runtime contexts with ID: %q", runtimeContextID)
 	}
 
-	_, err = s.runtimeRepo.GetByFiltersAndID(ctx, asa.TargetTenantID, rtmCtx.RuntimeID, lblFilters)
+	_, err = s.runtimeRepo.GetByFiltersAndIDUsingUnion(ctx, asa.TargetTenantID, rtmCtx.RuntimeID, lblFilters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
@@ -948,11 +952,13 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID st
 
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
+		log.C(ctx).Infof("The object is not part of any formations. Deleting empty label")
 		return s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey)
 	}
 
 	labelInput.Value = formations
 	labelInput.Version = existingLabel.Version
+	log.C(ctx).Infof("Updating formations list to %q", formations)
 	return s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
 

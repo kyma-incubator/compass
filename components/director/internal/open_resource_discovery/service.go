@@ -1024,12 +1024,18 @@ func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecR
 		return nil, err
 	}
 
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	fetchRequestsFromDB, err := s.specSvc.ListFetchRequestsByReferenceObjectIDs(ctx, tnt, specIDsFromDB, objectType)
+	if err != nil {
+		return nil, err
+	}
+
 	fetchRequests := make([]*model.FetchRequest, 0)
-	for _, specID := range specIDsFromDB {
-		fr, err := s.specSvc.GetFetchRequest(ctx, specID, objectType)
-		if err != nil {
-			return nil, err
-		}
+	for _, fr := range fetchRequestsFromDB {
 		if fr.Status != nil && fr.Status.Condition != model.FetchRequestStatusConditionSucceeded {
 			fetchRequests = append(fetchRequests, fr)
 		}
