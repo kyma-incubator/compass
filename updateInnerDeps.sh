@@ -20,11 +20,7 @@ process_project(){
     echo "[1]--------------  Processing: "${PROJECT_NAME}"  --------------"
     if [ -d "${SOURCE_PATH}/${PROJECT_NAME}" ]; then
         pushd "${SOURCE_PATH}/${PROJECT_NAME}"
-        declare -a dependencies=$(cat go.mod | grep "github.com/kyma-incubator/compass" | grep -v module | cut -d ' ' -f 1 | xargs)
-        for i in "${dependencies[@]}"; do
-            DEPENDENCY=$i
-            go get -u ${DEPENDENCY}${COMMIT_ID:+"@$COMMIT_ID"}
-        done
+        cat go.mod | grep "github.com/kyma-incubator/compass" | grep -v module | cut -d ' ' -f 1 | xargs -I {} go get -u {}${COMMIT_ID:+"@$COMMIT_ID"};go mod tidy
         popd
     else
         echo "[2]---------------  No such project "${PROJECT_NAME}"...  ---------------"
