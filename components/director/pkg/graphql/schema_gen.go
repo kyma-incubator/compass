@@ -5796,7 +5796,7 @@ type Query {
 	- [query application](examples/query-application/query-application.graphql)
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
-	applicationByNameAndSystemNumber(name: String!, systemNumber: String!): Application
+	applicationByNameAndSystemNumber(name: String!, systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationByNameAndSystemNumber")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
@@ -22517,8 +22517,32 @@ func (ec *executionContext) _Query_applicationByNameAndSystemNumber(ctx context.
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ApplicationByNameAndSystemNumber(rctx, args["name"].(string), args["systemNumber"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().ApplicationByNameAndSystemNumber(rctx, args["name"].(string), args["systemNumber"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.applicationByNameAndSystemNumber")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Application); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Application`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
