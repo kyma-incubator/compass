@@ -1,21 +1,14 @@
 go 1.18
 
-use ./components/connectivity-adapter
-
-use ./components/connector
-
-use ./components/director
-
-use ./components/external-services-mock
-
-use ./components/gateway
-
-use ./components/hydrator
-
-use ./components/operations-controller
-
-use ./components/pairing-adapter
-
-use ./components/system-broker
-
-use ./tests
+use (
+	./components/connectivity-adapter
+	./components/connector
+	./components/director
+	./components/external-services-mock
+	./components/gateway
+	./components/hydrator
+	./components/operations-controller
+	./components/pairing-adapter
+	./components/system-broker
+	./tests
+)
