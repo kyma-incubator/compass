@@ -636,7 +636,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenant, runtimeLblFilters).Return(make([]*model.Runtime, 0), nil).Once()
-				runtimeRepo.On("ListAll", ctx, TargetTenant, runtimeLblFilters).Return(make([]*model.Runtime, 0), nil).Once()
+				runtimeRepo.On("ListAllWithUnionSetCombination", ctx, TargetTenant, runtimeLblFilters).Return(make([]*model.Runtime, 0), nil).Once()
 				return runtimeRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
