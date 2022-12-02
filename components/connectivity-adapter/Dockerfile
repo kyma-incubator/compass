@@ -8,7 +8,7 @@ RUN go mod download -x
 
 COPY . ${BASE_APP_DIR}
 
-RUN go build -v -o main ./cmd/main.go
+RUN GOWORK=off go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main
 
 

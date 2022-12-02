@@ -20,14 +20,14 @@ COPY . .
 # Build app
 #
 
-RUN go build -v -o director ./cmd/director/main.go \
-  && go build -v -o ns-adapter ./cmd/ns-adapter/main.go \
-  && go build -v -o tenantfetcher-svc ./cmd/tenantfetcher-svc/main.go \
-  && go build -v -o tenantloader ./cmd/tenantloader/main.go \
-  && go build -v -o ordaggregator ./cmd/ordaggregator/main.go \
-  && go build -v -o scopessynchronizer ./cmd/scopessynchronizer/main.go \
-  && go build -v -o systemfetcher ./cmd/systemfetcher/main.go \
-  && go build -v -o destinationfetcher ./cmd/destinationfetcher-svc/main.go
+RUN GOWORK=off go build -v -o director ./cmd/director/main.go \
+  && GOWORK=off go build -v -o ns-adapter ./cmd/ns-adapter/main.go \
+  && GOWORK=off go build -v -o tenantfetcher-svc ./cmd/tenantfetcher-svc/main.go \
+  && GOWORK=off go build -v -o tenantloader ./cmd/tenantloader/main.go \
+  && GOWORK=off go build -v -o ordaggregator ./cmd/ordaggregator/main.go \
+  && GOWORK=off go build -v -o scopessynchronizer ./cmd/scopessynchronizer/main.go \
+  && GOWORK=off go build -v -o systemfetcher ./cmd/systemfetcher/main.go \
+  && GOWORK=off go build -v -o destinationfetcher ./cmd/destinationfetcher-svc/main.go
 RUN mkdir /app && mv ./director /app/director \
   && mv ./ns-adapter /app/ns-adapter \
   && mv ./tenantfetcher-svc /app/tenantfetcher-svc \

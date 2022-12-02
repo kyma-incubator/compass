@@ -19,7 +19,7 @@ COPY . ${BASE_APP_DIR}
 # Build app
 #
 
-RUN go build -v -o main ./cmd/main.go
+RUN GOWORK=off go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main
 
 FROM alpine:3.16.2
