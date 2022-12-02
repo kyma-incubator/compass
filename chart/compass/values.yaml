@@ -354,7 +354,7 @@ global:
         oauth:
           host: compass-gateway-auth-oauth
     mtls:
-      manageCerts: true
+      manageCerts: false
       host: compass-gateway-mtls
       certSecret: compass-gateway-mtls-certs
       external:
@@ -400,6 +400,15 @@ global:
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
   istio:
+    discoveryMtlsGateway:
+      name: "discovery-gateway"
+      namespace: "compass-system"
+      certSecretName: discovery-gateway-certs
+      localCA: # the CA property and its nested fields are used only in local setup
+        secretName: discovery-gateway-certs-cacert
+        namespace: istio-system # For Ingress Gateway to work properly the namespace needs to be istio-system
+        certificate: ""
+        key: ""
     externalMtlsGateway:
       name: "compass-gateway-external-mtls"
       namespace: "compass-system"
@@ -431,6 +440,10 @@ global:
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
   ingress:
     domainName: "local.kyma.dev"
+    discoveryDomain:
+      name: "discovery.api.local"
+      tlsCert: ""
+      tlsKey: ""
   database:
     sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
