@@ -415,6 +415,11 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Ap
 	return r.app.Application(ctx, id)
 }
 
+// Application missing godoc
+func (r *queryResolver) ApplicationByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*graphql.Application, error) {
+	return r.app.ApplicationByNameAndSystemNumber(ctx, name, systemNumber)
+}
+
 // ApplicationTemplates missing godoc
 func (r *queryResolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
 	return r.appTemplate.ApplicationTemplates(ctx, filter, first, after)

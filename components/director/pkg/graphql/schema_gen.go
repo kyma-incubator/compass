@@ -534,6 +534,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Application                             func(childComplexity int, id string) int
+		ApplicationByNameAndSystemNumber        func(childComplexity int, name string, systemNumber string) int
 		ApplicationTemplate                     func(childComplexity int, id string) int
 		ApplicationTemplates                    func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		Applications                            func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
@@ -798,6 +799,7 @@ type OneTimeTokenForRuntimeResolver interface {
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
 	Application(ctx context.Context, id string) (*Application, error)
+	ApplicationByNameAndSystemNumber(ctx context.Context, name string, systemNumber string) (*Application, error)
 	ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *PageCursor) (*ApplicationPage, error)
 	ApplicationTemplates(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationTemplatePage, error)
 	ApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
@@ -3562,6 +3564,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Application(childComplexity, args["id"].(string)), true
 
+	case "Query.applicationByNameAndSystemNumber":
+		if e.complexity.Query.ApplicationByNameAndSystemNumber == nil {
+			break
+		}
+
+		args, err := ec.field_Query_applicationByNameAndSystemNumber_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ApplicationByNameAndSystemNumber(childComplexity, args["name"].(string), args["systemNumber"].(string)), true
+
 	case "Query.applicationTemplate":
 		if e.complexity.Query.ApplicationTemplate == nil {
 			break
@@ -5523,12 +5537,6 @@ type FormationAssignment {
 	value: String
 }
 
-type FormationStatusError {
-	assignmentID: ID!
-	message: String!
-	errorCode: Int!
-}
-
 type FormationAssignmentPage implements Pageable {
 	data: [FormationAssignment!]!
 	pageInfo: PageInfo!
@@ -5544,6 +5552,12 @@ type FormationPage implements Pageable {
 type FormationStatus {
 	condition: FormationStatusCondition!
 	errors: [FormationStatusError!]
+}
+
+type FormationStatusError {
+	assignmentID: ID!
+	message: String!
+	errorCode: Int!
 }
 
 type FormationTemplate {
@@ -5782,6 +5796,7 @@ type Query {
 	- [query application](examples/query-application/query-application.graphql)
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
+	applicationByNameAndSystemNumber(name: String!, systemNumber: String!): Application
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
@@ -5916,7 +5931,6 @@ type Mutation {
 	createApplicationTemplate(in: ApplicationTemplateInput! @validate): ApplicationTemplate! @hasScopes(path: "graphql.mutation.createApplicationTemplate")
 	"""
 	**Examples**
-	- [register application from template with placeholder payload](examples/register-application-from-template/register-application-from-template-with-placeholder-payload.graphql)
 	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
 	"""
 	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
@@ -8340,6 +8354,28 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_applicationByNameAndSystemNumber_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["systemNumber"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["systemNumber"] = arg1
 	return args, nil
 }
 
@@ -22458,6 +22494,44 @@ func (ec *executionContext) _Query_application(ctx context.Context, field graphq
 	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_applicationByNameAndSystemNumber(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_applicationByNameAndSystemNumber_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ApplicationByNameAndSystemNumber(rctx, args["name"].(string), args["systemNumber"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Application)
+	fc.Result = res
+	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_applicationsForRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31905,6 +31979,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_application(ctx, field)
+				return res
+			})
+		case "applicationByNameAndSystemNumber":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_applicationByNameAndSystemNumber(ctx, field)
 				return res
 			})
 		case "applicationsForRuntime":

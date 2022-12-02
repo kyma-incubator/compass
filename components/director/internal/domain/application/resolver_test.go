@@ -845,6 +845,68 @@ func TestResolver_MergeApplications(t *testing.T) {
 	}
 }
 
+func TestResolver_ApplicationByNameNadSystemNumber(t *testing.T) {
+	// GIVEN
+	appName := "Foo"
+	systemNumber := "18"
+	modelApplication := fixModelApplication("foo", "tenant-foo", appName, "Bar")
+	gqlApplication := fixGQLApplication("foo", appName, "Bar")
+
+	testCases := []struct {
+		Name                string
+		PersistenceFn       func() *persistenceautomock.PersistenceTx
+		TransactionerFn     func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn           func() *automock.ApplicationService
+		ConverterFn         func() *automock.ApplicationConverter
+		AppName             string
+		SystemNumber        string
+		ExpectedApplication *graphql.Application
+		ExpectedErr         error
+	}{
+		{
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("GetByNameAndSystemNumber", contextParam, appName, systemNumber).Return(modelApplication, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
+				return conv
+			},
+			AppName:             appName,
+			SystemNumber:        systemNumber,
+			ExpectedApplication: gqlApplication,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", "")
+			resolver.SetConverter(converter)
+
+			// WHEN
+			result, err := resolver.ApplicationByNameAndSystemNumber(context.TODO(), testCase.AppName, testCase.SystemNumber)
+
+			// then
+			assert.Equal(t, testCase.ExpectedApplication, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			converter.AssertExpectations(t)
+		})
+	}
+}
+
 func TestResolver_Application(t *testing.T) {
 	// GIVEN
 	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Bar")
