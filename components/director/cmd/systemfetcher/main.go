@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
@@ -84,6 +85,8 @@ type config struct {
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+
+	TenantsToSync string `envconfig:"APP_TENANTS_TO_SYNC"`
 }
 
 type appTemplateConfig struct {
@@ -137,7 +140,7 @@ func main() {
 		return
 	}
 
-	if err = sf.SyncSystems(ctx); err != nil {
+	if err = sf.SyncSystems(ctx, strings.Split(cfg.TenantsToSync, ",")); err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to sync systems"))
 	}
 }

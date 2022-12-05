@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -120,7 +120,7 @@ func splitBusinessTenantMappingsToChunks(slice []*model.BusinessTenantMapping, c
 
 // SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
 // and creates any new applications present in the external source.
-func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
+func (s *SystemFetcher) SyncSystems(ctx context.Context, tenantsToSync []string) error {
 	allTenants, err := s.listTenants(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to list tenants")
@@ -128,7 +128,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 
 	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
 	for _, tnt := range allTenants {
-		if tnt.Type == tenantEntity.Account {
+		if str.ContainsInSlice(tenantsToSync, tnt.ExternalTenant) {
 			tenants = append(tenants, tnt)
 		}
 	}
