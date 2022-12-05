@@ -107,6 +107,7 @@ import (
 
 const envPrefix = "APP"
 
+// test
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 
