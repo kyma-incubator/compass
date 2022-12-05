@@ -61,6 +61,7 @@ import (
 
 const envPrefix = "APP"
 
+//
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 	RootAPI string `envconfig:"APP_ROOT_API,default=/hydrators"`

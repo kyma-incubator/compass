@@ -47,6 +47,7 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
+//
 type config struct {
 	Port        int `envconfig:"default=8080"`
 	CertPort    int `envconfig:"default=8081"`

@@ -14,7 +14,7 @@ function checkInputParameterValue() {
         exit 1
     fi
 }
-
+//
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do

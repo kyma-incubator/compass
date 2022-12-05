@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//
 const (
 	eventingCategory            = "eventing"
 	registerApplicationCategory = "register application"

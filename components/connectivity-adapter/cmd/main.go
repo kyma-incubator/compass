@@ -21,6 +21,7 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
+//
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
 

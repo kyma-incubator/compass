@@ -21,6 +21,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+//
 func main() {
 	conf := adapter.Configuration{}
 	err := envconfig.Init(&conf)

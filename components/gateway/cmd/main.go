@@ -29,6 +29,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+//
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 
