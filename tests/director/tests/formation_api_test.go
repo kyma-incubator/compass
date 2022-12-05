@@ -581,7 +581,8 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 		// Create provider formation template
 		providerFormationTmplName := "provider-formation-template-name"
 		providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
-		providerFT := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
+		runtimeTypes := []string{conf.SubscriptionProviderAppNameValue, "runtime-type-2"}
+		providerFT := createFormationTemplateWithMultipleRuntimeTypes(t, ctx, providerFormationTmplName, runtimeTypes, providerAppTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, providerFT.ID)
 
 		// Create kyma formation
@@ -2948,6 +2949,26 @@ func createFormationTemplate(t *testing.T, ctx context.Context, formationTemplat
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           []string{runtimeType},
+		RuntimeTypeDisplayName: formationTemplateName,
+		RuntimeArtifactKind:    runtimeArtifactKind,
+	}
+
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	require.NoError(t, err)
+	formationTmplRequest := fixtures.FixCreateFormationTemplateRequest(formationTmplGQLInput)
+
+	ft := graphql.FormationTemplate{}
+	t.Logf("Creating formation template with name: %q", formationTemplateName)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, formationTmplRequest, &ft)
+	require.NoError(t, err)
+	return ft
+}
+
+func createFormationTemplateWithMultipleRuntimeTypes(t *testing.T, ctx context.Context, formationTemplateName string, runtimeTypes []string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
+	formationTmplInput := graphql.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: formationTemplateName,
 		RuntimeArtifactKind:    runtimeArtifactKind,
 	}
