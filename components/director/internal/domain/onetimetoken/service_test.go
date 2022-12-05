@@ -51,8 +51,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 		suggestedTokenHeaderKey = "suggest_token"
 
-		ctxScenarioGroupKey    = "scenarioGroups"
-		ctxScenarioGroupsValue = "test_scenario_group"
+		ctxScenarioGroupKey = "scenarioGroups"
 	)
 
 	fakeToken := &model.OneTimeToken{
@@ -65,6 +64,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 	headers := http.Header{}
 	headers.Add(suggestedTokenHeaderKey, "true")
 
+	ctxScenarioGroups := "test_scenario_group"
+	ctxScenarioGroupsValue := []string{"test_scenario_group"}
 	subaccountExternalID := "sub-external-tenant"
 	subaccountInternalID := "sub-test-tenant"
 	contextSubaccountWithEnabledSuggestion := context.WithValue(context.TODO(), header.ContextKey, headers)
@@ -220,8 +221,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 				defaultTimeStr, err := time.Time{}.MarshalJSON()
 				assert.NoError(t, err)
-
-				return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"token":"abc","connectorURL":"connector.url","used":false,"expiresAt":%s,"createdAt":%s,"usedAt":%s,"type":"%s","scenario_groups":["%s"]}`, string(converted), string(nowStr), string(defaultTimeStr), tokens.ApplicationToken, ctxScenarioGroupsValue)))
+				return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"token":"abc","connectorURL":"connector.url","used":false,"expiresAt":%s,"createdAt":%s,"usedAt":%s,"type":"%s","scenario_groups":["%s"]}`, string(converted), string(nowStr), string(defaultTimeStr), tokens.ApplicationToken, ctxScenarioGroups)))
 			},
 		},
 		{
@@ -1072,7 +1072,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		LegacyConnectorURL: connectorURL,
 	}
 
-	ctxBackgroundWithScenearioGroups := context.WithValue(context.Background(), ctxScenarioGroupKey, ctxScenarioGroupsValue)
+	ctxBackgroundWithScenarioGroups := context.WithValue(context.Background(), ctxScenarioGroupKey, scenarioGroups)
 
 	t.Run("fails when systemAuth cannot be fetched", func(t *testing.T) {
 		// GIVEN
@@ -1128,8 +1128,8 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		pairingAdapters := &pkgadapters.Adapters{}
 
 		timeService.On("Now").Return(time.Now())
-		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenearioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
-		sysAuthSvc.On("Update", ctxBackgroundWithScenearioGroups, mock.Anything).Return(errors.New(updateErrMsg))
+		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenarioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("Update", ctxBackgroundWithScenarioGroups, mock.Anything).Return(errors.New(updateErrMsg))
 		defer sysAuthSvc.AssertExpectations(t)
 
 		tokenGenerator.On("NewToken").Return(token, nil)
@@ -1139,7 +1139,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 		// WHEN
-		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenearioGroups, systemAuthID)
+		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenarioGroups, systemAuthID)
 
 		// THEN
 		assert.Nil(t, token)
@@ -1156,8 +1156,8 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenearioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID}, nil)
-		sysAuthSvc.On("Update", ctxBackgroundWithScenearioGroups, mock.Anything).Return(nil)
+		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenarioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID}, nil)
+		sysAuthSvc.On("Update", ctxBackgroundWithScenarioGroups, mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
 		tokenGenerator.On("NewToken").Return(token, nil)
@@ -1177,7 +1177,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		}
 
 		// WHEN
-		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenearioGroups, systemAuthID)
+		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenarioGroups, systemAuthID)
 
 		// THEN
 		assert.Equal(t, expectedToken, token)
@@ -1193,8 +1193,8 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenearioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
-		sysAuthSvc.On("Update", ctxBackgroundWithScenearioGroups, mock.Anything).Return(nil)
+		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenarioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("Update", ctxBackgroundWithScenarioGroups, mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
 		tokenGenerator.On("NewToken").Return(token, nil)
@@ -1214,7 +1214,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 		// WHEN
-		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenearioGroups, systemAuthID)
+		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenarioGroups, systemAuthID)
 
 		// THEN
 		assert.Equal(t, expectedToken, token)

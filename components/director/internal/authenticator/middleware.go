@@ -137,7 +137,9 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 
 			if scenarioGroups := r.Header.Get("ScenarioGroups"); scenarioGroups != "" {
 				log.C(ctx).Infof("Found %s header in request with value: %s", "ScenarioGroups", scenarioGroups)
-				ctx = context.WithValue(ctx, CtxScenarioGroupsKey, scenarioGroups)
+				groups := strings.Split(scenarioGroups, ",")
+
+				ctx = context.WithValue(ctx, "scenarioGroups", groups)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))

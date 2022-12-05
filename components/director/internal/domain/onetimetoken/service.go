@@ -187,7 +187,7 @@ func (s *service) createToken(ctx context.Context, tokenType pkgmodel.SystemAuth
 
 	oneTimeToken.ScenarioGroups = []string{}
 	if sg := ctx.Value("scenarioGroups"); sg != nil {
-		oneTimeToken.ScenarioGroups = []string{sg.(string)}
+		oneTimeToken.ScenarioGroups = sg.([]string)
 	}
 
 	return oneTimeToken, nil
