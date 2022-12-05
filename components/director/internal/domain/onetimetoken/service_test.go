@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioGroups"
 	"io"
 	"net/http"
 	"reflect"
@@ -39,6 +40,8 @@ var runtimeID = "runtimeID"
 
 var nowTime = time.Now()
 
+type key string
+
 func TestGenerateOneTimeToken(t *testing.T) {
 	const (
 		tokenValue          = "abc"
@@ -50,9 +53,9 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		integrationSystemID = "123607c7-695f-4a31-b2d1-777939f84123"
 
 		suggestedTokenHeaderKey = "suggest_token"
-
-		ctxScenarioGroupKey = "scenarioGroups"
 	)
+
+	const ctxScenarioGroupKey scenarioGroups.Key = "scenarioGroups"
 
 	fakeToken := &model.OneTimeToken{
 		Used:         false,
@@ -66,6 +69,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 	ctxScenarioGroups := "test_scenario_group"
 	ctxScenarioGroupsValue := []string{"test_scenario_group"}
+
 	subaccountExternalID := "sub-external-tenant"
 	subaccountInternalID := "sub-test-tenant"
 	contextSubaccountWithEnabledSuggestion := context.WithValue(context.TODO(), header.ContextKey, headers)
@@ -1019,7 +1023,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 			// WHEN
 			token, err := tokenSvc.GenerateOneTimeToken(test.ctx, test.objectID, test.tokenType)
-
 			// THEN
 			if test.shouldHaveError {
 				assert.Error(t, err)
@@ -1061,10 +1064,9 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		legacyConnectorURL = "http://connector.url"
 		token              = "YWJj"
 
-		ctxScenarioGroupKey    = "scenarioGroups"
 		ctxScenarioGroupsValue = "test_scenario_group"
 	)
-
+	const ctxScenarioGroupKey scenarioGroups.Key = "scenarioGroups"
 	scenarioGroups := []string{ctxScenarioGroupsValue}
 
 	ottConfig := onetimetoken.Config{

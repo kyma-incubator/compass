@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioGroups"
 	"net/http"
 	"strings"
 	"sync"
@@ -51,6 +52,7 @@ type Authenticator struct {
 	clientIDHeaderKey   string
 	mux                 sync.RWMutex
 	claimsValidator     ClaimsValidator
+	scenarioGroupsKey   string
 }
 
 type key string
@@ -135,11 +137,12 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				ctx = client.SaveToContext(ctx, clientUser)
 			}
 
-			if scenarioGroups := r.Header.Get("ScenarioGroups"); scenarioGroups != "" {
-				log.C(ctx).Infof("Found %s header in request with value: %s", "ScenarioGroups", scenarioGroups)
-				groups := strings.Split(scenarioGroups, ",")
+			if scenarioGroupsValue := r.Header.Get("ScenarioGroups"); scenarioGroupsValue != "" {
+				log.C(ctx).Infof("Found %s header in request with value: %s", a.scenarioGroupsKey, scenarioGroupsValue)
+				groups := strings.Split(scenarioGroupsValue, ",")
 
-				ctx = context.WithValue(ctx, "scenarioGroups", groups)
+				ctx = scenarioGroups.SaveToContext(ctx, groups)
+				//ctx = context.WithValue(ctx, "scenarioGroups", groups)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))
