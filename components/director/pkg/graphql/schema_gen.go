@@ -3418,7 +3418,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OneTimeTokenForApplication.RawEncoded(childComplexity), true
 
-	case "OneTimeTokenForApplication.scenarioGroups":
+	case "OneTimeTokenForApplication.scenariogroups":
 		if e.complexity.OneTimeTokenForApplication.ScenarioGroups == nil {
 			break
 		}
@@ -5634,7 +5634,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	raw: String
 	rawEncoded: String
 	type: OneTimeTokenType
-	scenarioGroups: [String]
+	scenariogroups: [String]
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
@@ -31757,7 +31757,7 @@ func (ec *executionContext) _OneTimeTokenForApplication(ctx context.Context, sel
 			})
 		case "type":
 			out.Values[i] = ec._OneTimeTokenForApplication_type(ctx, field, obj)
-		case "scenarioGroups":
+		case "scenariogroups":
 			out.Values[i] = ec._OneTimeTokenForApplication_scenarioGroups(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

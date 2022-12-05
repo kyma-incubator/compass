@@ -1,13 +1,14 @@
-package scenarioGroups
+package scenariogroups
 
 import (
 	"context"
 )
 
+// Key missing go doc
 type Key string
 
 // ScenarioGroupsContextKey missing godoc
-const ScenarioGroupsContextKey Key = "scenarioGroups"
+const ScenarioGroupsContextKey Key = "scenariogroups"
 
 // LoadFromContext missing godoc
 func LoadFromContext(ctx context.Context) []string {

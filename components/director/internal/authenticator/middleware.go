@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioGroups"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 	"net/http"
 	"strings"
 	"sync"
@@ -58,7 +58,7 @@ type Authenticator struct {
 type key string
 
 // CtxScenarioGroupsKey missing godoc
-const CtxScenarioGroupsKey key = "scenarioGroups"
+const CtxScenarioGroupsKey key = "scenariogroups"
 
 // New missing godoc
 func New(httpClient *http.Client, jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string, claimsValidator ClaimsValidator) *Authenticator {
@@ -141,8 +141,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				log.C(ctx).Infof("Found %s header in request with value: %s", a.scenarioGroupsKey, scenarioGroupsValue)
 				groups := strings.Split(scenarioGroupsValue, ",")
 
-				ctx = scenarioGroups.SaveToContext(ctx, groups)
-				//ctx = context.WithValue(ctx, "scenarioGroups", groups)
+				ctx = scenariogroups.SaveToContext(ctx, groups)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))

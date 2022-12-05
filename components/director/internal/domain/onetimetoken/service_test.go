@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioGroups"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 	"io"
 	"net/http"
 	"reflect"
@@ -55,7 +55,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		suggestedTokenHeaderKey = "suggest_token"
 	)
 
-	const ctxScenarioGroupKey scenarioGroups.Key = "scenarioGroups"
+	const ctxScenarioGroupKey scenariogroups.Key = "scenariogroups"
 
 	fakeToken := &model.OneTimeToken{
 		Used:         false,
@@ -1066,7 +1066,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 
 		ctxScenarioGroupsValue = "test_scenario_group"
 	)
-	const ctxScenarioGroupKey scenarioGroups.Key = "scenarioGroups"
+	const ctxScenarioGroupKey scenariogroups.Key = "scenariogroups"
 	scenarioGroups := []string{ctxScenarioGroupsValue}
 
 	ottConfig := onetimetoken.Config{

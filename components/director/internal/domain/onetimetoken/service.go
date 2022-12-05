@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioGroups"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 	"net/http"
 	"time"
 
@@ -187,7 +187,7 @@ func (s *service) createToken(ctx context.Context, tokenType pkgmodel.SystemAuth
 	oneTimeToken.ExpiresAt = oneTimeToken.CreatedAt.Add(expiresAfter)
 
 	oneTimeToken.ScenarioGroups = []string{}
-	if sg := scenarioGroups.LoadFromContext(ctx); sg != nil {
+	if sg := scenariogroups.LoadFromContext(ctx); sg != nil {
 		oneTimeToken.ScenarioGroups = sg
 	}
 
