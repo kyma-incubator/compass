@@ -36,8 +36,6 @@ const (
 	testScenario                = "test-scenario"
 )
 
-// test
-
 func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
