@@ -49,7 +49,6 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 
 	externalTenantID := authDetails.AuthID
 
-	// test
 	scopes, err := p.directorScopes(consumerType)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", consumerType, err)
