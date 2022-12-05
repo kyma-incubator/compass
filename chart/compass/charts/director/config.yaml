@@ -3,7 +3,7 @@ graphql:
   query:
     applications: ["application:read"]
     application: ["application:read"]
-    applicationByNameAndSystemNumber: ["application:read"]
+    applicationBySystemNumber: ["application:read"]
     applicationsForRuntime: ["application:read"]
     applicationTemplates: ["application_template:read"]
     applicationTemplate: ["application_template:read"]

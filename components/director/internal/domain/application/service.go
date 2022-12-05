@@ -59,6 +59,7 @@ type ApplicationRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
+	GetBySystemNumber(ctx context.Context, tenant, systemNumber string) (*model.Application, error)
 	GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error)
 	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
@@ -321,6 +322,21 @@ func (s *service) GetByNameAndSystemNumber(ctx context.Context, name, systemNumb
 	app, err := s.appRepo.GetByNameAndSystemNumber(ctx, appTenant, name, systemNumber)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application with name %s and system number %s", name, systemNumber)
+	}
+
+	return app, nil
+}
+
+// GetBySystemNumber missing godoc
+func (s *service) GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	app, err := s.appRepo.GetBySystemNumber(ctx, appTenant, systemNumber)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application with system number %s", systemNumber)
 	}
 
 	return app, nil

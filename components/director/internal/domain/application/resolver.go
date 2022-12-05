@@ -40,7 +40,7 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
-	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
+	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context) ([]*model.Application, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
@@ -291,10 +291,10 @@ func (r *Resolver) getApplication(ctx context.Context, get func(context.Context)
 	return r.appConverter.ToGraphQL(app), nil
 }
 
-// ApplicationByNameAndSystemNumber missing godoc
-func (r *Resolver) ApplicationByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*graphql.Application, error) {
+// ApplicationBySystemNumber missing godoc
+func (r *Resolver) ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*graphql.Application, error) {
 	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
-		return r.appSvc.GetByNameAndSystemNumber(ctx, name, systemNumber)
+		return r.appSvc.GetBySystemNumber(ctx, systemNumber)
 	})
 }
 

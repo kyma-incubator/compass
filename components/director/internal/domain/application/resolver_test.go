@@ -845,9 +845,8 @@ func TestResolver_MergeApplications(t *testing.T) {
 	}
 }
 
-func TestResolver_ApplicationByNameNadSystemNumber(t *testing.T) {
+func TestResolver_ApplicationBySystemNumber(t *testing.T) {
 	// GIVEN
-	appName := "Foo"
 	systemNumber := "18"
 	modelApplication := fixModelApplication("foo", "tenant-foo", appName, "Bar")
 	gqlApplication := fixGQLApplication("foo", appName, "Bar")
@@ -858,7 +857,6 @@ func TestResolver_ApplicationByNameNadSystemNumber(t *testing.T) {
 		TransactionerFn     func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ServiceFn           func() *automock.ApplicationService
 		ConverterFn         func() *automock.ApplicationConverter
-		AppName             string
 		SystemNumber        string
 		ExpectedApplication *graphql.Application
 		ExpectedErr         error
@@ -869,7 +867,7 @@ func TestResolver_ApplicationByNameNadSystemNumber(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatSucceeds,
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("GetByNameAndSystemNumber", contextParam, appName, systemNumber).Return(modelApplication, nil).Once()
+				svc.On("GetBySystemNumber", contextParam, systemNumber).Return(modelApplication, nil).Once()
 
 				return svc
 			},
@@ -878,7 +876,6 @@ func TestResolver_ApplicationByNameNadSystemNumber(t *testing.T) {
 				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
 				return conv
 			},
-			AppName:             appName,
 			SystemNumber:        systemNumber,
 			ExpectedApplication: gqlApplication,
 		},
@@ -895,7 +892,7 @@ func TestResolver_ApplicationByNameNadSystemNumber(t *testing.T) {
 			resolver.SetConverter(converter)
 
 			// WHEN
-			result, err := resolver.ApplicationByNameAndSystemNumber(context.TODO(), testCase.AppName, testCase.SystemNumber)
+			result, err := resolver.ApplicationBySystemNumber(context.TODO(), testCase.SystemNumber)
 
 			// then
 			assert.Equal(t, testCase.ExpectedApplication, result)
