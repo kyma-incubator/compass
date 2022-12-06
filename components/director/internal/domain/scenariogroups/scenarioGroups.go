@@ -4,13 +4,13 @@ import (
 	"context"
 )
 
-// Key missing go doc
+// Key is used for type of the key for scenarioGroups in context
 type Key string
 
-// ScenarioGroupsContextKey missing godoc
+// ScenarioGroupsContextKey is the key of the value for scenarioGroups coming from header
 const ScenarioGroupsContextKey Key = "scenarioGroups"
 
-// LoadFromContext missing godoc
+// LoadFromContext retrieves the value of the scenario groups in the context
 func LoadFromContext(ctx context.Context) []string {
 	scenarioGroups := ctx.Value(ScenarioGroupsContextKey)
 	if scenarioGroups == nil {
@@ -20,7 +20,7 @@ func LoadFromContext(ctx context.Context) []string {
 	return scenarioGroups.([]string)
 }
 
-// SaveToContext missing godoc
-func SaveToContext(ctx context.Context, clientID []string) context.Context {
-	return context.WithValue(ctx, ScenarioGroupsContextKey, clientID)
+// SaveToContext adds the value of scenario groups to the context
+func SaveToContext(ctx context.Context, scenarioGroups []string) context.Context {
+	return context.WithValue(ctx, ScenarioGroupsContextKey, scenarioGroups)
 }
