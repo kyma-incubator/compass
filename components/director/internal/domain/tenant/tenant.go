@@ -11,6 +11,9 @@ type key int
 // TenantContextKey is the key under which the TenantCtx is saved in a given context.Context.
 const TenantContextKey key = iota
 
+// LocalTenantIDContextKey is the key under which the local tenant id is saved in a given context.Context.
+const LocalTenantIDContextKey key = iota
+
 // TenantCtx is the structure can be saved in a request context. It is used to determine the tenant context in which the request is being executed.
 type TenantCtx struct {
 	InternalID string
@@ -52,4 +55,24 @@ func LoadTenantPairFromContext(ctx context.Context) (TenantCtx, error) {
 func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {
 	tenantCtx := TenantCtx{InternalID: internalID, ExternalID: externalID}
 	return context.WithValue(ctx, TenantContextKey, tenantCtx)
+}
+
+// LoadLocalTenantIDFromContext retrieves the local tenant ID from the provided context. It returns error if such ID cannot be found.
+func LoadLocalTenantIDFromContext(ctx context.Context) (string, error) {
+	localTenantID, ok := ctx.Value(LocalTenantIDContextKey).(string)
+
+	if !ok {
+		return "", apperrors.NewInternalError("cannot read local tenant id from context")
+	}
+
+	if localTenantID == "" {
+		return "", apperrors.NewInternalError("local tenant id is required")
+	}
+
+	return localTenantID, nil
+}
+
+// SaveLocalTenantIDToContext returns a child context of the provided context, including the provided local tenant id.
+func SaveLocalTenantIDToContext(ctx context.Context, localTenantID string) context.Context {
+	return context.WithValue(ctx, LocalTenantIDContextKey, localTenantID)
 }

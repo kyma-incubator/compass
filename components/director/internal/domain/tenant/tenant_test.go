@@ -106,3 +106,61 @@ func TestSaveToLoadFromContext(t *testing.T) {
 	// then
 	assert.Equal(t, tenants, result.Value(tenant.TenantContextKey))
 }
+
+func TestLoadLocalTenantIDFromContext(t *testing.T) {
+	localTenantID := "foo"
+
+	testCases := []struct {
+		Name    string
+		Context context.Context
+
+		ExpectedResult     string
+		ExpectedErrMessage string
+	}{
+		{
+			Name:               "Success",
+			Context:            context.WithValue(context.TODO(), tenant.LocalTenantIDContextKey, localTenantID),
+			ExpectedResult:     localTenantID,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "Error loading context",
+			Context:            context.TODO(),
+			ExpectedResult:     "",
+			ExpectedErrMessage: "Internal Server Error: cannot read local tenant id from context",
+		},
+		{
+			Name:               "Error in case no local tenant id is provided",
+			Context:            context.WithValue(context.TODO(), tenant.LocalTenantIDContextKey, ""),
+			ExpectedResult:     "",
+			ExpectedErrMessage: "Internal Server Error: local tenant id is required",
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			// WHEN
+			result, err := tenant.LoadLocalTenantIDFromContext(testCase.Context)
+
+			// then
+			if testCase.ExpectedErrMessage != "" {
+				require.Equal(t, testCase.ExpectedErrMessage, err.Error())
+				return
+			}
+
+			assert.Equal(t, testCase.ExpectedResult, result)
+		})
+	}
+}
+
+func TestSaveLocalTenantIDToLoadFromContext(t *testing.T) {
+	// GIVEN
+	localTenantID := "foo"
+	ctx := context.TODO()
+
+	// WHEN
+	result := tenant.SaveLocalTenantIDToContext(ctx, localTenantID)
+
+	// then
+	assert.Equal(t, localTenantID, result.Value(tenant.LocalTenantIDContextKey))
+}
