@@ -42,13 +42,13 @@ func (_m *NotificationsService) GenerateNotifications(ctx context.Context, tenan
 	return r0, r1
 }
 
-type NewNotificationsServiceT interface {
+type mockConstructorTestingTNewNotificationsService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewNotificationsService creates a new instance of NotificationsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationsService(t NewNotificationsServiceT) *NotificationsService {
+func NewNotificationsService(t mockConstructorTestingTNewNotificationsService) *NotificationsService {
 	mock := &NotificationsService{}
 	mock.Mock.Test(t)
 
