@@ -2,8 +2,7 @@
 
 #set -e
 
-CURRENT_PATH=$(cd `dirname $0` && pwd)
-SOURCE_PATH=${GOPATH}/src/github.com/kyma-incubator/compass
+SOURCE_PATH=$(cd `dirname $0` && pwd)
 COMMIT_ID=${1}
 
 pushd () {
