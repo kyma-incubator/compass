@@ -14,7 +14,7 @@ const ScenarioGroupsContextKey Key = "scenarioGroups"
 func LoadFromContext(ctx context.Context) []string {
 	scenarioGroups := ctx.Value(ScenarioGroupsContextKey)
 	if scenarioGroups == nil {
-		return nil
+		return []string{}
 	}
 
 	return scenarioGroups.([]string)

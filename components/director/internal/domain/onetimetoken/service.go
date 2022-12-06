@@ -186,10 +186,7 @@ func (s *service) createToken(ctx context.Context, tokenType pkgmodel.SystemAuth
 	}
 	oneTimeToken.ExpiresAt = oneTimeToken.CreatedAt.Add(expiresAfter)
 
-	oneTimeToken.ScenarioGroups = []string{}
-	if sg := scenariogroups.LoadFromContext(ctx); sg != nil {
-		oneTimeToken.ScenarioGroups = sg
-	}
+	oneTimeToken.ScenarioGroups = scenariogroups.LoadFromContext(ctx)
 
 	return oneTimeToken, nil
 }
@@ -265,11 +262,14 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		log.C(ctx).Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", tntCtx.InternalID, extTenant)
 	}
 
+	scenarioGroups := scenariogroups.LoadFromContext(ctx)
+
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	data := pairing.RequestData{
-		Application: *graphqlApp,
-		Tenant:      extTenant,
-		ClientUser:  clientUser,
+		Application:    *graphqlApp,
+		Tenant:         extTenant,
+		ClientUser:     clientUser,
+		ScenarioGroups: scenarioGroups,
 	}
 
 	asJSON, err := json.Marshal(data)

@@ -34,7 +34,7 @@ const (
 	logKeyConsumerID     = "consumer-id"
 	logKeyTokenClientID  = "token-client-id"
 	logKeyFlow           = "flow"
-	ctxScenarioGroupsKey = "ScenarioGroups"
+	ctxScenarioGroupsKey = "scenario_groups"
 )
 
 // ClaimsValidator missing godoc
@@ -134,7 +134,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 
 			if scenarioGroupsValue := r.Header.Get(ctxScenarioGroupsKey); scenarioGroupsValue != "" {
 				log.C(ctx).Infof("Found %s header in request with value: %s", ctxScenarioGroupsKey, scenarioGroupsValue)
-				groups := strings.Split(scenarioGroupsValue, ",")
+				groups := strings.Split(strings.ToUpper(scenarioGroupsValue), ",")
 
 				ctx = scenariogroups.SaveToContext(ctx, groups)
 			}

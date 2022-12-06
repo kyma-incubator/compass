@@ -26,7 +26,7 @@ func TestLoadFromContext(t *testing.T) {
 		{
 			Name:           "Nil value",
 			Context:        context.TODO(),
-			ExpectedResult: nil,
+			ExpectedResult: []string{},
 		},
 	}
 
