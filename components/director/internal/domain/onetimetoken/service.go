@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
 

@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 

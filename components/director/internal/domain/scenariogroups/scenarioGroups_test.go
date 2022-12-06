@@ -3,8 +3,9 @@ package scenariogroups_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 
 	"github.com/stretchr/testify/assert"
 )

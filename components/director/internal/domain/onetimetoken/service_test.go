@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 	"io"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 

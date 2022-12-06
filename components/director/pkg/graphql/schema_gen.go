@@ -3418,7 +3418,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OneTimeTokenForApplication.RawEncoded(childComplexity), true
 
-	case "OneTimeTokenForApplication.scenariogroups":
+	case "OneTimeTokenForApplication.scenarioGroups":
 		if e.complexity.OneTimeTokenForApplication.ScenarioGroups == nil {
 			break
 		}
@@ -5531,12 +5531,6 @@ type FormationAssignment {
 	value: String
 }
 
-type FormationStatusError {
-	assignmentID: ID!
-	message: String!
-	errorCode: Int!
-}
-
 type FormationAssignmentPage implements Pageable {
 	data: [FormationAssignment!]!
 	pageInfo: PageInfo!
@@ -5552,6 +5546,12 @@ type FormationPage implements Pageable {
 type FormationStatus {
 	condition: FormationStatusCondition!
 	errors: [FormationStatusError!]
+}
+
+type FormationStatusError {
+	assignmentID: ID!
+	message: String!
+	errorCode: Int!
 }
 
 type FormationTemplate {
@@ -5634,7 +5634,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	raw: String
 	rawEncoded: String
 	type: OneTimeTokenType
-	scenariogroups: [String]
+	scenarioGroups: [String]
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
@@ -31757,7 +31757,7 @@ func (ec *executionContext) _OneTimeTokenForApplication(ctx context.Context, sel
 			})
 		case "type":
 			out.Values[i] = ec._OneTimeTokenForApplication_type(ctx, field, obj)
-		case "scenariogroups":
+		case "scenarioGroups":
 			out.Values[i] = ec._OneTimeTokenForApplication_scenarioGroups(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

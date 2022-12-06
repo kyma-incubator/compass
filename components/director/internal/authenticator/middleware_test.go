@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 
