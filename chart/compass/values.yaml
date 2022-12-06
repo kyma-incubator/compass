@@ -123,7 +123,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2770"
+      version: "PR-2777"
       name: compass-pairing-adapter
     director:
       dir:
