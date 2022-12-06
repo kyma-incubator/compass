@@ -53,7 +53,6 @@ type Authenticator struct {
 	clientIDHeaderKey   string
 	mux                 sync.RWMutex
 	claimsValidator     ClaimsValidator
-	scenarioGroupsKey   string
 }
 
 // New missing godoc
