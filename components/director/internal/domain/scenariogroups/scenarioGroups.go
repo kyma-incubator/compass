@@ -8,7 +8,7 @@ import (
 type Key string
 
 // ScenarioGroupsContextKey missing godoc
-const ScenarioGroupsContextKey Key = "scenariogroups"
+const ScenarioGroupsContextKey Key = "scenarioGroups"
 
 // LoadFromContext missing godoc
 func LoadFromContext(ctx context.Context) []string {

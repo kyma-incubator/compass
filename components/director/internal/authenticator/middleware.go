@@ -30,10 +30,11 @@ const (
 )
 
 const (
-	logKeyConsumerType  = "consumer-type"
-	logKeyConsumerID    = "consumer-id"
-	logKeyTokenClientID = "token-client-id"
-	logKeyFlow          = "flow"
+	logKeyConsumerType   = "consumer-type"
+	logKeyConsumerID     = "consumer-id"
+	logKeyTokenClientID  = "token-client-id"
+	logKeyFlow           = "flow"
+	ctxScenarioGroupsKey = "ScenarioGroups"
 )
 
 // ClaimsValidator missing godoc
@@ -54,11 +55,6 @@ type Authenticator struct {
 	claimsValidator     ClaimsValidator
 	scenarioGroupsKey   string
 }
-
-type key string
-
-// CtxScenarioGroupsKey missing godoc
-const CtxScenarioGroupsKey key = "scenariogroups"
 
 // New missing godoc
 func New(httpClient *http.Client, jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string, claimsValidator ClaimsValidator) *Authenticator {
@@ -137,8 +133,8 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				ctx = client.SaveToContext(ctx, clientUser)
 			}
 
-			if scenarioGroupsValue := r.Header.Get("ScenarioGroups"); scenarioGroupsValue != "" {
-				log.C(ctx).Infof("Found %s header in request with value: %s", a.scenarioGroupsKey, scenarioGroupsValue)
+			if scenarioGroupsValue := r.Header.Get(ctxScenarioGroupsKey); scenarioGroupsValue != "" {
+				log.C(ctx).Infof("Found %s header in request with value: %s", ctxScenarioGroupsKey, scenarioGroupsValue)
 				groups := strings.Split(scenarioGroupsValue, ",")
 
 				ctx = scenariogroups.SaveToContext(ctx, groups)

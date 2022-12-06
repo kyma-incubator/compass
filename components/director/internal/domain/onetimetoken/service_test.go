@@ -40,8 +40,6 @@ var runtimeID = "runtimeID"
 
 var nowTime = time.Now()
 
-type key string
-
 func TestGenerateOneTimeToken(t *testing.T) {
 	const (
 		tokenValue          = "abc"
@@ -52,10 +50,9 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		runtimeID           = "31a607c7-695f-4a31-b2d1-777939f84aac"
 		integrationSystemID = "123607c7-695f-4a31-b2d1-777939f84123"
 
-		suggestedTokenHeaderKey = "suggest_token"
+		suggestedTokenHeaderKey                    = "suggest_token"
+		ctxScenarioGroupKey     scenariogroups.Key = "scenarioGroups"
 	)
-
-	const ctxScenarioGroupKey scenariogroups.Key = "scenariogroups"
 
 	fakeToken := &model.OneTimeToken{
 		Used:         false,
@@ -1066,7 +1063,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 
 		ctxScenarioGroupsValue = "test_scenario_group"
 	)
-	const ctxScenarioGroupKey scenariogroups.Key = "scenariogroups"
+	const ctxScenarioGroupKey scenariogroups.Key = "scenarioGroups"
 	scenarioGroups := []string{ctxScenarioGroupsValue}
 
 	ottConfig := onetimetoken.Config{
