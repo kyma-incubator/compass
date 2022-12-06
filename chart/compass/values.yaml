@@ -1058,6 +1058,8 @@ global:
         - "webhook:write"
         - "application_template:read"
         - "application_template:write"
+        - "formation_template:read"
+        - "formation_template:write"
       application:
         - "application:read"
         - "application:write"
