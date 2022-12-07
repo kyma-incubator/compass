@@ -6,14 +6,14 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
 
-type tntCntxKey int
-type localTntCntxKey int
+type tntCtxKey int
+type localTntCtxKey int
 
 // TenantContextKey is the key under which the TenantCtx is saved in a given context.Context.
-const TenantContextKey tntCntxKey = iota
+const TenantContextKey tntCtxKey = iota
 
 // LocalTenantIDContextKey is the key under which the local tenant id is saved in a given context.Context.
-const LocalTenantIDContextKey localTntCntxKey = iota
+const LocalTenantIDContextKey localTntCtxKey = iota
 
 // TenantCtx is the structure can be saved in a request context. It is used to determine the tenant context in which the request is being executed.
 type TenantCtx struct {
