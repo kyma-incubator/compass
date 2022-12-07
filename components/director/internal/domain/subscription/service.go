@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -37,6 +39,7 @@ const (
 )
 
 // RuntimeService is responsible for Runtime operations
+//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	GetByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error)
@@ -44,6 +47,7 @@ type RuntimeService interface {
 }
 
 // RuntimeCtxService provide functionality to interact with the runtime contexts(create, list, delete).
+//
 //go:generate mockery --name=RuntimeCtxService --output=automock --outpkg=automock --case=underscore
 type RuntimeCtxService interface {
 	Create(ctx context.Context, in model.RuntimeContextInput) (string, error)
@@ -52,6 +56,7 @@ type RuntimeCtxService interface {
 }
 
 // TenantService provides functionality for retrieving, and creating tenants.
+//
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
@@ -59,6 +64,7 @@ type TenantService interface {
 }
 
 // LabelService is responsible updating already existing labels, and their label definitions.
+//
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
 	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
@@ -74,6 +80,7 @@ type uidService interface {
 }
 
 // ApplicationTemplateService is responsible for Application Template operations
+//
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
@@ -82,6 +89,7 @@ type ApplicationTemplateService interface {
 }
 
 // ApplicationConverter is converting graphql and model Applications
+//
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
@@ -90,6 +98,7 @@ type ApplicationConverter interface {
 }
 
 // ApplicationService is responsible for Application operations
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
@@ -283,7 +292,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName string) (bool, error) {
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName string, subscriptionPayload *string) (bool, error) {
 	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
@@ -328,7 +337,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		}
 	}
 
-	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region); err != nil {
+	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionPayload); err != nil {
 		return false, err
 	}
 
@@ -400,12 +409,30 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string) error {
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string, subscriptionPayload *string) error {
 	values := []*model.ApplicationTemplateValueInput{
-		{Placeholder: "name", Value: subscribedAppName},
-		{Placeholder: "display-name", Value: subscribedAppName},
 		{Placeholder: "subdomain", Value: subdomain},
 		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
+	}
+	if subscriptionPayload != nil && len(*subscriptionPayload) > 0 {
+		for _, placeholder := range appTemplate.Placeholders {
+			if len(*placeholder.JSONPath) > 0 {
+				value := gjson.Get(*subscriptionPayload, *placeholder.JSONPath)
+				if value.Exists() {
+					values = append(values, &model.ApplicationTemplateValueInput{Placeholder: placeholder.Name, Value: value.String()})
+				} else {
+					log.C(ctx).Errorf("while parsing the callback payload with the Application template %s the value for placeholder %s with jsonPath %s, do not exists in payload.", appTemplate.Name, placeholder.Name, *placeholder.JSONPath)
+				}
+			} else {
+				log.C(ctx).Errorf("while parsing the callback payload with the Application template %s the placeholder %s, do not have JSONPath.", appTemplate.Name, placeholder.Name)
+			}
+		}
+	} else {
+		additionalValues := []*model.ApplicationTemplateValueInput{
+			{Placeholder: "name", Value: subscribedAppName},
+			{Placeholder: "display-name", Value: subscribedAppName},
+		}
+		values = append(additionalValues, values...)
 	}
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)

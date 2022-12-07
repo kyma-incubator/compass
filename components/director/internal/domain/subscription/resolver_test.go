@@ -20,6 +20,8 @@ var (
 )
 
 func TestResolver_SubscribeTenant(t *testing.T) {
+	var emptyPayload = "{}"
+
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -33,7 +35,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			ServiceFn: func() *automock.SubscriptionService {
 				svc := &automock.SubscriptionService{}
 				svc.On("DetermineSubscriptionFlow", txtest.CtxWithDBMatcher(), subscriptionProviderID, tenantRegion).Return(resource.ApplicationTemplate, nil).Once()
-				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subaccountTenantExtID, consumerTenantID, tenantRegion, subscriptionAppName).Return(true, nil).Once()
+				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subaccountTenantExtID, consumerTenantID, tenantRegion, subscriptionAppName, &emptyPayload).Return(true, nil).Once()
 				svc.AssertNotCalled(t, "SubscribeTenantToRuntime")
 				return svc
 			},
@@ -85,7 +87,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			ServiceFn: func() *automock.SubscriptionService {
 				svc := &automock.SubscriptionService{}
 				svc.On("DetermineSubscriptionFlow", txtest.CtxWithDBMatcher(), subscriptionProviderID, tenantRegion).Return(resource.ApplicationTemplate, nil).Once()
-				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subaccountTenantExtID, consumerTenantID, tenantRegion, subscriptionAppName).Return(false, testErr).Once()
+				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subaccountTenantExtID, consumerTenantID, tenantRegion, subscriptionAppName, &emptyPayload).Return(false, testErr).Once()
 				svc.AssertNotCalled(t, "SubscribeTenantToRuntime")
 				return svc
 			},
@@ -129,7 +131,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, transact, persistTx, svc)
 
 			// WHEN
-			result, err := resolver.SubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, tenantRegion, subscriptionAppName)
+			result, err := resolver.SubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, tenantRegion, subscriptionAppName, &emptyPayload)
 
 			// THEN
 			assert.Equal(t, testCase.ExpectedOutput, result)

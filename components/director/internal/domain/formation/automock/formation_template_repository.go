@@ -61,13 +61,13 @@ func (_m *FormationTemplateRepository) GetByName(ctx context.Context, templateNa
 	return r0, r1
 }
 
-type NewFormationTemplateRepositoryT interface {
+type mockConstructorTestingTNewFormationTemplateRepository interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationTemplateRepository creates a new instance of FormationTemplateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationTemplateRepository(t NewFormationTemplateRepositoryT) *FormationTemplateRepository {
+func NewFormationTemplateRepository(t mockConstructorTestingTNewFormationTemplateRepository) *FormationTemplateRepository {
 	mock := &FormationTemplateRepository{}
 	mock.Mock.Test(t)
 

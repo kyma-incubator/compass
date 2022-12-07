@@ -694,10 +694,13 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 	appTmplAppName := "{{name}}"
 	appTmplID := "123-456-789"
 	repeats := 5
+	subscriptionPayload := `{"name":"subscription-app-name-value", "display-name":"subscription-app-name-value", "subdomain":"subdomain1", "region":"eu-1"}`
 
 	jsonAppCreateInput := fixJSONApplicationCreateInput(appTmplAppName)
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(appTmplID, appTmplName, jsonAppCreateInput)
+	modelAppTemplateWithPlaceholders := fixModelAppTemplateWithPlaceholdersWithAppInputJSON(appTmplID, appTmplName, jsonAppCreateInput)
 	modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName, tntSubdomain, tenantRegion)
+	modelAppFromTemplateInputWithPlaceholders := fixModelApplicationFromTemplateInputWithPlaceholders(appTmplName, subscriptionAppName, tntSubdomain, tenantRegion)
 	modelAppFromTemplateInputWithEmptySubdomain := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName, "", tenantRegion)
 	gqlAppCreateInput := fixGQLApplicationCreateInput(appTmplName)
 	modelAppCreateInput := fixModelApplicationCreateInput(appTmplName)
@@ -711,6 +714,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 		Region                 string
 		SubscriptionAppName    string
 		SubscriptionProviderID string
+		SubscriptionPayload    *string
 		AppTemplateServiceFn   func() *automock.ApplicationTemplateService
 		LabelServiceFn         func() *automock.LabelService
 		UIDServiceFn           func() *automock.UidService
@@ -728,6 +732,45 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
+				return appTemplateSvc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
+				return tenantSvc
+			},
+			AppConverterFn: func() *automock.ApplicationConverter {
+				appConv := &automock.ApplicationConverter{}
+				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
+
+				return appConv
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(subaccountTenantInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.On("CreateFromTemplate", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
+
+				return appSvc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				lblSvc := &automock.LabelService{}
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.TenantLabelableObject, subaccountTenantInternalID, subscription.SubdomainLabelKey).Return(subdomainLabel, nil).Once()
+
+				return lblSvc
+			},
+			UIDServiceFn: unusedUUIDSvc,
+			IsSuccessful: true,
+			Repeats:      1,
+		},
+		{
+			Name:                "Succeeds with subscription payload",
+			Region:              tenantRegionWithPrefix,
+			SubscriptionPayload: &subscriptionPayload,
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplateWithPlaceholders, nil).Once()
+				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplateWithPlaceholders, modelAppFromTemplateInputWithPlaceholders.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -1148,7 +1191,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 			for count := 0; count < testCase.Repeats; count++ {
 				// WHEN
-				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, consumerTenantID, testCase.Region, subscriptionAppName)
+				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, consumerTenantID, testCase.Region, subscriptionAppName, testCase.SubscriptionPayload)
 
 				// THEN
 				if len(testCase.ExpectedErrorOutput) > 0 {
