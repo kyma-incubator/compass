@@ -207,11 +207,11 @@ overrides:
 
 ## Tenant On-demand API
 
-The Tenant On-demand API is called in cases where the tenant from the request context is new to Compass.
-This might happen because the tenant fetcher's Go routine for that type of tenant has not been run yet or no subscription
+The Tenant On-demand API is called by Compass Director for requests involving subaccounts. That call is a prerequisite for those requests because the subaccount tenant might be missing from the Compass DB.
+It might be missing because the tenant fetcher's Go routine for that type of tenant has not been run yet or no subscription
 callbacks have been received for the tenant.
 
-Currently there are the following scenarios when a new tenant is used:
+Currently there are the following scenarios when a brand new subaccount tenant might be used:
 
 - When a Runtime is being created in the scope of a subaccount tenant.
 - When a subaccount tenant is assigned to a scenario.
@@ -221,11 +221,21 @@ Currently there are the following scenarios when a new tenant is used:
 The Fetch On-demand flow is described in the diagram below:
 ![tenant on-demand flow](./assets/tenant-on-demand.svg)
 
+### API Security
+The On-demand API is used only internally by Director and Hydrator, hence it uses the Internal Authentication mechanism. You can learn more about it [here](https://github.com/kyma-incubator/compass/blob/main/docs/compass/03-01-security.md#internal-authentication).
+
 ## Subscription Callback API
 
 The Tenants Aggregator is the entry point for tenant subscriptions. It provides an endpoint that can be registered as
-a callback in an external system. This endpoint is called when either a tenant is created, or a consumer tenant is
-subscribed to a provider tenant.
+a subscription callback in an external system. This endpoint is called when:
+* a tenant is created
+* a consumer tenant is **subscribed** to a provider tenant
+* a consumer tenant is **unsubscribed** from a provider tenant
+
+### Subscription and Tenant Creation
+```
+PUT /v1/regional/{region}/callback/{tenantId}
+```
 
 Example subscription request body
 ```
@@ -239,16 +249,13 @@ Example subscription request body
 ```
 
 When a call is received at the endpoint, it tries to create all tenants from the tenant hierarchy of the tenant for
-that request. Then, if the callback is a subscription callback, it calls the Director to subscribe or unsubscribe the tenant.
+that request. Then, if the callback is a subscription callback, it calls the Director to subscribe the tenant.
 The subscription logic is handled in Director.
 
-The Tenants Aggregator runs the following Director mutations:
+The Tenants Aggregator runs the following Director mutation:
 
 ```graphql
-type Mutation {
-    subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
-    unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
-}
+subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
 ```
 
 It distinguishes subscription callbacks and normal tenant creation callbacks by checking the `subscribedSaaSApplication` property in the request
@@ -258,3 +265,17 @@ Compass can be considered as an SaaS application that a tenant can subscribe to.
 is to store that tenant.
 
 If the Subscription Callback API is called when a tenant is subscribed to another SaaS application or a Runtime, then it must also provide the subscription tenant (provider tenant) access to the subscriber tenant (consumer tenant). 
+
+### Subscription and Tenant Decomissioning
+```
+DELETE /v1/regional/{region}/callback/{tenantId}
+```
+The Tenants Aggregator delegates the unsubscribe logic to Director by calling the following mutation:
+```graphql
+unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
+```
+
+No tenants are deleted via these calls. The only flow where tenants are actually removed from the Compass DB is when the Tenant Fetcher Routine is run and there is a `Delete` event for the tenant.
+
+### API Security
+The Subscription API is called from an external system. In 
