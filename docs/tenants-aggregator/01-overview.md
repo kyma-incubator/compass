@@ -31,6 +31,14 @@ The Tenants Aggregator provides the following ways of aggregation:
 A tenant fetcher is a configurable, periodic, Go routine that runs on the Tenants Aggregator. Its purpose is to
 synchronize tenants that are managed by an external system. Note that the external system must expose an API with tenants-related events, for example, when a new tenant is created, updated, deleted, or moved.
 
+When the tenant fetcher runs and calculates which tenants should be created, updated, or deleted it calls the respective mutations on Director side:
+```graphql
+writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
+updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
+deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
+```
+The mutation that is run for tenants that were moved from one parent tenant to another is `updateTenant`.
+
 ### Region-Based Tenancy
 
 In cases when SaaS applications or integration systems from multiple regions use Compass, the supported tenants must
@@ -258,9 +266,6 @@ The Tenants Aggregator runs the following Director mutation:
 subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
 ```
 
-It distinguishes subscription callbacks and normal tenant creation callbacks by checking the `subscribedSaaSApplication` property in the request
-payload.
-
 Compass can be considered as an SaaS application that a tenant can subscribe to. The only required action from Compass side
 is to store that tenant.
 
@@ -279,4 +284,4 @@ No tenants are deleted via this call. The only flow where tenants are actually r
 
 ### API Security
 The Subscription API is called from an external system. The Security configuration is managed as ORY Oathkeeper rule [here](https://github.com/kyma-incubator/compass/blob/main/chart/compass/charts/gateway/templates/oathkeeper-authenticator-rules.yaml), and the current scenario uses the JWT Gateway endpoint.
-The validation on the Tenants Aggregator side is only for one scope in the token - `Callback`.
+The validation on Tenants Aggregator side is only for one scope in the token - `Callback`. The scope is configurable via an environment variable.
