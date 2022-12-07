@@ -275,7 +275,8 @@ The Tenants Aggregator delegates the unsubscribe logic to Director by calling th
 unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 ```
 
-No tenants are deleted via these calls. The only flow where tenants are actually removed from the Compass DB is when the Tenant Fetcher Routine is run and there is a `Delete` event for the tenant.
+No tenants are deleted via this call. The only flow where tenants are actually removed from the Compass DB is when the Tenant Fetcher Routine is run and there is a `Delete` event for the tenant.
 
 ### API Security
-The Subscription API is called from an external system. In 
+The Subscription API is called from an external system. The Security configuration is managed as ORY Oathkeeper rule [here](https://github.com/kyma-incubator/compass/blob/main/chart/compass/charts/gateway/templates/oathkeeper-authenticator-rules.yaml), and the current scenario uses the JWT Gateway endpoint.
+The validation on the Tenants Aggregator side is only for one scope in the token - `Callback`.
