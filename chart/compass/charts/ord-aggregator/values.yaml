@@ -1,0 +1,20 @@
+deployment:
+  minReplicas: 1
+  maxReplicas: 1
+  autoscaling:
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 75
+  image:
+    pullPolicy: IfNotPresent
+  resources: {}
+  resourcesCloudsqlProxy: {}
+  resourcesIstioProxy:
+    requests: {}
+    limits: {}
+  securityContext: # Set on container level
+    runAsUser: 2000
+    allowPrivilegeEscalation: false
+  strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+  nodeSelector: {}
+
+

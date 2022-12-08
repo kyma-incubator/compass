@@ -49,7 +49,7 @@ type fetchRequestResult struct {
 type MetricsConfig struct {
 	PushEndpoint  string        `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	ClientTimeout time.Duration `envconfig:"default=60s"`
-	JobName       string        `envconfig:"default=compass-ord-aggregator"`
+	JobName       string        `envconfig:"default=compass-ord-aggregator"` // TODO its not a job anymore
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters

@@ -3,7 +3,13 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"net/http"
+	"sync"
 	"time"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
@@ -13,6 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	httputilpkg "github.com/kyma-incubator/compass/components/director/pkg/http"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
@@ -62,6 +69,16 @@ import (
 )
 
 type config struct {
+	Address           string `envconfig:"default=127.0.0.1:8080"`
+	AggregatorRootAPI string `envconfig:"APP_ROOT_API,default=/ord-aggregator"`
+
+	ServerTimeout   time.Duration `envconfig:"default=110s"`
+	ShutdownTimeout time.Duration `envconfig:"default=10s"`
+
+	JwksEndpoint        string        `envconfig:"APP_JWKS_ENDPOINT"`
+	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+
 	Database persistence.DatabaseConfig
 
 	Log log.Config
@@ -140,10 +157,42 @@ func main() {
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
 	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, accessStrategyExecutorProviderWithTenant, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor, ordWebhookMapping)
-	err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
-	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
-	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
+	jwtHttpClient := &http.Client{
+		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	handler := initHandler(ctx, jwtHttpClient, cfg)
+	runMainSrv, _ := createServer(ctx, cfg, handler, "main")
+
+	//go func() {
+	//	<-ctx.Done()
+	//	// Interrupt signal received - shut down the servers
+	//	shutdownMainSrv()
+	//}()
+
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		runMainSrv()
+	}()
+
+	go func() {
+		defer wg.Done()
+		for true { //TODO schedule sync documents
+			err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
+			exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
+			log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
+		}
+	}()
+
+	wg.Wait()
+
 }
 
 func ctxTenantProvider(ctx context.Context) (string, error) {
@@ -262,4 +311,97 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.D().Fatal(wrappedError)
 	}
+}
+
+func createServer(ctx context.Context, cfg config, handler http.Handler, name string) (func(), func()) {
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, cfg.ServerTimeout)
+	exitOnError(err, "Error while configuring tenant mapping handler")
+
+	srv := &http.Server{
+		Addr:              cfg.Address,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}
+
+	runFn := func() {
+		log.C(ctx).Infof("Running %s server on %s...", name, cfg.Address)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.C(ctx).Errorf("%s HTTP server ListenAndServe: %v", name, err)
+		}
+	}
+
+	shutdownFn := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+
+		log.C(ctx).Infof("Shutting down %s server...", name)
+		if err := srv.Shutdown(ctx); err != nil {
+			log.C(ctx).Errorf("%s HTTP server Shutdown: %v", name, err)
+		}
+	}
+
+	return runFn, shutdownFn
+}
+
+func initHandler(ctx context.Context, httpClient *http.Client, cfg config) http.Handler {
+	const (
+		healthzEndpoint = "/healthz"
+		readyzEndpoint  = "/readyz"
+	)
+	logger := log.C(ctx)
+	mainRouter := mux.NewRouter()
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
+		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
+
+	unprotectedRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+	unprotectedRouter.HandleFunc("/unprotected", newUnprotectedHandler()).Methods(http.MethodGet)
+	//configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
+	//registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
+	//
+	protectedAPIRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, protectedAPIRouter, cfg, "ord:read")
+	protectedAPIRouter.HandleFunc("/protected", newProtectedHandler()).Methods(http.MethodGet)
+
+	//
+	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+	logger.Infof("Registering readiness endpoint...")
+	healthCheckRouter.HandleFunc(readyzEndpoint, newReadinessHandler())
+	logger.Infof("Registering liveness endpoint...")
+	healthCheckRouter.HandleFunc(healthzEndpoint, newReadinessHandler())
+
+	return mainRouter
+}
+
+func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+func newUnprotectedHandler() func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("unprotected"))
+	}
+}
+
+func newProtectedHandler() func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("protected"))
+	}
+}
+
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg config, requiredScopes ...string) {
+	scopeValidator := claims.NewScopesValidator(requiredScopes)
+	middleware := authenticator.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	router.Use(middleware.Handler())
+
+	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
+	periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
+		if err := middleware.SynchronizeJWKS(ctx); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
+		}
+	})
+	go periodicExecutor.Run(ctx)
 }

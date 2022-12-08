@@ -186,6 +186,29 @@ spec:
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
+  name: compass-ord-aggregator-internal
+spec:
+  # Configuration of oathkeeper for secure endpoint internal communication with compass gateway
+  upstream:
+    url: "http://compass-ord-aggregator.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.ordAggregator.port }}"
+  match:
+    methods: ["PUT", "GET"]
+    url: <http|https>://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.ordAggregator.prefix }}/<.*>
+  authenticators:
+    - handler: jwt
+      config:
+        jwks_urls: [{{ .Values.global.kubernetes.serviceAccountTokenJWKS }}]
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop # This will copy all request headers to the oathkeeper's session, making them available in the claims template
+    - handler: id_token
+      config:
+        claims: {{ .Values.global.oathkeeper.idTokenConfig.internalClaims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
   name: compass-director-internal
 spec:
   # Configuration of oathkeeper for secure endpoint internal communication with compass director
