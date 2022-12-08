@@ -166,18 +166,6 @@ func (r *pgRepository) GetBySystemNumber(ctx context.Context, tenant, systemNumb
 	return appModel, nil
 }
 
-// GetByNameAndSystemNumber missing godoc
-func (r *pgRepository) GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error) {
-	var appEnt Entity
-	if err := r.singleGetter.Get(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("name", name), repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {
-		return nil, err
-	}
-
-	appModel := r.conv.FromEntity(&appEnt)
-
-	return appModel, nil
-}
-
 // GetGlobalByID missing godoc
 func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
 	var appEnt Entity
