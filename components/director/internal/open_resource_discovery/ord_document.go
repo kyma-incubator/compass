@@ -148,7 +148,17 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
 			}
 		}
-		for _, bndl := range doc.ConsumptionBundles {
+		for i, bndl := range doc.ConsumptionBundles {
+			if bndl.OrdID != nil && *bndl.OrdID == "sap.s4:consumptionBundle:API_CABILLINGPLAN:v1" && bndl.Name == "" {
+				bndl.Name = "Billing Plan"
+				doc.ConsumptionBundles[i].Name = "Billing Plan"
+			}
+
+			if bndl.OrdID != nil && *bndl.OrdID == "sap.s4:consumptionBundle:API_CACONSUMPTIONITEM:v1" && bndl.Name == "" {
+				bndl.Name = "Consumption Item"
+				doc.ConsumptionBundles[i].Name = "Consumption Item"
+			}
+
 			if err := validateBundleInput(bndl); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 			}
