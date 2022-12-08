@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
+
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
@@ -27,6 +29,7 @@ import (
 )
 
 // SystemAuthService missing godoc
+//
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
 	Create(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
@@ -36,12 +39,14 @@ type SystemAuthService interface {
 }
 
 // ApplicationConverter missing godoc
+//
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 }
 
 // ApplicationService missing godoc
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
@@ -49,12 +54,14 @@ type ApplicationService interface {
 }
 
 // ExternalTenantsService missing godoc
+//
 //go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalTenantsService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // HTTPDoer missing godoc
+//
 //go:generate mockery --name=HTTPDoer --output=automock --outpkg=automock --case=underscore --disable-version-string
 type HTTPDoer interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -180,6 +187,8 @@ func (s *service) createToken(ctx context.Context, tokenType pkgmodel.SystemAuth
 	}
 	oneTimeToken.ExpiresAt = oneTimeToken.CreatedAt.Add(expiresAfter)
 
+	oneTimeToken.ScenarioGroups = scenariogroups.LoadFromContext(ctx)
+
 	return oneTimeToken, nil
 }
 
@@ -254,11 +263,14 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		log.C(ctx).Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", tntCtx.InternalID, extTenant)
 	}
 
+	scenarioGroups := scenariogroups.LoadFromContext(ctx)
+
 	graphqlApp := s.appConverter.ToGraphQL(&app)
 	data := pairing.RequestData{
-		Application: *graphqlApp,
-		Tenant:      extTenant,
-		ClientUser:  clientUser,
+		Application:    *graphqlApp,
+		Tenant:         extTenant,
+		ClientUser:     clientUser,
+		ScenarioGroups: scenarioGroups,
 	}
 
 	asJSON, err := json.Marshal(data)
@@ -352,13 +364,14 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 	}
 
 	rawEnc, err := rawEncoded(&graphql.TokenWithURL{
-		Token:        oneTimeToken.Token,
-		ConnectorURL: oneTimeToken.ConnectorURL,
-		Used:         oneTimeToken.Used,
-		Type:         graphql.OneTimeTokenTypeApplication,
-		ExpiresAt:    (*graphql.Timestamp)(&oneTimeToken.ExpiresAt),
-		CreatedAt:    (*graphql.Timestamp)(&oneTimeToken.CreatedAt),
-		UsedAt:       (*graphql.Timestamp)(&oneTimeToken.UsedAt),
+		Token:          oneTimeToken.Token,
+		ConnectorURL:   oneTimeToken.ConnectorURL,
+		Used:           oneTimeToken.Used,
+		Type:           graphql.OneTimeTokenTypeApplication,
+		ExpiresAt:      (*graphql.Timestamp)(&oneTimeToken.ExpiresAt),
+		CreatedAt:      (*graphql.Timestamp)(&oneTimeToken.CreatedAt),
+		UsedAt:         (*graphql.Timestamp)(&oneTimeToken.UsedAt),
+		ScenarioGroups: oneTimeToken.ScenarioGroups,
 	})
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to generade raw encoded one time token for application, will continue with actual token: %v", err)

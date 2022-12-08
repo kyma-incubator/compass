@@ -40,13 +40,14 @@ func (c converter) ToGraphQLForApplication(model model.OneTimeToken) (graphql.On
 
 	return graphql.OneTimeTokenForApplication{
 		TokenWithURL: graphql.TokenWithURL{
-			Token:        model.Token,
-			ConnectorURL: model.ConnectorURL,
-			Used:         model.Used,
-			ExpiresAt:    timeToTimestampPtr(model.ExpiresAt),
-			CreatedAt:    timeToTimestampPtr(model.CreatedAt),
-			UsedAt:       timeToTimestampPtr(model.UsedAt),
-			Type:         graphql.OneTimeTokenType(model.Type),
+			Token:          model.Token,
+			ConnectorURL:   model.ConnectorURL,
+			Used:           model.Used,
+			ExpiresAt:      timeToTimestampPtr(model.ExpiresAt),
+			CreatedAt:      timeToTimestampPtr(model.CreatedAt),
+			UsedAt:         timeToTimestampPtr(model.UsedAt),
+			Type:           graphql.OneTimeTokenType(model.Type),
+			ScenarioGroups: model.ScenarioGroups,
 		},
 		LegacyConnectorURL: urlWithToken,
 	}, nil

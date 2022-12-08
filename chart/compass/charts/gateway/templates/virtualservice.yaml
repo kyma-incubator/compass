@@ -95,6 +95,7 @@ spec:
           - "authorization"
           - "content-type"
           - "tenant"
+          - "scenario_groups"
           - {{ .Values.global.director.clientIDHeaderKey }}
         allowMethods:
           - "GET"

@@ -502,6 +502,7 @@ type ComplexityRoot struct {
 		LegacyConnectorURL func(childComplexity int) int
 		Raw                func(childComplexity int) int
 		RawEncoded         func(childComplexity int) int
+		ScenarioGroups     func(childComplexity int) int
 		Token              func(childComplexity int) int
 		Type               func(childComplexity int) int
 		Used               func(childComplexity int) int
@@ -3419,6 +3420,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OneTimeTokenForApplication.RawEncoded(childComplexity), true
 
+	case "OneTimeTokenForApplication.scenarioGroups":
+		if e.complexity.OneTimeTokenForApplication.ScenarioGroups == nil {
+			break
+		}
+
+		return e.complexity.OneTimeTokenForApplication.ScenarioGroups(childComplexity), true
+
 	case "OneTimeTokenForApplication.token":
 		if e.complexity.OneTimeTokenForApplication.Token == nil {
 			break
@@ -5640,6 +5648,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	raw: String
 	rawEncoded: String
 	type: OneTimeTokenType
+	scenarioGroups: [String]
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
@@ -21856,6 +21865,37 @@ func (ec *executionContext) _OneTimeTokenForApplication_type(ctx context.Context
 	return ec.marshalOOneTimeTokenType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenType(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OneTimeTokenForApplication_scenarioGroups(ctx context.Context, field graphql.CollectedField, obj *OneTimeTokenForApplication) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OneTimeTokenForApplication",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScenarioGroups, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OneTimeTokenForRuntime_token(ctx context.Context, field graphql.CollectedField, obj *OneTimeTokenForRuntime) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31808,6 +31848,8 @@ func (ec *executionContext) _OneTimeTokenForApplication(ctx context.Context, sel
 			})
 		case "type":
 			out.Values[i] = ec._OneTimeTokenForApplication_type(ctx, field, obj)
+		case "scenarioGroups":
+			out.Values[i] = ec._OneTimeTokenForApplication_scenarioGroups(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36451,6 +36493,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstring(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {

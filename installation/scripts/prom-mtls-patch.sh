@@ -294,6 +294,8 @@ function patchKymaServiceMonitorsForMTLS() {
       rm "${sm}.json"
     fi
   done
+
+  kubectl delete servicemonitors.monitoring.coreos.com -n kyma-system ory-hydra-maester || true
 }
 
 function removeKymaPeerAuthsForPrometheus() {
