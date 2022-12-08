@@ -12,12 +12,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-const tableName string = `public.formation_templates`
+const (
+	tableName      string = `public.formation_templates`
+	tenantIDColumn string = "tenant_id"
+)
 
 var (
-	updatableTableColumns = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind"}
-	idTableColumns        = []string{"id"}
-	tableColumns          = append(idTableColumns, updatableTableColumns...)
+	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind"}
+	idTableColumns            = []string{"id"}
+	tenantTableColumn         = []string{tenantIDColumn}
+	tableColumnsWithoutTenant = append(idTableColumns, updatableTableColumns...)
+	tableColumns              = append(tableColumnsWithoutTenant, tenantTableColumn...)
 )
 
 // EntityConverter converts between the internal model and entity
@@ -81,11 +86,17 @@ func (r *repository) Get(ctx context.Context, id string) (*model.FormationTempla
 	return result, nil
 }
 
-// GetByName returns a single FormationTemplate by given name
-func (r *repository) GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error) {
-	log.C(ctx).Debugf("Getting formation template by name: %q...", templateName)
+// GetByNameAndTenant returns a single FormationTemplate by given name and tenant ID
+func (r *repository) GetByNameAndTenant(ctx context.Context, templateName, tenantID string) (*model.FormationTemplate, error) {
+	log.C(ctx).Debugf("Getting formation template by name: %q and tenant %q ...", templateName, tenantID)
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", templateName)}, repo.NoOrderBy, &entity); err != nil {
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("name", templateName),
+		repo.NewEqualCondition(tenantIDColumn, tenantID),
+	}
+
+	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -98,9 +109,17 @@ func (r *repository) GetByName(ctx context.Context, templateName string) (*model
 }
 
 // List queries for all FormationTemplate sorted by ID and paginated by the pageSize and cursor parameters
-func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
+func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	var entityCollection EntityCollection
-	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
+
+	var conditions *repo.ConditionTree
+	if tenantID == "" {
+		conditions = &repo.ConditionTree{Operand: repo.NewNullCondition(tenantIDColumn)}
+	} else {
+		conditions = repo.Or(&repo.ConditionTree{Operand: repo.NewNullCondition(tenantIDColumn)}, &repo.ConditionTree{Operand: repo.NewEqualCondition(tenantIDColumn, tenantID)})
+	}
+
+	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entityCollection, conditions)
 	if err != nil {
 		return nil, err
 	}

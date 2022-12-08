@@ -20,11 +20,11 @@ func TestRepository_Get(t *testing.T) {
 		MethodName: "Get",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind FROM public.formation_templates WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE id = $1`),
 				Args:     []driver.Value{testID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.TenantID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -44,17 +44,17 @@ func TestRepository_Get(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestRepository_GetByName(t *testing.T) {
+func TestRepository_GetByNameAndTenant(t *testing.T) {
 	suite := testdb.RepoGetTestSuite{
-		Name:       "Get Formation Template By name",
-		MethodName: "GetByName",
+		Name:       "Get Formation Template By name and tenant",
+		MethodName: "GetByNameAndTenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind FROM public.formation_templates WHERE name = $1`),
-				Args:     []driver.Value{formationTemplateName},
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE name = $1 AND tenant_id = $2`),
+				Args:     []driver.Value{formationTemplateName, testTenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.TenantID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -67,7 +67,7 @@ func TestRepository_GetByName(t *testing.T) {
 		RepoConstructorFunc:       formationtemplate.NewRepository,
 		ExpectedModelEntity:       &formationTemplateModel,
 		ExpectedDBEntity:          &formationTemplateEntity,
-		MethodArgs:                []interface{}{formationTemplateName},
+		MethodArgs:                []interface{}{formationTemplateName, testTenantID},
 		DisableConverterErrorTest: false,
 	}
 
@@ -81,7 +81,7 @@ func TestRepository_Create(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.formation_templates \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind},
+				Args:        []driver.Value{formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.TenantID},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -151,15 +151,61 @@ func TestRepository_Delete(t *testing.T) {
 }
 
 func TestRepository_List(t *testing.T) {
-	suite := testdb.RepoListPageableTestSuite{
-		Name:       "Get Formation Template By ID",
+	suiteWithEmptyTenantID := testdb.RepoListPageableTestSuite{
+		Name:       "List Formation Templates with paging when there is no tenant",
 		MethodName: "List",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind FROM public.formation_templates ORDER BY id LIMIT 3 OFFSET 0`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE tenant_id IS NULL ORDER BY id LIMIT 3 OFFSET 0`),
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntityNullTenant.TenantID)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.formation_templates`),
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
+				},
+			},
+		},
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: []interface{}{&formationTemplateModelNullTenant},
+				ExpectedDBEntities:    []interface{}{&formationTemplateEntityNullTenant},
+				ExpectedPage: &model.FormationTemplatePage{
+					Data: []*model.FormationTemplate{&formationTemplateModelNullTenant},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formationtemplate.NewRepository,
+		MethodArgs:                []interface{}{"", 3, ""},
+		DisableConverterErrorTest: false,
+	}
+
+	suiteWithTenantID := testdb.RepoListPageableTestSuite{
+		Name:       "List Formation Templates with paging when tenant is passed",
+		MethodName: "List",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE (tenant_id IS NULL OR tenant_id = $1) ORDER BY id LIMIT 3 OFFSET 0`),
+				Args:     []driver.Value{testTenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.TenantID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -192,11 +238,12 @@ func TestRepository_List(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       formationtemplate.NewRepository,
-		MethodArgs:                []interface{}{3, ""},
+		MethodArgs:                []interface{}{testTenantID, 3, ""},
 		DisableConverterErrorTest: false,
 	}
 
-	suite.Run(t)
+	suiteWithEmptyTenantID.Run(t)
+	suiteWithTenantID.Run(t)
 }
 
 func TestRepository_Update(t *testing.T) {

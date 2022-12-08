@@ -3,6 +3,8 @@ package formationtemplate
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
@@ -31,10 +33,16 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 }
 
 // FromModelInputToModel converts from internal model input and id to internal model
-func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id string) *model.FormationTemplate {
+func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id string, tenantID string) *model.FormationTemplate {
 	if in == nil {
 		return nil
 	}
+
+	var tntID *string
+	if tenantID != "" {
+		tntID = &tenantID
+	}
+
 	return &model.FormationTemplate{
 		ID:                     id,
 		Name:                   in.Name,
@@ -42,6 +50,7 @@ func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id s
 		RuntimeTypes:           in.RuntimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    in.RuntimeArtifactKind,
+		TenantID:               tntID,
 	}
 }
 
@@ -98,6 +107,7 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 		RuntimeTypes:           string(marshalledRuntimeTypes),
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    string(in.RuntimeArtifactKind),
+		TenantID:               repo.NewNullableString(in.TenantID),
 	}, nil
 }
 
@@ -126,5 +136,6 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		RuntimeTypes:           unmarshalledRuntimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
+		TenantID:               repo.StringPtrFromNullableString(in.TenantID),
 	}, nil
 }

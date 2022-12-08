@@ -14,6 +14,7 @@ import (
 func TestLoadFromContext(t *testing.T) {
 	value := "foo"
 	tenants := tenant.TenantCtx{InternalID: value, ExternalID: value}
+	tenantsEmptyInternalID := tenant.TenantCtx{InternalID: "", ExternalID: value}
 
 	testCases := []struct {
 		Name    string
@@ -34,6 +35,12 @@ func TestLoadFromContext(t *testing.T) {
 			ExpectedResult:     "",
 			ExpectedErrMessage: "cannot read tenant from context",
 		},
+		{
+			Name:               "Error required tenant",
+			Context:            context.WithValue(context.TODO(), tenant.TenantContextKey, tenantsEmptyInternalID),
+			ExpectedResult:     "",
+			ExpectedErrMessage: "Tenant is required",
+		},
 	}
 
 	for i, testCase := range testCases {
@@ -53,6 +60,54 @@ func TestLoadFromContext(t *testing.T) {
 }
 
 func TestLoadTenantPairFromContext(t *testing.T) {
+	value := "foo"
+	tenants := tenant.TenantCtx{InternalID: value, ExternalID: value}
+	tenantsEmptyInternalID := tenant.TenantCtx{InternalID: "", ExternalID: value}
+
+	testCases := []struct {
+		Name    string
+		Context context.Context
+
+		ExpectedResult     tenant.TenantCtx
+		ExpectedErrMessage string
+	}{
+		{
+			Name:               "Success",
+			Context:            context.WithValue(context.TODO(), tenant.TenantContextKey, tenants),
+			ExpectedResult:     tenants,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:               "Error",
+			Context:            context.TODO(),
+			ExpectedResult:     tenant.TenantCtx{},
+			ExpectedErrMessage: "cannot read tenant from context",
+		},
+		{
+			Name:               "Error required tenant",
+			Context:            context.WithValue(context.TODO(), tenant.TenantContextKey, tenantsEmptyInternalID),
+			ExpectedResult:     tenant.TenantCtx{},
+			ExpectedErrMessage: "Tenant is required",
+		},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
+			// WHEN
+			result, err := tenant.LoadTenantPairFromContext(testCase.Context)
+
+			// then
+			if testCase.ExpectedErrMessage != "" {
+				require.Equal(t, testCase.ExpectedErrMessage, err.Error())
+				return
+			}
+
+			assert.Equal(t, testCase.ExpectedResult, result)
+		})
+	}
+}
+
+func TestLoadTenantPairFromContextNoChecks(t *testing.T) {
 	value := "foo"
 	tenants := tenant.TenantCtx{InternalID: value, ExternalID: value}
 
@@ -80,7 +135,7 @@ func TestLoadTenantPairFromContext(t *testing.T) {
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("%d: %s", i, testCase.Name), func(t *testing.T) {
 			// WHEN
-			result, err := tenant.LoadTenantPairFromContext(testCase.Context)
+			result, err := tenant.LoadTenantPairFromContextNoChecks(testCase.Context)
 
 			// then
 			if testCase.ExpectedErrMessage != "" {
