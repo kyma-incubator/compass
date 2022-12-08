@@ -252,7 +252,12 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				errs = multierror.Append(errs, errors.Errorf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor))
 			}
 		}
-		for _, api := range doc.APIResources {
+
+		publicVisibility := "public"
+		for i, api := range doc.APIResources {
+			api.Visibility = &publicVisibility
+			doc.APIResources[i].Visibility = &publicVisibility
+
 			if api.OrdPackageID != nil && !packageIDs[*api.OrdPackageID] {
 				errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID))
 			}
