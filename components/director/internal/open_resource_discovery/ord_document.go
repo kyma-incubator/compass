@@ -176,7 +176,26 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 			productIDs[product.OrdID] = true
 		}
-		for _, api := range doc.APIResources {
+
+		finalAPIs := make([]*model.APIDefinitionInput, 0)
+		for i, api := range doc.APIResources {
+			foundBndl := false
+			for _, bndl := range api.PartOfConsumptionBundles {
+				for _, finalBndl := range finalBundles {
+					if *finalBndl.OrdID == bndl.BundleOrdID {
+						foundBndl = true
+						break
+					}
+				}
+				if foundBndl {
+					break
+				}
+			}
+
+			if !foundBndl {
+				continue
+			}
+
 			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
 			}
@@ -186,12 +205,27 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				}
 				apiIDs[*api.OrdID] = true
 			}
+			finalAPIs = append(finalAPIs, doc.APIResources[i])
 		}
+		doc.APIResources = finalAPIs
 
 		eventsIndicesWithEmptyName := make([]int, 0)
 
 		for i, event := range doc.EventResources {
-			if event.Name == "" {
+			foundBndl := false
+			for _, bndl := range event.PartOfConsumptionBundles {
+				for _, finalBndl := range finalBundles {
+					if *finalBndl.OrdID == bndl.BundleOrdID {
+						foundBndl = true
+						break
+					}
+				}
+				if foundBndl {
+					break
+				}
+			}
+
+			if event.Name == "" || !foundBndl {
 				eventsIndicesWithEmptyName = append(eventsIndicesWithEmptyName, i)
 				continue
 			}
