@@ -148,13 +148,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
 			}
 		}
-
-		finalBundles := make([]*model.BundleCreateInput, 0)
-		for i, bndl := range doc.ConsumptionBundles {
-			if bndl.Name == "" {
-				continue
-			}
-
+		for _, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(bndl); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 			}
@@ -164,9 +158,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				}
 				bundleIDs[*bndl.OrdID] = true
 			}
-			finalBundles = append(finalBundles, doc.ConsumptionBundles[i])
 		}
-		doc.ConsumptionBundles = finalBundles
 		for _, product := range doc.Products {
 			if err := validateProductInput(product); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating product with ord id %q", product.OrdID))
