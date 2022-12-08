@@ -19,7 +19,7 @@ type HTTPRoundTripper interface {
 	GetTransport() *http.Transport
 }
 
-const tenantHeader = "Tenant_Id"
+const tenantHeader = "tenant"
 
 type cmpMTLSAccessStrategyExecutor struct {
 	certCache                    certloader.Cache
@@ -69,12 +69,12 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 	}
 
 	if as.tenantProviderFunc != nil {
-		tenant, err := as.tenantProviderFunc(ctx)
+		localTenantID, err := as.tenantProviderFunc(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		req.Header.Set(tenantHeader, tenant)
+		req.Header.Set(tenantHeader, localTenantID)
 	} else if len(tnt) > 0 {
 		req.Header.Set(tenantHeader, tnt)
 	}
