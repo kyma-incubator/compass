@@ -19,7 +19,7 @@ type HTTPRoundTripper interface {
 	GetTransport() *http.Transport
 }
 
-const tenantHeader = "tenant"
+const tenantHeader = "Tenant_Id"
 
 type cmpMTLSAccessStrategyExecutor struct {
 	certCache                    certloader.Cache
