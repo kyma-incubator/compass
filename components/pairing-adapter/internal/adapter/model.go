@@ -63,6 +63,8 @@ type RequestData struct {
 	Tenant string
 	// in: body
 	ClientUser string
+	// in: body
+	ScenarioGroups []string
 }
 
 type ResponseData struct {
