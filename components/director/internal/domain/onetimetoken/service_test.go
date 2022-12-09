@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
+
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
@@ -49,7 +51,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		runtimeID           = "31a607c7-695f-4a31-b2d1-777939f84aac"
 		integrationSystemID = "123607c7-695f-4a31-b2d1-777939f84123"
 
-		suggestedTokenHeaderKey = "suggest_token"
+		suggestedTokenHeaderKey                    = "suggest_token"
+		ctxScenarioGroupKey     scenariogroups.Key = "scenarioGroups"
 	)
 
 	fakeToken := &model.OneTimeToken{
@@ -62,19 +65,28 @@ func TestGenerateOneTimeToken(t *testing.T) {
 	headers := http.Header{}
 	headers.Add(suggestedTokenHeaderKey, "true")
 
+	ctxScenarioGroups := "test_scenario_group"
+	ctxScenarioGroupsValue := []string{"test_scenario_group"}
+
 	subaccountExternalID := "sub-external-tenant"
 	subaccountInternalID := "sub-test-tenant"
 	contextSubaccountWithEnabledSuggestion := context.WithValue(context.TODO(), header.ContextKey, headers)
 	contextSubaccountWithEnabledSuggestion = tenant.SaveToContext(contextSubaccountWithEnabledSuggestion, subaccountInternalID, subaccountExternalID)
+	contextSubaccountWithEnabledSuggestionAndScenarioGroups := context.WithValue(contextSubaccountWithEnabledSuggestion, ctxScenarioGroupKey, ctxScenarioGroupsValue)
 
 	ctxWithSubaccount := tenant.SaveToContext(context.TODO(), subaccountInternalID, subaccountExternalID)
+	ctxWithSubaccountAndScenarioGroups := context.WithValue(ctxWithSubaccount, ctxScenarioGroupKey, ctxScenarioGroupsValue)
 
 	gaExternalID := "ga-external-tenant"
 	gaInternalID := "ga-test-tenant"
 	ctxWithGlobalAccount := tenant.SaveToContext(context.TODO(), gaInternalID, gaExternalID)
+	ctxWithGlobalAccountAndScenarioGroups := context.WithValue(ctxWithGlobalAccount, ctxScenarioGroupKey, ctxScenarioGroupsValue)
 	ctxGlobalAccountWithoutExternalTenant := tenant.SaveToContext(context.TODO(), gaInternalID, "")
+	ctxGlobalAccountWithoutExternalTenantAndScenarioGroups := context.WithValue(ctxGlobalAccountWithoutExternalTenant, ctxScenarioGroupKey, ctxScenarioGroupsValue)
+
 	contextGlobalAccountWithEnabledSuggestion := context.WithValue(context.TODO(), header.ContextKey, headers)
 	contextGlobalAccountWithEnabledSuggestion = tenant.SaveToContext(contextGlobalAccountWithEnabledSuggestion, gaInternalID, gaExternalID)
+	contextGlobalAccountWithEnabledSuggestionAndScenarioGroups := context.WithValue(contextGlobalAccountWithEnabledSuggestion, ctxScenarioGroupKey, ctxScenarioGroupsValue)
 
 	subaccountMapping := &model.BusinessTenantMapping{
 		ID:             subaccountInternalID,
@@ -130,17 +142,17 @@ func TestGenerateOneTimeToken(t *testing.T) {
 	}{
 		{
 			description: "Generate Application token, no int system, should succeed",
-			ctx:         ctxWithSubaccount,
+			ctx:         ctxWithSubaccountAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxWithSubaccount, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxWithSubaccountAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", ctxWithSubaccount, appID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}}, nil)
+				appSvc.On("Get", ctxWithSubaccountAndScenarioGroups, appID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}}, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -167,18 +179,18 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, no int system, with suggestion enabled, should succeed",
-			ctx:         contextSubaccountWithEnabledSuggestion,
+			ctx:         contextSubaccountWithEnabledSuggestionAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", contextSubaccountWithEnabledSuggestion, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", contextSubaccountWithEnabledSuggestionAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", contextSubaccountWithEnabledSuggestion, appID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}}, nil)
-				appSvc.On("ListLabels", contextSubaccountWithEnabledSuggestion, appID).Return(map[string]*model.Label{}, nil)
+				appSvc.On("Get", contextSubaccountWithEnabledSuggestionAndScenarioGroups, appID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}}, nil)
+				appSvc.On("ListLabels", contextSubaccountWithEnabledSuggestionAndScenarioGroups, appID).Return(map[string]*model.Label{}, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -211,24 +223,23 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 				defaultTimeStr, err := time.Time{}.MarshalJSON()
 				assert.NoError(t, err)
-
-				return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"token":"abc","connectorURL":"connector.url","used":false,"expiresAt":%s,"createdAt":%s,"usedAt":%s,"type":"%s"}`, string(converted), string(nowStr), string(defaultTimeStr), tokens.ApplicationToken)))
+				return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"token":"abc","connectorURL":"connector.url","used":false,"expiresAt":%s,"createdAt":%s,"usedAt":%s,"type":"%s","scenario_groups":["%s"]}`, string(converted), string(nowStr), string(defaultTimeStr), tokens.ApplicationToken, ctxScenarioGroups)))
 			},
 		},
 		{
 			description: "Generate Application token for legacy application, with suggestion enabled, should succeed",
-			ctx:         contextSubaccountWithEnabledSuggestion,
+			ctx:         contextSubaccountWithEnabledSuggestionAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", contextSubaccountWithEnabledSuggestion, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", contextSubaccountWithEnabledSuggestionAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", contextSubaccountWithEnabledSuggestion, appID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}}, nil)
-				appSvc.On("ListLabels", contextSubaccountWithEnabledSuggestion, appID).Return(map[string]*model.Label{"legacy": {Value: true}}, nil)
+				appSvc.On("Get", contextSubaccountWithEnabledSuggestionAndScenarioGroups, appID).Return(&model.Application{BaseEntity: &model.BaseEntity{ID: appID}}, nil)
+				appSvc.On("ListLabels", contextSubaccountWithEnabledSuggestionAndScenarioGroups, appID).Return(map[string]*model.Label{"legacy": {Value: true}}, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -320,17 +331,17 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token should fail on db error",
-			ctx:         ctxWithSubaccount,
+			ctx:         ctxWithSubaccountAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxWithSubaccount, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxWithSubaccountAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", errors.New("db error"))
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", ctxWithSubaccount, appID).Return(&model.Application{}, nil)
+				appSvc.On("Get", ctxWithSubaccountAndScenarioGroups, appID).Return(&model.Application{}, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -357,10 +368,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, with int system, should succeed when global account external tenant is in the context",
-			ctx:         ctxWithGlobalAccount,
+			ctx:         ctxWithGlobalAccountAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxWithGlobalAccount, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxWithGlobalAccountAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -370,7 +381,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				app.Name = appName
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", ctxWithGlobalAccount, appID).Return(app, nil)
+				appSvc.On("Get", ctxWithGlobalAccountAndScenarioGroups, appID).Return(app, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -386,7 +397,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByID", ctxWithGlobalAccount, gaInternalID).Return(gaMapping, nil)
+				tenantSvc.On("GetTenantByID", ctxWithGlobalAccountAndScenarioGroups, gaInternalID).Return(gaMapping, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -429,10 +440,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, with int system, should succeed when subaccount external tenant is in the context",
-			ctx:         ctxWithSubaccount,
+			ctx:         ctxWithSubaccountAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxWithSubaccount, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxWithSubaccountAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -442,7 +453,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				app.Name = appName
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", ctxWithSubaccount, appID).Return(app, nil)
+				appSvc.On("Get", ctxWithSubaccountAndScenarioGroups, appID).Return(app, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -458,8 +469,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
-				tenantSvc.On("GetTenantByID", ctxWithSubaccount, gaInternalID).Return(gaMapping, nil)
+				tenantSvc.On("GetTenantByID", ctxWithSubaccountAndScenarioGroups, subaccountInternalID).Return(subaccountMapping, nil)
+				tenantSvc.On("GetTenantByID", ctxWithSubaccountAndScenarioGroups, gaInternalID).Return(gaMapping, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -502,10 +513,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, with int system, should succeed when global account external tenant is not in the context",
-			ctx:         ctxGlobalAccountWithoutExternalTenant,
+			ctx:         ctxGlobalAccountWithoutExternalTenantAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxGlobalAccountWithoutExternalTenant, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxGlobalAccountWithoutExternalTenantAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -515,7 +526,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				app.Name = appName
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", ctxGlobalAccountWithoutExternalTenant, appID).Return(app, nil)
+				appSvc.On("Get", ctxGlobalAccountWithoutExternalTenantAndScenarioGroups, appID).Return(app, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -531,7 +542,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByID", ctxGlobalAccountWithoutExternalTenant, gaInternalID).Return(gaMapping, nil)
+				tenantSvc.On("GetTenantByID", ctxGlobalAccountWithoutExternalTenantAndScenarioGroups, gaInternalID).Return(gaMapping, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -574,10 +585,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, with int system, and token suggestion enabled, should succeed",
-			ctx:         contextGlobalAccountWithEnabledSuggestion,
+			ctx:         contextGlobalAccountWithEnabledSuggestionAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", contextGlobalAccountWithEnabledSuggestion, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", contextGlobalAccountWithEnabledSuggestionAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -586,7 +597,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				app := &model.Application{BaseEntity: &model.BaseEntity{ID: appID}}
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", contextGlobalAccountWithEnabledSuggestion, appID).Return(app, nil)
+				appSvc.On("Get", contextGlobalAccountWithEnabledSuggestionAndScenarioGroups, appID).Return(app, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -602,7 +613,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByID", contextGlobalAccountWithEnabledSuggestion, gaInternalID).Return(gaMapping, nil)
+				tenantSvc.On("GetTenantByID", contextGlobalAccountWithEnabledSuggestionAndScenarioGroups, gaInternalID).Return(gaMapping, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -645,10 +656,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Application token, with int system, but no adapters defined should succeed",
-			ctx:         ctxWithSubaccount,
+			ctx:         ctxWithSubaccountAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxWithSubaccount, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxWithSubaccountAndScenarioGroups, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -657,7 +668,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				app := &model.Application{}
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", ctxWithSubaccount, appID).Return(app, nil)
+				appSvc.On("Get", ctxWithSubaccountAndScenarioGroups, appID).Return(app, nil)
 				return appSvc
 			},
 			appConverter: func() onetimetoken.ApplicationConverter {
@@ -895,10 +906,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Runtime token should succeed",
-			ctx:         ctxWithSubaccount,
+			ctx:         ctxWithSubaccountAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxWithSubaccount, pkgmodel.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxWithSubaccountAndScenarioGroups, pkgmodel.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -960,10 +971,10 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		},
 		{
 			description: "Generate Runtime token should fail on db error",
-			ctx:         ctxWithSubaccount,
+			ctx:         ctxWithSubaccountAndScenarioGroups,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxWithSubaccount, pkgmodel.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxWithSubaccountAndScenarioGroups, pkgmodel.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", errors.New("db error"))
 				return systemAuthSvc
@@ -1010,7 +1021,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 
 			// WHEN
 			token, err := tokenSvc.GenerateOneTimeToken(test.ctx, test.objectID, test.tokenType)
-
 			// THEN
 			if test.shouldHaveError {
 				assert.Error(t, err)
@@ -1051,12 +1061,18 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		connectorURL       = "http://connector.url"
 		legacyConnectorURL = "http://connector.url"
 		token              = "YWJj"
+
+		ctxScenarioGroupsValue = "test_scenario_group"
 	)
+	const ctxScenarioGroupKey scenariogroups.Key = "scenarioGroups"
+	scenarioGroups := []string{ctxScenarioGroupsValue}
 
 	ottConfig := onetimetoken.Config{
 		ConnectorURL:       connectorURL,
 		LegacyConnectorURL: connectorURL,
 	}
+
+	ctxBackgroundWithScenarioGroups := context.WithValue(context.Background(), ctxScenarioGroupKey, scenarioGroups)
 
 	t.Run("fails when systemAuth cannot be fetched", func(t *testing.T) {
 		// GIVEN
@@ -1112,8 +1128,8 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		pairingAdapters := &pkgadapters.Adapters{}
 
 		timeService.On("Now").Return(time.Now())
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
-		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(errors.New(updateErrMsg))
+		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenarioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("Update", ctxBackgroundWithScenarioGroups, mock.Anything).Return(errors.New(updateErrMsg))
 		defer sysAuthSvc.AssertExpectations(t)
 
 		tokenGenerator.On("NewToken").Return(token, nil)
@@ -1123,7 +1139,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 		// WHEN
-		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID)
+		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenarioGroups, systemAuthID)
 
 		// THEN
 		assert.Nil(t, token)
@@ -1140,8 +1156,8 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID}, nil)
-		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
+		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenarioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID}, nil)
+		sysAuthSvc.On("Update", ctxBackgroundWithScenarioGroups, mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
 		tokenGenerator.On("NewToken").Return(token, nil)
@@ -1150,17 +1166,18 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
 			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 		expectedToken := &model.OneTimeToken{
-			Token:        token,
-			ConnectorURL: connectorURL,
-			Type:         tokens.RuntimeToken,
-			CreatedAt:    now,
-			Used:         false,
-			ExpiresAt:    now.Add(ottConfig.ApplicationExpiration),
-			UsedAt:       time.Time{},
+			Token:          token,
+			ConnectorURL:   connectorURL,
+			Type:           tokens.RuntimeToken,
+			CreatedAt:      now,
+			Used:           false,
+			ExpiresAt:      now.Add(ottConfig.ApplicationExpiration),
+			UsedAt:         time.Time{},
+			ScenarioGroups: scenarioGroups,
 		}
 
 		// WHEN
-		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID)
+		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenarioGroups, systemAuthID)
 
 		// THEN
 		assert.Equal(t, expectedToken, token)
@@ -1176,27 +1193,28 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
-		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
+		sysAuthSvc.On("GetGlobal", ctxBackgroundWithScenarioGroups, systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("Update", ctxBackgroundWithScenarioGroups, mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
 		tokenGenerator.On("NewToken").Return(token, nil)
 		defer tokenGenerator.AssertExpectations(t)
 		expectedToken := &model.OneTimeToken{
-			Token:        token,
-			ConnectorURL: connectorURL,
-			Type:         tokens.RuntimeToken,
-			CreatedAt:    now,
-			Used:         false,
-			ExpiresAt:    now.Add(ottConfig.ApplicationExpiration),
-			UsedAt:       time.Time{},
+			Token:          token,
+			ConnectorURL:   connectorURL,
+			Type:           tokens.RuntimeToken,
+			CreatedAt:      now,
+			Used:           false,
+			ExpiresAt:      now.Add(ottConfig.ApplicationExpiration),
+			UsedAt:         time.Time{},
+			ScenarioGroups: scenarioGroups,
 		}
 
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
 			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 		// WHEN
-		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID)
+		token, err := tokenService.RegenerateOneTimeToken(ctxBackgroundWithScenarioGroups, systemAuthID)
 
 		// THEN
 		assert.Equal(t, expectedToken, token)

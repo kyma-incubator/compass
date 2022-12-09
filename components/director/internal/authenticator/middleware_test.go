@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
+
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/automock"
@@ -41,6 +43,7 @@ import (
 const (
 	AuthorizationHeaderKey = "Authorization"
 	ClientIDHeaderKey      = "client_user"
+	ScenarioGroupsKey      = "scenario_groups"
 
 	defaultTenant   = "af9f84a9-1d3a-4d9f-ae0c-94f883b33b6e"
 	PrivateJWKSURL  = "file://testdata/jwks-private.json"
@@ -177,6 +180,54 @@ func TestAuthenticator_Handler(t *testing.T) {
 		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
 		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
 		req.Header.Add(ClientIDHeaderKey, clientUser)
+
+		// WHEN
+		middleware(handler).ServeHTTP(rr, req)
+
+		// THEN
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
+	t.Run("Success - with one scenario group provided", func(t *testing.T) {
+		scenarioGroups := []string{"FOO"}
+		scenarioGroupsHeaderValue := "foo"
+		// GIVEN
+		middleware := createMiddleware(t, false, claimsValidatorMock())
+		handler := testHandlerWithScenarioGroups(t, defaultTenant, scenarioGroups, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
+		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
+		req.Header.Add(ScenarioGroupsKey, scenarioGroupsHeaderValue)
+
+		// WHEN
+		middleware(handler).ServeHTTP(rr, req)
+
+		// THEN
+		assert.Equal(t, "OK", rr.Body.String())
+		assert.Equal(t, http.StatusOK, rr.Code)
+	})
+
+	t.Run("Success - with two scenario groups provided", func(t *testing.T) {
+		scenarioGroups := []string{"FOO", "BAR"}
+		scenarioGroupsHeaderValue := "fOo,Bar"
+		// GIVEN
+		middleware := createMiddleware(t, false, claimsValidatorMock())
+		handler := testHandlerWithScenarioGroups(t, defaultTenant, scenarioGroups, scopes)
+		rr := httptest.NewRecorder()
+		req := fixEmptyRequest(t)
+		key, ok := privateJWKS.Get(0)
+		assert.True(t, ok)
+
+		keyID := key.KeyID()
+		token := createTokenWithSigningMethod(t, defaultTenant, scopes, key, &keyID, true)
+		req.Header.Add(AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", token))
+		req.Header.Add(ScenarioGroupsKey, scenarioGroupsHeaderValue)
 
 		// WHEN
 		middleware(handler).ServeHTTP(rr, req)
@@ -983,6 +1034,27 @@ func testHandlerWithClientUser(t *testing.T, expectedTenant, expectedClientUser,
 
 		require.Equal(t, expectedTenant, tenantFromContext)
 		require.Equal(t, expectedClientUser, clientUserFromContext)
+		scopesArray := strings.Split(scopes, " ")
+		require.ElementsMatch(t, scopesArray, scopesFromContext)
+
+		_, err = w.Write([]byte("OK"))
+		require.NoError(t, err)
+	}
+}
+
+func testHandlerWithScenarioGroups(t *testing.T, expectedTenant string, expectedScenarioGroups []string, scopes string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tenantFromContext, err := tenant.LoadFromContext(r.Context())
+		if !apperrors.IsTenantRequired(err) {
+			require.NoError(t, err)
+		}
+		scenarioGroupsFromContext := scenariogroups.LoadFromContext(r.Context())
+
+		scopesFromContext, err := scope.LoadFromContext(r.Context())
+		require.NoError(t, err)
+
+		require.Equal(t, expectedTenant, tenantFromContext)
+		require.Equal(t, expectedScenarioGroups, scenarioGroupsFromContext)
 		scopesArray := strings.Split(scopes, " ")
 		require.ElementsMatch(t, scopesArray, scopesFromContext)
 

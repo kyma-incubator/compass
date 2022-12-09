@@ -8,11 +8,12 @@ import (
 
 // OneTimeToken missing godoc
 type OneTimeToken struct {
-	Token        string
-	ConnectorURL string
-	Type         tokens.TokenType
-	CreatedAt    time.Time
-	Used         bool
-	ExpiresAt    time.Time
-	UsedAt       time.Time
+	Token          string
+	ConnectorURL   string
+	Type           tokens.TokenType
+	CreatedAt      time.Time
+	Used           bool
+	ExpiresAt      time.Time
+	UsedAt         time.Time
+	ScenarioGroups []string
 }
