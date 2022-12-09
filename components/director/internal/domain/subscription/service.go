@@ -299,7 +299,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName string, subscriptionPayload *string) (bool, error) {
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName string, subscriptionPayload string) (bool, error) {
 	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
@@ -417,7 +417,7 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string, subscriptionPayload *string) error {
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string, subscriptionPayload string) error {
 	values := []*model.ApplicationTemplateValueInput{
 		{Placeholder: "subdomain", Value: subdomain},
 		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
@@ -435,7 +435,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 
 	appFromTemplateInput, err := s.appTemplateConv.ApplicationFromTemplateInputFromGraphQL(appTemplate, graphql.ApplicationFromTemplateInput{
 		TemplateName:        appTemplate.Name,
-		PlaceholdersPayload: subscriptionPayload,
+		PlaceholdersPayload: &subscriptionPayload,
 	})
 
 	if err != nil {
@@ -444,7 +444,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 
 	appTemplate.Placeholders = oldPlaceholders
 
-	if subscriptionPayload != nil && len(*subscriptionPayload) > 0 {
+	if len(subscriptionPayload) > 0 {
 		values = append(appFromTemplateInput.Values, values...)
 	} else {
 		additionalValues := []*model.ApplicationTemplateValueInput{

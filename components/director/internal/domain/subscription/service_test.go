@@ -718,7 +718,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 		Region                 string
 		SubscriptionAppName    string
 		SubscriptionProviderID string
-		SubscriptionPayload    *string
+		SubscriptionPayload    string
 		AppTemplateServiceFn   func() *automock.ApplicationTemplateService
 		LabelServiceFn         func() *automock.LabelService
 		UIDServiceFn           func() *automock.UidService
@@ -777,7 +777,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 		{
 			Name:                "Succeeds with subscription payload",
 			Region:              tenantRegionWithPrefix,
-			SubscriptionPayload: &subscriptionPayload,
+			SubscriptionPayload: subscriptionPayload,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", context.TODO(), regionalAndSubscriptionFiltersWithPrefix).Return(modelAppTemplateWithPlaceholders, nil).Once()

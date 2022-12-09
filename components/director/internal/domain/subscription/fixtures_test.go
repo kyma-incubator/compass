@@ -158,18 +158,6 @@ func fixModelApplicationFromTemplateSimplifiedInput(name, subscribedAppName, sub
 	}
 }
 
-func fixGQLApplicationFromTemplateWithValuesInput(name, subscribedAppName, subdomain, region string) graphql.ApplicationFromTemplateInput {
-	return graphql.ApplicationFromTemplateInput{
-		TemplateName: name,
-		Values: []*graphql.TemplateValueInput{
-			{Placeholder: "name", Value: subscribedAppName},
-			{Placeholder: "display-name", Value: subscribedAppName},
-			{Placeholder: "subdomain", Value: subdomain},
-			{Placeholder: "region", Value: region},
-		},
-	}
-}
-
 func fixGQLApplicationFromTemplateWithPayloadInput(name, subscribedAppName, subdomain, region string) graphql.ApplicationFromTemplateInput {
 	placeholderPayload := "{\"name\":\"subscription-app-name-value\", \"display-name\":\"subscription-app-name-value\", \"subdomain\":\"subdomain1\", \"region\":\"eu-1\"}"
 
