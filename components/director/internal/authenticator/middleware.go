@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
+
 	"github.com/kyma-incubator/compass/components/director/internal/nsadapter/httputil"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -29,13 +31,15 @@ const (
 )
 
 const (
-	logKeyConsumerType  = "consumer-type"
-	logKeyConsumerID    = "consumer-id"
-	logKeyTokenClientID = "token-client-id"
-	logKeyFlow          = "flow"
+	logKeyConsumerType   = "consumer-type"
+	logKeyConsumerID     = "consumer-id"
+	logKeyTokenClientID  = "token-client-id"
+	logKeyFlow           = "flow"
+	ctxScenarioGroupsKey = "scenario_groups"
 )
 
 // ClaimsValidator missing godoc
+//
 //go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClaimsValidator interface {
 	Validate(context.Context, claims.Claims) error
@@ -127,6 +131,13 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
 				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeaderKey, clientUser)
 				ctx = client.SaveToContext(ctx, clientUser)
+			}
+
+			if scenarioGroupsValue := r.Header.Get(ctxScenarioGroupsKey); scenarioGroupsValue != "" {
+				log.C(ctx).Infof("Found %s header in request with value: %s", ctxScenarioGroupsKey, scenarioGroupsValue)
+				groups := strings.Split(strings.ToUpper(scenarioGroupsValue), ",")
+
+				ctx = scenariogroups.SaveToContext(ctx, groups)
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))

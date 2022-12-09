@@ -13,6 +13,7 @@ import (
 )
 
 // TokenService missing godoc
+//
 //go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenService interface {
 	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
@@ -20,6 +21,7 @@ type TokenService interface {
 }
 
 // TokenConverter missing godoc
+//
 //go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenConverter interface {
 	ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime
@@ -105,13 +107,14 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*
 	}
 
 	return rawEncoded(&graphql.TokenWithURL{
-		Token:        extractToken(obj.Token),
-		ConnectorURL: obj.ConnectorURL,
-		Used:         obj.Used,
-		ExpiresAt:    obj.ExpiresAt,
-		CreatedAt:    obj.CreatedAt,
-		UsedAt:       obj.UsedAt,
-		Type:         obj.Type,
+		Token:          extractToken(obj.Token),
+		ConnectorURL:   obj.ConnectorURL,
+		Used:           obj.Used,
+		ExpiresAt:      obj.ExpiresAt,
+		CreatedAt:      obj.CreatedAt,
+		UsedAt:         obj.UsedAt,
+		Type:           obj.Type,
+		ScenarioGroups: obj.ScenarioGroups,
 	})
 }
 
@@ -126,12 +129,13 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string,
 	}
 
 	return raw(&graphql.TokenWithURL{
-		Token:        extractToken(obj.Token),
-		ConnectorURL: obj.ConnectorURL,
-		Used:         obj.Used,
-		ExpiresAt:    obj.ExpiresAt,
-		CreatedAt:    obj.CreatedAt,
-		UsedAt:       obj.UsedAt,
-		Type:         obj.Type,
+		Token:          extractToken(obj.Token),
+		ConnectorURL:   obj.ConnectorURL,
+		Used:           obj.Used,
+		ExpiresAt:      obj.ExpiresAt,
+		CreatedAt:      obj.CreatedAt,
+		UsedAt:         obj.UsedAt,
+		Type:           obj.Type,
+		ScenarioGroups: obj.ScenarioGroups,
 	})
 }
