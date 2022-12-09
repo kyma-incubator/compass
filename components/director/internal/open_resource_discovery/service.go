@@ -202,6 +202,7 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 	return nil
 }
 
+// ProcessApp todo
 func (s *Service) ProcessApp(ctx context.Context, cfg MetricsConfig, appID string) error {
 	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
 	if err != nil {

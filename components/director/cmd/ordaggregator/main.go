@@ -158,21 +158,21 @@ func main() {
 
 	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, accessStrategyExecutorProviderWithTenant, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor, ordWebhookMapping)
 
-	jwtHttpClient := &http.Client{
+	jwtHTTPClient := &http.Client{
 		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
 
-	handler := initHandler(ctx, jwtHttpClient, ordAggregator, cfg)
+	handler := initHandler(ctx, jwtHTTPClient, ordAggregator, cfg)
 	runMainSrv, _ := createServer(ctx, cfg, handler, "main")
 
-	//go func() {
+	// go func() {
 	//	<-ctx.Done()
 	//	// Interrupt signal received - shut down the servers
 	//	shutdownMainSrv()
-	//}()
+	// }()
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
@@ -184,15 +184,14 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		for true { //TODO schedule sync documents
-			//err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
-			//exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
+		for true { // TODO schedule sync documents
+			// err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
+			// exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 			log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
 		}
 	}()
 
 	wg.Wait()
-
 }
 
 func ctxTenantProvider(ctx context.Context) (string, error) {
@@ -384,14 +383,20 @@ func newReadinessHandler() func(writer http.ResponseWriter, request *http.Reques
 func newUnprotectedHandler() func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte("unprotected"))
+		_, err := writer.Write([]byte("unprotected"))
+		if err != nil {
+			return
+		}
 	}
 }
 
 func newProtectedHandler() func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte("protected"))
+		_, err := writer.Write([]byte("protected"))
+		if err != nil {
+			return
+		}
 	}
 }
 

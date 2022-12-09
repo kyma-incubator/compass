@@ -21,12 +21,12 @@ func NewORDAggregatorHTTPHandler(svc *Service, cfg MetricsConfig) *handler {
 func (h *handler) ScheduleORDAggregation(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 	//
-	//tenantID, err := tenant.LoadFromContext(request.Context())
-	//if err != nil {
+	// tenantID, err := tenant.LoadFromContext(request.Context())
+	// if err != nil {
 	//	log.C(ctx).WithError(err).Error("Failed to fetch sensitive data for destinations")
 	//	http.Error(writer, err.Error(), http.StatusBadRequest)
 	//	return
-	//}
+	// }
 
 	appID := request.URL.Query().Get("appID")
 	if appID == "" {
@@ -42,5 +42,7 @@ func (h *handler) ScheduleORDAggregation(writer http.ResponseWriter, request *ht
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte("☄ HTTP status code returned!"))
+	if _, err = writer.Write([]byte("☄ HTTP status code returned!")); err != nil {
+		return
+	}
 }
