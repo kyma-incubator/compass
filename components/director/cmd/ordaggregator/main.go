@@ -184,7 +184,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		for true { // TODO schedule sync documents
+		for { // TODO schedule sync documents
 			// err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
 			// exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 			log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
