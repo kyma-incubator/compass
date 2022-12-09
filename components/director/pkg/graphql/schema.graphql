@@ -1192,6 +1192,7 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	raw: String
 	rawEncoded: String
 	type: OneTimeTokenType
+	scenarioGroups: [String]
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
