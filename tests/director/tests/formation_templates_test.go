@@ -27,7 +27,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Logf("Create formation template with name: %q", formationTemplateName)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 	require.NoError(t, err)
 
@@ -59,7 +59,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Logf("Delete formation template with name %q", formationTemplateName)
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteFormationTemplateRequest, &output)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteFormationTemplateRequest, &output)
 
 	//THEN
 	require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	getFormationTemplateRequest := fixtures.FixQueryFormationTemplateRequest(output.ID)
 	formationTemplateOutput := graphql.FormationTemplate{}
 
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationTemplateRequest, &formationTemplateOutput)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getFormationTemplateRequest, &formationTemplateOutput)
 
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 	saveExample(t, getFormationTemplateRequest.Query(), "query formation template")
@@ -106,7 +106,7 @@ func TestUpdateFormationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Logf("Update formation template with name: %q and ID: %q", createdFormationTemplateName, formationTemplateReq.ID)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateFormationTemplateRequest, &output)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateFormationTemplateRequest, &output)
 
 	//THEN
 	require.NoError(t, err)
@@ -137,7 +137,7 @@ func TestQueryFormationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Logf("Query formation template with name %q and id %q", formationTemplateName, createdFormationRequest.ID)
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryFormationTemplateRequest, &output)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryFormationTemplateRequest, &output)
 
 	//THEN
 	require.NoError(t, err)
@@ -180,7 +180,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 
 	// WHEN
 	t.Log("Query formation templates")
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryFormationTemplatesRequest, &output)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryFormationTemplatesRequest, &output)
 
 	//THEN
 	require.NotEmpty(t, output)
