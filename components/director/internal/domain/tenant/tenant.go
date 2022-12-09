@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
@@ -66,6 +67,7 @@ func LoadLocalTenantIDFromContext(ctx context.Context) (string, error) {
 		return "", apperrors.NewInternalError("cannot read local tenant id from context")
 	}
 
+	localTenantID = strings.TrimSpace(localTenantID)
 	if localTenantID == "" {
 		return "", apperrors.NewInternalError("local tenant id is required")
 	}
