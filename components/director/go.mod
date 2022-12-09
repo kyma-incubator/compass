@@ -20,9 +20,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20221209165133-96e21faf34ac
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20221209165133-96e21faf34ac
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221209165133-96e21faf34ac
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20221209170532-c100a7c3d004
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20221209170532-c100a7c3d004
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221209170532-c100a7c3d004
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
 	github.com/lib/pq v1.10.4
