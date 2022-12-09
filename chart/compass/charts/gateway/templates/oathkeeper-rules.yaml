@@ -192,7 +192,7 @@ spec:
   upstream:
     url: "http://compass-ord-aggregator.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.ordAggregator.port }}"
   match:
-    methods: ["PUT", "GET"]
+    methods: ["POST", "GET"]
     url: <http|https>://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.ordAggregator.prefix }}/<.*>
   authenticators:
     - handler: jwt

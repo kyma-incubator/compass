@@ -202,6 +202,57 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 	return nil
 }
 
+func (s *Service) ProcessApp(ctx context.Context, cfg MetricsConfig, appID string) error {
+	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
+		globalResourcesOrdIDs, err = s.globalRegistrySvc.ListGlobalResources(ctx)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while listing existing global resource: %s. Proceeding with empty globalResourceOrdIDs... Validation of Documents relying on global resources might fail.", err)
+		}
+	}
+
+	if globalResourcesOrdIDs == nil {
+		globalResourcesOrdIDs = make(map[string]bool)
+	}
+
+	webhooks, err := s.getWebhooksForApplication(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	for _, wh := range webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			if err := s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) ([]*model.Webhook, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	ordWebhooks, err := s.webhookSvc.ListForApplication(ctx, appID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("error while fetching webhooks for application with id %s", appID)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return ordWebhooks, nil
+}
+
 func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool) error {
 	apiDataFromDB, eventDataFromDB, packageDataFromDB, err := s.fetchResources(ctx, appID)
 	if err != nil {

@@ -165,7 +165,7 @@ func main() {
 		},
 	}
 
-	handler := initHandler(ctx, jwtHttpClient, cfg)
+	handler := initHandler(ctx, jwtHttpClient, ordAggregator, cfg)
 	runMainSrv, _ := createServer(ctx, cfg, handler, "main")
 
 	//go func() {
@@ -185,8 +185,8 @@ func main() {
 	go func() {
 		defer wg.Done()
 		for true { //TODO schedule sync documents
-			err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
-			exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
+			//err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
+			//exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 			log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
 		}
 	}()
@@ -343,26 +343,29 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, cfg config) http.Handler {
+func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service, cfg config) http.Handler {
 	const (
 		healthzEndpoint = "/healthz"
 		readyzEndpoint  = "/readyz"
 	)
 	logger := log.C(ctx)
+
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
 	unprotectedRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	unprotectedRouter.HandleFunc("/unprotected", newUnprotectedHandler()).Methods(http.MethodGet)
-	//configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
-	//registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
-	//
+
 	protectedAPIRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
-	configureAuthMiddleware(ctx, httpClient, protectedAPIRouter, cfg, "ord:read")
+	configureAuthMiddleware(ctx, httpClient, protectedAPIRouter, cfg, "ord:sync")
 	protectedAPIRouter.HandleFunc("/protected", newProtectedHandler()).Methods(http.MethodGet)
 
-	//
+	handler := ord.NewORDAggregatorHTTPHandler(svc, cfg.MetricsConfig)
+	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, "ord:sync")
+	apiRouter.HandleFunc("/unprotectedTrigger", handler.ScheduleORDAggregation).Methods(http.MethodPost)
+
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc(readyzEndpoint, newReadinessHandler())
