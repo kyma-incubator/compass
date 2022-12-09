@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221209112229-ef4cd5fadb3e
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221209112445-ac005260a6ca
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.1
