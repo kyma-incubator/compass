@@ -168,8 +168,10 @@ func fixGQLApplicationFromTemplateWithPayloadInput(name, subscribedAppName, subd
 }
 
 func fixGQLApplicationFromTemplateInput(name, subscribedAppName, subdomain, region string) graphql.ApplicationFromTemplateInput {
+	placeholderPayload := ""
 	return graphql.ApplicationFromTemplateInput{
-		TemplateName: name,
+		TemplateName:        name,
+		PlaceholdersPayload: &placeholderPayload,
 	}
 }
 
