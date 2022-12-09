@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tidwall/gjson"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -88,6 +86,13 @@ type ApplicationTemplateService interface {
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
+// ApplicationTemplateConverter missing godoc
+//
+//go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateConverter interface {
+	ApplicationFromTemplateInputFromGraphQL(appTemplate *model.ApplicationTemplate, in graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error)
+}
+
 // ApplicationConverter is converting graphql and model Applications
 //
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -113,6 +118,7 @@ type service struct {
 	labelSvc                     LabelService
 	appTemplateSvc               ApplicationTemplateService
 	appConv                      ApplicationConverter
+	appTemplateConv              ApplicationTemplateConverter
 	appSvc                       ApplicationService
 	uidSvc                       uidService
 	consumerSubaccountLabelKey   string
@@ -122,7 +128,7 @@ type service struct {
 }
 
 // NewService returns a new object responsible for service-layer Subscription operations.
-func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appSvc ApplicationService, uidService uidService,
+func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appTemplateConv ApplicationTemplateConverter, appSvc ApplicationService, uidService uidService,
 	consumerSubaccountLabelKey, subscriptionLabelKey, runtimeTypeLabelKey, subscriptionProviderLabelKey string) *service {
 	return &service{
 		runtimeSvc:                   runtimeSvc,
@@ -131,6 +137,7 @@ func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tena
 		labelSvc:                     labelSvc,
 		appTemplateSvc:               appTemplateSvc,
 		appConv:                      appConv,
+		appTemplateConv:              appTemplateConv,
 		appSvc:                       appSvc,
 		uidSvc:                       uidService,
 		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
@@ -414,7 +421,38 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		{Placeholder: "subdomain", Value: subdomain},
 		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
 	}
-	values = processAdditionalValues(subscriptionPayload, appTemplate, values, ctx, subscribedAppName)
+
+	oldPlaceholders := appTemplate.Placeholders
+
+	newPlaceholders := []model.ApplicationTemplatePlaceholder{}
+	for _, placeholder := range oldPlaceholders {
+		if placeholder.Name != "subdomain" && placeholder.Name != "region" {
+			newPlaceholders = append(newPlaceholders, placeholder)
+		}
+	}
+	appTemplate.Placeholders = newPlaceholders
+
+	appFromTemplateInput, err := s.appTemplateConv.ApplicationFromTemplateInputFromGraphQL(appTemplate, graphql.ApplicationFromTemplateInput{
+		TemplateName:        appTemplate.Name,
+		PlaceholdersPayload: subscriptionPayload,
+	})
+
+	if err != nil {
+		return errors.Wrapf(err, "while parsing the callback payload with the Application template %q", appTemplate.Name)
+	}
+
+	appTemplate.Placeholders = oldPlaceholders
+
+	if subscriptionPayload != nil && len(*subscriptionPayload) > 0 {
+		values = append(appFromTemplateInput.Values, values...)
+	} else {
+		additionalValues := []*model.ApplicationTemplateValueInput{
+			{Placeholder: "name", Value: subscribedAppName},
+			{Placeholder: "display-name", Value: subscribedAppName},
+		}
+		values = append(additionalValues, values...)
+	}
+
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
 	if err != nil {
@@ -451,30 +489,6 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 
 	return nil
-}
-
-func processAdditionalValues(subscriptionPayload *string, appTemplate *model.ApplicationTemplate, values []*model.ApplicationTemplateValueInput, ctx context.Context, subscribedAppName string) []*model.ApplicationTemplateValueInput {
-	if subscriptionPayload != nil && len(*subscriptionPayload) > 0 {
-		for _, placeholder := range appTemplate.Placeholders {
-			if len(*placeholder.JSONPath) > 0 {
-				value := gjson.Get(*subscriptionPayload, *placeholder.JSONPath)
-				if value.Exists() {
-					values = append(values, &model.ApplicationTemplateValueInput{Placeholder: placeholder.Name, Value: value.String()})
-				} else {
-					log.C(ctx).Errorf("while parsing the callback payload with the Application template %s the value for placeholder %s with jsonPath %s, do not exists in payload.", appTemplate.Name, placeholder.Name, *placeholder.JSONPath)
-				}
-			} else {
-				log.C(ctx).Errorf("while parsing the callback payload with the Application template %s the placeholder %s, do not have JSONPath.", appTemplate.Name, placeholder.Name)
-			}
-		}
-	} else {
-		additionalValues := []*model.ApplicationTemplateValueInput{
-			{Placeholder: "name", Value: subscribedAppName},
-			{Placeholder: "display-name", Value: subscribedAppName},
-		}
-		values = append(additionalValues, values...)
-	}
-	return values
 }
 
 func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemplateID string) error {

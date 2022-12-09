@@ -90,10 +90,10 @@ func fixModelApplicationFromTemplateInputWithPlaceholders(name, subscribedAppNam
 	return model.ApplicationFromTemplateInput{
 		TemplateName: name,
 		Values: []*model.ApplicationTemplateValueInput{
-			{Placeholder: "subdomain", Value: subdomain},
-			{Placeholder: "region", Value: region},
 			{Placeholder: "name", Value: subscribedAppName},
 			{Placeholder: "display-name", Value: subscribedAppName},
+			{Placeholder: "subdomain", Value: subdomain},
+			{Placeholder: "region", Value: region},
 		},
 	}
 }
@@ -145,6 +145,43 @@ func fixModelApplicationFromTemplateInput(name, subscribedAppName, subdomain, re
 			{Placeholder: "subdomain", Value: subdomain},
 			{Placeholder: "region", Value: region},
 		},
+	}
+}
+
+func fixModelApplicationFromTemplateSimplifiedInput(name, subscribedAppName, subdomain, region string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*model.ApplicationTemplateValueInput{
+			{Placeholder: "name", Value: subscribedAppName},
+			{Placeholder: "display-name", Value: subscribedAppName},
+		},
+	}
+}
+
+func fixGQLApplicationFromTemplateWithValuesInput(name, subscribedAppName, subdomain, region string) graphql.ApplicationFromTemplateInput {
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*graphql.TemplateValueInput{
+			{Placeholder: "name", Value: subscribedAppName},
+			{Placeholder: "display-name", Value: subscribedAppName},
+			{Placeholder: "subdomain", Value: subdomain},
+			{Placeholder: "region", Value: region},
+		},
+	}
+}
+
+func fixGQLApplicationFromTemplateWithPayloadInput(name, subscribedAppName, subdomain, region string) graphql.ApplicationFromTemplateInput {
+	placeholderPayload := "{\"name\":\"subscription-app-name-value\", \"display-name\":\"subscription-app-name-value\", \"subdomain\":\"subdomain1\", \"region\":\"eu-1\"}"
+
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName:        name,
+		PlaceholdersPayload: &placeholderPayload,
+	}
+}
+
+func fixGQLApplicationFromTemplateInput(name, subscribedAppName, subdomain, region string) graphql.ApplicationFromTemplateInput {
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName: name,
 	}
 }
 
