@@ -52,17 +52,6 @@ func TestService_SubscriptionFlows(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	validRequestBodyWithMatchingParentID, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:                tenantExtID,
-		TenantID:                    tenantExtID,
-		Subdomain:                   regionalTenantSubdomain,
-		SubscriptionProviderID:      subscriptionProviderID,
-		ProviderSubaccountID:        providerSubaccountID,
-		ConsumerTenantID:            consumerTenantID,
-		SubscriptionProviderAppName: subscriptionProviderAppName,
-	})
-	assert.NoError(t, err)
-
 	bodyWithMissingParent, err := json.Marshal(regionalTenantCreationRequest{
 		SubaccountID:                subaccountTenantExtID,
 		Subdomain:                   regionalTenantSubdomain,
@@ -169,7 +158,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		ProviderSubaccountID:        providerSubaccountID,
 		ConsumerTenantID:            consumerTenantID,
 		SubscriptionProviderAppName: subscriptionProviderAppName,
-		SubscriptionPayload:         string(validRequestBodyWithMatchingParentID),
+		SubscriptionPayload:         string(bodyWithMatchingAccountAndSubaccountIDs),
 	}
 
 	// Subscribe flow

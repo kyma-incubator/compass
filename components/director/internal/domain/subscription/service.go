@@ -414,26 +414,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		{Placeholder: "subdomain", Value: subdomain},
 		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
 	}
-	if subscriptionPayload != nil && len(*subscriptionPayload) > 0 {
-		for _, placeholder := range appTemplate.Placeholders {
-			if len(*placeholder.JSONPath) > 0 {
-				value := gjson.Get(*subscriptionPayload, *placeholder.JSONPath)
-				if value.Exists() {
-					values = append(values, &model.ApplicationTemplateValueInput{Placeholder: placeholder.Name, Value: value.String()})
-				} else {
-					log.C(ctx).Errorf("while parsing the callback payload with the Application template %s the value for placeholder %s with jsonPath %s, do not exists in payload.", appTemplate.Name, placeholder.Name, *placeholder.JSONPath)
-				}
-			} else {
-				log.C(ctx).Errorf("while parsing the callback payload with the Application template %s the placeholder %s, do not have JSONPath.", appTemplate.Name, placeholder.Name)
-			}
-		}
-	} else {
-		additionalValues := []*model.ApplicationTemplateValueInput{
-			{Placeholder: "name", Value: subscribedAppName},
-			{Placeholder: "display-name", Value: subscribedAppName},
-		}
-		values = append(additionalValues, values...)
-	}
+	values = processAdditionalValues(subscriptionPayload, appTemplate, values, ctx, subscribedAppName)
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
 	if err != nil {
@@ -470,6 +451,30 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 
 	return nil
+}
+
+func processAdditionalValues(subscriptionPayload *string, appTemplate *model.ApplicationTemplate, values []*model.ApplicationTemplateValueInput, ctx context.Context, subscribedAppName string) []*model.ApplicationTemplateValueInput {
+	if subscriptionPayload != nil && len(*subscriptionPayload) > 0 {
+		for _, placeholder := range appTemplate.Placeholders {
+			if len(*placeholder.JSONPath) > 0 {
+				value := gjson.Get(*subscriptionPayload, *placeholder.JSONPath)
+				if value.Exists() {
+					values = append(values, &model.ApplicationTemplateValueInput{Placeholder: placeholder.Name, Value: value.String()})
+				} else {
+					log.C(ctx).Errorf("while parsing the callback payload with the Application template %s the value for placeholder %s with jsonPath %s, do not exists in payload.", appTemplate.Name, placeholder.Name, *placeholder.JSONPath)
+				}
+			} else {
+				log.C(ctx).Errorf("while parsing the callback payload with the Application template %s the placeholder %s, do not have JSONPath.", appTemplate.Name, placeholder.Name)
+			}
+		}
+	} else {
+		additionalValues := []*model.ApplicationTemplateValueInput{
+			{Placeholder: "name", Value: subscribedAppName},
+			{Placeholder: "display-name", Value: subscribedAppName},
+		}
+		values = append(additionalValues, values...)
+	}
+	return values
 }
 
 func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemplateID string) error {
