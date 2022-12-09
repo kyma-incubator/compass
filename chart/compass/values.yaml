@@ -442,8 +442,6 @@ global:
     domainName: "local.kyma.dev"
     discoveryDomain:
       name: "discovery.api.local"
-      tlsCert: ""
-      tlsKey: ""
   database:
     sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
