@@ -9,8 +9,8 @@ require (
 	github.com/goccy/go-json v0.9.4 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221209170532-c100a7c3d004
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20221209170532-c100a7c3d004
+	github.com/kyma-incubator/compass/components/director v0.0.0-20221209180946-334795ca748a
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20221209180946-334795ca748a
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect
@@ -33,7 +33,7 @@ require (
 )
 
 require (
-	github.com/kyma-incubator/compass/tests v0.0.0-20221209170532-c100a7c3d004
+	github.com/kyma-incubator/compass/tests v0.0.0-20221209180946-334795ca748a
 	github.com/tidwall/sjson v1.2.4
 	k8s.io/apimachinery v0.25.1
 )
