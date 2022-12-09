@@ -326,6 +326,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 	for _, app := range applications {
 		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
 			// Already subscribed
+			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
 			return true, nil
 		}
 	}
