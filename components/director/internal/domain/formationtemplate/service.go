@@ -20,7 +20,7 @@ type FormationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
 	List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error)
 	Update(ctx context.Context, model *model.FormationTemplate) error
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id, tenantID string) error
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
@@ -120,7 +120,12 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationTemp
 
 // Delete deletes a FormationTemplate matching ID `id`
 func (s *service) Delete(ctx context.Context, id string) error {
-	if err := s.repo.Delete(ctx, id); err != nil {
+	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.Delete(ctx, id, tenantID); err != nil {
 		return errors.Wrapf(err, "while deleting Formation Template with ID %s", id)
 	}
 

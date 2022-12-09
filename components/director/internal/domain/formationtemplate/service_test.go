@@ -685,7 +685,7 @@ func TestService_Update(t *testing.T) {
 
 func TestService_Delete(t *testing.T) {
 	// GIVEN
-	ctx := context.TODO()
+	ctx := tnt.SaveToContext(context.TODO(), testTenantID, testTenantID)
 
 	testErr := errors.New("test error")
 
@@ -693,25 +693,88 @@ func TestService_Delete(t *testing.T) {
 		Name                        string
 		Input                       string
 		FormationTemplateRepository func() *automock.FormationTemplateRepository
+		TenantSvc                   func() *automock.TenantService
 		ExpectedError               error
 	}{
 		{
-			Name:  "Success",
+			Name:  "Success when tenant in ctx is GA",
 			Input: testID,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Delete", ctx, testID).Return(nil).Once()
+				repo.On("Delete", ctx, testID, testTenantID).Return(nil).Once()
 				return repo
 			},
+			TenantSvc: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil).Once()
+				return svc
+			},
 			ExpectedError: nil,
+		},
+		{
+			Name:  "Success when tenant in ctx is SA",
+			Input: testID,
+			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Delete", ctx, testID, testTenantID).Return(nil).Once()
+				return repo
+			},
+			TenantSvc: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
+				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
+				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil)
+				return svc
+			},
+			ExpectedError: nil,
+		},
+		{
+			Name:                        "Error when getting tenant object",
+			Input:                       testID,
+			FormationTemplateRepository: UnusedFormationTemplateRepository,
+			TenantSvc: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, testTenantID).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:                        "Error when tenant object is not of type SA or GA",
+			Input:                       testID,
+			FormationTemplateRepository: UnusedFormationTemplateRepository,
+			TenantSvc: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Customer), nil)
+				return svc
+			},
+			ExpectedError: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
+		},
+		{
+			Name:                        "Error when getting GA tenant object",
+			Input:                       testID,
+			FormationTemplateRepository: UnusedFormationTemplateRepository,
+			TenantSvc: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
+				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
+				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
 		},
 		{
 			Name:  "Error when deleting formation template",
 			Input: testID,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Delete", ctx, testID).Return(testErr).Once()
+				repo.On("Delete", ctx, testID, testTenantID).Return(testErr).Once()
 				return repo
+			},
+			TenantSvc: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil).Once()
+				return svc
 			},
 			ExpectedError: testErr,
 		},
@@ -720,8 +783,9 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			formationTemplateRepo := testCase.FormationTemplateRepository()
+			tenantSvc := testCase.TenantSvc()
 
-			svc := formationtemplate.NewService(formationTemplateRepo, nil, nil, nil)
+			svc := formationtemplate.NewService(formationTemplateRepo, nil, nil, tenantSvc)
 
 			// WHEN
 			err := svc.Delete(ctx, testCase.Input)
@@ -737,4 +801,30 @@ func TestService_Delete(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, formationTemplateRepo)
 		})
 	}
+	t.Run("Error when tenant is not in context", func(t *testing.T) {
+		svc := formationtemplate.NewService(nil, nil, nil, nil)
+		// WHEN
+		err := svc.Delete(context.TODO(), "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot read tenant from context")
+	})
+	t.Run("Error when there is only internalID in context", func(t *testing.T) {
+		ctxWithoutExternalID := tnt.SaveToContext(context.TODO(), testTenantID, "")
+		svc := formationtemplate.NewService(nil, nil, nil, nil)
+		// WHEN
+		err := svc.Delete(ctxWithoutExternalID, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), apperrors.NewTenantNotFoundError("").Error())
+	})
+	t.Run("Error when there is only externalID in context", func(t *testing.T) {
+		ctxWithoutInternalID := tnt.SaveToContext(context.TODO(), "", testTenantID)
+		svc := formationtemplate.NewService(nil, nil, nil, nil)
+		// WHEN
+		err := svc.Delete(ctxWithoutInternalID, "")
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), apperrors.NewTenantNotFoundError(testTenantID).Error())
+	})
 }

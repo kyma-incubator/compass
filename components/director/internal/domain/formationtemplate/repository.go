@@ -15,11 +15,12 @@ import (
 const (
 	tableName      string = `public.formation_templates`
 	tenantIDColumn string = "tenant_id"
+	idColumn       string = "id"
 )
 
 var (
 	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind"}
-	idTableColumns            = []string{"id"}
+	idTableColumns            = []string{idColumn}
 	tenantTableColumn         = []string{tenantIDColumn}
 	tableColumnsWithoutTenant = append(idTableColumns, updatableTableColumns...)
 	tableColumns              = append(tableColumnsWithoutTenant, tenantTableColumn...)
@@ -33,25 +34,31 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	creator               repo.CreatorGlobal
-	existQuerierGlobal    repo.ExistQuerierGlobal
-	singleGetterGlobal    repo.SingleGetterGlobal
-	pageableQuerierGlobal repo.PageableQuerierGlobal
-	updaterGlobal         repo.UpdaterGlobal
-	deleterGlobal         repo.DeleterGlobal
-	conv                  EntityConverter
+	creator                        repo.CreatorGlobal
+	existQuerierGlobal             repo.ExistQuerierGlobal
+	singleGetterGlobal             repo.SingleGetterGlobal
+	singleGetterWithEmbeddedTenant repo.SingleGetter
+	pageableQuerierGlobal          repo.PageableQuerierGlobal
+	updaterGlobal                  repo.UpdaterGlobal
+	updaterWithEmbeddedTenant      repo.UpdaterGlobal
+	deleterGlobal                  repo.DeleterGlobal
+	deleterWithEmbeddedTenant      repo.Deleter
+	conv                           EntityConverter
 }
 
 // NewRepository creates a new FormationTemplate repository
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:               repo.NewCreatorGlobal(resource.FormationTemplate, tableName, tableColumns),
-		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.FormationTemplate, tableName),
-		singleGetterGlobal:    repo.NewSingleGetterGlobal(resource.FormationTemplate, tableName, tableColumns),
-		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.FormationTemplate, tableName, tableColumns),
-		updaterGlobal:         repo.NewUpdaterGlobal(resource.FormationTemplate, tableName, updatableTableColumns, idTableColumns),
-		deleterGlobal:         repo.NewDeleterGlobal(resource.FormationTemplate, tableName),
-		conv:                  conv,
+		creator:                        repo.NewCreatorGlobal(resource.FormationTemplate, tableName, tableColumns),
+		existQuerierGlobal:             repo.NewExistQuerierGlobal(resource.FormationTemplate, tableName),
+		singleGetterGlobal:             repo.NewSingleGetterGlobal(resource.FormationTemplate, tableName, tableColumns),
+		singleGetterWithEmbeddedTenant: repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantIDColumn, tableColumns),
+		pageableQuerierGlobal:          repo.NewPageableQuerierGlobal(resource.FormationTemplate, tableName, tableColumns),
+		updaterGlobal:                  repo.NewUpdaterGlobal(resource.FormationTemplate, tableName, updatableTableColumns, idTableColumns),
+		updaterWithEmbeddedTenant:      repo.NewUpdaterWithEmbeddedTenant(resource.FormationTemplate, tableName, updatableTableColumns, tenantIDColumn, idTableColumns),
+		deleterGlobal:                  repo.NewDeleterGlobal(resource.FormationTemplate, tableName),
+		deleterWithEmbeddedTenant:      repo.NewDeleterWithEmbeddedTenant(tableName, tenantIDColumn),
+		conv:                           conv,
 	}
 }
 
@@ -91,13 +98,17 @@ func (r *repository) GetByNameAndTenant(ctx context.Context, templateName, tenan
 	log.C(ctx).Debugf("Getting formation template by name: %q and tenant %q ...", templateName, tenantID)
 	var entity Entity
 
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("name", templateName),
-		repo.NewEqualCondition(tenantIDColumn, tenantID),
-	}
+	conditions := repo.Conditions{repo.NewEqualCondition("name", templateName)}
 
-	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
-		return nil, err
+	if tenantID == "" {
+		conditions = append(conditions, repo.NewNullCondition(tenantIDColumn))
+		if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := r.singleGetterWithEmbeddedTenant.Get(ctx, resource.FormationTemplate, tenantID, conditions, repo.NoOrderBy, &entity); err != nil {
+			return nil, err
+		}
 	}
 
 	result, err := r.conv.FromEntity(&entity)
@@ -119,7 +130,7 @@ func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cu
 		conditions = repo.Or(&repo.ConditionTree{Operand: repo.NewNullCondition(tenantIDColumn)}, &repo.ConditionTree{Operand: repo.NewEqualCondition(tenantIDColumn, tenantID)})
 	}
 
-	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entityCollection, conditions)
+	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, idColumn, &entityCollection, conditions)
 	if err != nil {
 		return nil, err
 	}
@@ -152,15 +163,25 @@ func (r *repository) Update(ctx context.Context, model *model.FormationTemplate)
 		return errors.Wrapf(err, "while converting Formation Template with ID %s", model.ID)
 	}
 
+	if model.TenantID != nil {
+		return r.updaterWithEmbeddedTenant.UpdateSingleGlobal(ctx, entity)
+	}
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
-// Delete deletes a formation template with given ID
-func (r *repository) Delete(ctx context.Context, id string) error {
-	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+// Delete deletes a formation template with given ID and tenantID
+func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
+	conditions := repo.Conditions{repo.NewEqualCondition(idColumn, id)}
+
+	if tenantID == "" {
+		conditions = append(conditions, repo.NewNullCondition(tenantIDColumn))
+		return r.deleterGlobal.DeleteOneGlobal(ctx, conditions)
+	}
+
+	return r.deleterWithEmbeddedTenant.DeleteOne(ctx, resource.FormationTemplate, tenantID, conditions)
 }
 
 // Exists check if a formation template with given ID exists
 func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
-	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }

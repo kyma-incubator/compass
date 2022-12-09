@@ -31,13 +31,13 @@ func (_m *FormationTemplateRepository) Create(ctx context.Context, item *model.F
 	return r0
 }
 
-// Delete provides a mock function with given fields: ctx, id
-func (_m *FormationTemplateRepository) Delete(ctx context.Context, id string) error {
-	ret := _m.Called(ctx, id)
+// Delete provides a mock function with given fields: ctx, id, tenantID
+func (_m *FormationTemplateRepository) Delete(ctx context.Context, id string, tenantID string) error {
+	ret := _m.Called(ctx, id, tenantID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, id, tenantID)
 	} else {
 		r0 = ret.Error(0)
 	}
