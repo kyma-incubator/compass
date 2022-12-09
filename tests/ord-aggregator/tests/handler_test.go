@@ -687,8 +687,7 @@ func TestORDAggregator(stdT *testing.T) {
 		//	k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 		// }()
 		c := http.Client{Timeout: time.Duration(1) * time.Minute}
-		// TODO trigger for app template
-		reqURL := fmt.Sprintf("https://compass-gateway-internal.local.kyma.dev/ord-aggregator/unprotectedTrigger?appID=%s", actualAppPage.Data[0].ID)
+		reqURL := fmt.Sprintf("https://compass-gateway-internal.local.kyma.dev/ord-aggregator/unprotectedTrigger?appTemplateID=%s", appTemplate.ID)
 		req, err := http.NewRequest("POST", reqURL, nil)
 		if err != nil {
 			fmt.Printf("error %s", err)

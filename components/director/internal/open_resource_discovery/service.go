@@ -233,6 +233,65 @@ func (s *Service) ProcessApp(ctx context.Context, cfg MetricsConfig, appID strin
 	return nil
 }
 
+// ProcessAppTemplate todo
+func (s *Service) ProcessAppTemplate(ctx context.Context, cfg MetricsConfig, appTemplateID string) error {
+	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
+		globalResourcesOrdIDs, err = s.globalRegistrySvc.ListGlobalResources(ctx)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while listing existing global resource: %s. Proceeding with empty globalResourceOrdIDs... Validation of Documents relying on global resources might fail.", err)
+		}
+	}
+
+	if globalResourcesOrdIDs == nil {
+		globalResourcesOrdIDs = make(map[string]bool)
+	}
+
+	webhooks, err := s.getWebhooksForApplicationTemplate(ctx, appTemplateID)
+	if err != nil {
+		return err
+	}
+
+	for _, wh := range webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
+			if err != nil {
+				return err
+			}
+
+			for _, app := range apps {
+				if err := s.processApplicationWebhook(ctx, cfg, wh, app.ID, globalResourcesOrdIDs); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
+func (s *Service) getWebhooksForApplicationTemplate(ctx context.Context, appTemplateID string) ([]*model.Webhook, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	ordWebhooks, err := s.webhookSvc.ListForApplicationTemplate(ctx, appTemplateID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("error while fetching webhooks for application template with id %s", appTemplateID)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return ordWebhooks, nil
+}
+
 func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) ([]*model.Webhook, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
