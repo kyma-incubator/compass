@@ -7,13 +7,13 @@ import (
 )
 
 type tntCtxKey int
-type localTntCtxKey int
+type localTntIDCtxKey int
 
 // TenantContextKey is the key under which the TenantCtx is saved in a given context.Context.
 const TenantContextKey tntCtxKey = iota
 
 // LocalTenantIDContextKey is the key under which the local tenant id is saved in a given context.Context.
-const LocalTenantIDContextKey localTntCtxKey = iota
+const LocalTenantIDContextKey localTntIDCtxKey = iota
 
 // TenantCtx is the structure can be saved in a request context. It is used to determine the tenant context in which the request is being executed.
 type TenantCtx struct {
