@@ -2,7 +2,6 @@ package formationtemplate
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -100,14 +99,33 @@ func (r *repository) GetByNameAndTenant(ctx context.Context, templateName, tenan
 
 	conditions := repo.Conditions{repo.NewEqualCondition("name", templateName)}
 
+	// TODO: refactor code snippet below and the comment itself
+	// if the call is with tenant but the query (select * from FT where name = ? and tenant_id = ?) returns NOT FOUND that means that there is no such tenant
+	// scoped FT and the call should get the global FT with that name.
+	//
+	// With this approach we allow the client to create a tenant scoped FT with the same name as a global FT - so when we get the FT first we will try to math it by name and tenant
+	// and if there is no such FT, we will get the global one
+	//
+	// the issue before this approach was that if there is a tenant scoped & global FT with the same name, I couldn't come up with a db query that does not return the 2 FT records but returns the expected tenant scoped FT only
+	// my initial solution was a partial unique index in the db forbidding creation of FT with name same as a global FT but that will require manual support and extending the list in the db every time a new global FT is added
+
 	if tenantID == "" {
 		conditions = append(conditions, repo.NewNullCondition(tenantIDColumn))
 		if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := r.singleGetterWithEmbeddedTenant.Get(ctx, resource.FormationTemplate, tenantID, conditions, repo.NoOrderBy, &entity); err != nil {
-			return nil, err
+		err := r.singleGetterWithEmbeddedTenant.Get(ctx, resource.FormationTemplate, tenantID, conditions, repo.NoOrderBy, &entity)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				conditions = append(conditions, repo.NewNullCondition(tenantIDColumn))
+				entity = Entity{}
+				if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, err
+			}
 		}
 	}
 
