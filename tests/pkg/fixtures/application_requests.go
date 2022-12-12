@@ -88,6 +88,7 @@ func FixSampleApplicationRegisterInputWithORDWebhooks(appName, appDescription, w
 			Type: graphql.WebhookTypeOpenResourceDiscovery,
 			URL:  ptr.String(webhookURL),
 		}},
+		LocalTenantID: ptr.String("test-id"),
 	}
 
 	if ordConfigSecurity != nil {
