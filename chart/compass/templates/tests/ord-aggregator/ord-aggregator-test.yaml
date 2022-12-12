@@ -181,18 +181,6 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 rules:
-  - apiGroups: ["*"]
-    resources: ["jobs"]
-    resourceNames: ["ord-aggregator-test", "ord-aggregator-test2"]
-    verbs: ["get", "delete"]
-  - apiGroups: ["*"]
-    resources: ["jobs"]
-    resourceNames: []
-    verbs: ["create"]
-  - apiGroups: ["*"]
-    resources: ["cronjobs"]
-    resourceNames: ["{{ .Chart.Name }}-{{ .Values.global.ordAggregator.name }}"]
-    verbs: ["get"]
   - apiGroups: ["operations.compass"]
     resources: ["operations"]
     verbs: ["get"]
