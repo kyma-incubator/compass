@@ -726,7 +726,6 @@ global:
     prefix: /ord-aggregator
     name: ord-aggregator
     enabled: true
-    suspend: true
     schedule: "*/1 * * * *"
     authentication:
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"

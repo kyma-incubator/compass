@@ -39,6 +39,7 @@ type config struct {
 	DefaultTestTenant                                     string
 	DirectorExternalCertSecuredURL                        string
 	DirectorGraphqlOauthURL                               string
+	ORDAggregatorURL                                      string
 	ORDServiceURL                                         string
 	ORDAggregatorContainerName                            string `envconfig:"ORD_AGGREGATOR_CONTAINER_NAME"`
 	AggregatorSchedule                                    string

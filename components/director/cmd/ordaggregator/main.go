@@ -363,7 +363,7 @@ func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service,
 	handler := ord.NewORDAggregatorHTTPHandler(svc, cfg.MetricsConfig)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, "ord:sync")
-	apiRouter.HandleFunc("/unprotectedTrigger", handler.ScheduleORDAggregation).Methods(http.MethodPost)
+	apiRouter.HandleFunc("/aggregate", handler.ScheduleORDAggregation).Methods(http.MethodPost)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")

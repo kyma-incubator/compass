@@ -328,30 +328,22 @@ func TestORDAggregator(stdT *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &seventhApp)
 		require.NoError(t, err)
 
-		//k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-		//require.NoError(t, err)
-		//jobName := "ord-aggregator-test"
-		//namespace := "compass-system"
-		//k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
-		//defer func() {
-		//	k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
-		//	k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
-		//}()
-		c := http.Client{Timeout: time.Duration(1) * time.Minute}
-		reqURL := fmt.Sprintf("https://compass-gateway-internal.local.kyma.dev/ord-aggregator/unprotectedTrigger?appID=%s", app.ID)
-		req, err := http.NewRequest("POST", reqURL, nil)
-		if err != nil {
-			fmt.Printf("error %s", err)
-			return
-		}
+		ordAggrClient := http.Client{Timeout: time.Duration(1) * time.Minute}
+		reqURL := fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, app.ID)
+		req, err := http.NewRequest(http.MethodPost, reqURL, nil)
+		require.NoError(t, err)
+
 		req.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
 		req.Header.Add(util.AuthorizationHeader, "Bearer "+accessTokenWithoutInternalVisibility)
-		resp, err := c.Do(req)
-		if err != nil {
-			fmt.Printf("error %s", err)
-			return
-		}
-		defer resp.Body.Close()
+		resp, err := ordAggrClient.Do(req)
+		require.NoError(t, err)
+
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -677,30 +669,22 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Len(t, actualAppPage.Data, 1)
 		require.Equal(t, appTemplate.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 
-		// k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-		// require.NoError(t, err)
-		// jobName := "ord-aggregator-test"
-		// namespace := "compass-system"
-		// k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
-		// defer func() {
-		//	k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
-		//	k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
-		// }()
-		c := http.Client{Timeout: time.Duration(1) * time.Minute}
-		reqURL := fmt.Sprintf("https://compass-gateway-internal.local.kyma.dev/ord-aggregator/unprotectedTrigger?appTemplateID=%s", appTemplate.ID)
-		req, err := http.NewRequest("POST", reqURL, nil)
-		if err != nil {
-			fmt.Printf("error %s", err)
-			return
-		}
+		ordAggrClient := http.Client{Timeout: time.Duration(1) * time.Minute}
+		reqURL := fmt.Sprintf("%s/aggregate?appTemplateID=%s", testConfig.ORDAggregatorURL, appTemplate.ID)
+		req, err := http.NewRequest(http.MethodPost, reqURL, nil)
+		require.NoError(t, err)
+
 		req.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
 		req.Header.Add(util.AuthorizationHeader, "Bearer "+subscriptionToken)
-		resp2, err := c.Do(req)
-		if err != nil {
-			fmt.Printf("error %s", err)
-			return
-		}
-		defer resp2.Body.Close()
+		resp, err = ordAggrClient.Do(req)
+		require.NoError(t, err)
+
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)

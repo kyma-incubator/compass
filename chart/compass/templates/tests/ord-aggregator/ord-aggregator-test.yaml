@@ -36,6 +36,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: ORD_AGGREGATOR_CONTAINER_NAME
               value: "{{ .Values.global.ordAggregator.containerName }}"
+            - name: ORD_AGGREGATOR_URL
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordAggregator.prefix }}"
             - name: DIRECTOR_GRAPHQL_OAUTH_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
@@ -165,59 +167,6 @@ metadata:
     app.kubernetes.io/name: {{ template "name" . }}
     app.kubernetes.io/managed-by: {{ $.Release.Service }}
     app.kubernetes.io/instance: {{ $.Release.Name }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ .Chart.Name }}-e2e-ord-aggregator
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-rules:
-  - apiGroups: ["*"]
-    resources: ["jobs"]
-    resourceNames: ["ord-aggregator-test", "ord-aggregator-test2"]
-    verbs: ["get", "delete"]
-  - apiGroups: ["*"]
-    resources: ["jobs"]
-    resourceNames: []
-    verbs: ["create"]
-  - apiGroups: ["*"]
-    resources: ["cronjobs"]
-    resourceNames: ["{{ .Chart.Name }}-{{ .Values.global.ordAggregator.name }}"]
-    verbs: ["get"]
-  - apiGroups: ["operations.compass"]
-    resources: ["operations"]
-    verbs: ["get"]
-  - apiGroups: ["*"]
-    resources: ["pods", "pods/log"]
-    verbs: ["get", "list"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: {{ .Chart.Name }}-e2e-ord-aggregator
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-subjects:
-  - kind: ServiceAccount
-    name: {{ .Chart.Name }}-e2e-ord-aggregator
-    namespace: {{ .Values.global.tests.namespace }}
-roleRef:
-  kind: Role
-  name: {{ .Chart.Name }}-e2e-ord-aggregator
-  apiGroup: rbac.authorization.k8s.io
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
