@@ -329,6 +329,11 @@ func TestORDAggregator(stdT *testing.T) {
 		require.NoError(t, err)
 
 		ordAggrClient := http.Client{Timeout: time.Duration(1) * time.Minute}
+		ordAggrClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
 		reqURL := fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, app.ID)
 		req, err := http.NewRequest(http.MethodPost, reqURL, nil)
 		require.NoError(t, err)
@@ -670,6 +675,11 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Equal(t, appTemplate.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 
 		ordAggrClient := http.Client{Timeout: time.Duration(1) * time.Minute}
+		ordAggrClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
 		reqURL := fmt.Sprintf("%s/aggregate?appTemplateID=%s", testConfig.ORDAggregatorURL, appTemplate.ID)
 		req, err := http.NewRequest(http.MethodPost, reqURL, nil)
 		require.NoError(t, err)
