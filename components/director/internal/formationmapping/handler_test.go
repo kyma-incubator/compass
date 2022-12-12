@@ -540,7 +540,7 @@ func Test_StatusUpdate(t *testing.T) {
 		},
 		{
 			name:       "Error when listing formation assignments for object fail",
-			transactFn: txGen.ThatDoesntExpectCommit,
+			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
@@ -558,7 +558,7 @@ func Test_StatusUpdate(t *testing.T) {
 		},
 		{
 			name:       "Error when getting formation by formation ID fail",
-			transactFn: txGen.ThatDoesntExpectCommit,
+			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
@@ -605,7 +605,7 @@ func Test_StatusUpdate(t *testing.T) {
 		},
 		{
 			name:       "Error when unassigning formation fail when there are no formation assignment left",
-			transactFn: txGen.ThatDoesntExpectCommit,
+			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
@@ -634,7 +634,6 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
 				faSvc.On("Delete", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(nil).Once()
-				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
 			reqBody: fm.RequestBody{
