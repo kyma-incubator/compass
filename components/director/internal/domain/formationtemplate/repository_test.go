@@ -45,7 +45,7 @@ func TestRepository_Get(t *testing.T) {
 }
 
 func TestRepository_GetByNameAndTenant(t *testing.T) {
-	/*	suiteWithTenant := testdb.RepoGetTestSuite{
+	suiteWithTenant := testdb.RepoGetTestSuite{
 		Name:       "Get Formation Template By name and tenant when tenant is present",
 		MethodName: "GetByNameAndTenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -69,7 +69,20 @@ func TestRepository_GetByNameAndTenant(t *testing.T) {
 		ExpectedDBEntity:          &formationTemplateEntity,
 		MethodArgs:                []interface{}{formationTemplateName, testTenantID},
 		DisableConverterErrorTest: false,
-	}*/
+		ExpectNotFoundError:       true,
+		AfterNotFoundErrorSQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE name = $1 AND tenant_id IS NULL`),
+				Args:     []driver.Value{formationTemplateName},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntityNullTenant.TenantID)}
+				},
+			},
+		},
+		AfterNotFoundErrorExpectedDBEntity:    &formationTemplateEntityNullTenant,
+		AfterNotFoundErrorExpectedModelEntity: &formationTemplateModelNullTenant,
+	}
 
 	suiteWithoutTenant := testdb.RepoGetTestSuite{
 		Name:       "Get Formation Template By name and tenant when tenant is not present",
@@ -98,7 +111,7 @@ func TestRepository_GetByNameAndTenant(t *testing.T) {
 	}
 
 	suiteWithoutTenant.Run(t)
-	//suiteWithTenant.Run(t)
+	suiteWithTenant.Run(t)
 }
 
 func TestRepository_Create(t *testing.T) {

@@ -164,6 +164,10 @@ func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.C
 		return "", err
 	}
 
+	if internalTenantID == "" {
+		return internalTenantID, nil
+	}
+
 	tenantObject, err := s.tenantSvc.GetTenantByID(ctx, internalTenantID)
 	if err != nil {
 		return "", err

@@ -15,16 +15,20 @@ import (
 // RepoGetTestSuite represents a generic test suite for repository Get method of any global entity or entity that has externally managed tenants in m2m table/view.
 // This test suite is not suitable entities with embedded tenant in them.
 type RepoGetTestSuite struct {
-	Name                      string
-	SQLQueryDetails           []SQLQueryDetails
-	ConverterMockProvider     func() Mock
-	RepoConstructorFunc       interface{}
-	ExpectedModelEntity       interface{}
-	ExpectedDBEntity          interface{}
-	MethodArgs                []interface{}
-	AdditionalConverterArgs   []interface{}
-	DisableConverterErrorTest bool
-	MethodName                string
+	Name                                  string
+	SQLQueryDetails                       []SQLQueryDetails
+	ConverterMockProvider                 func() Mock
+	RepoConstructorFunc                   interface{}
+	ExpectedModelEntity                   interface{}
+	ExpectedDBEntity                      interface{}
+	MethodArgs                            []interface{}
+	AdditionalConverterArgs               []interface{}
+	DisableConverterErrorTest             bool
+	MethodName                            string
+	ExpectNotFoundError                   bool
+	AfterNotFoundErrorSQLQueryDetails     []SQLQueryDetails
+	AfterNotFoundErrorExpectedModelEntity interface{}
+	AfterNotFoundErrorExpectedDBEntity    interface{}
 }
 
 // Run runs the generic repo get test suite
@@ -67,16 +71,28 @@ func (suite *RepoGetTestSuite) Run(t *testing.T) bool {
 			configureInvalidSelect(sqlMock, suite.SQLQueryDetails)
 
 			convMock := suite.ConverterMockProvider()
+			if suite.ExpectNotFoundError {
+				convMock.On("FromEntity", append([]interface{}{suite.AfterNotFoundErrorExpectedDBEntity}, suite.AdditionalConverterArgs...)...).Return(suite.AfterNotFoundErrorExpectedModelEntity, nil).Once()
+				configureValidSQLQueries(sqlMock, suite.AfterNotFoundErrorSQLQueryDetails)
+			}
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			// WHEN
 			res, err := callGet(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 			// THEN
-			require.Error(t, err)
-			require.Equal(t, apperrors.NotFound, apperrors.ErrorCode(err))
-			require.Contains(t, err.Error(), apperrors.NotFoundMsg)
-			require.Nil(t, res)
-			sqlMock.AssertExpectations(t)
-			convMock.AssertExpectations(t)
+			if !suite.ExpectNotFoundError {
+				require.Error(t, err)
+				require.Equal(t, apperrors.NotFound, apperrors.ErrorCode(err))
+				require.Contains(t, err.Error(), apperrors.NotFoundMsg)
+				require.Nil(t, res)
+				sqlMock.AssertExpectations(t)
+				convMock.AssertExpectations(t)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, suite.AfterNotFoundErrorExpectedModelEntity, res)
+				sqlMock.AssertExpectations(t)
+				convMock.AssertExpectations(t)
+			}
+
 		})
 
 		for i := range suite.SQLQueryDetails {
