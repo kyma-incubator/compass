@@ -1256,6 +1256,10 @@ func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConf
 	if err != nil {
 		return errors.Wrapf(err, "error while retrieving app with id %q", appID)
 	}
+
+	localTenantID := str.PtrStrToStr(app.LocalTenantID)
+	ctx = tenant.SaveLocalTenantIDToContext(ctx, localTenantID)
+
 	if err = tx.Commit(); err != nil {
 		return err
 	}
