@@ -92,7 +92,6 @@ func (suite *RepoGetTestSuite) Run(t *testing.T) bool {
 				sqlMock.AssertExpectations(t)
 				convMock.AssertExpectations(t)
 			}
-
 		})
 
 		for i := range suite.SQLQueryDetails {
