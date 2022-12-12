@@ -29,7 +29,9 @@ const (
 	// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
 	MultiErrorSeparator string = "* "
 
-	ApplicationWebhookResourceType         WebhookResourceType = "Application"
+	// ApplicationWebhookResourceType todo
+	ApplicationWebhookResourceType WebhookResourceType = "Application"
+	// ApplicationTemplateWebhookResourceType todo
 	ApplicationTemplateWebhookResourceType WebhookResourceType = "ApplicationTemplate"
 )
 
