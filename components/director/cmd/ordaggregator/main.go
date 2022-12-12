@@ -195,12 +195,12 @@ func main() {
 }
 
 func ctxTenantProvider(ctx context.Context) (string, error) {
-	tenantPair, err := tenant.LoadTenantPairFromContext(ctx)
+	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	return tenantPair.ExternalID, nil
+	return localTenantID, nil
 }
 
 func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, accessStrategyExecutorProviderWithTenant *accessstrategy.Provider, accessStrategyExecutorProviderWithoutTenant *accessstrategy.Provider, retryHTTPExecutor *retry.HTTPExecutor, ordWebhookMapping []application.ORDWebhookMapping) *ord.Service {
