@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"io/ioutil"
@@ -328,18 +329,21 @@ func TestORDAggregator(stdT *testing.T) {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &seventhApp)
 		require.NoError(t, err)
 
-		ordAggrClient := http.Client{Timeout: time.Duration(1) * time.Minute}
-		ordAggrClient.Transport = &http.Transport{
+		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
+		}
+		ordAggrClient := &http.Client{
+			Transport: httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), util.AuthorizationHeader),
+			Timeout:   time.Duration(1) * time.Minute,
 		}
 		reqURL := fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, app.ID)
 		req, err := http.NewRequest(http.MethodPost, reqURL, nil)
 		require.NoError(t, err)
 
 		req.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-		req.Header.Add(util.AuthorizationHeader, "Bearer "+accessTokenWithoutInternalVisibility)
+		// req.Header.Add(util.AuthorizationHeader, "Bearer "+accessTokenWithoutInternalVisibility)
 		resp, err := ordAggrClient.Do(req)
 		require.NoError(t, err)
 
@@ -674,18 +678,22 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Len(t, actualAppPage.Data, 1)
 		require.Equal(t, appTemplate.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 
-		ordAggrClient := http.Client{Timeout: time.Duration(1) * time.Minute}
-		ordAggrClient.Transport = &http.Transport{
+		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
 		}
+		ordAggrClient := &http.Client{
+			Transport: httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), util.AuthorizationHeader),
+			Timeout:   time.Duration(1) * time.Minute,
+		}
+
 		reqURL := fmt.Sprintf("%s/aggregate?appTemplateID=%s", testConfig.ORDAggregatorURL, appTemplate.ID)
 		req, err := http.NewRequest(http.MethodPost, reqURL, nil)
 		require.NoError(t, err)
 
 		req.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-		req.Header.Add(util.AuthorizationHeader, "Bearer "+subscriptionToken)
+		// req.Header.Add(util.AuthorizationHeader, "Bearer "+subscriptionToken)
 		resp, err = ordAggrClient.Do(req)
 		require.NoError(t, err)
 
