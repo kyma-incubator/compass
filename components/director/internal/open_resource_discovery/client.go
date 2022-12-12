@@ -61,7 +61,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader {
 		tntFromCtx, err := tenant.LoadTenantPairFromContext(ctx)
 		if err != nil {
-			return nil, "", errors.Wrapf(err, "while loading tenant from context for application template wenhook flow")
+			return nil, "", errors.Wrapf(err, "while loading tenant from context for application template webhook flow")
 		}
 
 		tenantValue = tntFromCtx.ExternalID
