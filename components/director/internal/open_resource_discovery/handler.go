@@ -20,13 +20,6 @@ func NewORDAggregatorHTTPHandler(svc *Service, cfg MetricsConfig) *handler {
 
 func (h *handler) ScheduleORDAggregation(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
-	//
-	// tenantID, err := tenant.LoadFromContext(request.Context())
-	// if err != nil {
-	//	log.C(ctx).WithError(err).Error("Failed to fetch sensitive data for destinations")
-	//	http.Error(writer, err.Error(), http.StatusBadRequest)
-	//	return
-	// }
 
 	appID := request.URL.Query().Get("appID")
 	appTemplateID := request.URL.Query().Get("appTemplateID")
@@ -44,7 +37,7 @@ func (h *handler) ScheduleORDAggregation(writer http.ResponseWriter, request *ht
 	}
 
 	if appID != "" {
-		err := h.ordSvc.ProcessApp(ctx, h.cfg, appID)
+		err := h.ordSvc.ProcessApplication(ctx, h.cfg, appID)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
@@ -52,7 +45,7 @@ func (h *handler) ScheduleORDAggregation(writer http.ResponseWriter, request *ht
 	}
 
 	if appTemplateID != "" {
-		err := h.ordSvc.ProcessAppTemplate(ctx, h.cfg, appTemplateID)
+		err := h.ordSvc.ProcessApplicationTemplate(ctx, h.cfg, appTemplateID)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
@@ -60,7 +53,4 @@ func (h *handler) ScheduleORDAggregation(writer http.ResponseWriter, request *ht
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	if _, err := writer.Write([]byte("HTTP status code returned!")); err != nil {
-		return
-	}
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"net/http"
-	"sync"
 	"time"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
@@ -166,24 +165,15 @@ func main() {
 	}
 
 	handler := initHandler(ctx, jwtHTTPClient, ordAggregator, cfg)
-	runMainSrv, _ := createServer(ctx, cfg, handler, "main")
-
-	// go func() {
-	//	<-ctx.Done()
-	//	// Interrupt signal received - shut down the servers
-	//	shutdownMainSrv()
-	// }()
-
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
-		defer wg.Done()
-		runMainSrv()
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMainSrv()
 	}()
 
 	go func() {
-		defer wg.Done()
 		for { // TODO schedule sync documents
 			// err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
 			// exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
@@ -191,7 +181,7 @@ func main() {
 		}
 	}()
 
-	wg.Wait()
+	runMainSrv()
 }
 
 func ctxTenantProvider(ctx context.Context) (string, error) {
@@ -353,13 +343,6 @@ func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service,
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
 		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
 
-	unprotectedRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
-	unprotectedRouter.HandleFunc("/unprotected", newUnprotectedHandler()).Methods(http.MethodGet)
-
-	protectedAPIRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
-	configureAuthMiddleware(ctx, httpClient, protectedAPIRouter, cfg, "ord:sync")
-	protectedAPIRouter.HandleFunc("/protected", newProtectedHandler()).Methods(http.MethodGet)
-
 	handler := ord.NewORDAggregatorHTTPHandler(svc, cfg.MetricsConfig)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, "ord:sync")
@@ -377,26 +360,6 @@ func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service,
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
-	}
-}
-
-func newUnprotectedHandler() func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-		_, err := writer.Write([]byte("unprotected"))
-		if err != nil {
-			return
-		}
-	}
-}
-
-func newProtectedHandler() func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-		_, err := writer.Write([]byte("protected"))
-		if err != nil {
-			return
-		}
 	}
 }
 
