@@ -455,7 +455,7 @@ func Test_StatusUpdate(t *testing.T) {
 		// Business logic unit tests for unassign operation
 		{
 			name:       "Success when operation is unassign",
-			transactFn: txGen.ThatSucceeds,
+			transactFn: txGen.ThatSucceedsTwice,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
@@ -539,8 +539,10 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
 		},
 		{
-			name:       "Error when listing formation assignments for object fail",
-			transactFn: txGen.ThatSucceeds,
+			name: "Error when listing formation assignments for object fail",
+			transactFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+			},
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
@@ -557,8 +559,10 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
 		},
 		{
-			name:       "Error when getting formation by formation ID fail",
-			transactFn: txGen.ThatSucceeds,
+			name: "Error when getting formation by formation ID fail",
+			transactFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+			},
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
@@ -581,7 +585,7 @@ func Test_StatusUpdate(t *testing.T) {
 		},
 		{
 			name:       "Successfully unassign formation when there are no formation assignment left",
-			transactFn: txGen.ThatSucceeds,
+			transactFn: txGen.ThatSucceedsTwice,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
@@ -604,8 +608,10 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Error when unassigning formation fail when there are no formation assignment left",
-			transactFn: txGen.ThatSucceeds,
+			name: "Error when unassigning formation fail when there are no formation assignment left",
+			transactFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(2, 1)
+			},
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
@@ -634,6 +640,61 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc := &automock.FormationAssignmentService{}
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
 				faSvc.On("Delete", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(nil).Once()
+				return faSvc
+			},
+			reqBody: fm.RequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+		},
+		{
+			name: "Error when second transaction fail on begin",
+			transactFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("Begin").Return(nil, testErr).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
+				faSvc.On("Delete", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(nil).Once()
+				return faSvc
+			},
+			reqBody: fm.RequestBody{
+				State:         model.ReadyAssignmentState,
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+		},
+		{
+			name: "Error when second transaction fail to commit",
+			transactFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(testErr).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+
+				return persistTx, transact
+			},
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntimeForUnassingOp, nil).Once()
+				faSvc.On("Delete", contextThatHasTenant(internalTntID), testFormationAssignmentID).Return(nil).Once()
+				faSvc.On("ListFormationAssignmentsForObjectID", contextThatHasTenant(internalTntID), testFormationID, faSourceID).Return(testFormationAssignmentsForObject, nil).Once()
 				return faSvc
 			},
 			reqBody: fm.RequestBody{

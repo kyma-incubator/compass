@@ -132,29 +132,42 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if isFADeleted {
-			formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(ctx, fa.FormationID, lastOpInitiatorID)
+			unassignTx, err := h.transact.Begin()
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("while listing formation assignments for object with type: %q and ID: %q", lastOpInitiatorType, lastOpInitiatorID)
+				log.C(ctx).WithError(err).Error("unable to establish connection with database")
 				respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+				return
+			}
+			defer h.transact.RollbackUnlessCommitted(ctx, unassignTx)
+			unassignCtx := persistence.SaveToContext(ctx, tx)
+			formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(unassignCtx, fa.FormationID, lastOpInitiatorID)
+			if err != nil {
+				log.C(unassignCtx).WithError(err).Errorf("while listing formation assignments for object with type: %q and ID: %q", lastOpInitiatorType, lastOpInitiatorID)
+				respondWithError(unassignCtx, w, http.StatusInternalServerError, errResp)
 				return
 			}
 
 			if len(formationAssignmentsForObject) == 0 { // if there are no formation assignments left after the deletion, execute formation unassign for the last operation initiator
-				formation, err := h.formationService.Get(ctx, fa.FormationID)
+				formation, err := h.formationService.Get(unassignCtx, fa.FormationID)
 				if err != nil {
-					log.C(ctx).WithError(err).Errorf("while getting formation from formation assignment with ID: %q", fa.FormationID)
-					respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+					log.C(unassignCtx).WithError(err).Errorf("while getting formation from formation assignment with ID: %q", fa.FormationID)
+					respondWithError(unassignCtx, w, http.StatusInternalServerError, errResp)
 					return
 				}
 
-				log.C(ctx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, lastOpInitiatorID, lastOpInitiatorType)
-				f, err := h.formationService.UnassignFormation(ctx, fa.TenantID, lastOpInitiatorID, graphql.FormationObjectType(lastOpInitiatorType), *formation)
+				log.C(unassignCtx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, lastOpInitiatorID, lastOpInitiatorType)
+				f, err := h.formationService.UnassignFormation(unassignCtx, fa.TenantID, lastOpInitiatorID, graphql.FormationObjectType(lastOpInitiatorType), *formation)
 				if err != nil {
-					log.C(ctx).WithError(err).Errorf("while unassigning formation with name: %q for object ID: %q and type: %q", formation.Name, lastOpInitiatorID, lastOpInitiatorType)
-					respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+					log.C(unassignCtx).WithError(err).Errorf("while unassigning formation with name: %q for object ID: %q and type: %q", formation.Name, lastOpInitiatorID, lastOpInitiatorType)
+					respondWithError(unassignCtx, w, http.StatusInternalServerError, errResp)
 					return
 				}
-				log.C(ctx).Infof("Object with type: %q and ID: %q was successfully unassigned from formation with name: %q", lastOpInitiatorType, lastOpInitiatorID, f.Name)
+				log.C(unassignCtx).Infof("Object with type: %q and ID: %q was successfully unassigned from formation with name: %q", lastOpInitiatorType, lastOpInitiatorID, f.Name)
+			}
+			if err = unassignTx.Commit(); err != nil {
+				log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+				respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+				return
 			}
 		}
 
