@@ -222,6 +222,7 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 	t.Logf("List all formation templates for the tenant in which formation template with name: %q was created and verify that it is visible there", scopedFormationTemplateName)
 	formationTemplatePage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, directorCertSecuredClient, first)
 
+	assert.Greater(t, len(formationTemplatePage.Data), 1) // assert that both tenant scoped and global formation templates are visible
 	assert.Subset(t, formationTemplatePage.Data, []*graphql.FormationTemplate{
 		scopedFormationTemplate,
 	})
