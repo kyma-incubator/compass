@@ -238,6 +238,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		appRegion := "test-async-app-region"
 		appNamespace := "compass.test"
 		localTenantID := "local-async-tenant-id"
+		placeholderName := "name"
+		placeholderDisplayName := "display-name"
 		t.Logf("Create application template for type: %q", applicationType)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name:        applicationType,
@@ -254,10 +256,14 @@ func Test_UpdateStatus(baseT *testing.T) {
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
-					Name: "name",
+					Name:        "name",
+					Description: &placeholderName,
+					JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
 				},
 				{
-					Name: "display-name",
+					Name:        "display-name",
+					Description: &placeholderDisplayName,
+					JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
 				},
 			},
 			ApplicationNamespace: &appNamespace,
@@ -345,6 +351,20 @@ func Test_UpdateStatus(baseT *testing.T) {
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription-async")
 		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhooks(appTemplateName)
+		placeholderName := "name"
+		placeholderDisplayName := "display-name"
+		appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:        "name",
+				Description: &placeholderName,
+				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+			},
+			{
+				Name:        "display-name",
+				Description: &placeholderDisplayName,
+				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+			},
+		}
 		appTemplateInput.Labels["applicationType"] = appTemplateName
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 

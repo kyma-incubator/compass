@@ -109,6 +109,22 @@ spec:
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
+            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
+            - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
+              value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
+            - name: APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
             - name: APP_SUBSCRIPTION_CONFIG_URL
               value: {{ .Values.global.tests.subscription.subscriptionURL }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL

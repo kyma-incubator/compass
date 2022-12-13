@@ -74,6 +74,20 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+		placeholderName := "name"
+		placeholderDisplayName := "display-name"
+		appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:        "name",
+				Description: &placeholderName,
+				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+			},
+			{
+				Name:        "display-name",
+				Description: &placeholderDisplayName,
+				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+			},
+		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
@@ -372,6 +386,20 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription-with-optional-placeholders")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
+		placeholderName := "name"
+		placeholderDisplayName := "display-name"
+		appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:        "name",
+				Description: &placeholderName,
+				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+			},
+			{
+				Name:        "display-name",
+				Description: &placeholderDisplayName,
+				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+			},
+		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
