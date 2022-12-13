@@ -1,9 +1,16 @@
 package ord
 
 import (
-	"fmt"
+	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 )
+
+// AggregationResources holds ids of resources for ord data aggregation
+type AggregationResources struct {
+	ApplicationIDs         []string `json:"applicationIDs"`
+	ApplicationTemplateIDs []string `json:"applicationTemplateIDs"`
+}
 
 type handler struct {
 	ordSvc *Service
@@ -18,38 +25,26 @@ func NewORDAggregatorHTTPHandler(svc *Service, cfg MetricsConfig) *handler {
 	}
 }
 
-func (h *handler) ScheduleORDAggregation(writer http.ResponseWriter, request *http.Request) {
+func (h *handler) AggregateORDData(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	appID := request.URL.Query().Get("appID")
-	appTemplateID := request.URL.Query().Get("appTemplateID")
-
-	if appID == "" && appTemplateID == "" {
-		err := fmt.Errorf("missing query parameter '%s' or '%s'", "appID", "appTemplateID")
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+	resources := AggregationResources{}
+	if err := json.NewDecoder(request.Body).Decode(&resources); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to parse request body")
+		http.Error(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if appID != "" && appTemplateID != "" {
-		err := fmt.Errorf("pass only one parameter -  '%s' or '%s'", "appID", "appTemplateID")
-		http.Error(writer, err.Error(), http.StatusBadRequest)
+	if err := h.ordSvc.ProcessApplications(ctx, h.cfg, resources.ApplicationIDs); err != nil {
+		log.C(ctx).WithError(err).Errorf("ORD data aggregation failed for one or more applications")
+		http.Error(writer, "ORD data aggregation failed for one or more applications", http.StatusInternalServerError)
 		return
 	}
 
-	if appID != "" {
-		err := h.ordSvc.ProcessApplication(ctx, h.cfg, appID)
-		if err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-
-	if appTemplateID != "" {
-		err := h.ordSvc.ProcessApplicationTemplate(ctx, h.cfg, appTemplateID)
-		if err != nil {
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
+	if err := h.ordSvc.ProcessApplicationTemplates(ctx, h.cfg, resources.ApplicationTemplateIDs); err != nil {
+		log.C(ctx).WithError(err).Errorf("ORD data aggregation failed for one or more application templates")
+		http.Error(writer, "ORD data aggregation failed for one or more application templates", http.StatusInternalServerError)
+		return
 	}
 
 	writer.WriteHeader(http.StatusOK)

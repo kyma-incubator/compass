@@ -339,68 +339,20 @@ func TestORDAggregator(stdT *testing.T) {
 			Timeout:   time.Duration(1) * time.Minute,
 		}
 
-		req1, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, app.ID), nil)
+		jsonBody := fmt.Sprintf(`{"applicationIDs":["%s","%s","%s","%s","%s","%s","%s",]}`, app.ID, secondApp.ID, thirdApp.ID, fourthApp.ID, fifthApp.ID, sixthApp.ID, seventhApp.ID)
+		req, err := http.NewRequest(http.MethodPost, testConfig.ORDAggregatorURL+"/aggregate", bytes.NewBuffer([]byte(jsonBody)))
 		require.NoError(t, err)
-		req1.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
 
-		req2, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, secondApp.ID), nil)
+		req.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
+		resp, err := ordAggrClient.Do(req)
 		require.NoError(t, err)
-		req2.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
 
-		req3, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, thirdApp.ID), nil)
-		require.NoError(t, err)
-		req3.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-
-		req4, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, fourthApp.ID), nil)
-		require.NoError(t, err)
-		req4.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-
-		req5, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, fifthApp.ID), nil)
-		require.NoError(t, err)
-		req5.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-
-		req6, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, sixthApp.ID), nil)
-		require.NoError(t, err)
-		req6.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-
-		req7, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/aggregate?appID=%s", testConfig.ORDAggregatorURL, seventhApp.ID), nil)
-		require.NoError(t, err)
-		req7.Header.Add(tenantHeader, testConfig.DefaultTestTenant)
-
-		resp1, err := ordAggrClient.Do(req1)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp1.StatusCode)
-
-		resp2, err := ordAggrClient.Do(req2)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp2.StatusCode)
-
-		resp3, err := ordAggrClient.Do(req3)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp3.StatusCode)
-
-		resp4, err := ordAggrClient.Do(req4)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp4.StatusCode)
-
-		resp5, err := ordAggrClient.Do(req5)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp5.StatusCode)
-
-		resp6, err := ordAggrClient.Do(req6)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp6.StatusCode)
-
-		resp7, err := ordAggrClient.Do(req7)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp7.StatusCode)
-
-		// defer func() {
-		//	if err := resp.Body.Close(); err != nil {
-		//		t.Logf("Could not close response body %s", err)
-		//	}
-		// }()
-		// require.Equal(t, http.StatusOK, resp.StatusCode)
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -736,12 +688,11 @@ func TestORDAggregator(stdT *testing.T) {
 			Timeout:   time.Duration(1) * time.Minute,
 		}
 
-		reqURL := fmt.Sprintf("%s/aggregate?appTemplateID=%s", testConfig.ORDAggregatorURL, appTemplate.ID)
-		req, err := http.NewRequest(http.MethodPost, reqURL, nil)
+		jsonBody := fmt.Sprintf(`{"applicationTemplateIDs":["%s"]}`, appTemplate.ID)
+		req, err := http.NewRequest(http.MethodPost, testConfig.ORDAggregatorURL+"/aggregate", bytes.NewBuffer([]byte(jsonBody)))
 		require.NoError(t, err)
 
 		req.Header.Add(tenantHeader, testConfig.TestConsumerSubaccountID)
-		// req.Header.Add(util.AuthorizationHeader, "Bearer "+subscriptionToken)
 		resp, err = ordAggrClient.Do(req)
 		require.NoError(t, err)
 

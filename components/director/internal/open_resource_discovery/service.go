@@ -177,9 +177,22 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 	return nil
 }
 
-// ProcessApplication performs resync of ORD information provided via ORD documents for application
-func (s *Service) ProcessApplication(ctx context.Context, cfg MetricsConfig, appID string) error {
+// ProcessApplications performs resync of ORD information provided via ORD documents for list of applications
+func (s *Service) ProcessApplications(ctx context.Context, cfg MetricsConfig, appIDs []string) error {
+	if len(appIDs) == 0 {
+		return nil
+	}
+
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
+	for _, appID := range appIDs {
+		if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
+			return errors.Wrapf(err, "processing of ORD data for application with id %q failed", appID)
+		}
+	}
+	return nil
+}
+
+func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appID string) error {
 	webhooks, err := s.getWebhooksForApplication(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving of webhooks for application with id %q failed", appID)
@@ -195,9 +208,22 @@ func (s *Service) ProcessApplication(ctx context.Context, cfg MetricsConfig, app
 	return nil
 }
 
-// ProcessApplicationTemplate performs resync of ORD information provided via ORD documents for application template
-func (s *Service) ProcessApplicationTemplate(ctx context.Context, cfg MetricsConfig, appTemplateID string) error {
+// ProcessApplicationTemplates performs resync of ORD information provided via ORD documents for list of application templates
+func (s *Service) ProcessApplicationTemplates(ctx context.Context, cfg MetricsConfig, appTemplateIDs []string) error {
+	if len(appTemplateIDs) == 0 {
+		return nil
+	}
+
 	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
+	for _, appTemplateID := range appTemplateIDs {
+		if err := s.processApplicationTemplate(ctx, cfg, globalResourcesOrdIDs, appTemplateID); err != nil {
+			return errors.Wrapf(err, "processing of ORD data for application template with id %q failed", appTemplateID)
+		}
+	}
+	return nil
+}
+
+func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appTemplateID string) error {
 	webhooks, err := s.getWebhooksForApplicationTemplate(ctx, appTemplateID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving of webhooks for application template with id %q failed", appTemplateID)

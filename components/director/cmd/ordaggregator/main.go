@@ -8,7 +8,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"net/http"
+	"os"
 	"time"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
@@ -74,15 +76,10 @@ type config struct {
 	ServerTimeout   time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout time.Duration `envconfig:"default=10s"`
 
-	JwksEndpoint        string        `envconfig:"APP_JWKS_ENDPOINT"`
-	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
-	AllowJWTSigningNone bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
-
-	Database persistence.DatabaseConfig
-
-	Log log.Config
-
-	Features features.Config
+	SecurityConfig securityConfig
+	Database       persistence.DatabaseConfig
+	Log            log.Config
+	Features       features.Config
 
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
@@ -90,10 +87,8 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=120s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
-	RetryConfig retry.Config
-
-	CertLoaderConfig certloader.Config
-
+	RetryConfig          retry.Config
+	CertLoaderConfig     certloader.Config
 	GlobalRegistryConfig ord.GlobalRegistryConfig
 
 	MaxParallelWebhookProcessors       int `envconfig:"APP_MAX_PARALLEL_WEBHOOK_PROCESSORS,default=1"`
@@ -114,12 +109,25 @@ type config struct {
 	MetricsConfig ord.MetricsConfig
 }
 
+type securityConfig struct {
+	JwksEndpoint        string        `envconfig:"APP_JWKS_ENDPOINT"`
+	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord:sync"`
+}
+
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Error while configuring logger")
 
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
@@ -334,8 +342,9 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 
 func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service, cfg config) http.Handler {
 	const (
-		healthzEndpoint = "/healthz"
-		readyzEndpoint  = "/readyz"
+		healthzEndpoint   = "/healthz"
+		readyzEndpoint    = "/readyz"
+		aggregateEndpoint = "/aggregate"
 	)
 	logger := log.C(ctx)
 
@@ -345,8 +354,8 @@ func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service,
 
 	handler := ord.NewORDAggregatorHTTPHandler(svc, cfg.MetricsConfig)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
-	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, "ord:sync")
-	apiRouter.HandleFunc("/aggregate", handler.ScheduleORDAggregation).Methods(http.MethodPost)
+	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
+	apiRouter.HandleFunc(aggregateEndpoint, handler.AggregateORDData).Methods(http.MethodPost)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -365,11 +374,11 @@ func newReadinessHandler() func(writer http.ResponseWriter, request *http.Reques
 
 func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg config, requiredScopes ...string) {
 	scopeValidator := claims.NewScopesValidator(requiredScopes)
-	middleware := authenticator.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	middleware := authenticator.New(httpClient, cfg.SecurityConfig.JwksEndpoint, cfg.SecurityConfig.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
-	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
-	periodicExecutor := executor.NewPeriodic(cfg.JWKSSyncPeriod, func(ctx context.Context) {
+	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.SecurityConfig.JWKSSyncPeriod)
+	periodicExecutor := executor.NewPeriodic(cfg.SecurityConfig.JWKSSyncPeriod, func(ctx context.Context) {
 		if err := middleware.SynchronizeJWKS(ctx); err != nil {
 			log.C(ctx).WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
 		}
