@@ -418,32 +418,11 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 }
 
 func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string, subscriptionPayload string) error {
-	values := []*model.ApplicationTemplateValueInput{
-		{Placeholder: "subdomain", Value: subdomain},
-		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
-	}
-
-	oldPlaceholders := appTemplate.Placeholders
-
-	newPlaceholders := []model.ApplicationTemplatePlaceholder{}
-	for _, placeholder := range oldPlaceholders {
-		if placeholder.Name != "subdomain" && placeholder.Name != "region" {
-			newPlaceholders = append(newPlaceholders, placeholder)
-		}
-	}
-	appTemplate.Placeholders = newPlaceholders
-
-	appFromTemplateInput, err := s.appTemplateConv.ApplicationFromTemplateInputFromGraphQL(appTemplate, graphql.ApplicationFromTemplateInput{
-		TemplateName:        appTemplate.Name,
-		PlaceholdersPayload: &subscriptionPayload,
-	})
-
+	log.C(ctx).Debugf("Preparing Values for Application Template with name %q", appTemplate.Name)
+	values, err := s.preparePlaceholderValues(ctx, appTemplate, subdomain, region, subscriptionPayload)
 	if err != nil {
-		return errors.Wrapf(err, "while parsing the callback payload with the Application template %q", appTemplate.Name)
+		return errors.Wrapf(err, "while preparing the values for Application template %q", appTemplate.Name)
 	}
-
-	appTemplate.Placeholders = oldPlaceholders
-	values = append(appFromTemplateInput.Values, values...)
 
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
@@ -481,6 +460,36 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 
 	return nil
+}
+
+func (s *service) preparePlaceholderValues(ctx context.Context, appTemplate *model.ApplicationTemplate, subdomain, region string, subscriptionPayload string) ([]*model.ApplicationTemplateValueInput, error) {
+	values := []*model.ApplicationTemplateValueInput{
+		{Placeholder: "subdomain", Value: subdomain},
+		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
+	}
+
+	oldPlaceholders := appTemplate.Placeholders
+
+	newPlaceholders := []model.ApplicationTemplatePlaceholder{}
+	for _, placeholder := range oldPlaceholders {
+		if placeholder.Name != "subdomain" && placeholder.Name != "region" {
+			newPlaceholders = append(newPlaceholders, placeholder)
+		}
+	}
+	appTemplate.Placeholders = newPlaceholders
+
+	appFromTemplateInput, err := s.appTemplateConv.ApplicationFromTemplateInputFromGraphQL(appTemplate, graphql.ApplicationFromTemplateInput{
+		TemplateName:        appTemplate.Name,
+		PlaceholdersPayload: &subscriptionPayload,
+	})
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing the callback payload with the Application template %q", appTemplate.Name)
+	}
+
+	appTemplate.Placeholders = oldPlaceholders
+	values = append(appFromTemplateInput.Values, values...)
+	return values, nil
 }
 
 func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemplateID string) error {
