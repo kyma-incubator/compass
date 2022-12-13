@@ -60,6 +60,8 @@ wait_for_helm_stable_state "compass" "compass-system"
 
 echo "Install Compass"
 echo "Path to compass charts: " ${COMPASS_CHARTS}
+echo "Helm version is: "
+helm version
 ls -la ${COMPASS_CHARTS}
 echo "Cat override file..."
 cat ./mergedOverrides.yaml
