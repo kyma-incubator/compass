@@ -339,7 +339,7 @@ func TestORDAggregator(stdT *testing.T) {
 			Timeout:   time.Duration(1) * time.Minute,
 		}
 
-		jsonBody := fmt.Sprintf(`{"applicationIDs":["%s","%s","%s","%s","%s","%s","%s",]}`, app.ID, secondApp.ID, thirdApp.ID, fourthApp.ID, fifthApp.ID, sixthApp.ID, seventhApp.ID)
+		jsonBody := fmt.Sprintf(`{"applicationIDs":["%s","%s","%s","%s","%s","%s","%s"]}`, app.ID, secondApp.ID, thirdApp.ID, fourthApp.ID, fifthApp.ID, sixthApp.ID, seventhApp.ID)
 		req, err := http.NewRequest(http.MethodPost, testConfig.ORDAggregatorURL+"/aggregate", bytes.NewBuffer([]byte(jsonBody)))
 		require.NoError(t, err)
 
