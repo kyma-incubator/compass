@@ -60,5 +60,7 @@ wait_for_helm_stable_state "compass" "compass-system"
 
 echo "Install Compass"
 echo "Path to compass charts: " ${COMPASS_CHARTS}
+echo "Cat override file..."
+cat ./mergedOverrides.yaml
 helm upgrade --install --wait --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
 trap "cleanup_trap" RETURN EXIT INT TERM
