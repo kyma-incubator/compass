@@ -1,6 +1,7 @@
 package ord
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
@@ -13,12 +14,19 @@ type AggregationResources struct {
 }
 
 type handler struct {
-	ordSvc *Service
+	ordSvc ORDService
 	cfg    MetricsConfig
 }
 
+//go:generate mockery --name=ORDService --output=automock --outpkg=automock --case=underscore --disable-version-string
+// ORDService missing godoc
+type ORDService interface {
+	ProcessApplications(ctx context.Context, cfg MetricsConfig, appIDs []string) error
+	ProcessApplicationTemplates(ctx context.Context, cfg MetricsConfig, appTemplateIDs []string) error
+}
+
 // NewORDAggregatorHTTPHandler returns a new HTTP handler, responsible for handling HTTP requests
-func NewORDAggregatorHTTPHandler(svc *Service, cfg MetricsConfig) *handler {
+func NewORDAggregatorHTTPHandler(svc ORDService, cfg MetricsConfig) *handler {
 	return &handler{
 		ordSvc: svc,
 		cfg:    cfg,
