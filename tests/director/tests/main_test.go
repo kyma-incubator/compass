@@ -61,6 +61,18 @@ type DirectorConfig struct {
 	ExternalClientCertExpectedIssuerLocalityRegion2 string `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
 	SupportedORDApplicationType                     string `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
 	FormationMappingAsyncResponseDelay              int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
+	TenantProviderConfig
+}
+
+type TenantProviderConfig struct {
+	TenantIDProperty                    string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
+	SubaccountTenantIDProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
+	CustomerIDProperty                  string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
+	SubdomainProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
+	SubscriptionProviderIDProperty      string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
+	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY"`
+	ConsumerTenantIDProperty            string `envconfig:"APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY"`
+	SubscriptionProviderAppNameProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
 }
 
 var (
