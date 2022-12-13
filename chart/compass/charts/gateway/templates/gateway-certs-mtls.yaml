@@ -8,14 +8,4 @@ type: Opaque
 data:
   "key": {{ .Values.global.ingress.tlsKey }}
   "cert": {{ .Values.global.ingress.tlsCrt }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ .Values.global.istio.discoveryMtlsGateway.certSecretName }}
-  namespace: istio-system
-type: Opaque
-data:
-  "cert": {{ .Values.global.ingress.discoveryDomain.tlsCert }}
-  "key": {{ .Values.global.ingress.discoveryDomain.tlsKey }}
 {{- end -}}
