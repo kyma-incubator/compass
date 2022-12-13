@@ -26,6 +26,7 @@ import (
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -560,6 +561,20 @@ func TestORDAggregator(stdT *testing.T) {
 
 		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
+		placeholderName := "name"
+		placeholderDisplayName := "display-name"
+		appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:        "name",
+				Description: &placeholderName,
+				JSONPath:    &testConfig.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+			},
+			{
+				Name:        "display-name",
+				Description: &placeholderDisplayName,
+				JSONPath:    &testConfig.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+			},
+		}
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
 		require.NoError(t, err)
