@@ -419,7 +419,7 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 
 func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string, subscriptionPayload string) error {
 	log.C(ctx).Debugf("Preparing Values for Application Template with name %q", appTemplate.Name)
-	values, err := s.preparePlaceholderValues(ctx, appTemplate, subdomain, region, subscriptionPayload)
+	values, err := s.preparePlaceholderValues(appTemplate, subdomain, region, subscriptionPayload)
 	if err != nil {
 		return errors.Wrapf(err, "while preparing the values for Application template %q", appTemplate.Name)
 	}
@@ -462,7 +462,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	return nil
 }
 
-func (s *service) preparePlaceholderValues(ctx context.Context, appTemplate *model.ApplicationTemplate, subdomain, region string, subscriptionPayload string) ([]*model.ApplicationTemplateValueInput, error) {
+func (s *service) preparePlaceholderValues(appTemplate *model.ApplicationTemplate, subdomain, region string, subscriptionPayload string) ([]*model.ApplicationTemplateValueInput, error) {
 	values := []*model.ApplicationTemplateValueInput{
 		{Placeholder: "subdomain", Value: subdomain},
 		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
