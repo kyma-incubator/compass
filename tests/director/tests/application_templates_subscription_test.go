@@ -80,12 +80,12 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			{
 				Name:        "name",
 				Description: &placeholderName,
-				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+				JSONPath:    &conf.SubscriptionProviderAppNameProperty,
 			},
 			{
 				Name:        "display-name",
 				Description: &placeholderDisplayName,
-				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+				JSONPath:    &conf.SubscriptionProviderAppNameProperty,
 			},
 		}
 
@@ -392,12 +392,12 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			{
 				Name:        "name",
 				Description: &placeholderName,
-				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+				JSONPath:    &conf.SubscriptionProviderAppNameProperty,
 			},
 			{
 				Name:        "display-name",
 				Description: &placeholderDisplayName,
-				JSONPath:    &conf.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+				JSONPath:    &conf.SubscriptionProviderAppNameProperty,
 			},
 		}
 

@@ -443,16 +443,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 
 	appTemplate.Placeholders = oldPlaceholders
-
-	if len(subscriptionPayload) > 0 {
-		values = append(appFromTemplateInput.Values, values...)
-	} else {
-		additionalValues := []*model.ApplicationTemplateValueInput{
-			{Placeholder: "name", Value: subscribedAppName},
-			{Placeholder: "display-name", Value: subscribedAppName},
-		}
-		values = append(additionalValues, values...)
-	}
+	values = append(appFromTemplateInput.Values, values...)
 
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)

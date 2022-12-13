@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -56,28 +55,17 @@ type config struct {
 	BasicPassword                                         string
 	ORDServiceDefaultResponseType                         string
 	GlobalRegistryURL                                     string
-	TenantProviderConfig
-	TestConsumerSubaccountID     string
-	TestConsumerTenantID         string
-	TestProviderSubaccountID     string
-	TokenPath                    string
-	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
-	CertLoaderConfig             certloader.Config
-	ClientTimeout                time.Duration `envconfig:"default=60s"`
-	SkipSSLValidation            bool          `envconfig:"default=false"`
-	SubscriptionConfig           subscription.Config
-}
-
-type TenantProviderConfig struct {
-	TenantIDProperty                    string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"`
-	SubaccountTenantIDProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"`
-	CustomerIDProperty                  string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
-	SubdomainProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
-	SubscriptionProviderIDProperty      string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
-	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY"`
-	ConsumerTenantIDProperty            string `envconfig:"APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY"`
-	SubscriptionProviderAppNameProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
+	TestConsumerSubaccountID                              string
+	TestConsumerTenantID                                  string
+	TestProviderSubaccountID                              string
+	TokenPath                                             string
+	ExternalClientCertSecretName                          string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ExtSvcClientCertSecretName                            string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+	SubscriptionProviderAppNameProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
+	CertLoaderConfig                                      certloader.Config
+	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
+	SkipSSLValidation                                     bool          `envconfig:"default=false"`
+	SubscriptionConfig                                    subscription.Config
 }
 
 var (

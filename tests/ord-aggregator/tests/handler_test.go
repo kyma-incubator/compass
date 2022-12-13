@@ -567,12 +567,12 @@ func TestORDAggregator(stdT *testing.T) {
 			{
 				Name:        "name",
 				Description: &placeholderName,
-				JSONPath:    &testConfig.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+				JSONPath:    &testConfig.SubscriptionProviderAppNameProperty,
 			},
 			{
 				Name:        "display-name",
 				Description: &placeholderDisplayName,
-				JSONPath:    &testConfig.TenantProviderConfig.SubscriptionProviderAppNameProperty,
+				JSONPath:    &testConfig.SubscriptionProviderAppNameProperty,
 			},
 		}
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
