@@ -230,6 +230,7 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 	t.Logf("List all formation templates for some other tenant in which formation template with name: %q was NOT created and verify that it is NOT visible there", scopedFormationTemplateName)
 	formationTemplatePageForOtherTenant := fixtures.QueryFormationTemplatesWithPageSizeAndTenant(t, ctx, directorCertSecuredClient, first, tenant.TestTenants.GetDefaultTenantID())
 
+	assert.NotEmpty(t, formationTemplatePageForOtherTenant.Data)
 	assert.NotContains(t, formationTemplatePageForOtherTenant.Data, []*graphql.FormationTemplate{
 		scopedFormationTemplate,
 	})
