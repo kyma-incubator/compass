@@ -108,6 +108,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	reportType := req.URL.Query().Get(reportTypeQueryParam)
+	log.C(ctx).Infof("Report of type %s received", reportType)
 	reportHandler, found := reportHandlers[reportType]
 	if !found {
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
@@ -140,6 +141,13 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
 	externalIDs := make([]string, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
+		log.C(ctx).Infof("SCC with location id %s and %d exposed systems", scc.LocationID, len(scc.ExposedSystems))
+		for _, exposedSys := range scc.ExposedSystems {
+			log.C(ctx).Infof("Exposed system type %s", exposedSys.SystemType)
+			log.C(ctx).Infof("Exposed system template id %s", exposedSys.TemplateID)
+			log.C(ctx).Infof("Exposed system host id %s", exposedSys.Host)
+		}
+
 		// New object with the same data is created and added to the sccs slice instead of adding &scc to the slice
 		// because otherwise the slice is populated with copies of the last scc`s address
 		s := &nsmodel.SCC{
@@ -170,6 +178,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 func (a *Handler) deltaReportHandler(ctx context.Context, filteredSccs []*nsmodel.SCC, details []httputil.Detail, _ nsmodel.Report, rw http.ResponseWriter) {
 	a.processDelta(ctx, filteredSccs, &details)
+	log.C(ctx).Infof("Delta report error details length %d", len(details))
 	if len(details) == 0 {
 		httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 		return
@@ -183,6 +192,7 @@ func (a *Handler) deltaReportHandler(ctx context.Context, filteredSccs []*nsmode
 
 func (a *Handler) fullReportHandler(ctx context.Context, filteredSccs []*nsmodel.SCC, details []httputil.Detail, reportData nsmodel.Report, rw http.ResponseWriter) {
 	a.processDelta(ctx, filteredSccs, &details)
+	log.C(ctx).Infof("Full report error details length %d", len(details))
 	a.handleUnreachableScc(ctx, reportData)
 	httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 }

@@ -279,6 +279,8 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 			return errors.Wrap(err, fmt.Sprintf("error while registering application template with name: %s", appTemplateName))
 		}
 		log.C(ctx).Infof(fmt.Sprintf("Successfully registered application template with id: %s", templateID))
+	} else {
+		log.C(ctx).Infof("Found application template with name: %s", appTemplateName)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -296,6 +298,7 @@ func exitOnError(err error, context string) {
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, transact persistence.Transactioner) error {
+	log.C(ctx).Infof("Starting calculation of template mappings")
 	var systemToTemplateMappings []nsmodel.TemplateMapping
 	if err := json.Unmarshal([]byte(cfg.SystemToTemplateMappings), &systemToTemplateMappings); err != nil {
 		return errors.Wrap(err, "failed to read system template mappings")
@@ -344,6 +347,7 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	}
 
 	nsmodel.Mappings = systemToTemplateMappings
+	log.C(ctx).Infof("Finished calculation of template mappings")
 	return nil
 }
 
