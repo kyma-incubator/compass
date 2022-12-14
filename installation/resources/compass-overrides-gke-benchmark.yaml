@@ -17,6 +17,15 @@ global:
   pairingAdapter:
     configMap:
       manage: true
+  istio:
+    discoveryMtlsGateway:
+      localCA:
+        certificate: "ZGVmYXVsdCBsb2NhbCBkaXNjb3ZlcnkgQ0EgY2VydA=="
+        key: "ZGVmYXVsdCBsb2NhbCBkaXNjb3ZlcnkgQ0Ega2V5"
+  ingress:
+    discoveryDomain:
+      tlsCert: "ZGVmYXVsdCBsb2NhbCBkaXNjb3ZlcnkgdGxzIGNlcnQ="
+      tlsKey: "ZGVmYXVsdCBsb2NhbCBkaXNjb3ZlcnkgdGxzIGtleQ=="
   gateway:
     mtls:
       manageCerts: true
