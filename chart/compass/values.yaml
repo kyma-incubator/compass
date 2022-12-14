@@ -127,7 +127,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2792"
+      version: "PR-2796"
       name: compass-director
     hydrator:
       dir:
@@ -147,7 +147,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2770"
+      version: "PR-2796"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -168,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2792"
+      version: "PR-2796"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1058,6 +1058,8 @@ global:
         - "webhook:write"
         - "application_template:read"
         - "application_template:write"
+        - "formation_template:read"
+        - "formation_template:write"
       application:
         - "application:read"
         - "application:write"
