@@ -93,6 +93,15 @@ var (
 		},
 		TotalCount: 1,
 	}
+	formationTemplateModelNullTenantPage = model.FormationTemplatePage{
+		Data: []*model.FormationTemplate{&formationTemplateModelNullTenant},
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: 1,
+	}
 	graphQLFormationTemplatePage = graphql.FormationTemplatePage{
 		Data: []*graphql.FormationTemplate{&graphQLFormationTemplate},
 		PageInfo: &graphql.PageInfo{

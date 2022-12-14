@@ -21,6 +21,7 @@ import (
 func TestService_Create(t *testing.T) {
 	// GIVEN
 	ctx := tnt.SaveToContext(context.TODO(), testTenantID, testTenantID)
+	ctxWithEmptyTenants := tnt.SaveToContext(context.TODO(), "", "")
 
 	testErr := errors.New("test error")
 
@@ -32,6 +33,7 @@ func TestService_Create(t *testing.T) {
 
 	testCases := []struct {
 		Name                        string
+		Context                     context.Context
 		Input                       *model.FormationTemplateInput
 		FormationTemplateRepository func() *automock.FormationTemplateRepository
 		FormationTemplateConverter  func() *automock.FormationTemplateConverter
@@ -40,8 +42,9 @@ func TestService_Create(t *testing.T) {
 		ExpectedError               error
 	}{
 		{
-			Name:  "Success when tenant in ctx is GA",
-			Input: &formationTemplateModelInput,
+			Name:    "Success when tenant in ctx is GA",
+			Context: ctx,
+			Input:   &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
 				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, testTenantID).Return(&formationTemplateModel).Once()
@@ -61,8 +64,9 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
-			Name:  "Success when tenant in ctx is SA",
-			Input: &formationTemplateModelInput,
+			Name:    "Success when tenant in ctx is SA",
+			Context: ctx,
+			Input:   &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
 				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, testTenantID).Return(&formationTemplateModel).Once()
@@ -84,8 +88,27 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
-			Name:  "Error when getting tenant object",
-			Input: &formationTemplateModelInput,
+			Name:    "Success when tenant in ctx is empty",
+			Context: ctxWithEmptyTenants,
+			Input:   &formationTemplateModelInput,
+			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
+				converter := &automock.FormationTemplateConverter{}
+				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, "").Return(&formationTemplateModelNullTenant).Once()
+				return converter
+			},
+			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Create", ctxWithEmptyTenants, &formationTemplateModelNullTenant).Return(nil).Once()
+				return repo
+			},
+			TenantSvc:      UnusedTenantService,
+			ExpectedOutput: testID,
+			ExpectedError:  nil,
+		},
+		{
+			Name:    "Error when getting tenant object",
+			Context: ctx,
+			Input:   &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				return &automock.FormationTemplateConverter{}
 			},
@@ -101,8 +124,9 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  testErr,
 		},
 		{
-			Name:  "Error when tenant object is not of type SA or GA",
-			Input: &formationTemplateModelInput,
+			Name:    "Error when tenant object is not of type SA or GA",
+			Context: ctx,
+			Input:   &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				return &automock.FormationTemplateConverter{}
 			},
@@ -118,8 +142,9 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
 		},
 		{
-			Name:  "Error when getting GA tenant object",
-			Input: &formationTemplateModelInput,
+			Name:    "Error when getting GA tenant object",
+			Context: ctx,
+			Input:   &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				return &automock.FormationTemplateConverter{}
 			},
@@ -137,8 +162,9 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  testErr,
 		},
 		{
-			Name:  "Error when creating formation template",
-			Input: &formationTemplateModelInput,
+			Name:    "Error when creating formation template",
+			Context: ctx,
+			Input:   &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
 				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, testTenantID).Return(&formationTemplateModel).Once()
@@ -169,7 +195,7 @@ func TestService_Create(t *testing.T) {
 			svc := formationtemplate.NewService(formationTemplateRepo, idSvc, formationTemplateConv, tenantSvc)
 
 			// WHEN
-			result, err := svc.Create(ctx, testCase.Input)
+			result, err := svc.Create(testCase.Context, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -277,6 +303,7 @@ func TestService_Get(t *testing.T) {
 func TestService_List(t *testing.T) {
 	// GIVEN
 	ctx := tnt.SaveToContext(context.TODO(), testTenantID, testTenantID)
+	ctxWithEmptyTenants := tnt.SaveToContext(context.TODO(), "", "")
 
 	testErr := errors.New("test error")
 	pageSize := 20
@@ -284,6 +311,7 @@ func TestService_List(t *testing.T) {
 
 	testCases := []struct {
 		Name                        string
+		Context                     context.Context
 		PageSize                    int
 		FormationTemplateRepository func() *automock.FormationTemplateRepository
 		TenantSvc                   func() *automock.TenantService
@@ -292,6 +320,7 @@ func TestService_List(t *testing.T) {
 	}{
 		{
 			Name:     "Success when tenant in ctx is GA",
+			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -308,6 +337,7 @@ func TestService_List(t *testing.T) {
 		},
 		{
 			Name:     "Success when tenant in ctx is SA",
+			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -325,7 +355,21 @@ func TestService_List(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
+			Name:     "Success when tenant in ctx is empty",
+			Context:  ctxWithEmptyTenants,
+			PageSize: pageSize,
+			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("List", ctxWithEmptyTenants, "", pageSize, mock.Anything).Return(&formationTemplateModelNullTenantPage, nil).Once()
+				return repo
+			},
+			TenantSvc:      UnusedTenantService,
+			ExpectedOutput: &formationTemplateModelNullTenantPage,
+			ExpectedError:  nil,
+		},
+		{
 			Name:     "Error when getting tenant object",
+			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				return &automock.FormationTemplateRepository{}
@@ -340,6 +384,7 @@ func TestService_List(t *testing.T) {
 		},
 		{
 			Name:     "Error when tenant object is not of type SA or GA",
+			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				return &automock.FormationTemplateRepository{}
@@ -354,6 +399,7 @@ func TestService_List(t *testing.T) {
 		},
 		{
 			Name:     "Error when getting GA tenant object",
+			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				return &automock.FormationTemplateRepository{}
@@ -370,6 +416,7 @@ func TestService_List(t *testing.T) {
 		},
 		{
 			Name:     "Error when listing formation templates",
+			Context:  ctx,
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -386,6 +433,7 @@ func TestService_List(t *testing.T) {
 		},
 		{
 			Name:                        "Error when invalid page size is given",
+			Context:                     ctx,
 			PageSize:                    invalidPageSize,
 			FormationTemplateRepository: UnusedFormationTemplateRepository,
 			TenantSvc:                   UnusedTenantService,
@@ -402,7 +450,7 @@ func TestService_List(t *testing.T) {
 			svc := formationtemplate.NewService(formationTemplateRepo, nil, nil, tenantSvc)
 
 			// WHEN
-			result, err := svc.List(ctx, testCase.PageSize, "")
+			result, err := svc.List(testCase.Context, testCase.PageSize, "")
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -447,6 +495,7 @@ func TestService_List(t *testing.T) {
 func TestService_Update(t *testing.T) {
 	// GIVEN
 	ctx := tnt.SaveToContext(context.TODO(), testTenantID, testTenantID)
+	ctxWithEmptyTenants := tnt.SaveToContext(context.TODO(), "", "")
 
 	testErr := errors.New("test error")
 
@@ -458,6 +507,7 @@ func TestService_Update(t *testing.T) {
 
 	testCases := []struct {
 		Name                        string
+		Context                     context.Context
 		Input                       string
 		InputFormationTemplate      *model.FormationTemplateInput
 		FormationTemplateRepository func() *automock.FormationTemplateRepository
@@ -467,6 +517,7 @@ func TestService_Update(t *testing.T) {
 	}{
 		{
 			Name:                   "Success when tenant in context is GA",
+			Context:                ctx,
 			Input:                  testID,
 			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -490,6 +541,7 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name:                   "Success when tenant in context is SA",
+			Context:                ctx,
 			Input:                  testID,
 			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -514,7 +566,28 @@ func TestService_Update(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
+			Name:                   "Success when tenant in context is empty",
+			Context:                ctxWithEmptyTenants,
+			Input:                  testID,
+			InputFormationTemplate: &formationTemplateModelInput,
+			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Exists", ctxWithEmptyTenants, testID).Return(true, nil).Once()
+				repo.On("Update", ctxWithEmptyTenants, &formationTemplateModelNullTenant).Return(nil).Once()
+				return repo
+			},
+			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
+				converter := &automock.FormationTemplateConverter{}
+				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, "").Return(&formationTemplateModelNullTenant).Once()
+
+				return converter
+			},
+			TenantSvc:     UnusedTenantService,
+			ExpectedError: nil,
+		},
+		{
 			Name:                   "Error when formation template does not exist",
+			Context:                ctx,
 			Input:                  testID,
 			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -528,6 +601,7 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name:                   "Error when formation existence check failed",
+			Context:                ctx,
 			Input:                  testID,
 			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -541,6 +615,7 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name:                   "Error when getting tenant object",
+			Context:                ctx,
 			Input:                  testID,
 			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -558,6 +633,7 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name:                   "Error when tenant object is not of type SA or GA",
+			Context:                ctx,
 			Input:                  testID,
 			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -575,6 +651,7 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name:                   "Error when getting GA tenant object",
+			Context:                ctx,
 			Input:                  testID,
 			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -594,6 +671,7 @@ func TestService_Update(t *testing.T) {
 		},
 		{
 			Name:                   "Error when updating formation template fails",
+			Context:                ctx,
 			Input:                  testID,
 			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -626,7 +704,7 @@ func TestService_Update(t *testing.T) {
 			svc := formationtemplate.NewService(formationTemplateRepo, uidSvcFn(), formationTemplateConverter, tenantSvc)
 
 			// WHEN
-			err := svc.Update(ctx, testCase.Input, testCase.InputFormationTemplate)
+			err := svc.Update(testCase.Context, testCase.Input, testCase.InputFormationTemplate)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -686,19 +764,21 @@ func TestService_Update(t *testing.T) {
 func TestService_Delete(t *testing.T) {
 	// GIVEN
 	ctx := tnt.SaveToContext(context.TODO(), testTenantID, testTenantID)
-
+	ctxWithEmptyTenants := tnt.SaveToContext(context.TODO(), "", "")
 	testErr := errors.New("test error")
 
 	testCases := []struct {
 		Name                        string
+		Context                     context.Context
 		Input                       string
 		FormationTemplateRepository func() *automock.FormationTemplateRepository
 		TenantSvc                   func() *automock.TenantService
 		ExpectedError               error
 	}{
 		{
-			Name:  "Success when tenant in ctx is GA",
-			Input: testID,
+			Name:    "Success when tenant in ctx is GA",
+			Context: ctx,
+			Input:   testID,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Delete", ctx, testID, testTenantID).Return(nil).Once()
@@ -712,8 +792,9 @@ func TestService_Delete(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
-			Name:  "Success when tenant in ctx is SA",
-			Input: testID,
+			Name:    "Success when tenant in ctx is SA",
+			Context: ctx,
+			Input:   testID,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Delete", ctx, testID, testTenantID).Return(nil).Once()
@@ -729,7 +810,20 @@ func TestService_Delete(t *testing.T) {
 			ExpectedError: nil,
 		},
 		{
+			Name:    "Success when tenant in ctx is empty",
+			Context: ctxWithEmptyTenants,
+			Input:   testID,
+			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Delete", ctxWithEmptyTenants, testID, "").Return(nil).Once()
+				return repo
+			},
+			TenantSvc:     UnusedTenantService,
+			ExpectedError: nil,
+		},
+		{
 			Name:                        "Error when getting tenant object",
+			Context:                     ctx,
 			Input:                       testID,
 			FormationTemplateRepository: UnusedFormationTemplateRepository,
 			TenantSvc: func() *automock.TenantService {
@@ -741,6 +835,7 @@ func TestService_Delete(t *testing.T) {
 		},
 		{
 			Name:                        "Error when tenant object is not of type SA or GA",
+			Context:                     ctx,
 			Input:                       testID,
 			FormationTemplateRepository: UnusedFormationTemplateRepository,
 			TenantSvc: func() *automock.TenantService {
@@ -752,6 +847,7 @@ func TestService_Delete(t *testing.T) {
 		},
 		{
 			Name:                        "Error when getting GA tenant object",
+			Context:                     ctx,
 			Input:                       testID,
 			FormationTemplateRepository: UnusedFormationTemplateRepository,
 			TenantSvc: func() *automock.TenantService {
@@ -764,8 +860,9 @@ func TestService_Delete(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:  "Error when deleting formation template",
-			Input: testID,
+			Name:    "Error when deleting formation template",
+			Context: ctx,
+			Input:   testID,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Delete", ctx, testID, testTenantID).Return(testErr).Once()
@@ -788,7 +885,7 @@ func TestService_Delete(t *testing.T) {
 			svc := formationtemplate.NewService(formationTemplateRepo, nil, nil, tenantSvc)
 
 			// WHEN
-			err := svc.Delete(ctx, testCase.Input)
+			err := svc.Delete(testCase.Context, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -798,7 +895,7 @@ func TestService_Delete(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, formationTemplateRepo)
+			mock.AssertExpectationsForObjects(t, formationTemplateRepo, tenantSvc)
 		})
 	}
 	t.Run("Error when tenant is not in context", func(t *testing.T) {

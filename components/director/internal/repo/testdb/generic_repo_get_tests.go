@@ -119,6 +119,31 @@ func (suite *RepoGetTestSuite) Run(t *testing.T) bool {
 			})
 		}
 
+		if suite.ExpectNotFoundError {
+			t.Run("error if SQL query fail", func(t *testing.T) {
+				sqlxDB, sqlMock := MockDatabase(t)
+				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+
+				configureInvalidSelect(sqlMock, suite.SQLQueryDetails)
+
+				convMock := suite.ConverterMockProvider()
+				configureFailureForSQLQueryOnIndex(sqlMock, suite.AfterNotFoundErrorSQLQueryDetails, 0, testErr)
+
+				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
+				// WHEN
+				res, err := callGet(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
+				// THEN
+				require.Nil(t, res)
+
+				require.Error(t, err)
+				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
+				require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+
+				sqlMock.AssertExpectations(t)
+				convMock.AssertExpectations(t)
+			})
+		}
+
 		if !suite.DisableConverterErrorTest {
 			t.Run("error when conversion fail", func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)

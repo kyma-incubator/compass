@@ -33,7 +33,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 }
 
 // FromModelInputToModel converts from internal model input and id to internal model
-func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id string, tenantID string) *model.FormationTemplate {
+func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id, tenantID string) *model.FormationTemplate {
 	if in == nil {
 		return nil
 	}
