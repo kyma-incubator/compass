@@ -249,7 +249,7 @@ func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *
 		return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.TargetType, fa.Target)
 	}
 	if err = unassignTx.Commit(); err != nil {
-		return errors.Wrapf(err, "while commiting transaction")
+		return errors.Wrapf(err, "while committing transaction")
 	}
 	return nil
 }
