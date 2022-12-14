@@ -74,8 +74,9 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
-		appTemplateInput.Placeholders[0].JSONPath = &conf.SubscriptionProviderAppNameProperty
-		appTemplateInput.Placeholders[1].JSONPath = &conf.SubscriptionProviderAppNameProperty
+		for i := range appTemplateInput.Placeholders {
+			appTemplateInput.Placeholders[i].JSONPath = &conf.SubscriptionProviderAppNameProperty
+		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
@@ -374,8 +375,9 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription-with-optional-placeholders")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
-		appTemplateInput.Placeholders[0].JSONPath = &conf.SubscriptionProviderAppNameProperty
-		appTemplateInput.Placeholders[1].JSONPath = &conf.SubscriptionProviderAppNameProperty
+		for i := range appTemplateInput.Placeholders {
+			appTemplateInput.Placeholders[i].JSONPath = &conf.SubscriptionProviderAppNameProperty
+		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
@@ -426,8 +428,9 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription-with-unknown-placeholders")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
-		appTemplateInput.Placeholders[0].JSONPath = &conf.SubscriptionProviderAppNameProperty
-		appTemplateInput.Placeholders[1].JSONPath = &conf.SubscriptionProviderAppNameProperty
+		for i := range appTemplateInput.Placeholders {
+			appTemplateInput.Placeholders[i].JSONPath = &conf.SubscriptionProviderAppNameProperty
+		}
 		other := "other"
 		otherPlaceholderDefinitionInput := &graphql.PlaceholderDefinitionInput{
 			Name:        other,
