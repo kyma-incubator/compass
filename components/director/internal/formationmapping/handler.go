@@ -242,10 +242,10 @@ func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *
 	}
 	defer h.transact.RollbackUnlessCommitted(ctx, unassignTx)
 	unassignCtx := persistence.SaveToContext(ctx, unassignTx)
-	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(err, unassignCtx, fa, fa.Source, fa.SourceType); err != nil {
+	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, fa.Source, fa.SourceType); err != nil {
 		return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.SourceType, fa.Source)
 	}
-	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(err, unassignCtx, fa, fa.Target, fa.TargetType); err != nil {
+	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, fa.Target, fa.TargetType); err != nil {
 		return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.TargetType, fa.Target)
 	}
 	if err = unassignTx.Commit(); err != nil {
@@ -254,7 +254,7 @@ func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *
 	return nil
 }
 
-func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(err error, unassignCtx context.Context, fa *model.FormationAssignment, objectID string, objectType model.FormationAssignmentType) error {
+func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx context.Context, fa *model.FormationAssignment, objectID string, objectType model.FormationAssignmentType) error {
 	formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(unassignCtx, fa.FormationID, objectID)
 	if err != nil {
 		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", objectType, objectID)
