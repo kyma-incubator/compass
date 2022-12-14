@@ -143,7 +143,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-82"
+      version: "PR-84"
       name: compass-ord-service
     schema_migrator:
       dir:
