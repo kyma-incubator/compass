@@ -172,8 +172,8 @@ func TestAPIDefinitionInput_Validate_Group(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "String longer than 36 chars",
-			Value:         str.Ptr(inputvalidationtest.String37Long),
+			Name:          "String longer than 100 chars",
+			Value:         str.Ptr(inputvalidationtest.String101Long),
 			ExpectedValid: false,
 		},
 	}
