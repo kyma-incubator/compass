@@ -5,6 +5,8 @@ import "strings"
 var (
 	// String37Long missing godoc
 	String37Long = strings.Repeat("a", 37)
+	// String101Long missing godoc
+	String101Long = strings.Repeat("a", 101)
 	// String129Long missing godoc
 	String129Long = strings.Repeat("a", 129)
 	// String257Long missing godoc
