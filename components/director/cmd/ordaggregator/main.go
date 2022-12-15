@@ -200,7 +200,7 @@ func startSyncORDDocumentsJob(ctx context.Context, ordAggregator *ord.Service, c
 		Fn: func(jobCtx context.Context) {
 			log.C(jobCtx).Infof("Starting ORD documents aggregation...")
 			if err := ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig); err != nil {
-				log.C(jobCtx).WithError(err).Errorf("error occured while syncing Open Resource Discovery Documents")
+				log.C(jobCtx).WithError(err).Errorf("error occurred while syncing Open Resource Discovery Documents")
 			}
 			log.C(jobCtx).Infof("ORD documents aggregation finished.")
 		},
