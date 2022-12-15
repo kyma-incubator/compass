@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -62,6 +61,7 @@ type config struct {
 	TokenPath                                             string
 	ExternalClientCertSecretName                          string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName                            string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+	SubscriptionProviderAppNameProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
 	CertLoaderConfig                                      certloader.Config
 	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation                                     bool          `envconfig:"default=false"`
