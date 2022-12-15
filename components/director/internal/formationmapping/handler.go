@@ -254,24 +254,24 @@ func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *
 	return nil
 }
 
-func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx context.Context, fa *model.FormationAssignment, objectID string, objectType model.FormationAssignmentType) error {
-	formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(unassignCtx, fa.FormationID, objectID)
+func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(ctx context.Context, fa *model.FormationAssignment, objectID string, objectType model.FormationAssignmentType) error {
+	formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(ctx, fa.FormationID, objectID)
 	if err != nil {
 		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", objectType, objectID)
 	}
 
 	if len(formationAssignmentsForObject) == 0 { // if there are no formation assignments left after the deletion, execute formation unassign for the last operation initiator
-		formation, err := h.formationService.Get(unassignCtx, fa.FormationID)
+		formation, err := h.formationService.Get(ctx, fa.FormationID)
 		if err != nil {
 			return errors.Wrapf(err, "while getting formation from formation assignment with ID: %q", fa.FormationID)
 		}
 
-		log.C(unassignCtx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, objectID, objectType)
-		f, err := h.formationService.UnassignFormation(unassignCtx, fa.TenantID, objectID, graphql.FormationObjectType(objectType), *formation)
+		log.C(ctx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, objectID, objectType)
+		f, err := h.formationService.UnassignFormation(ctx, fa.TenantID, objectID, graphql.FormationObjectType(objectType), *formation)
 		if err != nil {
 			return errors.Wrapf(err, "while unassigning formation with name: %q for object ID: %q and type: %q", formation.Name, objectID, objectType)
 		}
-		log.C(unassignCtx).Infof("Object with type: %q and ID: %q was successfully unassigned from formation with name: %q", objectType, objectID, f.Name)
+		log.C(ctx).Infof("Object with type: %q and ID: %q was successfully unassigned from formation with name: %q", objectType, objectID, f.Name)
 	}
 	return nil
 }

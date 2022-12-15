@@ -457,7 +457,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		if len(pendingAsyncAssignments) > 0 {
 			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
-			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is important to do the re-assign in the outer transaction.
 			if err != nil {
 				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
