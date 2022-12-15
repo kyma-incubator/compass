@@ -45,6 +45,59 @@ func fixModelApplicationTemplate(id, name string) *model.ApplicationTemplate {
 	return &out
 }
 
+func fixModelAppTemplateWithPlaceholdersWithAppInputJSON(id, name, appInputJSON string) *model.ApplicationTemplate {
+	out := fixModelApplicationTemplateWithPlaceholders(id, name)
+	out.ApplicationInputJSON = appInputJSON
+
+	return out
+}
+
+func fixModelApplicationTemplateWithPlaceholders(id, name string) *model.ApplicationTemplate {
+	desc := testDescription
+	out := model.ApplicationTemplate{
+		ID:                   id,
+		Name:                 name,
+		Description:          &desc,
+		ApplicationInputJSON: appInputJSONString,
+		Placeholders:         fixModelPlaceholdersFull(),
+		Webhooks:             []model.Webhook{},
+		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
+	}
+
+	return &out
+}
+
+func fixModelPlaceholdersFull() []model.ApplicationTemplatePlaceholder {
+	placeholderNameDesc := testDescription
+	placeholderNameJSONPath := "name"
+	placeholderDisplayNameDesc := testDescription
+	placeholderDisplayNameJSONPath := "display-name"
+	return []model.ApplicationTemplatePlaceholder{
+		{
+			Name:        "name",
+			Description: &placeholderNameDesc,
+			JSONPath:    &placeholderNameJSONPath,
+		},
+		{
+			Name:        "display-name",
+			Description: &placeholderDisplayNameDesc,
+			JSONPath:    &placeholderDisplayNameJSONPath,
+		},
+	}
+}
+
+func fixModelApplicationFromTemplateInputWithPlaceholders(name, subscribedAppName, subdomain, region string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*model.ApplicationTemplateValueInput{
+			{Placeholder: "name", Value: subscribedAppName},
+			{Placeholder: "display-name", Value: subscribedAppName},
+			{Placeholder: "subdomain", Value: subdomain},
+			{Placeholder: "region", Value: region},
+		},
+	}
+}
+
 func fixModelApplication(id, name, appTemplateID string) *model.Application {
 	return &model.Application{
 		Status: &model.ApplicationStatus{
@@ -92,6 +145,25 @@ func fixModelApplicationFromTemplateInput(name, subscribedAppName, subdomain, re
 			{Placeholder: "subdomain", Value: subdomain},
 			{Placeholder: "region", Value: region},
 		},
+	}
+}
+
+func fixModelApplicationFromTemplateSimplifiedInput(name, subscribedAppName, subdomain, region string) model.ApplicationFromTemplateInput {
+	return model.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values: []*model.ApplicationTemplateValueInput{
+			{Placeholder: "name", Value: subscribedAppName},
+			{Placeholder: "display-name", Value: subscribedAppName},
+		},
+	}
+}
+
+func fixGQLApplicationFromTemplateWithPayloadInput(name, subscribedAppName, subdomain, region string) graphql.ApplicationFromTemplateInput {
+	placeholderPayload := "{\"name\":\"subscription-app-name-value\", \"display-name\":\"subscription-app-name-value\"}"
+
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName:        name,
+		PlaceholdersPayload: &placeholderPayload,
 	}
 }
 
