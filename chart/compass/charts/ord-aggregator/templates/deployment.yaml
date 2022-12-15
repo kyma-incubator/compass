@@ -126,6 +126,10 @@ spec:
               value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
             - name: APP_GLOBAL_REGISTRY_URL
               value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
+            - name: APP_ELECTION_LEASE_LOCK_NAME
+              value: {{ .Values.global.ordAggregator.lease.lockname | quote }}
+            - name: APP_ELECTION_LEASE_LOCK_NAMESPACE
+              value: {{ .Release.Namespace }}
             - name: APP_MAX_PARALLEL_WEBHOOK_PROCESSORS
               value: "{{ .Values.global.ordAggregator.maxParallelWebhookProcessors }}"
             - name: APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION

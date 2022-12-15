@@ -727,6 +727,8 @@ global:
     name: ord-aggregator
     enabled: true
     schedule: "*/1 * * * *"
+    lease:
+      lockname: aggregatorlease
     authentication:
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
     http:

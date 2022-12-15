@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"net/http"
@@ -87,9 +88,11 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=120s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
-	RetryConfig          retry.Config
-	CertLoaderConfig     certloader.Config
-	GlobalRegistryConfig ord.GlobalRegistryConfig
+	RetryConfig           retry.Config
+	CertLoaderConfig      certloader.Config
+	GlobalRegistryConfig  ord.GlobalRegistryConfig
+	ElectionConfig        cronjob.ElectionConfig
+	ORDAggregatorSchedule time.Duration `envconfig:"APP_ORD_AGGREGATOR_SCHEDULE,default=60m"`
 
 	MaxParallelWebhookProcessors       int `envconfig:"APP_MAX_PARALLEL_WEBHOOK_PROCESSORS,default=1"`
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
@@ -182,14 +185,28 @@ func main() {
 	}()
 
 	go func() {
-		for { // TODO schedule sync documents
-			// err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
-			// exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
-			log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
+		if err := startSyncORDDocumentsJob(ctx, ordAggregator, cfg); err != nil {
+			log.C(ctx).WithError(err).Error("Failed to start sync ORD documents cronjob. Stopping app...")
 		}
+		cancel()
 	}()
 
 	runMainSrv()
+}
+
+func startSyncORDDocumentsJob(ctx context.Context, ordAggregator *ord.Service, cfg config) error {
+	resyncJob := cronjob.CronJob{
+		Name: "SyncORDDocuments",
+		Fn: func(jobCtx context.Context) {
+			log.C(jobCtx).Infof("Starting ORD documents aggregation...")
+			if err := ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig); err != nil {
+				log.C(jobCtx).WithError(err).Errorf("error occured while syncing Open Resource Discovery Documents")
+			}
+			log.C(jobCtx).Infof("ORD documents aggregation finished.")
+		},
+		SchedulePeriod: cfg.ORDAggregatorSchedule,
+	}
+	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
 }
 
 func ctxTenantProvider(ctx context.Context) (string, error) {
