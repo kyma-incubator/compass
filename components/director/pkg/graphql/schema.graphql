@@ -1082,9 +1082,6 @@ type FormationAssignment {
 	sourceType: FormationAssignmentType!
 	target: ID!
 	targetType: FormationAssignmentType!
-	lastOperation: String!
-	lastOperationInitiator: ID!
-	lastOperationInitiatorType: FormationAssignmentType!
 	state: String!
 	value: String
 }

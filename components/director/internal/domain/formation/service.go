@@ -419,7 +419,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -489,7 +489,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -549,21 +549,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
-}
-
-func (s *service) listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx context.Context, formationID, objectID string, objectType graphql.FormationObjectType) ([]*model.FormationAssignment, error) {
-	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-	}
-
-	for i := range formationAssignmentsForObject {
-		formationAssignmentsForObject[i].LastOperation = model.UnassignFormation
-		formationAssignmentsForObject[i].LastOperationInitiator = objectID
-		formationAssignmentsForObject[i].LastOperationInitiatorType = model.FormationAssignmentType(objectType)
-	}
-
-	return formationAssignmentsForObject, nil
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {

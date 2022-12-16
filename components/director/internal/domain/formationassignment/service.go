@@ -342,6 +342,16 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
+func (s *service) existsSelfFormationAssignment(assignment *model.FormationAssignment, allAssignments []*model.FormationAssignment) bool {
+	for _, currentAssignment := range allAssignments {
+		if currentAssignment.Source == assignment.Source && currentAssignment.SourceType == assignment.SourceType &&
+			currentAssignment.Source == currentAssignment.Target && currentAssignment.TargetType == currentAssignment.TargetType {
+			return true
+		}
+	}
+	return false
+}
+
 // GenerateAssignments creates and persists two formation assignments per participant in the formation `formation`.
 // For the first formation assignment the source is the objectID and the target is participant's ID.
 // For the second assignment the source and target are swapped.
@@ -387,14 +397,14 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 
 	// We should not generate notifications for formation participants that are being unassigned asynchronously
 	for _, assignment := range allAssignments {
-		if assignment.LastOperation == model.UnassignFormation {
-			switch assignment.LastOperationInitiatorType {
+		if !s.existsSelfFormationAssignment(assignment, allAssignments) {
+			switch assignment.SourceType {
 			case model.FormationAssignmentTypeApplication:
-				delete(appIDs, assignment.LastOperationInitiator)
+				delete(appIDs, assignment.Source)
 			case model.FormationAssignmentTypeRuntime:
-				delete(rtIDs, assignment.LastOperationInitiator)
+				delete(rtIDs, assignment.Source)
 			case model.FormationAssignmentTypeRuntimeContext:
-				delete(rtCtxIDs, assignment.LastOperationInitiator)
+				delete(rtCtxIDs, assignment.Source)
 			}
 		}
 	}
@@ -437,16 +447,13 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 	}
 
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID:                formation.ID,
-		Source:                     objectID,
-		SourceType:                 model.FormationAssignmentType(objectType),
-		Target:                     objectID,
-		TargetType:                 model.FormationAssignmentType(objectType),
-		LastOperation:              model.AssignFormation,
-		LastOperationInitiator:     objectID,
-		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
-		State:                      string(model.ReadyAssignmentState),
-		Value:                      nil,
+		FormationID: formation.ID,
+		Source:      objectID,
+		SourceType:  model.FormationAssignmentType(objectType),
+		Target:      objectID,
+		TargetType:  model.FormationAssignmentType(objectType),
+		State:       string(model.ReadyAssignmentState),
+		Value:       nil,
 	})
 
 	ids := make([]string, 0, len(assignments))
@@ -470,28 +477,22 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participantID string) []*model.FormationAssignmentInput {
 	assignments := make([]*model.FormationAssignmentInput, 0, 2)
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID:                formation.ID,
-		Source:                     objectID,
-		SourceType:                 model.FormationAssignmentType(objectType),
-		Target:                     participantID,
-		TargetType:                 participantType,
-		LastOperation:              model.AssignFormation,
-		LastOperationInitiator:     objectID,
-		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
-		State:                      string(model.InitialAssignmentState),
-		Value:                      nil,
+		FormationID: formation.ID,
+		Source:      objectID,
+		SourceType:  model.FormationAssignmentType(objectType),
+		Target:      participantID,
+		TargetType:  participantType,
+		State:       string(model.InitialAssignmentState),
+		Value:       nil,
 	})
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID:                formation.ID,
-		Source:                     participantID,
-		SourceType:                 participantType,
-		Target:                     objectID,
-		TargetType:                 model.FormationAssignmentType(objectType),
-		LastOperation:              model.AssignFormation,
-		LastOperationInitiator:     objectID,
-		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
-		State:                      string(model.InitialAssignmentState),
-		Value:                      nil,
+		FormationID: formation.ID,
+		Source:      participantID,
+		SourceType:  participantType,
+		Target:      objectID,
+		TargetType:  model.FormationAssignmentType(objectType),
+		State:       string(model.InitialAssignmentState),
+		Value:       nil,
 	})
 	return assignments
 }
@@ -833,18 +834,15 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 	return &FormationAssignmentRequestMapping{
 		Request: request,
 		FormationAssignment: &model.FormationAssignment{
-			ID:                         f.FormationAssignment.ID,
-			FormationID:                f.FormationAssignment.FormationID,
-			TenantID:                   f.FormationAssignment.TenantID,
-			Source:                     f.FormationAssignment.Source,
-			SourceType:                 f.FormationAssignment.SourceType,
-			Target:                     f.FormationAssignment.Target,
-			TargetType:                 f.FormationAssignment.TargetType,
-			LastOperation:              f.FormationAssignment.LastOperation,
-			LastOperationInitiator:     f.FormationAssignment.LastOperationInitiator,
-			LastOperationInitiatorType: f.FormationAssignment.LastOperationInitiatorType,
-			State:                      f.FormationAssignment.State,
-			Value:                      f.FormationAssignment.Value,
+			ID:          f.FormationAssignment.ID,
+			FormationID: f.FormationAssignment.FormationID,
+			TenantID:    f.FormationAssignment.TenantID,
+			Source:      f.FormationAssignment.Source,
+			SourceType:  f.FormationAssignment.SourceType,
+			Target:      f.FormationAssignment.Target,
+			TargetType:  f.FormationAssignment.TargetType,
+			State:       f.FormationAssignment.State,
+			Value:       f.FormationAssignment.Value,
 		},
 	}
 }

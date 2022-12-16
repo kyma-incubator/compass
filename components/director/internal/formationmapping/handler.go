@@ -113,7 +113,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 
 	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
 
-	if fa.LastOperation == model.UnassignFormation {
+	if fa.State == string(model.DeletingAssignmentState) {
 		log.C(ctx).Infof("Processing formation assignment asynchronous status update for %q operation...", model.UnassignFormation)
 		isFADeleted, err := h.processFormationAssignmentAsynchronousUnassign(ctx, fa, reqBody)
 		if err != nil {
@@ -180,7 +180,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q about last initiator ID: %q and type: %q", fa.ID, fa.FormationID, fa.LastOperationInitiator, fa.LastOperationInitiatorType)
+	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 	notificationReq, err := h.faNotificationService.GenerateNotification(ctx, fa)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
@@ -195,7 +195,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q about last initiator ID: %q and type: %q", fa.ID, fa.FormationID, fa.LastOperationInitiator, fa.LastOperationInitiatorType)
+	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q about last initiator ID", fa.ID, fa.FormationID)
 	reverseNotificationReq, err := h.faNotificationService.GenerateNotification(ctx, reverseFA)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
