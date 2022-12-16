@@ -30,13 +30,13 @@ func (_m *FormationTemplateConverter) FromInputGraphQL(in *graphql.FormationTemp
 	return r0
 }
 
-// FromModelInputToModel provides a mock function with given fields: in, id
-func (_m *FormationTemplateConverter) FromModelInputToModel(in *model.FormationTemplateInput, id string) *model.FormationTemplate {
-	ret := _m.Called(in, id)
+// FromModelInputToModel provides a mock function with given fields: in, id, tenantID
+func (_m *FormationTemplateConverter) FromModelInputToModel(in *model.FormationTemplateInput, id string, tenantID string) *model.FormationTemplate {
+	ret := _m.Called(in, id, tenantID)
 
 	var r0 *model.FormationTemplate
-	if rf, ok := ret.Get(0).(func(*model.FormationTemplateInput, string) *model.FormationTemplate); ok {
-		r0 = rf(in, id)
+	if rf, ok := ret.Get(0).(func(*model.FormationTemplateInput, string, string) *model.FormationTemplate); ok {
+		r0 = rf(in, id, tenantID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.FormationTemplate)

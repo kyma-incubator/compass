@@ -238,6 +238,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		appRegion := "test-async-app-region"
 		appNamespace := "compass.test"
 		localTenantID := "local-async-tenant-id"
+		placeholderName := "name"
+		placeholderDisplayName := "display-name"
 		t.Logf("Create application template for type: %q", applicationType)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name:        applicationType,
@@ -254,10 +256,14 @@ func Test_UpdateStatus(baseT *testing.T) {
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
-					Name: "name",
+					Name:        "name",
+					Description: &placeholderName,
+					JSONPath:    &conf.SubscriptionProviderAppNameProperty,
 				},
 				{
-					Name: "display-name",
+					Name:        "display-name",
+					Description: &placeholderDisplayName,
+					JSONPath:    &conf.SubscriptionProviderAppNameProperty,
 				},
 			},
 			ApplicationNamespace: &appNamespace,
@@ -345,6 +351,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription-async")
 		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhooks(appTemplateName)
+		appTemplateInput.Placeholders[0].JSONPath = &conf.SubscriptionProviderAppNameProperty
+		appTemplateInput.Placeholders[1].JSONPath = &conf.SubscriptionProviderAppNameProperty
 		appTemplateInput.Labels["applicationType"] = appTemplateName
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 
@@ -382,7 +390,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, true)
 
 		actualAppPage := graphql.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()

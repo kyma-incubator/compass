@@ -247,7 +247,7 @@ input APIDefinitionInput {
 	"""
 	targetURL: String!
 	"""
-	**Validation:** max=36
+	**Validation:** max=100
 	"""
 	group: String
 	spec: APISpecInput
@@ -1739,7 +1739,7 @@ type Mutation {
 	writeTenant(in: BusinessTenantMappingInput!): String! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
+	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!, subscriptionPayload: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
 	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**

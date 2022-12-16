@@ -29,13 +29,13 @@ func (_m *FormationTemplateRepository) Create(ctx context.Context, item *model.F
 	return r0
 }
 
-// Delete provides a mock function with given fields: ctx, id
-func (_m *FormationTemplateRepository) Delete(ctx context.Context, id string) error {
-	ret := _m.Called(ctx, id)
+// Delete provides a mock function with given fields: ctx, id, tenantID
+func (_m *FormationTemplateRepository) Delete(ctx context.Context, id string, tenantID string) error {
+	ret := _m.Called(ctx, id, tenantID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, id, tenantID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -87,13 +87,13 @@ func (_m *FormationTemplateRepository) Get(ctx context.Context, id string) (*mod
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, pageSize, cursor
-func (_m *FormationTemplateRepository) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
-	ret := _m.Called(ctx, pageSize, cursor)
+// List provides a mock function with given fields: ctx, tenantID, pageSize, cursor
+func (_m *FormationTemplateRepository) List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
+	ret := _m.Called(ctx, tenantID, pageSize, cursor)
 
 	var r0 *model.FormationTemplatePage
-	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.FormationTemplatePage); ok {
-		r0 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *model.FormationTemplatePage); ok {
+		r0 = rf(ctx, tenantID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.FormationTemplatePage)
@@ -101,8 +101,8 @@ func (_m *FormationTemplateRepository) List(ctx context.Context, pageSize int, c
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
-		r1 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
+		r1 = rf(ctx, tenantID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

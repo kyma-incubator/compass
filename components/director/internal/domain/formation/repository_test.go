@@ -187,14 +187,13 @@ func TestRepository_Delete(t *testing.T) {
 				Query:         regexp.QuoteMeta(`DELETE FROM public.formations WHERE tenant_id = $1 AND name = $2`),
 				Args:          []driver.Value{Tnt, testFormationName},
 				ValidResult:   sqlmock.NewResult(-1, 1),
-				InvalidResult: sqlmock.NewResult(-1, 0),
+				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
 		},
 		RepoConstructorFunc: formation.NewRepository,
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		IsGlobal:   true,
 		MethodName: "DeleteByName",
 		MethodArgs: []interface{}{Tnt, testFormationName},
 	}

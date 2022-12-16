@@ -21,12 +21,14 @@ const (
 )
 
 // TenantFetcher is used to fectch tenants for creation;
+//
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
 	SynchronizeTenant(ctx context.Context, parentTenantID, tenantID string) error
 }
 
 // TenantSubscriber is used to apply subscription changes for tenants;
+//
 //go:generate mockery --name=TenantSubscriber --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantSubscriber interface {
 	Subscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error
@@ -251,6 +253,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		ConsumerTenantID:            properties[h.config.ConsumerTenantIDProperty],
 		SubscriptionProviderAppName: properties[h.config.SubscriptionProviderAppNameProperty],
 		Region:                      region,
+		SubscriptionPayload:         string(body),
 	}
 
 	if req.AccountTenantID == req.SubaccountTenantID {
