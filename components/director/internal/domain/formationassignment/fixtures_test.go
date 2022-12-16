@@ -384,6 +384,20 @@ func fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(objectType model
 			State:                      string(model.InitialAssignmentState),
 			Value:                      nil,
 		},
+		{
+			ID:                         "ID7",
+			FormationID:                "ID",
+			TenantID:                   TestTenantID,
+			Source:                     objectID,
+			SourceType:                 objectType,
+			Target:                     objectID,
+			TargetType:                 objectType,
+			LastOperation:              lastOperation,
+			LastOperationInitiator:     objectID,
+			LastOperationInitiatorType: objectType,
+			State:                      string(model.ReadyAssignmentState),
+			Value:                      nil,
+		},
 	}
 }
 
@@ -443,6 +457,20 @@ func fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(objectType model.Formation
 			LastOperationInitiator:     objectID,
 			LastOperationInitiatorType: objectType,
 			State:                      string(model.InitialAssignmentState),
+			Value:                      nil,
+		},
+		{
+			ID:                         "ID5",
+			FormationID:                "ID",
+			TenantID:                   TestTenantID,
+			Source:                     objectID,
+			SourceType:                 objectType,
+			Target:                     objectID,
+			TargetType:                 objectType,
+			LastOperation:              model.AssignFormation,
+			LastOperationInitiator:     objectID,
+			LastOperationInitiatorType: objectType,
+			State:                      string(model.ReadyAssignmentState),
 			Value:                      nil,
 		},
 	}

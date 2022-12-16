@@ -1126,8 +1126,8 @@ func TestService_GenerateAssignments(t *testing.T) {
 
 	allAssignments := append(formationAssignmentsForApplication, append(formationAssignmentsForRuntime, append(formationAssignmentsForRuntimeContext, formationAssignmentsForRuntimeContextWithParentInTheFormation...)...)...)
 
-	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6"}
-	formationAssignmentIDsRtmCtxParentInFormation := []string{"ID1", "ID2", "ID3", "ID4"}
+	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6", "ID7"}
+	formationAssignmentIDsRtmCtxParentInFormation := []string{"ID1", "ID2", "ID3", "ID4", "ID5"}
 
 	formation := &model.Formation{
 		Name: "testFormation",
