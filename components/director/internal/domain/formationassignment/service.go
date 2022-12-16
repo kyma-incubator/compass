@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -345,7 +344,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 func (s *service) existsSelfFormationAssignment(assignment *model.FormationAssignment, allAssignments []*model.FormationAssignment) bool {
 	for _, currentAssignment := range allAssignments {
 		if currentAssignment.Source == assignment.Source && currentAssignment.SourceType == assignment.SourceType &&
-			currentAssignment.Source == currentAssignment.Target && currentAssignment.TargetType == currentAssignment.TargetType {
+			currentAssignment.Source == currentAssignment.Target && currentAssignment.SourceType == currentAssignment.TargetType {
 			return true
 		}
 	}
