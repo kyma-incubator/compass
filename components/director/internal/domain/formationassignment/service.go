@@ -401,7 +401,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 
 	// When assigning an object to a formation we need to create two formation assignments per participant.
 	// In the first formation assignment the object we're assigning will be the source and in the second it will be the target
-	assignments := make([]*model.FormationAssignmentInput, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2)
+	assignments := make([]*model.FormationAssignmentInput, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2+1)
 	for appID := range appIDs {
 		if appID == objectID {
 			continue
@@ -435,6 +435,19 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtxID)...)
 	}
+
+	assignments = append(assignments, &model.FormationAssignmentInput{
+		FormationID:                formation.ID,
+		Source:                     objectID,
+		SourceType:                 model.FormationAssignmentType(objectType),
+		Target:                     objectID,
+		TargetType:                 model.FormationAssignmentType(objectType),
+		LastOperation:              model.AssignFormation,
+		LastOperationInitiator:     objectID,
+		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
+		State:                      string(model.ReadyAssignmentState),
+		Value:                      nil,
+	})
 
 	ids := make([]string, 0, len(assignments))
 	for _, assignment := range assignments {
@@ -756,6 +769,10 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 
 			participants := request.Object.GetParticipantsIDs()
 			for _, id := range participants {
+				// We should not generate notifications for self
+				if assignment.Source == assignment.Target {
+					break assignment
+				}
 				if assignment.Source == id {
 					mappingObject.Request = requests[j]
 					break assignment
