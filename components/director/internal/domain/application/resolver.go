@@ -266,32 +266,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	}, nil
 }
 
-func (r *Resolver) getApplication(ctx context.Context, get func(context.Context) (*model.Application, error)) (*graphql.Application, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-	app, err := get(ctx)
-
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, tx.Commit()
-		}
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.appConverter.ToGraphQL(app), nil
-}
-
-// ApplicationBySystemNumber missing godoc
+// ApplicationBySystemNumber returns an application retrieved by systemNumber
 func (r *Resolver) ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*graphql.Application, error) {
 	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
 		return r.appSvc.GetBySystemNumber(ctx, systemNumber)
@@ -850,4 +825,29 @@ func (r *Resolver) getApplicationProviderTenant(ctx context.Context, consumerInf
 	}
 
 	return r.appConverter.ToGraphQL(foundApp), nil
+}
+
+func (r *Resolver) getApplication(ctx context.Context, get func(context.Context) (*model.Application, error)) (*graphql.Application, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	app, err := get(ctx)
+
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.appConverter.ToGraphQL(app), nil
 }

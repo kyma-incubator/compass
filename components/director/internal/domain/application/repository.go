@@ -154,7 +154,7 @@ func (r *pgRepository) GetByIDForUpdate(ctx context.Context, tenant, id string) 
 	return appModel, nil
 }
 
-// GetBySystemNumber missing godoc
+// GetBySystemNumber returns an application retrieved by systemNumber from the Compass DB
 func (r *pgRepository) GetBySystemNumber(ctx context.Context, tenant, systemNumber string) (*model.Application, error) {
 	var appEnt Entity
 	if err := r.singleGetter.Get(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("system_number", systemNumber)}, repo.NoOrderBy, &appEnt); err != nil {

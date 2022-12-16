@@ -311,7 +311,7 @@ func (s *service) GetForUpdate(ctx context.Context, id string) (*model.Applicati
 	return app, nil
 }
 
-// GetBySystemNumber missing godoc
+// GetBySystemNumber returns an application retrieved by systemNumber
 func (s *service) GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {

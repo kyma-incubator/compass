@@ -850,6 +850,7 @@ func TestResolver_ApplicationBySystemNumber(t *testing.T) {
 	systemNumber := "18"
 	modelApplication := fixModelApplication("foo", "tenant-foo", appName, "Bar")
 	gqlApplication := fixGQLApplication("foo", appName, "Bar")
+	testErr := errors.New("Test error")
 
 	testCases := []struct {
 		Name                string
@@ -878,6 +879,85 @@ func TestResolver_ApplicationBySystemNumber(t *testing.T) {
 			},
 			SystemNumber:        systemNumber,
 			ExpectedApplication: gqlApplication,
+		},
+		{
+			Name:            "GetBySystemNumber returns NotFound error",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("GetBySystemNumber", contextParam, systemNumber).Return(nil, apperrors.NewNotFoundError(resource.Application, "foo")).Once()
+				return svc
+			},
+			ConverterFn:  func () *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+				return conv
+			},
+			SystemNumber:        systemNumber,
+			ExpectedApplication: nil,
+			ExpectedErr:         nil,
+		},
+		{
+			Name:            "GetBySystemNumber returns error",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("GetBySystemNumber", contextParam, systemNumber).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn:  func () *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+				return conv
+			},
+			SystemNumber:        systemNumber,
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name:          "Returns error when starting transaction failed",
+			PersistenceFn: txtest.PersistenceContextThatExpectsCommit,
+			ServiceFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				return appSvc
+			},
+			ConverterFn:  func () *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+				return conv
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(nil, testErr).Once()
+				return transact
+			},
+			SystemNumber:        systemNumber,
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
+		},
+		{
+			Name: "Returns error when transaction commit failed",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(testErr).Once()
+				return persistTx
+			},
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("GetBySystemNumber", contextParam, systemNumber).Return(modelApplication, nil).Once()
+				return svc
+			},
+			ConverterFn:  func () *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+				return conv
+			},
+			TransactionerFn:     txtest.TransactionerThatSucceeds,
+			SystemNumber:        systemNumber,
+			ExpectedApplication: nil,
+			ExpectedErr:         testErr,
 		},
 	}
 

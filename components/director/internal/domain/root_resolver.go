@@ -415,7 +415,7 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Ap
 	return r.app.Application(ctx, id)
 }
 
-// ApplicationBySystemNumber missing godoc
+// ApplicationBySystemNumber returns an application retrieved by systemNumber
 func (r *queryResolver) ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*graphql.Application, error) {
 	return r.app.ApplicationBySystemNumber(ctx, systemNumber)
 }
