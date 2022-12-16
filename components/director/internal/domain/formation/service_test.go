@@ -237,7 +237,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
-				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(fixFormationTemplateModel(), nil).Once()
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, templateName, Tnt).Return(fixFormationTemplateModel(), nil).Once()
 				return formationTemplateRepoMock
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -270,7 +270,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
-				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(fixFormationTemplateModel(), nil).Once()
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, templateName, Tnt).Return(fixFormationTemplateModel(), nil).Once()
 				return formationTemplateRepoMock
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -310,7 +310,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
-				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(nil, testErr).Once()
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, templateName, Tnt).Return(nil, testErr).Once()
 				return formationTemplateRepoMock
 			},
 			TemplateName:       templateName,
@@ -397,7 +397,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
-				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(nil, testErr).Once()
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, templateName, Tnt).Return(nil, testErr).Once()
 				return formationTemplateRepoMock
 			},
 			TemplateName:       templateName,
@@ -424,7 +424,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
-				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(fixFormationTemplateModel(), nil).Once()
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, templateName, Tnt).Return(fixFormationTemplateModel(), nil).Once()
 				return formationTemplateRepoMock
 			},
 			FormationRepoFn: func() *automock.FormationRepository {

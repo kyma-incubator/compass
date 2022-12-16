@@ -69,7 +69,7 @@ type FormationRepository interface {
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
-	GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error)
+	GetByNameAndTenant(ctx context.Context, templateName, tenantID string) (*model.FormationTemplate, error)
 }
 
 // NotificationsService represents the notification service for generating and sending notifications
@@ -1057,7 +1057,7 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 }
 
 func (s *service) createFormation(ctx context.Context, tenant, templateName, formationName string) (*model.Formation, error) {
-	fTmpl, err := s.formationTemplateRepository.GetByName(ctx, templateName)
+	fTmpl, err := s.formationTemplateRepository.GetByNameAndTenant(ctx, templateName, tenant)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
 		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)

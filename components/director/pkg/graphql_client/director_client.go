@@ -13,6 +13,7 @@ import (
 )
 
 // GraphQLClient expects graphql implementation
+//
 //go:generate mockery --name=GraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GraphQLClient interface {
 	Run(context.Context, *gcli.Request, interface{}) error
@@ -83,10 +84,10 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 }
 
 // SubscribeTenant makes graphql query tenant subscription
-func (d *Director) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName string) error {
+func (d *Director) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload string) error {
 	var res map[string]interface{}
 
-	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", subscriptionAppName: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
+	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", subscriptionAppName: "%s", subscriptionPayload: %q)}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload)
 	gRequest := gcli.NewRequest(subscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")

@@ -143,11 +143,15 @@ func (c *converter) ApplicationFromTemplateInputFromGraphQL(appTemplate *model.A
 		for _, placeholder := range appTemplate.Placeholders {
 			if len(*placeholder.JSONPath) > 0 {
 				value := gjson.Get(*in.PlaceholdersPayload, *placeholder.JSONPath)
-				valueInput := model.ApplicationTemplateValueInput{
-					Placeholder: placeholder.Name,
-					Value:       value.String(),
+				if value.Exists() {
+					valueInput := model.ApplicationTemplateValueInput{
+						Placeholder: placeholder.Name,
+						Value:       value.String(),
+					}
+					values = append(values, &valueInput)
+				} else {
+					return model.ApplicationFromTemplateInput{}, errors.Errorf("error occurred while converting GraphQL input to Application From Template model. Value for Placeholder with name %s and path %s, not found in payload %s.", placeholder.Name, *placeholder.JSONPath, *in.PlaceholdersPayload)
 				}
-				values = append(values, &valueInput)
 			} else {
 				return model.ApplicationFromTemplateInput{}, errors.Errorf("error occurred while converting GraphQL input to Application From Template model. Placeholder with name %s, do not have the JSONPath.", placeholder.Name)
 			}
