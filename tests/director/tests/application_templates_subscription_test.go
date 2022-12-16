@@ -420,58 +420,6 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.Equal(t, expectedBaseURL, *actualAppPage.Data[0].BaseURL)
 		})
 	})
-
-	t.Run("When creating app without supplying values for all placeholders", func(stdT *testing.T) {
-		t := testingx.NewT(stdT)
-		ctx := context.Background()
-
-		// Create Application Template
-		appTemplateName := createAppTemplateName("app-template-name-subscription-with-unknown-placeholders")
-		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
-		for i := range appTemplateInput.Placeholders {
-			appTemplateInput.Placeholders[i].JSONPath = &conf.SubscriptionProviderAppNameProperty
-		}
-		other := "other"
-		otherPlaceholderDefinitionInput := &graphql.PlaceholderDefinitionInput{
-			Name:        other,
-			Description: &other,
-			JSONPath:    &other,
-		}
-		appTemplateInput.Placeholders = append(appTemplateInput.Placeholders, otherPlaceholderDefinitionInput)
-		newDescription := "test {{display-name}} other {{other}}"
-		appTemplateInput.ApplicationInput.Description = &newDescription
-
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
-		require.NoError(stdT, err)
-		require.NotEmpty(stdT, appTmpl.ID)
-		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
-
-		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
-		require.True(stdT, ok)
-		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
-
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
-		require.NoError(stdT, err)
-		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(stdT, err)
-		defer func() {
-			if err := response.Body.Close(); err != nil {
-				stdT.Logf("Could not close response body %s", err)
-			}
-		}()
-		require.Equal(stdT, http.StatusOK, response.StatusCode)
-
-		t.Run("Cannot be created in consumer subaccount as optional parameter value is missing in payload send for subscription ", func(t *testing.T) {
-			//GIVEN
-			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-
-			// WHEN
-			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, conf.TestProviderSubaccountIDRegion2, false)
-		})
-	})
-
 }
 
 func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Client, appTmpl graphql.ApplicationTemplate, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID string, expectedToPass bool) {
