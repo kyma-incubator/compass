@@ -193,6 +193,11 @@ func (a *Handler) deltaReportHandler(ctx context.Context, filteredSccs []*nsmode
 func (a *Handler) fullReportHandler(ctx context.Context, filteredSccs []*nsmodel.SCC, details []httputil.Detail, reportData nsmodel.Report, rw http.ResponseWriter) {
 	a.processDelta(ctx, filteredSccs, &details)
 	log.C(ctx).Infof("Full report error details length %d", len(details))
+	for _, errDetail := range details {
+		log.C(ctx).Infof("Err detail message %s", errDetail.Message)
+		log.C(ctx).Infof("Err detail location id %s", errDetail.LocationID)
+		log.C(ctx).Infof("Err detail subaccount %s", errDetail.Subaccount)
+	}
 	a.handleUnreachableScc(ctx, reportData)
 	httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 }
