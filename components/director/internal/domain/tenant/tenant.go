@@ -52,6 +52,17 @@ func LoadTenantPairFromContext(ctx context.Context) (TenantCtx, error) {
 	return tenant, nil
 }
 
+// LoadTenantPairFromContextNoChecks retrieves the whole tenant context from the provided request context. Checks for the values of the InternalID/ExternalID are not included and should be done outside the func case by case.
+func LoadTenantPairFromContextNoChecks(ctx context.Context) (TenantCtx, error) {
+	tenant, ok := ctx.Value(TenantContextKey).(TenantCtx)
+
+	if !ok {
+		return TenantCtx{}, apperrors.NewCannotReadTenantError()
+	}
+
+	return tenant, nil
+}
+
 // SaveToContext returns a child context of the provided context, including the provided tenant information.
 // The internal tenant ID can be later retrieved from the context by calling LoadFromContext.
 func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {
