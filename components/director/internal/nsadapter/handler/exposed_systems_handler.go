@@ -108,7 +108,8 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	reportType := req.URL.Query().Get(reportTypeQueryParam)
-	log.C(ctx).Infof("Report of type %s received", reportType)
+	logger.Infof("New report of type %q received", reportType)
+
 	reportHandler, found := reportHandlers[reportType]
 	if !found {
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
@@ -141,13 +142,6 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	sccs := make([]*nsmodel.SCC, 0, len(reportData.Value))
 	externalIDs := make([]string, 0, len(reportData.Value))
 	for _, scc := range reportData.Value {
-		log.C(ctx).Infof("SCC with location id %s and %d exposed systems", scc.LocationID, len(scc.ExposedSystems))
-		for _, exposedSys := range scc.ExposedSystems {
-			log.C(ctx).Infof("Exposed system type %s", exposedSys.SystemType)
-			log.C(ctx).Infof("Exposed system template id %s", exposedSys.TemplateID)
-			log.C(ctx).Infof("Exposed system host id %s", exposedSys.Host)
-		}
-
 		// New object with the same data is created and added to the sccs slice instead of adding &scc to the slice
 		// because otherwise the slice is populated with copies of the last scc`s address
 		s := &nsmodel.SCC{
@@ -173,12 +167,12 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	details := make([]httputil.Detail, 0)
 	filteredSccs := filterSccsByInternalID(ctx, sccs, &details)
 
+	logger.Infof("Starting processing of %q report.", reportType)
 	reportHandler(ctx, filteredSccs, details, reportData, rw)
 }
 
 func (a *Handler) deltaReportHandler(ctx context.Context, filteredSccs []*nsmodel.SCC, details []httputil.Detail, _ nsmodel.Report, rw http.ResponseWriter) {
 	a.processDelta(ctx, filteredSccs, &details)
-	log.C(ctx).Infof("Delta report error details length %d", len(details))
 	if len(details) == 0 {
 		httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 		return
@@ -192,12 +186,6 @@ func (a *Handler) deltaReportHandler(ctx context.Context, filteredSccs []*nsmode
 
 func (a *Handler) fullReportHandler(ctx context.Context, filteredSccs []*nsmodel.SCC, details []httputil.Detail, reportData nsmodel.Report, rw http.ResponseWriter) {
 	a.processDelta(ctx, filteredSccs, &details)
-	log.C(ctx).Infof("Full report error details length %d", len(details))
-	for _, errDetail := range details {
-		log.C(ctx).Infof("Err detail message %s", errDetail.Message)
-		log.C(ctx).Infof("Err detail location id %s", errDetail.LocationID)
-		log.C(ctx).Infof("Err detail subaccount %s", errDetail.Subaccount)
-	}
 	a.handleUnreachableScc(ctx, reportData)
 	httputils.RespondWithBody(ctx, rw, http.StatusNoContent, struct{}{})
 }
@@ -322,6 +310,11 @@ func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 	success := true
 	for _, system := range scc.ExposedSystems {
+		if len(system.TemplateID) == 0 {
+			log.C(ctx).Infof("Skipping processing of system with unsupported type %s", system.SystemType)
+			continue
+		}
+
 		tx, err := a.transact.Begin()
 		if err != nil {
 			log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
