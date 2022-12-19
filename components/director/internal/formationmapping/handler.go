@@ -110,6 +110,11 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
+	if fa.Source == fa.Target && fa.SourceType == fa.TargetType {
+		errResp := errors.Errorf("Can not update formation assignment with source %q and target %q. X-Request-Id: %s", fa.Source, fa.Target, correlationID)
+		respondWithError(ctx, w, http.StatusBadRequest, errResp)
+		return
+	}
 
 	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
 
