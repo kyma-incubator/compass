@@ -333,6 +333,7 @@ func fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(objectType model
 			State:       string(model.InitialAssignmentState),
 			Value:       nil,
 		},
+		// Self formation assignments
 		{
 			ID:          "ID7",
 			FormationID: "ID",
@@ -341,6 +342,44 @@ func fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(objectType model
 			SourceType:  objectType,
 			Target:      objectID,
 			TargetType:  objectType,
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+	}
+}
+
+func fixFormationAssignmentsForSelf(appID, rtmID, rtmCtxID string) []*model.FormationAssignment {
+	return []*model.FormationAssignment{
+		{
+			ID:          "ID8",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      appID,
+			SourceType:  model.FormationAssignmentTypeApplication,
+			Target:      appID,
+			TargetType:  model.FormationAssignmentTypeApplication,
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+		{
+			ID:          "ID9",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      rtmID,
+			SourceType:  model.FormationAssignmentTypeRuntime,
+			Target:      rtmID,
+			TargetType:  model.FormationAssignmentTypeRuntime,
+			State:       string(model.ReadyAssignmentState),
+			Value:       nil,
+		},
+		{
+			ID:          "ID10",
+			FormationID: "ID",
+			TenantID:    TestTenantID,
+			Source:      rtmCtxID,
+			SourceType:  model.FormationAssignmentTypeRuntimeContext,
+			Target:      rtmCtxID,
+			TargetType:  model.FormationAssignmentTypeRuntimeContext,
 			State:       string(model.ReadyAssignmentState),
 			Value:       nil,
 		},
