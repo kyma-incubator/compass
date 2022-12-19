@@ -343,16 +343,6 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-func (s *service) existsSelfFormationAssignment(assignment *model.FormationAssignment, allAssignments []*model.FormationAssignment) bool {
-	for _, currentAssignment := range allAssignments {
-		if currentAssignment.Source == assignment.Source && currentAssignment.SourceType == assignment.SourceType &&
-			currentAssignment.Source == currentAssignment.Target && currentAssignment.SourceType == currentAssignment.TargetType {
-			return true
-		}
-	}
-	return false
-}
-
 // GenerateAssignments creates and persists two formation assignments per participant in the formation `formation`.
 // For the first formation assignment the source is the objectID and the target is participant's ID.
 // For the second assignment the source and target are swapped.
@@ -375,20 +365,20 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 	}
 
 	allIDs := make([]string, 0, len(applications)+len(runtimes)+len(runtimeContexts))
-	appIDs := make(map[string]struct{}, len(applications))
-	rtIDs := make(map[string]struct{}, len(runtimes))
-	rtCtxIDs := make(map[string]struct{}, len(runtimeContexts))
+	appIDs := make(map[string]bool, len(applications))
+	rtIDs := make(map[string]bool, len(runtimes))
+	rtCtxIDs := make(map[string]bool, len(runtimeContexts))
 	for _, app := range applications {
 		allIDs = append(allIDs, app.ID)
-		appIDs[app.ID] = struct{}{}
+		appIDs[app.ID] = false
 	}
 	for _, rt := range runtimes {
 		allIDs = append(allIDs, rt.ID)
-		rtIDs[rt.ID] = struct{}{}
+		rtIDs[rt.ID] = false
 	}
 	for _, rtCtx := range runtimeContexts {
 		allIDs = append(allIDs, rtCtx.ID)
-		rtCtxIDs[rtCtx.ID] = struct{}{}
+		rtCtxIDs[rtCtx.ID] = false
 	}
 
 	allAssignments, err := s.ListFormationAssignmentsForObjectIDs(ctx, formation.ID, allIDs)
@@ -398,14 +388,14 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 
 	// We should not generate notifications for formation participants that are being unassigned asynchronously
 	for _, assignment := range allAssignments {
-		if !s.existsSelfFormationAssignment(assignment, allAssignments) {
+		if assignment.Source == assignment.Target && assignment.SourceType == assignment.TargetType {
 			switch assignment.SourceType {
 			case model.FormationAssignmentTypeApplication:
-				delete(appIDs, assignment.Source)
+				appIDs[assignment.Source] = true
 			case model.FormationAssignmentTypeRuntime:
-				delete(rtIDs, assignment.Source)
+				rtIDs[assignment.Source] = true
 			case model.FormationAssignmentTypeRuntimeContext:
-				delete(rtCtxIDs, assignment.Source)
+				rtCtxIDs[assignment.Source] = true
 			}
 		}
 	}
@@ -413,8 +403,8 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 	// When assigning an object to a formation we need to create two formation assignments per participant.
 	// In the first formation assignment the object we're assigning will be the source and in the second it will be the target
 	assignments := make([]*model.FormationAssignmentInput, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2+1)
-	for appID := range appIDs {
-		if appID == objectID {
+	for appID, isAssigned := range appIDs {
+		if !isAssigned || appID == objectID {
 			continue
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeApplication, appID)...)
@@ -433,15 +423,15 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		}
 		parentID = rtmCtx.RuntimeID
 	}
-	for runtimeID := range rtIDs {
-		if runtimeID == objectID || runtimeID == parentID {
+	for runtimeID, isAssigned := range rtIDs {
+		if !isAssigned || runtimeID == objectID || runtimeID == parentID {
 			continue
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntime, runtimeID)...)
 	}
 
-	for runtimeCtxID := range rtCtxIDs {
-		if runtimeCtxID == objectID {
+	for runtimeCtxID, isAssigned := range rtCtxIDs {
+		if !isAssigned || runtimeCtxID == objectID {
 			continue
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtxID)...)
