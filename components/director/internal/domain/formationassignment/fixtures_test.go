@@ -262,10 +262,6 @@ func fixConvertFAFromModel(formationAssignment *model.FormationAssignment) *webh
 }
 
 func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssignmentType, objectID, appID, rtmID, rtmCtxID string) []*model.FormationAssignment {
-	return fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(objectType, objectID, appID, rtmID, rtmCtxID, model.AssignFormation)
-}
-
-func fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(objectType model.FormationAssignmentType, objectID, appID, rtmID, rtmCtxID string, lastOperation model.FormationOperation) []*model.FormationAssignment {
 	return []*model.FormationAssignment{
 		{
 			ID:          "ID1",

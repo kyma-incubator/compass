@@ -1192,7 +1192,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 			ObjectType: graphql.FormationObjectTypeApplication,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				unassignAppFormationAssignments := fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID, "unassign")
+				unassignAppFormationAssignments := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, objectID, runtimes[0].ID, runtimeContexts[0].ID}).Return(append(allAssignments, unassignAppFormationAssignments...), nil).Once()
 				for i := range formationAssignmentsForApplication {
 					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
