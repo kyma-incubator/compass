@@ -108,6 +108,8 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	reportType := req.URL.Query().Get(reportTypeQueryParam)
+	logger.Infof("New report of type %q received", reportType)
+
 	reportHandler, found := reportHandlers[reportType]
 	if !found {
 		httputil.RespondWithError(ctx, rw, http.StatusBadRequest, httputil.Error{
@@ -165,6 +167,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	details := make([]httputil.Detail, 0)
 	filteredSccs := filterSccsByInternalID(ctx, sccs, &details)
 
+	logger.Infof("Starting processing of %q report.", reportType)
 	reportHandler(ctx, filteredSccs, details, reportData, rw)
 }
 
@@ -307,6 +310,11 @@ func (a *Handler) handleSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 func (a *Handler) upsertSccSystems(ctx context.Context, scc nsmodel.SCC) bool {
 	success := true
 	for _, system := range scc.ExposedSystems {
+		if len(system.TemplateID) == 0 {
+			log.C(ctx).Infof("Skipping processing of system with unsupported type %s", system.SystemType)
+			continue
+		}
+
 		tx, err := a.transact.Begin()
 		if err != nil {
 			log.C(ctx).Warn(errors.Wrapf(err, "while openning transaction"))
