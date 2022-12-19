@@ -638,7 +638,7 @@ func TestRepository_ListByFormationIDsNoPaging(t *testing.T) {
 
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
 		sqlMock.AssertExpectations(t)
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, last_operation, last_operation_initiator, last_operation_initiator_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id IN ($2)`)).
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id IN ($2)`)).
 			WithArgs(TestTenantID, TestFormationID).WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
