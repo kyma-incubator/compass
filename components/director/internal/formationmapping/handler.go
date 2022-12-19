@@ -200,7 +200,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q about last initiator ID", fa.ID, fa.FormationID)
+	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 	reverseNotificationReq, err := h.faNotificationService.GenerateNotification(ctx, reverseFA)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
@@ -265,7 +265,8 @@ func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(
 		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", objectType, objectID)
 	}
 
-	if len(formationAssignmentsForObject) == 0 { // if there are no formation assignments left after the deletion, execute formation unassign for the last operation initiator
+	// if there are no formation assignments left after the deletion, execute unassign formation for the object
+	if len(formationAssignmentsForObject) == 0 {
 		formation, err := h.formationService.Get(ctx, fa.FormationID)
 		if err != nil {
 			return errors.Wrapf(err, "while getting formation from formation assignment with ID: %q", fa.FormationID)

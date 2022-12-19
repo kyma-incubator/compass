@@ -1014,7 +1014,6 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.NotEmpty(t, app2.ID)
 		t.Logf("app2 ID: %q", app2.ID)
 
-		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Assign application 1 to formation %s", providerFormationName)
@@ -1023,7 +1022,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		//list assignments - expect 1
+
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
@@ -1037,7 +1036,6 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
-		//list assignments - expect 4
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
 				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
@@ -1063,7 +1061,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		//list assignments - expect 9
+
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
 				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
@@ -1106,7 +1104,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
-		//list assignments - expect 2
+
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app2.ID: {
 				app2.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
@@ -1139,7 +1137,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
-		//list assignments - expect 1
+
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
@@ -1711,7 +1709,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Assign application to formation %s", providerFormationName)
@@ -1721,7 +1718,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		//list assignments - expect 1
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
@@ -1735,7 +1731,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
-		//list assignments - expect 4
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app.ID: {
 				app.ID:   fixtures.AssignmentState{State: "READY", Config: nil},
@@ -1765,7 +1760,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
-		//list assignments - expect 1
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			rtCtx.ID: {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
@@ -1784,7 +1778,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		//list assignments - expect 4
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app.ID: {
 				app.ID:   fixtures.AssignmentState{State: "READY", Config: nil},
@@ -1810,7 +1803,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
-		//list assignments - expect 1
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
@@ -1828,7 +1820,6 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
-		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 	})
 }
@@ -1992,7 +1983,6 @@ func TestFormationAssignments(stdT *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 		require.NotEmpty(t, formation.ID)
 
-		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -2183,7 +2173,6 @@ func TestFormationAssignments(stdT *testing.T) {
 			notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
 			assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 1)
 
-			//list assignments - expect 0
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 				rtCtx.ID: {
