@@ -161,7 +161,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2791"
+      version: "PR-2807"
       name: compass-external-services-mock
     console:
       dir:
@@ -169,7 +169,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2806"
+      version: "PR-2807"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
