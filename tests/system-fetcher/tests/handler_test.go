@@ -163,6 +163,13 @@ func TestSystemFetcherSuccess(t *testing.T) {
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 		}
 	}()
+
+	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
+	var appResp directorSchema.ApplicationExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp)
+	require.NoError(t, err)
+	require.Equal(t, "name1", appResp.Name)
+
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
