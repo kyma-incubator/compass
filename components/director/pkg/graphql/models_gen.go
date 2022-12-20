@@ -35,7 +35,7 @@ type APIDefinitionInput struct {
 	Description *string `json:"description"`
 	// **Validation:** valid URL, max=256
 	TargetURL string `json:"targetURL"`
-	// **Validation:** max=36
+	// **Validation:** max=100
 	Group   *string       `json:"group"`
 	Spec    *APISpecInput `json:"spec"`
 	Version *VersionInput `json:"version"`
@@ -452,16 +452,13 @@ type FetchRequestStatus struct {
 }
 
 type FormationAssignment struct {
-	ID                         string                  `json:"id"`
-	Source                     string                  `json:"source"`
-	SourceType                 FormationAssignmentType `json:"sourceType"`
-	Target                     string                  `json:"target"`
-	TargetType                 FormationAssignmentType `json:"targetType"`
-	LastOperation              string                  `json:"lastOperation"`
-	LastOperationInitiator     string                  `json:"lastOperationInitiator"`
-	LastOperationInitiatorType FormationAssignmentType `json:"lastOperationInitiatorType"`
-	State                      string                  `json:"state"`
-	Value                      *string                 `json:"value"`
+	ID         string                  `json:"id"`
+	Source     string                  `json:"source"`
+	SourceType FormationAssignmentType `json:"sourceType"`
+	Target     string                  `json:"target"`
+	TargetType FormationAssignmentType `json:"targetType"`
+	State      string                  `json:"state"`
+	Value      *string                 `json:"value"`
 }
 
 type FormationAssignmentPage struct {

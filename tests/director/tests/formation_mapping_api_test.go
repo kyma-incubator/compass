@@ -102,8 +102,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		t.Logf("Listing formation assignments for formation with ID: %q", formationID)
 		listFormationAssignmentsReq := fixtures.FixListFormationAssignmentRequest(formationID, 100)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, parentTenantID, listFormationAssignmentsReq)
-		require.Len(t, assignmentsPage.Data, 2)
-		require.Equal(t, 2, assignmentsPage.TotalCount)
+		require.Len(t, assignmentsPage.Data, 4)
+		require.Equal(t, 4, assignmentsPage.TotalCount)
 
 		t.Run("Runtime caller successfully updates his formation assignment", func(t *testing.T) {
 			formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntime, app.ID)
@@ -298,6 +298,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NotEmpty(t, asyncApp.ID)
 		t.Logf("App ID: %q", asyncApp.ID)
 
+		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
+
 		t.Logf("Assign application to formation: %q", providerAsyncFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(asyncApp.ID, string(graphql.FormationObjectTypeApplication), providerAsyncFormationName)
 		var assignedFormation graphql.Formation
@@ -306,7 +308,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
-		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
+		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 1)
 
 		t.Logf("Assign tenant: %q to formation: %q", subscriptionConsumerSubaccountID, providerAsyncFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerAsyncFormationName)
@@ -315,7 +317,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
-		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 2)
+		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 4)
 
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntimeContext, asyncApp.ID)
 		executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formation.ID, formationAssignmentID, http.StatusOK)
@@ -419,6 +421,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName)
 		require.NotEmpty(t, formation.ID)
 
+		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
+
 		appID := actualAppPage.Data[0].ID
 		t.Logf("Assign application to formation: %q", providerAsyncFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(appID, string(graphql.FormationObjectTypeApplication), providerAsyncFormationName)
@@ -428,7 +432,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
-		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
+		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 1)
 
 		t.Logf("Assign tenant: %q to formation: %q", subscriptionConsumerSubaccountID, providerAsyncFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerAsyncFormationName)
@@ -437,7 +441,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
-		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 2)
+		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 4)
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeApplication, runtime.ID)
 
 		executeStatusUpdateReqWithExpectedStatusCode(t, appProviderCertSecuredHTTPClient, testConfig, formation.ID, formationAssignmentID, http.StatusOK)
@@ -492,8 +496,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		t.Logf("List formation assignments for formation with ID: %q", formationID)
 		listFormationAssignmentsReq := fixtures.FixListFormationAssignmentRequest(formationID, 100)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, parentTenantID, listFormationAssignmentsReq)
-		require.Len(t, assignmentsPage.Data, 2)
-		require.Equal(t, 2, assignmentsPage.TotalCount)
+		require.Len(t, assignmentsPage.Data, 4)
+		require.Equal(t, 4, assignmentsPage.TotalCount)
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntime, app.ID)
 		t.Logf("successfully listed FAs for formation ID: %q", formationID)
 

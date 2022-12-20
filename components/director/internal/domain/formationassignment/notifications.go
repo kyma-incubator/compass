@@ -328,6 +328,10 @@ func (fan *formationAssignmentNotificationService) createWebhookRequest(ctx cont
 }
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
+	config := string(formationAssignment.Value)
+	if config == "" {
+		config = "\"\""
+	}
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
 		FormationID: formationAssignment.FormationID,
@@ -337,6 +341,6 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
 		State:       formationAssignment.State,
-		Value:       string(formationAssignment.Value),
+		Value:       config,
 	}
 }
