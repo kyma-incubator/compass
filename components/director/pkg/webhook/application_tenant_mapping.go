@@ -51,6 +51,10 @@ func (rd *ApplicationTenantMappingInput) GetParticipantsIDs() []string {
 
 // SetAssignment sets the assignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.FormationAssignment) {
+	config := string(assignment.Value)
+	if config == "" {
+		config = "\"\""
+	}
 	rd.Assignment = &FormationAssignment{
 		ID:          assignment.ID,
 		FormationID: assignment.FormationID,
@@ -60,12 +64,16 @@ func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.Formati
 		Target:      assignment.Target,
 		TargetType:  assignment.TargetType,
 		State:       assignment.State,
-		Value:       string(assignment.Value),
+		Value:       config,
 	}
 }
 
 // SetReverseAssignment sets the reverseAssignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
+	config := string(reverseAssignment.Value)
+	if config == "" {
+		config = "\"\""
+	}
 	rd.ReverseAssignment = &FormationAssignment{
 		ID:          reverseAssignment.ID,
 		FormationID: reverseAssignment.FormationID,
@@ -75,7 +83,7 @@ func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment 
 		Target:      reverseAssignment.Target,
 		TargetType:  reverseAssignment.TargetType,
 		State:       reverseAssignment.State,
-		Value:       string(reverseAssignment.Value),
+		Value:       config,
 	}
 }
 

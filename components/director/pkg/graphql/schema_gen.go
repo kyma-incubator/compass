@@ -319,16 +319,13 @@ type ComplexityRoot struct {
 	}
 
 	FormationAssignment struct {
-		ID                         func(childComplexity int) int
-		LastOperation              func(childComplexity int) int
-		LastOperationInitiator     func(childComplexity int) int
-		LastOperationInitiatorType func(childComplexity int) int
-		Source                     func(childComplexity int) int
-		SourceType                 func(childComplexity int) int
-		State                      func(childComplexity int) int
-		Target                     func(childComplexity int) int
-		TargetType                 func(childComplexity int) int
-		Value                      func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Source     func(childComplexity int) int
+		SourceType func(childComplexity int) int
+		State      func(childComplexity int) int
+		Target     func(childComplexity int) int
+		TargetType func(childComplexity int) int
+		Value      func(childComplexity int) int
 	}
 
 	FormationAssignmentPage struct {
@@ -2121,27 +2118,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationAssignment.ID(childComplexity), true
-
-	case "FormationAssignment.lastOperation":
-		if e.complexity.FormationAssignment.LastOperation == nil {
-			break
-		}
-
-		return e.complexity.FormationAssignment.LastOperation(childComplexity), true
-
-	case "FormationAssignment.lastOperationInitiator":
-		if e.complexity.FormationAssignment.LastOperationInitiator == nil {
-			break
-		}
-
-		return e.complexity.FormationAssignment.LastOperationInitiator(childComplexity), true
-
-	case "FormationAssignment.lastOperationInitiatorType":
-		if e.complexity.FormationAssignment.LastOperationInitiatorType == nil {
-			break
-		}
-
-		return e.complexity.FormationAssignment.LastOperationInitiatorType(childComplexity), true
 
 	case "FormationAssignment.source":
 		if e.complexity.FormationAssignment.Source == nil {
@@ -4703,7 +4679,7 @@ input APIDefinitionInput {
 	"""
 	targetURL: String!
 	"""
-	**Validation:** max=36
+	**Validation:** max=100
 	"""
 	group: String
 	spec: APISpecInput
@@ -5538,9 +5514,6 @@ type FormationAssignment {
 	sourceType: FormationAssignmentType!
 	target: ID!
 	targetType: FormationAssignmentType!
-	lastOperation: String!
-	lastOperationInitiator: ID!
-	lastOperationInitiatorType: FormationAssignmentType!
 	state: String!
 	value: String
 }
@@ -15016,108 +14989,6 @@ func (ec *executionContext) _FormationAssignment_targetType(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TargetType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(FormationAssignmentType)
-	fc.Result = res
-	return ec.marshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FormationAssignment_lastOperation(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FormationAssignment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastOperation, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FormationAssignment_lastOperationInitiator(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FormationAssignment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastOperationInitiator, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FormationAssignment_lastOperationInitiatorType(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FormationAssignment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastOperationInitiatorType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -30863,21 +30734,6 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 			}
 		case "targetType":
 			out.Values[i] = ec._FormationAssignment_targetType(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "lastOperation":
-			out.Values[i] = ec._FormationAssignment_lastOperation(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "lastOperationInitiator":
-			out.Values[i] = ec._FormationAssignment_lastOperationInitiator(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "lastOperationInitiatorType":
-			out.Values[i] = ec._FormationAssignment_lastOperationInitiatorType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
