@@ -55,7 +55,7 @@ type config struct {
 	BasicPassword                                         string
 	ORDServiceDefaultResponseType                         string
 	GlobalRegistryURL                                     string
-	SubscriptionProviderAppNameValue                      string
+	SubscriptionProviderAppNameValue                      string `envconfig:"APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE"`
 	TestConsumerSubaccountID                              string
 	TestConsumerTenantID                                  string
 	TestProviderSubaccountID                              string

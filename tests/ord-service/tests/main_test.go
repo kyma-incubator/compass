@@ -61,7 +61,7 @@ type config struct {
 	BasicPassword                    string
 	AccountTenantID                  string
 	SubaccountTenantID               string
-	SubscriptionProviderAppNameValue string
+	SubscriptionProviderAppNameValue string `envconfig:"APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE"`
 	TestConsumerAccountID            string
 	TestProviderSubaccountID         string
 	TestConsumerSubaccountID         string
