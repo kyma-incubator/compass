@@ -55,6 +55,7 @@ type config struct {
 	BasicPassword                                         string
 	ORDServiceDefaultResponseType                         string
 	GlobalRegistryURL                                     string
+	SubscriptionProviderAppNameValue                      string
 	TestConsumerSubaccountID                              string
 	TestConsumerTenantID                                  string
 	TestProviderSubaccountID                              string

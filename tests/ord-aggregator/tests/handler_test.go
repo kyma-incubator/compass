@@ -605,8 +605,7 @@ func TestORDAggregator(stdT *testing.T) {
 		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
 		subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
-
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testConfig.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.SubscriptionConfig.ClientID, testConfig.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")

@@ -61,6 +61,7 @@ type config struct {
 	BasicPassword                    string
 	AccountTenantID                  string
 	SubaccountTenantID               string
+	SubscriptionProviderAppNameValue string
 	TestConsumerAccountID            string
 	TestProviderSubaccountID         string
 	TestConsumerSubaccountID         string
