@@ -23,8 +23,7 @@ type handler struct {
 }
 
 type JobStatus struct {
-	ID    string `json:"id"`
-	State string `json:"state"`
+	Status string `json:"status"`
 }
 
 var Subscriptions = make(map[string]string)
@@ -89,8 +88,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	jobStatus := &JobStatus{
-		ID:    h.jobID,
-		State: "SUCCEEDED",
+		Status: "COMPLETED",
 	}
 
 	payload, err := json.Marshal(jobStatus)

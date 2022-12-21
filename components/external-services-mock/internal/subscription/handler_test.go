@@ -319,7 +319,7 @@ func TestHandler_JobStatus(t *testing.T) {
 			Name:                 "Successful job status response",
 			RequestMethod:        http.MethodGet,
 			ExpectedResponseCode: http.StatusOK,
-			ExpectedBody:         fmt.Sprintf("{\"id\":\"%s\",\"state\":\"SUCCEEDED\"}", jobID),
+			ExpectedBody:         fmt.Sprintf("{\"status\":\"COMPLETED\"}"),
 			AuthHeader:           oauth2.AuthorizationHeader,
 			Token:                token,
 		},
