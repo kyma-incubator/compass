@@ -525,8 +525,8 @@ func TestRepository_GetByTargetAndSource(t *testing.T) {
 		MethodName: "GetByTargetAndSource",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND target = $2 AND source = $3`),
-				Args:     []driver.Value{TestTenantID, TestTarget, TestSource},
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND target = $3 AND source = $4`),
+				Args:     []driver.Value{TestTenantID, TestFormationID, TestTarget, TestSource},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestState, TestConfigValueStr)}
@@ -542,7 +542,7 @@ func TestRepository_GetByTargetAndSource(t *testing.T) {
 		RepoConstructorFunc:       formationassignment.NewRepository,
 		ExpectedModelEntity:       fixFormationAssignmentModel(TestConfigValueRawJSON),
 		ExpectedDBEntity:          fixFormationAssignmentEntity(TestConfigValueStr),
-		MethodArgs:                []interface{}{TestTarget, TestSource, TestTenantID},
+		MethodArgs:                []interface{}{TestTarget, TestSource, TestTenantID, TestFormationID},
 		DisableConverterErrorTest: true,
 	}
 

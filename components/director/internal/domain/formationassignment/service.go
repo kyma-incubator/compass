@@ -22,7 +22,7 @@ import (
 //go:generate mockery --name=FormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentRepository interface {
 	Create(ctx context.Context, item *model.FormationAssignment) error
-	GetByTargetAndSource(ctx context.Context, target, source, tenantID string) (*model.FormationAssignment, error)
+	GetByTargetAndSource(ctx context.Context, target, source, tenantID, formationID string) (*model.FormationAssignment, error)
 	Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
@@ -141,7 +141,7 @@ func (s *service) CreateIfNotExists(ctx context.Context, in *model.FormationAssi
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	existingEntity, err := s.repo.GetByTargetAndSource(ctx, in.Target, in.Source, tenantID)
+	existingEntity, err := s.repo.GetByTargetAndSource(ctx, in.Target, in.Source, tenantID, in.FormationID)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return "", errors.Wrapf(err, "while getting formation assignment by target %q and source %q", in.Target, in.Source)
 	}
