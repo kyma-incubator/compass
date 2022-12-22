@@ -1063,18 +1063,20 @@ func TestResolver_Status(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	formationIDs := []string{FormationID, FormationID + "2", FormationID + "3"}
+	formationIDs := []string{FormationID, FormationID + "2", FormationID + "3", FormationID + "4"}
 
 	// Formation Assignments model fixtures
 	faModelReady := fixFormationAssignmentModel(string(model.ReadyAssignmentState), TestConfigValueRawJSON)
 	faModelInitial := fixFormationAssignmentModelWithSuffix(string(model.InitialAssignmentState), TestConfigValueRawJSON, "-2")
 	faModelError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), json.RawMessage(`{"error": {"message": "failure", "errorCode": 1}}`), "-3")
+	faModelEmptyError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), nil, "-4")
 
-	fasReady := []*model.FormationAssignment{faModelReady}                               // all are READY -> READY condition
-	fasInProgress := []*model.FormationAssignment{faModelInitial, faModelReady}          // no errors, but one is INITIAL -> IN_PROGRESS condition
-	fasError := []*model.FormationAssignment{faModelReady, faModelError, faModelInitial} // have error -> ERROR condition
+	fasReady := []*model.FormationAssignment{faModelReady}                                         // all are READY -> READY condition
+	fasInProgress := []*model.FormationAssignment{faModelInitial, faModelReady}                    // no errors, but one is INITIAL -> IN_PROGRESS condition
+	fasError := []*model.FormationAssignment{faModelReady, faModelError, faModelInitial}           // have error -> ERROR condition
+	fasEmptyError := []*model.FormationAssignment{faModelReady, faModelEmptyError, faModelInitial} // should handle empty Value and have ERROR condition
 
-	fasPerFormation := [][]*model.FormationAssignment{fasReady, fasInProgress, fasError}
+	fasPerFormation := [][]*model.FormationAssignment{fasReady, fasInProgress, fasError, fasEmptyError}
 
 	fasUnmarshallable := []*model.FormationAssignment{fixFormationAssignmentModelWithSuffix(string(model.DeleteErrorAssignmentState), json.RawMessage(`unmarshallable structure`), "-4")}
 
@@ -1092,8 +1094,14 @@ func TestResolver_Status(t *testing.T) {
 			ErrorCode:    1,
 		}},
 	}
+	gqlStatusFourth := graphql.FormationStatus{
+		Condition: graphql.FormationStatusConditionError,
+		Errors: []*graphql.FormationStatusError{{
+			AssignmentID: FormationAssignmentID + "-4",
+		}},
+	}
 
-	gqlStatuses := []*graphql.FormationStatus{&gqlStatusFirst, &gqlStatusSecond, &gqlStatusThird}
+	gqlStatuses := []*graphql.FormationStatus{&gqlStatusFirst, &gqlStatusSecond, &gqlStatusThird, &gqlStatusFourth}
 
 	emptyFaPage := [][]*model.FormationAssignment{nil}
 
@@ -1181,7 +1189,8 @@ func TestResolver_Status(t *testing.T) {
 			firstFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID, Ctx: ctx}
 			secondFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID + "2", Ctx: ctx}
 			thirdFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID + "3", Ctx: ctx}
-			keys := []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams}
+			fourthPageFormations := dataloader.ParamFormationStatus{ID: FormationID + "4", Ctx: ctx}
+			keys := []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams, fourthPageFormations}
 
 			// WHEN
 			result, errs := resolver.StatusDataLoader(keys)
