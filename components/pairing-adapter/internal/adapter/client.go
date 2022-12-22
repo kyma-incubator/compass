@@ -121,6 +121,8 @@ func (c *ExternalClient) getBody(reqData RequestData) (io.Reader, error) {
 	if err := bodyTemplate.Execute(body, reqData); err != nil {
 		return nil, err
 	}
+	bodyTemplate = bodyTemplate.Funcs(template.FuncMap{"StringsJoin": strings.Join})
+
 	buf := new(strings.Builder)
 	_, err = io.Copy(buf, body)
 	if err != nil {
