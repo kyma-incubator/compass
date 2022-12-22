@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"text/template"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -120,6 +121,13 @@ func (c *ExternalClient) getBody(reqData RequestData) (io.Reader, error) {
 	if err := bodyTemplate.Execute(body, reqData); err != nil {
 		return nil, err
 	}
+	buf := new(strings.Builder)
+	_, err = io.Copy(buf, body)
+	if err != nil {
+		return nil, err
+	}
+	ctx := context.Background()
+	log.C(ctx).Infof("buf: %+v", buf.String())
 	return body, nil
 }
 
