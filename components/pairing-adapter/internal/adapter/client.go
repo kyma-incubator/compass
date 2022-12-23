@@ -122,7 +122,6 @@ func (c *ExternalClient) getBody(reqData RequestData) (io.Reader, error) {
 	// temporary code that needs to be removed after T13B 2022 has reached Live
 	for idx, value := range reqData.ScenarioGroups {
 		if value == "ALL_COMMUNICATION_SCENARIOS" {
-			fmt.Println("dummy print")
 			reqData.ScenarioGroups[idx] = "UNRESTRICTED"
 		}
 	}
