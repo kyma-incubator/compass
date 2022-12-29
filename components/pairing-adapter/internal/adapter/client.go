@@ -57,6 +57,8 @@ func (c *ExternalClient) Do(ctx context.Context, app RequestData) (*ExternalToke
 		if err != nil {
 			return nil, fmt.Errorf("wrong status code, got: [%d], cannot read body: [%v]", resp.StatusCode, err)
 		}
+
+		log.C(ctx).Infof("Wrong status code but got response: %s\n", string(b))
 		return nil, fmt.Errorf("wrong status code, got: [%d], body: [%s]", resp.StatusCode, string(b))
 	}
 
@@ -115,6 +117,13 @@ func (c *ExternalClient) getBody(reqData RequestData) (io.Reader, error) {
 	body := new(bytes.Buffer)
 	if err != nil {
 		return nil, err
+	}
+
+	// temporary code that needs to be removed after T13B 2022 has reached Live
+	for idx, value := range reqData.ScenarioGroups {
+		if value == "ALL_COMMUNICATION_SCENARIOS" {
+			reqData.ScenarioGroups[idx] = "UNRESTRICTED"
+		}
 	}
 
 	if err := bodyTemplate.Execute(body, reqData); err != nil {

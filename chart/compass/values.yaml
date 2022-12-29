@@ -123,7 +123,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2791"
+      version: "PR-2812"
       name: compass-pairing-adapter
     director:
       dir:
@@ -147,7 +147,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2796"
+      version: "PR-2798"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -168,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2806"
+      version: "PR-2798"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false

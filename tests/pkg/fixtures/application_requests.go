@@ -193,6 +193,15 @@ func FixGetApplicationRequest(id string) *gcli.Request {
 			}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
+func FixGetApplicationBySystemNumberRequest(systemNumber string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applicationBySystemNumber(systemNumber: "%s") {
+					%s
+				}
+			}`, systemNumber, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
 func FixMergeApplicationsRequest(srcID, destID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
