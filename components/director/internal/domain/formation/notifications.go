@@ -44,6 +44,8 @@ type webhookClient interface {
 	Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
+var emptyFormationAssignment = &webhookdir.FormationAssignment{Value: "\"\""}
+
 type notificationsService struct {
 	applicationRepository         applicationRepository
 	applicationTemplateRepository applicationTemplateRepository
@@ -235,6 +237,8 @@ func (ns *notificationsService) generateNotificationsAboutRuntimeAndRuntimeConte
 			Application:         applicationWithLabels,
 			Runtime:             runtime,
 			RuntimeContext:      rtCtx,
+			Assignment:          emptyFormationAssignment,
+			ReverseAssignment:   emptyFormationAssignment,
 		}
 		req, err := ns.createWebhookRequest(ctx, webhook, input)
 		if err != nil {
@@ -348,6 +352,8 @@ func (ns *notificationsService) generateNotificationsForRuntimeAboutTheApplicati
 			Application:         applicationWithLabels,
 			Runtime:             runtime,
 			RuntimeContext:      rtCtx,
+			Assignment:          emptyFormationAssignment,
+			ReverseAssignment:   emptyFormationAssignment,
 		}
 		req, err := ns.createWebhookRequest(ctx, webhooksToCall[runtime.ID], input)
 		if err != nil {
@@ -425,6 +431,8 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheAppl
 				SourceApplication:         sourceApp,
 				TargetApplicationTemplate: appTemplateWithLabels,
 				TargetApplication:         applicationWithLabels,
+				Assignment:                emptyFormationAssignment,
+				ReverseAssignment:         emptyFormationAssignment,
 			}
 			req, err := ns.createWebhookRequest(ctx, webhook, input)
 			if err != nil {
@@ -505,6 +513,8 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheAppl
 			SourceApplication:         applicationWithLabels,
 			TargetApplicationTemplate: appTemplate,
 			TargetApplication:         targetApp,
+			Assignment:                emptyFormationAssignment,
+			ReverseAssignment:         emptyFormationAssignment,
 		}
 		req, err := ns.createWebhookRequest(ctx, webhooksToCall[targetApp.ID], input)
 		if err != nil {
@@ -630,6 +640,8 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheRunt
 			Application:         app,
 			Runtime:             runtimeWithLabels,
 			RuntimeContext:      nil,
+			Assignment:          emptyFormationAssignment,
+			ReverseAssignment:   emptyFormationAssignment,
 		}
 		req, err := ns.createWebhookRequest(ctx, webhooksToCall[app.ID], input)
 		if err != nil {
@@ -693,6 +705,8 @@ func (ns *notificationsService) generateNotificationsAboutApplicationsForTheRunt
 			Application:         app,
 			Runtime:             runtimeWithLabels,
 			RuntimeContext:      nil,
+			Assignment:          emptyFormationAssignment,
+			ReverseAssignment:   emptyFormationAssignment,
 		}
 		req, err := ns.createWebhookRequest(ctx, webhook, input)
 		if err != nil {

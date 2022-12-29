@@ -87,13 +87,13 @@ func (_m *FormationAssignmentRepository) Get(ctx context.Context, id string, ten
 	return r0, r1
 }
 
-// GetByTargetAndSource provides a mock function with given fields: ctx, target, source, tenantID
-func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Context, target string, source string, tenantID string) (*model.FormationAssignment, error) {
-	ret := _m.Called(ctx, target, source, tenantID)
+// GetByTargetAndSource provides a mock function with given fields: ctx, target, source, tenantID, formationID
+func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Context, target string, source string, tenantID string, formationID string) (*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, target, source, tenantID, formationID)
 
 	var r0 *model.FormationAssignment
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.FormationAssignment); ok {
-		r0 = rf(ctx, target, source, tenantID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) *model.FormationAssignment); ok {
+		r0 = rf(ctx, target, source, tenantID, formationID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.FormationAssignment)
@@ -101,8 +101,8 @@ func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Contex
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, target, source, tenantID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string) error); ok {
+		r1 = rf(ctx, target, source, tenantID, formationID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -354,13 +354,13 @@ func (_m *FormationAssignmentRepository) Update(ctx context.Context, _a1 *model.
 	return r0
 }
 
-type mockConstructorTestingTNewFormationAssignmentRepository interface {
+type NewFormationAssignmentRepositoryT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationAssignmentRepository creates a new instance of FormationAssignmentRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentRepository(t mockConstructorTestingTNewFormationAssignmentRepository) *FormationAssignmentRepository {
+func NewFormationAssignmentRepository(t NewFormationAssignmentRepositoryT) *FormationAssignmentRepository {
 	mock := &FormationAssignmentRepository{}
 	mock.Mock.Test(t)
 

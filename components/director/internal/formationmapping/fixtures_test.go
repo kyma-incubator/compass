@@ -61,35 +61,29 @@ func fixFormationAssignmentModel(testFormationID, testTenantID, sourceID, target
 	}
 }
 
-func fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, lastOperation model.FormationOperation, state model.FormationAssignmentState, config string) *model.FormationAssignment {
+func fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, state model.FormationAssignmentState, config string) *model.FormationAssignment {
 	return &model.FormationAssignment{
-		ID:                         testFormationAssignmentID,
-		FormationID:                testFormationID,
-		TenantID:                   testTenantID,
-		Source:                     sourceID,
-		SourceType:                 sourceFAType,
-		Target:                     targetID,
-		TargetType:                 targetFAType,
-		LastOperation:              lastOperation,
-		LastOperationInitiator:     sourceID,
-		LastOperationInitiatorType: sourceFAType,
-		State:                      string(state),
-		Value:                      json.RawMessage(config),
+		ID:          testFormationAssignmentID,
+		FormationID: testFormationID,
+		TenantID:    testTenantID,
+		Source:      sourceID,
+		SourceType:  sourceFAType,
+		Target:      targetID,
+		TargetType:  targetFAType,
+		State:       string(state),
+		Value:       json.RawMessage(config),
 	}
 }
 
-func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, lastOperation model.FormationOperation, state model.FormationAssignmentState, config string) *model.FormationAssignmentInput {
+func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType, state model.FormationAssignmentState, config string) *model.FormationAssignmentInput {
 	return &model.FormationAssignmentInput{
-		FormationID:                testFormationID,
-		Source:                     sourceID,
-		SourceType:                 sourceFAType,
-		Target:                     targetID,
-		TargetType:                 targetFAType,
-		LastOperation:              lastOperation,
-		LastOperationInitiator:     sourceID,
-		LastOperationInitiatorType: sourceFAType,
-		State:                      string(state),
-		Value:                      json.RawMessage(config),
+		FormationID: testFormationID,
+		Source:      sourceID,
+		SourceType:  sourceFAType,
+		Target:      targetID,
+		TargetType:  targetFAType,
+		State:       string(state),
+		Value:       json.RawMessage(config),
 	}
 }
 

@@ -319,16 +319,13 @@ type ComplexityRoot struct {
 	}
 
 	FormationAssignment struct {
-		ID                         func(childComplexity int) int
-		LastOperation              func(childComplexity int) int
-		LastOperationInitiator     func(childComplexity int) int
-		LastOperationInitiatorType func(childComplexity int) int
-		Source                     func(childComplexity int) int
-		SourceType                 func(childComplexity int) int
-		State                      func(childComplexity int) int
-		Target                     func(childComplexity int) int
-		TargetType                 func(childComplexity int) int
-		Value                      func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Source     func(childComplexity int) int
+		SourceType func(childComplexity int) int
+		State      func(childComplexity int) int
+		Target     func(childComplexity int) int
+		TargetType func(childComplexity int) int
+		Value      func(childComplexity int) int
 	}
 
 	FormationAssignmentPage struct {
@@ -535,6 +532,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Application                             func(childComplexity int, id string) int
+		ApplicationBySystemNumber               func(childComplexity int, systemNumber string) int
 		ApplicationTemplate                     func(childComplexity int, id string) int
 		ApplicationTemplates                    func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		Applications                            func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
@@ -799,6 +797,7 @@ type OneTimeTokenForRuntimeResolver interface {
 type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
 	Application(ctx context.Context, id string) (*Application, error)
+	ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*Application, error)
 	ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *PageCursor) (*ApplicationPage, error)
 	ApplicationTemplates(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationTemplatePage, error)
 	ApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
@@ -2119,27 +2118,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationAssignment.ID(childComplexity), true
-
-	case "FormationAssignment.lastOperation":
-		if e.complexity.FormationAssignment.LastOperation == nil {
-			break
-		}
-
-		return e.complexity.FormationAssignment.LastOperation(childComplexity), true
-
-	case "FormationAssignment.lastOperationInitiator":
-		if e.complexity.FormationAssignment.LastOperationInitiator == nil {
-			break
-		}
-
-		return e.complexity.FormationAssignment.LastOperationInitiator(childComplexity), true
-
-	case "FormationAssignment.lastOperationInitiatorType":
-		if e.complexity.FormationAssignment.LastOperationInitiatorType == nil {
-			break
-		}
-
-		return e.complexity.FormationAssignment.LastOperationInitiatorType(childComplexity), true
 
 	case "FormationAssignment.source":
 		if e.complexity.FormationAssignment.Source == nil {
@@ -3570,6 +3548,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Application(childComplexity, args["id"].(string)), true
 
+	case "Query.applicationBySystemNumber":
+		if e.complexity.Query.ApplicationBySystemNumber == nil {
+			break
+		}
+
+		args, err := ec.field_Query_applicationBySystemNumber_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ApplicationBySystemNumber(childComplexity, args["systemNumber"].(string)), true
+
 	case "Query.applicationTemplate":
 		if e.complexity.Query.ApplicationTemplate == nil {
 			break
@@ -4689,7 +4679,7 @@ input APIDefinitionInput {
 	"""
 	targetURL: String!
 	"""
-	**Validation:** max=36
+	**Validation:** max=100
 	"""
 	group: String
 	spec: APISpecInput
@@ -5524,9 +5514,6 @@ type FormationAssignment {
 	sourceType: FormationAssignmentType!
 	target: ID!
 	targetType: FormationAssignmentType!
-	lastOperation: String!
-	lastOperationInitiator: ID!
-	lastOperationInitiatorType: FormationAssignmentType!
 	state: String!
 	value: String
 }
@@ -5791,6 +5778,7 @@ type Query {
 	- [query application](examples/query-application/query-application.graphql)
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
+	applicationBySystemNumber(systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationBySystemNumber")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
 	
@@ -8356,6 +8344,20 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_applicationBySystemNumber_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["systemNumber"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["systemNumber"] = arg0
 	return args, nil
 }
 
@@ -14987,108 +14989,6 @@ func (ec *executionContext) _FormationAssignment_targetType(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TargetType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(FormationAssignmentType)
-	fc.Result = res
-	return ec.marshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FormationAssignment_lastOperation(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FormationAssignment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastOperation, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FormationAssignment_lastOperationInitiator(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FormationAssignment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastOperationInitiator, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FormationAssignment_lastOperationInitiatorType(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FormationAssignment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastOperationInitiatorType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22482,6 +22382,68 @@ func (ec *executionContext) _Query_application(ctx context.Context, field graphq
 		}
 
 		tmp, err := directive2(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Application); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Application`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Application)
+	fc.Result = res
+	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_applicationBySystemNumber(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_applicationBySystemNumber_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().ApplicationBySystemNumber(rctx, args["systemNumber"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.applicationBySystemNumber")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -30775,21 +30737,6 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "lastOperation":
-			out.Values[i] = ec._FormationAssignment_lastOperation(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "lastOperationInitiator":
-			out.Values[i] = ec._FormationAssignment_lastOperationInitiator(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "lastOperationInitiatorType":
-			out.Values[i] = ec._FormationAssignment_lastOperationInitiatorType(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "state":
 			out.Values[i] = ec._FormationAssignment_state(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -31954,6 +31901,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_application(ctx, field)
+				return res
+			})
+		case "applicationBySystemNumber":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_applicationBySystemNumber(ctx, field)
 				return res
 			})
 		case "applicationsForRuntime":

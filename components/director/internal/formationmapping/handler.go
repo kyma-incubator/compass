@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
 
@@ -109,12 +110,17 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
+	if fa.Source == fa.Target && fa.SourceType == fa.TargetType {
+		errResp := errors.Errorf("Can not update formation assignment with source %q and target %q. X-Request-Id: %s", fa.Source, fa.Target, correlationID)
+		respondWithError(ctx, w, http.StatusBadRequest, errResp)
+		return
+	}
 
 	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
 
-	if fa.LastOperation == model.UnassignFormation {
+	if fa.State == string(model.DeletingAssignmentState) {
 		log.C(ctx).Infof("Processing formation assignment asynchronous status update for %q operation...", model.UnassignFormation)
-		err = h.processFormationAssignmentAsynchronousUnassign(ctx, fa, reqBody)
+		isFADeleted, err := h.processFormationAssignmentAsynchronousUnassign(ctx, fa, reqBody)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("An error occurred while processing asynchronously formation assignment for %q operation", model.UnassignFormation)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -125,6 +131,14 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
+		}
+
+		if isFADeleted {
+			if err = h.processFormationAsynchronousUnassign(ctx, fa); err != nil {
+				log.C(ctx).WithError(err).Error("An error occurred while unassigning from formation")
+				respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+				return
+			}
 		}
 
 		log.C(ctx).Infof("The formation assignment with ID: %q was successfully processed asynchronously for %q operation", formationAssignmentID, model.UnassignFormation)
@@ -171,7 +185,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q about last initiator ID: %q and type: %q", fa.ID, fa.FormationID, fa.LastOperationInitiator, fa.LastOperationInitiatorType)
+	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 	notificationReq, err := h.faNotificationService.GenerateNotification(ctx, fa)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
@@ -186,7 +200,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q about last initiator ID: %q and type: %q", fa.ID, fa.FormationID, fa.LastOperationInitiator, fa.LastOperationInitiatorType)
+	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 	reverseNotificationReq, err := h.faNotificationService.GenerateNotification(ctx, reverseFA)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
@@ -226,6 +240,48 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	httputils.Respond(w, http.StatusOK)
 }
 
+func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *model.FormationAssignment) error {
+	unassignTx, err := h.transact.Begin()
+	if err != nil {
+		return errors.Wrapf(err, "while betinning transaction")
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, unassignTx)
+	unassignCtx := persistence.SaveToContext(ctx, unassignTx)
+	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, fa.Source, fa.SourceType); err != nil {
+		return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.SourceType, fa.Source)
+	}
+	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, fa.Target, fa.TargetType); err != nil {
+		return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.TargetType, fa.Target)
+	}
+	if err = unassignTx.Commit(); err != nil {
+		return errors.Wrapf(err, "while committing transaction")
+	}
+	return nil
+}
+
+func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(ctx context.Context, fa *model.FormationAssignment, objectID string, objectType model.FormationAssignmentType) error {
+	formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(ctx, fa.FormationID, objectID)
+	if err != nil {
+		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", objectType, objectID)
+	}
+
+	// if there are no formation assignments left after the deletion, execute unassign formation for the object
+	if len(formationAssignmentsForObject) == 0 {
+		formation, err := h.formationService.Get(ctx, fa.FormationID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting formation from formation assignment with ID: %q", fa.FormationID)
+		}
+
+		log.C(ctx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, objectID, objectType)
+		f, err := h.formationService.UnassignFormation(ctx, fa.TenantID, objectID, graphql.FormationObjectType(objectType), *formation)
+		if err != nil {
+			return errors.Wrapf(err, "while unassigning formation with name: %q for object ID: %q and type: %q", formation.Name, objectID, objectType)
+		}
+		log.C(ctx).Infof("Object with type: %q and ID: %q was successfully unassigned from formation with name: %q", objectType, objectID, f.Name)
+	}
+	return nil
+}
+
 // Validate validates the request body input
 func (b RequestBody) Validate() error {
 	var fieldRules []*validation.FieldRules
@@ -245,47 +301,25 @@ func (b RequestBody) Validate() error {
 }
 
 // processFormationAssignmentAsynchronousUnassign handles the async unassign formation assignment status update
-func (h *Handler) processFormationAssignmentAsynchronousUnassign(ctx context.Context, fa *model.FormationAssignment, reqBody RequestBody) error {
-	lastOpInitiatorID := fa.LastOperationInitiator
-	lastOpInitiatorType := fa.LastOperationInitiatorType
-
+func (h *Handler) processFormationAssignmentAsynchronousUnassign(ctx context.Context, fa *model.FormationAssignment, reqBody RequestBody) (bool, error) {
 	if reqBody.State != model.DeleteErrorAssignmentState && reqBody.State != model.ReadyAssignmentState {
-		return errors.Errorf("An invalid state: %q is provided for %s operation", reqBody.State, model.UnassignFormation)
+		return false, errors.Errorf("An invalid state: %q is provided for %s operation", reqBody.State, model.UnassignFormation)
 	}
 
 	if reqBody.State == model.DeleteErrorAssignmentState {
 		err := h.faService.SetAssignmentToErrorState(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State)
 		if err != nil {
-			return errors.Wrapf(err, "while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
+			return false, errors.Wrapf(err, "while updating error state to: %s for formation assignment with ID: %q", reqBody.State, fa.ID)
 		}
-		return nil
+		return false, nil
 	}
 
 	err := h.faService.Delete(ctx, fa.ID)
 	if err != nil {
-		return errors.Wrapf(err, "while deleting formation assignment with ID: %q", fa.ID)
+		return false, errors.Wrapf(err, "while deleting formation assignment with ID: %q", fa.ID)
 	}
 
-	formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(ctx, fa.FormationID, lastOpInitiatorID)
-	if err != nil {
-		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", lastOpInitiatorType, lastOpInitiatorID)
-	}
-
-	if len(formationAssignmentsForObject) == 0 { // if there are no formation assignments left after the deletion, execute formation unassign for the last operation initiator
-		formation, err := h.formationService.Get(ctx, fa.FormationID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting formation from formation assignment with ID: %q", fa.FormationID)
-		}
-
-		log.C(ctx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, lastOpInitiatorID, lastOpInitiatorType)
-		f, err := h.formationService.UnassignFormation(ctx, fa.TenantID, lastOpInitiatorID, graphql.FormationObjectType(lastOpInitiatorType), *formation)
-		if err != nil {
-			return errors.Wrapf(err, "while unassigning formation with name: %q for object ID: %q and type: %q", formation.Name, lastOpInitiatorID, lastOpInitiatorType)
-		}
-		log.C(ctx).Infof("Object with type: %q and ID: %q was successfully unassigned from formation with name: %q", lastOpInitiatorType, lastOpInitiatorID, f.Name)
-	}
-
-	return nil
+	return true, nil
 }
 
 func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
