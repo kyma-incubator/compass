@@ -2,7 +2,9 @@ package ord
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
+	"reflect"
 	"regexp"
 
 	"github.com/hashicorp/go-multierror"
@@ -137,20 +139,37 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			packagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
 		}
 	}
+	invalidApisIndices := make([]int, 0)
+	invalidEventIndices := make([]int, 0)
 
 	for _, doc := range docs {
 		if err := validateDocumentInput(doc); err != nil {
 			errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
 		}
 
-		for _, pkg := range doc.Packages {
+		invalidPackageIndices := make([]int, 0)
+
+		for i, pkg := range doc.Packages {
 			if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
+				invalidPackageIndices = append(invalidPackageIndices, i)
+				packageIDs[pkg.OrdID] = false
 			}
 		}
-		for _, bndl := range doc.ConsumptionBundles {
+
+		decreaseIndexForDeleting := 0
+		for _, pkgIndex := range invalidPackageIndices {
+			deleteIndex := pkgIndex - decreaseIndexForDeleting
+			doc.Packages = append(doc.Packages[:deleteIndex], doc.Packages[deleteIndex+1:]...)
+			decreaseIndexForDeleting++
+		}
+
+		invalidBundleIndices := make([]int, 0)
+
+		for i, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(bndl); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
+				invalidBundleIndices = append(invalidBundleIndices, i)
 			}
 			if bndl.OrdID != nil {
 				if _, ok := bundleIDs[*bndl.OrdID]; ok {
@@ -159,18 +178,36 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				bundleIDs[*bndl.OrdID] = true
 			}
 		}
-		for _, product := range doc.Products {
+		decreaseIndexForDeleting = 0
+		for _, bundleIndex := range invalidBundleIndices {
+			deleteIndex := bundleIndex - decreaseIndexForDeleting
+			doc.ConsumptionBundles = append(doc.ConsumptionBundles[:deleteIndex], doc.ConsumptionBundles[deleteIndex+1:]...)
+			decreaseIndexForDeleting++
+		}
+
+		invalidProductsIndices := make([]int, 0)
+
+		for i, product := range doc.Products {
 			if err := validateProductInput(product); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating product with ord id %q", product.OrdID))
+				invalidProductsIndices = append(invalidProductsIndices, i)
 			}
 			if _, ok := productIDs[product.OrdID]; ok {
 				errs = multierror.Append(errs, errors.Errorf("found duplicate product with ord id %q", product.OrdID))
 			}
 			productIDs[product.OrdID] = true
 		}
-		for _, api := range doc.APIResources {
+		decreaseIndexForDeleting = 0
+		for _, productIndex := range invalidProductsIndices {
+			deleteIndex := productIndex - decreaseIndexForDeleting
+			doc.Products = append(doc.Products[:deleteIndex], doc.Products[deleteIndex+1:]...)
+			decreaseIndexForDeleting++
+		}
+
+		for i, api := range doc.APIResources {
 			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
+				invalidApisIndices = append(invalidApisIndices, i)
 			}
 			if api.OrdID != nil {
 				if _, ok := apiIDs[*api.OrdID]; ok {
@@ -180,16 +217,24 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		eventsIndicesWithEmptyName := make([]int, 0)
+		decreaseIndexForDeleting = 0
+		for apiIndex := range invalidApisIndices {
+			deleteIndex := apiIndex - decreaseIndexForDeleting
+			doc.APIResources = append(doc.APIResources[:deleteIndex], doc.APIResources[deleteIndex+1:]...)
+			decreaseIndexForDeleting++
+		}
+
+		invalidApisIndices = make([]int, 0)
 
 		for i, event := range doc.EventResources {
-			if event.Name == "" {
-				eventsIndicesWithEmptyName = append(eventsIndicesWithEmptyName, i)
-				continue
-			}
+			//if event.Name == "" {
+			//	eventsIndicesWithEmptyName = append(eventsIndicesWithEmptyName, i)
+			//	continue
+			//}
 
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
+				invalidEventIndices = append(invalidEventIndices, i)
 			}
 
 			if event.OrdID != nil {
@@ -201,21 +246,31 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		decreaseIndexForDeleting := 0
-		for eventIndex := range eventsIndicesWithEmptyName {
+		decreaseIndexForDeleting = 0
+		for _, eventIndex := range invalidEventIndices {
 			deleteIndex := eventIndex - decreaseIndexForDeleting
 			doc.EventResources = append(doc.EventResources[:deleteIndex], doc.EventResources[deleteIndex+1:]...)
 			decreaseIndexForDeleting++
 		}
 
-		for _, vendor := range doc.Vendors {
+		invalidEventIndices = make([]int, 0)
+
+		invalidVendorIndices := make([]int, 0)
+		for i, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
+				invalidVendorIndices = append(invalidVendorIndices, i)
 			}
 			if _, ok := vendorIDs[vendor.OrdID]; ok {
 				errs = multierror.Append(errs, errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID))
 			}
 			vendorIDs[vendor.OrdID] = true
+		}
+		decreaseIndexForDeleting = 0
+		for vendorIndex := range invalidVendorIndices {
+			deleteIndex := vendorIndex - decreaseIndexForDeleting
+			doc.Vendors = append(doc.Vendors[:deleteIndex], doc.Vendors[deleteIndex+1:]...)
+			decreaseIndexForDeleting++
 		}
 		for _, tombstone := range doc.Tombstones {
 			if err := validateTombstoneInput(tombstone); err != nil {
@@ -242,9 +297,10 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				errs = multierror.Append(errs, errors.Errorf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor))
 			}
 		}
-		for _, api := range doc.APIResources {
+		for i, api := range doc.APIResources {
 			if api.OrdPackageID != nil && !packageIDs[*api.OrdPackageID] {
-				errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID))
+				errs = multierror.Append(errs, errors.Errorf("api with id %q has a REFERENCEe to unknown package %q", *api.OrdID, *api.OrdPackageID))
+				invalidApisIndices = append(invalidApisIndices, i)
 			}
 			if api.PartOfConsumptionBundles != nil {
 				for _, apiBndlRef := range api.PartOfConsumptionBundles {
@@ -261,9 +317,17 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				}
 			}
 		}
-		for _, event := range doc.EventResources {
+		decreaseIndexForDeleting := 0
+		for apiIndex := range invalidApisIndices {
+			deleteIndex := apiIndex - decreaseIndexForDeleting
+			doc.APIResources = append(doc.APIResources[:deleteIndex], doc.APIResources[deleteIndex+1:]...)
+			decreaseIndexForDeleting++
+		}
+
+		for i, event := range doc.EventResources {
 			if event.OrdPackageID != nil && !packageIDs[*event.OrdPackageID] {
 				errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID))
+				invalidEventIndices = append(invalidEventIndices, i)
 			}
 			if event.PartOfConsumptionBundles != nil {
 				for _, eventBndlRef := range event.PartOfConsumptionBundles {
@@ -280,15 +344,22 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				}
 			}
 		}
+
+		decreaseIndexForDeleting = 0
+		for _, eventIndex := range invalidEventIndices {
+			deleteIndex := eventIndex - decreaseIndexForDeleting
+			doc.EventResources = append(doc.EventResources[:deleteIndex], doc.EventResources[deleteIndex+1:]...)
+			decreaseIndexForDeleting++
+		}
 	}
 
 	return errs.ErrorOrNil()
 }
 
 // Sanitize performs all the merging and rewriting rules defined in ORD. This method should be invoked after Documents are validated with the Validate method.
-//  - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
-//  - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
-//  - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
+//   - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
+//   - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
+//   - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
 func (docs Documents) Sanitize(baseURL string) error {
 	var err error
 
@@ -588,4 +659,19 @@ func stringPtrToString(p *string) string {
 		return *p
 	}
 	return ""
+}
+
+func deleteInvalidInputObjects(invalidSliceIndices []int, docs []*interface{}) {
+	//decreaseIndexForDeleting := 0
+	//s := reflect.ValueOf(docs)
+	docsType := reflect.TypeOf(docs)
+	docsValue := reflect.ValueOf(docs)
+
+	//ret := make(reflect.TypeOf(docs), 0)
+	fmt.Println(docsType, "TYPE", docsValue)
+	//for eventIndex := range invalidSliceIndices {
+	//	deleteIndex := eventIndex - decreaseIndexForDeleting
+	//	ret = append(ret[:deleteIndex], ret[deleteIndex+1:]...)
+	//	decreaseIndexForDeleting++
+	//}
 }
