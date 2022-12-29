@@ -2,9 +2,7 @@ package ord
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
-	"reflect"
 	"regexp"
 
 	"github.com/hashicorp/go-multierror"
@@ -227,10 +225,10 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		invalidApisIndices = make([]int, 0)
 
 		for i, event := range doc.EventResources {
-			//if event.Name == "" {
+			// if event.Name == "" {
 			//	eventsIndicesWithEmptyName = append(eventsIndicesWithEmptyName, i)
 			//	continue
-			//}
+			// }
 
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
@@ -659,19 +657,4 @@ func stringPtrToString(p *string) string {
 		return *p
 	}
 	return ""
-}
-
-func deleteInvalidInputObjects(invalidSliceIndices []int, docs []*interface{}) {
-	//decreaseIndexForDeleting := 0
-	//s := reflect.ValueOf(docs)
-	docsType := reflect.TypeOf(docs)
-	docsValue := reflect.ValueOf(docs)
-
-	//ret := make(reflect.TypeOf(docs), 0)
-	fmt.Println(docsType, "TYPE", docsValue)
-	//for eventIndex := range invalidSliceIndices {
-	//	deleteIndex := eventIndex - decreaseIndexForDeleting
-	//	ret = append(ret[:deleteIndex], ret[deleteIndex+1:]...)
-	//	decreaseIndexForDeleting++
-	//}
 }
