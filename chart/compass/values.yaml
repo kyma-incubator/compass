@@ -127,7 +127,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2800"
+      version: "PR-2815"
       name: compass-director
     hydrator:
       dir:
@@ -140,7 +140,6 @@ global:
     operations_controller:
       dir:
       version: "PR-2791"
-
       name: compass-operations-controller
     ord_service:
       dir:
