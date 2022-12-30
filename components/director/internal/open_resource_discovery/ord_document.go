@@ -137,15 +137,20 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			packagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel
 		}
 	}
+
 	invalidApisIndices := make([]int, 0)
 	invalidEventIndices := make([]int, 0)
 
 	for _, doc := range docs {
+		invalidPackageIndices := make([]int, 0)
+		invalidBundleIndices := make([]int, 0)
+		invalidProductsIndices := make([]int, 0)
+		invalidVendorIndices := make([]int, 0)
+		invalidTombstoneIndices := make([]int, 0)
+
 		if err := validateDocumentInput(doc); err != nil {
 			errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
 		}
-
-		invalidPackageIndices := make([]int, 0)
 
 		for i, pkg := range doc.Packages {
 			if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
@@ -155,14 +160,11 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		doc.Packages = deleteInvalidInputObjects(invalidPackageIndices, doc.Packages)
-
-		invalidBundleIndices := make([]int, 0)
-
 		for i, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(bndl); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
 				invalidBundleIndices = append(invalidBundleIndices, i)
+				continue
 			}
 			if bndl.OrdID != nil {
 				if _, ok := bundleIDs[*bndl.OrdID]; ok {
@@ -172,14 +174,11 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		doc.ConsumptionBundles = deleteInvalidInputObjects(invalidBundleIndices, doc.ConsumptionBundles)
-
-		invalidProductsIndices := make([]int, 0)
-
 		for i, product := range doc.Products {
 			if err := validateProductInput(product); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating product with ord id %q", product.OrdID))
 				invalidProductsIndices = append(invalidProductsIndices, i)
+				continue
 			}
 			if _, ok := productIDs[product.OrdID]; ok {
 				errs = multierror.Append(errs, errors.Errorf("found duplicate product with ord id %q", product.OrdID))
@@ -187,12 +186,11 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			productIDs[product.OrdID] = true
 		}
 
-		doc.Products = deleteInvalidInputObjects(invalidProductsIndices, doc.Products)
-
 		for i, api := range doc.APIResources {
 			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
 				invalidApisIndices = append(invalidApisIndices, i)
+				continue
 			}
 			if api.OrdID != nil {
 				if _, ok := apiIDs[*api.OrdID]; ok {
@@ -202,14 +200,11 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
-
-		invalidApisIndices = make([]int, 0)
-
 		for i, event := range doc.EventResources {
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
 				invalidEventIndices = append(invalidEventIndices, i)
+				continue
 			}
 
 			if event.OrdID != nil {
@@ -221,15 +216,11 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		doc.EventResources = deleteInvalidInputObjects(invalidEventIndices, doc.EventResources)
-
-		invalidEventIndices = make([]int, 0)
-
-		invalidVendorIndices := make([]int, 0)
 		for i, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
 				invalidVendorIndices = append(invalidVendorIndices, i)
+				continue
 			}
 			if _, ok := vendorIDs[vendor.OrdID]; ok {
 				errs = multierror.Append(errs, errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID))
@@ -237,13 +228,24 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			vendorIDs[vendor.OrdID] = true
 		}
 
-		doc.Vendors = deleteInvalidInputObjects(invalidVendorIndices, doc.Vendors)
-
-		for _, tombstone := range doc.Tombstones {
+		for i, tombstone := range doc.Tombstones {
 			if err := validateTombstoneInput(tombstone); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID))
+				invalidTombstoneIndices = append(invalidTombstoneIndices, i)
+				continue
 			}
 		}
+
+		doc.Packages = deleteInvalidInputObjects(invalidPackageIndices, doc.Packages)
+		doc.ConsumptionBundles = deleteInvalidInputObjects(invalidBundleIndices, doc.ConsumptionBundles)
+		doc.Products = deleteInvalidInputObjects(invalidProductsIndices, doc.Products)
+		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
+		doc.EventResources = deleteInvalidInputObjects(invalidEventIndices, doc.EventResources)
+		doc.Vendors = deleteInvalidInputObjects(invalidVendorIndices, doc.Vendors)
+		doc.Tombstones = deleteInvalidInputObjects(invalidTombstoneIndices, doc.Tombstones)
+
+		invalidApisIndices = nil
+		invalidEventIndices = nil
 	}
 
 	// Validate entity relations
@@ -285,8 +287,6 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
-
 		for i, event := range doc.EventResources {
 			if event.OrdPackageID != nil && !packageIDs[*event.OrdPackageID] {
 				errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID))
@@ -308,6 +308,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
+		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
 		doc.EventResources = deleteInvalidInputObjects(invalidEventIndices, doc.EventResources)
 	}
 
