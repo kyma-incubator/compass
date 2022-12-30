@@ -155,12 +155,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		decreaseIndexForDeleting := 0
-		for _, pkgIndex := range invalidPackageIndices {
-			deleteIndex := pkgIndex - decreaseIndexForDeleting
-			doc.Packages = append(doc.Packages[:deleteIndex], doc.Packages[deleteIndex+1:]...)
-			decreaseIndexForDeleting++
-		}
+		doc.Packages = deleteInvalidInputObjects(invalidPackageIndices, doc.Packages)
 
 		invalidBundleIndices := make([]int, 0)
 
@@ -176,12 +171,8 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				bundleIDs[*bndl.OrdID] = true
 			}
 		}
-		decreaseIndexForDeleting = 0
-		for _, bundleIndex := range invalidBundleIndices {
-			deleteIndex := bundleIndex - decreaseIndexForDeleting
-			doc.ConsumptionBundles = append(doc.ConsumptionBundles[:deleteIndex], doc.ConsumptionBundles[deleteIndex+1:]...)
-			decreaseIndexForDeleting++
-		}
+
+		doc.ConsumptionBundles = deleteInvalidInputObjects(invalidBundleIndices, doc.ConsumptionBundles)
 
 		invalidProductsIndices := make([]int, 0)
 
@@ -195,12 +186,8 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 			productIDs[product.OrdID] = true
 		}
-		decreaseIndexForDeleting = 0
-		for _, productIndex := range invalidProductsIndices {
-			deleteIndex := productIndex - decreaseIndexForDeleting
-			doc.Products = append(doc.Products[:deleteIndex], doc.Products[deleteIndex+1:]...)
-			decreaseIndexForDeleting++
-		}
+
+		doc.Products = deleteInvalidInputObjects(invalidProductsIndices, doc.Products)
 
 		for i, api := range doc.APIResources {
 			if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil {
@@ -215,21 +202,11 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		decreaseIndexForDeleting = 0
-		for apiIndex := range invalidApisIndices {
-			deleteIndex := apiIndex - decreaseIndexForDeleting
-			doc.APIResources = append(doc.APIResources[:deleteIndex], doc.APIResources[deleteIndex+1:]...)
-			decreaseIndexForDeleting++
-		}
+		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
 
 		invalidApisIndices = make([]int, 0)
 
 		for i, event := range doc.EventResources {
-			// if event.Name == "" {
-			//	eventsIndicesWithEmptyName = append(eventsIndicesWithEmptyName, i)
-			//	continue
-			// }
-
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
 				invalidEventIndices = append(invalidEventIndices, i)
@@ -244,12 +221,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		decreaseIndexForDeleting = 0
-		for _, eventIndex := range invalidEventIndices {
-			deleteIndex := eventIndex - decreaseIndexForDeleting
-			doc.EventResources = append(doc.EventResources[:deleteIndex], doc.EventResources[deleteIndex+1:]...)
-			decreaseIndexForDeleting++
-		}
+		doc.EventResources = deleteInvalidInputObjects(invalidEventIndices, doc.EventResources)
 
 		invalidEventIndices = make([]int, 0)
 
@@ -264,12 +236,9 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 			vendorIDs[vendor.OrdID] = true
 		}
-		decreaseIndexForDeleting = 0
-		for vendorIndex := range invalidVendorIndices {
-			deleteIndex := vendorIndex - decreaseIndexForDeleting
-			doc.Vendors = append(doc.Vendors[:deleteIndex], doc.Vendors[deleteIndex+1:]...)
-			decreaseIndexForDeleting++
-		}
+
+		doc.Vendors = deleteInvalidInputObjects(invalidVendorIndices, doc.Vendors)
+
 		for _, tombstone := range doc.Tombstones {
 			if err := validateTombstoneInput(tombstone); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID))
@@ -315,12 +284,8 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 				}
 			}
 		}
-		decreaseIndexForDeleting := 0
-		for apiIndex := range invalidApisIndices {
-			deleteIndex := apiIndex - decreaseIndexForDeleting
-			doc.APIResources = append(doc.APIResources[:deleteIndex], doc.APIResources[deleteIndex+1:]...)
-			decreaseIndexForDeleting++
-		}
+
+		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
 
 		for i, event := range doc.EventResources {
 			if event.OrdPackageID != nil && !packageIDs[*event.OrdPackageID] {
@@ -343,12 +308,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		decreaseIndexForDeleting = 0
-		for _, eventIndex := range invalidEventIndices {
-			deleteIndex := eventIndex - decreaseIndexForDeleting
-			doc.EventResources = append(doc.EventResources[:deleteIndex], doc.EventResources[deleteIndex+1:]...)
-			decreaseIndexForDeleting++
-		}
+		doc.EventResources = deleteInvalidInputObjects(invalidEventIndices, doc.EventResources)
 	}
 
 	return errs.ErrorOrNil()
@@ -657,4 +617,15 @@ func stringPtrToString(p *string) string {
 		return *p
 	}
 	return ""
+}
+
+func deleteInvalidInputObjects[T any](invalidObjectsIndices []int, objects []T) []T {
+	decreaseIndexForDeleting := 0
+	for _, eventIndex := range invalidObjectsIndices {
+		deleteIndex := eventIndex - decreaseIndexForDeleting
+		objects = append(objects[:deleteIndex], objects[deleteIndex+1:]...)
+		decreaseIndexForDeleting++
+	}
+
+	return objects
 }
