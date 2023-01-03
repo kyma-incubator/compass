@@ -8,6 +8,7 @@ type Entity struct {
 	RuntimeTypes           string `db:"runtime_types"`
 	RuntimeTypeDisplayName string `db:"runtime_type_display_name"`
 	RuntimeArtifactKind    string `db:"runtime_artifact_kind"`
+	FormationConstraints   string `db:"formation_constraints"`
 }
 
 // EntityCollection is a collection of formation template entities.
