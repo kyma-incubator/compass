@@ -97,17 +97,18 @@ KYMA_SOURCE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
 
 echo "Using Kyma source ${KYMA_SOURCE}"
 
-# TODO: Remove after adoption of Kyma 2.4.3
+# TODO: Remove after adoption of Kyma 2.4.3 and change kyma deploy command source to --source $KYMA_SOURCE
 KYMA_WORKSPACE=${HOME}/.kyma/sources/${KYMA_SOURCE}
 if [[ -d "$KYMA_WORKSPACE" ]]
 then
-    echo "Kyma ${KYMA_SOURCE} already exists locally. Will attempt to sync it with remote..."
-    rm -rf "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog || true
-    rm -rf "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons || true
+   echo "Kyma ${KYMA_SOURCE} already exists locally."
 else
-    echo "Pulling Kyma ${KYMA_SOURCE}"
-    git clone --single-branch --branch "${KYMA_SOURCE}" https://github.com/kyma-project/kyma.git "$KYMA_WORKSPACE"
+   echo "Pulling Kyma ${KYMA_SOURCE}"
+   git clone --single-branch --branch "${KYMA_SOURCE}" https://github.com/kyma-project/kyma.git "$KYMA_WORKSPACE"
 fi
+
+rm -rf "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog || true
+rm -rf "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons || true
 
 if [[ $KYMA_INSTALLATION == *full* ]]; then
   echo "Installing full Kyma"
