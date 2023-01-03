@@ -108,7 +108,8 @@ else
 fi
 
 rm -rf "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog || true
-rm -rf "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons || true
+rm -f "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons/clusteraddonsconfigurations.addons.crd.yaml || true
+rm -f "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons/addonsconfigurations.addons.crd.yaml || true
 
 if [[ $KYMA_INSTALLATION == *full* ]]; then
   echo "Installing full Kyma"
