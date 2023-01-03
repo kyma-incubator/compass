@@ -472,6 +472,19 @@ type FormationAssignmentPage struct {
 
 func (FormationAssignmentPage) IsPageable() {}
 
+type FormationConstraint struct {
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	ConstraintType  string  `json:"constraintType"`
+	TargetOperation string  `json:"targetOperation"`
+	Operator        string  `json:"operator"`
+	ResourceType    string  `json:"resourceType"`
+	ResourceSubtype string  `json:"resourceSubtype"`
+	OperatorScope   *string `json:"operatorScope"`
+	InputTemplate   string  `json:"inputTemplate"`
+	ConstraintScope string  `json:"constraintScope"`
+}
+
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`

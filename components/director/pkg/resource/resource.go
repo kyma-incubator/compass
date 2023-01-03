@@ -72,6 +72,10 @@ const (
 	FormationTemplate Type = "formationTemplate"
 	// FormationAssignment type represents formation assignment resource.
 	FormationAssignment Type = "formationAssignment"
+	// FormationConstraint type represents formation constraint resource.
+	FormationConstraint Type = "formationConstraint"
+	// FormationTemplateConstraintReference type represents formationTemplate-constraint reference resource.
+	FormationTemplateConstraintReference Type = "formationTemplateConstraintReference"
 	// Webhook type represents generic webhook resource. This resource does not assume the referenced resource type of the Webhook.
 	Webhook Type = "webhook"
 	// AppWebhook type represents application webhook resource.

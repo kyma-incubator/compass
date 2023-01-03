@@ -1095,6 +1095,19 @@ type FormationAssignmentPage implements Pageable {
 	totalCount: Int!
 }
 
+type FormationConstraint {
+	id: ID!
+	name: String!
+	constraintType: String!
+	targetOperation: String!
+	operator: String!
+	resourceType: String!
+	resourceSubtype: String!
+	operatorScope: String
+	inputTemplate: String!
+	constraintScope: String!
+}
+
 type FormationPage implements Pageable {
 	data: [Formation!]!
 	pageInfo: PageInfo!
