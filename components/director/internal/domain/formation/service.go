@@ -70,7 +70,7 @@ type FormationRepository interface {
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
-	GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error)
+	GetByNameAndTenant(ctx context.Context, templateName, tenantID string) (*model.FormationTemplate, error)
 }
 
 // NotificationsService represents the notification service for generating and sending notifications
@@ -218,7 +218,7 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 // If the scenario label definition does not exist it will be created
 // Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error) {
-	fTmpl, err := s.formationTemplateRepository.GetByName(ctx, templateName)
+	fTmpl, err := s.formationTemplateRepository.GetByNameAndTenant(ctx, templateName, tnt)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
 		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
@@ -600,7 +600,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -638,7 +638,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		if len(pendingAsyncAssignments) > 0 {
 			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
-			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is important to do the re-assign in the outer transaction.
 			if err != nil {
 				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
@@ -670,7 +670,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -730,21 +730,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
-}
-
-func (s *service) listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx context.Context, formationID, objectID string, objectType graphql.FormationObjectType) ([]*model.FormationAssignment, error) {
-	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-	}
-
-	for i := range formationAssignmentsForObject {
-		formationAssignmentsForObject[i].LastOperation = model.UnassignFormation
-		formationAssignmentsForObject[i].LastOperationInitiator = objectID
-		formationAssignmentsForObject[i].LastOperationInitiatorType = model.FormationAssignmentType(objectType)
-	}
-
-	return formationAssignmentsForObject, nil
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
@@ -1237,18 +1222,24 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 	return out, nil
 }
 
-func (s *service) createFormation(ctx context.Context, tenant, templateID, formationName string) (*model.Formation, error) {
+func (s *service) createFormation(ctx context.Context, tenant, templateName, formationName string) (*model.Formation, error) {
+	fTmpl, err := s.formationTemplateRepository.GetByNameAndTenant(ctx, templateName, tenant)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
+	}
+
 	formation := &model.Formation{
 		ID:                  s.uuidService.Generate(),
 		TenantID:            tenant,
-		FormationTemplateID: templateID,
+		FormationTemplateID: fTmpl.ID,
 		Name:                formationName,
 	}
 
-	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, templateID)
+	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, fTmpl.ID)
 	if err := s.formationRepository.Create(ctx, formation); err != nil {
-		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, templateID)
-		return nil, errors.Wrapf(err, "An error occurred while creating formation with name: %q and template ID: %q", formationName, templateID)
+		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+		return nil, errors.Wrapf(err, "An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
 	}
 
 	return formation, nil

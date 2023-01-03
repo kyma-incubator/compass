@@ -4,6 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -11,6 +15,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const globalFormationTemplateName = "Side-by-side extensibility with Kyma"
+
+var updatedFormationTemplateInput = graphql.FormationTemplateInput{
+	Name:                   "updated-formation-template-name",
+	ApplicationTypes:       []string{"app-type-3", "app-type-4"},
+	RuntimeTypes:           []string{"runtime-type-2"},
+	RuntimeTypeDisplayName: "test-display-name-2",
+	RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
+}
 
 func TestCreateFormationTemplate(t *testing.T) {
 	// GIVEN
@@ -27,7 +41,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Logf("Create formation template with name: %q", formationTemplateName)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 	require.NoError(t, err)
 
@@ -59,7 +73,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Logf("Delete formation template with name %q", formationTemplateName)
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteFormationTemplateRequest, &output)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteFormationTemplateRequest, &output)
 
 	//THEN
 	require.NoError(t, err)
@@ -73,7 +87,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	getFormationTemplateRequest := fixtures.FixQueryFormationTemplateRequest(output.ID)
 	formationTemplateOutput := graphql.FormationTemplate{}
 
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationTemplateRequest, &formationTemplateOutput)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getFormationTemplateRequest, &formationTemplateOutput)
 
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 	saveExample(t, getFormationTemplateRequest.Query(), "query formation template")
@@ -85,15 +99,6 @@ func TestUpdateFormationTemplate(t *testing.T) {
 
 	createdFormationTemplateName := "created-formation-template-name"
 	createdFormationTemplateInput := fixtures.FixFormationTemplateInput(createdFormationTemplateName)
-	runtimeType := "runtime-type-2"
-
-	var updatedFormationTemplateInput = graphql.FormationTemplateInput{
-		Name:                   "updated-formation-template-name",
-		ApplicationTypes:       []string{"app-type-3", "app-type-4"},
-		RuntimeTypes:           []string{runtimeType},
-		RuntimeTypeDisplayName: "test-display-name-2",
-		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
-	}
 
 	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(updatedFormationTemplateInput)
 	require.NoError(t, err)
@@ -106,7 +111,7 @@ func TestUpdateFormationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Logf("Update formation template with name: %q and ID: %q", createdFormationTemplateName, formationTemplateReq.ID)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateFormationTemplateRequest, &output)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateFormationTemplateRequest, &output)
 
 	//THEN
 	require.NoError(t, err)
@@ -137,7 +142,7 @@ func TestQueryFormationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Logf("Query formation template with name %q and id %q", formationTemplateName, createdFormationRequest.ID)
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryFormationTemplateRequest, &output)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryFormationTemplateRequest, &output)
 
 	//THEN
 	require.NoError(t, err)
@@ -168,7 +173,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 
 	// Get current state
 	first := 100
-	currentFormationPage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, certSecuredGraphQLClient, first)
+	currentFormationTemplatePage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, certSecuredGraphQLClient, first)
 
 	createdFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationTemplate.ID)
@@ -180,12 +185,12 @@ func TestQueryFormationTemplates(t *testing.T) {
 
 	// WHEN
 	t.Log("Query formation templates")
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryFormationTemplatesRequest, &output)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryFormationTemplatesRequest, &output)
 
 	//THEN
 	require.NotEmpty(t, output)
 	require.NoError(t, err)
-	assert.Equal(t, currentFormationPage.TotalCount+2, output.TotalCount)
+	assert.Equal(t, currentFormationTemplatePage.TotalCount+2, output.TotalCount)
 
 	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates")
 
@@ -195,4 +200,67 @@ func TestQueryFormationTemplates(t *testing.T) {
 		createdFormationTemplate,
 		secondCreatedFormationTemplate,
 	})
+}
+
+func TestTenantScopedFormationTemplates(t *testing.T) {
+	ctx := context.Background()
+	first := 100
+
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+	scopedFormationTemplateName := "tenant-scoped-formation-template-test"
+	scopedFormationTemplateInput := fixtures.FixFormationTemplateInput(scopedFormationTemplateName)
+
+	t.Logf("Create tenant scoped formation template with name: %q", scopedFormationTemplateName)
+	scopedFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplateInput) // tenant_id is extracted from the subject of the cert
+	defer fixtures.CleanupFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplate.ID)
+
+	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, scopedFormationTemplate)
+
+	t.Logf("List all formation templates for the tenant in which formation template with name: %q was created and verify that it is visible there", scopedFormationTemplateName)
+	formationTemplatePage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, directorCertSecuredClient, first)
+
+	assert.Greater(t, len(formationTemplatePage.Data), 1) // assert that both tenant scoped and global formation templates are visible
+	assert.Subset(t, formationTemplatePage.Data, []*graphql.FormationTemplate{
+		scopedFormationTemplate,
+	})
+
+	t.Logf("List all formation templates for some other tenant in which formation template with name: %q was NOT created and verify that it is NOT visible there", scopedFormationTemplateName)
+	formationTemplatePageForOtherTenant := fixtures.QueryFormationTemplatesWithPageSizeAndTenant(t, ctx, directorCertSecuredClient, first, tenant.TestTenants.GetDefaultTenantID())
+
+	assert.NotEmpty(t, formationTemplatePageForOtherTenant.Data)
+	assert.NotContains(t, formationTemplatePageForOtherTenant.Data, []*graphql.FormationTemplate{
+		scopedFormationTemplate,
+	})
+
+	var globalFormationTemplateID string
+	for _, ft := range formationTemplatePage.Data {
+		if ft.Name == globalFormationTemplateName {
+			globalFormationTemplateID = ft.ID
+			break
+		}
+	}
+	require.NotEmpty(t, globalFormationTemplateID)
+
+	t.Logf("Verify that tenant scoped call can NOT delete global formation template with name: %q", globalFormationTemplateName)
+	deleteFormationTemplateRequest := fixtures.FixDeleteFormationTemplateRequest(globalFormationTemplateID)
+	output := graphql.FormationTemplate{}
+
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, deleteFormationTemplateRequest, &output) // tenant_id is extracted from the subject of the cert
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Owner access is needed for resource modification")
+
+	t.Logf("Verify that tenant scoped call can NOT update global formation template with name: %q", globalFormationTemplateName)
+
+	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(updatedFormationTemplateInput)
+	require.NoError(t, err)
+
+	updateFormationTemplateRequest := fixtures.FixUpdateFormationTemplateRequest(globalFormationTemplateID, updatedFormationTemplateInputGQLString)
+	updateOutput := graphql.FormationTemplate{}
+
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, updateFormationTemplateRequest, &updateOutput) // tenant_id is extracted from the subject of the cert
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Owner access is needed for resource modification")
 }

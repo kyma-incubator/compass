@@ -652,7 +652,7 @@ func TestRepository_DeleteByKey(t *testing.T) {
 		// WHEN
 		err := repo.DeleteByKey(ctx, tnt, key)
 		// THEN
-		require.EqualError(t, err, "Internal Server Error: delete should remove single row, but removed 0 rows")
+		require.EqualError(t, err, "Unauthorized [reason=Owner access is needed for resource modification]")
 	})
 }
 

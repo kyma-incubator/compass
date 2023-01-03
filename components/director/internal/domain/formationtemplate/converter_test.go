@@ -58,7 +58,7 @@ func TestConverter_FromModelInputToModel(t *testing.T) {
 			// GIVEN
 			converter := formationtemplate.NewConverter()
 			// WHEN
-			result := converter.FromModelInputToModel(testCase.Input, testID)
+			result := converter.FromModelInputToModel(testCase.Input, testID, testTenantID)
 
 			assert.Equal(t, result, testCase.Expected)
 		})

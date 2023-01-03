@@ -1,5 +1,7 @@
 package formationtemplate
 
+import "database/sql"
+
 // Entity represents the formation template entity
 type Entity struct {
 	ID                     string `db:"id"`
@@ -9,6 +11,7 @@ type Entity struct {
 	RuntimeTypeDisplayName string `db:"runtime_type_display_name"`
 	RuntimeArtifactKind    string `db:"runtime_artifact_kind"`
 	FormationConstraints   string `db:"formation_constraints"`
+	TenantID               sql.NullString `db:"tenant_id"`
 }
 
 // EntityCollection is a collection of formation template entities.

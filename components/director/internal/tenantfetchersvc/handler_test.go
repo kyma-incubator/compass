@@ -146,7 +146,9 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		ProviderSubaccountID:        providerSubaccountID,
 		ConsumerTenantID:            consumerTenantID,
 		SubscriptionProviderAppName: subscriptionProviderAppName,
+		SubscriptionPayload:         string(validRequestBody),
 	}
+
 	regionalTenantWithMatchingParentID := tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID:          "",
 		AccountTenantID:             tenantExtID,
@@ -156,6 +158,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		ProviderSubaccountID:        providerSubaccountID,
 		ConsumerTenantID:            consumerTenantID,
 		SubscriptionProviderAppName: subscriptionProviderAppName,
+		SubscriptionPayload:         string(bodyWithMatchingAccountAndSubaccountIDs),
 	}
 
 	// Subscribe flow
