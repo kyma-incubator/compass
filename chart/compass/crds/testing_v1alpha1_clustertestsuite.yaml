@@ -77,9 +77,12 @@ spec:
                         required:
                         - name
                         - namespace
+                        x-kubernetes-preserve-unknown-fields: true
                         type: object
                       type: array
+                  x-kubernetes-preserve-unknown-fields: true
                   type: object
+              x-kubernetes-preserve-unknown-fields: true
               type: object
             status:
               properties:
@@ -97,6 +100,7 @@ spec:
                     required:
                     - type
                     - status
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                   type: array
                 results:
@@ -119,6 +123,7 @@ spec:
                           required:
                           - id
                           - podPhase
+                          x-kubernetes-preserve-unknown-fields: true
                           type: object
                         type: array
                       name:
@@ -133,8 +138,10 @@ spec:
                     - namespace
                     - status
                     - executions
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                   type: array
+              x-kubernetes-preserve-unknown-fields: true
               type: object
 status:
   acceptedNames:

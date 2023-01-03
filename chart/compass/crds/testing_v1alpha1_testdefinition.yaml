@@ -51,9 +51,11 @@ spec:
                     (e.g. scope, test scenario, edge cases, known limitations etc.).
                   type: string
                 template:
+                  x-kubernetes-preserve-unknown-fields: true
                   type: object
               required:
               - template
+              x-kubernetes-preserve-unknown-fields: true
               type: object
 status:
   acceptedNames:
