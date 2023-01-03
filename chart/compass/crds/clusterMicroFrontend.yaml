@@ -1,4 +1,4 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: "clustermicrofrontends.ui.kyma-project.io"
@@ -6,7 +6,6 @@ metadata:
     "helm.sh/hook": pre-install
 spec:
   group: ui.kyma-project.io
-  version: v1alpha1
   scope: Cluster
   names:
     plural: "clustermicrofrontends"
@@ -14,60 +13,69 @@ spec:
     kind: ClusterMicroFrontend
     shortNames:
       - "cmf"
-  validation:
-    openAPIV3Schema:
-      required:
-        - "spec"
-      properties:
-        spec:
-          type: object
-          required:
-            - "placement"
-            - "navigationNodes"
-          properties:
-            appName:
-              type: string
-            displayName:
-              type: string
-            version:
-              type: string
-              pattern: "[a-zA-Z0-9]+"
-            placement:
-              type: string
-              pattern: "^(environment|cluster|namespace)$"
-            category:
-              type: string
-            viewBaseUrl:
-              type: string
-              pattern: '^(https?)://.+$'
-            navigationNodes:
-              type: array
-              items:
-                type: object
-                required:
-                  - "label"
-                  - "navigationPath"
-                properties:
-                  label:
-                    type: string
-                  navigationPath:
-                    type: string
-                  viewUrl:
-                    type: string
-                  showInNavigation:
-                    type: boolean
-                  externalLink:
-                    type: string
-                  requiredPermissions:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        apiGroup:
-                          type: string
-                        resource:
-                          type: string
-                        verbs:
-                          type: array
-                          items:
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        x-kubernetes-preserve-unknown-fields: true
+        type: object
+        required:
+          - "spec"
+        properties:
+          spec:
+            x-kubernetes-preserve-unknown-fields: true
+            type: object
+            required:
+              - "placement"
+              - "navigationNodes"
+            properties:
+              appName:
+                type: string
+              displayName:
+                type: string
+              version:
+                type: string
+                pattern: "[a-zA-Z0-9]+"
+              placement:
+                type: string
+                pattern: "^(environment|cluster|namespace)$"
+              category:
+                type: string
+              viewBaseUrl:
+                type: string
+                pattern: '^(https?)://.+$'
+              navigationNodes:
+                type: array
+                items:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+                  required:
+                    - "label"
+                    - "navigationPath"
+                  properties:
+                    label:
+                      type: string
+                    navigationPath:
+                      type: string
+                    viewUrl:
+                      type: string
+                    showInNavigation:
+                      type: boolean
+                    externalLink:
+                      type: string
+                    requiredPermissions:
+                      type: array
+                      items:
+                        x-kubernetes-preserve-unknown-fields: true
+                        type: object
+                        properties:
+                          apiGroup:
                             type: string
+                          resource:
+                            type: string
+                          verbs:
+                            type: array
+                            items:
+                              type: string

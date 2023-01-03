@@ -97,10 +97,24 @@ KYMA_SOURCE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
 
 echo "Using Kyma source ${KYMA_SOURCE}"
 
+# TODO: Remove after adoption of Kyma 2.4.3 and change kyma deploy command source to --source $KYMA_SOURCE
+KYMA_WORKSPACE=${HOME}/.kyma/sources/${KYMA_SOURCE}
+if [[ -d "$KYMA_WORKSPACE" ]]
+then
+   echo "Kyma ${KYMA_SOURCE} already exists locally."
+else
+   echo "Pulling Kyma ${KYMA_SOURCE}"
+   git clone --single-branch --branch "${KYMA_SOURCE}" https://github.com/kyma-project/kyma.git "$KYMA_WORKSPACE"
+fi
+
+rm -rf "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog || true
+rm -f "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons/clusteraddonsconfigurations.addons.crd.yaml || true
+rm -f "$KYMA_WORKSPACE"/installation/resources/crds/service-catalog-addons/addonsconfigurations.addons.crd.yaml || true
+
 if [[ $KYMA_INSTALLATION == *full* ]]; then
   echo "Installing full Kyma"
-  kyma deploy --components-file $KYMA_COMPONENTS_FULL --values-file $FULL_OVERRIDES_TEMP --source $KYMA_SOURCE
+  kyma deploy --components-file $KYMA_COMPONENTS_FULL --values-file $FULL_OVERRIDES_TEMP --source=local --workspace "$KYMA_WORKSPACE"
 else
   echo "Installing minimal Kyma"
-  kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source $KYMA_SOURCE
+  kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source=local --workspace "$KYMA_WORKSPACE"
 fi
