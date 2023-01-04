@@ -202,7 +202,7 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 	return nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
 	apiDataFromDB, eventDataFromDB, packageDataFromDB, err := s.fetchResources(ctx, appID)
 	if err != nil {
 		return err
@@ -213,8 +213,10 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs); err != nil {
-		return &ORDDocumentValidationError{errors.Wrap(err, "invalid documents")}
+	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs)
+	if validationResult != nil {
+		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
+		*validationErrors = validationResult
 	}
 
 	if err := documents.Sanitize(baseURL); err != nil {
@@ -609,6 +611,7 @@ func (s *Service) processBundles(ctx context.Context, appID string, bundles []*m
 	if err != nil {
 		return nil, err
 	}
+
 	return bundlesFromDB, nil
 }
 
@@ -1154,28 +1157,29 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
-		if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
-			if ordValidationError, ok := err.(*ORDDocumentValidationError); ok {
-				validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
+		var validationErrors error
+		if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs, &validationErrors); err != nil {
+			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
-				// the first item in the slice is the message 'invalid documents' for the wrapped errors
-				validationErrors = validationErrors[1:]
-
-				metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-
-				for i := range validationErrors {
-					validationErrors[i] = strings.TrimSpace(validationErrors[i])
-					metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
-				}
-
-				log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
-			} else {
-				metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-				metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
-
-				log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
-			}
+			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
 			return errors.Wrapf(err, "error processing ORD documents")
+		}
+		if ordValidationError, ok := (validationErrors).(*ORDDocumentValidationError); ok {
+			validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
+
+			// the first item in the slice is the message 'invalid documents' for the wrapped errors
+			validationErrors = validationErrors[1:]
+
+			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
+
+			for i := range validationErrors {
+				validationErrors[i] = strings.TrimSpace(validationErrors[i])
+				metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
+			}
+
+			log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error("error processing ORD documents")
+			return errors.Wrapf(ordValidationError.Err, "error processing ORD documents")
 		}
 		log.C(ctx).Info("Successfully processed ORD documents")
 	}
