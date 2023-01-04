@@ -23,8 +23,7 @@ type handler struct {
 }
 
 type JobStatus struct {
-	ID    string `json:"id"`
-	State string `json:"state"`
+	Status string `json:"status"`
 }
 
 var Subscriptions = make(map[string]string)
@@ -89,8 +88,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	jobStatus := &JobStatus{
-		ID:    h.jobID,
-		State: "SUCCEEDED",
+		Status: "COMPLETED",
 	}
 
 	payload, err := json.Marshal(jobStatus)
@@ -123,10 +121,10 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusUnauthorized, errors.New("token value is required")
 	}
 
-	consumerTenantID := mux.Vars(r)["tenant_id"]
-	if consumerTenantID == "" {
-		log.C(ctx).Error("parameter [tenant_id] not provided")
-		return http.StatusBadRequest, errors.New("parameter [tenant_id] not provided")
+	appName := mux.Vars(r)["app_name"]
+	if appName == "" {
+		log.C(ctx).Error("parameter [app_name] not provided")
+		return http.StatusBadRequest, errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
 
@@ -139,9 +137,9 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	}
 
 	if httpMethod == http.MethodPut {
-		log.C(ctx).Infof("Creating subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
+		log.C(ctx).Infof("Creating subscription for application with name %s", appName)
 	} else {
-		log.C(ctx).Infof("Removing subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
+		log.C(ctx).Infof("Removing subscription for application with name %s", appName)
 	}
 	resp, err := h.httpClient.Do(request)
 	if err != nil {
@@ -164,9 +162,9 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
 	}
 	if httpMethod == http.MethodPut {
-		Subscriptions[consumerTenantID] = providerSubaccID
+		Subscriptions[appName] = providerSubaccID
 	} else if httpMethod == http.MethodDelete {
-		delete(Subscriptions, consumerTenantID)
+		delete(Subscriptions, appName)
 	}
 
 	return http.StatusOK, nil
