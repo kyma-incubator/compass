@@ -139,14 +139,14 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 	}
 
 	invalidApisIndices := make([]int, 0)
-	invalidEventIndices := make([]int, 0)
+	invalidEventsIndices := make([]int, 0)
 
 	for _, doc := range docs {
-		invalidPackageIndices := make([]int, 0)
-		invalidBundleIndices := make([]int, 0)
+		invalidPackagesIndices := make([]int, 0)
+		invalidBundlesIndices := make([]int, 0)
 		invalidProductsIndices := make([]int, 0)
-		invalidVendorIndices := make([]int, 0)
-		invalidTombstoneIndices := make([]int, 0)
+		invalidVendorsIndices := make([]int, 0)
+		invalidTombstonesIndices := make([]int, 0)
 
 		if err := validateDocumentInput(doc); err != nil {
 			errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
@@ -155,7 +155,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		for i, pkg := range doc.Packages {
 			if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
-				invalidPackageIndices = append(invalidPackageIndices, i)
+				invalidPackagesIndices = append(invalidPackagesIndices, i)
 				packageIDs[pkg.OrdID] = false
 			}
 		}
@@ -163,7 +163,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		for i, bndl := range doc.ConsumptionBundles {
 			if err := validateBundleInput(bndl); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
-				invalidBundleIndices = append(invalidBundleIndices, i)
+				invalidBundlesIndices = append(invalidBundlesIndices, i)
 				continue
 			}
 			if bndl.OrdID != nil {
@@ -203,7 +203,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		for i, event := range doc.EventResources {
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
-				invalidEventIndices = append(invalidEventIndices, i)
+				invalidEventsIndices = append(invalidEventsIndices, i)
 				continue
 			}
 
@@ -219,7 +219,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		for i, vendor := range doc.Vendors {
 			if err := validateVendorInput(vendor); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
-				invalidVendorIndices = append(invalidVendorIndices, i)
+				invalidVendorsIndices = append(invalidVendorsIndices, i)
 				continue
 			}
 			if _, ok := vendorIDs[vendor.OrdID]; ok {
@@ -231,21 +231,20 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		for i, tombstone := range doc.Tombstones {
 			if err := validateTombstoneInput(tombstone); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID))
-				invalidTombstoneIndices = append(invalidTombstoneIndices, i)
-				continue
+				invalidTombstonesIndices = append(invalidTombstonesIndices, i)
 			}
 		}
 
-		doc.Packages = deleteInvalidInputObjects(invalidPackageIndices, doc.Packages)
-		doc.ConsumptionBundles = deleteInvalidInputObjects(invalidBundleIndices, doc.ConsumptionBundles)
+		doc.Packages = deleteInvalidInputObjects(invalidPackagesIndices, doc.Packages)
+		doc.ConsumptionBundles = deleteInvalidInputObjects(invalidBundlesIndices, doc.ConsumptionBundles)
 		doc.Products = deleteInvalidInputObjects(invalidProductsIndices, doc.Products)
 		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
-		doc.EventResources = deleteInvalidInputObjects(invalidEventIndices, doc.EventResources)
-		doc.Vendors = deleteInvalidInputObjects(invalidVendorIndices, doc.Vendors)
-		doc.Tombstones = deleteInvalidInputObjects(invalidTombstoneIndices, doc.Tombstones)
+		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
+		doc.Vendors = deleteInvalidInputObjects(invalidVendorsIndices, doc.Vendors)
+		doc.Tombstones = deleteInvalidInputObjects(invalidTombstonesIndices, doc.Tombstones)
 
 		invalidApisIndices = nil
-		invalidEventIndices = nil
+		invalidEventsIndices = nil
 	}
 
 	// Validate entity relations
@@ -290,7 +289,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		for i, event := range doc.EventResources {
 			if event.OrdPackageID != nil && !packageIDs[*event.OrdPackageID] {
 				errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID))
-				invalidEventIndices = append(invalidEventIndices, i)
+				invalidEventsIndices = append(invalidEventsIndices, i)
 			}
 			if event.PartOfConsumptionBundles != nil {
 				for _, eventBndlRef := range event.PartOfConsumptionBundles {
@@ -309,7 +308,9 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		}
 
 		doc.APIResources = deleteInvalidInputObjects(invalidApisIndices, doc.APIResources)
-		doc.EventResources = deleteInvalidInputObjects(invalidEventIndices, doc.EventResources)
+		doc.EventResources = deleteInvalidInputObjects(invalidEventsIndices, doc.EventResources)
+		invalidApisIndices = nil
+		invalidEventsIndices = nil
 	}
 
 	return errs.ErrorOrNil()
@@ -622,8 +623,8 @@ func stringPtrToString(p *string) string {
 
 func deleteInvalidInputObjects[T any](invalidObjectsIndices []int, objects []T) []T {
 	decreaseIndexForDeleting := 0
-	for _, eventIndex := range invalidObjectsIndices {
-		deleteIndex := eventIndex - decreaseIndexForDeleting
+	for _, invalidObjectIndex := range invalidObjectsIndices {
+		deleteIndex := invalidObjectIndex - decreaseIndexForDeleting
 		objects = append(objects[:deleteIndex], objects[deleteIndex+1:]...)
 		decreaseIndexForDeleting++
 	}
