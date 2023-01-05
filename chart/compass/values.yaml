@@ -1060,6 +1060,7 @@ global:
         - "application_template:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "application.local_tenant_id:write"
       application:
         - "application:read"
         - "application:write"
