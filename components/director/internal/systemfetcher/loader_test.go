@@ -35,6 +35,16 @@ func TestLoadData(t *testing.T) {
 		"\"description\":\"int-sys-desc\"}," +
 		"\"description\":\"app-tmpl-desc\"}]"
 
+	applicationTemplatesWithIntSysJSONAndPlaceholders := "[{" +
+		"\"name\":\"" + applicationTemplateName + "\"," +
+		"\"applicationInputJSON\":\"{\\\"name\\\": \\\"name\\\", \\\"labels\\\": {\\\"legacy\\\":\\\"true\\\"}}\"," +
+		"\"placeholders\":[{\"name\":\"name\",\"description\": \"description\",\"jsonPath\": \"jsonPath\"}]," +
+		"\"labels\":{\"managed_app_provisioning\":false}," +
+		"\"intSystem\":{" +
+		"\"name\":\"int-sys-name\"," +
+		"\"description\":\"int-sys-desc\"}," +
+		"\"description\":\"app-tmpl-desc\"}]"
+
 	pageInfo := &pagination.Page{
 		StartCursor: "",
 		EndCursor:   "",
@@ -421,7 +431,55 @@ func TestLoadData(t *testing.T) {
 			},
 		},
 		{
-			name: "Success - integration systeem already exists, missing labels in applicationInputJSON",
+			name: "Success - application template already exists, update triggered when only labels are different",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				return txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+			},
+			appTmplSvc: func() *automock.AppTmplService {
+				template := model.ApplicationTemplate{
+					ID:                   "id",
+					Name:                 "app-tmpl-name",
+					Description:          str.Ptr("app-tmpl-desc"),
+					ApplicationInputJSON: "{\"integrationSystemID\":\"id\",\"labels\":{\"legacy\":\"true\"},\"name\":\"name\"}",
+					Placeholders: []model.ApplicationTemplatePlaceholder{
+						{
+							Name:        "name",
+							Description: str.Ptr("description"),
+							JSONPath:    str.Ptr("jsonPath"),
+						},
+					},
+					Labels: map[string]interface{}{
+						"managed_app_provisioning": false,
+					},
+				}
+				appTmplSvc := &automock.AppTmplService{}
+				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(&template, nil).Once()
+				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateUpdateInput")).Return(nil).Once()
+				return appTmplSvc
+			},
+			intSysSvc: func() *automock.IntSysSvc {
+				intSysPage := model.IntegrationSystemPage{
+					Data: []*model.IntegrationSystem{
+						{
+							ID:          "id",
+							Name:        "int-sys-name",
+							Description: str.Ptr("int-sys-desc"),
+						},
+					},
+					PageInfo:   pageInfo,
+					TotalCount: 0,
+				}
+				intSysSvc := &automock.IntSysSvc{}
+				intSysSvc.On("List", txtest.CtxWithDBMatcher(), 200, "").Return(intSysPage, nil).Once()
+				return intSysSvc
+			},
+			readDirFunc: mockReadDir,
+			readFileFunc: func(path string) ([]byte, error) {
+				return []byte(applicationTemplatesWithIntSysJSONAndPlaceholders), nil
+			},
+		},
+		{
+			name: "Success - integration system already exists, missing labels in applicationInputJSON",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
 			},
