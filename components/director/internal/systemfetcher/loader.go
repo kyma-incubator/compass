@@ -221,15 +221,6 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 			continue
 		}
 
-		var appInput1 map[string]interface{}
-		if err := json.Unmarshal([]byte(appTmplInput.ApplicationInputJSON), &appInput1); err != nil {
-			return errors.Wrapf(err, "while unmarshaling application input json")
-		}
-		var appInput2 map[string]interface{}
-		if err := json.Unmarshal([]byte(appTemplate.ApplicationInputJSON), &appInput2); err != nil {
-			return errors.Wrapf(err, "while unmarshaling application input json")
-		}
-
 		if !areAppTemplatesEqual(appTemplate, appTmplInput) {
 			log.C(ctx).Infof("Updating application template with id %q", appTemplate.ID)
 			appTemplateUpdateInput := model.ApplicationTemplateUpdateInput{
@@ -348,7 +339,7 @@ func areAppTemplatesEqual(appTemplate *model.ApplicationTemplate, appTemplateInp
 		return false
 	}
 
-	isAppInputJSONEqual := reflect.DeepEqual(appTemplate.ApplicationInputJSON, appTemplateInput.ApplicationInputJSON)
+	isAppInputJSONEqual := appTemplate.ApplicationInputJSON == appTemplateInput.ApplicationInputJSON
 	isLabelEqual := reflect.DeepEqual(appTemplate.Labels, appTemplateInput.Labels)
 	isWebhookEqual := (appTemplate.Webhooks == nil && appTemplateInput.Webhooks == nil) || reflect.DeepEqual(appTemplate.Webhooks, appTemplateInput.Webhooks)
 	isPlaceholderEqual := reflect.DeepEqual(appTemplate.Placeholders, appTemplateInput.Placeholders)
