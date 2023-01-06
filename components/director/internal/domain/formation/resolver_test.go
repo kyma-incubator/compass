@@ -613,9 +613,11 @@ func TestFormationByName(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tenant"
 	ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+	emptyCtx := context.Background()
 
 	testCases := []struct {
 		Name              string
+		Ctx               context.Context
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn         func() *automock.Service
 		ConverterFn       func() *automock.Converter
@@ -626,6 +628,7 @@ func TestFormationByName(t *testing.T) {
 	}{
 		{
 			Name: "Success",
+			Ctx:  ctx,
 			TxFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
@@ -642,7 +645,18 @@ func TestFormationByName(t *testing.T) {
 			ExpectedError:     nil,
 		},
 		{
+			Name:              "Returns error when getting tenant fails",
+			Ctx:               emptyCtx,
+			TxFn:              txGen.ThatDoesntExpectCommit,
+			ServiceFn:         unusedService,
+			ConverterFn:       unusedConverter,
+			InputName:         testFormationName,
+			ExpectedFormation: nil,
+			ExpectedError:     errors.New("cannot read tenant from context"),
+		},
+		{
 			Name: "Returns error when getting formation fails",
+			Ctx:  ctx,
 			TxFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
@@ -656,6 +670,7 @@ func TestFormationByName(t *testing.T) {
 		},
 		{
 			Name:              "Returns error when can't start transaction",
+			Ctx:               ctx,
 			TxFn:              txGen.ThatFailsOnBegin,
 			ServiceFn:         unusedService,
 			ConverterFn:       unusedConverter,
@@ -665,6 +680,7 @@ func TestFormationByName(t *testing.T) {
 		},
 		{
 			Name: "Returns error when can't commit transaction",
+			Ctx:  ctx,
 			TxFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
@@ -680,6 +696,7 @@ func TestFormationByName(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
+			testCtx := testCase.Ctx
 			persist, transact := testCase.TxFn()
 			service := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
@@ -687,7 +704,7 @@ func TestFormationByName(t *testing.T) {
 			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil)
 
 			// WHEN
-			f, err := resolver.FormationByName(ctx, testCase.InputName)
+			f, err := resolver.FormationByName(testCtx, testCase.InputName)
 
 			// THEN
 			if testCase.ExpectedError != nil {
