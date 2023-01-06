@@ -449,7 +449,7 @@ func TestLoadData(t *testing.T) {
 						},
 					},
 					Labels: map[string]interface{}{
-						"managed_app_provisioning": false,
+						"managed_app_provisioning": true,
 					},
 				}
 				appTmplSvc := &automock.AppTmplService{}
