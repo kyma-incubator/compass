@@ -18,6 +18,7 @@ type ApplicationTemplate struct {
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
 	Webhooks             []Webhook
+	Labels               map[string]interface{}
 }
 
 // ApplicationTemplatePage missing godoc
@@ -114,6 +115,7 @@ type ApplicationTemplateUpdateInput struct {
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
+	Labels               map[string]interface{}
 }
 
 // ToApplicationTemplate missing godoc
@@ -130,5 +132,6 @@ func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) Applic
 		ApplicationInputJSON: a.ApplicationInputJSON,
 		Placeholders:         a.Placeholders,
 		AccessLevel:          a.AccessLevel,
+		Labels:               a.Labels,
 	}
 }
