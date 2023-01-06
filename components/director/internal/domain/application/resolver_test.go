@@ -889,7 +889,7 @@ func TestResolver_ApplicationBySystemNumber(t *testing.T) {
 				svc.On("GetBySystemNumber", contextParam, systemNumber).Return(nil, apperrors.NewNotFoundError(resource.Application, "foo")).Once()
 				return svc
 			},
-			ConverterFn:  func () *automock.ApplicationConverter {
+			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				conv.AssertNotCalled(t, "ToGraphQL")
 				return conv
@@ -907,7 +907,7 @@ func TestResolver_ApplicationBySystemNumber(t *testing.T) {
 				svc.On("GetBySystemNumber", contextParam, systemNumber).Return(nil, testErr).Once()
 				return svc
 			},
-			ConverterFn:  func () *automock.ApplicationConverter {
+			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				conv.AssertNotCalled(t, "ToGraphQL")
 				return conv
@@ -923,7 +923,7 @@ func TestResolver_ApplicationBySystemNumber(t *testing.T) {
 				appSvc := &automock.ApplicationService{}
 				return appSvc
 			},
-			ConverterFn:  func () *automock.ApplicationConverter {
+			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				conv.AssertNotCalled(t, "ToGraphQL")
 				return conv
@@ -949,7 +949,7 @@ func TestResolver_ApplicationBySystemNumber(t *testing.T) {
 				svc.On("GetBySystemNumber", contextParam, systemNumber).Return(modelApplication, nil).Once()
 				return svc
 			},
-			ConverterFn:  func () *automock.ApplicationConverter {
+			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
 				conv.AssertNotCalled(t, "ToGraphQL")
 				return conv
