@@ -341,10 +341,9 @@ func areAppTemplatesEqual(appTemplate *model.ApplicationTemplate, appTemplateInp
 
 	isAppInputJSONEqual := appTemplate.ApplicationInputJSON == appTemplateInput.ApplicationInputJSON
 	isLabelEqual := reflect.DeepEqual(appTemplate.Labels, appTemplateInput.Labels)
-	isWebhookEqual := (appTemplate.Webhooks == nil && appTemplateInput.Webhooks == nil) || reflect.DeepEqual(appTemplate.Webhooks, appTemplateInput.Webhooks)
 	isPlaceholderEqual := reflect.DeepEqual(appTemplate.Placeholders, appTemplateInput.Placeholders)
 
-	if isAppInputJSONEqual && isLabelEqual && isWebhookEqual && isPlaceholderEqual {
+	if isAppInputJSONEqual && isLabelEqual && isPlaceholderEqual {
 		return true
 	}
 
