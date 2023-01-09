@@ -5,12 +5,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 

@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -567,12 +569,12 @@ func TestORDAggregator(stdT *testing.T) {
 			{
 				Name:        "name",
 				Description: &placeholderName,
-				JSONPath:    &testConfig.SubscriptionProviderAppNameProperty,
+				JSONPath:    str.Ptr(fmt.Sprintf("$.%s", testConfig.SubscriptionProviderAppNameProperty)),
 			},
 			{
 				Name:        "display-name",
 				Description: &placeholderDisplayName,
-				JSONPath:    &testConfig.SubscriptionProviderAppNameProperty,
+				JSONPath:    str.Ptr(fmt.Sprintf("$.%s", testConfig.SubscriptionProviderAppNameProperty)),
 			},
 		}
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
