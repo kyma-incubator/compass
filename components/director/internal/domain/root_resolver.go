@@ -379,6 +379,11 @@ func (r *queryResolver) Formation(ctx context.Context, id string) (*graphql.Form
 	return r.formation.Formation(ctx, id)
 }
 
+// FormationByName returns a formation retrieved by name
+func (r *queryResolver) FormationByName(ctx context.Context, name string) (*graphql.Formation, error) {
+	return r.formation.FormationByName(ctx, name)
+}
+
 func (r *queryResolver) Formations(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationPage, error) {
 	return r.formation.Formations(ctx, first, after)
 }
