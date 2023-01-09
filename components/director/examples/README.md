@@ -53,6 +53,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query event definition](./query-event-definition/query-event-definition.graphql)
 - [query event definitions](./query-event-definitions/query-event-definitions.graphql)
 - [query formation](./query-formation/query-formation.graphql)
+- [query formation by name](./query-formation-by-name/query-formation-by-name.graphql)
 - [query formation template](./query-formation-template/query-formation-template.graphql)
 - [query formation templates](./query-formation-templates/query-formation-templates.graphql)
 - [query formations](./query-formations/query-formations.graphql)

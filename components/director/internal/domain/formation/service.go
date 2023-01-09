@@ -231,7 +231,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
-	f, err := s.getFormationByName(ctx, formation.Name, tnt)
+	f, err := s.GetFormationByName(ctx, formation.Name, tnt)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		return s.getFormationByName(ctx, formation.Name, tnt)
+		return s.GetFormationByName(ctx, formation.Name, tnt)
 
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
@@ -324,7 +324,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+	formationFromDB, err := s.GetFormationByName(ctx, formation.Name, tnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation %q", formation.Name)
 	}
@@ -409,7 +409,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+		formationFromDB, err := s.GetFormationByName(ctx, formation.Name, tnt)
 		if err != nil {
 			return nil, err
 		}
@@ -472,7 +472,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return &formation, nil
 		}
 
-		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+		formationFromDB, err := s.GetFormationByName(ctx, formation.Name, tnt)
 		if err != nil {
 			return nil, err
 		}
@@ -545,7 +545,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		return s.getFormationByName(ctx, formation.Name, tnt)
+		return s.GetFormationByName(ctx, formation.Name, tnt)
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
@@ -1063,7 +1063,7 @@ func (s *service) createFormation(ctx context.Context, tenant, templateName, for
 	return formation, nil
 }
 
-func (s *service) getFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
+func (s *service) GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
 	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
