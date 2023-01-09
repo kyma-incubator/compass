@@ -183,8 +183,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	// Subscription handlers that mock subscription manager API's. On real environment we use the same path but with different(real) host
 	jobID := "818cbe72-8dea-4e01-850d-bc1b54b00e78" // randomly chosen UUID
 	subHandler := subscription.NewHandler(httpClient, cfg.TenantConfig, cfg.TenantProviderConfig, jobID)
-	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscribe).Methods(http.MethodPost)
-	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Unsubscribe).Methods(http.MethodDelete)
+	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Subscribe).Methods(http.MethodPost)
+	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Unsubscribe).Methods(http.MethodDelete)
 	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
 
 	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks

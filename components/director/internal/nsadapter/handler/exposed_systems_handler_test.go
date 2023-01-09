@@ -607,6 +607,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("failed to update application", func(t *testing.T) {
+		setMappings()
+		defer clearMappings()
+
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 
@@ -669,6 +672,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("failed to set label systemType", func(t *testing.T) {
+		setMappings()
+		defer clearMappings()
+
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 
@@ -722,6 +728,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("failed to set label systemProtocol", func(t *testing.T) {
+		setMappings()
+		defer clearMappings()
+
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 
@@ -781,6 +790,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("successfully update system", func(t *testing.T) {
+		setMappings()
+		defer clearMappings()
+
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 
@@ -1267,6 +1279,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("failed to update application", func(t *testing.T) {
+		setMappings()
+		defer clearMappings()
+
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 
@@ -1316,6 +1331,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("failed to set label systemType", func(t *testing.T) {
+		setMappings()
+		defer clearMappings()
+
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 
@@ -1356,6 +1374,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("failed to set label systemProtocol", func(t *testing.T) {
+		setMappings()
+		defer clearMappings()
+
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 
@@ -1397,6 +1418,9 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	})
 
 	t.Run("successfully update system", func(t *testing.T) {
+		setMappings()
+		defer clearMappings()
+
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 

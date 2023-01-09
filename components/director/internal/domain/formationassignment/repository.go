@@ -18,8 +18,8 @@ const tableName string = `public.formation_assignments`
 
 var (
 	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"last_operation", "last_operation_initiator", "last_operation_initiator_type", "state", "value"}
-	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "last_operation", "last_operation_initiator", "last_operation_initiator_type", "state", "value"}
+	updatableTableColumns = []string{"state", "value"}
+	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value"}
 	tenantColumn          = "tenant_id"
 )
 
@@ -71,10 +71,10 @@ func (r *repository) Create(ctx context.Context, item *model.FormationAssignment
 	return r.creator.Create(ctx, r.conv.ToEntity(item))
 }
 
-// GetByTargetAndSource queries for a single Formation Assignment matching by a given Target and Source
-func (r *repository) GetByTargetAndSource(ctx context.Context, target, source, tenantID string) (*model.FormationAssignment, error) {
+// GetByTargetAndSource queries for a single Formation Assignment matching by a given Target, Source for the given Formation
+func (r *repository) GetByTargetAndSource(ctx context.Context, target, source, tenantID, formationID string) (*model.FormationAssignment, error) {
 	var entity Entity
-	if err := r.getter.Get(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("target", target), repo.NewEqualCondition("source", source)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.getter.Get(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("formation_id", formationID), repo.NewEqualCondition("target", target), repo.NewEqualCondition("source", source)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 

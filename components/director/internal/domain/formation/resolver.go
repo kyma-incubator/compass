@@ -22,6 +22,7 @@ import (
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	Get(ctx context.Context, id string) (*model.Formation, error)
+	GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error)
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
@@ -85,8 +86,7 @@ func NewResolver(transact persistence.Transactioner, service Service, conv Conve
 	}
 }
 
-// Formation returns a Formation by its id
-func (r *Resolver) Formation(ctx context.Context, id string) (*graphql.Formation, error) {
+func (r *Resolver) getFormation(ctx context.Context, get func(context.Context) (*model.Formation, error)) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (r *Resolver) Formation(ctx context.Context, id string) (*graphql.Formation
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formation, err := r.service.Get(ctx, id)
+	formation, err := get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +105,25 @@ func (r *Resolver) Formation(ctx context.Context, id string) (*graphql.Formation
 	}
 
 	return r.conv.ToGraphQL(formation), nil
+}
+
+// FormationByName returns a Formation by its name
+func (r *Resolver) FormationByName(ctx context.Context, name string) (*graphql.Formation, error) {
+	return r.getFormation(ctx, func(ctx context.Context) (*model.Formation, error) {
+		tnt, err := tenant.LoadFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return r.service.GetFormationByName(ctx, name, tnt)
+	})
+}
+
+// Formation returns a Formation by its id
+func (r *Resolver) Formation(ctx context.Context, id string) (*graphql.Formation, error) {
+	return r.getFormation(ctx, func(ctx context.Context) (*model.Formation, error) {
+		return r.service.Get(ctx, id)
+	})
 }
 
 // Formations returns paginated Formations based on first and after
@@ -394,6 +413,10 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 			if isInErrorState(fa.State) {
 				condition = graphql.FormationStatusConditionError
 
+				if fa.Value == nil {
+					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: fa.ID})
+					continue
+				}
 				var assignmentError formationassignment.AssignmentErrorWrapper
 				if err = json.Unmarshal(fa.Value, &assignmentError); err != nil {
 					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}

@@ -74,6 +74,8 @@ spec:
               value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: APP_EXT_SVC_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
             - name: SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: BASIC_USERNAME
@@ -147,8 +149,6 @@ spec:
               value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
             - name: TEST_CONSUMER_SUBACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
-            - name: TEST_CONSUMER_TENANT_ID
-              value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordAggregator.skipPattern }}
       restartPolicy: Never

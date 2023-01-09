@@ -69,7 +69,7 @@ type FormationRepository interface {
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
-	GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error)
+	GetByNameAndTenant(ctx context.Context, templateName, tenantID string) (*model.FormationTemplate, error)
 }
 
 // NotificationsService represents the notification service for generating and sending notifications
@@ -231,7 +231,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
-	f, err := s.getFormationByName(ctx, formation.Name, tnt)
+	f, err := s.GetFormationByName(ctx, formation.Name, tnt)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		return s.getFormationByName(ctx, formation.Name, tnt)
+		return s.GetFormationByName(ctx, formation.Name, tnt)
 
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
@@ -324,7 +324,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+	formationFromDB, err := s.GetFormationByName(ctx, formation.Name, tnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation %q", formation.Name)
 	}
@@ -409,7 +409,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+		formationFromDB, err := s.GetFormationByName(ctx, formation.Name, tnt)
 		if err != nil {
 			return nil, err
 		}
@@ -419,7 +419,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -457,7 +457,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		if len(pendingAsyncAssignments) > 0 {
 			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
-			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is important to do the re-assign in the outer transaction.
 			if err != nil {
 				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
@@ -472,7 +472,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return &formation, nil
 		}
 
-		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+		formationFromDB, err := s.GetFormationByName(ctx, formation.Name, tnt)
 		if err != nil {
 			return nil, err
 		}
@@ -489,7 +489,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -545,25 +545,10 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		return s.getFormationByName(ctx, formation.Name, tnt)
+		return s.GetFormationByName(ctx, formation.Name, tnt)
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
-}
-
-func (s *service) listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx context.Context, formationID, objectID string, objectType graphql.FormationObjectType) ([]*model.FormationAssignment, error) {
-	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
-	}
-
-	for i := range formationAssignmentsForObject {
-		formationAssignmentsForObject[i].LastOperation = model.UnassignFormation
-		formationAssignmentsForObject[i].LastOperationInitiator = objectID
-		formationAssignmentsForObject[i].LastOperationInitiatorType = model.FormationAssignmentType(objectType)
-	}
-
-	return formationAssignmentsForObject, nil
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
@@ -1057,7 +1042,7 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 }
 
 func (s *service) createFormation(ctx context.Context, tenant, templateName, formationName string) (*model.Formation, error) {
-	fTmpl, err := s.formationTemplateRepository.GetByName(ctx, templateName)
+	fTmpl, err := s.formationTemplateRepository.GetByNameAndTenant(ctx, templateName, tenant)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
 		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
@@ -1078,7 +1063,7 @@ func (s *service) createFormation(ctx context.Context, tenant, templateName, for
 	return formation, nil
 }
 
-func (s *service) getFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
+func (s *service) GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
 	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)

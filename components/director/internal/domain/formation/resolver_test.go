@@ -605,6 +605,120 @@ func TestFormation(t *testing.T) {
 	}
 }
 
+func TestFormationByName(t *testing.T) {
+	testErr := errors.New("test error")
+
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+	emptyCtx := context.Background()
+
+	testCases := []struct {
+		Name              string
+		Ctx               context.Context
+		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn         func() *automock.Service
+		ConverterFn       func() *automock.Converter
+		FetcherFn         func() *automock.TenantFetcher
+		InputName         string
+		ExpectedFormation *graphql.Formation
+		ExpectedError     error
+	}{
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			TxFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("GetFormationByName", contextThatHasTenant(tnt), testFormationName, tnt).Return(&modelFormation, nil).Once()
+				return service
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation).Once()
+				return conv
+			},
+			InputName:         testFormationName,
+			ExpectedFormation: &graphqlFormation,
+			ExpectedError:     nil,
+		},
+		{
+			Name:              "Returns error when getting tenant fails",
+			Ctx:               emptyCtx,
+			TxFn:              txGen.ThatDoesntExpectCommit,
+			ServiceFn:         unusedService,
+			ConverterFn:       unusedConverter,
+			InputName:         testFormationName,
+			ExpectedFormation: nil,
+			ExpectedError:     errors.New("cannot read tenant from context"),
+		},
+		{
+			Name: "Returns error when getting formation fails",
+			Ctx:  ctx,
+			TxFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("GetFormationByName", txtest.CtxWithDBMatcher(), testFormationName, tnt).Return(nil, testErr).Once()
+				return service
+			},
+			ConverterFn:       unusedConverter,
+			InputName:         testFormationName,
+			ExpectedFormation: nil,
+			ExpectedError:     testErr,
+		},
+		{
+			Name:              "Returns error when can't start transaction",
+			Ctx:               ctx,
+			TxFn:              txGen.ThatFailsOnBegin,
+			ServiceFn:         unusedService,
+			ConverterFn:       unusedConverter,
+			InputName:         testFormationName,
+			ExpectedFormation: nil,
+			ExpectedError:     testErr,
+		},
+		{
+			Name: "Returns error when can't commit transaction",
+			Ctx:  ctx,
+			TxFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("GetFormationByName", txtest.CtxWithDBMatcher(), testFormationName, tnt).Return(formationModel, nil).Once()
+				return service
+			}, ConverterFn: unusedConverter,
+			InputName:         testFormationName,
+			ExpectedFormation: nil,
+			ExpectedError:     testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			testCtx := testCase.Ctx
+			persist, transact := testCase.TxFn()
+			service := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil)
+
+			// WHEN
+			f, err := resolver.FormationByName(testCtx, testCase.InputName)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedFormation, f)
+
+			mock.AssertExpectationsForObjects(t, persist, service, converter)
+		})
+	}
+}
 func TestFormations(t *testing.T) {
 	testErr := errors.New("test error")
 
@@ -1063,18 +1177,20 @@ func TestResolver_Status(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	formationIDs := []string{FormationID, FormationID + "2", FormationID + "3"}
+	formationIDs := []string{FormationID, FormationID + "2", FormationID + "3", FormationID + "4"}
 
 	// Formation Assignments model fixtures
 	faModelReady := fixFormationAssignmentModel(string(model.ReadyAssignmentState), TestConfigValueRawJSON)
 	faModelInitial := fixFormationAssignmentModelWithSuffix(string(model.InitialAssignmentState), TestConfigValueRawJSON, "-2")
 	faModelError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), json.RawMessage(`{"error": {"message": "failure", "errorCode": 1}}`), "-3")
+	faModelEmptyError := fixFormationAssignmentModelWithSuffix(string(model.CreateErrorAssignmentState), nil, "-4")
 
-	fasReady := []*model.FormationAssignment{faModelReady}                               // all are READY -> READY condition
-	fasInProgress := []*model.FormationAssignment{faModelInitial, faModelReady}          // no errors, but one is INITIAL -> IN_PROGRESS condition
-	fasError := []*model.FormationAssignment{faModelReady, faModelError, faModelInitial} // have error -> ERROR condition
+	fasReady := []*model.FormationAssignment{faModelReady}                                         // all are READY -> READY condition
+	fasInProgress := []*model.FormationAssignment{faModelInitial, faModelReady}                    // no errors, but one is INITIAL -> IN_PROGRESS condition
+	fasError := []*model.FormationAssignment{faModelReady, faModelError, faModelInitial}           // have error -> ERROR condition
+	fasEmptyError := []*model.FormationAssignment{faModelReady, faModelEmptyError, faModelInitial} // should handle empty Value and have ERROR condition
 
-	fasPerFormation := [][]*model.FormationAssignment{fasReady, fasInProgress, fasError}
+	fasPerFormation := [][]*model.FormationAssignment{fasReady, fasInProgress, fasError, fasEmptyError}
 
 	fasUnmarshallable := []*model.FormationAssignment{fixFormationAssignmentModelWithSuffix(string(model.DeleteErrorAssignmentState), json.RawMessage(`unmarshallable structure`), "-4")}
 
@@ -1092,8 +1208,14 @@ func TestResolver_Status(t *testing.T) {
 			ErrorCode:    1,
 		}},
 	}
+	gqlStatusFourth := graphql.FormationStatus{
+		Condition: graphql.FormationStatusConditionError,
+		Errors: []*graphql.FormationStatusError{{
+			AssignmentID: FormationAssignmentID + "-4",
+		}},
+	}
 
-	gqlStatuses := []*graphql.FormationStatus{&gqlStatusFirst, &gqlStatusSecond, &gqlStatusThird}
+	gqlStatuses := []*graphql.FormationStatus{&gqlStatusFirst, &gqlStatusSecond, &gqlStatusThird, &gqlStatusFourth}
 
 	emptyFaPage := [][]*model.FormationAssignment{nil}
 
@@ -1181,7 +1303,8 @@ func TestResolver_Status(t *testing.T) {
 			firstFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID, Ctx: ctx}
 			secondFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID + "2", Ctx: ctx}
 			thirdFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID + "3", Ctx: ctx}
-			keys := []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams}
+			fourthPageFormations := dataloader.ParamFormationStatus{ID: FormationID + "4", Ctx: ctx}
+			keys := []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams, fourthPageFormations}
 
 			// WHEN
 			result, errs := resolver.StatusDataLoader(keys)

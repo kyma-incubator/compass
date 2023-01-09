@@ -22,6 +22,7 @@ type FormationTemplate struct {
 	RuntimeTypes           []string            `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string              `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
+	TenantID               *string             `json:"tenant_id"`
 }
 
 // FormationTemplateInput missing godoc

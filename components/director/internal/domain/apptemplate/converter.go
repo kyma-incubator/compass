@@ -1,15 +1,17 @@
 package apptemplate
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/tidwall/gjson"
+	"k8s.io/client-go/util/jsonpath"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
@@ -140,12 +142,27 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 func (c *converter) ApplicationFromTemplateInputFromGraphQL(appTemplate *model.ApplicationTemplate, in graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error) {
 	values := make([]*model.ApplicationTemplateValueInput, 0, len(in.Values))
 	if (in.PlaceholdersPayload != nil) && (len(in.Values) == 0) {
+		var obj interface{}
+		if err := json.Unmarshal([]byte(*in.PlaceholdersPayload), &obj); err != nil {
+			return model.ApplicationFromTemplateInput{}, err
+		}
+
+		parser := jsonpath.New("parser")
+
 		for _, placeholder := range appTemplate.Placeholders {
 			if len(*placeholder.JSONPath) > 0 {
-				value := gjson.Get(*in.PlaceholdersPayload, *placeholder.JSONPath)
+				if err := parser.Parse(fmt.Sprintf("{%s}", *placeholder.JSONPath)); err != nil {
+					return model.ApplicationFromTemplateInput{}, errors.Wrapf(err, "while parsing placeholder JSON path: %s", *placeholder.JSONPath)
+				}
+
+				buf := new(bytes.Buffer)
+				if err := parser.Execute(buf, obj); err != nil {
+					return model.ApplicationFromTemplateInput{}, errors.Wrapf(err, "while converting GraphQL input to Application From Template model. Value for Placeholder with name %s and path %s, not found in payload %s.", placeholder.Name, *placeholder.JSONPath, *in.PlaceholdersPayload)
+				}
+
 				valueInput := model.ApplicationTemplateValueInput{
 					Placeholder: placeholder.Name,
-					Value:       value.String(),
+					Value:       buf.String(),
 				}
 				values = append(values, &valueInput)
 			} else {

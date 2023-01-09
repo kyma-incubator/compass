@@ -24,7 +24,7 @@ RESET_VALUES_YAML=true
 
 K3D_MEMORY=8192MB
 K3D_TIMEOUT=10m0s
-APISERVER_VERSION=1.21.12
+APISERVER_VERSION=1.22.16
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -294,4 +294,4 @@ else # this is the case when the script is ran on non-Mac OSX machines, ex. as p
 fi
 
 echo "Adding Compass entries to /etc/hosts..."
-sudo sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev local.discovery.api\" >> /etc/hosts"
+sudo sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"

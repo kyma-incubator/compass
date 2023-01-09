@@ -16,7 +16,7 @@ func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient 
 	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
 
 	formationTemplate := graphql.FormationTemplate{}
-	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, createRequest, &formationTemplate))
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, createRequest, &formationTemplate))
 	require.NotEmpty(t, formationTemplate.ID)
 
 	return &formationTemplate
@@ -26,7 +26,7 @@ func QueryFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *
 	queryRequest := FixQueryFormationTemplateRequest(id)
 
 	formationTemplate := graphql.FormationTemplate{}
-	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, queryRequest, &formationTemplate))
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &formationTemplate))
 	require.NotEmpty(t, formationTemplate.ID)
 
 	return &formationTemplate
@@ -36,7 +36,17 @@ func QueryFormationTemplatesWithPageSize(t require.TestingT, ctx context.Context
 	queryPaginationRequest := FixQueryFormationTemplatesRequestWithPageSize(pageSize)
 
 	var formationTemplates graphql.FormationTemplatePage
-	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, queryPaginationRequest, &formationTemplates))
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryPaginationRequest, &formationTemplates))
+	require.NotEmpty(t, formationTemplates)
+
+	return &formationTemplates
+}
+
+func QueryFormationTemplatesWithPageSizeAndTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, pageSize int, tenantID string) *graphql.FormationTemplatePage {
+	queryPaginationRequest := FixQueryFormationTemplatesRequestWithPageSize(pageSize)
+
+	var formationTemplates graphql.FormationTemplatePage
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, queryPaginationRequest, &formationTemplates))
 	require.NotEmpty(t, formationTemplates)
 
 	return &formationTemplates
@@ -46,7 +56,7 @@ func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient
 	deleteRequest := FixDeleteFormationTemplateRequest(id)
 
 	formationTemplate := graphql.FormationTemplate{}
-	err := testctx.Tc.RunOperation(ctx, gqlClient, deleteRequest, &formationTemplate)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, deleteRequest, &formationTemplate)
 
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 

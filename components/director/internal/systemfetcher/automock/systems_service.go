@@ -14,13 +14,13 @@ type SystemsService struct {
 	mock.Mock
 }
 
-// GetByNameAndSystemNumber provides a mock function with given fields: ctx, name, systemNumber
-func (_m *SystemsService) GetByNameAndSystemNumber(ctx context.Context, name string, systemNumber string) (*model.Application, error) {
-	ret := _m.Called(ctx, name, systemNumber)
+// GetBySystemNumber provides a mock function with given fields: ctx, systemNumber
+func (_m *SystemsService) GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error) {
+	ret := _m.Called(ctx, systemNumber)
 
 	var r0 *model.Application
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
-		r0 = rf(ctx, name, systemNumber)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Application); ok {
+		r0 = rf(ctx, systemNumber)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Application)
@@ -28,8 +28,8 @@ func (_m *SystemsService) GetByNameAndSystemNumber(ctx context.Context, name str
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, name, systemNumber)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, systemNumber)
 	} else {
 		r1 = ret.Error(1)
 	}

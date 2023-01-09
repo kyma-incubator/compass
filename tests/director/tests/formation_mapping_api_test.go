@@ -102,8 +102,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		t.Logf("Listing formation assignments for formation with ID: %q", formationID)
 		listFormationAssignmentsReq := fixtures.FixListFormationAssignmentRequest(formationID, 100)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, parentTenantID, listFormationAssignmentsReq)
-		require.Len(t, assignmentsPage.Data, 2)
-		require.Equal(t, 2, assignmentsPage.TotalCount)
+		require.Len(t, assignmentsPage.Data, 4)
+		require.Equal(t, 4, assignmentsPage.TotalCount)
 
 		t.Run("Runtime caller successfully updates his formation assignment", func(t *testing.T) {
 			formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntime, app.ID)
@@ -169,7 +169,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		}()
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -238,6 +238,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		appRegion := "test-async-app-region"
 		appNamespace := "compass.test"
 		localTenantID := "local-async-tenant-id"
+		placeholderName := "name"
+		placeholderDisplayName := "display-name"
 		t.Logf("Create application template for type: %q", applicationType)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name:        applicationType,
@@ -254,10 +256,14 @@ func Test_UpdateStatus(baseT *testing.T) {
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
-					Name: "name",
+					Name:        "name",
+					Description: &placeholderName,
+					JSONPath:    str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty)),
 				},
 				{
-					Name: "display-name",
+					Name:        "display-name",
+					Description: &placeholderDisplayName,
+					JSONPath:    str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty)),
 				},
 			},
 			ApplicationNamespace: &appNamespace,
@@ -292,6 +298,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NotEmpty(t, asyncApp.ID)
 		t.Logf("App ID: %q", asyncApp.ID)
 
+		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
+
 		t.Logf("Assign application to formation: %q", providerAsyncFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(asyncApp.ID, string(graphql.FormationObjectTypeApplication), providerAsyncFormationName)
 		var assignedFormation graphql.Formation
@@ -300,7 +308,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
-		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
+		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 1)
 
 		t.Logf("Assign tenant: %q to formation: %q", subscriptionConsumerSubaccountID, providerAsyncFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerAsyncFormationName)
@@ -309,7 +317,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
-		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 2)
+		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 4)
 
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntimeContext, asyncApp.ID)
 		executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formation.ID, formationAssignmentID, http.StatusOK)
@@ -340,11 +348,13 @@ func Test_UpdateStatus(baseT *testing.T) {
 
 		appProviderCertSecuredHTTPClient := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription-async")
 		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhooks(appTemplateName)
+		appTemplateInput.Placeholders[0].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
+		appTemplateInput.Placeholders[1].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		appTemplateInput.Labels["applicationType"] = appTemplateName
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 
@@ -382,7 +392,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true)
 
 		actualAppPage := graphql.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
@@ -411,6 +421,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName)
 		require.NotEmpty(t, formation.ID)
 
+		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
+
 		appID := actualAppPage.Data[0].ID
 		t.Logf("Assign application to formation: %q", providerAsyncFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(appID, string(graphql.FormationObjectTypeApplication), providerAsyncFormationName)
@@ -420,7 +432,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
-		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
+		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 1)
 
 		t.Logf("Assign tenant: %q to formation: %q", subscriptionConsumerSubaccountID, providerAsyncFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerAsyncFormationName)
@@ -429,7 +441,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerAsyncFormationName, assignedFormation.Name)
 
-		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 2)
+		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 4)
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeApplication, runtime.ID)
 
 		executeStatusUpdateReqWithExpectedStatusCode(t, appProviderCertSecuredHTTPClient, testConfig, formation.ID, formationAssignmentID, http.StatusOK)
@@ -484,8 +496,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		t.Logf("List formation assignments for formation with ID: %q", formationID)
 		listFormationAssignmentsReq := fixtures.FixListFormationAssignmentRequest(formationID, 100)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, parentTenantID, listFormationAssignmentsReq)
-		require.Len(t, assignmentsPage.Data, 2)
-		require.Equal(t, 2, assignmentsPage.TotalCount)
+		require.Len(t, assignmentsPage.Data, 4)
+		require.Equal(t, 4, assignmentsPage.TotalCount)
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntime, app.ID)
 		t.Logf("successfully listed FAs for formation ID: %q", formationID)
 

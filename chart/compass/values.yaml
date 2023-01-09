@@ -115,31 +115,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2792"
+      version: "PR-2791"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2792"
+      version: "PR-2791"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2792"
+      version: "PR-2812"
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2792"
+      version: "PR-2820"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2792"
+      version: "PR-2791"
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2792"
+      version: "PR-2791"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2792"
+      version: "PR-2791"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -147,11 +147,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2770"
+      version: "PR-2798"
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2792"
+      version: "PR-2791"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -160,7 +160,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2792"
+      version: "PR-2807"
       name: compass-external-services-mock
     console:
       dir:
@@ -168,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2792"
+      version: "PR-2820"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1058,6 +1058,8 @@ global:
         - "webhook:write"
         - "application_template:read"
         - "application_template:write"
+        - "formation_template:read"
+        - "formation_template:write"
       application:
         - "application:read"
         - "application:write"

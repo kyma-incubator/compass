@@ -16,7 +16,7 @@ type FormationTemplateConverter interface {
 	FromInputGraphQL(in *graphql.FormationTemplateInput) *model.FormationTemplateInput
 	ToGraphQL(in *model.FormationTemplate) *graphql.FormationTemplate
 	MultipleToGraphQL(in []*model.FormationTemplate) []*graphql.FormationTemplate
-	FromModelInputToModel(in *model.FormationTemplateInput, id string) *model.FormationTemplate
+	FromModelInputToModel(in *model.FormationTemplateInput, id string, tenantID string) *model.FormationTemplate
 }
 
 // FormationTemplateService represents the FormationTemplate service layer

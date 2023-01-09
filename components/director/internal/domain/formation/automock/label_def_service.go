@@ -78,13 +78,13 @@ func (_m *LabelDefService) ValidateExistingLabelsAgainstSchema(ctx context.Conte
 	return r0
 }
 
-type NewLabelDefServiceT interface {
+type mockConstructorTestingTNewLabelDefService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewLabelDefService creates a new instance of LabelDefService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelDefService(t NewLabelDefServiceT) *LabelDefService {
+func NewLabelDefService(t mockConstructorTestingTNewLabelDefService) *LabelDefService {
 	mock := &LabelDefService{}
 	mock.Mock.Test(t)
 

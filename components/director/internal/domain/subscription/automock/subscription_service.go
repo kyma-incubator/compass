@@ -35,20 +35,20 @@ func (_m *SubscriptionService) DetermineSubscriptionFlow(ctx context.Context, pr
 	return r0, r1
 }
 
-// SubscribeTenantToApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName
-func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context, providerID string, subaccountTenantID string, consumerTenantID string, region string, subscribedAppName string) (bool, error) {
-	ret := _m.Called(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName)
+// SubscribeTenantToApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionPayload
+func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context, providerID string, subaccountTenantID string, consumerTenantID string, region string, subscribedAppName string, subscriptionPayload string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionPayload)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) bool); ok {
-		r0 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) bool); ok {
+		r0 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionPayload)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string) error); ok {
+		r1 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName, subscriptionPayload)
 	} else {
 		r1 = ret.Error(1)
 	}

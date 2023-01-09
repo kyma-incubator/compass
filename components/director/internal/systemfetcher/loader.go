@@ -221,16 +221,7 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 			continue
 		}
 
-		var appInput1 map[string]interface{}
-		if err := json.Unmarshal([]byte(appTmplInput.ApplicationInputJSON), &appInput1); err != nil {
-			return errors.Wrapf(err, "while unmarshaling application input json")
-		}
-		var appInput2 map[string]interface{}
-		if err := json.Unmarshal([]byte(appTemplate.ApplicationInputJSON), &appInput2); err != nil {
-			return errors.Wrapf(err, "while unmarshaling application input json")
-		}
-
-		if !reflect.DeepEqual(appInput1, appInput2) {
+		if !areAppTemplatesEqual(appTemplate, appTmplInput) {
 			log.C(ctx).Infof("Updating application template with id %q", appTemplate.ID)
 			appTemplateUpdateInput := model.ApplicationTemplateUpdateInput{
 				Name:                 appTmplInput.Name,
@@ -239,6 +230,7 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 				ApplicationInputJSON: appTmplInput.ApplicationInputJSON,
 				Placeholders:         appTmplInput.Placeholders,
 				AccessLevel:          appTmplInput.AccessLevel,
+				Labels:               appTmplInput.Labels,
 			}
 			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, appTemplateUpdateInput); err != nil {
 				return errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
@@ -340,4 +332,20 @@ func retrieveRegion(labels map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("%q label value must be string", tenant.RegionLabelKey)
 	}
 	return regionValue, nil
+}
+
+func areAppTemplatesEqual(appTemplate *model.ApplicationTemplate, appTemplateInput model.ApplicationTemplateInput) bool {
+	if appTemplate == nil {
+		return false
+	}
+
+	isAppInputJSONEqual := appTemplate.ApplicationInputJSON == appTemplateInput.ApplicationInputJSON
+	isLabelEqual := reflect.DeepEqual(appTemplate.Labels, appTemplateInput.Labels)
+	isPlaceholderEqual := reflect.DeepEqual(appTemplate.Placeholders, appTemplateInput.Placeholders)
+
+	if isAppInputJSONEqual && isLabelEqual && isPlaceholderEqual {
+		return true
+	}
+
+	return false
 }
