@@ -1574,11 +1574,11 @@ func TestMergeApplications(t *testing.T) {
 	healthURL := ptr.String("http://health.com")
 	providerName := ptr.String("test-provider")
 	description := "app description"
-	nameJSONPath := "name-json-path"
+	nameJSONPath := "$.name-json-path"
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	namePlaceholder := "name"
 	displayNamePlaceholder := "display-name"
-	displayNameJSONPath := "display-name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
 	managedLabelValue := "true"
 	sccLabelValue := "cloud connector"
 	expectedProductType := createAppTemplateName("MergeTemplate")
@@ -1785,8 +1785,8 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	expectedProductType := createAppTemplateName("MergeTemplate")
 	newFormation := "formation-merge-applications-e2e"
 	formationTemplateName := "merge-applications-template"
-	nameJSONPath := "name-json-path"
-	displayNameJSONPath := "display-name-json-path"
+	nameJSONPath := "$.name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
 
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"

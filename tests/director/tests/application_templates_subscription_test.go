@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
@@ -75,7 +77,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 		for i := range appTemplateInput.Placeholders {
-			appTemplateInput.Placeholders[i].JSONPath = &conf.SubscriptionProviderAppNameProperty
+			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
@@ -376,7 +378,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		appTemplateName := createAppTemplateName("app-template-name-subscription-with-optional-placeholders")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(appTemplateName)
 		for i := range appTemplateInput.Placeholders {
-			appTemplateInput.Placeholders[i].JSONPath = &conf.SubscriptionProviderAppNameProperty
+			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
