@@ -34,6 +34,12 @@ type webhookRepository interface {
 	GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error)
 }
 
+//go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantRepository interface {
+	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error)
+}
+
 //go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type webhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
@@ -53,6 +59,7 @@ type notificationsService struct {
 	runtimeContextRepo            runtimeContextRepository
 	labelRepository               labelRepository
 	webhookRepository             webhookRepository
+	tenantRepository              tenantRepository
 	webhookConverter              webhookConverter
 	webhookClient                 webhookClient
 	webhookDataInputBuilder       databuilder.DataInputBuilder
@@ -66,6 +73,7 @@ func NewNotificationService(
 	runtimeContextRepo runtimeContextRepository,
 	labelRepository labelRepository,
 	webhookRepository webhookRepository,
+	tenantRepository tenantRepository,
 	webhookConverter webhookConverter,
 	webhookClient webhookClient,
 	webhookDataInputBuilder databuilder.DataInputBuilder,
@@ -77,6 +85,7 @@ func NewNotificationService(
 		runtimeContextRepo:            runtimeContextRepo,
 		labelRepository:               labelRepository,
 		webhookRepository:             webhookRepository,
+		tenantRepository:              tenantRepository,
 		webhookClient:                 webhookClient,
 		webhookConverter:              webhookConverter,
 		webhookDataInputBuilder:       webhookDataInputBuilder,

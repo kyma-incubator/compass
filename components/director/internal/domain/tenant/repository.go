@@ -370,6 +370,37 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	return dest.TenantID, nil
 }
 
+// GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant
+func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error) {
+	recursiveQuery := `WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.parent, t1.external_tenant, t1.type
+                    FROM business_tenant_mappings t1
+                    WHERE id = $1
+                    UNION ALL
+                    SELECT t2.id, t2.parent, t2.external_tenant, t2.type
+                    FROM business_tenant_mappings t2
+                             INNER JOIN parents p on p.parent = t2.id)
+			SELECT external_tenant FROM parents WHERE parent is null`
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", recursiveQuery)
+
+	var externalCustomerID string
+	if err := persist.GetContext(ctx, &externalCustomerID, recursiveQuery, tenant); err != nil {
+		return "", persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for internal tenant: %q", tenant)
+	}
+
+	if externalCustomerID == "" {
+		return "", errors.Errorf("external parent customer ID for internal tenant ID: %s can not be empty", tenant)
+	}
+
+	return externalCustomerID, nil
+}
+
 func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 
