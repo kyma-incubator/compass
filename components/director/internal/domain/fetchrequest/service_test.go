@@ -188,6 +188,7 @@ func TestService_HandleSpec(t *testing.T) {
 	testCases := []struct {
 		Name                 string
 		Client               func(t *testing.T) *http.Client
+		localTenantId        string
 		InputFr              model.FetchRequest
 		ExecutorProviderFunc func() accessstrategy.ExecutorProvider
 		ExpectedResult       *string
@@ -205,6 +206,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInput,
+			localTenantId:  localTenantID,
 			ExpectedResult: &mockSpec,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp),
 		},
@@ -217,8 +219,24 @@ func TestService_HandleSpec(t *testing.T) {
 			},
 
 			InputFr:        modelInputBundle,
+			localTenantId:  localTenantID,
 			ExpectedResult: nil,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr("Invalid data [reason=Unsupported fetch mode: BUNDLE]"), timestamp),
+		},
+		{
+			Name: "Nil when can't load local tenant id from context",
+			Client: func(t *testing.T) *http.Client {
+				return NewTestClient(func(req *http.Request) *http.Response {
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec))}
+				})
+			},
+
+			InputFr:        modelInput,
+			localTenantId:  "",
+			ExpectedResult: nil,
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr("Internal Server Error: local tenant id is required"), timestamp),
 		},
 		{
 			Name: "Nil when fetch request validation fails due to provided filter",
@@ -229,6 +247,7 @@ func TestService_HandleSpec(t *testing.T) {
 			},
 
 			InputFr:        modelInputFilter,
+			localTenantId:  localTenantID,
 			ExpectedResult: nil,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr("Invalid data [reason=Filter for Fetch Request was provided, currently it's unsupported]"), timestamp),
 		},
@@ -236,7 +255,7 @@ func TestService_HandleSpec(t *testing.T) {
 			Name: "Success with access strategy",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &accessstrategyautomock.Executor{}
-				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, "").Return(&http.Response{
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, localTenantID).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 				}, nil).Once()
@@ -249,6 +268,7 @@ func TestService_HandleSpec(t *testing.T) {
 				return nil
 			},
 			InputFr:        modelInputAccessStrategy,
+			localTenantId:  localTenantID,
 			ExpectedResult: &mockSpec,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp),
 		},
@@ -263,13 +283,14 @@ func TestService_HandleSpec(t *testing.T) {
 				return nil
 			},
 			InputFr:        modelInputAccessStrategy,
+			localTenantId:  localTenantID,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec: test"), timestamp),
 		},
 		{
 			Name: "Fails when access strategy execution fail",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &accessstrategyautomock.Executor{}
-				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, "").Return(nil, testErr).Once()
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, localTenantID).Return(nil, testErr).Once()
 
 				executorProvider := &accessstrategyautomock.ExecutorProvider{}
 				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
@@ -279,6 +300,7 @@ func TestService_HandleSpec(t *testing.T) {
 				return nil
 			},
 			InputFr:        modelInputAccessStrategy,
+			localTenantId:  localTenantID,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec: test"), timestamp),
 		},
 		{
@@ -296,6 +318,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInputBasicCredentials,
+			localTenantId:  localTenantID,
 			ExpectedResult: &mockSpec,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp),
 		},
@@ -313,6 +336,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInputBasicCredentials,
+			localTenantId:  localTenantID,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec status code: 500"), timestamp),
 		},
 		{
@@ -324,6 +348,7 @@ func TestService_HandleSpec(t *testing.T) {
 			},
 
 			InputFr:        modelInputMissingCredentials,
+			localTenantId:  localTenantID,
 			ExpectedResult: nil,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec: Invalid data [reason=Credentials not provided]"), timestamp),
 		},
@@ -349,6 +374,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInputOauth,
+			localTenantId:  localTenantID,
 			ExpectedResult: &mockSpec,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp),
 		},
@@ -371,6 +397,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInputOauth,
+			localTenantId:  localTenantID,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec: Get \"http://dummy.url.sth\": oauth2: cannot fetch token: \nResponse: "), timestamp),
 		},
 		{
@@ -395,6 +422,7 @@ func TestService_HandleSpec(t *testing.T) {
 				})
 			},
 			InputFr:        modelInputOauth,
+			localTenantId:  localTenantID,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr("While fetching Spec status code: 500"), timestamp),
 		},
 	}
@@ -409,6 +437,7 @@ func TestService_HandleSpec(t *testing.T) {
 
 			ctx := context.TODO()
 			ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+			ctx = tenant.SaveLocalTenantIDToContext(ctx, testCase.localTenantId)
 
 			frRepo := &automock.FetchRequestRepository{}
 			frRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
@@ -431,6 +460,7 @@ func TestService_HandleSpec(t *testing.T) {
 func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveLocalTenantIDToContext(ctx, localTenantID)
 
 	timestamp := time.Now()
 	frRepo := &automock.FetchRequestRepository{}
@@ -460,6 +490,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveLocalTenantIDToContext(ctx, localTenantID)
 
 	timestamp := time.Now()
 	frRepo := &automock.FetchRequestRepository{}
@@ -506,6 +537,7 @@ func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T)
 func TestService_HandleSpec_FailsAfterRetryMechanismIsExhausted(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+	ctx = tenant.SaveLocalTenantIDToContext(ctx, localTenantID)
 
 	timestamp := time.Now()
 	frRepo := &automock.FetchRequestRepository{}

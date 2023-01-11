@@ -104,7 +104,6 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 	}
 
 	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
-	log.C(ctx).Infof("LOCAL TENANT ID IN FETCHREQUEST: %s", localTenantID)
 	if err != nil {
 		return nil, FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()), s.timestampGen())
 	}
@@ -119,14 +118,17 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 
 		doRequest = func() (*http.Response, error) {
+			log.C(ctx).Info("calling execute")
 			return executor.Execute(ctx, s.client, fr.URL, localTenantID)
 		}
 	} else if fr.Auth != nil {
 		doRequest = func() (*http.Response, error) {
+			log.C(ctx).Info("calling GetRequestWithCredentials")
 			return httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, localTenantID, fr.Auth)
 		}
 	} else {
 		doRequest = func() (*http.Response, error) {
+			log.C(ctx).Info("calling GetRequestWithoutCredentials")
 			return httputil.GetRequestWithoutCredentials(s.client, fr.URL, localTenantID)
 		}
 	}
