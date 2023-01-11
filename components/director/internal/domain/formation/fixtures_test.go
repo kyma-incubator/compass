@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
@@ -84,6 +85,9 @@ const (
 	ApplicationTemplateID            = "58963c6f-24f6-4128-a05c-51d5356e7e09"
 	runtimeType                      = "runtimeType"
 	applicationType                  = "applicationType"
+	testProvider                     = "Compass"
+	TntExternalID                    = "ada4241d-caa1-4ee4-b8bf-f733e180fbf9"
+	TntParentID                      = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
 
 	// Formation Assignment constants
 	FormationAssignmentID          = "FormationAssignmentID"
@@ -114,6 +118,10 @@ func unusedASARepo() *automock.AutomaticFormationAssignmentRepository {
 
 func unusedRuntimeRepo() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
+}
+
+func unusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
 }
 
 func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
@@ -275,6 +283,18 @@ func fixApplicationModel(applicationID string) *model.Application {
 			UpdatedAt: &time.Time{},
 			DeletedAt: &time.Time{},
 		},
+	}
+}
+
+func fixModelBusinessTenantMappingWithType() *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             Tnt,
+		Name:           "test-name",
+		ExternalTenant: TntExternalID,
+		Parent:         TntParentID,
+		Type:           tnt.Account,
+		Provider:       testProvider,
+		Status:         tnt.Active,
 	}
 }
 

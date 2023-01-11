@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"

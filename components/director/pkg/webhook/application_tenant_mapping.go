@@ -17,9 +17,10 @@ type ApplicationTenantMappingInput struct {
 	SourceApplication         *ApplicationWithLabels
 	TargetApplicationTemplate *ApplicationTemplateWithLabels
 	// TargetApplication is the application that the notification is for (the one with the webhook / the one receiving the notification)
-	TargetApplication *ApplicationWithLabels
-	Assignment        *FormationAssignment
-	ReverseAssignment *FormationAssignment
+	TargetApplication     *ApplicationWithLabels
+	CustomerTenantContext *CustomerTenantContext
+	Assignment            *FormationAssignment
+	ReverseAssignment     *FormationAssignment
 }
 
 // ParseURLTemplate missing godoc
