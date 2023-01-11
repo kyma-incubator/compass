@@ -1154,13 +1154,13 @@ func TestPgRepository_GetCustomerIDParentRecursively(t *testing.T) {
                     SELECT t2.id, t2.parent, t2.external_tenant, t2.type
                     FROM business_tenant_mappings t2
                              INNER JOIN parents p on p.parent = t2.id)
-			SELECT external_tenant FROM parents WHERE parent is null`
+			SELECT external_tenant, type FROM parents WHERE parent is null`
 
-	t.Run("Success when parent is returned", func(t *testing.T) {
+	t.Run("Success when parent and type are returned", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 
-		rowsToReturn := sqlmock.NewRows([]string{"external_tenant"}).AddRow(testParentID)
+		rowsToReturn := sqlmock.NewRows([]string{"external_tenant", "type"}).AddRow(testParentID, tenantEntity.TypeToStr(tenantEntity.Customer))
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
 			WithArgs(testID).
 			WillReturnRows(rowsToReturn)
@@ -1206,11 +1206,32 @@ func TestPgRepository_GetCustomerIDParentRecursively(t *testing.T) {
 		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
 	})
 
+	t.Run("Return empty string when returned type is not customer", func(t *testing.T) {
+		// GIVEN
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := sqlmock.NewRows([]string{"external_tenant", "type"}).AddRow(testParentID, tenantEntity.TypeToStr(tenantEntity.Account))
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(testID).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(nil)
+
+		// WHEN
+		customerID, err := tenantMappingRepo.GetCustomerIDParentRecursively(ctx, testID)
+
+		// THEN
+		require.NoError(t, err)
+		require.Empty(t, customerID)
+		dbMock.AssertExpectations(t)
+	})
+
 	t.Run("Error when empty parent is returned", func(t *testing.T) {
 		// GIVEN
 		db, dbMock := testdb.MockDatabase(t)
 
-		rowsToReturn := sqlmock.NewRows([]string{"external_tenant"}).AddRow("")
+		rowsToReturn := sqlmock.NewRows([]string{"external_tenant", "type"}).AddRow("", tenantEntity.TypeToStr(tenantEntity.Customer))
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
 			WithArgs(testID).
 			WillReturnRows(rowsToReturn)
