@@ -86,7 +86,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="1"
+POSTGRES_VERSION="11"
 
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
@@ -175,7 +175,7 @@ else
             gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-local ${ROOT_PATH}/../schema-migrator/seeds
         fi
 
-        docker exec -i ${POSTGRES_CONTAINER} pg_restore -Fd -j 8 -v -O -x -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" tmp/dump-local
+        docker exec -i ${POSTGRES_CONTAINER} pg_restore --format=directory --jobs=8 --no-owner --no-privileges --username="${DB_USER}" --host="${DB_HOST}" --port="${DB_PORT}" --dbname="${DB_NAME}" tmp/dump-local
 
         REMOTE_MIGRATION_VERSION=$(docker exec -i ${POSTGRES_CONTAINER} psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
         LOCAL_MIGRATION_VERSION=$(echo $(ls ${ROOT_PATH}/../schema-migrator/migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')
