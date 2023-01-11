@@ -85,8 +85,8 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-POSTGRES_CONTAINER="test-postgres-14"
-POSTGRES_VERSION="14"
+POSTGRES_CONTAINER="test-postgres"
+POSTGRES_VERSION="1"
 
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
