@@ -85,8 +85,8 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="11"
+POSTGRES_CONTAINER="test-postgres-14"
+POSTGRES_VERSION="14"
 
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
@@ -134,6 +134,7 @@ else
                 -e POSTGRES_DB=${DB_NAME} \
                 -e POSTGRES_PORT=${DB_PORT} \
                 -p ${DB_PORT}:${DB_PORT} \
+                -v ${ROOT_PATH}/../schema-migrator/seeds:/tmp \
                 postgres:${POSTGRES_VERSION}
 
     if [[ $? -ne 0 ]] ; then
@@ -169,13 +170,12 @@ else
         cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
             docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
     else
-        if [[ ! -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
+        if [[ ! -d ${ROOT_PATH}/../schema-migrator/seeds/dump-local ]]; then
             echo -e "${GREEN}Will pull DB dump from GCR bucket${NC}"
-            gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql ${ROOT_PATH}/../schema-migrator/seeds/dump.sql
+            gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-local ${ROOT_PATH}/../schema-migrator/seeds
         fi
 
-        cat ${ROOT_PATH}/../schema-migrator/seeds/dump.sql | \
-            docker exec -i ${POSTGRES_CONTAINER} psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+        docker exec -i ${POSTGRES_CONTAINER} pg_restore -Fd -j 8 -v -O -x -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" tmp/dump-local
 
         REMOTE_MIGRATION_VERSION=$(docker exec -i ${POSTGRES_CONTAINER} psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
         LOCAL_MIGRATION_VERSION=$(echo $(ls ${ROOT_PATH}/../schema-migrator/migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')
