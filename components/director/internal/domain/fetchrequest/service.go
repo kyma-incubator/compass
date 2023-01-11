@@ -103,6 +103,11 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		return nil, FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()), s.timestampGen())
 	}
 
+	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
+	log.C(ctx).Infof("LOCAL TENANT ID IN FETCHREQUEST: %s", localTenantID)
+	if err != nil {
+		return nil, FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()), s.timestampGen())
+	}
 	var doRequest retry.ExecutableHTTPFunc
 	if fr.Auth != nil && fr.Auth.AccessStrategy != nil && len(*fr.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("Fetch Request with id %s is configured with %s access strategy.", fr.ID, *fr.Auth.AccessStrategy)
@@ -114,15 +119,15 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 
 		doRequest = func() (*http.Response, error) {
-			return executor.Execute(ctx, s.client, fr.URL, "")
+			return executor.Execute(ctx, s.client, fr.URL, localTenantID)
 		}
 	} else if fr.Auth != nil {
 		doRequest = func() (*http.Response, error) {
-			return httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, "", fr.Auth)
+			return httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, localTenantID, fr.Auth)
 		}
 	} else {
 		doRequest = func() (*http.Response, error) {
-			return httputil.GetRequestWithoutCredentials(s.client, fr.URL, "")
+			return httputil.GetRequestWithoutCredentials(s.client, fr.URL, localTenantID)
 		}
 	}
 
