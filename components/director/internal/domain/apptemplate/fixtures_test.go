@@ -41,7 +41,7 @@ const (
 var (
 	testUUID                       = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testDescription                = "Lorem ipsum"
-	testJSONPath                   = "test"
+	testJSONPath                   = "$.test"
 	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
 	testProviderName               = "provider-display-name"
 	testURL                        = "http://valid.url"
@@ -355,7 +355,7 @@ func fixModelPlaceholdersWithPayload() []model.ApplicationTemplatePlaceholder {
 	placeholderTestDesc := testDescription
 	placeholderTestJSONPath := testJSONPath
 	placeholderNameDesc := "Application Name placeholder"
-	placeholderNameJSONPath := "name"
+	placeholderNameJSONPath := "$.name"
 	return []model.ApplicationTemplatePlaceholder{
 		{
 			Name:        "test",

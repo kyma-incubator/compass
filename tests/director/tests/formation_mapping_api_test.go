@@ -258,12 +258,12 @@ func Test_UpdateStatus(baseT *testing.T) {
 				{
 					Name:        "name",
 					Description: &placeholderName,
-					JSONPath:    &conf.SubscriptionProviderAppNameProperty,
+					JSONPath:    str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty)),
 				},
 				{
 					Name:        "display-name",
 					Description: &placeholderDisplayName,
-					JSONPath:    &conf.SubscriptionProviderAppNameProperty,
+					JSONPath:    str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty)),
 				},
 			},
 			ApplicationNamespace: &appNamespace,
@@ -353,8 +353,8 @@ func Test_UpdateStatus(baseT *testing.T) {
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription-async")
 		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhooks(appTemplateName)
-		appTemplateInput.Placeholders[0].JSONPath = &conf.SubscriptionProviderAppNameProperty
-		appTemplateInput.Placeholders[1].JSONPath = &conf.SubscriptionProviderAppNameProperty
+		appTemplateInput.Placeholders[0].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
+		appTemplateInput.Placeholders[1].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		appTemplateInput.Labels["applicationType"] = appTemplateName
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 
