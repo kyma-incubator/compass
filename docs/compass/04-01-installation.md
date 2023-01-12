@@ -308,7 +308,7 @@ To install the Compass and Runtime components on a single cluster, perform the f
 
 > **NOTE:** During the installation of Kyma, the installed version must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
-You must have a Kyma installation with an enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.3.0/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the compass-system namespace to the list of [minimal compass components file](../../installation/resources/kyma/kyma-overrides-minimal.yaml).
+You must have a Kyma installation with an enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.3.0/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the compass-system namespace to the list of [minimal kyma components file](../../installation/resources/kyma/kyma-components-minimal.yaml).
 
 If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.3.0/docs/03-tutorials/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
