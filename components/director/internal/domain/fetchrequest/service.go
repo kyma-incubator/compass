@@ -105,7 +105,8 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 
 	localTenantID, err := tenant.LoadLocalTenantIDFromContext(ctx)
 	if err != nil {
-		return nil, FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()), s.timestampGen())
+		log.C(ctx).WithError(err).Errorf("An error has occurred while getting local tenant id: %v", err)
+		localTenantID = ""
 	}
 	var doRequest retry.ExecutableHTTPFunc
 	if fr.Auth != nil && fr.Auth.AccessStrategy != nil && len(*fr.Auth.AccessStrategy) > 0 {

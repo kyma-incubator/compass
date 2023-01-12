@@ -211,6 +211,20 @@ func TestService_HandleSpec(t *testing.T) {
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp),
 		},
 		{
+			Name: "Success when local tenant id is missing",
+			Client: func(t *testing.T) *http.Client {
+				return NewTestClient(func(req *http.Request) *http.Response {
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
+					}
+				})
+			},
+			InputFr:        modelInput,
+			ExpectedResult: &mockSpec,
+			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp),
+		},
+		{
 			Name: "Nil when fetch request validation fails due to mode Bundle",
 			Client: func(t *testing.T) *http.Client {
 				return NewTestClient(func(req *http.Request) *http.Response {
@@ -222,21 +236,6 @@ func TestService_HandleSpec(t *testing.T) {
 			localTenantID:  localTenantID,
 			ExpectedResult: nil,
 			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr("Invalid data [reason=Unsupported fetch mode: BUNDLE]"), timestamp),
-		},
-		{
-			Name: "Nil when can't load local tenant id from context",
-			Client: func(t *testing.T) *http.Client {
-				return NewTestClient(func(req *http.Request) *http.Response {
-					return &http.Response{
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewBufferString(mockSpec))}
-				})
-			},
-
-			InputFr:        modelInput,
-			localTenantID:  "",
-			ExpectedResult: nil,
-			ExpectedStatus: fetchrequest.FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr("Internal Server Error: local tenant id is required"), timestamp),
 		},
 		{
 			Name: "Nil when fetch request validation fails due to provided filter",

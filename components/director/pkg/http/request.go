@@ -12,6 +12,8 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+const tenantHeader = "Tenant_Id"
+
 // GetRequestWithCredentials executes a GET http request to the given url with the provided auth credentials
 func GetRequestWithCredentials(ctx context.Context, client *http.Client, url, tnt string, auth *model.Auth) (*http.Response, error) {
 	if auth == nil || (auth.Credential.Basic == nil && auth.Credential.Oauth == nil) {
@@ -24,7 +26,7 @@ func GetRequestWithCredentials(ctx context.Context, client *http.Client, url, tn
 	}
 
 	if len(tnt) > 0 {
-		req.Header.Set("Tenant", tnt)
+		req.Header.Set(tenantHeader, tnt)
 	}
 
 	var resp *http.Response
@@ -66,7 +68,7 @@ func GetRequestWithoutCredentials(client *http.Client, url, tnt string) (*http.R
 	}
 
 	if len(tnt) > 0 {
-		req.Header.Set("Tenant", tnt)
+		req.Header.Set(tenantHeader, tnt)
 	}
 
 	return client.Do(req)
