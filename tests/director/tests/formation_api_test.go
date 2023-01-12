@@ -905,12 +905,16 @@ func TestFormationNotificationsTenantHierarchy(stdT *testing.T) {
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
-		rtmRequest := fixtures.FixGetRuntimeContextsRequest(providerRuntime.ID)
-		rtm := graphql.RuntimeExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, gaAccountID, rtmRequest, &rtm)
-		require.NoError(t, err)
-		require.Equal(t, 1, len(rtm.RuntimeContexts.Data))
-		runtimeContextID := rtm.RuntimeContexts.Data[0].ID
+		t.Log("Assert provider runtime is visible in the consumer's subaccount after successful subscription")
+		consumerSubaccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
+		require.Equal(t, providerRuntime.ID, consumerSubaccountRuntime.ID)
+
+		t.Log("Assert there is a runtime context(subscription) as part of the provider runtime")
+		require.Len(t, consumerSubaccountRuntime.RuntimeContexts.Data, 1)
+		require.NotEmpty(t, consumerSubaccountRuntime.RuntimeContexts.Data[0].ID)
+		require.Equal(t, conf.SubscriptionLabelKey, consumerSubaccountRuntime.RuntimeContexts.Data[0].Key)
+		require.Equal(t, subscriptionConsumerTenantID, consumerSubaccountRuntime.RuntimeContexts.Data[0].Value)
+		runtimeContextID := consumerSubaccountRuntime.RuntimeContexts.Data[0].ID
 
 		applicationType := "provider-app-type-1"
 		providerFormationTmplName := "provider-formation-template-name"
