@@ -218,7 +218,7 @@ if [[ ${DUMP_DB} ]]; then
         echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
     fi
     rm -f "${DATA_DIR}"/dump || true
-    cp "${DATA_DIR}"/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump
+    cp -R "${DATA_DIR}"/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump
 fi
 
 if [[ ! ${SKIP_K3D_START} ]]; then
