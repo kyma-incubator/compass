@@ -58,7 +58,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		Labels:      fixApplicationLabelsMap(),
 	}
 
-	tenantObject := fixModelBusinessTenantMappingWithType()
+	tenantObject := fixModelBusinessTenantMapping()
 
 	testCases := []struct {
 		Name                      string

@@ -144,13 +144,14 @@ func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignm
 // Clone returns a copy of the FormationConfigurationChangeInput
 func (rd *FormationConfigurationChangeInput) Clone() FormationAssignmentTemplateInput {
 	return &FormationConfigurationChangeInput{
-		Operation:           rd.Operation,
-		FormationID:         rd.FormationID,
-		ApplicationTemplate: rd.ApplicationTemplate,
-		Application:         rd.Application,
-		Runtime:             rd.Runtime,
-		RuntimeContext:      rd.RuntimeContext,
-		Assignment:          rd.Assignment,
-		ReverseAssignment:   rd.ReverseAssignment,
+		Operation:             rd.Operation,
+		FormationID:           rd.FormationID,
+		ApplicationTemplate:   rd.ApplicationTemplate,
+		Application:           rd.Application,
+		Runtime:               rd.Runtime,
+		RuntimeContext:        rd.RuntimeContext,
+		CustomerTenantContext: rd.CustomerTenantContext,
+		Assignment:            rd.Assignment,
+		ReverseAssignment:     rd.ReverseAssignment,
 	}
 }

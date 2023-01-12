@@ -286,7 +286,7 @@ func fixApplicationModel(applicationID string) *model.Application {
 	}
 }
 
-func fixModelBusinessTenantMappingWithType() *model.BusinessTenantMapping {
+func fixModelBusinessTenantMapping() *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             Tnt,
 		Name:           "test-name",

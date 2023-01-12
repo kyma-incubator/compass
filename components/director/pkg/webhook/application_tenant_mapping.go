@@ -97,6 +97,7 @@ func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInpu
 		SourceApplication:         rd.SourceApplication,
 		TargetApplicationTemplate: rd.TargetApplicationTemplate,
 		TargetApplication:         rd.TargetApplication,
+		CustomerTenantContext:     rd.CustomerTenantContext,
 		Assignment:                rd.Assignment,
 		ReverseAssignment:         rd.ReverseAssignment,
 	}

@@ -922,7 +922,7 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 	uidSvc := uid.NewService()
 	notificationSvc := formation.NewNotificationService(appRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, tenantRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uid.NewService(), appRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
-	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, webhookDataInputBuilder)
+	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder)
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)

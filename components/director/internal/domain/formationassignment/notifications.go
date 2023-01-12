@@ -18,15 +18,17 @@ type formationAssignmentNotificationService struct {
 	formationAssignmentRepo FormationAssignmentRepository
 	webhookConverter        webhookConverter
 	webhookRepository       webhookRepository
+	tenantRepository        tenantRepository
 	webhookDataInputBuilder databuilder.DataInputBuilder
 }
 
 // NewFormationAssignmentNotificationService creates formation assignment notifications service
-func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, webhookConverter webhookConverter, webhookRepository webhookRepository, webhookDataInputBuilder databuilder.DataInputBuilder) *formationAssignmentNotificationService {
+func NewFormationAssignmentNotificationService(formationAssignmentRepo FormationAssignmentRepository, webhookConverter webhookConverter, webhookRepository webhookRepository, tenantRepository tenantRepository, webhookDataInputBuilder databuilder.DataInputBuilder) *formationAssignmentNotificationService {
 	return &formationAssignmentNotificationService{
 		formationAssignmentRepo: formationAssignmentRepo,
 		webhookConverter:        webhookConverter,
 		webhookRepository:       webhookRepository,
+		tenantRepository:        tenantRepository,
 		webhookDataInputBuilder: webhookDataInputBuilder,
 	}
 }
@@ -34,20 +36,25 @@ func NewFormationAssignmentNotificationService(formationAssignmentRepo Formation
 // GenerateNotification generates notifications by provided model.FormationAssignment
 func (fan *formationAssignmentNotificationService) GenerateNotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating notification for formation assignment with ID: %q and target type: %q and target ID: %q", fa.ID, fa.TargetType, fa.Target)
+
+	customerTenantContext, err := fan.extractCustomerTenantContext(ctx, fa.TenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while extracting customer tenant context for tenant with internal ID %s", fa.TenantID)
+	}
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
-		return fan.generateApplicationFANotification(ctx, fa)
+		return fan.generateApplicationFANotification(ctx, fa, customerTenantContext)
 	case model.FormationAssignmentTypeRuntime:
-		return fan.generateRuntimeFANotification(ctx, fa)
+		return fan.generateRuntimeFANotification(ctx, fa, customerTenantContext)
 	case model.FormationAssignmentTypeRuntimeContext:
-		return fan.generateRuntimeContextFANotification(ctx, fa)
+		return fan.generateRuntimeContextFANotification(ctx, fa, customerTenantContext)
 	default:
 		return nil, errors.Errorf("Unknown formation assignment type: %q", fa.TargetType)
 	}
 }
 
 // generateApplicationFANotification generates application formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateApplicationFANotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateApplicationFANotification(ctx context.Context, fa *model.FormationAssignment, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.NotificationRequest, error) {
 	tenant := fa.TenantID
 	appID := fa.Target
 
@@ -89,6 +96,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			SourceApplication:         reverseAppWithLabels,
 			TargetApplicationTemplate: appTemplateWithLabels,
 			TargetApplication:         appWithLabels,
+			CustomerTenantContext:     customerTenantContext,
 			Assignment:                convertFormationAssignmentFromModel(fa),
 			ReverseAssignment:         convertFormationAssignmentFromModel(reverseFA),
 		}
@@ -123,14 +131,15 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		}
 
 		whInput := &webhook.FormationConfigurationChangeInput{
-			Operation:           model.AssignFormation,
-			FormationID:         fa.FormationID,
-			ApplicationTemplate: appTemplateWithLabels,
-			Application:         applicationWithLabels,
-			Runtime:             runtimeWithLabels,
-			RuntimeContext:      runtimeContextWithLabels,
-			Assignment:          convertFormationAssignmentFromModel(fa),
-			ReverseAssignment:   convertFormationAssignmentFromModel(reverseFA),
+			Operation:             model.AssignFormation,
+			FormationID:           fa.FormationID,
+			ApplicationTemplate:   appTemplateWithLabels,
+			Application:           applicationWithLabels,
+			Runtime:               runtimeWithLabels,
+			RuntimeContext:        runtimeContextWithLabels,
+			CustomerTenantContext: customerTenantContext,
+			Assignment:            convertFormationAssignmentFromModel(fa),
+			ReverseAssignment:     convertFormationAssignmentFromModel(reverseFA),
 		}
 
 		notificationReq, err := fan.createWebhookRequest(ctx, appWebhook, whInput)
@@ -170,14 +179,15 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		}
 
 		whInput := &webhook.FormationConfigurationChangeInput{
-			Operation:           model.AssignFormation,
-			FormationID:         fa.FormationID,
-			ApplicationTemplate: appTemplateWithLabels,
-			Application:         applicationWithLabels,
-			Runtime:             runtimeWithLabels,
-			RuntimeContext:      runtimeContextWithLabels,
-			Assignment:          convertFormationAssignmentFromModel(fa),
-			ReverseAssignment:   convertFormationAssignmentFromModel(reverseFA),
+			Operation:             model.AssignFormation,
+			FormationID:           fa.FormationID,
+			ApplicationTemplate:   appTemplateWithLabels,
+			Application:           applicationWithLabels,
+			Runtime:               runtimeWithLabels,
+			RuntimeContext:        runtimeContextWithLabels,
+			CustomerTenantContext: customerTenantContext,
+			Assignment:            convertFormationAssignmentFromModel(fa),
+			ReverseAssignment:     convertFormationAssignmentFromModel(reverseFA),
 		}
 
 		notificationReq, err := fan.createWebhookRequest(ctx, appWebhook, whInput)
@@ -190,7 +200,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 }
 
 // generateRuntimeFANotification generates runtime formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateRuntimeFANotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateRuntimeFANotification(ctx context.Context, fa *model.FormationAssignment, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.NotificationRequest, error) {
 	tenant := fa.TenantID
 	runtimeID := fa.Target
 
@@ -230,14 +240,15 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	}
 
 	whInput := &webhook.FormationConfigurationChangeInput{
-		Operation:           model.AssignFormation,
-		FormationID:         fa.FormationID,
-		ApplicationTemplate: appTemplateWithLabels,
-		Application:         applicationWithLabels,
-		Runtime:             runtimeWithLabels,
-		RuntimeContext:      nil,
-		Assignment:          convertFormationAssignmentFromModel(fa),
-		ReverseAssignment:   convertFormationAssignmentFromModel(reverseFA),
+		Operation:             model.AssignFormation,
+		FormationID:           fa.FormationID,
+		ApplicationTemplate:   appTemplateWithLabels,
+		Application:           applicationWithLabels,
+		Runtime:               runtimeWithLabels,
+		RuntimeContext:        nil,
+		CustomerTenantContext: customerTenantContext,
+		Assignment:            convertFormationAssignmentFromModel(fa),
+		ReverseAssignment:     convertFormationAssignmentFromModel(reverseFA),
 	}
 
 	notificationReq, err := fan.createWebhookRequest(ctx, runtimeWebhook, whInput)
@@ -250,7 +261,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 }
 
 // generateRuntimeContextFANotification generates runtime context formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotification(ctx context.Context, fa *model.FormationAssignment, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.NotificationRequest, error) {
 	tenant := fa.TenantID
 	runtimeCtxID := fa.Target
 
@@ -297,14 +308,15 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	}
 
 	whInput := &webhook.FormationConfigurationChangeInput{
-		Operation:           model.AssignFormation,
-		FormationID:         fa.FormationID,
-		ApplicationTemplate: appTemplateWithLabels,
-		Application:         applicationWithLabels,
-		Runtime:             runtimeWithLabels,
-		RuntimeContext:      runtimeContextWithLabels,
-		Assignment:          convertFormationAssignmentFromModel(fa),
-		ReverseAssignment:   convertFormationAssignmentFromModel(reverseFA),
+		Operation:             model.AssignFormation,
+		FormationID:           fa.FormationID,
+		ApplicationTemplate:   appTemplateWithLabels,
+		Application:           applicationWithLabels,
+		Runtime:               runtimeWithLabels,
+		RuntimeContext:        runtimeContextWithLabels,
+		CustomerTenantContext: customerTenantContext,
+		Assignment:            convertFormationAssignmentFromModel(fa),
+		ReverseAssignment:     convertFormationAssignmentFromModel(reverseFA),
 	}
 
 	notificationReq, err := fan.createWebhookRequest(ctx, runtimeWebhook, whInput)
@@ -343,4 +355,21 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		State:       formationAssignment.State,
 		Value:       config,
 	}
+}
+
+func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(ctx context.Context, internalTenantID string) (*webhook.CustomerTenantContext, error) {
+	tenantObject, err := fan.tenantRepository.Get(ctx, internalTenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	customerID, err := fan.tenantRepository.GetCustomerIDParentRecursively(ctx, internalTenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhook.CustomerTenantContext{
+		Tenant:     tenantObject.ExternalTenant,
+		CustomerID: customerID,
+	}, nil
 }
