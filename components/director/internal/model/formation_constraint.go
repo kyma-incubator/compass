@@ -3,43 +3,57 @@ package model
 type FormationConstraintType string
 
 const (
-	PreOperation  FormationConstraintType = "pre"
-	PostOperation FormationConstraintType = "post"
+	PreOperation  FormationConstraintType = "PRE"
+	PostOperation FormationConstraintType = "POST"
 )
 
 type TargetOperation string
 
 const (
-	AssignFormationOperation      TargetOperation = "assignFormation"
-	UnassignFormationOperation    TargetOperation = "unassignFormation"
-	CreateFormationOperation      TargetOperation = "creatFormation"
-	DeleteFormationOperation      TargetOperation = "deleteFormation"
-	GenerateNotificationOperation TargetOperation = "generateNotification"
+	AssignFormationOperation      TargetOperation = "ASSIGN_FORMATION"
+	UnassignFormationOperation    TargetOperation = "UNASSIGNED_FORMATION"
+	CreateFormationOperation      TargetOperation = "CREATE_FORMATION"
+	DeleteFormationOperation      TargetOperation = "DELETE_FORMATION"
+	GenerateNotificationOperation TargetOperation = "GENERATE_NOTIFICATION"
 )
 
 type ResourceType string
 
 const (
-	ApplicationResourceType ResourceType = "application"
-	RuntimeResourceType     ResourceType = "runtime"
-	TenantResourceType      ResourceType = "tenant"
-	FormationResourceType   ResourceType = "formation"
+	ApplicationResourceType    ResourceType = "APPLICATION"
+	RuntimeResourceType        ResourceType = "RUNTIME"
+	RuntimeContextResourceType ResourceType = "RUNTIME_CONTEXT"
+	TenantResourceType         ResourceType = "TENANT"
+	FormationResourceType      ResourceType = "FORMATION"
 )
 
 type OperatorScopeType string
 
 const (
-	TenantScope    OperatorScopeType = "tenant"
-	FormationScope OperatorScopeType = "formation"
-	GlobalScope    OperatorScopeType = "global"
+	TenantScope    OperatorScopeType = "TENANT"
+	FormationScope OperatorScopeType = "FORMATION"
+	GlobalScope    OperatorScopeType = "GLOBAL"
 )
 
 type FormationConstraintScope string
 
 const (
-	GlobalFormationConstraintScope        FormationConstraintScope = "global"
-	FormationTypeFormationConstraintScope FormationConstraintScope = "formation_type"
+	GlobalFormationConstraintScope        FormationConstraintScope = "GLOBAL"
+	FormationTypeFormationConstraintScope FormationConstraintScope = "FORMATION_TYPE"
 )
+
+type FormationConstraintInput struct {
+	Name                string
+	ConstraintType      FormationConstraintType
+	TargetOperation     TargetOperation
+	Operator            string
+	ResourceType        ResourceType
+	ResourceSubtype     string
+	OperatorScope       OperatorScopeType
+	InputTemplate       string
+	ConstraintScope     FormationConstraintScope
+	FormationTemplateID string
+}
 
 type FormationConstraint struct {
 	ID              string

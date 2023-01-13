@@ -96,6 +96,16 @@ enum BundleInstanceAuthStatusCondition {
 	UNUSED
 }
 
+enum ConstraintScope {
+	GLOBAL
+	FORMATION_TYPE
+}
+
+enum ConstraintType {
+	PRE
+	POST
+}
+
 enum DocumentFormat {
 	MARKDOWN
 }
@@ -160,6 +170,20 @@ enum OperationType {
 	DELETE
 }
 
+enum OperatorScope {
+	TENANT
+	FORMATION
+	GLOBAL
+}
+
+enum ResourceType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+	TENANT
+	FORMATION
+}
+
 enum RuntimeStatusCondition {
 	INITIAL
 	PROVISIONING
@@ -177,6 +201,14 @@ enum SystemAuthReferenceType {
 	APPLICATION
 	RUNTIME
 	INTEGRATION_SYSTEM
+}
+
+enum TargetOperation {
+	ASSIGN_FORMATION
+	UNASSIGNED_FORMATION
+	CREATE_FORMATION
+	DELETE_FORMATION
+	GENERATE_NOTIFICATION
 }
 
 enum ViewerType {
@@ -604,6 +636,19 @@ input FetchRequestInput {
 	Currently unsupported, providing it will result in a failure
 	"""
 	filter: String
+}
+
+input FormationConstraintInput {
+	name: String!
+	constraintType: ConstraintType!
+	targetOperation: TargetOperation!
+	operator: String!
+	resourceType: ResourceType!
+	resourceSubtype: String!
+	operatorScope: OperatorScope!
+	inputTemplate: String!
+	constraintScope: ConstraintScope!
+	formationTemplateID: ID!
 }
 
 input FormationInput {
@@ -1100,7 +1145,7 @@ type FormationConstraint {
 	operator: String!
 	resourceType: String!
 	resourceSubtype: String!
-	operatorScope: String
+	operatorScope: String!
 	inputTemplate: String!
 	constraintScope: String!
 }
@@ -1129,6 +1174,7 @@ type FormationTemplate {
 	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
+	formationConstraints: [FormationConstraint!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1451,6 +1497,8 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
+	formationConstraintsByFormationType(formationTemplateID: ID!): [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
 	- [query formation template](examples/query-formation-template/query-formation-template.graphql)
@@ -1653,6 +1701,8 @@ type Mutation {
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
+	createFormationConstraint(formationConstraint: FormationConstraintInput! @validate): FormationConstraint! @hasScopes(path: "graphql.mutation.createFormationConstraint")
+	deleteFormationConstraint(id: ID!): FormationConstraint! @hasScopes(path: "graphql.mutation.deleteFormationConstraint")
 	"""
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)

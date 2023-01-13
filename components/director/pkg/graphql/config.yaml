@@ -43,6 +43,10 @@ models:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.PageCursor"
   Formation:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Formation"
+  FormationTemplate:
+    fields:
+      formationConstraints:
+        resolver: true
   Application:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Application"
     fields:

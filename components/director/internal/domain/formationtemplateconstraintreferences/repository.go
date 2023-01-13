@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	tableName                string = `public.formation_template_constraint_references`
-	formationTemplateField   string = "formation_template"
-	formationConstraintField string = "constraint"
+	tableName                 string = `public.formation_template_constraint_references`
+	formationTemplateColumn   string = "formation_template"
+	formationConstraintColumn string = "formation_constraint"
 )
 
 var (
-	tableColumns = []string{formationConstraintField, formationTemplateField}
+	tableColumns = []string{formationConstraintColumn, formationTemplateColumn}
 )
 
 // EntityConverter converts between the internal model and entity
@@ -49,7 +49,7 @@ func NewRepository(conv EntityConverter) *repository {
 func (r *repository) ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error) {
 	var entityCollection EntityCollection
 
-	if err := r.lister.ListGlobal(ctx, &entityCollection, repo.NewEqualCondition(formationTemplateField, formationTemplateID)); err != nil {
+	if err := r.lister.ListGlobal(ctx, &entityCollection, repo.NewEqualCondition(formationTemplateColumn, formationTemplateID)); err != nil {
 		//TODO do we need to check for not found?
 		return nil, errors.Wrap(err, "while listing formationTemplate-constraint references by formationTemplate ID")
 	}
@@ -72,5 +72,5 @@ func (r *repository) Create(ctx context.Context, item *model.FormationTemplateCo
 // Delete deletes a formationTemplate-constraint reference for formation and constraint
 func (r *repository) Delete(ctx context.Context, formationTemplateID, constraintID string) error {
 	log.C(ctx).Debugf("Deleting FormationTemplateConstraintReference with formationTemplate ID: %q and formationConstraint ID: %q...", formationTemplateID, constraintID)
-	return r.deleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(formationTemplateField, formationTemplateID), repo.NewEqualCondition(formationConstraintField, constraintID)})
+	return r.deleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(formationTemplateColumn, formationTemplateID), repo.NewEqualCondition(formationConstraintColumn, constraintID)})
 }

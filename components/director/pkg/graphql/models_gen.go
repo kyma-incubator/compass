@@ -470,16 +470,29 @@ type FormationAssignmentPage struct {
 func (FormationAssignmentPage) IsPageable() {}
 
 type FormationConstraint struct {
-	ID              string  `json:"id"`
-	Name            string  `json:"name"`
-	ConstraintType  string  `json:"constraintType"`
-	TargetOperation string  `json:"targetOperation"`
-	Operator        string  `json:"operator"`
-	ResourceType    string  `json:"resourceType"`
-	ResourceSubtype string  `json:"resourceSubtype"`
-	OperatorScope   *string `json:"operatorScope"`
-	InputTemplate   string  `json:"inputTemplate"`
-	ConstraintScope string  `json:"constraintScope"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	ConstraintType  string `json:"constraintType"`
+	TargetOperation string `json:"targetOperation"`
+	Operator        string `json:"operator"`
+	ResourceType    string `json:"resourceType"`
+	ResourceSubtype string `json:"resourceSubtype"`
+	OperatorScope   string `json:"operatorScope"`
+	InputTemplate   string `json:"inputTemplate"`
+	ConstraintScope string `json:"constraintScope"`
+}
+
+type FormationConstraintInput struct {
+	Name                string          `json:"name"`
+	ConstraintType      ConstraintType  `json:"constraintType"`
+	TargetOperation     TargetOperation `json:"targetOperation"`
+	Operator            string          `json:"operator"`
+	ResourceType        ResourceType    `json:"resourceType"`
+	ResourceSubtype     string          `json:"resourceSubtype"`
+	OperatorScope       OperatorScope   `json:"operatorScope"`
+	InputTemplate       string          `json:"inputTemplate"`
+	ConstraintScope     ConstraintScope `json:"constraintScope"`
+	FormationTemplateID string          `json:"formationTemplateID"`
 }
 
 type FormationInput struct {
@@ -507,12 +520,13 @@ type FormationStatusError struct {
 }
 
 type FormationTemplate struct {
-	ID                     string       `json:"id"`
-	Name                   string       `json:"name"`
-	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeTypes           []string     `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
+	ID                     string                 `json:"id"`
+	Name                   string                 `json:"name"`
+	ApplicationTypes       []string               `json:"applicationTypes"`
+	RuntimeTypes           []string               `json:"runtimeTypes"`
+	RuntimeTypeDisplayName string                 `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType           `json:"runtimeArtifactKind"`
+	FormationConstraints   []*FormationConstraint `json:"formationConstraints"`
 }
 
 type FormationTemplateInput struct {
@@ -1077,6 +1091,88 @@ func (e BundleInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type ConstraintScope string
+
+const (
+	ConstraintScopeGlobal        ConstraintScope = "GLOBAL"
+	ConstraintScopeFormationType ConstraintScope = "FORMATION_TYPE"
+)
+
+var AllConstraintScope = []ConstraintScope{
+	ConstraintScopeGlobal,
+	ConstraintScopeFormationType,
+}
+
+func (e ConstraintScope) IsValid() bool {
+	switch e {
+	case ConstraintScopeGlobal, ConstraintScopeFormationType:
+		return true
+	}
+	return false
+}
+
+func (e ConstraintScope) String() string {
+	return string(e)
+}
+
+func (e *ConstraintScope) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConstraintScope(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConstraintScope", str)
+	}
+	return nil
+}
+
+func (e ConstraintScope) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ConstraintType string
+
+const (
+	ConstraintTypePre  ConstraintType = "PRE"
+	ConstraintTypePost ConstraintType = "POST"
+)
+
+var AllConstraintType = []ConstraintType{
+	ConstraintTypePre,
+	ConstraintTypePost,
+}
+
+func (e ConstraintType) IsValid() bool {
+	switch e {
+	case ConstraintTypePre, ConstraintTypePost:
+		return true
+	}
+	return false
+}
+
+func (e ConstraintType) String() string {
+	return string(e)
+}
+
+func (e *ConstraintType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConstraintType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConstraintType", str)
+	}
+	return nil
+}
+
+func (e ConstraintType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type DocumentFormat string
 
 const (
@@ -1577,6 +1673,96 @@ func (e OperationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type OperatorScope string
+
+const (
+	OperatorScopeTenant    OperatorScope = "TENANT"
+	OperatorScopeFormation OperatorScope = "FORMATION"
+	OperatorScopeGlobal    OperatorScope = "GLOBAL"
+)
+
+var AllOperatorScope = []OperatorScope{
+	OperatorScopeTenant,
+	OperatorScopeFormation,
+	OperatorScopeGlobal,
+}
+
+func (e OperatorScope) IsValid() bool {
+	switch e {
+	case OperatorScopeTenant, OperatorScopeFormation, OperatorScopeGlobal:
+		return true
+	}
+	return false
+}
+
+func (e OperatorScope) String() string {
+	return string(e)
+}
+
+func (e *OperatorScope) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OperatorScope(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OperatorScope", str)
+	}
+	return nil
+}
+
+func (e OperatorScope) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ResourceType string
+
+const (
+	ResourceTypeApplication    ResourceType = "APPLICATION"
+	ResourceTypeRuntime        ResourceType = "RUNTIME"
+	ResourceTypeRuntimeContext ResourceType = "RUNTIME_CONTEXT"
+	ResourceTypeTenant         ResourceType = "TENANT"
+	ResourceTypeFormation      ResourceType = "FORMATION"
+)
+
+var AllResourceType = []ResourceType{
+	ResourceTypeApplication,
+	ResourceTypeRuntime,
+	ResourceTypeRuntimeContext,
+	ResourceTypeTenant,
+	ResourceTypeFormation,
+}
+
+func (e ResourceType) IsValid() bool {
+	switch e {
+	case ResourceTypeApplication, ResourceTypeRuntime, ResourceTypeRuntimeContext, ResourceTypeTenant, ResourceTypeFormation:
+		return true
+	}
+	return false
+}
+
+func (e ResourceType) String() string {
+	return string(e)
+}
+
+func (e *ResourceType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ResourceType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ResourceType", str)
+	}
+	return nil
+}
+
+func (e ResourceType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type RuntimeStatusCondition string
 
 const (
@@ -1705,6 +1891,53 @@ func (e *SystemAuthReferenceType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e SystemAuthReferenceType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TargetOperation string
+
+const (
+	TargetOperationAssignFormation      TargetOperation = "ASSIGN_FORMATION"
+	TargetOperationUnassignedFormation  TargetOperation = "UNASSIGNED_FORMATION"
+	TargetOperationCreateFormation      TargetOperation = "CREATE_FORMATION"
+	TargetOperationDeleteFormation      TargetOperation = "DELETE_FORMATION"
+	TargetOperationGenerateNotification TargetOperation = "GENERATE_NOTIFICATION"
+)
+
+var AllTargetOperation = []TargetOperation{
+	TargetOperationAssignFormation,
+	TargetOperationUnassignedFormation,
+	TargetOperationCreateFormation,
+	TargetOperationDeleteFormation,
+	TargetOperationGenerateNotification,
+}
+
+func (e TargetOperation) IsValid() bool {
+	switch e {
+	case TargetOperationAssignFormation, TargetOperationUnassignedFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateNotification:
+		return true
+	}
+	return false
+}
+
+func (e TargetOperation) String() string {
+	return string(e)
+}
+
+func (e *TargetOperation) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TargetOperation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TargetOperation", str)
+	}
+	return nil
+}
+
+func (e TargetOperation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -1,8 +1,6 @@
 package formationconstraint
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -28,7 +26,7 @@ func (c *converter) ToGraphQL(in *model.FormationConstraint) *graphql.FormationC
 		Operator:        in.Operator,
 		ResourceType:    string(in.ResourceType),
 		ResourceSubtype: in.ResourceSubtype,
-		OperatorScope:   str.Ptr(string(in.OperatorScope)),
+		OperatorScope:   string(in.OperatorScope),
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: string(in.ConstraintScope),
 	}
@@ -108,4 +106,34 @@ func (c *converter) MultipleFromEntity(in EntityCollection) []*model.FormationCo
 	}
 
 	return formationConstraints
+}
+
+func (c *converter) FromInputGraphQL(in *graphql.FormationConstraintInput) *model.FormationConstraintInput {
+	return &model.FormationConstraintInput{
+		Name:                in.Name,
+		ConstraintType:      model.FormationConstraintType(in.ConstraintType),
+		TargetOperation:     model.TargetOperation(in.TargetOperation),
+		Operator:            in.Operator,
+		ResourceType:        model.ResourceType(in.ResourceType),
+		ResourceSubtype:     in.ResourceSubtype,
+		OperatorScope:       model.OperatorScopeType(in.OperatorScope),
+		InputTemplate:       in.InputTemplate,
+		ConstraintScope:     model.FormationConstraintScope(in.ConstraintScope),
+		FormationTemplateID: in.FormationTemplateID,
+	}
+}
+
+func (c *converter) FromModelInputToModel(in *model.FormationConstraintInput, id string) *model.FormationConstraint {
+	return &model.FormationConstraint{
+		ID:              id,
+		Name:            in.Name,
+		ConstraintType:  in.ConstraintType,
+		TargetOperation: in.TargetOperation,
+		Operator:        in.Operator,
+		ResourceType:    in.ResourceType,
+		ResourceSubtype: in.ResourceSubtype,
+		OperatorScope:   in.OperatorScope,
+		InputTemplate:   in.InputTemplate,
+		ConstraintScope: in.ConstraintScope,
+	}
 }

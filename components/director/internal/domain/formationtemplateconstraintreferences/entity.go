@@ -2,7 +2,7 @@ package formationtemplateconstraintreferences
 
 // Entity represents the formation constraint entity
 type Entity struct {
-	Constraint        string `db:"constraint"`
+	Constraint        string `db:"formation_constraint"`
 	FormationTemplate string `db:"formation_template"`
 }
 

@@ -4,11 +4,14 @@ import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 )
 
 const tableName string = `public.formation_constraints`
+const idColumn string = "id"
 
 var (
 	tableColumns = []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "operator_scope", "input_template", "constraint_scope"}
@@ -23,21 +26,84 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	lister repo.ConditionTreeListerGlobal
-	conv   EntityConverter
+	conditionTreeLister repo.ConditionTreeListerGlobal
+	lister              repo.ListerGlobal
+	creator             repo.CreatorGlobal
+	singleGetter        repo.SingleGetterGlobal
+	deleter             repo.DeleterGlobal
+	conv                EntityConverter
 }
 
 // NewRepository creates a new FormationConstraint repository
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		lister: repo.NewConditionTreeListerGlobal(tableName, tableColumns),
-		conv:   conv,
+		conditionTreeLister: repo.NewConditionTreeListerGlobal(tableName, tableColumns),
+		lister:              repo.NewListerGlobal(resource.FormationConstraint, tableName, tableColumns),
+		creator:             repo.NewCreatorGlobal(resource.FormationConstraint, tableName, tableColumns),
+		singleGetter:        repo.NewSingleGetterGlobal(resource.FormationConstraint, tableName, tableColumns),
+		deleter:             repo.NewDeleterGlobal(resource.FormationConstraint, tableName),
+		conv:                conv,
 	}
+}
+
+func (r *repository) Create(ctx context.Context, item *model.FormationConstraint) error {
+	if item == nil {
+		return apperrors.NewInternalError("model can not be empty")
+	}
+
+	log.C(ctx).Debugf("Converting Formation Constraint with id %s to entity", item.ID)
+	entity := r.conv.ToEntity(item)
+
+	log.C(ctx).Debugf("Persisting Formation Constraint entity with id %s to db", item.ID)
+	return r.creator.Create(ctx, entity)
+}
+
+func (r *repository) Get(ctx context.Context, id string) (*model.FormationConstraint, error) {
+	var entity Entity
+	if err := r.singleGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	result := r.conv.FromEntity(&entity)
+
+	return result, nil
+}
+func (r *repository) ListAll(ctx context.Context) ([]*model.FormationConstraint, error) {
+	var entities EntityCollection
+
+	if err := r.lister.ListGlobal(ctx, &entities); err != nil {
+		return nil, err
+	}
+
+	return r.conv.MultipleFromEntity(entities), nil
+}
+
+func (r *repository) ListByIDs(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error) {
+	var entities EntityCollection
+
+	if err := r.lister.ListGlobal(ctx, &entities, repo.NewInConditionForStringValues(idColumn, formationConstraintIDs)); err != nil {
+		return nil, err
+	}
+
+	return r.conv.MultipleFromEntity(entities), nil
+}
+
+func (r *repository) Delete(ctx context.Context, id string) error {
+	return r.deleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }
 
 // ListMatchingFormationConstraints lists formationConstraints whose ID can be found in formationConstraintIDs or have constraint scope "global" that match on the join point location and matching details
 func (r *repository) ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location JoinPointLocation, details MatchingDetails) ([]*model.FormationConstraint, error) {
 	var entityCollection EntityCollection
+
+	formationTypeRelevanceConditions := []repo.Condition{
+		repo.NewEqualCondition("constraint_scope", model.GlobalFormationConstraintScope),
+	}
+
+	if len(formationConstraintIDs) > 0 {
+		formationTypeRelevanceConditions = append(formationTypeRelevanceConditions, repo.NewInConditionForStringValues("id", formationConstraintIDs))
+	}
+
 	conditions := repo.And(
 		append(
 			repo.ConditionTreesFromConditions(
@@ -49,15 +115,12 @@ func (r *repository) ListMatchingFormationConstraints(ctx context.Context, forma
 				},
 			),
 			repo.Or(repo.ConditionTreesFromConditions(
-				[]repo.Condition{
-					repo.NewInConditionForStringValues("id", formationConstraintIDs),
-					repo.NewEqualCondition("constraint_scope", model.GlobalFormationConstraintScope),
-				},
+				formationTypeRelevanceConditions,
 			)...),
 		)...,
 	)
 
-	if err := r.lister.ListConditionTreeGlobal(ctx, resource.FormationConstraint, &entityCollection, conditions); err != nil {
+	if err := r.conditionTreeLister.ListConditionTreeGlobal(ctx, resource.FormationConstraint, &entityCollection, conditions); err != nil {
 		return nil, errors.Wrap(err, "while listing constraints")
 	}
 	return r.conv.MultipleFromEntity(entityCollection), nil

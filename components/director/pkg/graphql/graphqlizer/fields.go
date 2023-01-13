@@ -194,6 +194,22 @@ func (fp *GqlFieldsProvider) ForFormationStatusErrors() string {
 	`
 }
 
+// ForFormationConstraint missing godoc
+func (fp *GqlFieldsProvider) ForFormationConstraint() string {
+	return `
+			id
+			name
+			constraintType
+			targetOperation
+			operator
+			resourceType
+			resourceSubtype
+			operatorScope
+			inputTemplate
+			constraintScope
+	`
+}
+
 // OmitForWebhooks missing godoc
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
 	return buildProperties(map[string]string{
