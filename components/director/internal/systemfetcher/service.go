@@ -304,6 +304,7 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		StatusCondition: &initStatusCond,
 		ProviderName:    &sc.InfrastructureProvider,
 		BaseURL:         &baseURL,
+		LocalTenantID:   &sc.ExternalID,
 		SystemNumber:    &sc.SystemNumber,
 		Labels: map[string]interface{}{
 			"managed":              "true",

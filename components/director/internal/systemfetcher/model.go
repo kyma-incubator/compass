@@ -34,6 +34,7 @@ type AdditionalAttributes map[string]string
 // SystemBase missing godoc
 type SystemBase struct {
 	SystemNumber           string               `json:"systemNumber"`
+	ExternalID             string               `json:"externalId"`
 	DisplayName            string               `json:"displayName"`
 	ProductID              string               `json:"productId"`
 	PpmsProductVersionID   string               `json:"ppmsProductVersionId"`
