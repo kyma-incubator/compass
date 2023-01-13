@@ -1325,7 +1325,8 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner`",
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `sap partner`",
+			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
@@ -1341,6 +1342,16 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `none`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
 
 				return []*ord.Document{doc}
 			},
@@ -1395,7 +1406,8 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `industry` field when `policyLevel` is `sap partner`",
+			Name:              "Valid `industry` field when `policyLevel` is `sap partner`",
+			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
@@ -1411,6 +1423,16 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				doc := fixORDDocument()
 				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `none`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
 
 				return []*ord.Document{doc}
 			},
@@ -2300,7 +2322,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner` for API",
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `sap partner` for API",
+			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
@@ -2316,6 +2339,16 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `none` for API",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
 
 				return []*ord.Document{doc}
 			},
@@ -2370,7 +2403,8 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `industry` field when `policyLevel` is `sap partner` for API",
+			Name:              "Valid `industry` field when `policyLevel` is `sap partner` for API",
+			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
@@ -2386,6 +2420,16 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `none`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
 
 				return []*ord.Document{doc}
 			},
@@ -4363,7 +4407,8 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `lineOfBusiness` field when `policyLevel` is `sap partner` for Event",
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `sap partner` for Event",
+			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
@@ -4379,6 +4424,16 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name:              "Valid `lineOfBusiness` field when `policyLevel` is `none`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LineOfBusiness = json.RawMessage(`["LoB"]`)
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
 
 				return []*ord.Document{doc}
 			},
@@ -4433,7 +4488,8 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `industry` field when `policyLevel` is `sap partner` for Event",
+			Name:              "Valid `industry` field when `policyLevel` is `sap partner` for Event",
+			ExpectedToBeValid: true,
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
@@ -4449,6 +4505,16 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
 				doc.Packages[0].PolicyLevel = ord.PolicyLevelCustom
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name:              "Valid `industry` field when `policyLevel` is `none`",
+			ExpectedToBeValid: true,
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Industry = json.RawMessage(`["SomeIndustry"]`)
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelNone
 
 				return []*ord.Document{doc}
 			},
