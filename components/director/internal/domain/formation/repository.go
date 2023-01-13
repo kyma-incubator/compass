@@ -15,10 +15,11 @@ import (
 const tableName string = `public.formations`
 
 var (
-	updatableTableColumns = []string{"name"}
-	idTableColumns        = []string{"id"}
-	tableColumns          = []string{"id", "tenant_id", "formation_template_id", "name"}
-	tenantColumn          = "tenant_id"
+	updatableTableColumns   = []string{"name"}
+	idTableColumns          = []string{"id"}
+	tableColumns            = []string{"id", "tenant_id", "formation_template_id", "name"}
+	tenantColumn            = "tenant_id"
+	formationTemplateColumn = "formation_template_id"
 )
 
 // EntityConverter converts between the internal model and entity
@@ -32,6 +33,7 @@ type repository struct {
 	creator               repo.CreatorGlobal
 	getter                repo.SingleGetter
 	pageableQuerierGlobal repo.PageableQuerier
+	listerGlobal          repo.ListerGlobal
 	updater               repo.UpdaterGlobal
 	deleter               repo.Deleter
 	existQuerier          repo.ExistQuerier
@@ -44,6 +46,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:               repo.NewCreatorGlobal(resource.Formations, tableName, tableColumns),
 		getter:                repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		pageableQuerierGlobal: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		listerGlobal:          repo.NewListerGlobal(resource.Formations, tableName, tableColumns),
 		updater:               repo.NewUpdaterWithEmbeddedTenant(resource.Formations, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
@@ -106,6 +109,23 @@ func (r *repository) List(ctx context.Context, tenant string, pageSize int, curs
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+// ListByFormationTemplateID returns all Formations for FormationTemplate with the provided ID
+func (r *repository) ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.Formation, error) {
+	var entityCollection EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, repo.NewEqualCondition(formationTemplateColumn, formationTemplateID)); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Formation, 0, entityCollection.Len())
+
+	for _, entity := range entityCollection {
+		formationModel := r.conv.FromEntity(entity)
+
+		items = append(items, formationModel)
+	}
+	return items, nil
 }
 
 // Update updates a Formation with the given input

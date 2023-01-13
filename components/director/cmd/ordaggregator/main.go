@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 	"net/http"
 	"time"
 
@@ -179,6 +181,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	runtimeContextConv := runtimectx.NewConverter()
 	formationConv := formation.NewConverter()
 	formationTemplateConverter := formationtemplate.NewConverter()
+	formationConstraintConverter := formationconstraint.NewConverter()
+	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -201,6 +205,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConv)
 	formationRepo := formation.NewRepository(formationConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
+	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
+	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -222,15 +228,18 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
-	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc)
+	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, formationRepo, labelRepo)
+	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookClient, webhookDataInputBuilder, notificationsBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
-	formationSvc := formation.NewService(transact, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(transact, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, constraintEngine, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
 
