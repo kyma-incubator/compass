@@ -124,7 +124,7 @@ function cleanup_trap() {
   fi
   if [[ ${DUMP_DB} ]]; then
       revert_migrator_file
-      rm -f "${DATA_DIR}"/dump.sql || true
+      rm -rf "${DATA_DIR}"/dump || true
   fi
   if [[ ${RESET_VALUES_YAML} ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
@@ -213,7 +213,7 @@ if [[ ${DUMP_DB} ]]; then
     if [[ ! -d ${DATA_DIR}/dump-${SCHEMA_VERSION} ]]; then
         echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
         mkdir ${DATA_DIR}/dump-${SCHEMA_VERSION}
-        gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump-"${SCHEMA_VERSION}"
+        gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"
     else
         echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
     fi
