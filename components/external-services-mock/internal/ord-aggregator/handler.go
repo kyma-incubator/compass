@@ -29,7 +29,7 @@ func HandleFuncOrdConfigWithDocPath(baseURLOverride, docPath, accessStrategy str
 			baseURLFormat = fmt.Sprintf(`"baseUrl": "%s",`, baseURLOverride)
 		}
 
-		if tnt := req.Header.Get("Tenant_Id"); isMultiTenant && len(tnt) == 0 {
+		if tnt := req.Header.Get("Tenant"); isMultiTenant && len(tnt) == 0 {
 			httphelpers.WriteError(rw, errors.New("tenant header is missing"), http.StatusInternalServerError)
 			return
 		}
