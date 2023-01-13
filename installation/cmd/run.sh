@@ -210,14 +210,14 @@ if [[ ${DUMP_DB} ]]; then
       exit 1
     fi
 
-    if [[ ! -f ${DATA_DIR}/dump-${SCHEMA_VERSION} ]]; then
+    if [[ ! -d ${DATA_DIR}/dump-${SCHEMA_VERSION} ]]; then
         echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
         mkdir ${DATA_DIR}/dump-${SCHEMA_VERSION}
         gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump-"${SCHEMA_VERSION}"
     else
         echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
     fi
-    rm -f "${DATA_DIR}"/dump || true
+    rm -rf "${DATA_DIR}"/dump || true
     cp -R "${DATA_DIR}"/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump
 fi
 

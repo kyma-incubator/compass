@@ -52,7 +52,7 @@ spec:
               - "/bin/bash"
             args:
               - "-c"
-              - "sleep 40; [ -f /tmp/dbdata/dump-local ] && PGPASSWORD=${DB_PASSWORD} pg_restore -Fd -j 8 -O -x -U ${DB_USER} -h ${DB_HOST} -p ${DB_PORT} -d ${DB_NAME} tmp/dump-local || echo 'There is no dump.sql to be applied.' ; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              - "sleep 40; [ -d /tmp/dbdata/dump ] && PGPASSWORD=${DB_PASSWORD} pg_restore --format=directory --jobs=8 --no-owner --no-privileges --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} --dbname=${DB_NAME} tmp/dbdata/dump || echo 'There is no dump to be applied.' ; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
             volumeMounts:
               - name: dump-folder
                 mountPath: "/tmp/dbdata"
