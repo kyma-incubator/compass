@@ -11,6 +11,7 @@ NC='\033[0m' # No Color
 set -e
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+SCHEMA_MIGRATOR_COMPONENT_PATH=${ROOT_PATH}/../schema-migrator
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
@@ -86,7 +87,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="11"
+POSTGRES_VERSION="14"
 
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
@@ -203,7 +204,7 @@ else
         if [[ ! -d ${ROOT_PATH}/../schema-migrator/seeds/dump-${SCHEMA_VERSION} ]]; then
           echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
           mkdir ${ROOT_PATH}/../schema-migrator/seeds/dump-${SCHEMA_VERSION}
-          gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}" "${ROOT_PATH}"/../schema-migrator/seeds/dump-"${SCHEMA_VERSION}"
+          gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}" "${ROOT_PATH}"/../schema-migrator/seeds
         else
           echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
         fi
