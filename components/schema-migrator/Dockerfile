@@ -5,7 +5,7 @@ ARG MIGRATE_VER=4.15.2
 WORKDIR /migrate
 
 RUN apk --no-cache add bash postgresql-client curl jq
-RUN wget https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-amd64.tar.gz -O - | tar -xz
+RUN export ARCH="$(uname -m)" && if [[ ${ARCH} == "x86_64" ]]; then export ARCH="amd64"; fi && if [[ ${ARCH} == "aarch64" ]]; then export ARCH="arm64"; fi && wget https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-${ARCH}.tar.gz -O - | tar -xz
 RUN mv migrate /usr/local/bin/migrate
 
 # kubectl is supported within one minor version (older or newer) of kube-apiserver
