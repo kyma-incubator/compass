@@ -73,6 +73,7 @@ const (
 
 const (
 	custom string = "custom"
+	none   string = "none"
 
 	// PolicyLevelSap is one of the available policy options
 	PolicyLevelSap string = "sap:core:v1"
@@ -80,6 +81,8 @@ const (
 	PolicyLevelSapPartner string = "sap:partner:v1"
 	// PolicyLevelCustom is one of the available policy options
 	PolicyLevelCustom = custom
+	// PolicyLevelNone is one of the available policy options
+	PolicyLevelNone string = none
 
 	// ReleaseStatusBeta is one of the available release status options
 	ReleaseStatusBeta string = "beta"
@@ -216,7 +219,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
 			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
 		})),
-		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
 		validation.Field(&pkg.Links, validation.By(validateORDLinks)),
@@ -233,7 +236,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		})),
 		validation.Field(&pkg.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				if pkg.PolicyLevel == PolicyLevelCustom {
+				if pkg.PolicyLevel != PolicyLevelSap {
 					return nil
 				}
 				return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
@@ -244,7 +247,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		),
 		validation.Field(&pkg.Industry,
 			validation.By(func(value interface{}) error {
-				if pkg.PolicyLevel == PolicyLevelCustom {
+				if pkg.PolicyLevel != PolicyLevelSap {
 					return nil
 				}
 				return validateJSONArrayOfStringsContainsInMap(value, Industries)
@@ -306,7 +309,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		})),
 		validation.Field(&api.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsNotCustom(api.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(api.OrdPackageID, packagePolicyLevels, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
 				})
 			}),
@@ -316,7 +319,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		),
 		validation.Field(&api.Industry,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsNotCustom(api.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(api.OrdPackageID, packagePolicyLevels, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, Industries)
 				})
 			}),
@@ -375,7 +378,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		})),
 		validation.Field(&event.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsNotCustom(event.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(event.OrdPackageID, packagePolicyLevels, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
 				})
 			}),
@@ -385,7 +388,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		),
 		validation.Field(&event.Industry,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsNotCustom(event.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(event.OrdPackageID, packagePolicyLevels, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, Industries)
 				})
 			}),
@@ -695,7 +698,6 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 		return errors.New("error while casting to EventResourceDefinition")
 	}
 
-	// soften validation temporarily
 	if len(eventResourceDef) == 0 {
 		return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
 	}
@@ -814,11 +816,11 @@ func noNewLines(s string) bool {
 	return !strings.Contains(s, "\\n")
 }
 
-func validateWhenPolicyLevelIsNotCustom(apiOrdID *string, packagePolicyLevels map[string]string, validationFunc func() error) error {
-	pkgOrdID := str.PtrStrToStr(apiOrdID)
+func validateWhenPolicyLevelIsSAP(packageOrdID *string, packagePolicyLevels map[string]string, validationFunc func() error) error {
+	pkgOrdID := str.PtrStrToStr(packageOrdID)
 	policyLevel := packagePolicyLevels[pkgOrdID]
 
-	if policyLevel == PolicyLevelCustom {
+	if policyLevel != PolicyLevelSap {
 		return nil
 	}
 
