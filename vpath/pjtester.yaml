@@ -1,13 +1,13 @@
 pjConfigs:
-  prConfig:
+  prConfigs:
     kyma-project:
       test-infra:
         prNumber: 6734
   prowJobs:
-    kyma-project:
-      test-infra:
-      - pjName: "pre-main-compass-schema-migrator-validate"
-prConfigs: #
+    kyma-incubator:
+      compass:
+        - pjName: "pre-main-compass-schema-migrator-validate"
+prConfigs:
   kyma-incubator:
     compass:
       prNumber: 2827
