@@ -41,3 +41,12 @@ func FixQueryFormationConstraintsRequest() *gcli.Request {
 					}
 				}`, testctx.Tc.GQLFieldsProvider.ForFormationConstraint()))
 }
+
+func FixQueryFormationConstraintsForFormationTemplateRequest(formationTemplateID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				  result: formationConstraintsByFormationType(formationTemplateID: "%s") {
+    					%s
+					}
+				}`, formationTemplateID, testctx.Tc.GQLFieldsProvider.ForFormationConstraint()))
+}

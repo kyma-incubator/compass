@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"context"
-	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -14,7 +13,6 @@ func CreateFormationConstraint(t require.TestingT, ctx context.Context, gqlClien
 	formationConstraintInputGQLString, err := testctx.Tc.Graphqlizer.FormationConstraintInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := FixCreateFormationConstraintRequest(formationConstraintInputGQLString)
-	fmt.Println(createRequest)
 	formationConstraint := graphql.FormationConstraint{}
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, createRequest, &formationConstraint))
 	require.NotEmpty(t, formationConstraint.ID)
@@ -22,17 +20,7 @@ func CreateFormationConstraint(t require.TestingT, ctx context.Context, gqlClien
 	return &formationConstraint
 }
 
-func QueryFormationConstraint(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationConstraint {
-	queryRequest := FixQueryFormationConstraintRequest(id)
-
-	formationConstraint := graphql.FormationConstraint{}
-	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &formationConstraint))
-	require.NotEmpty(t, formationConstraint.ID)
-
-	return &formationConstraint
-}
-
-func QueryFormationConstraintsWithPageSize(t require.TestingT, ctx context.Context, gqlClient *gcli.Client) []*graphql.FormationConstraint {
+func QueryFormationConstraints(t require.TestingT, ctx context.Context, gqlClient *gcli.Client) []*graphql.FormationConstraint {
 	queryRequest := FixQueryFormationConstraintsRequest()
 
 	var formationConstraints []*graphql.FormationConstraint
