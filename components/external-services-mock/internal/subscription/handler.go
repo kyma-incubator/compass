@@ -16,10 +16,11 @@ import (
 )
 
 type handler struct {
-	httpClient     *http.Client
-	tenantConfig   Config
-	providerConfig ProviderConfig
-	jobID          string
+	httpClient       *http.Client
+	tenantConfig     Config
+	providerConfig   ProviderConfig
+	jobID            string
+	tenantsHierarchy map[string]string // maps consumerSubaccount to consumerAccount
 }
 
 type JobStatus struct {
@@ -31,10 +32,11 @@ var Subscriptions = make(map[string]string)
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
 	return &handler{
-		httpClient:     httpClient,
-		tenantConfig:   tenantConfig,
-		providerConfig: providerConfig,
-		jobID:          jobID,
+		httpClient:       httpClient,
+		tenantConfig:     tenantConfig,
+		providerConfig:   providerConfig,
+		jobID:            jobID,
+		tenantsHierarchy: map[string]string{tenantConfig.TestConsumerSubaccountIDTenantHierarchy: tenantConfig.TestConsumerAccountIDTenantHierarchy, tenantConfig.TestConsumerSubaccountID: tenantConfig.TestConsumerAccountID},
 	}
 }
 
@@ -175,6 +177,13 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		body = "{}"
 		err  error
 	)
+
+	// 1. extract consumerSA from token
+	// 2. below use that consumerSA instead of 'h.tenantConfig.TestConsumerSubaccountID'
+	// 3. below use consumerGA from tenantsHierarchy map (based on the SA from 2.) instead of 'h.tenantConfig.TestConsumerAccountID'
+	// 4. adapt all subscription e2e tests to use the correct claim ('subscriptionClaims' or 'subscriptionClaimsTenantHierarchy') so that the correct consumerSA is extracted; currently most of the subscription e2e tests use 'tenantFetcherClaims' claim and the SA/GA here are hardcoded via env vars
+
+	fmt.Println("===TOKEN===: ", token)
 
 	if len(h.tenantConfig.TestConsumerAccountID) > 0 {
 		body, err = sjson.Set(body, h.providerConfig.TenantIDProperty, h.tenantConfig.TestConsumerAccountID)
