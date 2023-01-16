@@ -211,11 +211,11 @@ else
         rm -rf "${ROOT_PATH}"/../schema-migrator/seeds/dump || true
         cp -R "${ROOT_PATH}"/../schema-migrator/seeds/dump-"${SCHEMA_VERSION}" "${ROOT_PATH}"/../schema-migrator/seeds/dump
 
-        echo -e "${GREEN}Starting DB restore process...${NC}"
-        docker exec -i ${POSTGRES_CONTAINER} pg_restore --verbose --format=directory --jobs=8 --no-owner --no-privileges --username="${DB_USER}" --host="${DB_HOST}" --port="${DB_PORT}" --dbname="${DB_NAME}" tmp/dump
-
         CONNECTION_STRING="postgres://$DB_USER:$DB_PWD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
         migrate -path ${ROOT_PATH}/../schema-migrator/migrations/director -database "$CONNECTION_STRING" up
+
+        echo -e "${GREEN}Starting DB restore process...${NC}"
+        docker exec -i ${POSTGRES_CONTAINER} pg_restore --verbose --format=directory --jobs=8 --no-owner --no-privileges --username="${DB_USER}" --host="${DB_HOST}" --port="${DB_PORT}" --dbname="${DB_NAME}" tmp/dump
     fi
 fi
 
