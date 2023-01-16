@@ -115,6 +115,7 @@ func NewRootResolver(
 	subscriptionConfig subscription.Config,
 	tenantOnDemandAPIConfig tenant.FetchOnDemandAPIConfig,
 	ordWebhookMappings []application.ORDWebhookMapping,
+	tenantMappingConfig map[string]interface{},
 ) (*RootResolver, error) {
 	timeService := time.NewService()
 
@@ -180,7 +181,7 @@ func NewRootResolver(
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, tenantMappingConfig)
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
@@ -608,6 +609,7 @@ func (r *mutationResolver) MergeApplications(ctx context.Context, destID, srcID 
 
 // CreateApplicationTemplate missing godoc
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	fmt.Println("IN RESOLVER")
 	return r.appTemplate.CreateApplicationTemplate(ctx, in)
 }
 

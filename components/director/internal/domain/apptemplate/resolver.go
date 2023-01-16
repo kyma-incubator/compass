@@ -222,6 +222,15 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	convertedIn, err := r.appTemplateConverter.InputFromGraphQL(in)
+	var tenantMappingVersion string
+
+	for _, w := range in.Webhooks {
+		if w.Version != nil {
+			tenantMappingVersion = *w.Version
+			break
+		}
+	}
+	
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +277,9 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
-	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, selfRegLabels)
+	v := r.appTemplateSvc.(*service)
+
+	id, err := v.CreateWithLabelsAndTenantMappingVersion(ctx, convertedIn, selfRegLabels, tenantMappingVersion)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -71,21 +72,23 @@ type LabelRepository interface {
 }
 
 type service struct {
-	appTemplateRepo    ApplicationTemplateRepository
-	webhookRepo        WebhookRepository
-	uidService         UIDService
-	labelUpsertService LabelUpsertService
-	labelRepo          LabelRepository
+	appTemplateRepo     ApplicationTemplateRepository
+	webhookRepo         WebhookRepository
+	uidService          UIDService
+	labelUpsertService  LabelUpsertService
+	labelRepo           LabelRepository
+	tenantMappingConfig map[string]interface{}
 }
 
 // NewService missing godoc
-func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository) *service {
+func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository, tenantMappingConfig map[string]interface{}) *service {
 	return &service{
-		appTemplateRepo:    appTemplateRepo,
-		webhookRepo:        webhookRepo,
-		uidService:         uidService,
-		labelUpsertService: labelUpsertService,
-		labelRepo:          labelRepo,
+		appTemplateRepo:     appTemplateRepo,
+		webhookRepo:         webhookRepo,
+		uidService:          uidService,
+		labelUpsertService:  labelUpsertService,
+		labelRepo:           labelRepo,
+		tenantMappingConfig: tenantMappingConfig,
 	}
 }
 
@@ -144,6 +147,34 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
 	for key, val := range labels {
 		in.Labels[key] = val
+	}
+
+	appTemplateID, err := s.Create(ctx, in)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating Application Template")
+	}
+
+	return appTemplateID, nil
+}
+
+// CreateWithLabelsAndTenantMappingVersion Creates an AppTemplate with provided labels and
+func (s *service) CreateWithLabelsAndTenantMappingVersion(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}, tenantMappingVersion string) (string, error) {
+	for key, val := range labels {
+		in.Labels[key] = val
+	}
+
+	// if it has tenantMappingWebhook
+	if tenantMappingVersion != "" {
+		tenantMappingConfig := s.tenantMappingConfig
+		for _, i := range in.Webhooks {
+			// There can be a ORD webhook. We want to process the other types
+			if string(i.Type) != string(graphql.WebhookTypeOpenResourceDiscovery) {
+				tenantMappingVersionsMap := tenantMappingConfig[string(*i.Mode)].(map[string]interface{})
+				t := tenantMappingVersionsMap[tenantMappingVersion].([]model.WebhookInput)
+				fmt.Println(t)
+				// here in the model WebhookInput should be filled the urlTemplate, inputTemplate, headerTemplate, outputTemplate
+			}
+		}
 	}
 
 	appTemplateID, err := s.Create(ctx, in)

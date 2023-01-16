@@ -257,6 +257,11 @@ spec:
               value: {{ .Values.global.director.formationAsyncApi.pathPrefix }}
             - name: APP_FORMATION_MAPPING_API_ENDPOINT
               value: {{ .Values.global.director.formationAsyncApi.path }}
+            - name: APP_TENANT_MAPPING_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: tenant-mapping-config
+                  key: tenant-mapping-config.json
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
