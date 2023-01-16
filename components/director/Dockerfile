@@ -1,4 +1,4 @@
-FROM golang:1.19.3-alpine3.16 as builder
+FROM --platform=$BUILDPLATFORM golang:1.19.3-alpine3.16 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/director
 WORKDIR ${BASE_APP_DIR}
@@ -20,7 +20,8 @@ COPY . .
 # Build app
 #
 
-RUN go build -v -o director ./cmd/director/main.go \
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o director ./cmd/director/main.go \
   && go build -v -o ns-adapter ./cmd/ns-adapter/main.go \
   && go build -v -o tenantfetcher-svc ./cmd/tenantfetcher-svc/main.go \
   && go build -v -o tenantloader ./cmd/tenantloader/main.go \
@@ -37,7 +38,7 @@ RUN mkdir /app && mv ./director /app/director \
   && mv ./systemfetcher /app/systemfetcher \
   && mv ./destinationfetcher /app/destinationfetcher
 
-FROM alpine:3.16.2
+FROM --platform=$BUILDPLATFORM alpine:3.16.2
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 

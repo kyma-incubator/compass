@@ -1,4 +1,4 @@
-FROM golang:1.19.3-alpine3.16 as builder
+FROM --platform=$BUILDPLATFORM golang:1.19.3-alpine3.16 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/pairing-adapter
 WORKDIR ${BASE_APP_DIR}
@@ -19,10 +19,11 @@ COPY . ${BASE_APP_DIR}
 # Build app
 #
 
-RUN go build -v -o main ./cmd/main.go
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main
 
-FROM alpine:3.16.2
+FROM --platform=$BUILDPLATFORM alpine:3.16.2
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
