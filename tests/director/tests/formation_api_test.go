@@ -557,6 +557,122 @@ func TestTenantFormationFlow(t *testing.T) {
 	assert.Equal(t, secondFormation, deleteUnusedFormation.Name)
 }
 
+func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
+	ctx := context.Background()
+	const (
+		firstFormation  = "FIRST"
+		secondFormation = "SECOND"
+	)
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+
+	formationTemplateName := "create-formation-template-name"
+	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
+	require.NoError(t, err)
+
+	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
+	output := graphql.FormationTemplate{}
+
+	t.Logf("Create formation template with name: %q", formationTemplateName)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, output.ID)
+	require.NotEmpty(t, output.Name)
+
+	t.Logf("Check if formation template with name %q was created", formationTemplateName)
+
+	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
+	assertions.AssertFormationTemplate(t, &formationTemplateInput, formationTemplateOutput)
+
+	in := graphql.FormationConstraintInput{
+		Name:                "TestSubaccountInAtMostOneFormationOfType",
+		ConstraintType:      graphql.ConstraintTypePre,
+		TargetOperation:     graphql.TargetOperationAssignFormation,
+		Operator:            "IsNotAssignedToAnyFormationOfType",
+		ResourceType:        graphql.ResourceTypeTenant,
+		ResourceSubtype:     "subaccount",
+		OperatorScope:       graphql.OperatorScopeTenant,
+		InputTemplate:       "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope:     graphql.ConstraintScopeFormationType,
+		FormationTemplateID: formationTemplateOutput.ID,
+	}
+	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, in)
+	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
+	require.NotEmpty(t, constraint.ID)
+
+	t.Logf("Should create formation: %s", firstFormation)
+
+	formationInput := fixtures.FixFormationInput(firstFormation, str.Ptr(formationTemplateName))
+	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
+	require.NoError(t, err)
+
+	var formation graphql.Formation
+	createReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, firstFormation, formation.Name)
+
+	t.Logf("Should create formation: %s", secondFormation)
+
+	secondFormationInput := fixtures.FixFormationInput(secondFormation, str.Ptr(formationTemplateName))
+	secondFormationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(secondFormationInput)
+	require.NoError(t, err)
+
+	var unusedFormation graphql.Formation
+	createUnusedReq := fixtures.FixCreateFormationWithTemplateRequest(secondFormationInputGQL)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, secondFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createUnusedReq, &unusedFormation)
+	require.NoError(t, err)
+	require.Equal(t, secondFormation, unusedFormation.Name)
+
+	t.Logf("Assign tenant %s to formation %s", subaccountID, firstFormation)
+	assignReq := fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
+	var assignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	require.NoError(t, err)
+	require.Equal(t, firstFormation, assignFormation.Name)
+
+	saveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign tenant to formation")
+
+	t.Log("Should match expected ASA")
+	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
+	require.Equal(t, 1, len(asaPage.Data))
+
+	assignment := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: firstFormation,
+		Selector: &graphql.LabelSelectorInput{
+			Key:   "global_subaccount_id",
+			Value: subaccountID,
+		},
+	}
+	assertions.AssertAutomaticScenarioAssignment(t, assignment, *asaPage.Data[0])
+
+	t.Logf("Should fail to assign tenant %s to second formation of type %s", subaccountID, formationTemplateName)
+	assignReq = fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Operator \"IsNotAssignedToAnyFormationOfType\" is not satisfied")
+
+	t.Logf("Unassign tenant %s from formation %s", subaccountID, firstFormation)
+	unassignReq := fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
+	var unassignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
+	require.NoError(t, err)
+	require.Equal(t, firstFormation, unassignFormation.Name)
+
+	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign tenant from formation")
+
+	t.Log("Should match expected ASA")
+	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
+	require.Equal(t, 0, len(asaPage.Data))
+}
+
 func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("Runtime context formation processing from ASA", func(t *testing.T) {

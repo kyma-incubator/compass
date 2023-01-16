@@ -1126,6 +1126,8 @@ global:
         - "webhook:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "formation_constraint:read"
+        - "formation_constraint:write"
       default:
         - "runtime:read"
         - "runtime:write"

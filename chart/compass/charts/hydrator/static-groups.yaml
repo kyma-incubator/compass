@@ -34,6 +34,8 @@
     - "webhook:write"
     - "formation_template:read"
     - "formation_template:write"
+    - "formation_constraint:read"
+    - "formation_constraint:write"
 {{- end -}}
 {{ range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"

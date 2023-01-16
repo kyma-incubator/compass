@@ -29,6 +29,8 @@ graphql:
     formationTemplates: [ "formation_template:read" ]
     systemAuth: ["ory_internal"]
     systemAuthByToken: ["ory_internal"]
+    formationConstraints: [ "formation_constraint:read" ]
+    formationConstraintsByFormationType: [ "formation_constraint:read" ]
 
   mutation:
     registerApplication: ["application:write"]
@@ -103,6 +105,8 @@ graphql:
     createFormationTemplate: [ "formation_template:write" ]
     deleteFormationTemplate: [ "formation_template:write" ]
     updateFormationTemplate: [ "formation_template:write" ]
+    createFormationConstraint: [ "formation_constraint:write" ]
+    deleteFormationConstraint: [ "formation_constraint:write" ]
 
   field:
     fetch_request:

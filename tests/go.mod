@@ -4,10 +4,11 @@ go 1.18
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
+	github.com/davecgh/go-spew v1.1.1
 	github.com/google/uuid v1.3.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221212124318-3f94458ea0c5
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20221212124318-3f94458ea0c5
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221212124318-3f94458ea0c5
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230116125956-a04ce4122954
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221212124318-3f94458ea0c5
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20221212124318-3f94458ea0c5
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20221212124318-3f94458ea0c5
@@ -35,7 +36,6 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
