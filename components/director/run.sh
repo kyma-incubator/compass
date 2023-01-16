@@ -87,7 +87,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="12"
+POSTGRES_VERSION="11"
 
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
@@ -98,6 +98,10 @@ DB_HOST="127.0.0.1"
 CLIENT_CERT_SECRET_NAMESPACE="default"
 CLIENT_CERT_SECRET_NAME="external-client-certificate"
 EXT_SVC_CERT_SECRET_NAME="ext-svc-client-certificate"
+
+if [[ ${DUMP_DB} = true ]]; then
+  POSTGRES_VERSION=12
+fi
 
 function cleanup() {
 
