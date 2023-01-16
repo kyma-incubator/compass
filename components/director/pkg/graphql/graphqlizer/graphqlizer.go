@@ -576,14 +576,14 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstraintInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}"
-		constraintType: "{{.ConstraintType}}"
-		targetOperation: "{{.TargetOperation}}"
+		constraintType: {{.ConstraintType}}
+		targetOperation: {{.TargetOperation}}
 		operator: "{{.Operator}}"
-		resourceType: "{{.ResourceType}}"
+		resourceType: {{.ResourceType}}
 		resourceSubtype: "{{.ResourceSubtype}}"
-		operatorScope: "{{.OperatorScope}}"
+		operatorScope: {{.OperatorScope}}
 		inputTemplate: "{{.InputTemplate}}"
-		constraintScope: "{{.ConstraintScope}}"
+		constraintScope: {{.ConstraintScope}}
 		formationTemplateID: "{{.FormationTemplateID}}"
 	}`)
 }
