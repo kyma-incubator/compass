@@ -211,7 +211,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if consumerInfo.OnBehalfOf != "" {
-		log.C(ctx).Infof("External tenant with id %s is retrieving application on behalf of tenant with id %s", consumerInfo.ConsumerID, consumerInfo.OnBehalfOf)
+		log.C(ctx).Infof("External tenant with id %s is retrieving application on behalf of tenant with id %s", consumerInfo.ConsumerID, "")
 		tenantApp, err := r.getApplicationProviderTenant(ctx, consumerInfo)
 		if err != nil {
 			return nil, err
@@ -800,7 +800,7 @@ func (r *Resolver) getApplicationProviderTenant(ctx context.Context, consumerInf
 	// Derive application provider's app template
 	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
-		log.C(ctx).Infof("No app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
+		log.C(ctx).Infof("No app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, "", tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
 		return nil, errors.Wrapf(err, "no app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
 	}
 
