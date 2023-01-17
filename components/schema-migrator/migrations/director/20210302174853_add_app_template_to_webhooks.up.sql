@@ -2,7 +2,7 @@ BEGIN;
 
 ALTER TABLE webhooks
     ADD COLUMN app_template_id uuid,
-    ADD FOREIGN KEY (app_template_id) REFERENCES app_templates(id) ON DELETE CASCADE,
+    ADD CONSTRAINT webhooks_app_template_id_fkey FOREIGN KEY (app_template_id) REFERENCES app_templates(id) ON DELETE CASCADE,
     ALTER COLUMN tenant_id DROP NOT NULL,
     ADD CONSTRAINT webhook_owner_id_unique
         CHECK ((app_template_id IS NOT NULL AND tenant_id IS NULL AND app_id IS NULL AND runtime_id IS NULL AND integration_system_id IS NULL)
