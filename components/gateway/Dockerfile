@@ -24,7 +24,7 @@ ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o main ./cmd/main.go
 RUN mkdir /app && mv ./main /app/main
 
-FROM --platform=$BUILDPLATFORM alpine:3.16.2
+FROM alpine:3.16.2
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 

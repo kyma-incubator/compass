@@ -3,11 +3,6 @@ FROM --platform=$BUILDPLATFORM golang:1.19.3-alpine3.16 as builder
 ENV BASE_TEST_DIR /go/src/github.com/kyma-incubator/compass/tests
 WORKDIR ${BASE_TEST_DIR}
 
-COPY go.mod go.sum ${BASE_TEST_DIR}/
-RUN go mod download -x
-
-COPY . ${BASE_TEST_DIR}
-
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./connectivity-adapter/tests -o connectivity-adapter.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./connector/tests -o connector.test && \
@@ -25,7 +20,7 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./connectivity-ad
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./ord-service/bench -o ord-service.bench && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./pairing-adapter/tests -o pairing-adapter.test
 
-FROM --platform=$BUILDPLATFORM alpine:3.16.2
+FROM alpine:3.16.2
 
 RUN apk add --no-cache curl
 

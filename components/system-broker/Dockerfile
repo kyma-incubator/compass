@@ -11,7 +11,7 @@ COPY . ${BASE_APP_DIR}
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o /app/system-broker ./cmd/main.go
 
-FROM --platform=$BUILDPLATFORM alpine:3.16.2
+FROM alpine:3.16.2
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
