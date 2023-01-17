@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -95,8 +97,9 @@ func Test_GenerateNotification(t *testing.T) {
 	}
 
 	testCustomerTenantContext := &webhook.CustomerTenantContext{
-		Tenant:     TestTenantID,
-		CustomerID: TntParentID,
+		CustomerID: str.Ptr(TntParentID),
+		AccountID:  str.Ptr(TestTenantID),
+		Path:       nil,
 	}
 
 	testAppTenantMappingWebhookInput := fixAppTenantMappingWebhookInput(TestFormationID, testAppWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppTemplateWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppAndTargetApp), fixConvertFAFromModel(faWithSourceAppAndTargetAppReverse))

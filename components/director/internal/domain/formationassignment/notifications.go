@@ -3,6 +3,8 @@ package formationassignment
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -368,8 +370,17 @@ func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(
 		return nil, err
 	}
 
+	var accountID *string
+	var path *string
+	if tenantObject.Type == tenant.Account {
+		accountID = &tenantObject.ExternalTenant
+	} else if tenantObject.Type == tenant.ResourceGroup {
+		path = &tenantObject.ExternalTenant
+	}
+
 	return &webhook.CustomerTenantContext{
-		Tenant:     tenantObject.ExternalTenant,
-		CustomerID: customerID,
+		CustomerID: &customerID,
+		AccountID:  accountID,
+		Path:       path,
 	}, nil
 }

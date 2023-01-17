@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -804,13 +805,22 @@ func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context
 		return nil, err
 	}
 
+	var accountID *string
+	var path *string
+	if tenantObject.Type == tenant.Account {
+		accountID = &tenantObject.ExternalTenant
+	} else if tenantObject.Type == tenant.ResourceGroup {
+		path = &tenantObject.ExternalTenant
+	}
+
 	customerID, err := ns.tenantRepository.GetCustomerIDParentRecursively(ctx, internalTenantID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &webhookdir.CustomerTenantContext{
-		Tenant:     tenantObject.ExternalTenant,
-		CustomerID: customerID,
+		CustomerID: &customerID,
+		AccountID:  accountID,
+		Path:       path,
 	}, nil
 }
