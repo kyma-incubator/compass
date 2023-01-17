@@ -29,3 +29,18 @@ RUN apk add --no-cache curl
 LABEL source=git@github.com:kyma-incubator/compass.git
 
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connectivity-adapter.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/connector.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ns-adapter.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/external-services-mock.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/gateway.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-aggregator.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-fetcher.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/istio.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/pairing-adapter.test .
+
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director.bench .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.bench .
