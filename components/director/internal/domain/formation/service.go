@@ -382,7 +382,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 	case graphql.FormationObjectTypeTenant:
 		targetTenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
-		fmt.Println(">>>>>>>>>>> ", objectID)
 		if err != nil {
 			return nil, err
 		}

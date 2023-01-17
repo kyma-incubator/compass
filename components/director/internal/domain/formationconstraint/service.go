@@ -7,9 +7,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// FormationConstraintRepository represents the Formation Constraint repository layer
-//go:generate mockery --name=FormationConstraintRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type FormationConstraintRepository interface {
+//go:generate mockery --exported --name=formationConstraintRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationConstraintRepository interface {
 	Create(ctx context.Context, item *model.FormationConstraint) error
 	Get(ctx context.Context, id string) (*model.FormationConstraint, error)
 	ListAll(ctx context.Context) ([]*model.FormationConstraint, error)
@@ -18,35 +17,35 @@ type FormationConstraintRepository interface {
 	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location JoinPointLocation, details MatchingDetails) ([]*model.FormationConstraint, error)
 }
 
-// FormationTemplateConstraintReferenceRepository converts between the internal model and entity
-//go:generate mockery --name=EntityConveFormationTemplateConstraintReferenceRepositoryrter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type FormationTemplateConstraintReferenceRepository interface {
+//go:generate mockery --exported --name=formationTemplateConstraintReferenceRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationTemplateConstraintReferenceRepository interface {
 	Create(ctx context.Context, item *model.FormationTemplateConstraintReference) error
 	ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error)
 }
 
-// UIDService generates UUIDs for new entities
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type UIDService interface {
+//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type uidService interface {
 	Generate() string
 }
 
 type service struct {
-	repo                                     FormationConstraintRepository
-	formationTemplateConstraintReferenceRepo FormationTemplateConstraintReferenceRepository
-	converter                                FormationConstraintConverter
-	uidSvc                                   UIDService
+	repo                                     formationConstraintRepository
+	formationTemplateConstraintReferenceRepo formationTemplateConstraintReferenceRepository
+	converter                                formationConstraintConverter
+	uidSvc                                   uidService
 }
 
 // NewService creates a FormationConstraint service
-func NewService(repo FormationConstraintRepository, formationTemplateConstraintReferenceRepo FormationTemplateConstraintReferenceRepository, uidSvc UIDService) *service {
+func NewService(repo formationConstraintRepository, formationTemplateConstraintReferenceRepo formationTemplateConstraintReferenceRepository, uidSvc uidService, converter formationConstraintConverter) *service {
 	return &service{
 		repo:                                     repo,
 		formationTemplateConstraintReferenceRepo: formationTemplateConstraintReferenceRepo,
 		uidSvc:                                   uidSvc,
+		converter:                                converter,
 	}
 }
 
+// Create creates formation constraint using the provided input
 func (s *service) Create(ctx context.Context, in *model.FormationConstraintInput) (string, error) {
 	formationConstraintID := s.uidSvc.Generate()
 
@@ -68,6 +67,7 @@ func (s *service) Create(ctx context.Context, in *model.FormationConstraintInput
 	return formationConstraintID, nil
 }
 
+// Get fetches formation constraint by id
 func (s *service) Get(ctx context.Context, id string) (*model.FormationConstraint, error) {
 	formationConstraint, err := s.repo.Get(ctx, id)
 	if err != nil {
@@ -77,6 +77,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationConstrain
 	return formationConstraint, nil
 }
 
+// List lists all formation constraints
 func (s *service) List(ctx context.Context) ([]*model.FormationConstraint, error) {
 	formationConstraints, err := s.repo.ListAll(ctx)
 	if err != nil {
@@ -85,6 +86,7 @@ func (s *service) List(ctx context.Context) ([]*model.FormationConstraint, error
 	return formationConstraints, nil
 }
 
+// ListByFormationTemplateID lists all formation constraints associated with the formation template
 func (s *service) ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationConstraint, error) {
 	constraintReferences, err := s.formationTemplateConstraintReferenceRepo.ListByFormationTemplateID(ctx, formationTemplateID)
 	if err != nil {
@@ -103,6 +105,7 @@ func (s *service) ListByFormationTemplateID(ctx context.Context, formationTempla
 	return formationConstraints, nil
 }
 
+// Delete deletes formation constraint by id
 func (s *service) Delete(ctx context.Context, id string) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "while deleting Formation Constraint with ID %s", id)
@@ -111,6 +114,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// ListMatchingConstraints lists formation constraints that math the provided JoinPointLocation and JoinPointDetails
 func (s *service) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location JoinPointLocation, details MatchingDetails) ([]*model.FormationConstraint, error) {
 	formationTemplateConstraintReferences, err := s.formationTemplateConstraintReferenceRepo.ListByFormationTemplateID(ctx, formationTemplateID)
 	if err != nil {

@@ -6,12 +6,15 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/formation_constraint_input"
 )
 
+// IsNotAssignedToAnyFormationOfType contains the name of the IsNotAssignedToAnyFormationOfType operator
 const IsNotAssignedToAnyFormationOfType string = "IsNotAssignedToAnyFormationOfType"
 
+// OperatorInput represent the input needed by the operators
 type OperatorInput interface{}
 
+// FormationConstraintInputByOperator represents a mapping between operator names and OperatorInputs
 var FormationConstraintInputByOperator = map[string]OperatorInput{
-	IsNotAssignedToAnyFormationOfType: formation_constraint_input.IsNotAssignedToAnyFormationOfTypeInput{},
+	IsNotAssignedToAnyFormationOfType: &formation_constraint_input.IsNotAssignedToAnyFormationOfTypeInput{},
 }
 
 type templateSource struct {
@@ -19,7 +22,7 @@ type templateSource struct {
 	ResourceType        ResourceType
 	ResourceSubtype     string
 	ResourceID          string
-	Tenant              string
+	TenantID            string
 }
 
 var validationSource = templateSource{
@@ -27,10 +30,10 @@ var validationSource = templateSource{
 	ResourceType:        "",
 	ResourceSubtype:     "",
 	ResourceID:          "",
-	Tenant:              "",
+	TenantID:            "",
 }
 
-// Validate missing godoc
+// Validate validates FormationConstraintInput
 func (i FormationConstraintInput) Validate() error {
 	if err := validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required),

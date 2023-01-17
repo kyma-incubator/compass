@@ -9,18 +9,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
-// FormationConstraintConverter converts between the graphql and model
-//go:generate mockery --name=FormationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type FormationConstraintConverter interface {
+//go:generate mockery --exported --name=formationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationConstraintConverter interface {
 	FromInputGraphQL(in *graphql.FormationConstraintInput) *model.FormationConstraintInput
 	ToGraphQL(in *model.FormationConstraint) *graphql.FormationConstraint
 	MultipleToGraphQL(in []*model.FormationConstraint) []*graphql.FormationConstraint
 	FromModelInputToModel(in *model.FormationConstraintInput, id string) *model.FormationConstraint
 }
 
-// FormationConstraintService represents the FormationConstraint service layer
-//go:generate mockery --name=FormationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type FormationConstraintService interface {
+//go:generate mockery --exported --name=formationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationConstraintService interface {
 	Create(ctx context.Context, in *model.FormationConstraintInput) (string, error)
 	Get(ctx context.Context, id string) (*model.FormationConstraint, error)
 	List(ctx context.Context) ([]*model.FormationConstraint, error)
@@ -32,12 +30,12 @@ type FormationConstraintService interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	svc       FormationConstraintService
-	converter FormationConstraintConverter
+	svc       formationConstraintService
+	converter formationConstraintConverter
 }
 
 // NewResolver creates FormationConstraint resolver
-func NewResolver(transact persistence.Transactioner, converter FormationConstraintConverter, svc FormationConstraintService) *Resolver {
+func NewResolver(transact persistence.Transactioner, converter formationConstraintConverter, svc formationConstraintService) *Resolver {
 	return &Resolver{
 		transact:  transact,
 		converter: converter,

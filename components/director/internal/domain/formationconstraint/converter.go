@@ -108,6 +108,7 @@ func (c *converter) MultipleFromEntity(in EntityCollection) []*model.FormationCo
 	return formationConstraints
 }
 
+// FromInputGraphQL converts from GraphQL input to internal model input
 func (c *converter) FromInputGraphQL(in *graphql.FormationConstraintInput) *model.FormationConstraintInput {
 	return &model.FormationConstraintInput{
 		Name:                in.Name,
@@ -123,6 +124,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationConstraintInput) *mode
 	}
 }
 
+// FromModelInputToModel converts from internal model input to internal model
 func (c *converter) FromModelInputToModel(in *model.FormationConstraintInput, id string) *model.FormationConstraint {
 	return &model.FormationConstraint{
 		ID:              id,

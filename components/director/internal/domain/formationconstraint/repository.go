@@ -46,6 +46,7 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
+// Create stores new record in the database
 func (r *repository) Create(ctx context.Context, item *model.FormationConstraint) error {
 	if item == nil {
 		return apperrors.NewInternalError("model can not be empty")
@@ -58,6 +59,7 @@ func (r *repository) Create(ctx context.Context, item *model.FormationConstraint
 	return r.creator.Create(ctx, entity)
 }
 
+// Get fetches the formation constraint from the db by the provided id
 func (r *repository) Get(ctx context.Context, id string) (*model.FormationConstraint, error) {
 	var entity Entity
 	if err := r.singleGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -68,6 +70,8 @@ func (r *repository) Get(ctx context.Context, id string) (*model.FormationConstr
 
 	return result, nil
 }
+
+// ListAll lists all formation constraints
 func (r *repository) ListAll(ctx context.Context) ([]*model.FormationConstraint, error) {
 	var entities EntityCollection
 
@@ -78,6 +82,7 @@ func (r *repository) ListAll(ctx context.Context) ([]*model.FormationConstraint,
 	return r.conv.MultipleFromEntity(entities), nil
 }
 
+// ListByIDs lists all formation constraints whose id is in formationConstraintIDs
 func (r *repository) ListByIDs(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error) {
 	var entities EntityCollection
 
@@ -88,6 +93,7 @@ func (r *repository) ListByIDs(ctx context.Context, formationConstraintIDs []str
 	return r.conv.MultipleFromEntity(entities), nil
 }
 
+// Delete deletes formation constraint from the database by id
 func (r *repository) Delete(ctx context.Context, id string) error {
 	return r.deleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }

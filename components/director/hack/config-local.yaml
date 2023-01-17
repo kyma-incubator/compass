@@ -26,6 +26,8 @@ graphql:
     formationTemplates: [ "formation_template:read" ]
     formation: ["formation:read"]
     formations: ["formation:read"]
+    formationConstraints: ["formation_constraint:read"]
+    formationConstraintsByFormationType: ["formation_constraint:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -93,9 +95,11 @@ graphql:
     updateTenant: ["tenant:write"]
     subscribeTenant: ["tenant_subscription:write"]
     unsubscribeTenant: ["tenant_subscription:write"]
-    createFormationTemplate: [ "formation_template:write" ]
-    deleteFormationTemplate: [ "formation_template:write" ]
-    updateFormationTemplate: [ "formation_template:write" ]
+    createFormationTemplate: ["formation_template:write"]
+    deleteFormationTemplate: ["formation_template:write"]
+    updateFormationTemplate: ["formation_template:write"]
+    createFormationConstraint: ["formation_constraint:write"]
+    deleteFormationConstraint: ["formation_constraint:write"]
 
   field:
     fetch_request:
