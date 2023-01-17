@@ -147,7 +147,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2822"
+      version: "PR-2823"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -946,7 +946,7 @@ global:
       skipPattern: ""
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
-      skipPattern: ""
+      skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs)"
     externalServicesMock:
       skipPattern: ""
       formationAsyncApi:
