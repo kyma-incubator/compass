@@ -3,6 +3,7 @@ package authenticator
 import (
 	"context"
 	"crypto/rsa"
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"strings"
@@ -128,7 +129,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 			ctx = tokenClaims.ContextWithClaims(ctx)
 
 			if clientUser := r.Header.Get(a.clientIDHeaderKey); clientUser != "" {
-				log.C(ctx).Infof("Found %s header in request with value: %s", a.clientIDHeaderKey, "")
+				log.C(ctx).Infof("Found %s header in request with value: REDACTED_%x", a.clientIDHeaderKey, sha256.Sum256([]byte(clientUser)))
 				ctx = client.SaveToContext(ctx, clientUser)
 			}
 
