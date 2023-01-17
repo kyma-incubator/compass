@@ -20,8 +20,11 @@ spec:
         shareProcessNamespace: true
         containers:
           - name: dbdump
-            image: bitnami/postgresql:11.15.0-debian-10-r93
+            image: bitnami/postgresql:12.13.0-debian-11-r21
             imagePullPolicy: IfNotPresent
+            securityContext:
+              allowPrivilegeEscalation: false
+              runAsUser: 0
             env:
             - name: DB_USER
               valueFrom:
@@ -48,16 +51,11 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-db-name
-            - name: DB_SSL
-              valueFrom:
-                secretKeyRef:
-                  name: compass-postgresql
-                  key: postgresql-sslMode
             command:
               - "/bin/bash"
             args:
               - "-c"
-              - "sleep 40; [ -f /tmp/dbdata/dump.sql ] && PGPASSWORD=${DB_PASSWORD} psql --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} --dbname=${DB_NAME} --single-transaction -f /tmp/dbdata/dump.sql --set ON_ERROR_STOP=on --set sslmode=${DB_SSL} || echo 'There is no dump.sql to be applied.' ; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              - "apt -y update && apt -y upgrade && apt -y install curl && curl --version; sleep 60; [ -d /tmp/dbdata/dump ] && PGPASSWORD=${DB_PASSWORD} pg_restore --verbose --format=directory --jobs=8 --no-owner --no-privileges --username=${DB_USER} --host=${DB_HOST} --port=${DB_PORT} --dbname=${DB_NAME} /tmp/dbdata/dump || echo 'There is no dump to be applied.' ; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
             volumeMounts:
               - name: dump-folder
                 mountPath: "/tmp/dbdata"

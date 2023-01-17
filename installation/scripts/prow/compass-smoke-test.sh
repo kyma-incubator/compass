@@ -93,7 +93,7 @@ tar --extract --file migrate.tgz --directory "${MIGRATE_HOME}" --no-same-owner
 rm migrate.tgz* 
 
 echo "-----------------------------------"
-echo "Eenvironment"
+echo "Environment"
 echo "-----------------------------------"
 echo "JAVA_HOME: ${JAVA_HOME}"
 echo "M2_HOME: ${M2_HOME}"
