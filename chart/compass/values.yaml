@@ -127,7 +127,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2824"
+      version: "PR-2831"
       name: compass-director
     hydrator:
       dir:
