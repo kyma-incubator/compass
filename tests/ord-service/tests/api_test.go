@@ -22,6 +22,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"net/http"
 	urlpkg "net/url"
 	"strings"
@@ -51,7 +52,8 @@ const (
 	odataV2APIProtocol = "odata-v2"
 )
 
-func TestORDService(t *testing.T) {
+func TestORDService(stdT *testing.T) {
+	t := testingx.NewT(stdT)
 	ctx := context.Background()
 
 	defaultTestTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
@@ -156,7 +158,7 @@ func TestORDService(t *testing.T) {
 		ExternalCertProvider:                  certprovider.CertificateService,
 	}
 
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	extIssuerCertHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
@@ -284,8 +286,8 @@ func TestORDService(t *testing.T) {
 	}
 
 	// create label definition
-	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
-	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
+	defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
+	fixtures.CreateFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
 
 	// create automatic scenario assigment for subTenant
 	formationInput := directorSchema.FormationInput{Name: scenarioName}
