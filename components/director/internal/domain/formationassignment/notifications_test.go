@@ -97,7 +97,7 @@ func Test_GenerateNotification(t *testing.T) {
 	}
 
 	testCustomerTenantContext := &webhook.CustomerTenantContext{
-		CustomerID: str.Ptr(TntParentID),
+		CustomerID: TntParentID,
 		AccountID:  str.Ptr(TestTenantID),
 		Path:       nil,
 	}

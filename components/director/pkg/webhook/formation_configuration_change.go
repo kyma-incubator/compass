@@ -34,7 +34,7 @@ type RuntimeContextWithLabels struct {
 
 // CustomerTenantContext represents the tenant hierarchy of the customer creating the formation. Both IDs are the external ones
 type CustomerTenantContext struct {
-	CustomerID *string
+	CustomerID string
 	AccountID  *string
 	Path       *string
 }

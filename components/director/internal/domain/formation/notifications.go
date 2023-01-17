@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
@@ -819,7 +820,7 @@ func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context
 	}
 
 	return &webhookdir.CustomerTenantContext{
-		CustomerID: &customerID,
+		CustomerID: customerID,
 		AccountID:  accountID,
 		Path:       path,
 	}, nil

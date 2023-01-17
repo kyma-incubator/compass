@@ -157,7 +157,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 						},
 						RuntimeContext: nil,
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -181,7 +181,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -209,7 +209,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -234,7 +234,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -518,7 +518,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -543,7 +543,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -624,7 +624,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -649,7 +649,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1012,7 +1012,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1037,7 +1037,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1119,7 +1119,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1144,7 +1144,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:  fixRuntimeLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1389,7 +1389,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1417,7 +1417,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1448,7 +1448,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1476,7 +1476,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1768,7 +1768,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1796,7 +1796,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1881,7 +1881,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -1909,7 +1909,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -2405,7 +2405,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -2433,7 +2433,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -2650,7 +2650,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 						},
 						RuntimeContext: nil,
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -2681,7 +2681,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -2709,7 +2709,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:      fixApplicationLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -2737,7 +2737,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:      fixApplicationLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -2768,7 +2768,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -2799,7 +2799,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -3633,7 +3633,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -3664,7 +3664,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -4549,7 +4549,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 						},
 						RuntimeContext: nil,
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -4580,7 +4580,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:         fixRuntimeContextLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -4608,7 +4608,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:      fixApplicationLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -4636,7 +4636,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 							Labels:      fixApplicationLabelsMap(),
 						},
 						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: str.Ptr(TntParentID),
+							CustomerID: TntParentID,
 							AccountID:  str.Ptr(TntExternalID),
 							Path:       nil,
 						},
@@ -4790,7 +4790,12 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 							Runtime: fixRuntimeModel(RuntimeID),
 							Labels:  fixRuntimeLabelsMap(),
 						},
-						RuntimeContext:    nil,
+						RuntimeContext: nil,
+						CustomerTenantContext: &webhook.CustomerTenantContext{
+							CustomerID: TntParentID,
+							AccountID:  str.Ptr(TntExternalID),
+							Path:       nil,
+						},
 						Assignment:        emptyFormationAssignment,
 						ReverseAssignment: emptyFormationAssignment,
 					},
@@ -4815,7 +4820,12 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 						Runtime: fixRuntimeModel(RuntimeID),
 						Labels:  fixRuntimeLabelsMap(),
 					},
-					RuntimeContext:    nil,
+					RuntimeContext: nil,
+					CustomerTenantContext: &webhook.CustomerTenantContext{
+						CustomerID: TntParentID,
+						AccountID:  str.Ptr(TntExternalID),
+						Path:       nil,
+					},
 					Assignment:        emptyFormationAssignment,
 					ReverseAssignment: emptyFormationAssignment,
 				},
@@ -4843,7 +4853,12 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 							Runtime: fixRuntimeModel(RuntimeID),
 							Labels:  fixRuntimeLabelsMap(),
 						},
-						RuntimeContext:    nil,
+						RuntimeContext: nil,
+						CustomerTenantContext: &webhook.CustomerTenantContext{
+							CustomerID: TntParentID,
+							AccountID:  str.Ptr(TntExternalID),
+							Path:       nil,
+						},
 						Assignment:        emptyFormationAssignment,
 						ReverseAssignment: emptyFormationAssignment,
 					},
@@ -4868,7 +4883,12 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 						Runtime: fixRuntimeModel(RuntimeID),
 						Labels:  fixRuntimeLabelsMap(),
 					},
-					RuntimeContext:    nil,
+					RuntimeContext: nil,
+					CustomerTenantContext: &webhook.CustomerTenantContext{
+						CustomerID: TntParentID,
+						AccountID:  str.Ptr(TntExternalID),
+						Path:       nil,
+					},
 					Assignment:        emptyFormationAssignment,
 					ReverseAssignment: emptyFormationAssignment,
 				},

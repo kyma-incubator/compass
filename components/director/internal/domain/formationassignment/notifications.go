@@ -379,7 +379,7 @@ func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(
 	}
 
 	return &webhook.CustomerTenantContext{
-		CustomerID: &customerID,
+		CustomerID: customerID,
 		AccountID:  accountID,
 		Path:       path,
 	}, nil
