@@ -6,7 +6,7 @@ ARG TARGETARCH
 WORKDIR /migrate
 
 RUN apk --no-cache add bash postgresql-client curl jq
-RUN wget https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-${TARGETARCH}.tar.gz -O - | tar -xz
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-${TARGETARCH}.tar.gz | tar -xz
 RUN mv migrate /usr/local/bin/migrate
 
 # kubectl is supported within one minor version (older or newer) of kube-apiserver
