@@ -195,7 +195,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	secondFormationTemplateInput := fixtures.FixFormationTemplateInput(secondFormationTemplateName)
 
 	secondFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationTemplateInput)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
 
 	firstConstraint := graphql.FormationConstraintInput{
 		Name:                "test_constraint",
