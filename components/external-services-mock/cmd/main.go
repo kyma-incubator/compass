@@ -128,10 +128,10 @@ func main() {
 
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
-		"tenantFetcherClaims":               claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"subscriptionClaims":                claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
-		"nsAdapterClaims":                   claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
-		"subscriptionClaimsTenantHierarchy": claimsFunc("subsc-key-tnt-hierarchy-test", "subscription-flow-tnt-hierarchy", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountIDTenantHierarchy, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
+		"tenantFetcherClaims":                claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		"subscriptionClaims":                 claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
+		"nsAdapterClaims":                    claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		"tenantFetcherClaimsTenantHierarchy": claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountIDTenantHierarchy, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)

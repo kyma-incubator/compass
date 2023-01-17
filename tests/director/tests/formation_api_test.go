@@ -45,10 +45,6 @@ const (
 	assignOperation           = "assign"
 	unassignOperation         = "unassign"
 	emptyParentCustomerID     = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
-	LocationHeader            = "Location"
-	JobSucceededStatus        = "COMPLETED"
-	EventuallyTimeout         = 60 * time.Second
-	EventuallyTick            = 2 * time.Second
 )
 
 func TestGetFormation(t *testing.T) {
@@ -798,9 +794,7 @@ func TestFormationNotificationsTenantHierarchy(stdT *testing.T) {
 		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID // randomly chosen id
 
-		// This test will be executed only on 'local' env and there is a requirement for the subscriptionConsumer tenants - to be related from SA up to CRM. The tenants below are randomly selected.
-		//subscriptionConsumerSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedSubaccount) // randomly selected child of subscriptionConsumerAccount (tenant.TestTenants.GetDefaultTenantID())
-		//subscriptionConsumerAccountID := tenant.TestTenants.GetDefaultTenantID()                                             // this global account tenant is selected because it has both subaccount child and customer parent
+		// This test will be executed only on 'local' env and there is a requirement for the subscriptionConsumer tenants - to be related from SA up to CRM. The tenants below are randomly selected
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountIDTenantHierarchy                      // randomly selected child of subscriptionConsumerAccount (tenant.TestTenants.GetDefaultTenantID())
 		subscriptionConsumerAccountID := conf.TestConsumerAccountIDTenantHierarchy                            // this global account tenant is selected because it has both subaccount child and customer parent
 		subscriptionConsumerCustomerID := tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant) // this is the customer parent of `tenant.TestTenants.GetDefaultTenantID()`
@@ -884,7 +878,7 @@ func TestFormationNotificationsTenantHierarchy(stdT *testing.T) {
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "subscriptionClaimsTenantHierarchy")
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaimsTenantHierarchy")
 		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
 		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
