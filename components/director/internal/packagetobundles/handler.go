@@ -136,7 +136,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 					return
 				}
 
-				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID %q and type %q", consumerInfo.ConsumerID, consumerInfo.ConsumerType)
+				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID %s and type %q", "", consumerInfo.ConsumerType)
 
 				next.ServeHTTP(w, r)
 
