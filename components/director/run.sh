@@ -100,15 +100,6 @@ CLIENT_CERT_SECRET_NAMESPACE="default"
 CLIENT_CERT_SECRET_NAME="external-client-certificate"
 EXT_SVC_CERT_SECRET_NAME="ext-svc-client-certificate"
 
-# Switching to Postgres version 11 is needed due to a change in the default values for foreign key constraints.
-# There are old migrations that make use of these default values. As of Postgres v12.13,
-# the format of the default values has been changed (https://www.postgresql.org/docs/release/12.13/ - Fix generation of
-# constraint names for per-partition foreign key constraints (Jehan-Guillaume de Rorthais)). Due to this, some old migrations
-# fail with "no such constraint found"
-if [[ ${DUMP_DB} = false ]]; then
-  POSTGRES_VERSION=11
-fi
-
 function cleanup() {
 
     if [[ ${DEBUG} == true ]]; then
