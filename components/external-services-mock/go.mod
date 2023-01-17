@@ -9,7 +9,7 @@ require (
 	github.com/goccy/go-json v0.9.4 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230113212053-9511b220e4c8
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230117160600-37834cf6765d
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230113212053-9511b220e4c8
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
