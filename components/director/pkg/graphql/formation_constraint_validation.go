@@ -42,7 +42,7 @@ func (i FormationConstraintInput) Validate() error {
 		validation.Field(&i.Operator, validation.Required),
 		validation.Field(&i.ResourceType, validation.Required, validation.In(ResourceTypeApplication, ResourceTypeRuntime, ResourceTypeFormation, ResourceTypeTenant, ResourceTypeRuntimeContext)),
 		validation.Field(&i.ResourceSubtype, validation.Required),
-		validation.Field(&i.OperatorScope, validation.Required, validation.In(OperatorScopeGlobal, OperatorScopeTenant)),
+		validation.Field(&i.OperatorScope, validation.Required, validation.In(OperatorScopeGlobal, OperatorScopeFormation, OperatorScopeTenant)),
 		validation.Field(&i.InputTemplate, validation.Required),
 		validation.Field(&i.ConstraintScope, validation.Required, validation.In(ConstraintScopeFormationType, ConstraintScopeGlobal)),
 		validation.Field(&i.FormationTemplateID, validation.Required),

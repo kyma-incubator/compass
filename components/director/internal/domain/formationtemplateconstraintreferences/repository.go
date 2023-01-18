@@ -20,23 +20,21 @@ var (
 	tableColumns = []string{formationConstraintColumn, formationTemplateColumn}
 )
 
-// EntityConverter converts between the internal model and entity
-//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type EntityConverter interface {
+//go:generate mockery --exported --name=entityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type entityConverter interface {
 	ToEntity(in *model.FormationTemplateConstraintReference) *Entity
 	FromEntity(entity *Entity) *model.FormationTemplateConstraintReference
-	MultipleFromEntity(in EntityCollection) []*model.FormationTemplateConstraintReference
 }
 
 type repository struct {
 	lister  repo.ListerGlobal
 	creator repo.CreatorGlobal
 	deleter repo.DeleterGlobal
-	conv    EntityConverter
+	conv    entityConverter
 }
 
 // NewRepository creates a new FormationConstraint repository
-func NewRepository(conv EntityConverter) *repository {
+func NewRepository(conv entityConverter) *repository {
 	return &repository{
 		lister:  repo.NewListerGlobal(resource.FormationTemplateConstraintReference, tableName, tableColumns),
 		creator: repo.NewCreatorGlobal(resource.FormationTemplateConstraintReference, tableName, tableColumns),
@@ -53,7 +51,7 @@ func (r *repository) ListByFormationTemplateID(ctx context.Context, formationTem
 		//TODO do we need to check for not found?
 		return nil, errors.Wrap(err, "while listing formationTemplate-constraint references by formationTemplate ID")
 	}
-	return r.conv.MultipleFromEntity(entityCollection), nil
+	return r.multipleFromEntities(entityCollection)
 }
 
 // Create stores new formationTemplate-constraint reference in the database
@@ -73,4 +71,13 @@ func (r *repository) Create(ctx context.Context, item *model.FormationTemplateCo
 func (r *repository) Delete(ctx context.Context, formationTemplateID, constraintID string) error {
 	log.C(ctx).Debugf("Deleting FormationTemplateConstraintReference with formationTemplate ID: %q and formationConstraint ID: %q...", formationTemplateID, constraintID)
 	return r.deleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(formationTemplateColumn, formationTemplateID), repo.NewEqualCondition(formationConstraintColumn, constraintID)})
+}
+
+func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.FormationTemplateConstraintReference, error) {
+	items := make([]*model.FormationTemplateConstraintReference, 0, len(entities))
+	for _, ent := range entities {
+		m := r.conv.FromEntity(ent)
+		items = append(items, m)
+	}
+	return items, nil
 }

@@ -90,24 +90,6 @@ func (c *converter) FromEntity(e *Entity) *model.FormationConstraint {
 	}
 }
 
-// MultipleFromEntity converts multiple entities to internal models
-func (c *converter) MultipleFromEntity(in EntityCollection) []*model.FormationConstraint {
-	if in == nil {
-		return nil
-	}
-	formationConstraints := make([]*model.FormationConstraint, 0, len(in))
-	for _, r := range in {
-		if r == nil {
-			continue
-		}
-
-		fc := c.FromEntity(r)
-		formationConstraints = append(formationConstraints, fc)
-	}
-
-	return formationConstraints
-}
-
 // FromInputGraphQL converts from GraphQL input to internal model input
 func (c *converter) FromInputGraphQL(in *graphql.FormationConstraintInput) *model.FormationConstraintInput {
 	return &model.FormationConstraintInput{

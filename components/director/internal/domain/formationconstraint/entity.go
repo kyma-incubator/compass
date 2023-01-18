@@ -15,7 +15,7 @@ type Entity struct {
 }
 
 // EntityCollection is a collection of formation constraint entities.
-type EntityCollection []*Entity
+type EntityCollection []Entity
 
 // Len is implementation of a repo.Collection interface
 func (s EntityCollection) Len() int {

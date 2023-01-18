@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
-//go:generate mockery --exported --name=formationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationConstraintConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationConstraintConverter interface {
 	FromInputGraphQL(in *graphql.FormationConstraintInput) *model.FormationConstraintInput
 	ToGraphQL(in *model.FormationConstraint) *graphql.FormationConstraint
@@ -17,7 +17,7 @@ type formationConstraintConverter interface {
 	FromModelInputToModel(in *model.FormationConstraintInput, id string) *model.FormationConstraint
 }
 
-//go:generate mockery --exported --name=formationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationConstraintService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationConstraintService interface {
 	Create(ctx context.Context, in *model.FormationConstraintInput) (string, error)
 	Get(ctx context.Context, id string) (*model.FormationConstraint, error)

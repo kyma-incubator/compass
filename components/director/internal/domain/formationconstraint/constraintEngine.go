@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --exported --name=formationConstraintService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationConstraintSvc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationConstraintSvc interface {
 	ListMatchingConstraints(ctx context.Context, formationTemplateID string, location JoinPointLocation, details MatchingDetails) ([]*model.FormationConstraint, error)
 }
@@ -27,7 +27,7 @@ type automaticFormationAssignmentService interface {
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
 }
 
-//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationRepository interface {
 	ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.Formation, error)
 }

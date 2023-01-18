@@ -34,21 +34,3 @@ func (c *converter) FromEntity(e *Entity) *model.FormationTemplateConstraintRefe
 		FormationTemplate: e.FormationTemplate,
 	}
 }
-
-// MultipleFromEntity converts multiple entities to internal models
-func (c *converter) MultipleFromEntity(in EntityCollection) []*model.FormationTemplateConstraintReference {
-	if in == nil {
-		return nil
-	}
-	references := make([]*model.FormationTemplateConstraintReference, 0, len(in))
-	for _, e := range in {
-		if e == nil {
-			continue
-		}
-
-		fc := c.FromEntity(e)
-		references = append(references, fc)
-	}
-
-	return references
-}

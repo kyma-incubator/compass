@@ -79,7 +79,7 @@ func (r *repository) ListAll(ctx context.Context) ([]*model.FormationConstraint,
 		return nil, err
 	}
 
-	return r.conv.MultipleFromEntity(entities), nil
+	return r.multipleFromEntities(entities)
 }
 
 // ListByIDs lists all formation constraints whose id is in formationConstraintIDs
@@ -90,7 +90,7 @@ func (r *repository) ListByIDs(ctx context.Context, formationConstraintIDs []str
 		return nil, err
 	}
 
-	return r.conv.MultipleFromEntity(entities), nil
+	return r.multipleFromEntities(entities)
 }
 
 // Delete deletes formation constraint from the database by id
@@ -129,5 +129,14 @@ func (r *repository) ListMatchingFormationConstraints(ctx context.Context, forma
 	if err := r.conditionTreeLister.ListConditionTreeGlobal(ctx, resource.FormationConstraint, &entityCollection, conditions); err != nil {
 		return nil, errors.Wrap(err, "while listing constraints")
 	}
-	return r.conv.MultipleFromEntity(entityCollection), nil
+	return r.multipleFromEntities(entityCollection)
+}
+
+func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.FormationConstraint, error) {
+	items := make([]*model.FormationConstraint, 0, len(entities))
+	for _, ent := range entities {
+		m := r.conv.FromEntity(&ent)
+		items = append(items, m)
+	}
+	return items, nil
 }
