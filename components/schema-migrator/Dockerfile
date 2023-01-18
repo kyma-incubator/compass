@@ -1,24 +1,21 @@
-FROM alpine:3.17.1
+FROM debian:11.6-slim
 
 ARG MIGRATE_VER=4.15.2
 ARG TARGETARCH
 
 WORKDIR /migrate
 
-RUN apk --no-cache add bash postgresql-client curl jq
+RUN apt-get update && \
+    apt-get install -y bash ca-certificates postgresql-client jq curl && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-${TARGETARCH}.tar.gz | tar -xz
 RUN mv migrate /usr/local/bin/migrate
 
 # kubectl is supported within one minor version (older or newer) of kube-apiserver
 ENV CLUSTER_VERSION=1.21.12
 
-RUN apk add --update ca-certificates \
- && apk add -t deps \
- && apk add --update curl \
- && curl -L https://dl.k8s.io/release/v${CLUSTER_VERSION}/bin/linux/${TARGETARCH}/kubectl -o /usr/local/bin/kubectl \
- && chmod +x /usr/local/bin/kubectl \
- && apk del --purge deps \
- && rm /var/cache/apk/*
+RUN curl -L https://dl.k8s.io/release/v${CLUSTER_VERSION}/bin/linux/${TARGETARCH}/kubectl -o /usr/local/bin/kubectl  && chmod +x /usr/local/bin/kubectl 
 
 COPY ./migrations/ ./migrations
 COPY ./seeds/ ./seeds
