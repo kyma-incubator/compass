@@ -24,6 +24,7 @@ graphql:
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]
     formation: ["formation:read"]
+    formationByName: ["formation:read"]
     formations: ["formation:read"]
     formationTemplate: [ "formation_template:read" ]
     formationTemplates: [ "formation_template:read" ]

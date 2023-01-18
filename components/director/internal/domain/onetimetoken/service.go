@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenariogroups"
 
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
@@ -259,8 +261,9 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	}
 
 	clientUser, err := client.LoadFromContext(ctx)
-	if err != nil {
-		log.C(ctx).Infof("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]", tntCtx.InternalID, extTenant)
+	if err != nil || clientUser == "" {
+		log.C(ctx).Warnf("unable to provide client_user for internal tenant [%s] with corresponding external tenant [%s]. Using correlation ID as client_user header...", tntCtx.InternalID, extTenant)
+		clientUser = correlation.CorrelationIDFromContext(ctx)
 	}
 
 	scenarioGroups := scenariogroups.LoadFromContext(ctx)

@@ -18,7 +18,7 @@ import (
 const (
 	UserContextHeader  = "user_context"
 	LocationHeader     = "Location"
-	JobSucceededStatus = "SUCCEEDED"
+	JobSucceededStatus = "COMPLETED"
 	EventuallyTimeout  = 60 * time.Second
 	EventuallyTick     = 2 * time.Second
 )
@@ -36,7 +36,7 @@ func BuildAndExecuteUnsubscribeRequest(t *testing.T, resourceID, resourceName st
 	require.NoError(t, err)
 
 	body := string(unsubscribeBody)
-	if strings.Contains(body, "does not exist") { // Check in the body if subscription is already removed if yes, do not perform unsubscription again because it will fail
+	if strings.Contains(body, "job-not-created-yet") { // Check in the body if subscription is already removed if yes, do not perform unsubscription again because it will fail
 		t.Logf("Subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q, and subaccount id: %q is alredy removed", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, resourceName, resourceID, subscriptionProviderSubaccountID)
 		return
 	}
@@ -64,16 +64,14 @@ func GetSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusUR
 	respBody, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	id := gjson.GetBytes(respBody, "id")
-	state := gjson.GetBytes(respBody, "state")
-	require.True(t, id.Exists())
-	require.True(t, state.Exists())
-	t.Logf("state of the asynchronous job with id: %s is: %s", id.String(), state.String())
+	status := gjson.GetBytes(respBody, "status")
+	require.True(t, status.Exists())
+	t.Logf("the status of the asynchronous job is: %s", status.String())
 
 	jobErr := gjson.GetBytes(respBody, "error")
 	if jobErr.Exists() {
 		t.Errorf("Error occurred while executing asynchronous subscription job: %s", jobErr.String())
 	}
 
-	return state.String()
+	return status.String()
 }

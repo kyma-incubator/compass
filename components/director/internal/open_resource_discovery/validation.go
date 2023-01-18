@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"golang.org/x/mod/semver"
 
 	"github.com/google/go-cmp/cmp"
@@ -75,6 +73,7 @@ const (
 
 const (
 	custom string = "custom"
+	none   string = "none"
 
 	// PolicyLevelSap is one of the available policy options
 	PolicyLevelSap string = "sap:core:v1"
@@ -82,6 +81,8 @@ const (
 	PolicyLevelSapPartner string = "sap:partner:v1"
 	// PolicyLevelCustom is one of the available policy options
 	PolicyLevelCustom = custom
+	// PolicyLevelNone is one of the available policy options
+	PolicyLevelNone string = none
 
 	// ReleaseStatusBeta is one of the available release status options
 	ReleaseStatusBeta string = "beta"
@@ -180,7 +181,7 @@ var shortDescriptionRules = []validation.Rule{
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.NilOrNotEmpty, validation.Length(1, 2048), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 // ORDDocumentValidationError contains the validation errors when aggregating ord documents
@@ -218,7 +219,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
 			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
 		})),
-		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom, PolicyLevelNone), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
 		validation.Field(&pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&pkg.PackageLinks, validation.By(validatePackageLinks)),
 		validation.Field(&pkg.Links, validation.By(validateORDLinks)),
@@ -235,7 +236,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		})),
 		validation.Field(&pkg.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				if pkg.PolicyLevel == PolicyLevelCustom {
+				if pkg.PolicyLevel != PolicyLevelSap {
 					return nil
 				}
 				return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
@@ -246,7 +247,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		),
 		validation.Field(&pkg.Industry,
 			validation.By(func(value interface{}) error {
-				if pkg.PolicyLevel == PolicyLevelCustom {
+				if pkg.PolicyLevel != PolicyLevelSap {
 					return nil
 				}
 				return validateJSONArrayOfStringsContainsInMap(value, Industries)
@@ -289,8 +290,8 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 	return validation.ValidateStruct(api,
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
-		validation.Field(&api.ShortDescription, validation.Length(0, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks")),
-		validation.Field(&api.Description, validation.Length(0, MaxDescriptionLength)),
+		validation.Field(&api.ShortDescription, shortDescriptionRules...),
+		validation.Field(&api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
 			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
 		})),
@@ -308,7 +309,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		})),
 		validation.Field(&api.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsNotCustom(api.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(api.OrdPackageID, packagePolicyLevels, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
 				})
 			}),
@@ -318,7 +319,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		),
 		validation.Field(&api.Industry,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsNotCustom(api.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(api.OrdPackageID, packagePolicyLevels, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, Industries)
 				})
 			}),
@@ -333,8 +334,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
-		// validation is softened temporarily
-		validation.Field(&api.Successors, validation.By(func(value interface{}) error {
+		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
 		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
@@ -378,7 +378,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		})),
 		validation.Field(&event.LineOfBusiness,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsNotCustom(event.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(event.OrdPackageID, packagePolicyLevels, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
 				})
 			}),
@@ -388,7 +388,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		),
 		validation.Field(&event.Industry,
 			validation.By(func(value interface{}) error {
-				return validateWhenPolicyLevelIsNotCustom(event.OrdPackageID, packagePolicyLevels, func() error {
+				return validateWhenPolicyLevelIsSAP(event.OrdPackageID, packagePolicyLevels, func() error {
 					return validateJSONArrayOfStringsContainsInMap(value, Industries)
 				})
 			}),
@@ -413,7 +413,9 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.DefaultConsumptionBundle, validation.Match(regexp.MustCompile(BundleOrdIDRegex)), validation.By(func(value interface{}) error {
 			return validateDefaultConsumptionBundle(value, event.PartOfConsumptionBundles)
 		})),
-		validation.Field(&event.Extensible, validation.By(validateExtensibleFieldForEvent)),
+		validation.Field(&event.Extensible, validation.By(func(value interface{}) error {
+			return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
+		})),
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -696,10 +698,8 @@ func validateEventResourceDefinition(value interface{}, event model.EventDefinit
 		return errors.New("error while casting to EventResourceDefinition")
 	}
 
-	// soften validation temporarily
 	if len(eventResourceDef) == 0 {
-		log.DefaultLogger().Errorf("when event resource visibility is public or internal, resource definitions must be provided for event with ID: %s", *event.OrdID)
-		//	return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
+		return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
 	}
 
 	return nil
@@ -816,11 +816,11 @@ func noNewLines(s string) bool {
 	return !strings.Contains(s, "\\n")
 }
 
-func validateWhenPolicyLevelIsNotCustom(apiOrdID *string, packagePolicyLevels map[string]string, validationFunc func() error) error {
-	pkgOrdID := str.PtrStrToStr(apiOrdID)
+func validateWhenPolicyLevelIsSAP(packageOrdID *string, packagePolicyLevels map[string]string, validationFunc func() error) error {
+	pkgOrdID := str.PtrStrToStr(packageOrdID)
 	policyLevel := packagePolicyLevels[pkgOrdID]
 
-	if policyLevel == PolicyLevelCustom {
+	if policyLevel != PolicyLevelSap {
 		return nil
 	}
 
@@ -1177,16 +1177,6 @@ func validateExtensibleField(value interface{}, ordPackageID *string, packagePol
 		return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
 	}
 
-	return validateJSONObjects(value, map[string][]validation.Rule{
-		"supported": {
-			validation.Required,
-			validation.In("no", "manual", "automatic"),
-		},
-		"description": {},
-	}, validateExtensibleInnerFields)
-}
-
-func validateExtensibleFieldForEvent(value interface{}) error {
 	return validateJSONObjects(value, map[string][]validation.Rule{
 		"supported": {
 			validation.Required,
