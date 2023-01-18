@@ -5,7 +5,7 @@ ARG TARGETARCH
 
 WORKDIR /migrate
 
-RUN apk --no-cache add bash postgresql-client curl jq
+RUN apk --update --no-cache add bash postgresql-client curl jq
 
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-${TARGETARCH}.tar.gz | tar -xz
 RUN mv migrate /usr/local/bin/migrate
