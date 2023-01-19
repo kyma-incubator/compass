@@ -2,7 +2,7 @@ pjConfigs:
   prConfig:
     kyma-project:
       test-infra:
-        prNumber: 6734
+        prNumber: 6762
   prowJobs:
     kyma-incubator:
       compass:
