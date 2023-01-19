@@ -124,7 +124,7 @@ function cleanup_trap() {
   fi
   if [[ ${DUMP_DB} ]]; then
       revert_migrator_file
-      rm -f "${DATA_DIR}"/dump.sql || true
+      rm -rf "${DATA_DIR}"/dump || true
   fi
   if [[ ${RESET_VALUES_YAML} ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
@@ -200,7 +200,7 @@ if [[ ${DUMP_DB} ]]; then
     fi
 
     echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $SCHEMA_VERSION...${NC}"
-    gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql
+    gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}"/toc.dat
     STATUS=$?
 
     if [[ $STATUS ]]; then
@@ -210,14 +210,15 @@ if [[ ${DUMP_DB} ]]; then
       exit 1
     fi
 
-    if [[ ! -f ${DATA_DIR}/dump-${SCHEMA_VERSION}.sql ]]; then
+    if [[ ! -d ${DATA_DIR}/dump-${SCHEMA_VERSION} ]]; then
         echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
-        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql "${DATA_DIR}"/dump-"${SCHEMA_VERSION}".sql
+        mkdir ${DATA_DIR}/dump-${SCHEMA_VERSION}
+        gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"
     else
         echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
     fi
-    rm -f "${DATA_DIR}"/dump.sql || true
-    cp "${DATA_DIR}"/dump-"${SCHEMA_VERSION}".sql "${DATA_DIR}"/dump.sql
+    rm -rf "${DATA_DIR}"/dump || true
+    cp -R "${DATA_DIR}"/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump
 fi
 
 if [[ ! ${SKIP_K3D_START} ]]; then

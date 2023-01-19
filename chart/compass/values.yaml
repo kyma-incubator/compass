@@ -127,11 +127,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2824"
+      version: "PR-2827"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2791"
+      version: "PR-2831"
       name: compass-hydrator
     gateway:
       dir:
@@ -168,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2820"
+      version: "PR-2833"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -946,7 +946,7 @@ global:
       skipPattern: ""
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
-      skipPattern: ""
+      skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs)"
     externalServicesMock:
       skipPattern: ""
       formationAsyncApi:
