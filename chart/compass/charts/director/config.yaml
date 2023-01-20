@@ -108,6 +108,8 @@ graphql:
     updateFormationTemplate: [ "formation_template:write" ]
     createFormationConstraint: [ "formation_constraint:write" ]
     deleteFormationConstraint: [ "formation_constraint:write" ]
+    attachConstraintToFormationTemplate: [ "formation_constraint:write" ]
+    detachConstraintFromFormationTemplate: [ "formation_constraint:write" ]
 
   field:
     fetch_request:

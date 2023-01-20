@@ -21,16 +21,14 @@ func TestCreateFormationConstraint(t *testing.T) {
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
 
 	in := graphql.FormationConstraintInput{
-		Name:                "test_constraint",
-		ConstraintType:      graphql.ConstraintTypePre,
-		TargetOperation:     graphql.TargetOperationAssignFormation,
-		Operator:            "IsNotAssignedToAnyFormationOfType",
-		ResourceType:        graphql.ResourceTypeTenant,
-		ResourceSubtype:     "subaccount",
-		OperatorScope:       graphql.OperatorScopeTenant,
-		InputTemplate:       "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
-		ConstraintScope:     graphql.ConstraintScopeFormationType,
-		FormationTemplateID: formationTemplate.ID,
+		Name:            "test_constraint",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        "IsNotAssignedToAnyFormationOfType",
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
 	t.Logf("Create formation constraint")
@@ -52,7 +50,6 @@ func TestCreateFormationConstraint(t *testing.T) {
 		Operator:        "IsNotAssignedToAnyFormationOfType",
 		ResourceType:    string(graphql.ResourceTypeTenant),
 		ResourceSubtype: "subaccount",
-		OperatorScope:   string(graphql.OperatorScopeTenant),
 		InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 		ConstraintScope: string(graphql.ConstraintScopeFormationType),
 	}
@@ -70,16 +67,14 @@ func TestDeleteFormationConstraint(t *testing.T) {
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
 
 	in := graphql.FormationConstraintInput{
-		Name:                "test_constraint",
-		ConstraintType:      graphql.ConstraintTypePre,
-		TargetOperation:     graphql.TargetOperationAssignFormation,
-		Operator:            "IsNotAssignedToAnyFormationOfType",
-		ResourceType:        graphql.ResourceTypeTenant,
-		ResourceSubtype:     "subaccount",
-		OperatorScope:       graphql.OperatorScopeTenant,
-		InputTemplate:       "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
-		ConstraintScope:     graphql.ConstraintScopeFormationType,
-		FormationTemplateID: formationTemplate.ID,
+		Name:            "test_constraint",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        "IsNotAssignedToAnyFormationOfType",
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
 	t.Logf("Create formation constraint with name: %s", in.Name)
@@ -108,16 +103,14 @@ func TestListFormationConstraints(t *testing.T) {
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
 
 	firstConstraint := graphql.FormationConstraintInput{
-		Name:                "test_constraint",
-		ConstraintType:      graphql.ConstraintTypePre,
-		TargetOperation:     graphql.TargetOperationAssignFormation,
-		Operator:            "IsNotAssignedToAnyFormationOfType",
-		ResourceType:        graphql.ResourceTypeTenant,
-		ResourceSubtype:     "subaccount",
-		OperatorScope:       graphql.OperatorScopeTenant,
-		InputTemplate:       "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
-		ConstraintScope:     graphql.ConstraintScopeFormationType,
-		FormationTemplateID: formationTemplate.ID,
+		Name:            "test_constraint",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        "IsNotAssignedToAnyFormationOfType",
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
 	t.Logf("Create formation constraint with name: %s", firstConstraint.Name)
@@ -126,16 +119,14 @@ func TestListFormationConstraints(t *testing.T) {
 	require.NotEmpty(t, constraint.ID)
 
 	secondConstraint := graphql.FormationConstraintInput{
-		Name:                "test_constraint_second",
-		ConstraintType:      graphql.ConstraintTypePost,
-		TargetOperation:     graphql.TargetOperationDeleteFormation,
-		Operator:            "IsNotAssignedToAnyFormationOfType",
-		ResourceType:        graphql.ResourceTypeTenant,
-		ResourceSubtype:     "subaccount",
-		OperatorScope:       graphql.OperatorScopeTenant,
-		InputTemplate:       "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
-		ConstraintScope:     graphql.ConstraintScopeFormationType,
-		FormationTemplateID: formationTemplate.ID,
+		Name:            "test_constraint_second",
+		ConstraintType:  graphql.ConstraintTypePost,
+		TargetOperation: graphql.TargetOperationDeleteFormation,
+		Operator:        "IsNotAssignedToAnyFormationOfType",
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
 	t.Logf("Create formation constraint with name: %s", secondConstraint.Name)
@@ -159,7 +150,6 @@ func TestListFormationConstraints(t *testing.T) {
 			Operator:        "IsNotAssignedToAnyFormationOfType",
 			ResourceType:    string(graphql.ResourceTypeTenant),
 			ResourceSubtype: "subaccount",
-			OperatorScope:   string(graphql.OperatorScopeTenant),
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 			ConstraintScope: string(graphql.ConstraintScopeFormationType),
 		},
@@ -170,7 +160,6 @@ func TestListFormationConstraints(t *testing.T) {
 			Operator:        "IsNotAssignedToAnyFormationOfType",
 			ResourceType:    string(graphql.ResourceTypeTenant),
 			ResourceSubtype: "subaccount",
-			OperatorScope:   string(graphql.OperatorScopeTenant),
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 			ConstraintScope: string(graphql.ConstraintScopeFormationType),
 		},
@@ -198,16 +187,14 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
 
 	firstConstraint := graphql.FormationConstraintInput{
-		Name:                "test_constraint",
-		ConstraintType:      graphql.ConstraintTypePre,
-		TargetOperation:     graphql.TargetOperationAssignFormation,
-		Operator:            "IsNotAssignedToAnyFormationOfType",
-		ResourceType:        graphql.ResourceTypeTenant,
-		ResourceSubtype:     "subaccount",
-		OperatorScope:       graphql.OperatorScopeTenant,
-		InputTemplate:       "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
-		ConstraintScope:     graphql.ConstraintScopeFormationType,
-		FormationTemplateID: formationTemplate.ID,
+		Name:            "test_constraint",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        "IsNotAssignedToAnyFormationOfType",
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
 	t.Logf("Create formation constraint with name: %s", firstConstraint.Name)
@@ -216,16 +203,14 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	require.NotEmpty(t, constraint.ID)
 
 	secondConstraint := graphql.FormationConstraintInput{
-		Name:                "test_constraint_second",
-		ConstraintType:      graphql.ConstraintTypePost,
-		TargetOperation:     graphql.TargetOperationDeleteFormation,
-		Operator:            "IsNotAssignedToAnyFormationOfType",
-		ResourceType:        graphql.ResourceTypeTenant,
-		ResourceSubtype:     "subaccount",
-		OperatorScope:       graphql.OperatorScopeTenant,
-		InputTemplate:       "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
-		ConstraintScope:     graphql.ConstraintScopeFormationType,
-		FormationTemplateID: formationTemplate.ID,
+		Name:            "test_constraint_second",
+		ConstraintType:  graphql.ConstraintTypePost,
+		TargetOperation: graphql.TargetOperationDeleteFormation,
+		Operator:        "IsNotAssignedToAnyFormationOfType",
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
 	t.Logf("Create formation constraint with name: %s", secondConstraint.Name)
@@ -234,16 +219,14 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	require.NotEmpty(t, constraintSecond.ID)
 
 	constraintForOtherTemplateInput := graphql.FormationConstraintInput{
-		Name:                "test_constraint_other_template",
-		ConstraintType:      graphql.ConstraintTypePre,
-		TargetOperation:     graphql.TargetOperationAssignFormation,
-		Operator:            "IsNotAssignedToAnyFormationOfType",
-		ResourceType:        graphql.ResourceTypeTenant,
-		ResourceSubtype:     "subaccount",
-		OperatorScope:       graphql.OperatorScopeTenant,
-		InputTemplate:       "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
-		ConstraintScope:     graphql.ConstraintScopeFormationType,
-		FormationTemplateID: secondFormationTemplate.ID,
+		Name:            "test_constraint_other_template",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        "IsNotAssignedToAnyFormationOfType",
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
 
 	t.Logf("Create formation constraint with name: %s", constraintForOtherTemplateInput.Name)
@@ -267,7 +250,6 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 			Operator:        "IsNotAssignedToAnyFormationOfType",
 			ResourceType:    string(graphql.ResourceTypeTenant),
 			ResourceSubtype: "subaccount",
-			OperatorScope:   string(graphql.OperatorScopeTenant),
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 			ConstraintScope: string(graphql.ConstraintScopeFormationType),
 		},
@@ -278,7 +260,6 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 			Operator:        "IsNotAssignedToAnyFormationOfType",
 			ResourceType:    string(graphql.ResourceTypeTenant),
 			ResourceSubtype: "subaccount",
-			OperatorScope:   string(graphql.OperatorScopeTenant),
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
 			ConstraintScope: string(graphql.ConstraintScopeFormationType),
 		},
@@ -297,7 +278,6 @@ func assertConstraint(t *testing.T, expected, actual *graphql.FormationConstrain
 	require.Equal(t, expected.Operator, actual.Operator)
 	require.Equal(t, expected.ResourceType, actual.ResourceType)
 	require.Equal(t, expected.ResourceSubtype, actual.ResourceSubtype)
-	require.Equal(t, expected.OperatorScope, actual.OperatorScope)
 	require.Equal(t, expected.InputTemplate, actual.InputTemplate)
 	require.Equal(t, expected.ConstraintScope, actual.ConstraintScope)
 }

@@ -20,16 +20,6 @@ func CreateFormationConstraint(t require.TestingT, ctx context.Context, gqlClien
 	return &formationConstraint
 }
 
-func QueryFormationConstraints(t require.TestingT, ctx context.Context, gqlClient *gcli.Client) []*graphql.FormationConstraint {
-	queryRequest := FixQueryFormationConstraintsRequest()
-
-	var formationConstraints []*graphql.FormationConstraint
-	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &formationConstraints))
-	require.NotEmpty(t, formationConstraints)
-
-	return formationConstraints
-}
-
 func CleanupFormationConstraint(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationConstraint {
 	deleteRequest := FixDeleteFormationConstraintRequest(id)
 
