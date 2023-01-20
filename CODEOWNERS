@@ -27,6 +27,7 @@
 /components/director/internal/domain/formation @kyma-incubator/team-raptor
 /components/director/internal/domain/formationassignment @kyma-incubator/team-raptor
 /components/director/internal/domain/formationtemplate @kyma-incubator/team-raptor
+/components/director/internal/formationmapping @kyma-incubator/team-raptor
 /components/director/internal/domain/certsubjectmapping @kyma-incubator/team-raptor
 /components/director/internal/info @kyma-incubator/team-raptor
 /components/director/internal/nsadapter @kyma-incubator/team-falcon

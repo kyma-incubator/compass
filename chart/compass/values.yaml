@@ -127,11 +127,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2824"
+      version: "PR-2835"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2791"
+      version: "PR-2831"
       name: compass-hydrator
     gateway:
       dir:
@@ -168,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2820"
+      version: "PR-2833"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
