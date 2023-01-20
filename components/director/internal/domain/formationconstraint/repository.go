@@ -116,8 +116,8 @@ func (r *repository) ListMatchingFormationConstraints(ctx context.Context, forma
 				[]repo.Condition{
 					repo.NewEqualCondition("target_operation", location.OperationName),
 					repo.NewEqualCondition("constraint_type", location.ConstraintType),
-					repo.NewEqualCondition("resource_type", details.resourceType),
-					repo.NewEqualCondition("resource_subtype", details.resourceSubtype),
+					repo.NewEqualCondition("resource_type", details.ResourceType),
+					repo.NewEqualCondition("resource_subtype", details.ResourceSubtype),
 				},
 			),
 			repo.Or(repo.ConditionTreesFromConditions(
