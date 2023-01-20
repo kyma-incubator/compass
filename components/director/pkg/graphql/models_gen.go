@@ -357,6 +357,29 @@ type CertificateOAuthCredentialDataInput struct {
 	URL string `json:"url"`
 }
 
+type CertificateSubjectMapping struct {
+	ID                 string   `json:"id"`
+	Subject            string   `json:"subject"`
+	ConsumerType       string   `json:"consumerType"`
+	InternalConsumerID *string  `json:"internalConsumerID"`
+	TenantAccessLevels []string `json:"tenantAccessLevels"`
+}
+
+type CertificateSubjectMappingInput struct {
+	Subject            string   `json:"subject"`
+	ConsumerType       string   `json:"consumerType"`
+	InternalConsumerID *string  `json:"internalConsumerID"`
+	TenantAccessLevels []string `json:"tenantAccessLevels"`
+}
+
+type CertificateSubjectMappingPage struct {
+	Data       []*CertificateSubjectMapping `json:"data"`
+	PageInfo   *PageInfo                    `json:"pageInfo"`
+	TotalCount int                          `json:"totalCount"`
+}
+
+func (CertificateSubjectMappingPage) IsPageable() {}
+
 // **Validation:** basic or oauth or certificateOAuth field required
 type CredentialDataInput struct {
 	Basic            *BasicCredentialDataInput            `json:"basic"`

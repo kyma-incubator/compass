@@ -26,6 +26,7 @@ graphql:
     formationTemplates: [ "formation_template:read" ]
     formation: ["formation:read"]
     formations: ["formation:read"]
+    certificateSubjectMapping: ["certificate_subject_mapping:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -96,6 +97,9 @@ graphql:
     createFormationTemplate: [ "formation_template:write" ]
     deleteFormationTemplate: [ "formation_template:write" ]
     updateFormationTemplate: [ "formation_template:write" ]
+    createCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
+    updateCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
+    deleteCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
 
   field:
     fetch_request:
@@ -199,6 +203,8 @@ clientCredentialsRegistrationScopes:
     - "webhook:write"
     - "formation_template:read"
     - "formation_template:write"
+    - "certificate_subject_mapping:read"
+    - "certificate_subject_mapping:write"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

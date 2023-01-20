@@ -519,6 +519,13 @@ input CertificateOAuthCredentialDataInput {
 	url: String!
 }
 
+input CertificateSubjectMappingInput {
+	subject: String!
+	consumerType: String!
+	internalConsumerID: String
+	tenantAccessLevels: [String!]!
+}
+
 """
 **Validation:** basic or oauth or certificateOAuth field required
 """
@@ -992,6 +999,20 @@ type CertificateOAuthCredentialData {
 	url: String!
 }
 
+type CertificateSubjectMapping {
+	id: ID!
+	subject: String!
+	consumerType: String!
+	internalConsumerID: String
+	tenantAccessLevels: [String!]!
+}
+
+type CertificateSubjectMappingPage implements Pageable {
+	data: [CertificateSubjectMapping!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type CredentialRequestAuth {
 	csrf: CSRFTokenCredentialRequestAuth
 }
@@ -1433,6 +1454,10 @@ type Query {
 	- [query formation](examples/query-formation/query-formation.graphql)
 	"""
 	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
+	"""
+	**Examples**
+	- [query formation by name](examples/query-formation-by-name/query-formation-by-name.graphql)
+	"""
 	formationByName(name: String!): Formation @hasScopes(path: "graphql.query.formationByName")
 	"""
 	**Examples**
@@ -1449,6 +1474,8 @@ type Query {
 	- [query formation templates](examples/query-formation-templates/query-formation-templates.graphql)
 	"""
 	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
+	certificateSubjectMapping(id: ID!): CertificateSubjectMapping! @hasScopes(path: "graphql.query.certificateSubjectMapping")
+	certificateSubjectMappings(first: Int = 300, after: PageCursor): CertificateSubjectMappingPage! @hasScopes(path: "graphql.query.certificateSubjectMappings")
 }
 
 type Mutation {
@@ -1754,5 +1781,19 @@ type Mutation {
 	- [update formation template](examples/update-formation-template/update-formation-template.graphql)
 	"""
 	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
+	"""
+	**Examples**
+	- [create certificate subject mapping](examples/create-certificate-subject-mapping/create-certificate-subject-mapping.graphql)
+	"""
+	createCertificateSubjectMapping(in: CertificateSubjectMappingInput! @validate): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.createCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [update certificate subject mapping](examples/update-certificate-subject-mapping/update-certificate-subject-mapping.graphql)
+	"""
+	updateCertificateSubjectMapping(id: ID!, in: CertificateSubjectMappingInput! @validate): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.updateCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [delete certificate subject mapping](examples/delete-certificate-subject-mapping/delete-certificate-subject-mapping.graphql)
+	"""
+	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
 }
-

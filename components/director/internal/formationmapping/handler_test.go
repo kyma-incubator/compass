@@ -653,7 +653,7 @@ func Test_StatusUpdate(t *testing.T) {
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "Can not update formation assignment with source ",
+			expectedErrOutput:  "Cannot update formation assignment with source ",
 		},
 		{
 			name: "Error when unassigning target from formation fail when there are no formation assignment left",
