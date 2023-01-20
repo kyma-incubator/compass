@@ -583,7 +583,6 @@ func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstrai
 		resourceSubtype: "{{.ResourceSubtype}}"
 		inputTemplate: "{{.InputTemplate}}"
 		constraintScope: {{.ConstraintScope}}
-		formationTemplateID: "{{.FormationTemplateID}}"
 	}`)
 }
 
