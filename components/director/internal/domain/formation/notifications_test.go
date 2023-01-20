@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
@@ -60,7 +61,8 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		Labels:      fixApplicationLabelsMap(),
 	}
 
-	tenantObject := fixModelBusinessTenantMapping()
+	gaTenantObject := fixModelBusinessTenantMappingWithType(tnt.Account)
+	rgTenantObject := fixModelBusinessTenantMappingWithType(tnt.ResourceGroup)
 
 	testCases := []struct {
 		Name                      string
@@ -84,10 +86,10 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		// start testing 'generateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned' and 'generateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned' funcs
 		{
 			Name: "success when generating notifications for runtime about all applications in that formation and" +
-				"success when generating notifications for all listening applications about the assigned runtime in that formation",
+				"success when generating notifications for all listening applications about the assigned runtime in that formation when tenant is global account",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -248,6 +250,171 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name: "success when generating notifications for runtime about all applications in that formation and" +
+				"success when generating notifications for all listening applications about the assigned runtime in that formation when tenant is resource group",
+			TenantRepoFn: func() *automock.TenantRepository {
+				repo := &automock.TenantRepository{}
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(rgTenantObject, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				return repo
+			},
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				return repo
+			},
+			WebhookConverterFN: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(fixApplicationWebhookGQLModel(WebhookID, ApplicationID), nil)
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(fixApplicationWebhookGQLModel(Webhook2ID, Application2ID), nil)
+
+				conv.On("ToGraphQL", fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(fixRuntimeWebhookGQLModel(WebhookID, RuntimeID), nil)
+				return conv
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Twice()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Twice()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil).Twice()
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				return repo
+			},
+			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				return dataInputBuilder
+			},
+			ObjectType:     graphql.FormationObjectTypeRuntime,
+			OperationType:  model.AssignFormation,
+			ObjectID:       RuntimeID,
+			InputFormation: expectedFormation,
+			ExpectedRequests: []*webhookclient.NotificationRequest{
+				{
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: expectedFormation.ID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+						CustomerTenantContext: &webhook.CustomerTenantContext{
+							CustomerID: TntParentID,
+							AccountID:  nil,
+							Path:       str.Ptr(TntExternalID),
+						},
+						Assignment:        emptyFormationAssignment,
+						ReverseAssignment: emptyFormationAssignment,
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:           model.AssignFormation,
+						FormationID:         expectedFormation.ID,
+						ApplicationTemplate: nil,
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModelWithoutTemplate(Application2ID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						CustomerTenantContext: &webhook.CustomerTenantContext{
+							CustomerID: TntParentID,
+							AccountID:  nil,
+							Path:       str.Ptr(TntExternalID),
+						},
+						RuntimeContext:    nil,
+						Assignment:        emptyFormationAssignment,
+						ReverseAssignment: emptyFormationAssignment,
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: expectedFormation.ID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						CustomerTenantContext: &webhook.CustomerTenantContext{
+							CustomerID: TntParentID,
+							AccountID:  nil,
+							Path:       str.Ptr(TntExternalID),
+						},
+						RuntimeContext:    nil,
+						Assignment:        emptyFormationAssignment,
+						ReverseAssignment: emptyFormationAssignment,
+					},
+					CorrelationID: "",
+				},
+				{
+					Webhook: *fixApplicationWebhookGQLModel(Webhook2ID, Application2ID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:           model.AssignFormation,
+						FormationID:         expectedFormation.ID,
+						ApplicationTemplate: nil,
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModelWithoutTemplate(Application2ID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						CustomerTenantContext: &webhook.CustomerTenantContext{
+							CustomerID: TntParentID,
+							AccountID:  nil,
+							Path:       str.Ptr(TntExternalID),
+						},
+						RuntimeContext:    nil,
+						Assignment:        emptyFormationAssignment,
+						ReverseAssignment: emptyFormationAssignment,
+					},
+					CorrelationID: "",
+				},
+			},
+			ExpectedErrMessage: "",
+		},
+		{
 			Name: "error when generating notifications for application if getting tenant fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
@@ -269,7 +436,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if getting parent customer id fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return("", testErr)
 				return repo
 			},
@@ -288,7 +455,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if webhook conversion fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -337,7 +504,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if fetching application template labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -379,7 +546,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if fetching application templates fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -420,7 +587,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if fetching application labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -453,7 +620,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when generating notifications for runtime if there are no applications in the formation to notify",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -560,7 +727,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when generating notifications for runtime if there are no applications with CONFIGURATION_CHANGED webhook to notify",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -666,7 +833,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if fetching applications fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -694,7 +861,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if fetching webhooks fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -717,7 +884,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if preparing runtime with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -735,7 +902,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime if webhook conversion fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -788,7 +955,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime if fetching application template labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -841,7 +1008,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime if fetching application templates fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -894,7 +1061,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime if fetching application labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -947,7 +1114,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "returns nil when generating notifications for runtime if webhook is not found",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1053,7 +1220,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when generating notifications for runtime if there are no applications to notify",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1161,7 +1328,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime if fetching applications fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1213,7 +1380,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime if fetching webhooks fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1264,7 +1431,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime if preparing runtime with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1316,7 +1483,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when generating notifications for runtime contexts about all applications in that formation",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1511,7 +1678,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application if getting parent customer id fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return("", testErr)
 				return repo
 			},
@@ -1530,7 +1697,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application  when runtime context is assigned if webhook conversion fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1579,7 +1746,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if fetching application template with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1622,7 +1789,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if fetching application templates fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1664,7 +1831,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if fetching application labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1698,7 +1865,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when generating notifications for runtime context if there are no applications in the formation to notify",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1812,7 +1979,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when generating notifications for runtime context if there are no applications with CONFIGURATION_CHANGED webhook to notify",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1925,7 +2092,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if fetching applications fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1954,7 +2121,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if fetching webhook fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1978,7 +2145,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if preparing runtime context with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -1996,7 +2163,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when runtime context is assigned if preparing runtime with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2014,7 +2181,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime context if webhook conversion fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2068,7 +2235,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime context if fetching application template labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2122,7 +2289,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime context if fetching application templates fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2176,7 +2343,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime context if fetching application labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2230,7 +2397,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime context if fetching applications fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2283,7 +2450,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime context if fetching webhook fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2335,7 +2502,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "returns nil when generating notifications for runtime context if webhook is not found",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2448,7 +2615,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime context if fetching runtime context with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2500,7 +2667,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for runtime context if fetching runtime with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2554,7 +2721,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when generating notifications for application with both runtime <-> app and app <-> app notifications",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2839,7 +3006,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: getting parent customer id fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return("", testErr)
 				return repo
 			},
@@ -2860,7 +3027,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: webhook conversion fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -2938,7 +3105,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: templates list labels for IDs fail",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3015,7 +3182,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: templates list by IDs fail",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3091,7 +3258,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: application labels list for IDs fail",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3164,7 +3331,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: application by scenarios and IDs fail",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3236,7 +3403,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: self webhook conversion fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3309,7 +3476,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: list labels for app templates of apps already in formation fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3377,7 +3544,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: list app templates of apps already in formation fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3444,7 +3611,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: list labels of apps already in formation fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3503,7 +3670,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: list apps already in formation fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3561,7 +3728,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when there are no listening apps",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3679,7 +3846,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: list listening apps' webhooks fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3732,7 +3899,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error while generating app-to-app notifications: while preparing app template with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3785,7 +3952,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error for application when webhook conversion fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3847,7 +4014,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error for application when fetching runtime context labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3906,7 +4073,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error for application when fetching runtime contexts in scenario fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -3964,7 +4131,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error for application when fetching runtimes in scenario fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4021,7 +4188,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error for application when fetching listening runtimes labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4075,7 +4242,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error for application when fetching listening runtimes fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4128,7 +4295,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error for application when fetching webhooks fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4180,7 +4347,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error for application when fetching app and/or application template with labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4232,7 +4399,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when application is assigned if webhook conversion fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4283,7 +4450,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when application is assigned if fetching runtime context labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4326,7 +4493,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when application is assigned if fetching listening runtimes labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4365,7 +4532,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when application is assigned if fetching all listening runtimes fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4399,7 +4566,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when application is assigned if fetching runtime contexts in scenario fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4432,7 +4599,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when application is assigned if fetching runtimes in scenario fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4460,7 +4627,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "success when generating notifications for application when application is assigned and no CONFIGURATION_CHANGED webhook is found",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4656,7 +4823,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when application is assigned if fetching webhooks fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},
@@ -4679,7 +4846,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			Name: "error when generating notifications for application when application is assigned if fetching application and/or app template labels fails",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
-				repo.On("Get", ctx, expectedFormation.TenantID).Return(tenantObject, nil)
+				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
 				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
 				return repo
 			},

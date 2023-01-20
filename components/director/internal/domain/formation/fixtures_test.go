@@ -286,13 +286,13 @@ func fixApplicationModel(applicationID string) *model.Application {
 	}
 }
 
-func fixModelBusinessTenantMapping() *model.BusinessTenantMapping {
+func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             Tnt,
 		Name:           "test-name",
 		ExternalTenant: TntExternalID,
 		Parent:         TntParentID,
-		Type:           tnt.Account,
+		Type:           t,
 		Provider:       testProvider,
 		Status:         tnt.Active,
 	}

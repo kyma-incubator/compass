@@ -179,13 +179,13 @@ func fixFormationConfigurationChangeInput(formationID string, appTemplate *webho
 	}
 }
 
-func fixModelBusinessTenantMapping() *model.BusinessTenantMapping {
+func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             TestTenantID,
 		Name:           "test-name",
 		ExternalTenant: TestTenantID,
 		Parent:         TntParentID,
-		Type:           tnt.Account,
+		Type:           t,
 		Provider:       "Compass",
 		Status:         tnt.Active,
 	}
