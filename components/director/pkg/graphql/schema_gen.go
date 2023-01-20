@@ -346,7 +346,6 @@ type ComplexityRoot struct {
 		InputTemplate   func(childComplexity int) int
 		Name            func(childComplexity int) int
 		Operator        func(childComplexity int) int
-		OperatorScope   func(childComplexity int) int
 		ResourceSubtype func(childComplexity int) int
 		ResourceType    func(childComplexity int) int
 		TargetOperation func(childComplexity int) int
@@ -2269,13 +2268,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationConstraint.Operator(childComplexity), true
-
-	case "FormationConstraint.operatorScope":
-		if e.complexity.FormationConstraint.OperatorScope == nil {
-			break
-		}
-
-		return e.complexity.FormationConstraint.OperatorScope(childComplexity), true
 
 	case "FormationConstraint.resourceSubtype":
 		if e.complexity.FormationConstraint.ResourceSubtype == nil {
@@ -4797,12 +4789,6 @@ enum OperationType {
 	DELETE
 }
 
-enum OperatorScope {
-	TENANT
-	FORMATION
-	GLOBAL
-}
-
 enum ResourceType {
 	APPLICATION
 	RUNTIME
@@ -5272,7 +5258,6 @@ input FormationConstraintInput {
 	operator: String!
 	resourceType: ResourceType!
 	resourceSubtype: String!
-	operatorScope: OperatorScope!
 	inputTemplate: String!
 	constraintScope: ConstraintScope!
 }
@@ -5776,7 +5761,6 @@ type FormationConstraint {
 	operator: String!
 	resourceType: String!
 	resourceSubtype: String!
-	operatorScope: String!
 	inputTemplate: String!
 	constraintScope: String!
 }
@@ -15845,40 +15829,6 @@ func (ec *executionContext) _FormationConstraint_resourceSubtype(ctx context.Con
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ResourceSubtype, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FormationConstraint_operatorScope(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FormationConstraint",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OperatorScope, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29804,12 +29754,6 @@ func (ec *executionContext) unmarshalInputFormationConstraintInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
-		case "operatorScope":
-			var err error
-			it.OperatorScope, err = ec.unmarshalNOperatorScope2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperatorScope(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "inputTemplate":
 			var err error
 			it.InputTemplate, err = ec.unmarshalNString2string(ctx, v)
@@ -32169,11 +32113,6 @@ func (ec *executionContext) _FormationConstraint(ctx context.Context, sel ast.Se
 			}
 		case "resourceSubtype":
 			out.Values[i] = ec._FormationConstraint_resourceSubtype(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "operatorScope":
-			out.Values[i] = ec._FormationConstraint_operatorScope(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -35931,15 +35870,6 @@ func (ec *executionContext) unmarshalNOperationType2githubᚗcomᚋkymaᚑincuba
 }
 
 func (ec *executionContext) marshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx context.Context, sel ast.SelectionSet, v OperationType) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalNOperatorScope2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperatorScope(ctx context.Context, v interface{}) (OperatorScope, error) {
-	var res OperatorScope
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNOperatorScope2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperatorScope(ctx context.Context, sel ast.SelectionSet, v OperatorScope) graphql.Marshaler {
 	return v
 }
 

@@ -21,7 +21,6 @@ type CRUDFormationOperationDetails struct {
 	FormationType       string
 	FormationTemplateID string
 	FormationName       string
-	CheckScope          model.OperatorScopeType
 	TenantID            string
 }
 
@@ -41,7 +40,6 @@ type AssignFormationOperationDetails struct {
 	FormationType       string
 	FormationTemplateID string
 	FormationID         string
-	CheckScope          model.OperatorScopeType
 	TenantID            string
 }
 
@@ -61,7 +59,6 @@ type UnassignFormationOperationDetails struct {
 	FormationType       string
 	FormationTemplateID string
 	FormationID         string
-	CheckScope          model.OperatorScopeType
 	TenantID            string
 }
 
@@ -97,8 +94,7 @@ type GenerateNotificationOperationDetails struct {
 	// TargetApplication is the application that the notification is for (the one with the webhook / the one receiving the notification)
 	TargetApplication *webhook.ApplicationWithLabels
 
-	CheckScope model.OperatorScopeType
-	TenantID   string
+	TenantID string
 }
 
 // GetMatchingDetails returns matching details for GenerateNotificationOperationDetails

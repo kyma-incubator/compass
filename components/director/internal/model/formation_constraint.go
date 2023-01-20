@@ -27,14 +27,6 @@ const (
 	FormationResourceType      ResourceType = "FORMATION"
 )
 
-type OperatorScopeType string
-
-const (
-	TenantScope    OperatorScopeType = "TENANT"
-	FormationScope OperatorScopeType = "FORMATION"
-	GlobalScope    OperatorScopeType = "GLOBAL"
-)
-
 type FormationConstraintScope string
 
 const (
@@ -43,16 +35,14 @@ const (
 )
 
 type FormationConstraintInput struct {
-	Name                string
-	ConstraintType      FormationConstraintType
-	TargetOperation     TargetOperation
-	Operator            string
-	ResourceType        ResourceType
-	ResourceSubtype     string
-	OperatorScope       OperatorScopeType
-	InputTemplate       string
-	ConstraintScope     FormationConstraintScope
-	FormationTemplateID string
+	Name            string
+	ConstraintType  FormationConstraintType
+	TargetOperation TargetOperation
+	Operator        string
+	ResourceType    ResourceType
+	ResourceSubtype string
+	InputTemplate   string
+	ConstraintScope FormationConstraintScope
 }
 
 type FormationConstraint struct {
@@ -63,7 +53,6 @@ type FormationConstraint struct {
 	Operator        string
 	ResourceType    ResourceType
 	ResourceSubtype string
-	OperatorScope   OperatorScopeType
 	InputTemplate   string
 	ConstraintScope FormationConstraintScope
 }

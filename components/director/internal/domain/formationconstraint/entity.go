@@ -9,7 +9,6 @@ type Entity struct {
 	Operator        string `db:"operator"`
 	ResourceType    string `db:"resource_type"`
 	ResourceSubtype string `db:"resource_subtype"`
-	OperatorScope   string `db:"operator_scope"`
 	InputTemplate   string `db:"input_template"`
 	ConstraintScope string `db:"constraint_scope"`
 }

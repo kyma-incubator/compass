@@ -26,7 +26,6 @@ func (c *converter) ToGraphQL(in *model.FormationConstraint) *graphql.FormationC
 		Operator:        in.Operator,
 		ResourceType:    string(in.ResourceType),
 		ResourceSubtype: in.ResourceSubtype,
-		OperatorScope:   string(in.OperatorScope),
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: string(in.ConstraintScope),
 	}
@@ -64,7 +63,6 @@ func (c *converter) ToEntity(in *model.FormationConstraint) *Entity {
 		Operator:        in.Operator,
 		ResourceType:    string(in.ResourceType),
 		ResourceSubtype: in.ResourceSubtype,
-		OperatorScope:   string(in.OperatorScope),
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: string(in.ConstraintScope),
 	}
@@ -84,7 +82,6 @@ func (c *converter) FromEntity(e *Entity) *model.FormationConstraint {
 		Operator:        e.Operator,
 		ResourceType:    model.ResourceType(e.ResourceType),
 		ResourceSubtype: e.ResourceSubtype,
-		OperatorScope:   model.OperatorScopeType(e.OperatorScope),
 		InputTemplate:   e.InputTemplate,
 		ConstraintScope: model.FormationConstraintScope(e.ConstraintScope),
 	}
@@ -93,16 +90,14 @@ func (c *converter) FromEntity(e *Entity) *model.FormationConstraint {
 // FromInputGraphQL converts from GraphQL input to internal model input
 func (c *converter) FromInputGraphQL(in *graphql.FormationConstraintInput) *model.FormationConstraintInput {
 	return &model.FormationConstraintInput{
-		Name:                in.Name,
-		ConstraintType:      model.FormationConstraintType(in.ConstraintType),
-		TargetOperation:     model.TargetOperation(in.TargetOperation),
-		Operator:            in.Operator,
-		ResourceType:        model.ResourceType(in.ResourceType),
-		ResourceSubtype:     in.ResourceSubtype,
-		OperatorScope:       model.OperatorScopeType(in.OperatorScope),
-		InputTemplate:       in.InputTemplate,
-		ConstraintScope:     model.FormationConstraintScope(in.ConstraintScope),
-		FormationTemplateID: in.FormationTemplateID,
+		Name:            in.Name,
+		ConstraintType:  model.FormationConstraintType(in.ConstraintType),
+		TargetOperation: model.TargetOperation(in.TargetOperation),
+		Operator:        in.Operator,
+		ResourceType:    model.ResourceType(in.ResourceType),
+		ResourceSubtype: in.ResourceSubtype,
+		InputTemplate:   in.InputTemplate,
+		ConstraintScope: model.FormationConstraintScope(in.ConstraintScope),
 	}
 }
 
@@ -116,7 +111,6 @@ func (c *converter) FromModelInputToModel(in *model.FormationConstraintInput, id
 		Operator:        in.Operator,
 		ResourceType:    in.ResourceType,
 		ResourceSubtype: in.ResourceSubtype,
-		OperatorScope:   in.OperatorScope,
 		InputTemplate:   in.InputTemplate,
 		ConstraintScope: in.ConstraintScope,
 	}

@@ -20,7 +20,7 @@ func TestRepository_Get(t *testing.T) {
 				Args:     []driver.Value{testID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.OperatorScope, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -49,7 +49,7 @@ func TestRepository_ListAll(t *testing.T) {
 				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, operator_scope, input_template, constraint_scope FROM public.formation_constraints`),
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.OperatorScope, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -80,7 +80,7 @@ func TestRepository_ListByIDs(t *testing.T) {
 				IsSelect: true,
 				Args:     []driver.Value{testID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.OperatorScope, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -111,7 +111,7 @@ func TestRepository_ListMatchingFormationConstraints(t *testing.T) {
 				IsSelect: true,
 				Args:     []driver.Value{location.OperationName, location.ConstraintType, details.ResourceType, details.ResourceSubtype, "GLOBAL", testID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.OperatorScope, entity.InputTemplate, entity.ConstraintScope)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -139,7 +139,7 @@ func TestRepository_Create(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.formation_constraints \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.OperatorScope, entity.InputTemplate, entity.ConstraintScope},
+				Args:        []driver.Value{entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},

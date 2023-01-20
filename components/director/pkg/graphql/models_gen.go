@@ -482,7 +482,6 @@ type FormationConstraint struct {
 	Operator        string `json:"operator"`
 	ResourceType    string `json:"resourceType"`
 	ResourceSubtype string `json:"resourceSubtype"`
-	OperatorScope   string `json:"operatorScope"`
 	InputTemplate   string `json:"inputTemplate"`
 	ConstraintScope string `json:"constraintScope"`
 }
@@ -494,7 +493,6 @@ type FormationConstraintInput struct {
 	Operator        string          `json:"operator"`
 	ResourceType    ResourceType    `json:"resourceType"`
 	ResourceSubtype string          `json:"resourceSubtype"`
-	OperatorScope   OperatorScope   `json:"operatorScope"`
 	InputTemplate   string          `json:"inputTemplate"`
 	ConstraintScope ConstraintScope `json:"constraintScope"`
 }
@@ -1673,49 +1671,6 @@ func (e *OperationType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OperationType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type OperatorScope string
-
-const (
-	OperatorScopeTenant    OperatorScope = "TENANT"
-	OperatorScopeFormation OperatorScope = "FORMATION"
-	OperatorScopeGlobal    OperatorScope = "GLOBAL"
-)
-
-var AllOperatorScope = []OperatorScope{
-	OperatorScopeTenant,
-	OperatorScopeFormation,
-	OperatorScopeGlobal,
-}
-
-func (e OperatorScope) IsValid() bool {
-	switch e {
-	case OperatorScopeTenant, OperatorScopeFormation, OperatorScopeGlobal:
-		return true
-	}
-	return false
-}
-
-func (e OperatorScope) String() string {
-	return string(e)
-}
-
-func (e *OperatorScope) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = OperatorScope(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid OperatorScope", str)
-	}
-	return nil
-}
-
-func (e OperatorScope) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

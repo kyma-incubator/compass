@@ -170,12 +170,6 @@ enum OperationType {
 	DELETE
 }
 
-enum OperatorScope {
-	TENANT
-	FORMATION
-	GLOBAL
-}
-
 enum ResourceType {
 	APPLICATION
 	RUNTIME
@@ -645,7 +639,6 @@ input FormationConstraintInput {
 	operator: String!
 	resourceType: ResourceType!
 	resourceSubtype: String!
-	operatorScope: OperatorScope!
 	inputTemplate: String!
 	constraintScope: ConstraintScope!
 }
@@ -1149,7 +1142,6 @@ type FormationConstraint {
 	operator: String!
 	resourceType: String!
 	resourceSubtype: String!
-	operatorScope: String!
 	inputTemplate: String!
 	constraintScope: String!
 }

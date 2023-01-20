@@ -204,7 +204,6 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 			operator
 			resourceType
 			resourceSubtype
-			operatorScope
 			inputTemplate
 			constraintScope
 	`
