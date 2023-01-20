@@ -15,7 +15,7 @@ type formationConstraintRepository interface {
 	ListAll(ctx context.Context) ([]*model.FormationConstraint, error)
 	ListByIDs(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error)
 	Delete(ctx context.Context, id string) error
-	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
+	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
 }
 
 //go:generate mockery --exported --name=formationTemplateConstraintReferenceRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -107,7 +107,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 // ListMatchingConstraints lists formation constraints that math the provided JoinPointLocation and JoinPointDetails
-func (s *service) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
+func (s *service) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
 	formationTemplateConstraintReferences, err := s.formationTemplateConstraintReferenceRepo.ListByFormationTemplateID(ctx, formationTemplateID)
 	if err != nil {
 		return nil, err

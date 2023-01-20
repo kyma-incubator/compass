@@ -12,7 +12,7 @@ import (
 
 //go:generate mockery --exported --name=formationConstraintSvc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationConstraintSvc interface {
-	ListMatchingConstraints(ctx context.Context, formationTemplateID string, location JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
+	ListMatchingConstraints(ctx context.Context, formationTemplateID string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
 }
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -33,12 +33,6 @@ type formationRepository interface {
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
-}
-
-// JoinPointLocation contains information to distinguish join points
-type JoinPointLocation struct {
-	OperationName  model.TargetOperation
-	ConstraintType model.FormationConstraintType
 }
 
 // ConstraintEngine determines which constraints are applicable to the reached join point and enforces them
@@ -69,13 +63,13 @@ func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantS
 // EnforceConstraints finds all the applicable constraints based on JoinPointLocation and JoinPointDetails. Checks for each constraint if it is satisfied.
 // If any constraint is not satisfied this information is stored and the engine proceeds with enforcing the next constraint if such exists. In the end if
 // any constraint was not satisfied an error is returned.
-func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error {
+func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error {
 	matchingDetails := details.GetMatchingDetails()
-	log.C(ctx).Infof("Enforcing constraints for target operation %q, constraint type %q, resource type %q and resource subtype %q", location.OperationName, location.ConstraintType, matchingDetails.resourceType, matchingDetails.resourceSubtype)
+	log.C(ctx).Infof("Enforcing constraints for target operation %q, constraint type %q, resource type %q and resource subtype %q", location.OperationName, location.ConstraintType, matchingDetails.ResourceType, matchingDetails.ResourceSubtype)
 
 	constraints, err := e.constraintSvc.ListMatchingConstraints(ctx, formationTemplateID, location, matchingDetails)
 	if err != nil {
-		return errors.Wrapf(err, "While listing matching constraints for target operation %q, constraint type %q, resource type %q and resource subtype %q", location.OperationName, location.ConstraintType, matchingDetails.resourceType, matchingDetails.resourceSubtype)
+		return errors.Wrapf(err, "While listing matching constraints for target operation %q, constraint type %q, resource type %q and resource subtype %q", location.OperationName, location.ConstraintType, matchingDetails.ResourceType, matchingDetails.ResourceSubtype)
 	}
 
 	matchedConstraintsNames := make([]string, 0, len(constraints))

@@ -20,7 +20,7 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 
 	testCases := []struct {
 		Name                       string
-		Location                   formationconstraint.JoinPointLocation
+		Location                   formationconstraint2.JoinPointLocation
 		Details                    formationconstraint2.JoinPointDetails
 		FormationConstraintService func() *automock.FormationConstraintSvc
 		ExpectedError              error

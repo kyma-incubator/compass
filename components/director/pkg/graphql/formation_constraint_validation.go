@@ -2,6 +2,7 @@ package graphql
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 )
@@ -17,20 +18,18 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	IsNotAssignedToAnyFormationOfType: &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{},
 }
 
-type templateSource struct {
-	FormationTemplateID string
-	ResourceType        ResourceType
-	ResourceSubtype     string
-	ResourceID          string
-	TenantID            string
-}
-
-var validationSource = templateSource{
-	FormationTemplateID: "",
-	ResourceType:        "",
-	ResourceSubtype:     "",
-	ResourceID:          "",
-	TenantID:            "",
+// JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
+var JoinPointDetailsByLocation = map[formationconstraint.JoinPointLocation]formationconstraint.JoinPointDetails{
+	formationconstraint.PreAssign:                 &formationconstraint.AssignFormationOperationDetails{},
+	formationconstraint.PostAssign:                &formationconstraint.AssignFormationOperationDetails{},
+	formationconstraint.PreUnassign:               &formationconstraint.UnassignFormationOperationDetails{},
+	formationconstraint.PostUnassign:              &formationconstraint.UnassignFormationOperationDetails{},
+	formationconstraint.PreCreate:                 &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PostCreate:                &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PreDelete:                 &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PostDelete:                &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PreGenerateNotifications:  &formationconstraint.GenerateNotificationOperationDetails{},
+	formationconstraint.PostGenerateNotifications: &formationconstraint.GenerateNotificationOperationDetails{},
 }
 
 // Validate validates FormationConstraintInput
@@ -50,7 +49,7 @@ func (i FormationConstraintInput) Validate() error {
 	}
 
 	input := FormationConstraintInputByOperator[i.Operator]
-	if err := formationconstraint.ParseInputTemplate(i.InputTemplate, validationSource, input); err != nil {
+	if err := formationconstraint.ParseInputTemplate(i.InputTemplate, JoinPointDetailsByLocation[formationconstraint.JoinPointLocation{ConstraintType: model.FormationConstraintType(i.ConstraintType), OperationName: model.TargetOperation(i.TargetOperation)}], input); err != nil {
 		return apperrors.NewInvalidDataError("failed to parse input template: %s", err)
 	}
 

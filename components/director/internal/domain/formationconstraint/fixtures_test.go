@@ -109,7 +109,7 @@ var (
 		ConstraintID:        testID,
 		FormationTemplateID: formationTemplateID,
 	}
-	location = formationconstraint.JoinPointLocation{
+	location = formationconstraint2.JoinPointLocation{
 		OperationName:  "assign",
 		ConstraintType: "pre",
 	}

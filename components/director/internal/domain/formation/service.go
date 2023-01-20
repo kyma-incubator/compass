@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -121,7 +120,7 @@ type tenantService interface {
 
 //go:generate mockery --exported --name=constraintEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type constraintEngine interface {
-	EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint2.JoinPointDetails, formationTemplateID string) error
+	EnforceConstraints(ctx context.Context, location formationconstraint2.JoinPointLocation, details formationconstraint2.JoinPointDetails, formationTemplateID string) error
 }
 
 type service struct {
@@ -1260,7 +1259,7 @@ func (s *service) getFormationWithTemplate(ctx context.Context, formationName, t
 func (s *service) enforceConstraints(ctx context.Context, operation model.TargetOperation, constraintType model.FormationConstraintType, details formationconstraint2.JoinPointDetails, formationTemplateID string) error {
 	return s.constraintEngine.EnforceConstraints(
 		ctx,
-		formationconstraint.JoinPointLocation{
+		formationconstraint2.JoinPointLocation{
 			OperationName:  operation,
 			ConstraintType: constraintType,
 		},
