@@ -7,8 +7,8 @@ import (
 
 // MatchingDetails contains information used to match the reached join point with the applicable constraints
 type MatchingDetails struct {
-	resourceType    model.ResourceType
-	resourceSubtype string
+	ResourceType    model.ResourceType
+	ResourceSubtype string
 }
 
 // JoinPointDetails provides an interface for join point details
@@ -28,8 +28,8 @@ type CRUDFormationOperationDetails struct {
 // GetMatchingDetails returns matching details for CRUDFormationOperationDetails
 func (d *CRUDFormationOperationDetails) GetMatchingDetails() MatchingDetails {
 	return MatchingDetails{
-		resourceType:    model.FormationResourceType,
-		resourceSubtype: d.FormationType,
+		ResourceType:    model.FormationResourceType,
+		ResourceSubtype: d.FormationType,
 	}
 }
 
@@ -41,14 +41,15 @@ type AssignFormationOperationDetails struct {
 	FormationType       string
 	FormationTemplateID string
 	FormationID         string
+	CheckScope          model.OperatorScopeType
 	TenantID            string
 }
 
 // GetMatchingDetails returns matching details for AssignFormationOperationDetails
 func (d *AssignFormationOperationDetails) GetMatchingDetails() MatchingDetails {
 	return MatchingDetails{
-		resourceType:    d.ResourceType,
-		resourceSubtype: d.ResourceSubtype,
+		ResourceType:    d.ResourceType,
+		ResourceSubtype: d.ResourceSubtype,
 	}
 }
 
@@ -60,14 +61,15 @@ type UnassignFormationOperationDetails struct {
 	FormationType       string
 	FormationTemplateID string
 	FormationID         string
+	CheckScope          model.OperatorScopeType
 	TenantID            string
 }
 
 // GetMatchingDetails returns matching details for UnassignFormationOperationDetails
 func (d *UnassignFormationOperationDetails) GetMatchingDetails() MatchingDetails {
 	return MatchingDetails{
-		resourceType:    d.ResourceType,
-		resourceSubtype: d.ResourceSubtype,
+		ResourceType:    d.ResourceType,
+		ResourceSubtype: d.ResourceSubtype,
 	}
 }
 
@@ -94,12 +96,15 @@ type GenerateNotificationOperationDetails struct {
 	TargetApplicationTemplate *webhook.ApplicationTemplateWithLabels
 	// TargetApplication is the application that the notification is for (the one with the webhook / the one receiving the notification)
 	TargetApplication *webhook.ApplicationWithLabels
+
+	CheckScope model.OperatorScopeType
+	TenantID   string
 }
 
 // GetMatchingDetails returns matching details for GenerateNotificationOperationDetails
 func (d *GenerateNotificationOperationDetails) GetMatchingDetails() MatchingDetails {
 	return MatchingDetails{
-		resourceType:    d.ResourceType,
-		resourceSubtype: d.ResourceSubtype,
+		ResourceType:    d.ResourceType,
+		ResourceSubtype: d.ResourceSubtype,
 	}
 }

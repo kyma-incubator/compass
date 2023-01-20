@@ -648,7 +648,6 @@ input FormationConstraintInput {
 	operatorScope: OperatorScope!
 	inputTemplate: String!
 	constraintScope: ConstraintScope!
-	formationTemplateID: ID!
 }
 
 input FormationInput {
@@ -1037,6 +1036,11 @@ type CertificateOAuthCredentialData {
 	url: String!
 }
 
+type ConstraintReference {
+	constraintID: ID!
+	formationTemplateID: ID!
+}
+
 type CredentialRequestAuth {
 	csrf: CSRFTokenCredentialRequestAuth
 }
@@ -1174,7 +1178,6 @@ type FormationTemplate {
 	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
-	formationConstraints: [FormationConstraint!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1708,6 +1711,8 @@ type Mutation {
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
 	createFormationConstraint(formationConstraint: FormationConstraintInput! @validate): FormationConstraint! @hasScopes(path: "graphql.mutation.createFormationConstraint")
 	deleteFormationConstraint(id: ID!): FormationConstraint! @hasScopes(path: "graphql.mutation.deleteFormationConstraint")
+	attachConstraintToFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.attachConstraintToFormationTemplate")
+	detachConstraintFromFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.detachConstraintToFormationTemplate")
 	"""
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)

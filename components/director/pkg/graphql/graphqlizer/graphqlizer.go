@@ -588,6 +588,14 @@ func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstrai
 	}`)
 }
 
+// FormationTemplateConstraintReferenceToGQL missing godoc
+func (g *Graphqlizer) FormationTemplateConstraintReferenceToGQL(in graphql.ConstraintReference) (string, error) {
+	return g.genericToGQL(in, `{
+		constraintId: "{{.ConstraintID}}"
+		formationTemplateId: {{.formationTemplateID}}
+	}`)
+}
+
 // ApplicationFromTemplateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{

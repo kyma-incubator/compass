@@ -2,7 +2,7 @@ package formationassignment
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -51,27 +51,28 @@ func NewFormationAssignmentNotificationService(formationAssignmentRepo Formation
 // GenerateNotification generates notifications by provided model.FormationAssignment
 func (fan *formationAssignmentNotificationService) GenerateNotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Generating notification for formation assignment with ID: %q and target type: %q and target ID: %q", fa.ID, fa.TargetType, fa.Target)
+
+	referencedFormation, err := fan.formationRepository.Get(ctx, fa.FormationID, fa.TenantID)
+	if err != nil {
+		return nil, err
+	}
+
 	switch fa.TargetType {
 	case model.FormationAssignmentTypeApplication:
-		return fan.generateApplicationFANotification(ctx, fa)
+		return fan.generateApplicationFANotification(ctx, fa, referencedFormation)
 	case model.FormationAssignmentTypeRuntime:
-		return fan.generateRuntimeFANotification(ctx, fa)
+		return fan.generateRuntimeFANotification(ctx, fa, referencedFormation)
 	case model.FormationAssignmentTypeRuntimeContext:
-		return fan.generateRuntimeContextFANotification(ctx, fa)
+		return fan.generateRuntimeContextFANotification(ctx, fa, referencedFormation)
 	default:
 		return nil, errors.Errorf("Unknown formation assignment type: %q", fa.TargetType)
 	}
 }
 
 // generateApplicationFANotification generates application formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateApplicationFANotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateApplicationFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation) (*webhookclient.NotificationRequest, error) {
 	tenant := fa.TenantID
 	appID := fa.Target
-
-	referencedFormation, err := fan.formationRepository.Get(ctx, fa.FormationID, fa.TenantID)
-	if err != nil {
-		return nil, err
-	}
 
 	appWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenant, appID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged)
 	if err != nil {
@@ -104,6 +105,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
+		log.C(ctx).Infof("Preparing join point details for application tenant mapping notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(
 			model.AssignFormation,
 			fa.FormationID,
@@ -115,12 +117,13 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			convertFormationAssignmentFromModel(reverseFA),
 		)
 		if err != nil {
+			log.C(ctx).Errorf("while preparing join point details for application tenant mapping notification generation: %v", err)
 			return nil, err
 		}
 
 		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
 		if err != nil {
-			log.C(ctx).Error(err)
+			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
 		}
 
@@ -141,6 +144,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
+		log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			model.AssignFormation,
 			fa.FormationID,
@@ -152,12 +156,13 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			convertFormationAssignmentFromModel(reverseFA),
 			model.ApplicationResourceType)
 		if err != nil {
+			log.C(ctx).Errorf("while preparing join point details for configuration change notification generation: %v", err)
 			return nil, err
 		}
 
 		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
 		if err != nil {
-			log.C(ctx).Error(err)
+			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
 		}
 
@@ -185,6 +190,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
+		log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 		details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 			model.AssignFormation,
 			fa.FormationID,
@@ -196,11 +202,13 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			convertFormationAssignmentFromModel(reverseFA),
 			model.ApplicationResourceType)
 		if err != nil {
+			log.C(ctx).Errorf("while preparing join point details for configuration change notification generation: %v", err)
 			return nil, err
 		}
 
 		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
 		if err != nil {
+			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
 		}
 
@@ -208,16 +216,10 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 	}
 }
 
-//todo logs
 // generateRuntimeFANotification generates runtime formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateRuntimeFANotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateRuntimeFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation) (*webhookclient.NotificationRequest, error) {
 	tenant := fa.TenantID
 	runtimeID := fa.Target
-
-	referencedFormation, err := fan.formationRepository.Get(ctx, fa.FormationID, fa.TenantID)
-	if err != nil {
-		return nil, err
-	}
 
 	runtimeWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenant, runtimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged)
 	if err != nil {
@@ -254,6 +256,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 	details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 		model.AssignFormation,
 		fa.FormationID,
@@ -265,12 +268,13 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 		convertFormationAssignmentFromModel(reverseFA),
 		model.RuntimeResourceType)
 	if err != nil {
+		log.C(ctx).Errorf("while preparing join point details for configuration change notification generation: %v", err)
 		return nil, err
 	}
 
 	notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
 	if err != nil {
-		log.C(ctx).Error(err)
+		log.C(ctx).Errorf("while building notification request: %v", err)
 		return nil, err
 	}
 
@@ -278,14 +282,9 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 }
 
 // generateRuntimeContextFANotification generates runtime context formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
+func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation) (*webhookclient.NotificationRequest, error) {
 	tenant := fa.TenantID
 	runtimeCtxID := fa.Target
-
-	referencedFormation, err := fan.formationRepository.Get(ctx, fa.FormationID, fa.TenantID)
-	if err != nil {
-		return nil, err
-	}
 
 	runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
 	if err != nil {
@@ -329,6 +328,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
 	details, err := fan.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
 		model.AssignFormation,
 		fa.FormationID,
@@ -340,11 +340,13 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 		convertFormationAssignmentFromModel(reverseFA),
 		model.RuntimeContextResourceType)
 	if err != nil {
+		log.C(ctx).Errorf("while preparing join point details for configuration change notification generation: %v", err)
 		return nil, err
 	}
 
 	notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
 	if err != nil {
+		log.C(ctx).Errorf("while building notification request: %v", err)
 		return nil, err
 	}
 

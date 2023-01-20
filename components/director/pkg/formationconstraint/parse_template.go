@@ -1,4 +1,4 @@
-package formation_constraint_input
+package formationconstraint
 
 import (
 	"bytes"

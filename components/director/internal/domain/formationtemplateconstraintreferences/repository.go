@@ -12,29 +12,23 @@ import (
 
 const (
 	tableName                 string = `public.formation_template_constraint_references`
-	formationTemplateColumn   string = "formation_template"
-	formationConstraintColumn string = "formation_constraint"
+	formationTemplateColumn   string = "formation_template_id"
+	formationConstraintColumn string = "formation_constraint_id"
 )
 
 var (
 	tableColumns = []string{formationConstraintColumn, formationTemplateColumn}
 )
 
-//go:generate mockery --exported --name=entityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type entityConverter interface {
-	ToEntity(in *model.FormationTemplateConstraintReference) *Entity
-	FromEntity(entity *Entity) *model.FormationTemplateConstraintReference
-}
-
 type repository struct {
 	lister  repo.ListerGlobal
 	creator repo.CreatorGlobal
 	deleter repo.DeleterGlobal
-	conv    entityConverter
+	conv    constraintReferenceConverter
 }
 
-// NewRepository creates a new FormationConstraint repository
-func NewRepository(conv entityConverter) *repository {
+// NewRepository creates a new FormationTemplateConstraintReference repository
+func NewRepository(conv constraintReferenceConverter) *repository {
 	return &repository{
 		lister:  repo.NewListerGlobal(resource.FormationTemplateConstraintReference, tableName, tableColumns),
 		creator: repo.NewCreatorGlobal(resource.FormationTemplateConstraintReference, tableName, tableColumns),
@@ -43,31 +37,30 @@ func NewRepository(conv entityConverter) *repository {
 	}
 }
 
-// ListByFormationTemplateID lists formationConstraints which name can be found in constraintNames and formation constraint which have constraint scope "global"
+// ListByFormationTemplateID lists formationTemplateConstraintReferences for the provided formationTemplate ID
 func (r *repository) ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error) {
 	var entityCollection EntityCollection
 
 	if err := r.lister.ListGlobal(ctx, &entityCollection, repo.NewEqualCondition(formationTemplateColumn, formationTemplateID)); err != nil {
-		//TODO do we need to check for not found?
 		return nil, errors.Wrap(err, "while listing formationTemplate-constraint references by formationTemplate ID")
 	}
 	return r.multipleFromEntities(entityCollection)
 }
 
-// Create stores new formationTemplate-constraint reference in the database
+// Create stores new formationTemplateConstraintReference in the database
 func (r *repository) Create(ctx context.Context, item *model.FormationTemplateConstraintReference) error {
 	if item == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.C(ctx).Debugf("Converting FormationTemplateConstraintReference with formationTemplate ID: %q and formationConstraint ID: %q to entity", item.FormationTemplate, item.Constraint)
+	log.C(ctx).Debugf("Converting FormationTemplateConstraintReference with formationTemplate ID: %q and formationConstraint ID: %q to entity", item.FormationTemplateID, item.ConstraintID)
 	entity := r.conv.ToEntity(item)
 
-	log.C(ctx).Debugf("Persisting FormationTemplateConstraintReference with formationTemplate ID: %q and formationConstraint ID: %q to the DB", item.FormationTemplate, item.Constraint)
+	log.C(ctx).Debugf("Persisting FormationTemplateConstraintReference with formationTemplate ID: %q and formationConstraint ID: %q to the DB", item.FormationTemplateID, item.ConstraintID)
 	return r.creator.Create(ctx, entity)
 }
 
-// Delete deletes a formationTemplate-constraint reference for formation and constraint
+// Delete deletes a formationTemplateConstraintReference for formationTemplate ID and constraint ID
 func (r *repository) Delete(ctx context.Context, formationTemplateID, constraintID string) error {
 	log.C(ctx).Debugf("Deleting FormationTemplateConstraintReference with formationTemplate ID: %q and formationConstraint ID: %q...", formationTemplateID, constraintID)
 	return r.deleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(formationTemplateColumn, formationTemplateID), repo.NewEqualCondition(formationConstraintColumn, constraintID)})

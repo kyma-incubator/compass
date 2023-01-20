@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	formationconstraint2 "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -61,7 +62,6 @@ type FormationRepository interface {
 	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
 	GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
-	ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.Formation, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
 }
@@ -121,7 +121,7 @@ type tenantService interface {
 
 //go:generate mockery --exported --name=constraintEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type constraintEngine interface {
-	EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error
+	EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint2.JoinPointDetails, formationTemplateID string) error
 }
 
 type service struct {
@@ -185,16 +185,6 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.formationRepository.List(ctx, formationTenant, pageSize, cursor)
 }
 
-// ListForFormationTemplate returns Formations for FormationTemplate with the provided ID
-func (s *service) ListForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Formation, error) {
-	formations, err := s.formationRepository.ListByFormationTemplateID(ctx, formationTemplateID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing Formations for Formation Template with ID %q", formationTemplateID)
-	}
-
-	return formations, nil
-}
-
 // Get returns the Formation by its id
 func (s *service) Get(ctx context.Context, id string) (*model.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
@@ -208,6 +198,16 @@ func (s *service) Get(ctx context.Context, id string) (*model.Formation, error) 
 	}
 
 	return formation, nil
+}
+
+func (s *service) GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
+	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
+	}
+
+	return f, nil
 }
 
 // GetFormationsForObject returns slice of formations for entity with ID objID and type objType
@@ -235,7 +235,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
 	}
 
-	joinPointDetails := &formationconstraint.CRUDFormationOperationDetails{
+	joinPointDetails := &formationconstraint2.CRUDFormationOperationDetails{
 		FormationType:       templateName,
 		FormationTemplateID: fTmpl.ID,
 		FormationName:       formation.Name,
@@ -277,7 +277,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "While deleting formation")
 	}
 
-	joinPointDetails := &formationconstraint.CRUDFormationOperationDetails{
+	joinPointDetails := &formationconstraint2.CRUDFormationOperationDetails{
 		FormationType:       ft.formationTemplate.Name,
 		FormationTemplateID: ft.formationTemplate.ID,
 		FormationName:       ft.formation.Name,
@@ -401,13 +401,13 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	return formationFromDB, nil
 }
 
-func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint.AssignFormationOperationDetails, error) {
+func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint2.AssignFormationOperationDetails, error) {
 	resourceSubtype, err := s.getObjectSubtype(ctx, tnt, objectID, objectType)
 	if err != nil {
 		return nil, err
 	}
 
-	joinPointDetails := &formationconstraint.AssignFormationOperationDetails{
+	joinPointDetails := &formationconstraint2.AssignFormationOperationDetails{
 		ResourceType:        model.ResourceType(objectType),
 		ResourceSubtype:     resourceSubtype,
 		ResourceID:          objectID,
@@ -419,13 +419,13 @@ func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID str
 	return joinPointDetails, nil
 }
 
-func (s *service) prepareDetailsForUnassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint.UnassignFormationOperationDetails, error) {
+func (s *service) prepareDetailsForUnassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint2.UnassignFormationOperationDetails, error) {
 	resourceSubtype, err := s.getObjectSubtype(ctx, tnt, objectID, objectType)
 	if err != nil {
 		return nil, err
 	}
 
-	joinPointDetails := &formationconstraint.UnassignFormationOperationDetails{
+	joinPointDetails := &formationconstraint2.UnassignFormationOperationDetails{
 		ResourceType:        model.ResourceType(objectType),
 		ResourceSubtype:     resourceSubtype,
 		ResourceID:          objectID,
@@ -1257,7 +1257,7 @@ func (s *service) getFormationWithTemplate(ctx context.Context, formationName, t
 	return &formationWithTemplate{formation: formation, formationTemplate: template}, nil
 }
 
-func (s *service) enforceConstraints(ctx context.Context, operation model.TargetOperation, constraintType model.FormationConstraintType, details formationconstraint.JoinPointDetails, formationTemplateID string) error {
+func (s *service) enforceConstraints(ctx context.Context, operation model.TargetOperation, constraintType model.FormationConstraintType, details formationconstraint2.JoinPointDetails, formationTemplateID string) error {
 	return s.constraintEngine.EnforceConstraints(
 		ctx,
 		formationconstraint.JoinPointLocation{

@@ -2,6 +2,7 @@ package formationtemplateconstraintreferences
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 // NewConverter creates a new formationTemplate-constraint references converter
@@ -18,8 +19,8 @@ func (c *converter) ToEntity(in *model.FormationTemplateConstraintReference) *En
 	}
 
 	return &Entity{
-		Constraint:        in.Constraint,
-		FormationTemplate: in.FormationTemplate,
+		ConstraintID:        in.ConstraintID,
+		FormationTemplateID: in.FormationTemplateID,
 	}
 }
 
@@ -30,7 +31,31 @@ func (c *converter) FromEntity(e *Entity) *model.FormationTemplateConstraintRefe
 	}
 
 	return &model.FormationTemplateConstraintReference{
-		Constraint:        e.Constraint,
-		FormationTemplate: e.FormationTemplate,
+		ConstraintID:        e.ConstraintID,
+		FormationTemplateID: e.FormationTemplateID,
+	}
+}
+
+// ToModel converts from graphql to internal model
+func (c *converter) ToModel(in *graphql.ConstraintReference) *model.FormationTemplateConstraintReference {
+	if in == nil {
+		return nil
+	}
+
+	return &model.FormationTemplateConstraintReference{
+		ConstraintID:        in.ConstraintID,
+		FormationTemplateID: in.FormationTemplateID,
+	}
+}
+
+// ToGraphql converts from internal model to graphql
+func (c *converter) ToGraphql(in *model.FormationTemplateConstraintReference) *graphql.ConstraintReference {
+	if in == nil {
+		return nil
+	}
+
+	return &graphql.ConstraintReference{
+		ConstraintID:        in.ConstraintID,
+		FormationTemplateID: in.FormationTemplateID,
 	}
 }

@@ -97,11 +97,7 @@ type RootResolver struct {
 	subscription        *subscription.Resolver
 	formationTemplate   *formationtemplate.Resolver
 	formationConstraint *formationconstraint.Resolver
-}
-
-func (r *RootResolver) FormationTemplate() graphql.FormationTemplateResolver {
-	//TODO implement me
-	panic("implement me")
+	constraintReference *formationtemplateconstraintreferences.Resolver
 }
 
 // NewRootResolver missing godoc
@@ -162,7 +158,8 @@ func NewRootResolver(
 	formationTemplateConverter := formationtemplate.NewConverter()
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationConstraintConverter := formationconstraint.NewConverter()
-	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
+	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
+	constraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -188,13 +185,11 @@ func NewRootResolver(
 	formationRepo := formation.NewRepository(formationConv)
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
-	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
+	constraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(constraintReferencesConverter)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
-	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
-
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewServiceWithRetry(fetchRequestRepo, httpClient, accessStrategyExecutorProvider, retryHTTPExecutor)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -214,7 +209,7 @@ func NewRootResolver(
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
-	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
+	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, constraintReferencesRepo, uidSvc, formationConstraintConverter)
 	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, formationRepo, labelRepo)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookClient, webhookDataInputBuilder, notificationsBuilder)
@@ -227,6 +222,7 @@ func NewRootResolver(
 	subscriptionSvc := subscription.NewService(runtimeSvc, runtimeContextSvc, tenantSvc, labelSvc, appTemplateSvc, appConverter, appTemplateConv, appSvc, uidSvc, subscriptionConfig.ConsumerSubaccountLabelKey, subscriptionConfig.SubscriptionLabelKey, subscriptionConfig.RuntimeTypeLabelKey, subscriptionConfig.ProviderLabelKey)
 	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
 	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter, tenantSvc)
+	constraintReferenceSvc := formationtemplateconstraintreferences.NewService(constraintReferencesRepo, constraintReferencesConverter)
 
 	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
 	if err != nil {
@@ -259,6 +255,7 @@ func NewRootResolver(
 		subscription:        subscription.NewResolver(transact, subscriptionSvc),
 		formationTemplate:   formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc),
 		formationConstraint: formationconstraint.NewResolver(transact, formationConstraintConverter, formationConstraintSvc),
+		constraintReference: formationtemplateconstraintreferences.NewResolver(transact, constraintReferencesConverter, constraintReferenceSvc),
 	}, nil
 }
 
@@ -574,6 +571,14 @@ func (r *queryResolver) SystemAuthByToken(ctx context.Context, id string) (graph
 
 type mutationResolver struct {
 	*RootResolver
+}
+
+func (r *mutationResolver) AttachConstraintToFormationTemplate(ctx context.Context, constraintID string, formationTemplateID string) (*graphql.ConstraintReference, error) {
+	return r.constraintReference.AttachConstraintToFormationTemplate(ctx, constraintID, formationTemplateID)
+}
+
+func (r *mutationResolver) DetachConstraintFromFormationTemplate(ctx context.Context, constraintID string, formationTemplateID string) (*graphql.ConstraintReference, error) {
+	return r.constraintReference.DetachConstraintFromFormationTemplate(ctx, constraintID, formationTemplateID)
 }
 
 func (r *mutationResolver) CreateFormationConstraint(ctx context.Context, formationConstraint graphql.FormationConstraintInput) (*graphql.FormationConstraint, error) {

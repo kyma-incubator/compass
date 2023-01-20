@@ -16,12 +16,12 @@ func fixColumns() []string {
 
 var (
 	constraintReference = &model.FormationTemplateConstraintReference{
-		Constraint:        constraintID,
-		FormationTemplate: templateID,
+		ConstraintID:        constraintID,
+		FormationTemplateID: templateID,
 	}
 	nilModel *model.FormationTemplateConstraintReference
 	entity   = &formationtemplateconstraintreferences.Entity{
-		Constraint:        constraintID,
-		FormationTemplate: templateID,
+		ConstraintID:        constraintID,
+		FormationTemplateID: templateID,
 	}
 )

@@ -3,10 +3,10 @@ package formation
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"

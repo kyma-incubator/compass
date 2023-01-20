@@ -2,8 +2,8 @@ package formationtemplateconstraintreferences
 
 // Entity represents the formation constraint entity
 type Entity struct {
-	Constraint        string `db:"formation_constraint"`
-	FormationTemplate string `db:"formation_template"`
+	ConstraintID        string `db:"formation_constraint_id"`
+	FormationTemplateID string `db:"formation_template_id"`
 }
 
 // EntityCollection is a collection of formationTemplate-constraint references entities.

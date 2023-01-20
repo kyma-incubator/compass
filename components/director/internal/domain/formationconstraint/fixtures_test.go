@@ -4,6 +4,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	formationconstraint2 "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -11,7 +12,7 @@ const (
 	testID                  = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	formationTemplateID     = "id"
 	formationConstraintName = "test constraint"
-	operatorName            = "IsNotAssignedToAnyFormationOfType"
+	operatorName            = formationconstraint.IsNotAssignedToAnyFormationOfTypeOperator
 	resourceSubtype         = "test subtype"
 	inputTemplate           = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
 	testTenantID            = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
@@ -105,14 +106,14 @@ var (
 	}
 	nilModelEntity               *model.FormationConstraint
 	formationConstraintReference = &model.FormationTemplateConstraintReference{
-		Constraint:        testID,
-		FormationTemplate: formationTemplateID,
+		ConstraintID:        testID,
+		FormationTemplateID: formationTemplateID,
 	}
 	location = formationconstraint.JoinPointLocation{
 		OperationName:  "assign",
 		ConstraintType: "pre",
 	}
-	details = formationconstraint.AssignFormationOperationDetails{
+	details = formationconstraint2.AssignFormationOperationDetails{
 		ResourceType:    "runtime",
 		ResourceSubtype: "kyma",
 	}

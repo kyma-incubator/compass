@@ -16,11 +16,11 @@ func TestRepository_ListMatchingFormationConstraints(t *testing.T) {
 		MethodName: "ListByFormationTemplateID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT formation_constraint, formation_template FROM public.formation_template_constraint_references WHERE formation_template = $1`),
+				Query:    regexp.QuoteMeta(`SELECT formation_constraint_id, formation_template_id FROM public.formation_template_constraint_references WHERE formation_template = $1`),
 				IsSelect: true,
 				Args:     []driver.Value{templateID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.FormationTemplate, entity.Constraint)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.FormationTemplateID, entity.ConstraintID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -48,7 +48,7 @@ func TestRepository_Create(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.formation_template_constraint_references \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{entity.Constraint, entity.FormationTemplate},
+				Args:        []driver.Value{entity.ConstraintID, entity.FormationTemplateID},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},

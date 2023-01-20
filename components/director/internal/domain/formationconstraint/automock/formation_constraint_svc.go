@@ -4,6 +4,7 @@ package automock
 
 import (
 	context "context"
+	formationconstraint2 "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	formationconstraint "github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	mock "github.com/stretchr/testify/mock"
@@ -17,11 +18,11 @@ type FormationConstraintSvc struct {
 }
 
 // ListMatchingConstraints provides a mock function with given fields: ctx, formationTemplateID, location, details
-func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
+func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location formationconstraint.JoinPointLocation, details formationconstraint2.MatchingDetails) ([]*model.FormationConstraint, error) {
 	ret := _m.Called(ctx, formationTemplateID, location, details)
 
 	var r0 []*model.FormationConstraint
-	if rf, ok := ret.Get(0).(func(context.Context, string, formationconstraint.JoinPointLocation, formationconstraint.MatchingDetails) []*model.FormationConstraint); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, formationconstraint.JoinPointLocation, formationconstraint2.MatchingDetails) []*model.FormationConstraint); ok {
 		r0 = rf(ctx, formationTemplateID, location, details)
 	} else {
 		if ret.Get(0) != nil {
@@ -30,7 +31,7 @@ func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, f
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, formationconstraint.JoinPointLocation, formationconstraint.MatchingDetails) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, formationconstraint.JoinPointLocation, formationconstraint2.MatchingDetails) error); ok {
 		r1 = rf(ctx, formationTemplateID, location, details)
 	} else {
 		r1 = ret.Error(1)

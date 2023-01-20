@@ -210,6 +210,14 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 	`
 }
 
+// ForFormationTemplateConstraintReference missing godoc
+func (fp *GqlFieldsProvider) ForFormationTemplateConstraintReference() string {
+	return `
+			constraintId
+			formationTemplateId
+	`
+}
+
 // OmitForWebhooks missing godoc
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
 	return buildProperties(map[string]string{

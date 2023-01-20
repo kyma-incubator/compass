@@ -5,6 +5,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
@@ -22,7 +23,6 @@ var (
 type EntityConverter interface {
 	ToEntity(in *model.FormationConstraint) *Entity
 	FromEntity(entity *Entity) *model.FormationConstraint
-	MultipleFromEntity(in EntityCollection) []*model.FormationConstraint
 }
 
 type repository struct {
@@ -99,7 +99,7 @@ func (r *repository) Delete(ctx context.Context, id string) error {
 }
 
 // ListMatchingFormationConstraints lists formationConstraints whose ID can be found in formationConstraintIDs or have constraint scope "global" that match on the join point location and matching details
-func (r *repository) ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location JoinPointLocation, details MatchingDetails) ([]*model.FormationConstraint, error) {
+func (r *repository) ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
 	var entityCollection EntityCollection
 
 	formationTypeRelevanceConditions := []repo.Condition{

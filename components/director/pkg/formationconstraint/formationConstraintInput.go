@@ -1,0 +1,12 @@
+package formationconstraint
+
+import "github.com/kyma-incubator/compass/components/director/internal/model"
+
+type IsNotAssignedToAnyFormationOfTypeInput struct {
+	FormationTemplateID string                  `json:"formation_template_id"`
+	ResourceType        model.ResourceType      `json:"resource_type"`
+	ResourceSubtype     string                  `json:"resource_subtype"`
+	ResourceID          string                  `json:"resource_id"`
+	CheckScope          model.OperatorScopeType `json:"check_scope"`
+	Tenant              string                  `json:"tenant"`
+}

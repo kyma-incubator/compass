@@ -357,6 +357,11 @@ type CertificateOAuthCredentialDataInput struct {
 	URL string `json:"url"`
 }
 
+type ConstraintReference struct {
+	ConstraintID        string `json:"constraintID"`
+	FormationTemplateID string `json:"formationTemplateID"`
+}
+
 // **Validation:** basic or oauth or certificateOAuth field required
 type CredentialDataInput struct {
 	Basic            *BasicCredentialDataInput            `json:"basic"`
@@ -483,16 +488,15 @@ type FormationConstraint struct {
 }
 
 type FormationConstraintInput struct {
-	Name                string          `json:"name"`
-	ConstraintType      ConstraintType  `json:"constraintType"`
-	TargetOperation     TargetOperation `json:"targetOperation"`
-	Operator            string          `json:"operator"`
-	ResourceType        ResourceType    `json:"resourceType"`
-	ResourceSubtype     string          `json:"resourceSubtype"`
-	OperatorScope       OperatorScope   `json:"operatorScope"`
-	InputTemplate       string          `json:"inputTemplate"`
-	ConstraintScope     ConstraintScope `json:"constraintScope"`
-	FormationTemplateID string          `json:"formationTemplateID"`
+	Name            string          `json:"name"`
+	ConstraintType  ConstraintType  `json:"constraintType"`
+	TargetOperation TargetOperation `json:"targetOperation"`
+	Operator        string          `json:"operator"`
+	ResourceType    ResourceType    `json:"resourceType"`
+	ResourceSubtype string          `json:"resourceSubtype"`
+	OperatorScope   OperatorScope   `json:"operatorScope"`
+	InputTemplate   string          `json:"inputTemplate"`
+	ConstraintScope ConstraintScope `json:"constraintScope"`
 }
 
 type FormationInput struct {
@@ -520,13 +524,12 @@ type FormationStatusError struct {
 }
 
 type FormationTemplate struct {
-	ID                     string                 `json:"id"`
-	Name                   string                 `json:"name"`
-	ApplicationTypes       []string               `json:"applicationTypes"`
-	RuntimeTypes           []string               `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string                 `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    ArtifactType           `json:"runtimeArtifactKind"`
-	FormationConstraints   []*FormationConstraint `json:"formationConstraints"`
+	ID                     string       `json:"id"`
+	Name                   string       `json:"name"`
+	ApplicationTypes       []string     `json:"applicationTypes"`
+	RuntimeTypes           []string     `json:"runtimeTypes"`
+	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
 }
 
 type FormationTemplateInput struct {

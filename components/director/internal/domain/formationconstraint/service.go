@@ -3,6 +3,7 @@ package formationconstraint
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
@@ -14,12 +15,11 @@ type formationConstraintRepository interface {
 	ListAll(ctx context.Context) ([]*model.FormationConstraint, error)
 	ListByIDs(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error)
 	Delete(ctx context.Context, id string) error
-	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location JoinPointLocation, details MatchingDetails) ([]*model.FormationConstraint, error)
+	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
 }
 
 //go:generate mockery --exported --name=formationTemplateConstraintReferenceRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationTemplateConstraintReferenceRepository interface {
-	Create(ctx context.Context, item *model.FormationTemplateConstraintReference) error
 	ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error)
 }
 
@@ -56,14 +56,6 @@ func (s *service) Create(ctx context.Context, in *model.FormationConstraintInput
 		return "", errors.Wrapf(err, "while creating Formation Constraint with name %s", in.Name)
 	}
 
-	constraintReference := &model.FormationTemplateConstraintReference{
-		Constraint:        formationConstraintID,
-		FormationTemplate: in.FormationTemplateID,
-	}
-	if err = s.formationTemplateConstraintReferenceRepo.Create(ctx, constraintReference); err != nil {
-		return "", errors.Wrapf(err, "while creting Reference for Formation Template and Formation Constraint")
-	}
-
 	return formationConstraintID, nil
 }
 
@@ -95,7 +87,7 @@ func (s *service) ListByFormationTemplateID(ctx context.Context, formationTempla
 
 	formationConstraintIDs := make([]string, 0, len(constraintReferences))
 	for _, cr := range constraintReferences {
-		formationConstraintIDs = append(formationConstraintIDs, cr.Constraint)
+		formationConstraintIDs = append(formationConstraintIDs, cr.ConstraintID)
 	}
 
 	formationConstraints, err := s.repo.ListByIDs(ctx, formationConstraintIDs)
@@ -115,7 +107,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 // ListMatchingConstraints lists formation constraints that math the provided JoinPointLocation and JoinPointDetails
-func (s *service) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location JoinPointLocation, details MatchingDetails) ([]*model.FormationConstraint, error) {
+func (s *service) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
 	formationTemplateConstraintReferences, err := s.formationTemplateConstraintReferenceRepo.ListByFormationTemplateID(ctx, formationTemplateID)
 	if err != nil {
 		return nil, err
@@ -123,12 +115,12 @@ func (s *service) ListMatchingConstraints(ctx context.Context, formationTemplate
 
 	constraintIDs := make([]string, 0, len(formationTemplateConstraintReferences))
 	for _, reference := range formationTemplateConstraintReferences {
-		constraintIDs = append(constraintIDs, reference.Constraint)
+		constraintIDs = append(constraintIDs, reference.ConstraintID)
 	}
 
 	constraints, err := s.repo.ListMatchingFormationConstraints(ctx, constraintIDs, location, details)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing matching formation constraints for formation template with ID %q, target operation %q, constraint type %q, resource type %q and resource subtype %q", formationTemplateID, location.OperationName, location.ConstraintType, details.resourceType, details.resourceSubtype)
+		return nil, errors.Wrapf(err, "while listing matching formation constraints for formation template with ID %q, target operation %q, constraint type %q, resource type %q and resource subtype %q", formationTemplateID, location.OperationName, location.ConstraintType, details.ResourceType, details.ResourceSubtype)
 	}
 
 	return constraints, nil
