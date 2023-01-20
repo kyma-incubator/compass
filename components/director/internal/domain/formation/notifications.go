@@ -253,9 +253,10 @@ func (ns *notificationsService) generateNotificationsAboutRuntimeAndRuntimeConte
 
 		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 		if err != nil {
-			return nil, err
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
 		}
-		requests = append(requests, req)
 	}
 	return requests, nil
 }
@@ -373,9 +374,10 @@ func (ns *notificationsService) generateNotificationsForRuntimeAboutTheApplicati
 
 		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhooksToCall[runtime.ID])
 		if err != nil {
-			return nil, err
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
 		}
-		requests = append(requests, req)
 	}
 
 	return requests, nil
@@ -457,9 +459,10 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheAppl
 
 			req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 			if err != nil {
-				return nil, err
+				log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+			} else {
+				requests = append(requests, req)
 			}
-			requests = append(requests, req)
 		}
 
 		delete(listeningAppIDs, appID)
@@ -544,9 +547,10 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheAppl
 
 		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhooksToCall[targetApp.ID])
 		if err != nil {
-			return nil, err
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
 		}
-		requests = append(requests, req)
 	}
 
 	log.C(ctx).Infof("Total number of app-to-app notifications for application with ID %s that is being %s is %d", appID, operation, len(requests))
@@ -676,9 +680,10 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheRunt
 
 		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhooksToCall[app.ID])
 		if err != nil {
-			return nil, err
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
 		}
-		requests = append(requests, req)
 	}
 	return requests, nil
 }
@@ -734,11 +739,11 @@ func (ns *notificationsService) generateNotificationsAboutApplicationsForTheRunt
 		}
 
 		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
-		//todo Should we continue and aggregate errors or just return
 		if err != nil {
-			return nil, err
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
 		}
-		requests = append(requests, req)
 	}
 
 	return requests, nil
@@ -790,9 +795,10 @@ func (ns *notificationsService) generateNotificationsAboutApplicationsForTheRunt
 
 		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 		if err != nil {
-			return nil, err
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
 		}
-		requests = append(requests, req)
 	}
 
 	return requests, nil
