@@ -1,4 +1,4 @@
-FROM golang:1.19.3-alpine3.16 as builder
+FROM --platform=$BUILDPLATFORM golang:1.19.3-alpine3.16 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/connector
 WORKDIR ${BASE_APP_DIR}
@@ -8,7 +8,8 @@ RUN go mod download -x
 
 COPY . ${BASE_APP_DIR}
 
-RUN go build -v -o main ./cmd
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o main ./cmd
 RUN mkdir /app && mv ./main /app/main
 
 
