@@ -17,9 +17,9 @@ CREATE TABLE formation_constraints
 CREATE TABLE formation_template_constraint_references
 (
     formation_template_id    UUID NOT NULL    CHECK (formation_template_id <> '00000000-0000-0000-0000-000000000000'),
-    FOREIGN KEY (formation_template) REFERENCES formation_templates(id) ON DELETE CASCADE,
+    FOREIGN KEY (formation_template_id) REFERENCES formation_templates(id) ON DELETE CASCADE,
     formation_constraint_id    UUID NOT NULL    CHECK (formation_constraint_id <> '00000000-0000-0000-0000-000000000000'),
-    FOREIGN KEY (formation_constraint) REFERENCES formation_constraints(id) ON DELETE CASCADE
+    FOREIGN KEY (formation_constraint_id) REFERENCES formation_constraints(id) ON DELETE CASCADE
 );
 
 CREATE INDEX formation_template_id ON formation_template_constraint_references (formation_template_id);
