@@ -51,7 +51,7 @@ require (
 
 require (
 	github.com/imdario/mergo v0.3.12
-	github.com/kyma-incubator/compass/tests v0.0.0-20221209181415-b0ec8a9f18fa
+	github.com/kyma-incubator/compass/tests v0.0.0-20230112161055-681ca6fbeb8f
 	golang.org/x/net v0.1.0
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/text v0.4.0
@@ -93,7 +93,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221209181155-38efa62041f3 // indirect
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20221212124318-3f94458ea0c5 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -199,8 +198,6 @@ func main() {
 	exitOnError(err, "Error while loading ORD Webhook Mappings")
 
 	tenantMappingConfig, err := apptemplate.UnmarshalTenantMappingConfig(cfg.TenantMappingConfig)
-	// this log is for debugging while developing the task
-	logger.Infof(fmt.Sprintf("Tenant mapping config %s", tenantMappingConfig))
 	exitOnError(err, "Error while loading Tenant mapping config")
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
