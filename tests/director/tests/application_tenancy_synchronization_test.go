@@ -50,9 +50,10 @@ func TestCreateTenantAccessForNewApplication(t *testing.T) {
 	assert.Equal(t, actualApp.ID, app.ID)
 }
 
-func TestCreateTenantAccessForNewApplication1(t *testing.T) {
+func TestCreateTenantAccessForNewTenants(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+	newExternalTenantID := "ga-tenant-multiple"
 
 	parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant))
 	assert.NoError(t, err)
@@ -70,7 +71,7 @@ func TestCreateTenantAccessForNewApplication1(t *testing.T) {
 	tenants := []graphql.BusinessTenantMappingInput{
 		{
 			Name:           "test-new-tenant",
-			ExternalTenant: "ga-tenant",
+			ExternalTenant: newExternalTenantID,
 			Parent:         &parent.InternalID,
 			Type:           string(tenant.Account),
 			Provider:       "provide",
@@ -95,7 +96,7 @@ func TestCreateTenantAccessForNewApplication1(t *testing.T) {
 	defer func() {
 		tenantsToDelete := []graphql.BusinessTenantMappingInput{
 			{
-				ExternalTenant: "ga-tenant",
+				ExternalTenant: newExternalTenantID,
 			},
 		}
 		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenantsToDelete)
@@ -103,7 +104,62 @@ func TestCreateTenantAccessForNewApplication1(t *testing.T) {
 	}()
 
 	//THEN
+	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, newExternalTenantID, actualApp.ID)
+	assert.Equal(t, actualApp.ID, app.ID)
+}
 
-	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, "ga-tenant", actualApp.ID)
+func TestCreateTenantAccessForNewTenant(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	newExternalTenantID := "ga-tenant-single"
+
+	parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant))
+	assert.NoError(t, err)
+
+	in := graphql.ApplicationRegisterInput{
+		Name:           "test-atom-application",
+		ProviderName:   ptr.String("provider name"),
+		Description:    ptr.String("my first wordpress application"),
+		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
+		Labels: graphql.Labels{
+			"group": []interface{}{"production", "experimental"},
+		},
+	}
+
+	newTenant := graphql.BusinessTenantMappingInput{
+		Name:           "test-new-tenant",
+		ExternalTenant: newExternalTenantID,
+		Parent:         &parent.InternalID,
+		Type:           string(tenant.Account),
+		Provider:       "provide",
+	}
+
+	resourceGroupTnt := tenant.TestTenants.GetIDByName(t, tenant.TestAtomResourceGroup)
+
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
+
+	actualApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, resourceGroupTnt, request, &actualApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, resourceGroupTnt, &actualApp)
+
+	// WHEN
+	err = fixtures.WriteTenant(t, ctx, directorInternalGQLClient, newTenant)
+	require.NoError(t, err)
+
+	defer func() {
+		tenantsToDelete := []graphql.BusinessTenantMappingInput{
+			{
+				ExternalTenant: newExternalTenantID,
+			},
+		}
+		err := fixtures.DeleteTenants(t, ctx, directorInternalGQLClient, tenantsToDelete)
+		assert.NoError(t, err)
+	}()
+
+	//THEN
+	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, newExternalTenantID, actualApp.ID)
 	assert.Equal(t, actualApp.ID, app.ID)
 }
