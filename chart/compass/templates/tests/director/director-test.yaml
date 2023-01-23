@@ -208,11 +208,6 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerTokenURL }}
             - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
               value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds | quote}}
-{{/*            - name: APP_TENANT_MAPPING_CONFIG*/}}
-{{/*              valueFrom:*/}}
-{{/*                configMapKeyRef:*/}}
-{{/*                  name: compass-director-tenant-mapping-config*/}}
-{{/*                  key: tenant-mapping-config.json*/}}
             - name: APP_PROVIDER_CLIENT_ID
               valueFrom:
                 secretKeyRef:
