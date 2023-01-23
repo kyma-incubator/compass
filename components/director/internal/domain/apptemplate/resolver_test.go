@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/webhook"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -451,13 +450,16 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		selfregmanager.RegionLabel:       fmt.Sprintf("\"%s\"", "region"),
 	}
 
+	syncMode := graphql.WebhookModeSync
+	asyncCallbackMode := graphql.WebhookModeAsyncCallback
+
 	gqlAppTemplateInputWithProviderAndWebhook := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
 	gqlAppTemplateInputWithProviderAndWebhook.Webhooks = []*graphql.WebhookInput{
 		{
 			Type:    graphql.WebhookTypeConfigurationChanged,
 			URL:     &testURL,
 			Auth:    nil,
-			Mode:    webhook.WebhookModePtr(graphql.WebhookModeSync),
+			Mode:    &syncMode,
 			Version: str.Ptr("v1.0"),
 		},
 		{
@@ -472,7 +474,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			Type:    graphql.WebhookTypeConfigurationChanged,
 			URL:     &testURL,
 			Auth:    nil,
-			Mode:    webhook.WebhookModePtr(graphql.WebhookModeAsyncCallback),
+			Mode:    &asyncCallbackMode,
 			Version: str.Ptr("v1.0"),
 		},
 		{
@@ -561,7 +563,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 					{
 						Type:           graphql.WebhookTypeConfigurationChanged,
 						Auth:           nil,
-						Mode:           webhook.WebhookModePtr(graphql.WebhookModeSync),
+						Mode:           &syncMode,
 						URLTemplate:    &testURL,
 						InputTemplate:  str.Ptr("input template"),
 						HeaderTemplate: str.Ptr("header template"),
@@ -612,7 +614,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 					{
 						Type:           graphql.WebhookTypeConfigurationChanged,
 						Auth:           nil,
-						Mode:           webhook.WebhookModePtr(graphql.WebhookModeAsyncCallback),
+						Mode:           &asyncCallbackMode,
 						URLTemplate:    &testURL,
 						InputTemplate:  str.Ptr("input template"),
 						HeaderTemplate: &testURL,
