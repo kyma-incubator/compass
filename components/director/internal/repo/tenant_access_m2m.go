@@ -68,6 +68,7 @@ func (tc TenantAccessCollection) Len() int {
 	return len(tc)
 }
 
+// CreateSingleTenantAccess create a tenant access for a single entity
 func CreateSingleTenantAccess(ctx context.Context, m2mTable string, tenantAccess *TenantAccess) error {
 	values := make([]string, 0, len(M2MColumns))
 	for _, c := range M2MColumns {

@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -631,10 +630,10 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		parentID := "test"
 
 		resultTntModel := []*model.BusinessTenantMapping{
-			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, tenantpkg.Account),
+			newModelBusinessTenantMappingWithParentAndType("id1", "name1", parentID, tenantEntity.Account),
 		}
 
-		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantpkg.Account)
+		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
 		tntEntity.Initialized = ptr.Bool(true)
 
 		mockConverter := &automock.Converter{}
@@ -648,14 +647,14 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: str.NewNullString(parentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: ptr.Bool(true)},
 		})
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE parent = $1 AND type = $2`)).
-			WithArgs(parentID, tenantpkg.Account).
+			WithArgs(parentID, tenantEntity.Account).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantpkg.Account)
+		result, err := tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantEntity.Account)
 
 		// THEN
 		require.NoError(t, err)
@@ -667,7 +666,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		// GIVEN
 		parentID := "test"
 
-		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantpkg.Account)
+		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
 		tntEntity.Initialized = ptr.Bool(true)
 
 		mockConverter := &automock.Converter{}
@@ -677,14 +676,14 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE parent = $1 AND type = $2`)).
-			WithArgs(parentID, tenantpkg.Account).
+			WithArgs(parentID, tenantEntity.Account).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
 		tenantMappingRepo := tenant.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantpkg.Account)
+		result, err := tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantEntity.Account)
 
 		// THEN
 		require.Error(t, err)
@@ -699,7 +698,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		ctx := context.TODO()
 
 		// WHEN
-		result, err := repo.ListByParentAndType(ctx, parentID, tenantpkg.Account)
+		result, err := repo.ListByParentAndType(ctx, parentID, tenantEntity.Account)
 
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: unable to fetch database from context")

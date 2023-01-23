@@ -46,6 +46,10 @@ func NewDirective(transact persistence.Transactioner, tenantService BusinessTena
 	}
 }
 
+// SynchronizeApplicationTenancy handles graphql.EventTypeNewApplication, graphql.EventTypeNewSingleTenant, and graphql.EventTypeNewMultipleTenants events.
+// In EventTypeNewApplication we extract the customer parent of the owner of the new application. We give access to accounts under that customer to access the application.
+// In EventTypeNewSingleTenant we get the new tenant's customer parent. If the new tenant is account we give him access to all Atom applications under the customer.
+// In EventTypeNewMultipleTenants we do the same as for EventTypeNewSingleTenant event but for multiple new tenants.
 func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interface{}, next gqlgen.Resolver, eventType graphql.EventType) (res interface{}, err error) {
 	resp, err := next(ctx)
 	if err != nil {
