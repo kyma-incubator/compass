@@ -20,6 +20,7 @@ var (
 	testErr          = errors.New("test error")
 	url              = "https://target-url.com"
 	token            = "token-value"
+	tokenWithClaim   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnQiOiJ0ZXN0In0.5Jg0ylN1CI1vH-tmHbqCoGvOj6j-j8iFg-fZlz1BdFc"
 	providerSubaccID = "c062f54a-5626-4ad1-907a-3cca6fe3b80d"
 )
 
@@ -128,11 +129,29 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		assertExpectedResponse(t, resp, expectedBody, http.StatusBadRequest)
 	})
 
-	t.Run("Error when missing propagated provider subaccount header", func(t *testing.T) {
+	t.Run("Error when extracting tenant claim from token", func(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
+		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.Subscribe(r, subscribeReq)
+		resp := r.Result()
+
+		//THEN
+		expectedBody := "{\"error\":\"while executing subscribe request: while creating subscription request: error occurred when extracting consumer subaccount from token claims\"}\n"
+		assertExpectedResponse(t, resp, expectedBody, http.StatusInternalServerError)
+	})
+
+	t.Run("Error when missing propagated provider subaccount header", func(t *testing.T) {
+		//GIVEN
+		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		require.NoError(t, err)
+		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
 		r := httptest.NewRecorder()
@@ -178,7 +197,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 
@@ -231,7 +250,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				//GIVEN
 				req := testCase.Request
-				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 				req.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 				req = mux.SetURLVars(req, map[string]string{"app_name": appName})
 

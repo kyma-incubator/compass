@@ -70,6 +70,12 @@ type webhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 }
 
+//go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantRepository interface {
+	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error)
+}
+
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
 // Used for testing
 //nolint
