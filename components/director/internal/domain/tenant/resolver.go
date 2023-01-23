@@ -23,7 +23,7 @@ type BusinessTenantMappingService interface {
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
+	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error)
 	UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error)
 	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, tenantInputs []string) error
@@ -218,10 +218,10 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Tenant, key *string)
 }
 
 // Write creates new global and subaccounts
-func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) (int, error) {
+func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTenantMappingInput) ([]string, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
@@ -229,15 +229,16 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 
 	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
 
-	if err := r.srv.UpsertMany(ctx, tenants...); err != nil {
-		return -1, errors.Wrap(err, "while writing new tenants")
+	tenantIDs, err := r.srv.UpsertMany(ctx, tenants...)
+	if err != nil {
+		return nil, errors.Wrap(err, "while writing new tenants")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return -1, err
+		return nil, err
 	}
 
-	return len(tenants), nil
+	return tenantIDs, nil
 }
 
 // WriteSingle creates a single tenant

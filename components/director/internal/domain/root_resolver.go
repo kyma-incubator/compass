@@ -880,7 +880,7 @@ func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context
 }
 
 // WriteTenants creates tenants of type customer, account, subaccount, organization, folder, or resource-group
-func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) (int, error) {
+func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) ([]string, error) {
 	return r.tenant.Write(ctx, in)
 }
 

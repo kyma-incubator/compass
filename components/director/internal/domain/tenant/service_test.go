@@ -4,7 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -325,6 +331,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 	tenantModels := []model.BusinessTenantMapping{*newModelBusinessTenantMapping(testID, "test1"),
 		newModelBusinessTenantMapping(testID, "test2").WithExternalTenant("external2")}
 
+	expectedResult := []string{testID, testID}
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
 		uidSvc.On("Generate").Return(testID)
@@ -344,7 +351,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		LabelRepoFn         func() *automock.LabelRepository
 		LabelUpsertSvcFn    func() *automock.LabelUpsertService
 		UIDSvcFn            func() *automock.UIDService
-		ExpectedOutput      error
+		ExpectedError       error
+		ExpectedResult      []string
 	}
 
 	testCases := []testCase{
@@ -357,7 +365,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			UIDSvcFn:         uidSvcFn,
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
-			ExpectedOutput:   nil,
+			ExpectedError:    nil,
+			ExpectedResult:   expectedResult,
 		},
 		{
 			Name:         "Success when parent tenant exists with another ID",
@@ -382,7 +391,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			},
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
-			ExpectedOutput:   nil,
+			ExpectedError:    nil,
+			ExpectedResult:   []string{testTemporaryInternalParentID, testID},
 		},
 		{
 			Name:         "Success when parent tenant organization exists with another ID",
@@ -407,7 +417,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			},
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
-			ExpectedOutput:   nil,
+			ExpectedError:    nil,
+			ExpectedResult:   []string{testTemporaryInternalParentID, testID},
 		},
 		{
 			Name:         "Success when subdomain should be added",
@@ -428,7 +439,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				svc.On("UpsertLabel", ctx, testID, label).Return(nil).Once()
 				return svc
 			},
-			ExpectedOutput: nil,
+			ExpectedError:  nil,
+			ExpectedResult: expectedResult,
 		},
 		{
 			Name:         "Success when region should be added",
@@ -449,7 +461,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				svc.On("UpsertLabel", ctx, testID, regionLabel).Return(nil).Twice()
 				return svc
 			},
-			ExpectedOutput: nil,
+			ExpectedError:  nil,
+			ExpectedResult: expectedResult,
 		},
 		{
 			Name:         "Error when checking the existence of tenant",
@@ -463,7 +476,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			UIDSvcFn:         uidSvcFn,
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
-			ExpectedOutput:   testErr,
+			ExpectedError:    testErr,
+			ExpectedResult:   nil,
 		},
 		{
 			Name:         "Error when subdomain label setting fails",
@@ -487,7 +501,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				svc.On("UpsertLabel", ctx, testID, label).Return(testErr).Once()
 				return svc
 			},
-			ExpectedOutput: testErr,
+			ExpectedError:  testErr,
+			ExpectedResult: nil,
 		},
 		{
 			Name:         "Error when region label setting fails",
@@ -511,7 +526,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				svc.On("UpsertLabel", ctx, testID, label).Return(testErr).Once()
 				return svc
 			},
-			ExpectedOutput: testErr,
+			ExpectedError:  testErr,
+			ExpectedResult: nil,
 		},
 		{
 			Name:         "Error when creating the tenant",
@@ -524,7 +540,8 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			UIDSvcFn:         uidSvcFn,
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
-			ExpectedOutput:   testErr,
+			ExpectedError:    testErr,
+			ExpectedResult:   nil,
 		},
 	}
 
@@ -540,14 +557,15 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
 				// WHEN
-				err := svc.CreateManyIfNotExists(ctx, testCase.tenantInputs...)
+				res, err := svc.CreateManyIfNotExists(ctx, testCase.tenantInputs...)
 
 				// THEN
-				if testCase.ExpectedOutput != nil {
+				if testCase.ExpectedError != nil {
 					require.Error(t, err)
-					assert.Contains(t, err.Error(), testCase.ExpectedOutput.Error())
+					assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 				} else {
 					assert.NoError(t, err)
+					assert.Equal(t, testCase.ExpectedResult, res)
 				}
 			})
 		}
@@ -565,14 +583,15 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
 				// WHEN
-				err := svc.UpsertMany(ctx, testCase.tenantInputs...)
+				res, err := svc.UpsertMany(ctx, testCase.tenantInputs...)
 
 				// THEN
-				if testCase.ExpectedOutput != nil {
+				if testCase.ExpectedError != nil {
 					require.Error(t, err)
-					assert.Contains(t, err.Error(), testCase.ExpectedOutput.Error())
+					assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 				} else {
 					assert.NoError(t, err)
+					assert.Equal(t, testCase.ExpectedResult, res)
 				}
 			})
 		}
@@ -1122,6 +1141,51 @@ func Test_GetTenantByExternalID(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, actual)
 		assert.Equal(t, testError, err)
+	})
+}
+
+func TestService_CreateTenantAccessForResource(t *testing.T) {
+	tenantID := "test"
+	resourceID := "app-ID"
+	isOwner := false
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		resourceType := resource.Application
+		uidSvc := &automock.UIDService{}
+		tenantRepo := &automock.TenantMappingRepository{}
+		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc)
+
+		db, dbMock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`)).
+			WithArgs(tenantID, resourceID, isOwner).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+
+		svc := tenant.NewService(tenantRepo, uidSvc)
+
+		// WHEN
+		err := svc.CreateTenantAccessForResource(ctx, tenantID, resourceID, isOwner, resourceType)
+
+		// THEN
+		require.Nil(t, err)
+	})
+
+	t.Run("Error when resource has no access table", func(t *testing.T) {
+		// GIVEN
+		resourceType := resource.Document
+		uidSvc := &automock.UIDService{}
+		tenantRepo := &automock.TenantMappingRepository{}
+		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc)
+
+		svc := tenant.NewService(tenantRepo, uidSvc)
+
+		// WHEN
+		err := svc.CreateTenantAccessForResource(context.TODO(), tenantID, resourceID, isOwner, resourceType)
+
+		// THEN
+		require.Error(t, err, "entity \"document\" does not have access table")
 	})
 }
 

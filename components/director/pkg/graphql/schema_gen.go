@@ -53,11 +53,12 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Async       func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
-	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
-	HasScopes   func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
-	Sanitize    func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
-	Validate    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	Async                         func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
+	HasScenario                   func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
+	HasScopes                     func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
+	Sanitize                      func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
+	SynchronizeApplicationTenancy func(ctx context.Context, obj interface{}, next graphql.Resolver, eventType EventType) (res interface{}, err error)
+	Validate                      func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -777,7 +778,7 @@ type MutationResolver interface {
 	CreateAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
-	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
+	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) ([]string, error)
 	WriteTenant(ctx context.Context, in BusinessTenantMappingInput) (string, error)
 	DeleteTenants(ctx context.Context, in []string) (int, error)
 	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
@@ -4461,6 +4462,10 @@ Sanitize directive marks mutation arguments that will be validated.
 """
 directive @sanitize(path: String!) on FIELD_DEFINITION
 """
+SynchronizeApplications directive is added to mutations that create applications or tenants in other to synchronise the tenant access.
+"""
+directive @synchronizeApplicationTenancy(eventType: EventType!) on FIELD_DEFINITION
+"""
 Validate directive marks mutation arguments that will be validated.
 """
 directive @validate on ARGUMENT_DEFINITION
@@ -4548,6 +4553,12 @@ enum DocumentFormat {
 
 enum EventSpecType {
 	ASYNC_API
+}
+
+enum EventType {
+	NEW_APPLICATION
+	NEW_SINGLE_TENANT
+	NEW_MULTIPLE_TENANTS
 }
 
 enum FetchMode {
@@ -5879,6 +5890,10 @@ type Query {
 	- [query formation](examples/query-formation/query-formation.graphql)
 	"""
 	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
+	"""
+	**Examples**
+	- [query formation by name](examples/query-formation-by-name/query-formation-by-name.graphql)
+	"""
 	formationByName(name: String!): Formation @hasScopes(path: "graphql.query.formationByName")
 	"""
 	**Examples**
@@ -5905,7 +5920,7 @@ type Mutation {
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
-	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(operationType: CREATE, webhookType: REGISTER_APPLICATION)
+	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(operationType: CREATE, webhookType: REGISTER_APPLICATION) @synchronizeApplicationTenancy(eventType: NEW_APPLICATION)
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
@@ -5930,7 +5945,7 @@ type Mutation {
 	**Examples**
 	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
 	"""
-	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
+	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate") @synchronizeApplicationTenancy(eventType: NEW_APPLICATION)
 	"""
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
@@ -6179,8 +6194,8 @@ type Mutation {
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
-	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
-	writeTenant(in: BusinessTenantMappingInput!): String! @hasScopes(path: "graphql.mutation.writeTenants")
+	writeTenants(in: [BusinessTenantMappingInput!]): [String!] @hasScopes(path: "graphql.mutation.writeTenants") @synchronizeApplicationTenancy(eventType: NEW_MULTIPLE_TENANTS)
+	writeTenant(in: BusinessTenantMappingInput!): String! @hasScopes(path: "graphql.mutation.writeTenants") @synchronizeApplicationTenancy(eventType: NEW_SINGLE_TENANT)
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
 	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!, subscriptionPayload: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
@@ -6287,6 +6302,20 @@ func (ec *executionContext) dir_sanitize_args(ctx context.Context, rawArgs map[s
 		}
 	}
 	args["path"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) dir_synchronizeApplicationTenancy_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 EventType
+	if tmp, ok := rawArgs["eventType"]; ok {
+		arg0, err = ec.unmarshalNEventType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["eventType"] = arg0
 	return args, nil
 }
 
@@ -16640,8 +16669,18 @@ func (ec *executionContext) _Mutation_registerApplication(ctx context.Context, f
 			}
 			return ec.directives.Async(ctx, nil, directive1, operationType, webhookType, nil)
 		}
+		directive3 := func(ctx context.Context) (interface{}, error) {
+			eventType, err := ec.unmarshalNEventType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventType(ctx, "NEW_APPLICATION")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.SynchronizeApplicationTenancy == nil {
+				return nil, errors.New("directive synchronizeApplicationTenancy is not implemented")
+			}
+			return ec.directives.SynchronizeApplicationTenancy(ctx, nil, directive2, eventType)
+		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive3(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -17015,8 +17054,18 @@ func (ec *executionContext) _Mutation_registerApplicationFromTemplate(ctx contex
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			eventType, err := ec.unmarshalNEventType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventType(ctx, "NEW_APPLICATION")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.SynchronizeApplicationTenancy == nil {
+				return nil, errors.New("directive synchronizeApplicationTenancy is not implemented")
+			}
+			return ec.directives.SynchronizeApplicationTenancy(ctx, nil, directive1, eventType)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -20807,32 +20856,39 @@ func (ec *executionContext) _Mutation_writeTenants(ctx context.Context, field gr
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			eventType, err := ec.unmarshalNEventType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventType(ctx, "NEW_MULTIPLE_TENANTS")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.SynchronizeApplicationTenancy == nil {
+				return nil, errors.New("directive synchronizeApplicationTenancy is not implemented")
+			}
+			return ec.directives.SynchronizeApplicationTenancy(ctx, nil, directive1, eventType)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(int); ok {
+		if data, ok := tmp.([]string); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be int`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_writeTenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -20872,8 +20928,18 @@ func (ec *executionContext) _Mutation_writeTenant(ctx context.Context, field gra
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			eventType, err := ec.unmarshalNEventType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventType(ctx, "NEW_SINGLE_TENANT")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.SynchronizeApplicationTenancy == nil {
+				return nil, errors.New("directive synchronizeApplicationTenancy is not implemented")
+			}
+			return ec.directives.SynchronizeApplicationTenancy(ctx, nil, directive1, eventType)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -31657,9 +31723,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "writeTenants":
 			out.Values[i] = ec._Mutation_writeTenants(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "writeTenant":
 			out.Values[i] = ec._Mutation_writeTenant(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -33881,6 +33944,15 @@ func (ec *executionContext) unmarshalNEventSpecType2githubᚗcomᚋkymaᚑincuba
 }
 
 func (ec *executionContext) marshalNEventSpecType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventSpecType(ctx context.Context, sel ast.SelectionSet, v EventSpecType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNEventType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventType(ctx context.Context, v interface{}) (EventType, error) {
+	var res EventType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNEventType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventType(ctx context.Context, sel ast.SelectionSet, v EventType) graphql.Marshaler {
 	return v
 }
 

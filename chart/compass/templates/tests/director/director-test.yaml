@@ -43,6 +43,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationAsyncApi.pathPrefix }}{{ .Values.global.director.formationAsyncApi.path }}"
+            - name: APP_DIRECTOR_INTERNAL_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
             - name: APP_WEBHOOK_URL

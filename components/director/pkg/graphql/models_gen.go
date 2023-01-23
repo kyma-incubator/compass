@@ -1142,6 +1142,49 @@ func (e EventSpecType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type EventType string
+
+const (
+	EventTypeNewApplication     EventType = "NEW_APPLICATION"
+	EventTypeNewSingleTenant    EventType = "NEW_SINGLE_TENANT"
+	EventTypeNewMultipleTenants EventType = "NEW_MULTIPLE_TENANTS"
+)
+
+var AllEventType = []EventType{
+	EventTypeNewApplication,
+	EventTypeNewSingleTenant,
+	EventTypeNewMultipleTenants,
+}
+
+func (e EventType) IsValid() bool {
+	switch e {
+	case EventTypeNewApplication, EventTypeNewSingleTenant, EventTypeNewMultipleTenants:
+		return true
+	}
+	return false
+}
+
+func (e EventType) String() string {
+	return string(e)
+}
+
+func (e *EventType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EventType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EventType", str)
+	}
+	return nil
+}
+
+func (e EventType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type FetchMode string
 
 const (

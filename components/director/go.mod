@@ -51,6 +51,7 @@ require (
 
 require (
 	github.com/imdario/mergo v0.3.12
+	github.com/kyma-incubator/compass/tests v0.0.0-20230112161055-681ca6fbeb8f
 	golang.org/x/net v0.1.0
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/text v0.4.0
