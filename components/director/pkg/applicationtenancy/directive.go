@@ -75,7 +75,7 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 
 		tntModel, err := d.tenantService.GetTenantByID(ctx, tntIDFromContext)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant: %v", err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s: %v", tntIDFromContext, err)
 			return nil, errors.Wrapf(err, "while fetching tenant with id: %s", tntIDFromContext)
 		}
 
@@ -102,7 +102,7 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 
 		tntModel, err := d.tenantService.GetTenantByID(ctx, tenantID)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant: %v", err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s: %v", tenantID, err)
 			return nil, err
 		}
 
@@ -125,7 +125,7 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 		for _, tenantID := range tenantIDs {
 			t, err := d.tenantService.GetTenantByID(ctx, tenantID)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant: %v", err)
+				log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s: %v", tenantID, err)
 				return nil, err
 			}
 
@@ -185,7 +185,7 @@ func (d *directive) createTenantAccessForNewApplication(ctx context.Context, tnt
 	if tntFromContext.Type != tenantpkg.Customer {
 		parentExternalID, err := d.tenantService.GetCustomerIDParentRecursively(ctx, tntFromContext.ID)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant customer parent: %v", err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant %s customer parent: %v", tntFromContext.ID, err)
 			return errors.Wrapf(err, "while getting customer parent for tenant: %s", tntFromContext.ID)
 		}
 

@@ -260,7 +260,7 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 			return nil, errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
 		// the tenant already exists in our DB with a different ID, and we should update all child resources to use the correct internal ID
-		tenantIDs = append(tenantIDs, tenant.ID)
+		tenantIDs = append(tenantIDs, tenantID)
 		if tenantID != tenant.ID {
 			for i := tenantIdx; i < len(tenants); i++ {
 				if tenants[i].Parent == tenant.ID {
