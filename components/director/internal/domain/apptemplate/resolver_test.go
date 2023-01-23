@@ -2462,6 +2462,8 @@ func EmptyTenantMappingConfig() map[string]interface{} {
 
 func GetTenantMappingConfig(config string) map[string]interface{} {
 	var tenantMappingConfig map[string]interface{}
-	json.Unmarshal([]byte(config), &tenantMappingConfig)
+	if err := json.Unmarshal([]byte(config), &tenantMappingConfig); err != nil {
+		return nil
+	}
 	return tenantMappingConfig
 }
