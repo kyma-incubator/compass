@@ -97,26 +97,7 @@ type RootResolver struct {
 }
 
 // NewRootResolver missing godoc
-func NewRootResolver(
-	appNameNormalizer normalizer.Normalizator,
-	transact persistence.Transactioner,
-	cfgProvider *config.Provider,
-	oneTimeTokenCfg onetimetoken.Config,
-	oAuth20Cfg oauth20.Config,
-	pairingAdapters *pkgadapters.Adapters,
-	featuresConfig features.Config,
-	metricsCollector *metrics.Collector,
-	retryHTTPExecutor *retry.HTTPExecutor,
-	httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient, securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient *http.Client,
-	selfRegConfig config.SelfRegConfig,
-	tokenLength int,
-	hydraURL *url.URL,
-	accessStrategyExecutorProvider *accessstrategy.Provider,
-	subscriptionConfig subscription.Config,
-	tenantOnDemandAPIConfig tenant.FetchOnDemandAPIConfig,
-	ordWebhookMappings []application.ORDWebhookMapping,
-	tenantMappingConfig map[string]interface{},
-) (*RootResolver, error) {
+func NewRootResolver(appNameNormalizer normalizer.Normalizator, transact persistence.Transactioner, cfgProvider *config.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdapters *pkgadapters.Adapters, featuresConfig features.Config, metricsCollector *metrics.Collector, retryHTTPExecutor *retry.HTTPExecutor, httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient, securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient *http.Client, selfRegConfig config.SelfRegConfig, tokenLength int, hydraURL *url.URL, accessStrategyExecutorProvider *accessstrategy.Provider, subscriptionConfig subscription.Config, tenantOnDemandAPIConfig tenant.FetchOnDemandAPIConfig, ordWebhookMappings []application.ORDWebhookMapping, tenantMappingConfig map[string]interface{}, callbackURL string) (*RootResolver, error) {
 	timeService := time.NewService()
 
 	oAuth20HTTPClient := &http.Client{
@@ -181,7 +162,7 @@ func NewRootResolver(
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, tenantMappingConfig)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
@@ -222,7 +203,7 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
 		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, appTemplateSvc, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
-		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc),
+		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, tenantMappingConfig, callbackURL),
 		api:                api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
@@ -609,7 +590,6 @@ func (r *mutationResolver) MergeApplications(ctx context.Context, destID, srcID 
 
 // CreateApplicationTemplate missing godoc
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
-	fmt.Println("IN RESOLVER")
 	return r.appTemplate.CreateApplicationTemplate(ctx, in)
 }
 

@@ -171,8 +171,9 @@ type config struct {
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
-	ORDWebhookMappings  string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
-	TenantMappingConfig string `envconfig:"APP_TENANT_MAPPING_CONFIG"`
+	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	TenantMappingConfig      string `envconfig:"APP_TENANT_MAPPING_CONFIG"`
+	TenantMappingCallbackURL string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
@@ -290,6 +291,7 @@ func main() {
 		cfg.TenantOnDemandConfig,
 		ordWebhookMapping,
 		tenantMappingConfig,
+		cfg.TenantMappingCallbackURL,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -305,7 +307,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), runtimeCtxSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), appTemplateSvc(tenantMappingConfig), applicationSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), runtimeCtxSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), appTemplateSvc(), applicationSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -749,7 +751,7 @@ func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPCl
 	return runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }
 
-func appTemplateSvc(tenantMappingConfig map[string]interface{}) claims.ApplicationTemplateService {
+func appTemplateSvc() claims.ApplicationTemplateService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	versionConverter := version.NewConverter()
@@ -773,7 +775,7 @@ func appTemplateSvc(tenantMappingConfig map[string]interface{}) claims.Applicati
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 
-	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, tenantMappingConfig)
+	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 }
 
 func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client, certCache certloader.Cache, ordWebhookMapping []application.ORDWebhookMapping) claims.ApplicationService {
