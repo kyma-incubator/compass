@@ -11,6 +11,7 @@ NC='\033[0m' # No Color
 set -e
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+SCHEMA_MIGRATOR_COMPONENT_PATH=${ROOT_PATH}/../schema-migrator
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
@@ -86,7 +87,8 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="11"
+# Using v12 because the DB Dump file headers are not compatible with Postgres v11.
+POSTGRES_VERSION="12"
 
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
@@ -134,6 +136,7 @@ else
                 -e POSTGRES_DB=${DB_NAME} \
                 -e POSTGRES_PORT=${DB_PORT} \
                 -p ${DB_PORT}:${DB_PORT} \
+                -v ${ROOT_PATH}/../schema-migrator/seeds:/tmp \
                 postgres:${POSTGRES_VERSION}
 
     if [[ $? -ne 0 ]] ; then
@@ -169,24 +172,48 @@ else
         cat ${ROOT_PATH}/../schema-migrator/seeds/director/*.sql | \
             docker exec -i ${POSTGRES_CONTAINER} psql -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
     else
-        if [[ ! -f ${ROOT_PATH}/../schema-migrator/seeds/dump.sql ]]; then
-            echo -e "${GREEN}Will pull DB dump from GCR bucket${NC}"
-            gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql ${ROOT_PATH}/../schema-migrator/seeds/dump.sql
+        echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
+
+        REMOTE_VERSIONS=($(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | sort -r))
+        LOCAL_VERSIONS=($(ls "$SCHEMA_MIGRATOR_COMPONENT_PATH"/migrations/director | grep -o -E '^[0-9]+' | sed -e 's/^0\+//' | sort -ru))
+
+        SCHEMA_VERSION=""
+        for r in "${REMOTE_VERSIONS[@]}"; do
+          for l in "${LOCAL_VERSIONS[@]}"; do
+              if [[ "$r" == "$l" ]]; then
+               SCHEMA_VERSION=$r
+               break 2;
+             fi
+          done
+        done
+
+        if [[ -z $SCHEMA_VERSION ]]; then
+          echo -e "${RED}\$SCHEMA_VERSION variable cannot be empty${NC}"
         fi
 
-        cat ${ROOT_PATH}/../schema-migrator/seeds/dump.sql | \
-            docker exec -i ${POSTGRES_CONTAINER} psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}"
+        echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $SCHEMA_VERSION...${NC}"
+        gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}"/toc.dat
+        STATUS=$?
 
-        REMOTE_MIGRATION_VERSION=$(docker exec -i ${POSTGRES_CONTAINER} psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
-        LOCAL_MIGRATION_VERSION=$(echo $(ls ${ROOT_PATH}/../schema-migrator/migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')
-
-        if [[ ${REMOTE_MIGRATION_VERSION} = ${LOCAL_MIGRATION_VERSION} ]]; then
-            echo -e "${GREEN}Both remote and local migrations are at the same version.${NC}"
+        if [[ $STATUS ]]; then
+          echo -e "${GREEN}DB dump with migration number: $SCHEMA_VERSION exists in the bucket. Will use it...${NC}"
         else
-            echo -e "${YELLOW}NOTE: Remote and local migrations are at different versions.${NC}"
-            echo -e "${YELLOW}REMOTE:${NC} $REMOTE_MIGRATION_VERSION"
-            echo -e "${YELLOW}LOCAL:${NC} $LOCAL_MIGRATION_VERSION"
+          echo -e "${RED}There is no DB dump with migration number: $SCHEMA_VERSION in the bucket.${NC}"
+          exit 1
         fi
+
+        if [[ ! -d ${ROOT_PATH}/../schema-migrator/seeds/dump-${SCHEMA_VERSION} ]]; then
+          echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
+          mkdir ${ROOT_PATH}/../schema-migrator/seeds/dump-${SCHEMA_VERSION}
+          gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}" "${ROOT_PATH}"/../schema-migrator/seeds
+        else
+          echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
+        fi
+        rm -rf "${ROOT_PATH}"/../schema-migrator/seeds/dump || true
+        cp -R "${ROOT_PATH}"/../schema-migrator/seeds/dump-"${SCHEMA_VERSION}" "${ROOT_PATH}"/../schema-migrator/seeds/dump
+
+        echo -e "${GREEN}Starting DB restore process...${NC}"
+        docker exec -i ${POSTGRES_CONTAINER} pg_restore --verbose --format=directory --jobs=8 --no-owner --no-privileges --username="${DB_USER}" --host="${DB_HOST}" --port="${DB_PORT}" --dbname="${DB_NAME}" tmp/dump
 
         CONNECTION_STRING="postgres://$DB_USER:$DB_PWD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
         migrate -path ${ROOT_PATH}/../schema-migrator/migrations/director -database "$CONNECTION_STRING" up

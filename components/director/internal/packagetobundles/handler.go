@@ -19,6 +19,7 @@ package packagetobundles
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -136,7 +137,7 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 					return
 				}
 
-				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID %q and type %q", consumerInfo.ConsumerID, consumerInfo.ConsumerType)
+				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID REDACTED_%x and type %q", sha256.Sum256([]byte(consumerInfo.ConsumerID)), consumerInfo.ConsumerType)
 
 				next.ServeHTTP(w, r)
 

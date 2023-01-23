@@ -154,6 +154,10 @@ spec:
               value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
             - name: APP_TEST_CONSUMER_SUBACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountIDTenantHierarchy }}
+            - name: APP_TEST_CONSUMER_SUBACCOUNT_ID_TENANT_HIERARCHY
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountIDTenantHierarchy }}
             - name: APP_TEST_CONSUMER_TENANT_ID
               value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
             - name: APP_EXTERNAL_SERVICES_MOCK_BASE_URL

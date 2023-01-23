@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -359,7 +360,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id %q from GraphQL input", in.TemplateName, consumerInfo.ConsumerID)
+	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id REDACTED_%x from GraphQL input", in.TemplateName, sha256.Sum256([]byte(consumerInfo.ConsumerID)))
 	appTemplate, err := r.retrieveAppTemplate(ctx, in.TemplateName, consumerInfo.ConsumerID)
 	if err != nil {
 		return nil, err

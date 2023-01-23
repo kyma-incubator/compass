@@ -115,15 +115,15 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2791"
+      version: "PR-2830"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2791"
+      version: "PR-2830"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2812"
+      version: "PR-2830"
       name: compass-pairing-adapter
     director:
       dir:
@@ -131,15 +131,15 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2791"
+      version: "PR-2830"
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2791"
+      version: "PR-2830"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2791"
+      version: "PR-2830"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -147,11 +147,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2798"
+      version: "PR-2830"
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2791"
+      version: "PR-2830"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -160,7 +160,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2807"
+      version: "PR-2825"
       name: compass-external-services-mock
     console:
       dir:
@@ -1017,7 +1017,7 @@ global:
       skipPattern: ""
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
-      skipPattern: ""
+      skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs)"
     externalServicesMock:
       skipPattern: ""
       formationAsyncApi:
@@ -1036,6 +1036,8 @@ global:
         consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
         consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
         providerSubaccountIDRegion2: "731b7bc4-5472-41d2-a447-e4c0f45de739" # TestProviderSubaccountRegion2 from our testing tenants
+        consumerAccountIDTenantHierarchy: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
+        consumerSubaccountIDTenantHierarchy: "3cfcdd62-320d-403b-b66a-4ee3cdd06947" # TestIntegrationSystemManagedSubaccount from our testing tenants; more info in 'TestFormationNotificationsTenantHierarchy'
       oauthSecret:
         manage: false
         name: compass-subscription-secret

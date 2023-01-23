@@ -214,7 +214,16 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID,
 				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
 			}
 
-			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the target of the formation assignment with ID: %q and type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
+			log.C(ctx).Infof("The caller with ID: %q and type: %q manages the target of the formation assignment with ID: %q and type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
+			return true, http.StatusOK, nil
+		}
+
+		if app.ApplicationTemplateID != nil && *app.ApplicationTemplateID == consumerID {
+			if err := tx.Commit(); err != nil {
+				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+			}
+
+			log.C(ctx).Infof("The caller with ID: %q and type: %q is the parent of the target of the formation assignment with ID: %q and type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
 			return true, http.StatusOK, nil
 		}
 
