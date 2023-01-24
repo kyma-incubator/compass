@@ -115,6 +115,8 @@ func NewRootResolver(
 	subscriptionConfig subscription.Config,
 	tenantOnDemandAPIConfig tenant.FetchOnDemandAPIConfig,
 	ordWebhookMappings []application.ORDWebhookMapping,
+	tenantMappingConfig map[string]interface{},
+	callbackURL string,
 ) (*RootResolver, error) {
 	timeService := time.NewService()
 
@@ -221,7 +223,7 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
 		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, appTemplateSvc, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
-		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc),
+		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc, tenantMappingConfig, callbackURL),
 		api:                api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),

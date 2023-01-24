@@ -172,7 +172,9 @@ type config struct {
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
-	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
+	TenantMappingConfigPath  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
+	TenantMappingCallbackURL string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
@@ -196,6 +198,9 @@ func main() {
 
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	exitOnError(err, "Error while loading ORD Webhook Mappings")
+
+	tenantMappingConfig, err := apptemplate.UnmarshalTenantMappingConfig(cfg.TenantMappingConfigPath)
+	exitOnError(err, "Error while loading Tenant mapping config")
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
@@ -284,6 +289,8 @@ func main() {
 		cfg.SubscriptionConfig,
 		cfg.TenantOnDemandConfig,
 		ordWebhookMapping,
+		tenantMappingConfig,
+		cfg.TenantMappingCallbackURL,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 

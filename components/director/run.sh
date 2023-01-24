@@ -271,6 +271,8 @@ export APP_SELF_REGISTER_OAUTH_X509_KEY="LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0
 export APP_ORD_WEBHOOK_MAPPINGS='[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }]'
 export APP_FORMATION_MAPPING_API_PATH_PREFIX='/v1/businessIntegrations'
 export APP_FORMATION_MAPPING_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status'
+export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
+export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
 
 # Tenant Fetcher properties
 export APP_SUBSCRIPTION_CALLBACK_SCOPE=Callback
@@ -332,6 +334,24 @@ cat <<EOF > /tmp/dependencies.json
     {
         "eu-1": "{\n \"xsappname\": \"xsappname1\", \"clientid\": \"clientid-1\", \"certificate\": \"client-cert-1\", \"key\": \"client-cert-key-1\", \"url\": \"http://token-url\", \"uri\": \"http://destination-service\"\n}",
         "eu-2": "{\n \"xsappname\": \"xsappname2\", \"clientid\": \"clientid-2\", \"certificate\": \"client-cert-2\", \"key\": \"client-cert-key-2\", \"url\": \"http://token-url\", \"uri\": \"http://destination-service\"\n}"
+    }
+EOF
+
+# This file contains tenant mapping configuration
+cat <<EOF > /tmp/tenant-mapping-config.json
+    {
+    	"SYNC": {
+    		"v1.0" : [
+    			{
+            "type": "CONFIGURATION_CHANGED",
+            "mode": "SYNC",
+            "urlTemplate": "{\"path\":\"%s/v1/tenant-mappings/{{.RuntimeContext.Value}}\",\"method\":\"PATCH\"}",
+            "inputTemplate": "{\"context\":{ {{ if .CustomerTenantContext.AccountID }}\"btp\": {\"uclFormationId\":\"{{.FormationID}}\",\"globalAccountId\":\"{{.CustomerTenantContext.AccountID}}\",\"crmId\":\"{{.CustomerTenantContext.CustomerID}}\" } {{ else }}\"atom\": {\"uclFormationId\":\"{{.FormationID}}\",\"path\":\"{{.CustomerTenantContext.Path}}\",\"crmId\":\"{{.CustomerTenantContext.CustomerID}}\" } {{ end }} },\"items\": [ {\"uclAssignmentId\":\"{{ .Assignment.ID }}\",\"operation\":\"{{.Operation}}\",\"deploymentRegion\":\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\",\"applicationNamespace\":\"{{ if .Application.ApplicationNamespace }}{{.Application.ApplicationNamespace}}{{ else }}{{.ApplicationTemplate.ApplicationNamespace}}{{ end }}\",\"applicationTenantId\":\"{{.Application.LocalTenantID}}\",\"uclSystemTenantId\":\"{{.Application.ID}}\", {{ if .ApplicationTemplate.Labels.parameters }}\"parameters\": {{.ApplicationTemplate.Labels.parameters}}, {{ end }}\"configuration\": {{.ReverseAssignment.Value}} } ] }",
+            "headerTemplate": "{\"Content-Type\": [\"application/json\"]}",
+            "outputTemplate": "{\"error\":\"{{.Body.error}}\",\"success_status_code\": 200}"
+          }
+    		]
+    	}
     }
 EOF
 

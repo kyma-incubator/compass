@@ -5230,6 +5230,7 @@ input WebhookInput {
 	url: String
 	auth: AuthInput
 	mode: WebhookMode
+	version: String
 	correlationIdKey: String
 	retryInterval: Int
 	timeout: Int
@@ -29202,6 +29203,12 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 		case "mode":
 			var err error
 			it.Mode, err = ec.unmarshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
