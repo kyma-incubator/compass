@@ -59,25 +59,29 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 
 	tx, err := d.transact.Begin()
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening database transaction: %s", err.Error())
+		log.C(ctx).WithError(err).Errorf("An error occurred while opening database transaction")
 		return nil, apperrors.NewInternalError("Unable to initialize database transaction: %s", err.Error())
 	}
 	defer d.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	log.C(ctx).Debugf("Preparing tenant access creation for event: %s", eventType)
+
 	if eventType == graphql.EventTypeNewApplication {
 		tntIDFromContext, err := tenant.LoadFromContext(ctx)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while loading tenant from context: %v", err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while loading tenant from context")
 			return nil, err
 		}
 
 		tntModel, err := d.tenantService.GetTenantByID(ctx, tntIDFromContext)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s: %v", tntIDFromContext, err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s", tntIDFromContext)
 			return nil, errors.Wrapf(err, "while fetching tenant with id: %s", tntIDFromContext)
 		}
+
+		log.C(ctx).Debugf("Found a matching tenant in the database: %s", tntModel.ID)
 
 		if !(tntModel.Type == tenantpkg.ResourceGroup || tntModel.Type == tenantpkg.Folder || tntModel.Type == tenantpkg.Organization) {
 			log.C(ctx).Infof("Tenant type is %s. Will not continue with tanancy synchronization", tntModel.Type)
@@ -86,7 +90,7 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 
 		entity, ok := resp.(graphql.Entity)
 		if !ok {
-			log.C(ctx).WithError(err).Errorf("An error occurred while casting the response entity: %v", resp)
+			log.C(ctx).WithError(err).Errorf("An error occurred while casting the graphql response entity")
 			return nil, apperrors.NewInvalidDataError("An error occurred while casting the response entity: %v", resp)
 		}
 
@@ -96,17 +100,16 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 	} else if eventType == graphql.EventTypeNewSingleTenant {
 		tenantID, ok := resp.(string)
 		if !ok {
-			log.C(ctx).WithError(err).Errorf("An error occurred while casting the response entity: %v", err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while casting the graphql response entity")
 			return nil, apperrors.NewInvalidDataError("An error occurred while casting the response entity: %v", resp)
 		}
 
-		tntModel, err := d.tenantService.GetTenantByID(ctx, tenantID)
+		tntModel, err := d.getTenantAndValidateTenantAccessEligibility(ctx, tenantID)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s: %v", tenantID, err)
 			return nil, err
 		}
 
-		if tntModel.Type != tenantpkg.Account || tntModel.Parent == "" {
+		if tntModel == nil {
 			return resp, nil
 		}
 
@@ -123,17 +126,16 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 		filteredTenants := make([]*model.BusinessTenantMapping, 0)
 
 		for _, tenantID := range tenantIDs {
-			t, err := d.tenantService.GetTenantByID(ctx, tenantID)
+			tntModel, err := d.getTenantAndValidateTenantAccessEligibility(ctx, tenantID)
 			if err != nil {
-				log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s: %v", tenantID, err)
 				return nil, err
 			}
 
-			if t.Type != tenantpkg.Account || t.Parent == "" {
+			if tntModel == nil {
 				continue
 			}
 
-			filteredTenants = append(filteredTenants, t)
+			filteredTenants = append(filteredTenants, tntModel)
 		}
 
 		for _, t := range filteredTenants {
@@ -185,32 +187,48 @@ func (d *directive) createTenantAccessForNewApplication(ctx context.Context, tnt
 	if tntFromContext.Type != tenantpkg.Customer {
 		parentExternalID, err := d.tenantService.GetCustomerIDParentRecursively(ctx, tntFromContext.ID)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant %s customer parent: %v", tntFromContext.ID, err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant %s customer parent", tntFromContext.ID)
 			return errors.Wrapf(err, "while getting customer parent for tenant: %s", tntFromContext.ID)
 		}
 
 		parent, err := d.tenantService.GetTenantByExternalID(ctx, parentExternalID)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting parent: %v", err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting parent model by external ID %s", parentExternalID)
 			return errors.Wrapf(err, "while getting parent: %s", tntFromContext.ID)
 		}
 
 		parentTntID = parent.ID
 	}
 
-	log.C(ctx).Infof("Found parent: %s for tenant with ID %s", parentTntID, tntFromContext.ID)
+	log.C(ctx).Debugf("Found parent: %s for tenant with ID %s", parentTntID, tntFromContext.ID)
+
 	tenants, err := d.tenantService.ListByParentAndType(ctx, parentTntID, tenantpkg.Account)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while listing tenants by parent: %v", err)
+		log.C(ctx).WithError(err).Errorf("An error occurred while listing tenants by parent ID %s", parentTntID)
 		return errors.Wrapf(err, "while listing tenants by parent %s and type %s", parentTntID, tenantpkg.Account)
 	}
 
 	for _, tenant := range tenants {
 		if err := d.tenantService.CreateTenantAccessForResource(ctx, tenant.ID, appID, false, resource.Application); err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while creating tenant access: %v", err)
+			log.C(ctx).WithError(err).Errorf("An error occurred while creating tenant access for tenant %s and application %s", tenant.ID, appID)
 			return errors.Wrap(err, "while creating tenant access")
 		}
 	}
 
 	return nil
+}
+
+func (d *directive) getTenantAndValidateTenantAccessEligibility(ctx context.Context, tenantID string) (*model.BusinessTenantMapping, error) {
+	tntModel, err := d.tenantService.GetTenantByID(ctx, tenantID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s", tenantID)
+		return nil, err
+	}
+
+	if tntModel.Type != tenantpkg.Account || tntModel.Parent == "" {
+		log.C(ctx).Debugf("Tenant with ID %s is not Account type or does not have a parent. Skipping tenant access creation.", tntModel.ID)
+		return nil, nil
+	}
+
+	return tntModel, nil
 }
