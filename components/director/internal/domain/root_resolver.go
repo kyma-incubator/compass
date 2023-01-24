@@ -97,7 +97,27 @@ type RootResolver struct {
 }
 
 // NewRootResolver missing godoc
-func NewRootResolver(appNameNormalizer normalizer.Normalizator, transact persistence.Transactioner, cfgProvider *config.Provider, oneTimeTokenCfg onetimetoken.Config, oAuth20Cfg oauth20.Config, pairingAdapters *pkgadapters.Adapters, featuresConfig features.Config, metricsCollector *metrics.Collector, retryHTTPExecutor *retry.HTTPExecutor, httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient, securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient *http.Client, selfRegConfig config.SelfRegConfig, tokenLength int, hydraURL *url.URL, accessStrategyExecutorProvider *accessstrategy.Provider, subscriptionConfig subscription.Config, tenantOnDemandAPIConfig tenant.FetchOnDemandAPIConfig, ordWebhookMappings []application.ORDWebhookMapping, tenantMappingConfig map[string]interface{}, callbackURL string) (*RootResolver, error) {
+func NewRootResolver(
+	appNameNormalizer normalizer.Normalizator,
+	transact persistence.Transactioner,
+	cfgProvider *config.Provider,
+	oneTimeTokenCfg onetimetoken.Config,
+	oAuth20Cfg oauth20.Config,
+	pairingAdapters *pkgadapters.Adapters,
+	featuresConfig features.Config,
+	metricsCollector *metrics.Collector,
+	retryHTTPExecutor *retry.HTTPExecutor,
+	httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient, securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient *http.Client,
+	selfRegConfig config.SelfRegConfig,
+	tokenLength int,
+	hydraURL *url.URL,
+	accessStrategyExecutorProvider *accessstrategy.Provider,
+	subscriptionConfig subscription.Config,
+	tenantOnDemandAPIConfig tenant.FetchOnDemandAPIConfig,
+	ordWebhookMappings []application.ORDWebhookMapping,
+	tenantMappingConfig map[string]interface{},
+	callbackURL string,
+) (*RootResolver, error) {
 	timeService := time.NewService()
 
 	oAuth20HTTPClient := &http.Client{

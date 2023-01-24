@@ -587,7 +587,11 @@ func (r *Resolver) enrichWebhooksWithTenantMappingWebhooks(in graphql.Applicatio
 				return nil, err
 			}
 			for _, tenantMappingWebhook := range tenantMappingWebhooks {
-				urlTemplate := fmt.Sprintf(*tenantMappingWebhook.URLTemplate, *w.URL)
+				urlTemplate := *tenantMappingWebhook.URLTemplate
+				if strings.Contains(urlTemplate, "%s") {
+					urlTemplate = fmt.Sprintf(*tenantMappingWebhook.URLTemplate, *w.URL)
+				}
+
 				headerTemplate := *tenantMappingWebhook.HeaderTemplate
 				if *w.Mode == graphql.WebhookModeAsyncCallback && strings.Contains(headerTemplate, "%s") {
 					headerTemplate = fmt.Sprintf(*tenantMappingWebhook.HeaderTemplate, r.tenantMappingCallbackURL)
