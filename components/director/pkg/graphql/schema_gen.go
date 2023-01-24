@@ -5219,6 +5219,7 @@ input WebhookInput {
 	url: String
 	auth: AuthInput
 	mode: WebhookMode
+	version: String
 	correlationIdKey: String
 	retryInterval: Int
 	timeout: Int
@@ -5879,6 +5880,10 @@ type Query {
 	- [query formation](examples/query-formation/query-formation.graphql)
 	"""
 	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
+	"""
+	**Examples**
+	- [query formation by name](examples/query-formation-by-name/query-formation-by-name.graphql)
+	"""
 	formationByName(name: String!): Formation @hasScopes(path: "graphql.query.formationByName")
 	"""
 	**Examples**
@@ -29136,6 +29141,12 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 		case "mode":
 			var err error
 			it.Mode, err = ec.unmarshalOWebhookMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookMode(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
