@@ -614,7 +614,6 @@ func (r *Resolver) enrichWebhooksWithTenantMappingWebhooks(in graphql.Applicatio
 			}
 			webhooks = append(webhooks, wh)
 		}
-
 	}
 	return webhooks, nil
 }
