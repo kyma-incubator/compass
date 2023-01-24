@@ -586,6 +586,9 @@ func (r *Resolver) enrichWebhooksWithTenantMappingWebhooks(in graphql.Applicatio
 			continue
 		}
 
+		if w.URL == nil || w.Mode == nil {
+			return nil, errors.Errorf("url and mode are required fields when version is provided")
+		}
 		tenantMappingWebhooks, err := r.getTenantMappingWebhooks(w.Mode.String(), *w.Version)
 		if err != nil {
 			return nil, err
