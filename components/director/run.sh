@@ -337,6 +337,24 @@ cat <<EOF > /tmp/dependencies.json
     }
 EOF
 
+# This file contains tenant mapping configuration
+cat <<EOF > /tmp/tenantMappingsConfig/tenant-mapping-config.json
+    {
+    	"SYNC": {
+    		"v1.0" : [
+    			{
+            "type": "CONFIGURATION_CHANGED",
+            "mode": "SYNC",
+            "urlTemplate": "{\"path\":\"%s/v1/tenant-mappings/{{.RuntimeContext.Value}}\",\"method\":\"PATCH\"}",
+            "inputTemplate": "{\"context\":{ {{ if .CustomerTenantContext.AccountID }}\"btp\": {\"uclFormationId\":\"{{.FormationID}}\",\"globalAccountId\":\"{{.CustomerTenantContext.AccountID}}\",\"crmId\":\"{{.CustomerTenantContext.CustomerID}}\" } {{ else }}\"atom\": {\"uclFormationId\":\"{{.FormationID}}\",\"path\":\"{{.CustomerTenantContext.Path}}\",\"crmId\":\"{{.CustomerTenantContext.CustomerID}}\" } {{ end }} },\"items\": [ {\"uclAssignmentId\":\"{{ .Assignment.ID }}\",\"operation\":\"{{.Operation}}\",\"deploymentRegion\":\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\",\"applicationNamespace\":\"{{ if .Application.ApplicationNamespace }}{{.Application.ApplicationNamespace}}{{ else }}{{.ApplicationTemplate.ApplicationNamespace}}{{ end }}\",\"applicationTenantId\":\"{{.Application.LocalTenantID}}\",\"uclSystemTenantId\":\"{{.Application.ID}}\", {{ if .ApplicationTemplate.Labels.parameters }}\"parameters\": {{.ApplicationTemplate.Labels.parameters}}, {{ end }}\"configuration\": {{.ReverseAssignment.Value}} } ] }",
+            "headerTemplate": "{\"Content-Type\": [\"application/json\"]}",
+            "outputTemplate": "{\"error\":\"{{.Body.error}}\",\"success_status_code\": 200}"
+          }
+    		]
+    	}
+    }
+EOF
+
 kubectl create secret generic "$CLIENT_CERT_SECRET_NAME" --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
 kubectl create secret generic "$EXT_SVC_CERT_SECRET_NAME" --from-literal="$APP_EXT_SVC_CLIENT_CERT_KEY"="$APP_EXT_SVC_CLIENT_CERT_VALUE" --from-literal="$APP_EXT_SVC_CLIENT_KEY_KEY"="$APP_EXT_SVC_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
 
