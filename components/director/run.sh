@@ -271,7 +271,7 @@ export APP_SELF_REGISTER_OAUTH_X509_KEY="LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0
 export APP_ORD_WEBHOOK_MAPPINGS='[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }]'
 export APP_FORMATION_MAPPING_API_PATH_PREFIX='/v1/businessIntegrations'
 export APP_FORMATION_MAPPING_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status'
-export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenantMappingsConfig/tenant-mapping-config.json"
+export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
 export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
 
 # Tenant Fetcher properties
@@ -338,7 +338,7 @@ cat <<EOF > /tmp/dependencies.json
 EOF
 
 # This file contains tenant mapping configuration
-cat <<EOF > /tmp/tenantMappingsConfig/tenant-mapping-config.json
+cat <<EOF > /tmp/tenant-mapping-config.json
     {
     	"SYNC": {
     		"v1.0" : [
