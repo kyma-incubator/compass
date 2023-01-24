@@ -581,35 +581,37 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.ApplicationTemplat
 func (r *Resolver) enrichWebhooksWithTenantMappingWebhooks(in graphql.ApplicationTemplateInput) ([]*graphql.WebhookInput, error) {
 	webhooks := make([]*graphql.WebhookInput, 0)
 	for _, w := range in.Webhooks {
-		if w.Version != nil {
-			tenantMappingWebhooks, err := r.getTenantMappingWebhooks(w.Mode.String(), *w.Version)
-			if err != nil {
-				return nil, err
-			}
-			for _, tenantMappingWebhook := range tenantMappingWebhooks {
-				urlTemplate := *tenantMappingWebhook.URLTemplate
-				if strings.Contains(urlTemplate, "%s") {
-					urlTemplate = fmt.Sprintf(*tenantMappingWebhook.URLTemplate, *w.URL)
-				}
-
-				headerTemplate := *tenantMappingWebhook.HeaderTemplate
-				if *w.Mode == graphql.WebhookModeAsyncCallback && strings.Contains(headerTemplate, "%s") {
-					headerTemplate = fmt.Sprintf(*tenantMappingWebhook.HeaderTemplate, r.tenantMappingCallbackURL)
-				}
-				wh := &graphql.WebhookInput{
-					Type:           tenantMappingWebhook.Type,
-					Auth:           w.Auth,
-					Mode:           w.Mode,
-					URLTemplate:    &urlTemplate,
-					InputTemplate:  tenantMappingWebhook.InputTemplate,
-					HeaderTemplate: &headerTemplate,
-					OutputTemplate: tenantMappingWebhook.OutputTemplate,
-				}
-				webhooks = append(webhooks, wh)
-			}
-		} else {
+		if w.Version == nil {
 			webhooks = append(webhooks, w)
+			continue
 		}
+
+		tenantMappingWebhooks, err := r.getTenantMappingWebhooks(w.Mode.String(), *w.Version)
+		if err != nil {
+			return nil, err
+		}
+		for _, tenantMappingWebhook := range tenantMappingWebhooks {
+			urlTemplate := *tenantMappingWebhook.URLTemplate
+			if strings.Contains(urlTemplate, "%s") {
+				urlTemplate = fmt.Sprintf(*tenantMappingWebhook.URLTemplate, *w.URL)
+			}
+
+			headerTemplate := *tenantMappingWebhook.HeaderTemplate
+			if *w.Mode == graphql.WebhookModeAsyncCallback && strings.Contains(headerTemplate, "%s") {
+				headerTemplate = fmt.Sprintf(*tenantMappingWebhook.HeaderTemplate, r.tenantMappingCallbackURL)
+			}
+			wh := &graphql.WebhookInput{
+				Type:           tenantMappingWebhook.Type,
+				Auth:           w.Auth,
+				Mode:           w.Mode,
+				URLTemplate:    &urlTemplate,
+				InputTemplate:  tenantMappingWebhook.InputTemplate,
+				HeaderTemplate: &headerTemplate,
+				OutputTemplate: tenantMappingWebhook.OutputTemplate,
+			}
+			webhooks = append(webhooks, wh)
+		}
+
 	}
 	return webhooks, nil
 }

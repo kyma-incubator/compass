@@ -171,7 +171,7 @@ type config struct {
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
 	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
-	TenantMappingConfig      string `envconfig:"APP_TENANT_MAPPING_CONFIG"`
+	TenantMappingConfigPath  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
 	TenantMappingCallbackURL string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
@@ -197,7 +197,7 @@ func main() {
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	exitOnError(err, "Error while loading ORD Webhook Mappings")
 
-	tenantMappingConfig, err := apptemplate.UnmarshalTenantMappingConfig(cfg.TenantMappingConfig)
+	tenantMappingConfig, err := apptemplate.UnmarshalTenantMappingConfig(cfg.TenantMappingConfigPath)
 	exitOnError(err, "Error while loading Tenant mapping config")
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)

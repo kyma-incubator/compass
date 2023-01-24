@@ -283,6 +283,8 @@ global:
     kymaRuntimeTypeLabelValue: "kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
     ordWebhookMappings: '[]'
+    tenantMappingsPath: "/tmp/tenantMappingsConfig"
+    tenantMappingsKey: "tenant-mapping-config.json"
     tenantMappings:
       SYNC:
         v1.0:

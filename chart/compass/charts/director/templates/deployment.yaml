@@ -259,11 +259,8 @@ spec:
               value: {{ .Values.global.director.formationAsyncApi.path }}
             - name: APP_TENANT_MAPPING_CALLBACK_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-            - name: APP_TENANT_MAPPING_CONFIG
-              valueFrom:
-                configMapKeyRef:
-                  name: compass-director-tenant-mapping-config
-                  key: tenant-mapping-config.json
+            - name: APP_TENANT_MAPPING_CONFIG_PATH
+              value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
@@ -284,6 +281,9 @@ spec:
               readOnly: true
             - name: self-reg-app-names-volume
               mountPath: {{ .Values.global.director.selfRegister.secrets.saasAppNameCfg.path }}
+              readOnly: true
+            - name: tenant-mapping-config
+              mountPath: {{ .Values.global.director.tenantMappingsPath}}
               readOnly: true
             - mountPath: /config
               name: director-config
@@ -311,3 +311,6 @@ spec:
         - name: director-config
           configMap:
             name: {{ template "fullname" . }}-config
+        - name: tenant-mapping-config
+          configMap:
+            name: {{ template "fullname" . }}-tenant-mapping-config
