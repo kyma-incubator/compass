@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 	"net/http"
 	"os"
 	"time"
@@ -89,7 +90,7 @@ type config struct {
 
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName      string `envconfig:"default=compass-system/revocations-config"`
-	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
+	CertSubjectMappingConfig certsubjectmapping.Config
 
 	ConsumerClaimsKeys cfg.ConsumerClaimsKeysConfig
 
@@ -188,7 +189,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Certificate Resolver endpoint on %s...", cfg.Handler.CertResolverEndpoint)
-	certResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg)
+	certResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg, internalGatewayClientProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Connector Token Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
@@ -253,7 +254,7 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.C
 		tokenVerifier)
 }
 
-func getCertificateResolverHandler(ctx context.Context, cfg config) (certresolver.ValidationHydrator, revocation.Loader, error) {
+func getCertificateResolverHandler(ctx context.Context, cfg config, internalDirectorClientProvider director.ClientProvider) (certresolver.ValidationHydrator, revocation.Loader, error) {
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, cfg.KubeConfig.PollInterval, cfg.KubeConfig.PollTimeout, cfg.KubeConfig.Timeout)
 	if err != nil {
 		return nil, nil, err
@@ -273,7 +274,9 @@ func getCertificateResolverHandler(ctx context.Context, cfg config) (certresolve
 		time.Second,
 	)
 
-	subjectProcessor, err := subject.NewProcessor(cfg.SubjectConsumerMappingConfig, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
+	certSubjectMappingCache, err := certsubjectmapping.StartCertSubjectMappingLoader(ctx, cfg.CertSubjectMappingConfig, internalDirectorClientProvider.Client())
+
+	subjectProcessor, err := subject.NewProcessor(certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
 	if err != nil {
 		return nil, nil, err
 	}

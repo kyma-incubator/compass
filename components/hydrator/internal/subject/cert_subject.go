@@ -2,25 +2,11 @@ package subject
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-	"github.com/pkg/errors"
-)
-
-const (
-	RuntimeType             = "Runtime"
-	IntegrationSystemType   = "Integration System"
-	ApplicationType         = "Application"
-	SuperAdminType          = "Super Admin"
-	BusinessIntegrationType = "Business Integration"
-	TechnicalClient         = "Technical Client"
-
-	GlobalAccessLevel = "global"
 )
 
 type CSRSubjectConfig struct {
@@ -38,71 +24,25 @@ type ExternalIssuerSubjectConfig struct {
 	OrganizationalUnitRegionPattern string `envconfig:"default=Region"`
 }
 
-type subjectConsumerTypeMapping struct {
-	Subject            string   `json:"subject"`
-	ConsumerType       string   `json:"consumer_type"`
-	InternalConsumerID string   `json:"internal_consumer_id"`
-	TenantAccessLevels []string `json:"tenant_access_levels"`
-}
-
-func (s *subjectConsumerTypeMapping) validate() error {
-	if len(s.Subject) < 1 {
-		return errors.New("subject is not provided")
-	}
-
-	supportedConsumerTypes := map[string]bool{
-		RuntimeType:             true,
-		IntegrationSystemType:   true,
-		ApplicationType:         true,
-		SuperAdminType:          true,
-		BusinessIntegrationType: true,
-		TechnicalClient:         true,
-	}
-
-	supportedAccessLevels := map[string]bool{
-		string(tenantEntity.Customer):      true,
-		string(tenantEntity.Account):       true,
-		string(tenantEntity.Subaccount):    true,
-		string(tenantEntity.Organization):  true,
-		string(tenantEntity.Folder):        true,
-		string(tenantEntity.ResourceGroup): true,
-		string(GlobalAccessLevel):          true,
-	}
-
-	if !supportedConsumerTypes[s.ConsumerType] {
-		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
-	}
-	for _, al := range s.TenantAccessLevels {
-		if !supportedAccessLevels[al] {
-			return fmt.Errorf("tenant access level %s is not valid", al)
-		}
-	}
-
-	return nil
-}
-
 type processor struct {
-	mappings        []subjectConsumerTypeMapping
-	ouPattern       string
-	ouRegionPattern string
+	certSubjectMappingCache certsubjectmapping.Cache
+	ouPattern               string
+	ouRegionPattern         string
 }
 
-// NewProcessor returns a new subject processor configured with the given subject-to-consumer mapping, and subject organization unit pattern.
+// NewProcessor returns a new subject processor configured with the given subject-to-consumer mapping cache, and subject organization unit pattern.
 // If the subject-to-consumer mapping is invalid, an error is returned.
-func NewProcessor(subjectConsumerTypeMappingConfig string, ouPattern string, ouRegionPattern string) (*processor, error) {
-	mappings, err := unmarshalMappings(subjectConsumerTypeMappingConfig)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while configuring subject processor")
-	}
+func NewProcessor(certSubjectMappingCache certsubjectmapping.Cache, ouPattern, ouRegionPattern string) (*processor, error) {
+	mappings := certSubjectMappingCache.Get()
 	for _, m := range mappings {
-		if err := m.validate(); err != nil {
+		if err := m.Validate(); err != nil {
 			return nil, err
 		}
 	}
 	return &processor{
-		mappings:        mappings,
-		ouPattern:       ouPattern,
-		ouRegionPattern: ouRegionPattern,
+		certSubjectMappingCache: certSubjectMappingCache,
+		ouPattern:               ouPattern,
+		ouRegionPattern:         ouRegionPattern,
 	}, nil
 }
 
@@ -128,7 +68,8 @@ func (p *processor) EmptyAuthSessionExtraFunc() func(context.Context, string) ma
 func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, string) map[string]interface{} {
 	return func(ctx context.Context, subject string) map[string]interface{} {
 		log.C(ctx).Infof("trying to extract auth session extra from subject %s", subject)
-		for _, m := range p.mappings {
+		mappings := p.certSubjectMappingCache.Get()
+		for _, m := range mappings {
 			log.C(ctx).Infof("trying to match subject pattern %s", m.Subject)
 			if subjectsMatch(subject, m.Subject) {
 				log.C(ctx).Infof("pattern matched subject!")
@@ -161,22 +102,14 @@ func ConnectorCertificateSubjectMatcher(CSRSubjectConsts CSRSubjectConfig) func(
 
 func (p *processor) authIDFromMappings() func(subject string) string {
 	return func(subject string) string {
-		for _, m := range p.mappings {
+		mappings := p.certSubjectMappingCache.Get()
+		for _, m := range mappings {
 			if subjectsMatch(subject, m.Subject) {
 				return m.InternalConsumerID
 			}
 		}
 		return ""
 	}
-}
-
-func unmarshalMappings(mappingsConfig string) ([]subjectConsumerTypeMapping, error) {
-	var mappings []subjectConsumerTypeMapping
-	if err := json.Unmarshal([]byte(mappingsConfig), &mappings); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling mappings")
-	}
-
-	return mappings, nil
 }
 
 func subjectsMatch(actualSubject, expectedSubject string) bool {

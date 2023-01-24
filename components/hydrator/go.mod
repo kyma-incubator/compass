@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230113212053-9511b220e4c8
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20230113212053-9511b220e4c8
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230117160600-37834cf6765d
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230123165646-88f35a63f407
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230113212053-9511b220e4c8 // indirect
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
@@ -26,6 +26,7 @@ require (
 )
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/kyma-incubator/compass/tests v0.0.0-20230113212053-9511b220e4c8
 	github.com/prometheus/client_golang v1.13.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
@@ -43,7 +44,6 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect

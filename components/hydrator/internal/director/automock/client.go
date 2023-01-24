@@ -170,6 +170,29 @@ func (_m *Client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID s
 	return r0
 }
 
+// ListCertificateSubjectMappings provides a mock function with given fields: ctx, after
+func (_m *Client) ListCertificateSubjectMappings(ctx context.Context, after string) (*graphql.CertificateSubjectMappingPage, error) {
+	ret := _m.Called(ctx, after)
+
+	var r0 *graphql.CertificateSubjectMappingPage
+	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.CertificateSubjectMappingPage); ok {
+		r0 = rf(ctx, after)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*graphql.CertificateSubjectMappingPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, after)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UpdateSystemAuth provides a mock function with given fields: ctx, sysAuth
 func (_m *Client) UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (director.UpdateAuthResult, error) {
 	ret := _m.Called(ctx, sysAuth)

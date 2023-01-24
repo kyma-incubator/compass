@@ -773,6 +773,21 @@ func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingIn
 		}`)
 }
 
+// CertificateSubjectMappingInputToGQL creates certificate subject mapping graphql input
+func (g *Graphqlizer) CertificateSubjectMappingInputToGQL(in graphql.CertificateSubjectMappingInput) (string, error) {
+	return g.genericToGQL(in, `{
+		subject: "{{.Subject}}"
+		consumerType: "{{.ConsumerType}}"
+        {{- if .InternalConsumerID }}
+		internalConsumerID: "{{.InternalConsumerID}}",
+		{{- end}}
+		tenantAccessLevels: [
+			{{- range $i, $e := .TenantAccessLevels}}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+	}`)
+}
+
 func (g *Graphqlizer) marshal(obj interface{}) string {
 	var out string
 

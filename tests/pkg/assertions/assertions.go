@@ -344,6 +344,13 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 	assert.Equal(t, in.RuntimeArtifactKind, actual.RuntimeArtifactKind)
 }
 
+func AssertCertificateSubjectMapping(t *testing.T, in *graphql.CertificateSubjectMappingInput, actual *graphql.CertificateSubjectMapping) {
+	require.Equal(t, in.Subject, actual.Subject)
+	require.Equal(t, in.ConsumerType, actual.ConsumerType)
+	require.Equal(t, in.InternalConsumerID, actual.InternalConsumerID)
+	require.Equal(t, in.TenantAccessLevels, actual.TenantAccessLevels)
+}
+
 func AssertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
 	for i := range in {
 		assert.Equal(t, in[i].Name, actualPlaceholders[i].Name)
