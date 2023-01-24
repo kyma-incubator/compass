@@ -16,7 +16,7 @@ func TestRepository_Get(t *testing.T) {
 		MethodName: "Get",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, operator_scope, input_template, constraint_scope FROM public.formation_constraints WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints WHERE id = $1`),
 				Args:     []driver.Value{testID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -46,7 +46,7 @@ func TestRepository_ListAll(t *testing.T) {
 		MethodName: "ListAll",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, operator_scope, input_template, constraint_scope FROM public.formation_constraints`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints`),
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
@@ -76,7 +76,7 @@ func TestRepository_ListByIDs(t *testing.T) {
 		MethodName: "ListByIDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, operator_scope, input_template, constraint_scope FROM public.formation_constraints WHERE id IN ($1)`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints WHERE id IN ($1)`),
 				IsSelect: true,
 				Args:     []driver.Value{testID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -107,7 +107,7 @@ func TestRepository_ListMatchingFormationConstraints(t *testing.T) {
 		MethodName: "ListMatchingFormationConstraints",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, operator_scope, input_template, constraint_scope FROM public.formation_constraints WHERE (target_operation = $1 AND constraint_type = $2 AND resource_type = $3 AND resource_subtype = $4 AND (constraint_scope = $5 OR id IN ($6)))`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints WHERE (target_operation = $1 AND constraint_type = $2 AND resource_type = $3 AND resource_subtype = $4 AND (constraint_scope = $5 OR id IN ($6)))`),
 				IsSelect: true,
 				Args:     []driver.Value{location.OperationName, location.ConstraintType, details.ResourceType, details.ResourceSubtype, "GLOBAL", testID},
 				ValidRowsProvider: func() []*sqlmock.Rows {

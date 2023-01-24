@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"github.com/davecgh/go-spew/spew"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -219,6 +220,7 @@ func (l *universalLister) list(ctx context.Context, resourceType resource.Type, 
 	}
 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
+	spew.Dump(query, "ARGS", args)
 	err = persist.SelectContext(ctx, dest, query, args...)
 
 	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", l.tableName)

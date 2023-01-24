@@ -212,8 +212,8 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 // ForFormationTemplateConstraintReference missing godoc
 func (fp *GqlFieldsProvider) ForFormationTemplateConstraintReference() string {
 	return `
-			constraintId
-			formationTemplateId
+			constraintID
+			formationTemplateID
 	`
 }
 

@@ -60,13 +60,13 @@ func (_m *Converter) ToGraphQL(i *model.Formation) *graphql.Formation {
 	return r0
 }
 
-type mockConstructorTestingTNewConverter interface {
+type NewConverterT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewConverter creates a new instance of Converter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConverter(t mockConstructorTestingTNewConverter) *Converter {
+func NewConverter(t NewConverterT) *Converter {
 	mock := &Converter{}
 	mock.Mock.Test(t)
 

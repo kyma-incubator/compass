@@ -74,7 +74,7 @@ func NewNotificationService(
 	webhookRepository webhookRepository,
 	webhookClient webhookClient,
 	webhookDataInputBuilder databuilder.DataInputBuilder,
-	notificationBuilder *NotificationBuilder,
+	notificationBuilder notificationBuilder,
 ) *notificationsService {
 	return &notificationsService{
 		applicationRepository:         applicationRepository,

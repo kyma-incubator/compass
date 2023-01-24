@@ -15,7 +15,7 @@ const tableName string = `public.formation_constraints`
 const idColumn string = "id"
 
 var (
-	tableColumns = []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "operator_scope", "input_template", "constraint_scope"}
+	tableColumns = []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope"}
 )
 
 // EntityConverter converts between the internal model and entity

@@ -132,5 +132,5 @@ func UnusedFormationTemplateConstraintReferenceRepository() *automock.FormationT
 }
 
 func fixColumns() []string {
-	return []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "operator_scope", "input_template", "constraint_scope"}
+	return []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope"}
 }

@@ -192,13 +192,13 @@ func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Co
 	return r0
 }
 
-type mockConstructorTestingTNewFormationAssignmentService interface {
+type NewFormationAssignmentServiceT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentService(t mockConstructorTestingTNewFormationAssignmentService) *FormationAssignmentService {
+func NewFormationAssignmentService(t NewFormationAssignmentServiceT) *FormationAssignmentService {
 	mock := &FormationAssignmentService{}
 	mock.Mock.Test(t)
 

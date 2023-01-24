@@ -46,7 +46,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:         repo.NewCreatorGlobal(resource.Formations, tableName, tableColumns),
 		getter:          repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		lister:          repo.NewLister(tableName, tableColumns),
+		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updater:         repo.NewUpdaterWithEmbeddedTenant(resource.Formations, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:         repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:    repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
