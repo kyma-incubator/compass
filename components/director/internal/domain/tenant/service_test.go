@@ -392,7 +392,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedError:    nil,
-			ExpectedResult:   []string{testTemporaryInternalParentID, testID},
+			ExpectedResult:   []string{testInternalParentID, testID},
 		},
 		{
 			Name:         "Success when parent tenant organization exists with another ID",
@@ -418,7 +418,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedError:    nil,
-			ExpectedResult:   []string{testTemporaryInternalParentID, testID},
+			ExpectedResult:   []string{testInternalParentID, testID},
 		},
 		{
 			Name:         "Success when subdomain should be added",
