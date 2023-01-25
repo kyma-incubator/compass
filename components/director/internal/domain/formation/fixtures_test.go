@@ -532,6 +532,10 @@ func unusedASARepo() *automock.AutomaticFormationAssignmentRepository {
 	return &automock.AutomaticFormationAssignmentRepository{}
 }
 
+func unusedASAEngine() *automock.AsaEngine {
+	return &automock.AsaEngine{}
+}
+
 func unusedRuntimeRepo() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
 }
@@ -606,6 +610,10 @@ func noActionNotificationsService() *automock.NotificationsService {
 
 func unusedFormationTemplateRepo() *automock.FormationTemplateRepository {
 	return &automock.FormationTemplateRepository{}
+}
+
+func unusedProcessFunc() *automock.ProcessFunc {
+	return &automock.ProcessFunc{}
 }
 
 func unusedConstraintEngine() *automock.ConstraintEngine {

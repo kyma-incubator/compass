@@ -215,6 +215,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
 		FormationAssignmentServiceFn  func() *automock.FormationAssignmentService
 		ConstraintEngineFn            func() *automock.ConstraintEngine
+		ASAEngineFn                   func() *automock.AsaEngine
 		ObjectID                      string
 		ObjectType                    graphql.FormationObjectType
 		InputFormation                model.Formation
@@ -695,15 +696,9 @@ func TestServiceAssignFormation(t *testing.T) {
 
 				return asaRepo
 			},
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenant, runtimeLblFilters).Return(make([]*model.Runtime, 0), nil).Once()
-				runtimeRepo.On("ListAllWithUnionSetCombination", ctx, TargetTenant, runtimeLblFilters).Return(make([]*model.Runtime, 0), nil).Once()
-				return runtimeRepo
-			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Twice()
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -715,6 +710,11 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preAssignLocation, assignTenantDetails, FormationTemplateID).Return(nil).Once()
 				engine.On("EnforceConstraints", ctx, postAssignLocation, assignTenantDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ASAEngineFn: func() *automock.AsaEngine {
+				engine := &automock.AsaEngine{}
+				engine.On("EnsureScenarioAssigned", ctx, asa, mock.Anything).Return(nil)
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -2334,8 +2334,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			if testCase.ConstraintEngineFn != nil {
 				constraintEngine = testCase.ConstraintEngineFn()
 			}
+			asaEngine := unusedASAEngine()
+			if testCase.ASAEngineFn != nil {
+				asaEngine = testCase.ASAEngineFn()
+			}
 
-			svc := formation.NewService(nil, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, constraintEngine, runtimeType, applicationType)
+			svc := formation.NewServiceWithAsaEngine(nil, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, constraintEngine, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, Tnt, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
@@ -2350,7 +2354,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				require.Nil(t, actual)
 			}
 
-			mock.AssertExpectationsForObjects(t, uidService, labelService, asaRepo, asaService, tenantSvc, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, webhookClient, notificationSvc, formationAssignmentSvc, constraintEngine)
+			mock.AssertExpectationsForObjects(t, uidService, labelService, asaRepo, asaService, tenantSvc, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, webhookClient, notificationSvc, formationAssignmentSvc, constraintEngine, asaEngine)
 		})
 	}
 }
