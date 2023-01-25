@@ -1150,7 +1150,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.DeleteRuntimeLabel(t, ctx, certSecuredGraphQLClient, runtime.ID, ScenariosLabel)
+		defer fixtures.DeleteRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel)
 
 		actualApp := graphql.Application{}
 

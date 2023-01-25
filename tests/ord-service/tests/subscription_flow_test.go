@@ -185,7 +185,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation with name %s...", consumerFormationName)
 		createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
 		executeGQLRequest(stdT, ctx, createFormationReq, consumerFormationName, secondaryTenant)
-		defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, consumerFormationName)
+		defer func() {
+			stdT.Logf("Deleting formation with name: %s...", consumerFormationName)
+			deleteRequest := fixtures.FixDeleteFormationRequest(consumerFormationName)
+			executeGQLRequest(stdT, ctx, deleteRequest, consumerFormationName, secondaryTenant)
+			stdT.Logf("Successfully deleted formation with name: %s...", consumerFormationName)
+		}()
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
 		stdT.Logf("Assign application to formation %s", consumerFormationName)
