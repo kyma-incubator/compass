@@ -170,6 +170,68 @@ func TestServiceGet(t *testing.T) {
 	}
 }
 
+func TestService_GetFormationByName(t *testing.T) {
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
+
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name               string
+		FormationRepoFn    func() *automock.FormationRepository
+		Input              string
+		ExpectedFormation  *model.Formation
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("GetByName", ctx, testFormationName, Tnt).Return(&modelFormation, nil).Once()
+				return repo
+			},
+			Input:              testFormationName,
+			ExpectedFormation:  &modelFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when can't get the formation",
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("GetByName", ctx, testFormationName, Tnt).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:              testFormationName,
+			ExpectedFormation:  nil,
+			ExpectedErrMessage: "An error occurred while getting formation by name",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			formationRepo := testCase.FormationRepoFn()
+
+			svc := formation.NewService(nil, nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+
+			// WHEN
+			actual, err := svc.GetFormationByName(ctx, testCase.Input, Tnt)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormation, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
+			}
+
+			formationRepo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestServiceCreateFormation(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)

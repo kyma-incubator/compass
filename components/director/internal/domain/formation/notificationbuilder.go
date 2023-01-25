@@ -38,7 +38,7 @@ func (nb *NotificationBuilder) BuildNotificationRequest(
 		OperationName:  model.GenerateNotificationOperation,
 		ConstraintType: model.PreOperation,
 	}, joinPointDetails, formationTemplateID); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateNotificationOperation, model.PreOperation)
 	}
 
 	inputBuilder, err := getInputBuilder(webhook.Type)
@@ -55,7 +55,7 @@ func (nb *NotificationBuilder) BuildNotificationRequest(
 		OperationName:  model.GenerateNotificationOperation,
 		ConstraintType: model.PostOperation,
 	}, joinPointDetails, formationTemplateID); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateNotificationOperation, model.PostOperation)
 	}
 
 	return req, nil

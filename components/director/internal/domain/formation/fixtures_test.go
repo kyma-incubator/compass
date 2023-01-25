@@ -3,30 +3,26 @@ package formation_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-	"time"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
+	"time"
 
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/mock"
 )
 
 var (
@@ -59,6 +55,45 @@ var (
 	emptyFormationAssignment = &webhook.FormationAssignment{Value: "\"\""}
 
 	notificationDetails = &formationconstraint.GenerateNotificationOperationDetails{}
+
+	generateConfigurationChangeNotificationDetails = &formationconstraint.GenerateNotificationOperationDetails{
+		Operation:   model.AssignFormation,
+		FormationID: fixUUID(),
+		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: fixApplicationTemplateModel(),
+			Labels:              fixApplicationTemplateLabelsMap(),
+		},
+		Application: &webhook.ApplicationWithLabels{
+			Application: fixApplicationModel(ApplicationID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+		Runtime: &webhook.RuntimeWithLabels{
+			Runtime: fixRuntimeModel(RuntimeID),
+			Labels:  fixRuntimeLabelsMap(),
+		},
+		Assignment:        emptyFormationAssignment,
+		ReverseAssignment: emptyFormationAssignment,
+	}
+
+	generateAppToAppNotificationDetails = &formationconstraint.GenerateNotificationOperationDetails{
+		Operation:                 model.AssignFormation,
+		FormationID:               fixUUID(),
+		SourceApplicationTemplate: nil,
+		SourceApplication: &webhook.ApplicationWithLabels{
+			Application: fixApplicationModelWithoutTemplate(Application2ID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+		TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: fixApplicationTemplateModel(),
+			Labels:              fixApplicationTemplateLabelsMap(),
+		},
+		TargetApplication: &webhook.ApplicationWithLabels{
+			Application: fixApplicationModel(ApplicationID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+		Assignment:        emptyFormationAssignment,
+		ReverseAssignment: emptyFormationAssignment,
+	}
 
 	runtimeCtxNotificationWithAppTemplate = &webhookclient.NotificationRequest{
 		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
@@ -352,6 +387,16 @@ var (
 			ReverseAssignment: emptyFormationAssignment,
 		},
 		CorrelationID: "",
+	}
+
+	preGenerateNotificationLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.GenerateNotificationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postGenerateNotificationLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.GenerateNotificationOperation,
+		ConstraintType: model.PostOperation,
 	}
 
 	preAssignLocation = formationconstraint.JoinPointLocation{
@@ -816,9 +861,9 @@ func fixApplicationWebhookGQLModel(webhookID, appID string) *graphql.Webhook {
 
 func fixApplicationTenantMappingWebhookGQLModel(webhookID, appID string) *graphql.Webhook {
 	return &graphql.Webhook{
-		ID:        webhookID,
-		RuntimeID: str.Ptr(appID),
-		Type:      graphql.WebhookTypeApplicationTenantMapping,
+		ID:            webhookID,
+		ApplicationID: str.Ptr(appID),
+		Type:          graphql.WebhookTypeApplicationTenantMapping,
 	}
 }
 
