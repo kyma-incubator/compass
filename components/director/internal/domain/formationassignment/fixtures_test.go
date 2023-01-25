@@ -3,6 +3,8 @@ package formationassignment_test
 import (
 	"encoding/json"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -18,6 +20,8 @@ const (
 	TestID               = "c861c3db-1265-4143-a05c-1ced1291d816"
 	TestFormationID      = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestTenantID         = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
+	TestTenantExternalID = "q9c2bd32-dd07-4141-9655-42bc33a4ae37"
+	TntParentID          = "2d11035a-72e4-4a78-9025-bbcb1f87760b"
 	TestSource           = "05e10560-2259-4adf-bb3e-6aee0518f573"
 	TestSourceType       = "application"
 	TestTarget           = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
@@ -147,7 +151,7 @@ func fixFormationAssignmentEntityWithFormationID(formationID string) *formationa
 	}
 }
 
-func fixAppTenantMappingWebhookInput(formationID string, sourceApp, targetApp *webhook.ApplicationWithLabels, sourceAppTemplate, targetAppTemplate *webhook.ApplicationTemplateWithLabels, assignment, reverseAssignment *webhook.FormationAssignment) *webhook.ApplicationTenantMappingInput {
+func fixAppTenantMappingWebhookInput(formationID string, sourceApp, targetApp *webhook.ApplicationWithLabels, sourceAppTemplate, targetAppTemplate *webhook.ApplicationTemplateWithLabels, customerTenantContext *webhook.CustomerTenantContext, assignment, reverseAssignment *webhook.FormationAssignment) *webhook.ApplicationTenantMappingInput {
 	return &webhook.ApplicationTenantMappingInput{
 		Operation:                 model.AssignFormation,
 		FormationID:               formationID,
@@ -155,21 +159,35 @@ func fixAppTenantMappingWebhookInput(formationID string, sourceApp, targetApp *w
 		SourceApplication:         sourceApp,
 		TargetApplicationTemplate: targetAppTemplate,
 		TargetApplication:         targetApp,
+		CustomerTenantContext:     customerTenantContext,
 		Assignment:                assignment,
 		ReverseAssignment:         reverseAssignment,
 	}
 }
 
-func fixFormationConfigurationChangeInput(formationID string, appTemplate *webhook.ApplicationTemplateWithLabels, app *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeCtx *webhook.RuntimeContextWithLabels, assignment, reverseAssignment *webhook.FormationAssignment) *webhook.FormationConfigurationChangeInput {
+func fixFormationConfigurationChangeInput(formationID string, appTemplate *webhook.ApplicationTemplateWithLabels, app *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeCtx *webhook.RuntimeContextWithLabels, customerTenantContext *webhook.CustomerTenantContext, assignment, reverseAssignment *webhook.FormationAssignment) *webhook.FormationConfigurationChangeInput {
 	return &webhook.FormationConfigurationChangeInput{
-		Operation:           model.AssignFormation,
-		FormationID:         formationID,
-		ApplicationTemplate: appTemplate,
-		Application:         app,
-		Runtime:             runtime,
-		RuntimeContext:      runtimeCtx,
-		Assignment:          assignment,
-		ReverseAssignment:   reverseAssignment,
+		Operation:             model.AssignFormation,
+		FormationID:           formationID,
+		ApplicationTemplate:   appTemplate,
+		Application:           app,
+		Runtime:               runtime,
+		RuntimeContext:        runtimeCtx,
+		CustomerTenantContext: customerTenantContext,
+		Assignment:            assignment,
+		ReverseAssignment:     reverseAssignment,
+	}
+}
+
+func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             TestTenantID,
+		Name:           "test-name",
+		ExternalTenant: TestTenantID,
+		Parent:         TntParentID,
+		Type:           t,
+		Provider:       "Compass",
+		Status:         tnt.Active,
 	}
 }
 
@@ -524,4 +542,8 @@ func unusedWebhookRepo() *automock.WebhookRepository {
 
 func unusedWebhookConverter() *automock.WebhookConverter {
 	return &automock.WebhookConverter{}
+}
+
+func unusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
 }

@@ -32,6 +32,13 @@ type RuntimeContextWithLabels struct {
 	Labels map[string]interface{}
 }
 
+// CustomerTenantContext represents the tenant hierarchy of the customer creating the formation. Both IDs are the external ones
+type CustomerTenantContext struct {
+	CustomerID string
+	AccountID  *string
+	Path       *string
+}
+
 // FormationAssignment represents the FormationAssignment model, but with the value stored as a string
 // Because otherwise the template later renders it as a stringified []byte rather than a string
 type FormationAssignment struct {
@@ -48,14 +55,15 @@ type FormationAssignment struct {
 
 // FormationConfigurationChangeInput struct contains the input for a formation notification
 type FormationConfigurationChangeInput struct {
-	Operation           model.FormationOperation
-	FormationID         string
-	ApplicationTemplate *ApplicationTemplateWithLabels
-	Application         *ApplicationWithLabels
-	Runtime             *RuntimeWithLabels
-	RuntimeContext      *RuntimeContextWithLabels
-	Assignment          *FormationAssignment
-	ReverseAssignment   *FormationAssignment
+	Operation             model.FormationOperation
+	FormationID           string
+	ApplicationTemplate   *ApplicationTemplateWithLabels
+	Application           *ApplicationWithLabels
+	Runtime               *RuntimeWithLabels
+	RuntimeContext        *RuntimeContextWithLabels
+	CustomerTenantContext *CustomerTenantContext
+	Assignment            *FormationAssignment
+	ReverseAssignment     *FormationAssignment
 }
 
 // ParseURLTemplate missing godoc
@@ -137,13 +145,14 @@ func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignm
 // Clone returns a copy of the FormationConfigurationChangeInput
 func (rd *FormationConfigurationChangeInput) Clone() FormationAssignmentTemplateInput {
 	return &FormationConfigurationChangeInput{
-		Operation:           rd.Operation,
-		FormationID:         rd.FormationID,
-		ApplicationTemplate: rd.ApplicationTemplate,
-		Application:         rd.Application,
-		Runtime:             rd.Runtime,
-		RuntimeContext:      rd.RuntimeContext,
-		Assignment:          rd.Assignment,
-		ReverseAssignment:   rd.ReverseAssignment,
+		Operation:             rd.Operation,
+		FormationID:           rd.FormationID,
+		ApplicationTemplate:   rd.ApplicationTemplate,
+		Application:           rd.Application,
+		Runtime:               rd.Runtime,
+		RuntimeContext:        rd.RuntimeContext,
+		CustomerTenantContext: rd.CustomerTenantContext,
+		Assignment:            rd.Assignment,
+		ReverseAssignment:     rd.ReverseAssignment,
 	}
 }

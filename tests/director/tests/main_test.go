@@ -37,6 +37,8 @@ type DirectorConfig struct {
 	TestProviderSubaccountID                        string
 	TestConsumerAccountID                           string
 	TestConsumerSubaccountID                        string
+	TestConsumerAccountIDTenantHierarchy            string
+	TestConsumerSubaccountIDTenantHierarchy         string
 	TestConsumerTenantID                            string
 	TestProviderSubaccountIDRegion2                 string
 	ExternalServicesMockBaseURL                     string

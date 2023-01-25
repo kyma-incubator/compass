@@ -778,6 +778,7 @@ type WebhookInput struct {
 	URL              *string      `json:"url"`
 	Auth             *AuthInput   `json:"auth"`
 	Mode             *WebhookMode `json:"mode"`
+	Version          *string      `json:"version"`
 	CorrelationIDKey *string      `json:"correlationIdKey"`
 	RetryInterval    *int         `json:"retryInterval"`
 	Timeout          *int         `json:"timeout"`
