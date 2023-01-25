@@ -425,6 +425,7 @@ func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.B
 	return r.multipleFromEntities(entityCollection), nil
 }
 
+// ListByParentAndType list tenants by parent ID and tenant.Type
 func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 

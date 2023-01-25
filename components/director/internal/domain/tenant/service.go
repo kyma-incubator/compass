@@ -174,10 +174,12 @@ func (s *service) Update(ctx context.Context, id string, tenantInput model.Busin
 	return nil
 }
 
+// GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant
 func (s *service) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
 	return s.tenantMappingRepo.GetCustomerIDParentRecursively(ctx, tenantID)
 }
 
+// CreateTenantAccessForResource creates a tenant access for a single resource.Type
 func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantID, resourceID string, isOwner bool, resourceType resource.Type) error {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
@@ -197,6 +199,7 @@ func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantID, r
 	return nil
 }
 
+// ListByParentAndType list tenants by parent ID and tenant.Type
 func (s *service) ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantType)
 }

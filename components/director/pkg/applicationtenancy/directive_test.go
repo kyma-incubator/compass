@@ -120,7 +120,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 		},
 		{
 			Name: "NEW_APPLICATION flow: Should not do anything when tenant type is not expected",
-			TxFn: txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit,
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(subaccountTenantModel, nil)
@@ -258,7 +258,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 		},
 		{
 			Name: "NEW_SINGLE_TENANT flow: Should not do anything when new tenant is not Account",
-			TxFn: txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit,
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(subaccountTenantModel, nil)
@@ -272,7 +272,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 		},
 		{
 			Name: "NEW_SINGLE_TENANT flow: Should not do anything when new tenant is Account but does not have a parent",
-			TxFn: txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit,
+			TxFn: txtest.NewTransactionContextGenerator(nil).ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(accountTenantWithoutParentModel, nil)

@@ -69,84 +69,20 @@ func (d *directive) SynchronizeApplicationTenancy(ctx context.Context, _ interfa
 	log.C(ctx).Debugf("Preparing tenant access creation for event: %s", eventType)
 
 	if eventType == graphql.EventTypeNewApplication {
-		tntIDFromContext, err := tenant.LoadFromContext(ctx)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while loading tenant from context")
-			return nil, err
-		}
-
-		tntModel, err := d.tenantService.GetTenantByID(ctx, tntIDFromContext)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s", tntIDFromContext)
-			return nil, errors.Wrapf(err, "while fetching tenant with id: %s", tntIDFromContext)
-		}
-
-		log.C(ctx).Debugf("Found a matching tenant in the database: %s", tntModel.ID)
-
-		if !(tntModel.Type == tenantpkg.ResourceGroup || tntModel.Type == tenantpkg.Folder || tntModel.Type == tenantpkg.Organization) {
-			log.C(ctx).Infof("Tenant type is %s. Will not continue with tanancy synchronization", tntModel.Type)
-			return resp, nil
-		}
-
-		entity, ok := resp.(graphql.Entity)
-		if !ok {
-			log.C(ctx).WithError(err).Errorf("An error occurred while casting the graphql response entity")
-			return nil, apperrors.NewInvalidDataError("An error occurred while casting the response entity: %v", resp)
-		}
-
-		if err := d.createTenantAccessForNewApplication(ctx, tntModel, entity.GetID()); err != nil {
+		if err := d.handleNewApplicationCreation(ctx, resp); err != nil {
 			return nil, err
 		}
 	} else if eventType == graphql.EventTypeNewSingleTenant {
-		tenantID, ok := resp.(string)
-		if !ok {
-			log.C(ctx).WithError(err).Errorf("An error occurred while casting the graphql response entity")
-			return nil, apperrors.NewInvalidDataError("An error occurred while casting the response entity: %v", resp)
-		}
-
-		tntModel, err := d.getTenantAndValidateTenantAccessEligibility(ctx, tenantID)
-		if err != nil {
-			return nil, err
-		}
-
-		if tntModel == nil {
-			return resp, nil
-		}
-
-		if err := d.createTenantAccessForOrgApplications(ctx, tntModel.Parent, tntModel.ID); err != nil {
+		if err := d.handleNewSingleTenantCreation(ctx, resp); err != nil {
 			return nil, err
 		}
 	} else if eventType == graphql.EventTypeNewMultipleTenants {
-		tenantIDs, ok := resp.([]string)
-		if !ok {
-			log.C(ctx).WithError(err).Errorf("An error occurred while casting the response entity: %v", err)
-			return nil, apperrors.NewInvalidDataError("An error occurred while casting the response entity: %v", resp)
-		}
-
-		filteredTenants := make([]*model.BusinessTenantMapping, 0)
-
-		for _, tenantID := range tenantIDs {
-			tntModel, err := d.getTenantAndValidateTenantAccessEligibility(ctx, tenantID)
-			if err != nil {
-				return nil, err
-			}
-
-			if tntModel == nil {
-				continue
-			}
-
-			filteredTenants = append(filteredTenants, tntModel)
-		}
-
-		for _, t := range filteredTenants {
-			if err := d.createTenantAccessForOrgApplications(ctx, t.Parent, t.ID); err != nil {
-				return nil, err
-			}
+		if err := d.handleNewMultipleTenantCreation(ctx, resp); err != nil {
+			return nil, err
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while closing database transaction: %s", err.Error())
 		return nil, apperrors.NewInternalError("Unable to finalize request %v", err)
 	}
@@ -231,4 +167,80 @@ func (d *directive) getTenantAndValidateTenantAccessEligibility(ctx context.Cont
 	}
 
 	return tntModel, nil
+}
+
+func (d *directive) processSingleTenant(ctx context.Context, tenantID string) error {
+	tntModel, err := d.getTenantAndValidateTenantAccessEligibility(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+
+	if tntModel == nil {
+		return nil
+	}
+
+	return d.createTenantAccessForOrgApplications(ctx, tntModel.Parent, tntModel.ID)
+}
+
+func (d *directive) handleNewSingleTenantCreation(ctx context.Context, resp interface{}) error {
+	tenantID, ok := resp.(string)
+	if !ok {
+		log.C(ctx).Errorf("An error occurred while casting the graphql response entity to single tenant string")
+		return apperrors.NewInvalidDataError("An error occurred while casting the response entity: %v", resp)
+	}
+
+	return d.processSingleTenant(ctx, tenantID)
+}
+
+func (d *directive) handleNewMultipleTenantCreation(ctx context.Context, resp interface{}) error {
+	tenantIDs, ok := resp.([]string)
+	if !ok {
+		log.C(ctx).Errorf("An error occurred while casting the response entity to string array")
+		return apperrors.NewInvalidDataError("An error occurred while casting the response entity: %v", resp)
+	}
+
+	for _, tenantID := range tenantIDs {
+		if err := d.processSingleTenant(ctx, tenantID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *directive) handleNewApplicationCreation(ctx context.Context, resp interface{}) error {
+	tntIDFromContext, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while loading tenant from context")
+		return err
+	}
+
+	tntModel, err := d.tenantService.GetTenantByID(ctx, tntIDFromContext)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting tenant with ID %s", tntIDFromContext)
+		return errors.Wrapf(err, "while fetching tenant with id: %s", tntIDFromContext)
+	}
+
+	log.C(ctx).Debugf("Found a matching tenant in the database: %s", tntModel.ID)
+
+	if !isAtomTenant(tntModel.Type) {
+		log.C(ctx).Infof("Tenant type is %s. Will not continue with tanancy synchronization", tntModel.Type)
+		return nil
+	}
+
+	entity, ok := resp.(graphql.Entity)
+	if !ok {
+		log.C(ctx).Errorf("An error occurred while casting the graphql response entity")
+		return apperrors.NewInvalidDataError("An error occurred while casting the response entity: %v", resp)
+	}
+
+	return d.createTenantAccessForNewApplication(ctx, tntModel, entity.GetID())
+}
+
+func isAtomTenant(tenantType tenantpkg.Type) bool {
+	if tenantType == tenantpkg.ResourceGroup || tenantType == tenantpkg.Folder || tenantType == tenantpkg.Organization {
+		return true
+	}
+
+	return false
 }
