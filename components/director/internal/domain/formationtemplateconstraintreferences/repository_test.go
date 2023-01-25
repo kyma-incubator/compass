@@ -16,7 +16,7 @@ func TestRepository_ListMatchingFormationConstraints(t *testing.T) {
 		MethodName: "ListByFormationTemplateID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT formation_constraint_id, formation_template_id FROM public.formation_template_constraint_references WHERE formation_template = $1`),
+				Query:    regexp.QuoteMeta(`SELECT formation_constraint_id, formation_template_id FROM public.formation_template_constraint_references WHERE formation_template_id = $1`),
 				IsSelect: true,
 				Args:     []driver.Value{templateID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -28,7 +28,7 @@ func TestRepository_ListMatchingFormationConstraints(t *testing.T) {
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
-			conv := &automock.EntityConverter{}
+			conv := &automock.ConstraintReferenceConverter{}
 			return conv
 		},
 		RepoConstructorFunc:       formationtemplateconstraintreferences.NewRepository,
@@ -53,7 +53,7 @@ func TestRepository_Create(t *testing.T) {
 			},
 		},
 		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
+			return &automock.ConstraintReferenceConverter{}
 		},
 		RepoConstructorFunc:       formationtemplateconstraintreferences.NewRepository,
 		ModelEntity:               constraintReference,
@@ -71,7 +71,7 @@ func TestRepository_Delete(t *testing.T) {
 		Name: "Delete Formation Constraint by ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`DELETE FROM public.formation_template_constraint_references WHERE formation_template = $1 AND formation_constraint = $2`),
+				Query:         regexp.QuoteMeta(`DELETE FROM public.formation_template_constraint_references WHERE formation_template_id = $1 AND formation_constraint_id = $2`),
 				Args:          []driver.Value{templateID, constraintID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 2),
@@ -79,7 +79,7 @@ func TestRepository_Delete(t *testing.T) {
 		},
 		RepoConstructorFunc: formationtemplateconstraintreferences.NewRepository,
 		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
+			return &automock.ConstraintReferenceConverter{}
 		},
 		IsGlobal:   true,
 		MethodArgs: []interface{}{templateID, constraintID},

@@ -31,6 +31,17 @@ var (
 		InputTemplate:   inputTemplate,
 		ConstraintScope: model.FormationTypeFormationConstraintScope,
 	}
+	formationConstraintUnsupportedOperatorModel = &model.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        "unsupported",
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
 	gqlFormationConstraint = &graphql.FormationConstraint{
 		ID:              testID,
 		Name:            formationConstraintName,

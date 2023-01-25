@@ -26,14 +26,13 @@ func TestService_Create(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name                                   string
-		Context                                context.Context
-		Input                                  *model.FormationConstraintInput
-		FormationConstraintRepository          func() *automock.FormationConstraintRepository
-		FormationConstraintConverter           func() *automock.FormationConstraintConverter
-		FormationConstraintReferenceRepository func() *automock.FormationTemplateConstraintReferenceRepository
-		ExpectedOutput                         string
-		ExpectedError                          error
+		Name                          string
+		Context                       context.Context
+		Input                         *model.FormationConstraintInput
+		FormationConstraintRepository func() *automock.FormationConstraintRepository
+		FormationConstraintConverter  func() *automock.FormationConstraintConverter
+		ExpectedOutput                string
+		ExpectedError                 error
 	}{
 		{
 			Name:    "Success",
@@ -47,11 +46,6 @@ func TestService_Create(t *testing.T) {
 			FormationConstraintRepository: func() *automock.FormationConstraintRepository {
 				repo := &automock.FormationConstraintRepository{}
 				repo.On("Create", ctx, formationConstraintModel).Return(nil).Once()
-				return repo
-			},
-			FormationConstraintReferenceRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
-				repo := &automock.FormationTemplateConstraintReferenceRepository{}
-				repo.On("Create", ctx, formationConstraintReference).Return(nil)
 				return repo
 			},
 			ExpectedOutput: testID,
@@ -71,29 +65,6 @@ func TestService_Create(t *testing.T) {
 				repo.On("Create", ctx, formationConstraintModel).Return(testErr).Once()
 				return repo
 			},
-			FormationConstraintReferenceRepository: UnusedFormationTemplateConstraintReferenceRepository,
-			ExpectedOutput:                         "",
-			ExpectedError:                          testErr,
-		},
-		{
-			Name:    "Error when creating constraint reference",
-			Context: ctx,
-			Input:   formationConstraintModelInput,
-			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
-				converter := &automock.FormationConstraintConverter{}
-				converter.On("FromModelInputToModel", formationConstraintModelInput, testID).Return(formationConstraintModel).Once()
-				return converter
-			},
-			FormationConstraintRepository: func() *automock.FormationConstraintRepository {
-				repo := &automock.FormationConstraintRepository{}
-				repo.On("Create", ctx, formationConstraintModel).Return(nil).Once()
-				return repo
-			},
-			FormationConstraintReferenceRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
-				repo := &automock.FormationTemplateConstraintReferenceRepository{}
-				repo.On("Create", ctx, formationConstraintReference).Return(testErr)
-				return repo
-			},
 			ExpectedOutput: "",
 			ExpectedError:  testErr,
 		},
@@ -103,10 +74,9 @@ func TestService_Create(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			formationConstraintRepo := testCase.FormationConstraintRepository()
 			formationConstraintConv := testCase.FormationConstraintConverter()
-			formationConstraintReferenceRepo := testCase.FormationConstraintReferenceRepository()
 			idSvc := uidSvcFn()
 
-			svc := formationconstraint.NewService(formationConstraintRepo, formationConstraintReferenceRepo, idSvc, formationConstraintConv)
+			svc := formationconstraint.NewService(formationConstraintRepo, nil, idSvc, formationConstraintConv)
 
 			// WHEN
 			result, err := svc.Create(testCase.Context, testCase.Input)
@@ -120,7 +90,7 @@ func TestService_Create(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			mock.AssertExpectationsForObjects(t, formationConstraintRepo, idSvc, formationConstraintConv, formationConstraintReferenceRepo)
+			mock.AssertExpectationsForObjects(t, formationConstraintRepo, idSvc, formationConstraintConv)
 		})
 	}
 }

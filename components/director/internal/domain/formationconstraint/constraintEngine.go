@@ -101,7 +101,7 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 
 		operatorInput := operatorInputConstructor()
 		if err := formationconstraint.ParseInputTemplate(mc.InputTemplate, details, operatorInput); err != nil {
-			log.C(ctx).Errorf("An error occured while parsing input template for formation constraint %q: %s", mc.Name, err.Error())
+			log.C(ctx).Errorf("An error occurred while parsing input template for formation constraint %q: %s", mc.Name, err.Error())
 			errs = multierror.Append(errs, ConstraintError{
 				ConstraintName: mc.Name,
 				Reason:         fmt.Sprintf("Failed to parse operator input template for operator %q", mc.Operator),
@@ -113,7 +113,7 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 		if err != nil {
 			errs = multierror.Append(errs, ConstraintError{
 				ConstraintName: mc.Name,
-				Reason:         fmt.Sprintf("An error occured while executing operator %q for formation constraint %q: %v", mc.Operator, mc.Name, err),
+				Reason:         fmt.Sprintf("An error occurred while executing operator %q for formation constraint %q: %v", mc.Operator, mc.Name, err),
 			})
 		}
 

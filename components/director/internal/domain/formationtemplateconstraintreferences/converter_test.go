@@ -41,3 +41,37 @@ func TestFromEntity(t *testing.T) {
 		require.Nil(t, actual)
 	})
 }
+
+func TestToModel(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// WHEN
+		actual := converter.ToModel(gqlConstraintReference)
+
+		// THEN
+		require.Equal(t, constraintReference, actual)
+	})
+	t.Run("Nil input", func(t *testing.T) {
+		// WHEN
+		actual := converter.ToModel(nil)
+
+		// THEN
+		require.Nil(t, actual)
+	})
+}
+
+func TestFromGraphql(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// WHEN
+		actual := converter.ToGraphql(constraintReference)
+
+		// THEN
+		require.Equal(t, gqlConstraintReference, actual)
+	})
+	t.Run("Nil input", func(t *testing.T) {
+		// WHEN
+		actual := converter.ToGraphql(nil)
+
+		// THEN
+		require.Nil(t, actual)
+	})
+}

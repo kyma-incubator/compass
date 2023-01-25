@@ -57,11 +57,12 @@ func (r *Resolver) AttachConstraintToFormationTemplate(ctx context.Context, cons
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Infof("Successfully created an Formation Template Constraint Reference for Constraint with ID %q and Formation Template with ID %q", in.ConstraintID, in.FormationTemplateID)
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("Successfully created an Formation Template Constraint Reference for Constraint with ID %q and Formation Template with ID %q", in.ConstraintID, in.FormationTemplateID)
 
 	return in, nil
 }
@@ -86,5 +87,7 @@ func (r *Resolver) DetachConstraintFromFormationTemplate(ctx context.Context, co
 		return nil, err
 	}
 
-	return &graphql.ConstraintReference{ConstraintID: constraintID, FormationTemplateID: formationTemplateColumn}, nil
+	log.C(ctx).Infof("Successfully deleted Formation Template Constraint Reference for Constraint with ID %q and Formation Template with ID %q", constraintID, formationTemplateID)
+
+	return &graphql.ConstraintReference{ConstraintID: constraintID, FormationTemplateID: formationTemplateID}, nil
 }
