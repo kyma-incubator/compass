@@ -634,7 +634,7 @@ func TestFullReport(stdT *testing.T) {
 			for {
 				apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 				if err != nil {
-					log.C(ctx).Error("failed to clean-up after test: %v", err)
+					log.C(ctx).Errorf("failed to clean-up after test: %v", err)
 				}
 
 				if len(apps) == 0 {
