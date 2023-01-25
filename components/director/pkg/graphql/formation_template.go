@@ -1,5 +1,6 @@
 package graphql
 
+// FormationTemplate represents the Formation Template object
 type FormationTemplate struct {
 	ID                     string       `json:"id"`
 	Name                   string       `json:"name"`
