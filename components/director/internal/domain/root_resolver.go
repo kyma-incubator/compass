@@ -962,6 +962,7 @@ type formationTemplateResolver struct {
 	*RootResolver
 }
 
+// FormationTemplate represents the resolver for Formation Template
 func (r *RootResolver) FormationTemplate() graphql.FormationTemplateResolver {
 	return &formationTemplateResolver{r}
 }
