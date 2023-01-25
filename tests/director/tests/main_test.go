@@ -26,7 +26,7 @@ import (
 
 type DirectorConfig struct {
 	DirectorUrl                             string
-	DirectorInternalUrl                     string
+	DirectorInternalGatewayUrl              string
 	HealthUrl                               string `envconfig:"default=https://director.kyma.local/healthz"`
 	WebhookUrl                              string `envconfig:"default=https://kyma-project.io"`
 	InfoUrl                                 string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
@@ -108,7 +108,7 @@ func TestMain(m *testing.M) {
 		Transport: saTransport,
 		Timeout:   time.Second * 30,
 	}
-	directorInternalGQLClient = graphql.NewClient(conf.DirectorInternalUrl, graphql.WithHTTPClient(client))
+	directorInternalGQLClient = graphql.NewClient(conf.DirectorInternalGatewayUrl, graphql.WithHTTPClient(client))
 	directorInternalGQLClient.Log = func(s string) {
 		log.D().Info(s)
 	}
