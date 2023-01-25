@@ -113,13 +113,13 @@ func (_m *AsaEngine) RemoveAssignedScenario(ctx context.Context, in model.Automa
 	return r0
 }
 
-type NewAsaEngineT interface {
+type mockConstructorTestingTNewAsaEngine interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewAsaEngine creates a new instance of AsaEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAsaEngine(t NewAsaEngineT) *AsaEngine {
+func NewAsaEngine(t mockConstructorTestingTNewAsaEngine) *AsaEngine {
 	mock := &AsaEngine{}
 	mock.Mock.Test(t)
 

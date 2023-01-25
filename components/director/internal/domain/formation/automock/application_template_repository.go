@@ -61,13 +61,13 @@ func (_m *ApplicationTemplateRepository) ListByIDs(ctx context.Context, ids []st
 	return r0, r1
 }
 
-type NewApplicationTemplateRepositoryT interface {
+type mockConstructorTestingTNewApplicationTemplateRepository interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewApplicationTemplateRepository creates a new instance of ApplicationTemplateRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationTemplateRepository(t NewApplicationTemplateRepositoryT) *ApplicationTemplateRepository {
+func NewApplicationTemplateRepository(t mockConstructorTestingTNewApplicationTemplateRepository) *ApplicationTemplateRepository {
 	mock := &ApplicationTemplateRepository{}
 	mock.Mock.Test(t)
 

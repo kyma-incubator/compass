@@ -30,22 +30,6 @@ func (_m *EntityConverter) FromEntity(entity *formationconstraint.Entity) *model
 	return r0
 }
 
-// MultipleFromEntity provides a mock function with given fields: in
-func (_m *EntityConverter) MultipleFromEntity(in formationconstraint.EntityCollection) []*model.FormationConstraint {
-	ret := _m.Called(in)
-
-	var r0 []*model.FormationConstraint
-	if rf, ok := ret.Get(0).(func(formationconstraint.EntityCollection) []*model.FormationConstraint); ok {
-		r0 = rf(in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.FormationConstraint)
-		}
-	}
-
-	return r0
-}
-
 // ToEntity provides a mock function with given fields: in
 func (_m *EntityConverter) ToEntity(in *model.FormationConstraint) *formationconstraint.Entity {
 	ret := _m.Called(in)
@@ -62,13 +46,13 @@ func (_m *EntityConverter) ToEntity(in *model.FormationConstraint) *formationcon
 	return r0
 }
 
-type NewEntityConverterT interface {
+type mockConstructorTestingTNewEntityConverter interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEntityConverter(t NewEntityConverterT) *EntityConverter {
+func NewEntityConverter(t mockConstructorTestingTNewEntityConverter) *EntityConverter {
 	mock := &EntityConverter{}
 	mock.Mock.Test(t)
 

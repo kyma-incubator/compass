@@ -34,13 +34,13 @@ func (_m *TenantService) GetInternalTenant(ctx context.Context, externalTenant s
 	return r0, r1
 }
 
-type NewTenantServiceT interface {
+type mockConstructorTestingTNewTenantService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewTenantService creates a new instance of TenantService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantService(t NewTenantServiceT) *TenantService {
+func NewTenantService(t mockConstructorTestingTNewTenantService) *TenantService {
 	mock := &TenantService{}
 	mock.Mock.Test(t)
 

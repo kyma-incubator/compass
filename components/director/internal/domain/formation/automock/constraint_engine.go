@@ -29,13 +29,13 @@ func (_m *ConstraintEngine) EnforceConstraints(ctx context.Context, location for
 	return r0
 }
 
-type NewConstraintEngineT interface {
+type mockConstructorTestingTNewConstraintEngine interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewConstraintEngine creates a new instance of ConstraintEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConstraintEngine(t NewConstraintEngineT) *ConstraintEngine {
+func NewConstraintEngine(t mockConstructorTestingTNewConstraintEngine) *ConstraintEngine {
 	mock := &ConstraintEngine{}
 	mock.Mock.Test(t)
 

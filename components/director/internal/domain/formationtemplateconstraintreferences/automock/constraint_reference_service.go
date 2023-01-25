@@ -43,13 +43,13 @@ func (_m *ConstraintReferenceService) Delete(ctx context.Context, constraintID s
 	return r0
 }
 
-type NewConstraintReferenceServiceT interface {
+type mockConstructorTestingTNewConstraintReferenceService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewConstraintReferenceService creates a new instance of ConstraintReferenceService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConstraintReferenceService(t NewConstraintReferenceServiceT) *ConstraintReferenceService {
+func NewConstraintReferenceService(t mockConstructorTestingTNewConstraintReferenceService) *ConstraintReferenceService {
 	mock := &ConstraintReferenceService{}
 	mock.Mock.Test(t)
 

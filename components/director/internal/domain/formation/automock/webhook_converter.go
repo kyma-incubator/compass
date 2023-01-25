@@ -37,13 +37,13 @@ func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, erro
 	return r0, r1
 }
 
-type NewWebhookConverterT interface {
+type mockConstructorTestingTNewWebhookConverter interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewWebhookConverter creates a new instance of WebhookConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookConverter(t NewWebhookConverterT) *WebhookConverter {
+func NewWebhookConverter(t mockConstructorTestingTNewWebhookConverter) *WebhookConverter {
 	mock := &WebhookConverter{}
 	mock.Mock.Test(t)
 

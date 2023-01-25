@@ -84,13 +84,13 @@ func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, te
 	return r0, r1
 }
 
-type NewApplicationRepositoryT interface {
+type mockConstructorTestingTNewApplicationRepository interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationRepository(t NewApplicationRepositoryT) *ApplicationRepository {
+func NewApplicationRepository(t mockConstructorTestingTNewApplicationRepository) *ApplicationRepository {
 	mock := &ApplicationRepository{}
 	mock.Mock.Test(t)
 

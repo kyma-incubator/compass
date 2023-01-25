@@ -4,7 +4,9 @@ package automock
 
 import (
 	context "context"
-	formationconstraint2 "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
+	formationconstraint "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
@@ -16,11 +18,11 @@ type FormationConstraintSvc struct {
 }
 
 // ListMatchingConstraints provides a mock function with given fields: ctx, formationTemplateID, location, details
-func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location formationconstraint2.JoinPointLocation, details formationconstraint2.MatchingDetails) ([]*model.FormationConstraint, error) {
+func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
 	ret := _m.Called(ctx, formationTemplateID, location, details)
 
 	var r0 []*model.FormationConstraint
-	if rf, ok := ret.Get(0).(func(context.Context, string, formationconstraint2.JoinPointLocation, formationconstraint2.MatchingDetails) []*model.FormationConstraint); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, formationconstraint.JoinPointLocation, formationconstraint.MatchingDetails) []*model.FormationConstraint); ok {
 		r0 = rf(ctx, formationTemplateID, location, details)
 	} else {
 		if ret.Get(0) != nil {
@@ -29,7 +31,7 @@ func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, f
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, formationconstraint2.JoinPointLocation, formationconstraint2.MatchingDetails) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, formationconstraint.JoinPointLocation, formationconstraint.MatchingDetails) error); ok {
 		r1 = rf(ctx, formationTemplateID, location, details)
 	} else {
 		r1 = ret.Error(1)
@@ -38,13 +40,13 @@ func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, f
 	return r0, r1
 }
 
-type NewFormationConstraintSvcT interface {
+type mockConstructorTestingTNewFormationConstraintSvc interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationConstraintSvc creates a new instance of FormationConstraintSvc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationConstraintSvc(t NewFormationConstraintSvcT) *FormationConstraintSvc {
+func NewFormationConstraintSvc(t mockConstructorTestingTNewFormationConstraintSvc) *FormationConstraintSvc {
 	mock := &FormationConstraintSvc{}
 	mock.Mock.Test(t)
 

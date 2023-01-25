@@ -119,13 +119,13 @@ func (_m *FormationConstraintService) ListByFormationTemplateID(ctx context.Cont
 	return r0, r1
 }
 
-type NewFormationConstraintServiceT interface {
+type mockConstructorTestingTNewFormationConstraintService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationConstraintService creates a new instance of FormationConstraintService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationConstraintService(t NewFormationConstraintServiceT) *FormationConstraintService {
+func NewFormationConstraintService(t mockConstructorTestingTNewFormationConstraintService) *FormationConstraintService {
 	mock := &FormationConstraintService{}
 	mock.Mock.Test(t)
 

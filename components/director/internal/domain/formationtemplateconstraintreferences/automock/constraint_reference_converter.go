@@ -80,13 +80,13 @@ func (_m *ConstraintReferenceConverter) ToModel(in *graphql.ConstraintReference)
 	return r0
 }
 
-type NewConstraintReferenceConverterT interface {
+type mockConstructorTestingTNewConstraintReferenceConverter interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewConstraintReferenceConverter creates a new instance of ConstraintReferenceConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewConstraintReferenceConverter(t NewConstraintReferenceConverterT) *ConstraintReferenceConverter {
+func NewConstraintReferenceConverter(t mockConstructorTestingTNewConstraintReferenceConverter) *ConstraintReferenceConverter {
 	mock := &ConstraintReferenceConverter{}
 	mock.Mock.Test(t)
 

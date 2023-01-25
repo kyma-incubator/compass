@@ -46,13 +46,13 @@ func (_m *EntityConverter) ToEntity(in *model.Formation) *formation.Entity {
 	return r0
 }
 
-type NewEntityConverterT interface {
+type mockConstructorTestingTNewEntityConverter interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewEntityConverter creates a new instance of EntityConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEntityConverter(t NewEntityConverterT) *EntityConverter {
+func NewEntityConverter(t mockConstructorTestingTNewEntityConverter) *EntityConverter {
 	mock := &EntityConverter{}
 	mock.Mock.Test(t)
 

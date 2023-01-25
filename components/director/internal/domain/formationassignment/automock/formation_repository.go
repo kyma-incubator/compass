@@ -15,22 +15,22 @@ type FormationRepository struct {
 	mock.Mock
 }
 
-// ListByFormationNames provides a mock function with given fields: ctx, formationNames, tenantID
-func (_m *FormationRepository) ListByFormationNames(ctx context.Context, formationNames []string, tenantID string) ([]*model.Formation, error) {
-	ret := _m.Called(ctx, formationNames, tenantID)
+// Get provides a mock function with given fields: ctx, id, tenantID
+func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID string) (*model.Formation, error) {
+	ret := _m.Called(ctx, id, tenantID)
 
-	var r0 []*model.Formation
-	if rf, ok := ret.Get(0).(func(context.Context, []string, string) []*model.Formation); ok {
-		r0 = rf(ctx, formationNames, tenantID)
+	var r0 *model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Formation); ok {
+		r0 = rf(ctx, id, tenantID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Formation)
+			r0 = ret.Get(0).(*model.Formation)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []string, string) error); ok {
-		r1 = rf(ctx, formationNames, tenantID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, id, tenantID)
 	} else {
 		r1 = ret.Error(1)
 	}
