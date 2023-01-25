@@ -18,10 +18,11 @@ package main
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
@@ -88,8 +89,8 @@ type config struct {
 	CSRSubject            subject.CSRSubjectConfig
 	ExternalIssuerSubject subject.ExternalIssuerSubjectConfig
 
-	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
-	RevocationConfigMapName      string `envconfig:"default=compass-system/revocations-config"`
+	CertificateDataHeader    string `envconfig:"default=Certificate-Data"`
+	RevocationConfigMapName  string `envconfig:"default=compass-system/revocations-config"`
 	CertSubjectMappingConfig certsubjectmapping.Config
 
 	ConsumerClaimsKeys cfg.ConsumerClaimsKeysConfig

@@ -2,26 +2,31 @@ package tests
 
 import (
 	"context"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var (
 	ctx = context.Background()
 
-	subject = "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=E2E-test-compass"
-	consumerType = "Integration System" // should be a valid consumer type
+	subject            = "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=E2E-test-compass"
+	consumerType       = "Integration System"                   // should be a valid consumer type
 	internalConsumerID = "e01a1918-5ee9-40c4-8ec7-e407264d43d2" // randomly chosen
-	tenantAccessLevels = []string{"subaccount"} // should be a valid tenant access level
+	tenantAccessLevels = []string{"account"}                    // should be a valid tenant access level
 
-	updatedSubject = "C=DE, L=E2E-test-updated, O=E2E-Org, OU=TestRegion-updated, OU=E2E-Org-Unit-updated, OU=8e255922-6a2e-4677-a1a4-246ffcb391df, CN=E2E-test-cmp-updated"
-	updatedConsumerType = "Runtime" // should be a valid consumer type
+	updatedSubject            = "C=DE, L=E2E-test-updated, O=E2E-Org, OU=TestRegion-updated, OU=E2E-Org-Unit-updated, OU=8e255922-6a2e-4677-a1a4-246ffcb391df, CN=E2E-test-cmp-updated"
+	updatedConsumerType       = "Runtime"                              // should be a valid consumer type
 	updatedInternalConsumerID = "d5644469-7605-48a7-9f18-f5dee8805904" // randomly chosen
-	updatedTntAccessLevels = []string{"customer"} // should be a valid tenant access level
+	updatedTntAccessLevels    = []string{"customer"}                   // should be a valid tenant access level
 )
 
 func TestCreateCertSubjectMapping(t *testing.T) {
@@ -129,11 +134,54 @@ func TestQueryCertSubjectMappings(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, certSubjectMappings)
 	require.Equal(t, currentCertSubjectMappings.TotalCount+2, certSubjectMappings.TotalCount)
+}
 
-	// todo::: when the data in the DB increase that could not be sufficient because we fetch only 100 elements,
-	// and the newly created cert subject mapping could not be in the response. Consider implementing paging or remove this assert.
-	require.Subset(t, certSubjectMappings.Data, []*graphql.CertificateSubjectMapping{
-		csmCreate,
-		csmCreate2,
-	})
+func TestQueryCertSubjectMappingWithNewlyCreatedSubjectMapping(t *testing.T) {
+	certSubjcetMappingCN := "cert-subject-mapping-cn"
+	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
+
+	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
+	// which later will be loaded in-memory from the hydrator component
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               certSubjectMappingCustomSubject,
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	directorCertSecuredClientWithCustomCert := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+
+	formationName := "cert-subject-mapping-formation"
+	t.Logf("Creating formation with name: %q should fail due to missing scopes", formationName)
+	var formation graphql.Formation
+	createFormationReq := fixtures.FixCreateFormationRequest(formationName)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClientWithCustomCert, createFormationReq, &formation)
+	defer fixtures.DeleteFormation(t, ctx, directorCertSecuredClientWithCustomCert, formationName)
+	require.Error(t, err)
+	require.Empty(t, formation)
+	require.Contains(t, err.Error(), "insufficient scopes provided") // we expect that error because the consumer from the certificate doesn't have formation permissions
+
+	// Create certificate subject mapping with custom subject that was used to create a certificate for the graphql client above
+	certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubjectMappingCustomSubject, "/"), "/", ",")
+	csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
+	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, tenantAccessLevels)
+	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
+
+	t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())
+	time.Sleep(conf.CertSubjectMappingResyncInterval)
+
+	t.Logf("Creating formation with name: %q after certificate subject mapping is created and it should be successful", formationName)
+	err = testctx.Tc.RunOperation(ctx, directorCertSecuredClientWithCustomCert, createFormationReq, &formation)
+	defer fixtures.DeleteFormation(t, ctx, directorCertSecuredClientWithCustomCert, formationName)
+	require.NoError(t, err)
+	require.NotEmpty(t, formation)
+	require.Equal(t, formationName, formation.Name)
+	t.Log("The formation was successfully created.")
 }

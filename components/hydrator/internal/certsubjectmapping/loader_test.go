@@ -3,6 +3,9 @@ package certsubjectmapping_test
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -12,13 +15,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var (
-	validSubject = "C=DE, OU=Compass Clients, OU=Region, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=unit-tests, CN=unit-test-compass"
-	validConsumerType = inputvalidation.RuntimeType
+	validSubject         = "C=DE, OU=Compass Clients, OU=Region, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=unit-tests, CN=unit-test-compass"
+	validConsumerType    = inputvalidation.RuntimeType
 	validTntAccessLevels = []string{inputvalidation.GlobalAccessLevel}
 )
 
@@ -46,7 +47,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 
 	certSubjcetMappingPage := &graphql.CertificateSubjectMappingPage{
 		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping},
-		PageInfo:   &graphql.PageInfo{
+		PageInfo: &graphql.PageInfo{
 			StartCursor: "",
 			EndCursor:   "",
 			HasNextPage: false,
@@ -56,23 +57,23 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 
 	certSubjcetMappingWithNextPage := &graphql.CertificateSubjectMappingPage{
 		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping, certSubjectMapping},
-		PageInfo:   &graphql.PageInfo{
+		PageInfo: &graphql.PageInfo{
 			StartCursor: "",
-			EndCursor: graphql.PageCursor(endCursor),
+			EndCursor:   graphql.PageCursor(endCursor),
 			HasNextPage: true,
 		},
 		TotalCount: 2,
 	}
 
-	testCases := []struct{
-		name string
-		certSubjectMappingCfg certsubjectmapping.Config
-		directorClientFn func() *automock.DirectorClient
+	testCases := []struct {
+		name                            string
+		certSubjectMappingCfg           certsubjectmapping.Config
+		directorClientFn                func() *automock.DirectorClient
 		expectedCertSubjectMappingCount int
-		expectedErrMsg string
+		expectedErrMsg                  string
 	}{
 		{
-			name: "Successfully resync certificate subject mappings",
+			name:                  "Successfully resync certificate subject mappings",
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
@@ -82,7 +83,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			expectedCertSubjectMappingCount: 2,
 		},
 		{
-			name: "Successfully resync certificate subject mappings with paging",
+			name:                  "Successfully resync certificate subject mappings with paging",
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
@@ -93,7 +94,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			expectedCertSubjectMappingCount: 4,
 		},
 		{
-			name: "Error when listing certificate subject mappings fails",
+			name:                  "Error when listing certificate subject mappings fails",
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
@@ -138,7 +139,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 				}
 				assert.Len(t, cacheMappings, testCase.expectedCertSubjectMappingCount)
 				return true
-			}, time.Second, 150 * time.Millisecond)
+			}, time.Second, 150*time.Millisecond)
 			cancel()
 			assert.Eventually(t, func() bool {
 				<-ctx.Done()
@@ -159,9 +160,9 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 	invalidConsumerType := "invalidConsumerType"
 	invalidTntAccessLevels := []string{"invalidAccessLevel"}
 
-	testCases := []struct{
-		name string
-		input certsubjectmapping.SubjectConsumerTypeMapping
+	testCases := []struct {
+		name           string
+		input          certsubjectmapping.SubjectConsumerTypeMapping
 		expectedErrMsg string
 	}{
 		{
@@ -173,15 +174,15 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 			},
 		},
 		{
-			name: "Error when the subject is invalid",
-			input: certsubjectmapping.SubjectConsumerTypeMapping{},
+			name:           "Error when the subject is invalid",
+			input:          certsubjectmapping.SubjectConsumerTypeMapping{},
 			expectedErrMsg: "subject is not provided",
 		},
 		{
 			name: "Error when the consumer type is unsupported",
 			input: certsubjectmapping.SubjectConsumerTypeMapping{
-				Subject:            validSubject,
-				ConsumerType:       invalidConsumerType,
+				Subject:      validSubject,
+				ConsumerType: invalidConsumerType,
 			},
 			expectedErrMsg: fmt.Sprintf("consumer type %s is not valid", invalidConsumerType),
 		},

@@ -2,8 +2,9 @@ package subject
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"

@@ -3,12 +3,13 @@ package subject_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping/automock"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/hydrator/internal/subject"
 
