@@ -374,6 +374,40 @@ var (
 		ConstraintType: model.PostOperation,
 	}
 
+	preCreateLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.CreateFormationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postCreateLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.CreateFormationOperation,
+		ConstraintType: model.PostOperation,
+	}
+
+	createFormationDetails = &formationconstraint.CRUDFormationOperationDetails{
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationName:       testFormationName,
+		TenantID:            Tnt,
+	}
+
+	preDeleteLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.DeleteFormationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postDeleteLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.DeleteFormationOperation,
+		ConstraintType: model.PostOperation,
+	}
+
+	deleteFormationDetails = &formationconstraint.CRUDFormationOperationDetails{
+		FormationType:       "formation-tmpl-name",
+		FormationTemplateID: FormationTemplateID,
+		FormationName:       testFormationName,
+		TenantID:            Tnt,
+	}
+
 	assignAppDetails = &formationconstraint.AssignFormationOperationDetails{
 		ResourceType:        model.ApplicationResourceType,
 		ResourceSubtype:     applicationType,
@@ -576,6 +610,10 @@ func unusedWebhookClient() *automock.WebhookClient {
 
 func unusedLabelDefService() *automock.LabelDefService {
 	return &automock.LabelDefService{}
+}
+
+func unusedLabelDefRepository() *automock.LabelDefRepository {
+	return &automock.LabelDefRepository{}
 }
 
 func unusedUUIDService() *automock.UuidService {
