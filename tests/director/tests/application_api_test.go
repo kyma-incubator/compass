@@ -829,10 +829,8 @@ func TestUnpairApplication(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationReq, &application)
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
-		defer func() {
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-			defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
-		}()
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 		//WHEN
 		req := fixtures.FixUnpairApplicationRequest(application.ID)
@@ -867,10 +865,7 @@ func TestUnpairApplication(t *testing.T) {
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationReq, &application)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-		defer func() {
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-			defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
-		}()
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -1155,11 +1150,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer func() {
-			deleteLabelRequest := fixtures.FixDeleteRuntimeLabel(runtime.ID, ScenariosLabel)
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteLabelRequest, nil)
-			require.NoError(t, err)
-		}()
+		defer fixtures.DeleteRuntimeLabel(t, ctx, certSecuredGraphQLClient, runtime.ID, ScenariosLabel)
 
 		actualApp := graphql.Application{}
 
@@ -1179,11 +1170,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer func() {
-			deleteLabelRequest := fixtures.FixDeleteRuntimeLabel(runtime.ID, ScenariosLabel)
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteLabelRequest, nil)
-			require.NoError(t, err)
-		}()
+		defer fixtures.DeleteRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel)
 
 		actualApp := graphql.Application{}
 
@@ -1255,10 +1242,8 @@ func TestApplicationsForRuntime(t *testing.T) {
 		application := graphql.Application{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testApp.Tenant, createApplicationReq, &application)
-		defer func(applicationID, tenant string) {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant, applicationID)
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant, &graphql.ApplicationExt{Application: application})
-		}(application.ID, testApp.Tenant)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testApp.Tenant, &graphql.ApplicationExt{Application: application})
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, testApp.Tenant, application.ID)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -1409,10 +1394,8 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationReq, &application)
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
-		defer func(applicationID string) {
-			fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, applicationID)
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &graphql.ApplicationExt{Application: application})
-		}(application.ID)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &graphql.ApplicationExt{Application: application})
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 		if !testApp.Hidden {
 			expectedApplications = append(expectedApplications, &application)
@@ -1699,26 +1682,14 @@ func TestMergeApplications(t *testing.T) {
 
 	createReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, createReq, &formation)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, newFormation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
-
-	defer func() {
-		t.Logf("Cleaning up formation: %s", newFormation)
-		var response graphql.Formation
-		deleteFormationReq := fixtures.FixDeleteFormationRequest(newFormation)
-		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, deleteFormationReq, &response)
-		require.NoError(t, err)
-		require.Equal(t, newFormation, response.Name)
-		t.Logf("Deleted formation with name: %s", response.Name)
-	}()
 
 	t.Logf("Assign application to formation %s", newFormation)
 	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, newFormation, assignFormation.Name)
-
 	defer func() {
 		t.Logf("Unassigning src-app from formation %s", newFormation)
 		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
@@ -1730,6 +1701,8 @@ func TestMergeApplications(t *testing.T) {
 			t.Logf("Src-app was not removed from formation %s: %v", newFormation, err)
 		}
 	}()
+	require.NoError(t, err)
+	require.Equal(t, newFormation, assignFormation.Name)
 
 	// WHEN
 	t.Logf("Should be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
@@ -1737,7 +1710,6 @@ func TestMergeApplications(t *testing.T) {
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
 	saveExample(t, mergeRequest.Query(), "merge applications")
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, mergeRequest, &destApp)
-
 	defer func() {
 		t.Logf("Unassigning dst-app from formation %s", newFormation)
 		request := fixtures.FixUnassignFormationRequest(destApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
@@ -1885,8 +1857,6 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 
 	createReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
-	require.NoError(t, err)
-	require.Equal(t, newFormation, formation.Name)
 	defer func() {
 		t.Logf("Cleaning up formation: %s", newFormation)
 		var response graphql.Formation
@@ -1896,12 +1866,12 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 		require.Equal(t, newFormation, response.Name)
 		t.Logf("Deleted formation with name: %s", response.Name)
 	}()
+	require.NoError(t, err)
+	require.Equal(t, newFormation, formation.Name)
 	t.Logf("Assign application to formation %s", newFormation)
 	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, newFormation, assignFormation.Name)
 	defer func() {
 		t.Logf("Unassigning src-app from formation %s", newFormation)
 		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
@@ -1913,6 +1883,8 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 			t.Logf("Src-app was not removed from formation %s: %v", newFormation, err)
 		}
 	}()
+	require.NoError(t, err)
+	require.Equal(t, newFormation, assignFormation.Name)
 
 	// WHEN
 	t.Logf("Should not be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)

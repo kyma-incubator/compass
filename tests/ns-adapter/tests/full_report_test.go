@@ -630,23 +630,21 @@ func TestFullReport(stdT *testing.T) {
 		require.NoError(t, err)
 		log.C(ctx).Infof("Sending request with body length of %d bytes", len(body))
 
-		defer func() {
-			for {
-				apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
-				require.NoError(t, err, "failed to clean-up after test")
+		for {
+			apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+			require.NoError(t, err, "failed to clean-up after test")
 
-				if len(apps) == 0 {
-					break
-				}
-
-				log.C(ctx).Infof("Cleaning up %d applications", len(apps))
-				for i := 0; i < len(apps); i++ {
-					fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, apps[i])
-				}
+			if len(apps) == 0 {
+				break
 			}
 
-			log.C(ctx).Infof("Successfully cleaned up after test")
-		}()
+			log.C(ctx).Infof("Cleaning up %d applications", len(apps))
+			for i := 0; i < len(apps); i++ {
+				defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, apps[i])
+			}
+		}
+
+		log.C(ctx).Infof("Successfully cleaned up after test")
 
 		resp, err := sendRequestWithTimeout(body, "full", token, 5*time.Minute)
 		require.NoError(t, err, "failed to send request with a large request body")
