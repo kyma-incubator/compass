@@ -127,7 +127,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2825"
+      version: "PR-2840"
       name: compass-director
     hydrator:
       dir:
@@ -147,7 +147,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2830"
+      version: "PR-2840"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -168,7 +168,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2825"
+      version: "PR-2840"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
