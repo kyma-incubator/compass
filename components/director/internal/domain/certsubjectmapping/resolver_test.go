@@ -230,7 +230,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 		TransactionerFn         func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ConverterFn             func() *automock.Converter
 		CertSubjectMappingSvcFn func() *automock.CertSubjectMappingService
-		UidSvcFn                func() *automock.UIDService
+		UIDSvcFn                func() *automock.UIDService
 		ExpectedOutput          *graphql.CertificateSubjectMapping
 		ExpectedError           error
 	}{
@@ -250,7 +250,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 				certSubjectMappingSvc.On("Get", txtest.CtxWithDBMatcher(), TestID).Return(CertSubjectMappingModel, nil).Once()
 				return certSubjectMappingSvc
 			},
-			UidSvcFn: func() *automock.UIDService {
+			UIDSvcFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(TestID).Once()
 				return uidSvc
@@ -284,7 +284,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 				certSubjectMappingSvc.On("Create", txtest.CtxWithDBMatcher(), CertSubjectMappingModel).Return("", testErr).Once()
 				return certSubjectMappingSvc
 			},
-			UidSvcFn: func() *automock.UIDService {
+			UIDSvcFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(TestID).Once()
 				return uidSvc
@@ -307,7 +307,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 				certSubjectMappingSvc.On("Get", txtest.CtxWithDBMatcher(), TestID).Return(nil, testErr).Once()
 				return certSubjectMappingSvc
 			},
-			UidSvcFn: func() *automock.UIDService {
+			UIDSvcFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(TestID).Once()
 				return uidSvc
@@ -330,7 +330,7 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 				certSubjectMappingSvc.On("Get", txtest.CtxWithDBMatcher(), TestID).Return(CertSubjectMappingModel, nil).Once()
 				return certSubjectMappingSvc
 			},
-			UidSvcFn: func() *automock.UIDService {
+			UIDSvcFn: func() *automock.UIDService {
 				uidSvc := &automock.UIDService{}
 				uidSvc.On("Generate").Return(TestID).Once()
 				return uidSvc
@@ -359,8 +359,8 @@ func TestResolver_CreateCertificateSubjectMapping(t *testing.T) {
 			}
 
 			uidSvc := fixUnusedUIDService()
-			if testCase.UidSvcFn != nil {
-				uidSvc = testCase.UidSvcFn()
+			if testCase.UIDSvcFn != nil {
+				uidSvc = testCase.UIDSvcFn()
 			}
 
 			defer mock.AssertExpectationsForObjects(t, persist, transact, conv, certSubjectMappingSvc, uidSvc)

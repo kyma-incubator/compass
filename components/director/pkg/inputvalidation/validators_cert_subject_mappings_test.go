@@ -84,7 +84,6 @@ func TestCertMappingSubjectValidator_Validate(t *testing.T) {
 				require.Error(t, err)
 			}
 		})
-
 	}
 }
 
@@ -144,7 +143,6 @@ func TestCertMappingConsumerTypeValidator_Validate(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ErrMsg)
 			}
 		})
-
 	}
 }
 
@@ -194,6 +192,5 @@ func TestCertMappingTenantAccessLevelValidator_Validate(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ErrMsg)
 			}
 		})
-
 	}
 }

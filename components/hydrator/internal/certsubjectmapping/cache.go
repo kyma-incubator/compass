@@ -5,6 +5,7 @@ import (
 )
 
 // Cache is responsible for the read and write operation of the cert subject mapping in-memory storage
+//go:generate mockery --name=Cache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Cache interface {
 	Get() []SubjectConsumerTypeMapping
 	Put(certSubjectMappings []SubjectConsumerTypeMapping)

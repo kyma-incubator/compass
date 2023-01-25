@@ -14,14 +14,14 @@ var (
 	ctx = context.Background()
 
 	subject = "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=E2E-test-compass"
-	consumerType = "Integration System"
-	internalConsumerID = "e01a1918-5ee9-40c4-8ec7-e407264d43d2"
-	tenantAccessLevels = []string{"global"}
+	consumerType = "Integration System" // should be a valid consumer type
+	internalConsumerID = "e01a1918-5ee9-40c4-8ec7-e407264d43d2" // randomly chosen
+	tenantAccessLevels = []string{"subaccount"} // should be a valid tenant access level
 
 	updatedSubject = "C=DE, L=E2E-test-updated, O=E2E-Org, OU=TestRegion-updated, OU=E2E-Org-Unit-updated, OU=8e255922-6a2e-4677-a1a4-246ffcb391df, CN=E2E-test-cmp-updated"
-	updatedConsumerType = "Runtime"
-	updatedInternalConsumerID = "d5644469-7605-48a7-9f18-f5dee8805904"
-	updatedTntAccessLevels = []string{"customer"}
+	updatedConsumerType = "Runtime" // should be a valid consumer type
+	updatedInternalConsumerID = "d5644469-7605-48a7-9f18-f5dee8805904" // randomly chosen
+	updatedTntAccessLevels = []string{"customer"} // should be a valid tenant access level
 )
 
 func TestCreateCertSubjectMapping(t *testing.T) {
@@ -44,7 +44,6 @@ func TestCreateCertSubjectMapping(t *testing.T) {
 
 func TestDeleteCertSubjectMapping(t *testing.T) {
 	csmInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &internalConsumerID, tenantAccessLevels)
-
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
 	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
@@ -63,7 +62,6 @@ func TestDeleteCertSubjectMapping(t *testing.T) {
 
 func TestUpdateCertSubjectMapping(t *testing.T) {
 	csmCreateInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &internalConsumerID, tenantAccessLevels)
-
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
 	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreateInput)
 	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
@@ -84,9 +82,8 @@ func TestUpdateCertSubjectMapping(t *testing.T) {
 	assertions.AssertCertificateSubjectMapping(t, &updatedCertSubjectMappingInput, &csmUpdated)
 }
 
-func TestQueryCertSubjectMapping(t *testing.T) {
+func TestQuerySingleCertSubjectMapping(t *testing.T) {
 	csmInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &internalConsumerID, tenantAccessLevels)
-
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
 	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
@@ -107,12 +104,12 @@ func TestQueryCertSubjectMappings(t *testing.T) {
 	first := 100
 	queryCertSubjectMappingsWithPaginationReq := fixtures.FixQueryCertificateSubjectMappingsRequestWithPageSize(first)
 	saveExample(t, queryCertSubjectMappingsWithPaginationReq.Query(), "query certificate subject mappings")
-	certSubjectMappings := graphql.CertificateSubjectMappingPage{}
+	currentCertSubjectMappings := graphql.CertificateSubjectMappingPage{}
 
-	t.Log("Query certificate subject mappings")
-	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryCertSubjectMappingsWithPaginationReq, &certSubjectMappings)
+	t.Log("Getting current certificate subject mappings...")
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryCertSubjectMappingsWithPaginationReq, &currentCertSubjectMappings)
 	require.NoError(t, err)
-	require.Equal(t, 0, certSubjectMappings.TotalCount)
+	t.Logf("Current number of certificate subject mappings is: %d", currentCertSubjectMappings.TotalCount)
 
 	// Create first certificate subject mapping
 	csmInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &internalConsumerID, tenantAccessLevels)
@@ -126,11 +123,15 @@ func TestQueryCertSubjectMappings(t *testing.T) {
 	csmCreate2 := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput2)
 	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate2.ID)
 
-	t.Log("Query certificate subject mappings")
+	certSubjectMappings := graphql.CertificateSubjectMappingPage{}
+	t.Log("Query certificate subject mappings...")
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryCertSubjectMappingsWithPaginationReq, &certSubjectMappings)
 	require.NoError(t, err)
 	require.NotEmpty(t, certSubjectMappings)
-	require.Equal(t, 2, certSubjectMappings.TotalCount)
+	require.Equal(t, currentCertSubjectMappings.TotalCount+2, certSubjectMappings.TotalCount)
+
+	// todo::: when the data in the DB increase that could not be sufficient because we fetch only 100 elements,
+	// and the newly created cert subject mapping could not be in the response. Consider implementing paging or remove this assert.
 	require.Subset(t, certSubjectMappings.Data, []*graphql.CertificateSubjectMapping{
 		csmCreate,
 		csmCreate2,

@@ -8,16 +8,24 @@ import (
 )
 
 const (
+	// RuntimeType represents a runtime consumer type
 	RuntimeType             = "Runtime"
+	// IntegrationSystemType represents a integration system consumer type
 	IntegrationSystemType   = "Integration System"
+	// ApplicationType represents an application consumer type
 	ApplicationType         = "Application"
+	// SuperAdminType represents a super admin consumer type, mainly used in local setup and E2E tests
 	SuperAdminType          = "Super Admin"
+	// BusinessIntegrationType represents a business integration consumer type
 	BusinessIntegrationType = "Business Integration"
+	// TechnicalClient represents a technical client consumer type
 	TechnicalClient         = "Technical Client"
 
+	// GlobalAccessLevel is an access level that is not tied to a specific tenant entity but rather it's used globally
 	GlobalAccessLevel = "global"
 )
 
+// SupportedConsumerTypes is a map of all supported consumer types
 var SupportedConsumerTypes = map[string]bool{
 	RuntimeType:             true,
 	IntegrationSystemType:   true,
@@ -27,6 +35,7 @@ var SupportedConsumerTypes = map[string]bool{
 	TechnicalClient:         true,
 }
 
+// SupportedAccessLevels is a map of all supported tenant access levels
 var SupportedAccessLevels = map[string]bool{
 	string(tenantEntity.Customer):      true,
 	string(tenantEntity.Account):       true,
@@ -41,8 +50,11 @@ type certMappingSubjectValidator struct{}
 type certMappingConsumerTypeValidator struct{}
 type certMappingTenantAccessLevelValidator struct{}
 
+// IsValidCertSubject is a custom validation rule that validates certificate subject mapping's subject input
 var IsValidCertSubject = &certMappingSubjectValidator{}
+// IsValidConsumerType is a custom validation rule that validates certificate subject mapping's consumer type input
 var IsValidConsumerType = &certMappingConsumerTypeValidator{}
+// AreTenantAccessLevelsValid  is a custom validation rule that validates certificate subject mapping's tenant access levels input
 var AreTenantAccessLevelsValid = &certMappingTenantAccessLevelValidator{}
 
 func (v *certMappingSubjectValidator) Validate(value interface{}) error {

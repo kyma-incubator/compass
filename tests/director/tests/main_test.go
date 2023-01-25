@@ -2,10 +2,10 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"os"
 	"testing"
-
-	"github.com/kyma-incubator/compass/tests/pkg/subscription"
+	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
@@ -56,14 +56,14 @@ type DirectorConfig struct {
 	ProviderClientSecret                            string
 	BasicUsername                                   string
 	BasicPassword                                   string
-	ExternalCertCommonName                          string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
-	CertSvcInstanceSecretName                       string `envconfig:"CERT_SVC_INSTANCE_SECRET_NAME"`
-	ExternalCertTestIntSystemOUSubaccount           string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
-	ExternalCertTestIntSystemCommonName             string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
-	ExternalClientCertExpectedIssuerLocalityRegion2 string `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
-	SupportedORDApplicationType                     string `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
-	FormationMappingAsyncResponseDelay              int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
-	SubscriptionProviderAppNameProperty             string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
+	CertSvcInstanceSecretName                       string        `envconfig:"CERT_SVC_INSTANCE_SECRET_NAME"`
+	ExternalCertTestIntSystemOUSubaccount           string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
+	ExternalCertTestIntSystemCommonName             string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
+	ExternalClientCertExpectedIssuerLocalityRegion2 string        `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
+	SupportedORDApplicationType                     string        `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
+	FormationMappingAsyncResponseDelay              int64         `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
+	SubscriptionProviderAppNameProperty             string        `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
+	CertSubjectMappingResyncInterval                time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
 }
 
 var (

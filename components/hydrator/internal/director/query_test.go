@@ -1,6 +1,7 @@
 package director_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -269,6 +270,40 @@ func TestUpdateSystemAuthQuery(t *testing.T) {
 
 		// then
 		assert.Equal(t, expectedQuery, query)
+	})
+}
+
+func TestListCertificateSubjectMappingsQuery(t *testing.T) {
+	t.Run("Should return certificate subject mapping list query", func(t *testing.T) {
+		// GIVEN
+		first := 300
+		after := ""
+
+		expectedQuery := fmt.Sprintf(`query {
+        result: certificateSubjectMappings(first: %d, after: "%s") {
+          data {
+            id
+            subject
+            consumerType
+            internalConsumerID
+            tenantAccessLevels
+          }
+          pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+          }
+          totalCount
+        }
+    }`, first, after)
+
+		expectedQuery = trimTabsAndNewLineSpace(expectedQuery)
+
+		// WHEN
+		query := trimTabsAndNewLineSpace(director.ListCertificateSubjectMappingsQuery(first, after))
+
+		// THEN
+		require.Equal(t, expectedQuery, query)
 	})
 }
 

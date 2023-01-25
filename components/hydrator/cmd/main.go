@@ -274,7 +274,7 @@ func getCertificateResolverHandler(ctx context.Context, cfg config, internalDire
 		time.Second,
 	)
 
-	certSubjectMappingCache, err := certsubjectmapping.StartCertSubjectMappingLoader(ctx, cfg.CertSubjectMappingConfig, internalDirectorClientProvider.Client())
+	certSubjectMappingCache := certsubjectmapping.StartCertSubjectMappingLoader(ctx, cfg.CertSubjectMappingConfig, internalDirectorClientProvider.Client())
 
 	subjectProcessor, err := subject.NewProcessor(certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
 	if err != nil {

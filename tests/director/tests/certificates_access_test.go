@@ -22,7 +22,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 	// Build graphql director client configured with certificate
 	ctx := context.Background()
 
-	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestIntSystemOUSubaccount, conf.ExternalCertCommonName, conf.ExternalCertTestIntSystemCommonName)
+	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestIntSystemOUSubaccount, conf.TestExternalCertCN, conf.ExternalCertTestIntSystemCommonName)
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{

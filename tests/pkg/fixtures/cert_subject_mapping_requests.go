@@ -48,5 +48,5 @@ func FixQueryCertificateSubjectMappingsRequestWithPageSize(pageSize int) *gcli.R
 				  result: certificateSubjectMappings(first: %d, after:"") {
     					%s
 					}
-				}`, pageSize, testctx.Tc.GQLFieldsProvider.ForCertificateSubjectMapping()))
+				}`, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForCertificateSubjectMapping())))
 }

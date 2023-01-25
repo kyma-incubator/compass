@@ -87,8 +87,6 @@ spec:
               value: {{ printf .Values.global.externalCertConfiguration.technicalClientSubjectPattern .Values.global.tests.subscription.tenants.consumerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
-            - name: EXTERNAL_CERT_COMMON_NAME
-              value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
               value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
@@ -204,10 +202,10 @@ spec:
               value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
             - name: APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2
               value: {{ .Values.global.tests.externalCertConfiguration.issuerLocalityRegion2 }}
-            - name: APP_CONSUMER_TOKEN_URL
-              value: {{ .Values.global.tests.subscription.consumerTokenURL }}
             - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
               value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds | quote}}
+            - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
+              value: {{ .Values.global.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_PROVIDER_CLIENT_ID
               valueFrom:
                 secretKeyRef:

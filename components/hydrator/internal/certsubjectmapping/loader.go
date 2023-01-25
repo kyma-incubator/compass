@@ -36,7 +36,7 @@ type certSubjectMappingLoader struct {
 	directorClient          DirectorClient
 }
 
-var certSubjectMappingLoaderCorrelationID = "cert-subject-mapping-loader-correlation-id"
+var CertSubjectMappingLoaderCorrelationID = "cert-subject-mapping-loader-correlation-id"
 
 func NewCertSubjectMappingLoader(certSubjectMappingCache *certSubjectMappingCache, certSubjectMappingCfg Config, directorClient DirectorClient) Loader {
 	return &certSubjectMappingLoader{
@@ -64,20 +64,20 @@ func (s *SubjectConsumerTypeMapping) Validate() error {
 	return nil
 }
 
-func StartCertSubjectMappingLoader(ctx context.Context, certSubjectMappingCfg Config, directorClient DirectorClient) (Cache, error) {
+func StartCertSubjectMappingLoader(ctx context.Context, certSubjectMappingCfg Config, directorClient DirectorClient) Cache {
 	cache := NewCertSubjectMappingCache()
 	certSubjectLoader := NewCertSubjectMappingLoader(cache, certSubjectMappingCfg, directorClient)
-	go certSubjectLoader.Run(ctx, certSubjectMappingCfg.environmentMappings)
+	go certSubjectLoader.Run(ctx, certSubjectMappingCfg.EnvironmentMappings)
 
-	return cache, nil
+	return cache
 }
 
 func (cl *certSubjectMappingLoader) Run(ctx context.Context, certSubjectMappingsFromEnv string) {
 	entry := log.C(ctx)
-	entry = entry.WithField(log.FieldRequestID, certSubjectMappingLoaderCorrelationID)
+	entry = entry.WithField(log.FieldRequestID, CertSubjectMappingLoaderCorrelationID)
 	ctx = log.ContextWithLogger(ctx, entry)
 
-	t := time.NewTicker(cl.certSubjectMappingCfg.resyncInterval)
+	t := time.NewTicker(cl.certSubjectMappingCfg.ResyncInterval)
 	for {
 		select {
 		case <-t.C:
@@ -99,24 +99,14 @@ func (cl *certSubjectMappingLoader) Run(ctx context.Context, certSubjectMappings
 }
 
 func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context, certSubjectMappingsFromEnv string) ([]SubjectConsumerTypeMapping, error) {
-	log.C(ctx).Info("Listing certificate subject mapping from DB...")
 	after := ""
-	certSubjectMappingsGQLPage, err := cl.directorClient.ListCertificateSubjectMappings(ctx, after)
-	if err != nil {
-		return nil, errors.Wrap(err, "while listing certificate subject mappings")
-	}
-
-	log.C(ctx).Infof("Total count of fetched certificate subject mappings from the DB: %d", certSubjectMappingsGQLPage.TotalCount)
-	mappings := make([]SubjectConsumerTypeMapping, 0, certSubjectMappingsGQLPage.TotalCount)
-
-	mappings = append(mappings, convertGQLCertSubjectMappings(certSubjectMappingsGQLPage.Data)...)
-
-	hasNextPage := certSubjectMappingsGQLPage.PageInfo.HasNextPage
-	after = string(certSubjectMappingsGQLPage.PageInfo.EndCursor)
+	mappings := make([]SubjectConsumerTypeMapping, 0)
+	hasNextPage := true
+	log.C(ctx).Info("Listing certificate subject mapping from DB...")
 	for hasNextPage == true {
 		csmGQLPage, err := cl.directorClient.ListCertificateSubjectMappings(ctx, after)
 		if err != nil {
-			return nil, errors.Wrap(err, "while listing certificate subject mappings")
+			return nil, errors.Wrap(err, "while listing certificate subject mappings from DB")
 		}
 		mappings = append(mappings, convertGQLCertSubjectMappings(csmGQLPage.Data)...)
 		hasNextPage = csmGQLPage.PageInfo.HasNextPage
@@ -135,11 +125,15 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 
 func convertGQLCertSubjectMappings(gqlMappings []*schema.CertificateSubjectMapping) []SubjectConsumerTypeMapping {
 	m := make([]SubjectConsumerTypeMapping, 0, len(gqlMappings))
+	var internalConsumerID string
 	for _, e := range gqlMappings {
+		if e.InternalConsumerID != nil {
+			internalConsumerID = *e.InternalConsumerID
+		}
 		scm := SubjectConsumerTypeMapping{
 			Subject:            e.Subject,
 			ConsumerType:       e.ConsumerType,
-			InternalConsumerID: *e.InternalConsumerID,
+			InternalConsumerID: internalConsumerID,
 			TenantAccessLevels: e.TenantAccessLevels,
 		}
 		m = append(m, scm)
