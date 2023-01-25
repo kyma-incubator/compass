@@ -74,20 +74,26 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 	CustomerTenantContext: &webhook.CustomerTenantContext{},
 }
 
+var emptyFormationLifecycleInput = &webhook.FormationLifecycleInput{
+	Formation:             &model.Formation{},
+	CustomerTenantContext: &webhook.CustomerTenantContext{},
+}
+
 var webhookTemplateInputByType = map[WebhookType]webhook.TemplateInput{
 	WebhookTypeRegisterApplication:      emptyApplicationLifecycleWebhookRequestObject,
 	WebhookTypeUnregisterApplication:    emptyApplicationLifecycleWebhookRequestObject,
 	WebhookTypeConfigurationChanged:     emptyFormationConfigurationChangeInput,
 	WebhookTypeApplicationTenantMapping: emptyApplicationTenantMappingInput,
+	WebhookTypeFormationLifecycle:       emptyFormationLifecycleInput,
 }
 
 // Validate missing godoc
 func (i WebhookInput) Validate() error {
 	if err := validation.ValidateStruct(&i,
-		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery)),
+		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeFormationLifecycle)),
 		validation.Field(&i.URL, is.URL, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.CorrelationIDKey, validation.RuneLength(0, longStringLengthLimit)),
-		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync, WebhookModeAsyncCallback), validation.When(i.Type == WebhookTypeConfigurationChanged || i.Type == WebhookTypeApplicationTenantMapping, validation.In(WebhookModeSync, WebhookModeAsyncCallback)).Else(validation.NotIn(WebhookModeAsyncCallback))),
+		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync, WebhookModeAsyncCallback), validation.When(i.Type == WebhookTypeFormationLifecycle, validation.In(WebhookModeSync)), validation.When(i.Type == WebhookTypeConfigurationChanged || i.Type == WebhookTypeApplicationTenantMapping, validation.In(WebhookModeSync, WebhookModeAsyncCallback)).Else(validation.NotIn(WebhookModeAsyncCallback))),
 		validation.Field(&i.RetryInterval, validation.Min(0)),
 		validation.Field(&i.Timeout, validation.Min(0)),
 		validation.Field(&i.Auth),

@@ -198,6 +198,7 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
+	FORMATION_LIFECYCLE
 }
 
 interface OneTimeToken {
@@ -617,6 +618,7 @@ input FormationTemplateInput {
 	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
+	webhooks: [WebhookInput!]
 }
 
 input IntegrationSystemInput {
@@ -1116,6 +1118,7 @@ type FormationTemplate {
 	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1317,6 +1320,7 @@ type Webhook {
 	applicationTemplateID: ID
 	runtimeID: ID
 	integrationSystemID: ID
+	formationTemplateID: ID
 	type: WebhookType!
 	mode: WebhookMode
 	correlationIdKey: String
@@ -1433,6 +1437,10 @@ type Query {
 	- [query formation](examples/query-formation/query-formation.graphql)
 	"""
 	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
+	"""
+	**Examples**
+	- [query formation by name](examples/query-formation-by-name/query-formation-by-name.graphql)
+	"""
 	formationByName(name: String!): Formation @hasScopes(path: "graphql.query.formationByName")
 	"""
 	**Examples**
@@ -1548,7 +1556,7 @@ type Mutation {
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
 	- [add runtime webhook](examples/add-webhook/add-runtime-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, formationTemplateID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update webhook](examples/update-webhook/update-webhook.graphql)

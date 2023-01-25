@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	userTableName    = "users"
-	appTableName     = "apps"
-	bundlesTableName = "bundles"
-	biaTableName     = "bia"
+	userTableName     = "users"
+	appTableName      = "apps"
+	bundlesTableName  = "bundles"
+	webhooksTableName = "webhooks"
+	biaTableName      = "bia"
 
 	appID           = "appID"
 	appID2          = "appID2"
@@ -25,6 +26,9 @@ const (
 	biaID          = "biaID"
 	biaName        = "biaName"
 	biaDescription = "biaDesc"
+
+	whID = "whID"
+	ftID = "ftID"
 
 	userID    = "given_id"
 	tenantID  = "75093633-1578-497f-890a-d438a74a4127"
@@ -70,6 +74,11 @@ var fixBIA = &BundleInstanceAuth{
 	Description: biaDescription,
 	OwnerID:     tenantID,
 	BundleID:    bundleID,
+}
+
+var fixWebhook = &Webhook{
+	ID:                  whID,
+	FormationTemplateID: ftID,
 }
 
 // User is a exemplary type to test generic Repositories
@@ -147,6 +156,20 @@ func (a *Bundle) DecorateWithTenantID(tenant string) interface{} {
 }
 
 var bundleColumns = []string{"id", "name", "description", "app_id"}
+var webhookColumns = []string{"id", "formation_template_id"}
+
+type Webhook struct {
+	ID                  string `db:"id"`
+	FormationTemplateID string `db:"formation_template_id"`
+}
+
+func (w *Webhook) GetID() string {
+	return w.ID
+}
+
+func (w *Webhook) GetParent(_ resource.Type) (resource.Type, string) {
+	return resource.FormationTemplate, w.FormationTemplateID
+}
 
 type BundleInstanceAuth struct {
 	ID          string `db:"id"`

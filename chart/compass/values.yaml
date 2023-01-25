@@ -1038,6 +1038,7 @@ global:
         - "formation:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "formation_template.webhooks:read"
       technical_client:
         - "tenant:read"
         - "tenant:write"
@@ -1062,6 +1063,7 @@ global:
         - "application_template:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "formation_template.webhooks:read"
       application:
         - "application:read"
         - "application:write"
@@ -1094,6 +1096,7 @@ global:
         - "application.auths:read"
         - "webhook:write"
         - "formation_template:read"
+        - "formation_template.webhooks:read"
       super_admin:
         - "application:read"
         - "application:write"
@@ -1128,6 +1131,7 @@ global:
         - "webhook:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "formation_template.webhooks:read"
       default:
         - "runtime:read"
         - "runtime:write"

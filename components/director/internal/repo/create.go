@@ -179,18 +179,25 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 		return errors.Errorf("unknown parent for entity type %s", resourceType)
 	}
 
+	tenantAccessResourceType := resource.TenantAccess
 	parentAccessTable, ok := parentResourceType.TenantAccessTable()
 	if !ok {
-		return errors.Errorf("parent entity %s does not have access table", parentResourceType)
+		log.C(ctx).Debugf("parent entity %s does not have access table. Will check if it has table with embedded tenant...", parentResourceType)
+		var ok bool
+		parentAccessTable, ok = parentResourceType.EmbeddedTenantTable()
+		if !ok {
+			return errors.Errorf("parent entity %s does not have access table or table with embedded tenant", parentResourceType)
+		}
+		tenantAccessResourceType = parentResourceType
 	}
 
 	conditions := Conditions{NewEqualCondition(M2MResourceIDColumn, parentID)}
-	if c.ownerCheckRequired {
+	if c.ownerCheckRequired && ok {
 		conditions = append(conditions, NewEqualCondition(M2MOwnerColumn, true))
 	}
 
 	exister := NewExistQuerierWithEmbeddedTenant(parentAccessTable, M2MTenantIDColumn)
-	exists, err := exister.Exists(ctx, resource.TenantAccess, tenant, conditions)
+	exists, err := exister.Exists(ctx, tenantAccessResourceType, tenant, conditions)
 	if err != nil {
 		return errors.Wrap(err, "while checking for tenant access")
 	}

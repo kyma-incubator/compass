@@ -78,6 +78,8 @@ const (
 	AppWebhook Type = "appWebhook"
 	// RuntimeWebhook type represents runtime webhook resource.
 	RuntimeWebhook Type = "runtimeWebhook"
+	// FormationTemplateWebhook type represents formation template webhook resource.
+	FormationTemplateWebhook Type = "formationTemplateWebhook"
 	// Tenant type represents tenant resource.
 	Tenant Type = "tenant"
 	// TenantAccess type represents tenant access resource.
@@ -95,32 +97,48 @@ var tenantAccessTable = map[Type]string{
 
 	// Views
 
-	Label:                 "labels_tenants",
-	ApplicationLabel:      "application_labels_tenants",
-	RuntimeLabel:          "runtime_labels_tenants",
-	RuntimeContextLabel:   "runtime_contexts_labels_tenants",
-	Bundle:                "bundles_tenants",
-	Package:               "packages_tenants",
-	Product:               "products_tenants",
-	Vendor:                "vendors_tenants",
-	Tombstone:             "tombstones_tenants",
-	DocFetchRequest:       "document_fetch_requests_tenants",
-	APISpecFetchRequest:   "api_specifications_fetch_requests_tenants",
-	EventSpecFetchRequest: "event_specifications_fetch_requests_tenants",
-	APISpecification:      "api_specifications_tenants",
-	EventSpecification:    "event_specifications_tenants",
-	Document:              "documents_tenants",
-	BundleInstanceAuth:    "bundle_instance_auths_tenants",
-	API:                   "api_definitions_tenants",
-	EventDefinition:       "event_api_definitions_tenants",
-	Webhook:               "webhooks_tenants",
-	AppWebhook:            "application_webhooks_tenants",
-	RuntimeWebhook:        "runtime_webhooks_tenants",
+	Label:                    "labels_tenants",
+	ApplicationLabel:         "application_labels_tenants",
+	RuntimeLabel:             "runtime_labels_tenants",
+	RuntimeContextLabel:      "runtime_contexts_labels_tenants",
+	Bundle:                   "bundles_tenants",
+	Package:                  "packages_tenants",
+	Product:                  "products_tenants",
+	Vendor:                   "vendors_tenants",
+	Tombstone:                "tombstones_tenants",
+	DocFetchRequest:          "document_fetch_requests_tenants",
+	APISpecFetchRequest:      "api_specifications_fetch_requests_tenants",
+	EventSpecFetchRequest:    "event_specifications_fetch_requests_tenants",
+	APISpecification:         "api_specifications_tenants",
+	EventSpecification:       "event_specifications_tenants",
+	Document:                 "documents_tenants",
+	BundleInstanceAuth:       "bundle_instance_auths_tenants",
+	API:                      "api_definitions_tenants",
+	EventDefinition:          "event_api_definitions_tenants",
+	Webhook:                  "webhooks_tenants",
+	AppWebhook:               "application_webhooks_tenants",
+	RuntimeWebhook:           "runtime_webhooks_tenants",
+	FormationTemplateWebhook: "formation_templates_webhooks_tenants",
+}
+
+var tablesWithEmbeddedTenant = map[Type]string{
+	// Tables
+	FormationTemplate:          "formation_templates",
+	AutomaticScenarioAssigment: "automatic_scenario_assignments",
+	LabelDefinition:            "label_definitions",
+	Label:                      "labels",
+	SystemAuth:                 "system_auths",
 }
 
 // TenantAccessTable returns the table / view with tenant accesses of the given type.
 func (t Type) TenantAccessTable() (string, bool) {
 	tbl, ok := tenantAccessTable[t]
+	return tbl, ok
+}
+
+// EmbeddedTenantTable returns the table of the given type that is with embedded tenant.
+func (t Type) EmbeddedTenantTable() (string, bool) {
+	tbl, ok := tablesWithEmbeddedTenant[t]
 	return tbl, ok
 }
 

@@ -111,6 +111,15 @@ func (s *service) ListForRuntime(ctx context.Context, runtimeID string) ([]*mode
 	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, runtimeID, model.RuntimeWebhookReference)
 }
 
+// ListForFormationTemplate lists all webhooks for a given formationTemplateID
+func (s *service) ListForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, formationTemplateID, model.FormationTemplateWebhookReference)
+}
+
 // Create creates a model.Webhook with generated ID and CreatedAt properties. Returns the ID of the webhook.
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)

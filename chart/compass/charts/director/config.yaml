@@ -128,6 +128,8 @@ graphql:
     runtime:
       auths: ["runtime.auths:read"]
       webhooks: ["runtime.webhooks:read"]
+    formation_template:
+      webhooks: ["formation_template.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
 

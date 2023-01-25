@@ -178,7 +178,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	bundleReferenceConv := bundlereferences.NewConverter()
 	runtimeContextConv := runtimectx.NewConverter()
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 	assignmentConv := scenarioassignment.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)

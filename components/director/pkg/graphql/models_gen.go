@@ -493,21 +493,13 @@ type FormationStatusError struct {
 	ErrorCode    int    `json:"errorCode"`
 }
 
-type FormationTemplate struct {
-	ID                     string       `json:"id"`
-	Name                   string       `json:"name"`
-	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeTypes           []string     `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
-}
-
 type FormationTemplateInput struct {
-	Name                   string       `json:"name"`
-	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeTypes           []string     `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
+	Name                   string          `json:"name"`
+	ApplicationTypes       []string        `json:"applicationTypes"`
+	RuntimeTypes           []string        `json:"runtimeTypes"`
+	RuntimeTypeDisplayName string          `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType    `json:"runtimeArtifactKind"`
+	Webhooks               []*WebhookInput `json:"webhooks"`
 }
 
 type FormationTemplatePage struct {
@@ -757,6 +749,7 @@ type Webhook struct {
 	ApplicationTemplateID *string      `json:"applicationTemplateID"`
 	RuntimeID             *string      `json:"runtimeID"`
 	IntegrationSystemID   *string      `json:"integrationSystemID"`
+	FormationTemplateID   *string      `json:"formationTemplateID"`
 	Type                  WebhookType  `json:"type"`
 	Mode                  *WebhookMode `json:"mode"`
 	CorrelationIDKey      *string      `json:"correlationIdKey"`
@@ -1791,6 +1784,7 @@ const (
 	WebhookTypeRegisterApplication      WebhookType = "REGISTER_APPLICATION"
 	WebhookTypeUnregisterApplication    WebhookType = "UNREGISTER_APPLICATION"
 	WebhookTypeOpenResourceDiscovery    WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	WebhookTypeFormationLifecycle       WebhookType = "FORMATION_LIFECYCLE"
 )
 
 var AllWebhookType = []WebhookType{
@@ -1799,11 +1793,12 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
+	WebhookTypeFormationLifecycle,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeFormationLifecycle:
 		return true
 	}
 	return false

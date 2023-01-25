@@ -130,7 +130,7 @@ func (b *synchronizerBuilder) domainServices(featuresConfig features.Config) (Te
 	runtimeContextConverter := runtimectx.NewConverter()
 	tenantConverter := tenant.NewConverter()
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
