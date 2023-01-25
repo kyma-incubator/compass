@@ -150,7 +150,7 @@ func (c *converter) ApplicationFromTemplateInputFromGraphQL(appTemplate *model.A
 		parser := jsonpath.New("parser")
 
 		for _, placeholder := range appTemplate.Placeholders {
-			if len(*placeholder.JSONPath) > 0 {
+			if placeholder.JSONPath != nil && len(*placeholder.JSONPath) > 0 {
 				if err := parser.Parse(fmt.Sprintf("{%s}", *placeholder.JSONPath)); err != nil {
 					return model.ApplicationFromTemplateInput{}, errors.Wrapf(err, "while parsing placeholder JSON path: %s", *placeholder.JSONPath)
 				}

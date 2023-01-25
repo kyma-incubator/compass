@@ -775,6 +775,7 @@ input WebhookInput {
 	url: String
 	auth: AuthInput
 	mode: WebhookMode
+	version: String
 	correlationIdKey: String
 	retryInterval: Int
 	timeout: Int
