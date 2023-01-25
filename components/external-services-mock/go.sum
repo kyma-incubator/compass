@@ -168,15 +168,12 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pretty v0.2.1 h1:Fmg33tUaq4/8ym9TJN1x7sLJnHVwhP33CNkpYV/7rwI=
-github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230113212053-9511b220e4c8 h1:hHVnypA60Jh7zIVMFx4E9RoaE5Uzgs+WxD27p1GoFAk=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230113212053-9511b220e4c8/go.mod h1:NVPoNAMvh9ExZ0WZIg0CQ35t1q7zEfmlsQIlkoXCOik=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230117160600-37834cf6765d h1:blLYf9UfFtvtoPlIPY4Vs0izKSDrYkeH3ydW5oxzFmI=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230117160600-37834cf6765d/go.mod h1:BtinXupm1KpwjRDdrClIZQiMPiLG66CRr6eUabj9hEo=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230125173445-b93a5ff29000 h1:siyAp2bj3g2GB4jKOrApsrddij8ILn1QjlBlLotA1Z8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230125173445-b93a5ff29000/go.mod h1:o3fqmrfcTPN67FfaTC5xILIhDD5DP0ZRt76DdFwBLik=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20230113212053-9511b220e4c8 h1:mppZwSIVuMYNhf41PUJh9+G0LOGRpEcGhe4wNYMM/2A=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20230113212053-9511b220e4c8/go.mod h1:fyWohqBVhsLrWp5Fw7j9zLIrvBclS3Wt5YlXeTs1jDE=
 github.com/kyma-incubator/compass/tests v0.0.0-20230113212053-9511b220e4c8 h1:cRgWXjojZehyfrazkT5dBagB7HFsTPcxE/dndn7zVYA=
@@ -554,7 +551,6 @@ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
-gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=
 gopkg.in/errgo.v2 v2.1.0/go.mod h1:hNsd1EY+bozCKY1Ytp96fpM3vjJbqLJn88ws8XvfDNI=
 gopkg.in/inf.v0 v0.9.1 h1:73M5CoZyi3ZLMOyDlQh031Cx6N9NDJ2Vvfl76EDAgDc=
 gopkg.in/inf.v0 v0.9.1/go.mod h1:cWUDdTG/fYaXco+Dcufb5Vnc6Gp2YChqWtbxRZE0mXw=
