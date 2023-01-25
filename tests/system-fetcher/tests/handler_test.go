@@ -401,8 +401,6 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
-	}
-	for _, app := range resp.Data {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
 
@@ -620,8 +618,6 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
-	}
-	for _, app := range resp.Data {
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
 
@@ -840,9 +836,6 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
-	}
-
-	for _, app := range resp2.Data {
 		defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
 	}
 

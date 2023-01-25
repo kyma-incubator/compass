@@ -667,12 +667,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 			t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 			resp, err := httpClient.Do(subscribeReq)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
-			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 			require.NoError(t, err)
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
@@ -2138,8 +2138,8 @@ func TestFormationAssignments(stdT *testing.T) {
 		// so, the secret could be deleted at the end of the test. Otherwise, it will remain as leftover resource in the cluster
 		defer func() {
 			k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-			k8s.DeleteSecret(t, ctx, k8sClient, conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName, conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace)
 			require.NoError(t, err)
+			k8s.DeleteSecret(t, ctx, k8sClient, conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName, conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace)
 		}()
 
 		runtimeWebhookMode := graphql.WebhookModeAsyncCallback
