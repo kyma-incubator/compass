@@ -1,6 +1,8 @@
 package certsubjectmapping_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -8,7 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_Create(t *testing.T) {
@@ -138,7 +139,7 @@ func TestService_Update(t *testing.T) {
 			},
 		},
 		{
-			Name: "Error when checking for certificate subject mapping existence fails",
+			Name:  "Error when checking for certificate subject mapping existence fails",
 			Input: CertSubjectMappingModel,
 			Repo: func() *automock.CertMappingRepository {
 				repo := &automock.CertMappingRepository{}
@@ -148,7 +149,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name: "Error when the updated certificate subject mapping is not found",
+			Name:  "Error when the updated certificate subject mapping is not found",
 			Input: CertSubjectMappingModel,
 			Repo: func() *automock.CertMappingRepository {
 				repo := &automock.CertMappingRepository{}
@@ -194,9 +195,9 @@ func TestService_Update(t *testing.T) {
 
 func TestService_Delete(t *testing.T) {
 	testCases := []struct {
-		Name           string
-		Repo           func() *automock.CertMappingRepository
-		ExpectedError  error
+		Name          string
+		Repo          func() *automock.CertMappingRepository
+		ExpectedError error
 	}{
 		{
 			Name: "Success",
@@ -213,7 +214,7 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", emptyCtx, TestID).Return(testErr).Once()
 				return repo
 			},
-			ExpectedError:  testErr,
+			ExpectedError: testErr,
 		},
 	}
 
@@ -306,7 +307,7 @@ func TestService_List(t *testing.T) {
 	testCases := []struct {
 		Name           string
 		Repo           func() *automock.CertMappingRepository
-		PageSize int
+		PageSize       int
 		ExpectedOutput *model.CertSubjectMappingPage
 		ExpectedError  error
 	}{
@@ -317,7 +318,7 @@ func TestService_List(t *testing.T) {
 				repo.On("List", emptyCtx, pageSize, "").Return(certSubjectMappingPage, nil).Once()
 				return repo
 			},
-			PageSize: pageSize,
+			PageSize:       pageSize,
 			ExpectedOutput: certSubjectMappingPage,
 		},
 		{

@@ -2,6 +2,7 @@ package certsubjectmapping
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -21,13 +22,13 @@ type CertMappingRepository interface {
 }
 
 type service struct {
-	repo   CertMappingRepository
+	repo CertMappingRepository
 }
 
 // NewService returns a new object responsible for service-layer certificate subject mapping operations.
 func NewService(repo CertMappingRepository) *service {
 	return &service{
-		repo:   repo,
+		repo: repo,
 	}
 }
 

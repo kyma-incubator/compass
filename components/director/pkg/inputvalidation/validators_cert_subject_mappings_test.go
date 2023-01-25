@@ -2,11 +2,12 @@ package inputvalidation_test
 
 import (
 	"fmt"
+	"testing"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestCertMappingSubjectValidator_Validate(t *testing.T) {
@@ -33,7 +34,7 @@ func TestCertMappingSubjectValidator_Validate(t *testing.T) {
 			Valid: false,
 		},
 		{
-			Name: "Valid when the input is empty pointer",
+			Name:  "Valid when the input is empty pointer",
 			Input: nilPointer,
 			Valid: true,
 		},
@@ -92,37 +93,37 @@ func TestCertMappingConsumerTypeValidator_Validate(t *testing.T) {
 	invalidType := "invalidType"
 
 	testCases := []struct {
-		Name  string
-		Input interface{}
-		Valid bool
+		Name   string
+		Input  interface{}
+		Valid  bool
 		ErrMsg string
 	}{
 		{
-			Name:  "Invalid when the input is not a string",
-			Input: 123,
-			Valid: false,
+			Name:   "Invalid when the input is not a string",
+			Input:  123,
+			Valid:  false,
 			ErrMsg: "type has to be a string",
 		},
 		{
-			Name:  "Invalid when the input is `nil`",
-			Input: nil,
-			Valid: false,
+			Name:   "Invalid when the input is `nil`",
+			Input:  nil,
+			Valid:  false,
 			ErrMsg: "type has to be a string",
 		},
 		{
-			Name: "Valid when the input is empty pointer",
+			Name:  "Valid when the input is empty pointer",
 			Input: nilPointer,
 			Valid: true,
 		},
 		{
-			Name: "Valid when the consumer type is supported",
+			Name:  "Valid when the consumer type is supported",
 			Input: inputvalidation.RuntimeType,
 			Valid: true,
 		},
 		{
-			Name: "Invalid when the consumer type is unsupported",
-			Input: invalidType,
-			Valid: false,
+			Name:   "Invalid when the consumer type is unsupported",
+			Input:  invalidType,
+			Valid:  false,
 			ErrMsg: fmt.Sprintf("consumer type %s is not valid", invalidType),
 		},
 	}
@@ -152,9 +153,9 @@ func TestCertMappingTenantAccessLevelValidator_Validate(t *testing.T) {
 	invalidTenantAccessLevelsType := "invalidTenantAccessLevelsType"
 
 	testCases := []struct {
-		Name  string
-		Input interface{}
-		Valid bool
+		Name   string
+		Input  interface{}
+		Valid  bool
 		ErrMsg string
 	}{
 		{
@@ -163,15 +164,15 @@ func TestCertMappingTenantAccessLevelValidator_Validate(t *testing.T) {
 			Valid: true,
 		},
 		{
-			Name:  "Invalid when tenant access levels are unsupported",
-			Input: unsupportedTntAccessLevels,
-			Valid: false,
+			Name:   "Invalid when tenant access levels are unsupported",
+			Input:  unsupportedTntAccessLevels,
+			Valid:  false,
 			ErrMsg: fmt.Sprintf("tenant access level %s is not valid", unsupportedTntAccessLevels[0]),
 		},
 		{
-			Name:  "Invalid when tenant access levels type is incorrect",
-			Input: invalidTenantAccessLevelsType,
-			Valid: false,
+			Name:   "Invalid when tenant access levels type is incorrect",
+			Input:  invalidTenantAccessLevelsType,
+			Valid:  false,
 			ErrMsg: fmt.Sprintf("invalid type, expected []string, got: %T", invalidTenantAccessLevelsType),
 		},
 	}

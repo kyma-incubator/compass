@@ -2,6 +2,7 @@ package certsubjectmapping
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
@@ -32,9 +33,9 @@ func (c *converter) ToGraphQL(in *model.CertSubjectMapping) *graphql.Certificate
 	}
 
 	return &graphql.CertificateSubjectMapping{
-		ID: in.ID,
-		Subject: in.Subject,
-		ConsumerType: in.ConsumerType,
+		ID:                 in.ID,
+		Subject:            in.Subject,
+		ConsumerType:       in.ConsumerType,
 		InternalConsumerID: in.InternalConsumerID,
 		TenantAccessLevels: in.TenantAccessLevels,
 	}
@@ -83,7 +84,7 @@ func (c *converter) FromEntity(e *Entity) (*model.CertSubjectMapping, error) {
 		return nil, nil
 	}
 
-	var unmarshalledTntAccessLevels	[]string
+	var unmarshalledTntAccessLevels []string
 	err := json.Unmarshal([]byte(e.TenantAccessLevels), &unmarshalledTntAccessLevels)
 	if err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling tenant access levels")

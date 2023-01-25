@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"net/http"
 	"net/url"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 
@@ -896,7 +897,7 @@ func (r *mutationResolver) CreateAutomaticScenarioAssignment(ctx context.Context
 }
 
 // WriteTenants creates tenants of type customer, account, subaccount, organization, folder, or resource-group
-func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) (int, error) {
+func (r *mutationResolver) WriteTenants(ctx context.Context, in []*graphql.BusinessTenantMappingInput) ([]string, error) {
 	return r.tenant.Write(ctx, in)
 }
 

@@ -1,11 +1,12 @@
 package certsubjectmapping_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var converter = certsubjectmapping.NewConverter()
@@ -155,9 +156,9 @@ func TestConverter_FromEntity(t *testing.T) {
 			Expected: nil,
 		},
 		{
-			Name: "Error when unmarhalling fails",
-			Input: CertSubjectMappingEntityInvalidTntAccessLevels,
-			Expected: nil,
+			Name:           "Error when unmarhalling fails",
+			Input:          CertSubjectMappingEntityInvalidTntAccessLevels,
+			Expected:       nil,
 			ExpectedErrMsg: "while unmarshalling tenant access levels",
 		},
 	}

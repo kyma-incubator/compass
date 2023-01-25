@@ -8,7 +8,7 @@ type CertSubjectMapping struct {
 	ID                 string   `json:"id"`
 	Subject            string   `json:"subject"`
 	ConsumerType       string   `json:"consumer_type"`
-	InternalConsumerID *string   `json:"internal_consumer_id"`
+	InternalConsumerID *string  `json:"internal_consumer_id"`
 	TenantAccessLevels []string `json:"tenant_access_levels"`
 }
 
@@ -16,7 +16,7 @@ type CertSubjectMapping struct {
 type CertSubjectMappingInput struct {
 	Subject            string   `json:"subject"`
 	ConsumerType       string   `json:"consumer_type"`
-	InternalConsumerID *string   `json:"internal_consumer_id"`
+	InternalConsumerID *string  `json:"internal_consumer_id"`
 	TenantAccessLevels []string `json:"tenant_access_levels"`
 }
 

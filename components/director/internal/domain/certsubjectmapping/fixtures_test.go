@@ -12,13 +12,13 @@ import (
 )
 
 const (
-	TestID                 = "455e47ea-5eab-49c5-ba35-a67e1d9125f6"
-	TestSubject            = "C=DE, L=test, O=SAP SE, OU=TestRegion, OU=SAP Cloud Platform Clients, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=test-compass"
-	TestConsumerType       = inputvalidation.RuntimeType
+	TestID           = "455e47ea-5eab-49c5-ba35-a67e1d9125f6"
+	TestSubject      = "C=DE, L=test, O=SAP SE, OU=TestRegion, OU=SAP Cloud Platform Clients, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=test-compass"
+	TestConsumerType = inputvalidation.RuntimeType
 )
 
 var (
-	TestInternalConsumerID = "c889e656-2623-4828-916c-c9d46fafac7c"
+	TestInternalConsumerID                = "c889e656-2623-4828-916c-c9d46fafac7c"
 	TestTenantAccessLevelsAsString        = "[\"account\",\"subaccount\"]"
 	TestInvalidTenantAccessLevelsAsString = "[invalid"
 	TestTenantAccessLevels                = []string{string(tenantEntity.Account), string(tenantEntity.Subaccount)}
@@ -70,8 +70,8 @@ var (
 	}
 
 	CertificateSubjectMappingModelPage = &model.CertSubjectMappingPage{
-		Data:       []*model.CertSubjectMapping{CertSubjectMappingModel},
-		PageInfo:   &pagination.Page{
+		Data: []*model.CertSubjectMapping{CertSubjectMappingModel},
+		PageInfo: &pagination.Page{
 			StartCursor: "start",
 			EndCursor:   "end",
 			HasNextPage: false,
@@ -82,8 +82,8 @@ var (
 	CertificateSubjectMappingsGQL = []*graphql.CertificateSubjectMapping{CertSubjectMappingGQLModel}
 
 	CertificateSubjectMappingGQLPage = &graphql.CertificateSubjectMappingPage{
-		Data:       CertificateSubjectMappingsGQL,
-		PageInfo:   &graphql.PageInfo{
+		Data: CertificateSubjectMappingsGQL,
+		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor("start"),
 			EndCursor:   graphql.PageCursor("end"),
 			HasNextPage: false,
