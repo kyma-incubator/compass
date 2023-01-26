@@ -4,19 +4,22 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	formationconstraint2 "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 const (
-	testID                  = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	formationTemplateID     = "id"
-	formationConstraintName = "test constraint"
-	operatorName            = formationconstraint.IsNotAssignedToAnyFormationOfTypeOperator
-	resourceSubtype         = "test subtype"
-	inputTemplate           = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
-	testTenantID            = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	testName                = "test"
+	testID                   = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	formationTemplateID      = "id"
+	otherFormationTemplateID = "other-id"
+	formationConstraintName  = "test constraint"
+	operatorName             = formationconstraint.IsNotAssignedToAnyFormationOfTypeOperator
+	resourceSubtype          = "test subtype"
+	inputTemplate            = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
+	testTenantID             = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	testInternalTenantID     = "aaaddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	scenario                 = "test-scenario"
+	testName                 = "test"
 )
 
 var (
@@ -111,11 +114,11 @@ var (
 		ConstraintID:        testID,
 		FormationTemplateID: formationTemplateID,
 	}
-	location = formationconstraint2.JoinPointLocation{
+	location = formationconstraintpkg.JoinPointLocation{
 		OperationName:  "assign",
 		ConstraintType: "pre",
 	}
-	details = formationconstraint2.AssignFormationOperationDetails{
+	details = formationconstraintpkg.AssignFormationOperationDetails{
 		ResourceType:    "runtime",
 		ResourceSubtype: "kyma",
 	}
@@ -124,6 +127,51 @@ var (
 	gqlInput       = &graphql.FormationConstraintInput{Name: testName}
 	modelInput     = &model.FormationConstraintInput{Name: testName}
 	modelFromInput = &model.FormationConstraint{ID: testID, Name: testName}
+
+	inputTenantResourceType = &formationconstraintpkg.IsNotAssignedToAnyFormationOfTypeInput{
+		FormationTemplateID: formationTemplateID,
+		ResourceType:        model.TenantResourceType,
+		ResourceSubtype:     "account",
+		ResourceID:          testID,
+		Tenant:              testTenantID,
+	}
+
+	inputApplicationResourceType = &formationconstraintpkg.IsNotAssignedToAnyFormationOfTypeInput{
+		FormationTemplateID: formationTemplateID,
+		ResourceType:        model.ApplicationResourceType,
+		ResourceSubtype:     "app",
+		ResourceID:          testID,
+		Tenant:              testTenantID,
+	}
+
+	inputRuntimeResourceType = &formationconstraintpkg.IsNotAssignedToAnyFormationOfTypeInput{
+		FormationTemplateID: formationTemplateID,
+		ResourceType:        model.RuntimeResourceType,
+		ResourceSubtype:     "account",
+		ResourceID:          testID,
+		Tenant:              testTenantID,
+	}
+
+	formations = []*model.Formation{
+		{
+			FormationTemplateID: otherFormationTemplateID,
+		},
+	}
+
+	formations2 = []*model.Formation{
+		{
+			FormationTemplateID: formationTemplateID,
+		},
+	}
+
+	assignments = []*model.AutomaticScenarioAssignment{
+		{ScenarioName: scenario},
+	}
+
+	emptyAssignments = []*model.AutomaticScenarioAssignment{}
+
+	scenariosLabel             = &model.Label{Value: []interface{}{scenario}}
+	scenariosLabelInvalidValue = &model.Label{Value: "invalid"}
 )
 
 func UnusedFormationConstraintService() *automock.FormationConstraintService {
@@ -136,6 +184,22 @@ func UnusedFormationConstraintRepository() *automock.FormationConstraintReposito
 
 func UnusedFormationConstraintConverter() *automock.FormationConstraintConverter {
 	return &automock.FormationConstraintConverter{}
+}
+
+func UnusedTenantService() *automock.TenantService {
+	return &automock.TenantService{}
+}
+
+func UnusedASAService() *automock.AutomaticFormationAssignmentService {
+	return &automock.AutomaticFormationAssignmentService{}
+}
+
+func UnusedLabelRepo() *automock.LabelRepository {
+	return &automock.LabelRepository{}
+}
+
+func UnusedFormationRepo() *automock.FormationRepository {
+	return &automock.FormationRepository{}
 }
 
 func UnusedFormationTemplateConstraintReferenceRepository() *automock.FormationTemplateConstraintReferenceRepository {

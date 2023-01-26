@@ -2,8 +2,6 @@ package formationconstraint
 
 import (
 	"context"
-	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -74,7 +72,7 @@ func (e *ConstraintEngine) IsNotAssignedToAnyFormationOfType(ctx context.Context
 			return false, err
 		}
 	default:
-		return false, errors.Errorf("Unsupportedd resource type %q", i.ResourceType)
+		return false, errors.Errorf("Unsupported resource type %q", i.ResourceType)
 	}
 
 	participatesInFormationsOfType, err := e.participatesInFormationsOfType(ctx, assignedFormations, i.Tenant, i.FormationTemplateID)
@@ -99,9 +97,6 @@ func (e *ConstraintEngine) participatesInFormationsOfType(ctx context.Context, a
 	if err != nil {
 		return false, err
 	}
-	spew.Dump(assignedFormationNames)
-	fmt.Println(">>>>>>>>>>>>>>>>")
-	spew.Dump(assignedFormations)
 	for _, formation := range assignedFormations {
 		if formation.FormationTemplateID == formationTemplateID {
 			return true, nil
