@@ -856,6 +856,10 @@ func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*mo
 	return nil
 }
 
+func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
+	return s.asaEngine.GetScenariosFromMatchingASAs(ctx, objectID, objType)
+}
+
 // MergeScenariosFromInputLabelsAndAssignments merges all the scenarios that are part of the resource labels (already added + to be added with the current operation)
 // with all the scenarios that should be assigned based on ASAs.
 func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {

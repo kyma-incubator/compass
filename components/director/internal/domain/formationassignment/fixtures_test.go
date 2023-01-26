@@ -15,16 +15,17 @@ import (
 )
 
 const (
-	TestID               = "c861c3db-1265-4143-a05c-1ced1291d816"
-	TestFormationID      = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
-	TestTenantID         = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
-	TestSource           = "05e10560-2259-4adf-bb3e-6aee0518f573"
-	TestSourceType       = "application"
-	TestTarget           = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
-	TestTargetType       = "runtimeContext"
-	TestState            = "INITIAL"
-	TestWebhookID        = "eca98d44-aac0-4e44-898b-c394beab2e94"
-	TestReverseWebhookID = "aecec253-b4d8-416a-be5c-a27677ee5157"
+	TestID                  = "c861c3db-1265-4143-a05c-1ced1291d816"
+	TestFormationID         = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
+	TestFormationTemplateID = "jjc0bd01-2441-4ca1-9b5e-a54e74fd7773"
+	TestTenantID            = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
+	TestSource              = "05e10560-2259-4adf-bb3e-6aee0518f573"
+	TestSourceType          = "application"
+	TestTarget              = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
+	TestTargetType          = "runtimeContext"
+	TestState               = "INITIAL"
+	TestWebhookID           = "eca98d44-aac0-4e44-898b-c394beab2e94"
+	TestReverseWebhookID    = "aecec253-b4d8-416a-be5c-a27677ee5157"
 )
 
 var (
@@ -524,4 +525,30 @@ func unusedWebhookRepo() *automock.WebhookRepository {
 
 func unusedWebhookConverter() *automock.WebhookConverter {
 	return &automock.WebhookConverter{}
+}
+
+func unusedFormationRepo() *automock.FormationRepository {
+	return &automock.FormationRepository{}
+}
+
+func unusedNotificationBuilder() *automock.NotificationBuilder {
+	return &automock.NotificationBuilder{}
+}
+
+func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
+	config := string(formationAssignment.Value)
+	if config == "" {
+		config = "\"\""
+	}
+	return &webhook.FormationAssignment{
+		ID:          formationAssignment.ID,
+		FormationID: formationAssignment.FormationID,
+		TenantID:    formationAssignment.TenantID,
+		Source:      formationAssignment.Source,
+		SourceType:  formationAssignment.SourceType,
+		Target:      formationAssignment.Target,
+		TargetType:  formationAssignment.TargetType,
+		State:       formationAssignment.State,
+		Value:       config,
+	}
 }
