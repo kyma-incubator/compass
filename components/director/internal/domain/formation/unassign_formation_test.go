@@ -2,8 +2,9 @@ package formation_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"

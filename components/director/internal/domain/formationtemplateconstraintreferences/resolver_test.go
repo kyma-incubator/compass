@@ -2,6 +2,8 @@ package formationtemplateconstraintreferences_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -11,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestResolver_AttachConstraintToFormationTemplate(t *testing.T) {

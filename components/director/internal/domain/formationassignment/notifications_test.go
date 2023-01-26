@@ -3,8 +3,9 @@ package formationassignment_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

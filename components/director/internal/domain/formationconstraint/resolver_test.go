@@ -2,6 +2,8 @@ package formationconstraint_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -14,7 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestResolver_FormationConstraints(t *testing.T) {

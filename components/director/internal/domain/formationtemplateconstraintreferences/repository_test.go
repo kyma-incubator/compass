@@ -2,12 +2,13 @@ package formationtemplateconstraintreferences_test
 
 import (
 	"database/sql/driver"
+	"regexp"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"regexp"
-	"testing"
 )
 
 func TestRepository_ListMatchingFormationConstraints(t *testing.T) {

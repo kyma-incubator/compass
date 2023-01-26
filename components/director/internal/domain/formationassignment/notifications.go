@@ -2,6 +2,7 @@ package formationassignment
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 

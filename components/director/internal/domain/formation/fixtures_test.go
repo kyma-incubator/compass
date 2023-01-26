@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -16,7 +18,6 @@ import (
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"

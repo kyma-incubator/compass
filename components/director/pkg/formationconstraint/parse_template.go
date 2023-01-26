@@ -3,8 +3,9 @@ package formationconstraint
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"text/template"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 )
 
 func ParseInputTemplate(tmpl string, data interface{}, dest interface{}) error {

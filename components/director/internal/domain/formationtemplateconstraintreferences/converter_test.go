@@ -1,9 +1,10 @@
 package formationtemplateconstraintreferences_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var converter = formationtemplateconstraintreferences.NewConverter()
