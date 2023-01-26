@@ -21,6 +21,9 @@ const (
 	// M2MOwnerColumn is the column name of the owner in each tenant access table / view.
 	M2MOwnerColumn = "owner"
 
+	// CreateSingleTenantAccessQuery sda
+	CreateSingleTenantAccessQuery = `INSERT INTO %s ( %s ) VALUES ( %s ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`
+
 	// RecursiveCreateTenantAccessCTEQuery is a recursive SQL query that creates a tenant access record for a tenant and all its parents.
 	RecursiveCreateTenantAccessCTEQuery = `WITH RECURSIVE parents AS
                    (SELECT t1.id, t1.parent
@@ -63,6 +66,26 @@ type TenantAccessCollection []TenantAccess
 // Len returns the current number of entities in the collection.
 func (tc TenantAccessCollection) Len() int {
 	return len(tc)
+}
+
+// CreateSingleTenantAccess create a tenant access for a single entity
+func CreateSingleTenantAccess(ctx context.Context, m2mTable string, tenantAccess *TenantAccess) error {
+	values := make([]string, 0, len(M2MColumns))
+	for _, c := range M2MColumns {
+		values = append(values, fmt.Sprintf(":%s", c))
+	}
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	insertTenantAccessStmt := fmt.Sprintf(CreateSingleTenantAccessQuery, m2mTable, strings.Join(M2MColumns, ", "), strings.Join(values, ", "))
+
+	log.C(ctx).Debugf("Executing DB query: %s", insertTenantAccessStmt)
+	_, err = persist.NamedExecContext(ctx, insertTenantAccessStmt, *tenantAccess)
+
+	return persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Create, "while inserting tenant access record to '%s' table", m2mTable)
 }
 
 // CreateTenantAccessRecursively creates the given tenantAccess in the provided m2mTable while making sure to recursively
