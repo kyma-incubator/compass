@@ -2,24 +2,25 @@ package fixtures
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 )
 
 func FixAttachConstraintToFormationTemplateRequest(constraintID, formationTemplateID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				  result: attachConstraintToFormationTemplate(constraintID: %s, formationTemplateID: %s) {
-    					%s
+				  result: attachConstraintToFormationTemplate(constraintID: "%s", formationTemplateID: "%s") {
+    					constraintID
+			            formationTemplateID
 					}
-				}`, constraintID, formationTemplateID, testctx.Tc.GQLFieldsProvider.ForFormationTemplateConstraintReference()))
+				}`, constraintID, formationTemplateID))
 }
 
 func FixDetachConstraintFromFormationTemplateRequest(constraintID, formationTemplateID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
-				  result: detachConstraintFromFormationTemplate(constraintID: %s, formationTemplateID: %s) {
-    					%s
+				  result: detachConstraintFromFormationTemplate(constraintID: "%s", formationTemplateID: "%s") {
+    					constraintID
+			            formationTemplateID
 					}
-				}`, constraintID, formationTemplateID, testctx.Tc.GQLFieldsProvider.ForFormationTemplateConstraintReference()))
+				}`, constraintID, formationTemplateID))
 }

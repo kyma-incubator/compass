@@ -9,7 +9,6 @@ CREATE TABLE formation_constraints
     operator         VARCHAR(256) NOT NULL,
     resource_type    VARCHAR(256) NOT NULL,
     resource_subtype VARCHAR(256) NOT NULL,
-    operator_scope   VARCHAR(256) NOT NULL,
     input_template   TEXT,
     constraint_scope VARCHAR(256) NOT NULL
 );

@@ -604,7 +604,7 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
 
-	t.Logf("Attaching constraint tot formation template")
+	t.Logf("Attaching constraint to formation template")
 	createRequest := fixtures.FixAttachConstraintToFormationTemplateRequest(constraint.ID, formationTemplate.ID)
 	constraintReference := graphql.ConstraintReference{}
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createRequest, &constraintReference))
