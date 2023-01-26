@@ -546,7 +546,7 @@ func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant st
 		return errors.Errorf("cannot cast %q label value of type %T to int", InstancesLabelKey, instancesLabel.Value)
 	}
 
-	instances = instances + 1
+	instances++
 	if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
 		Key:        instancesLabel.Key,
 		Value:      instances,
@@ -590,7 +590,7 @@ func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, object
 		}
 		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
 	} else {
-		instances = instances - 1
+		instances--
 		if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
 			Key:        instancesLabel.Key,
 			Value:      instances,
