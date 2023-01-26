@@ -12,21 +12,23 @@ const (
 )
 
 type Config struct {
-	TenantFetcherURL                   string
-	RootAPI                            string
-	RegionalHandlerEndpoint            string
-	TenantPathParam                    string
-	RegionPathParam                    string
-	SubscriptionProviderID             string
-	TenantFetcherFullRegionalURL       string `envconfig:"-"`
-	TestConsumerAccountID              string
-	TestConsumerSubaccountID           string
-	TestConsumerTenantID               string
-	PropagatedProviderSubaccountHeader string
-	SubscriptionProviderAppNameValue   string
-	TestTenantOnDemandID               string
-	ConsumerClaimsTenantIDKey          string
-	ConsumerClaimsSubdomainKey         string
+	TenantFetcherURL                        string
+	RootAPI                                 string
+	RegionalHandlerEndpoint                 string
+	TenantPathParam                         string
+	RegionPathParam                         string
+	SubscriptionProviderID                  string
+	TenantFetcherFullRegionalURL            string `envconfig:"-"`
+	TestConsumerAccountID                   string
+	TestConsumerSubaccountID                string
+	TestConsumerTenantID                    string
+	TestConsumerAccountIDTenantHierarchy    string
+	TestConsumerSubaccountIDTenantHierarchy string
+	PropagatedProviderSubaccountHeader      string
+	SubscriptionProviderAppNameValue        string
+	TestTenantOnDemandID                    string
+	ConsumerClaimsTenantIDKey               string
+	ConsumerClaimsSubdomainKey              string
 }
 
 // ProviderConfig includes the configuration for tenant providers - the tenant ID json property names - account, subaccount, customer. The subdomain property name and subscription provider ID property.

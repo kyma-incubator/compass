@@ -83,17 +83,19 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	assignment *webhookdir.FormationAssignment,
 	reverseAssignment *webhookdir.FormationAssignment,
 	targetType model.ResourceType,
+	tenantContext *webhookdir.CustomerTenantContext,
 ) (*formationconstraint2.GenerateNotificationOperationDetails, error) {
 	details := &formationconstraint2.GenerateNotificationOperationDetails{
-		Operation:           operation,
-		FormationID:         formationID,
-		ApplicationTemplate: applicationTemplate,
-		Application:         application,
-		Runtime:             runtime,
-		RuntimeContext:      runtimeContext,
-		Assignment:          assignment,
-		ReverseAssignment:   reverseAssignment,
-		ResourceType:        targetType,
+		Operation:             operation,
+		FormationID:           formationID,
+		CustomerTenantContext: tenantContext,
+		ApplicationTemplate:   applicationTemplate,
+		Application:           application,
+		Runtime:               runtime,
+		RuntimeContext:        runtimeContext,
+		Assignment:            assignment,
+		ReverseAssignment:     reverseAssignment,
+		ResourceType:          targetType,
 	}
 	switch targetType {
 	case model.ApplicationResourceType:
@@ -140,10 +142,12 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 	targetApplication *webhookdir.ApplicationWithLabels,
 	assignment *webhookdir.FormationAssignment,
 	reverseAssignment *webhookdir.FormationAssignment,
+	tenantContext *webhookdir.CustomerTenantContext,
 ) (*formationconstraint2.GenerateNotificationOperationDetails, error) {
 	details := &formationconstraint2.GenerateNotificationOperationDetails{
 		Operation:                 operation,
 		FormationID:               formationID,
+		CustomerTenantContext:     tenantContext,
 		SourceApplicationTemplate: sourceApplicationTemplate,
 		SourceApplication:         sourceApplication,
 		TargetApplicationTemplate: targetApplicationTemplate,
@@ -180,14 +184,15 @@ type InputBuilder func(details *formationconstraint2.GenerateNotificationOperati
 
 func buildConfigurationChangeInputFromJoinpointDetails(details *formationconstraint2.GenerateNotificationOperationDetails) webhookdir.FormationAssignmentTemplateInput {
 	return &webhookdir.FormationConfigurationChangeInput{
-		Operation:           details.Operation,
-		FormationID:         details.FormationID,
-		ApplicationTemplate: details.ApplicationTemplate,
-		Application:         details.Application,
-		Runtime:             details.Runtime,
-		RuntimeContext:      details.RuntimeContext,
-		Assignment:          details.Assignment,
-		ReverseAssignment:   details.ReverseAssignment,
+		Operation:             details.Operation,
+		FormationID:           details.FormationID,
+		ApplicationTemplate:   details.ApplicationTemplate,
+		Application:           details.Application,
+		Runtime:               details.Runtime,
+		RuntimeContext:        details.RuntimeContext,
+		CustomerTenantContext: details.CustomerTenantContext,
+		Assignment:            details.Assignment,
+		ReverseAssignment:     details.ReverseAssignment,
 	}
 }
 
@@ -199,6 +204,7 @@ func buildApplicationTenantMappingInputFromJoinpointDetails(details *formationco
 		SourceApplication:         details.SourceApplication,
 		TargetApplicationTemplate: details.TargetApplicationTemplate,
 		TargetApplication:         details.TargetApplication,
+		CustomerTenantContext:     details.CustomerTenantContext,
 		Assignment:                details.Assignment,
 		ReverseAssignment:         details.ReverseAssignment,
 	}

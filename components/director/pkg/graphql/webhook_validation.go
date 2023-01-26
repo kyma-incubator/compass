@@ -41,6 +41,7 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 		RuntimeContext: &model.RuntimeContext{},
 		Labels:         map[string]interface{}{},
 	},
+	CustomerTenantContext: &webhook.CustomerTenantContext{},
 }
 
 var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
@@ -70,6 +71,7 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 		},
 		Labels: map[string]interface{}{},
 	},
+	CustomerTenantContext: &webhook.CustomerTenantContext{},
 }
 
 var webhookTemplateInputByType = map[WebhookType]webhook.TemplateInput{

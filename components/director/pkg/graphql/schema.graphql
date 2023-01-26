@@ -15,6 +15,10 @@ Sanitize directive marks mutation arguments that will be validated.
 """
 directive @sanitize(path: String!) on FIELD_DEFINITION
 """
+SynchronizeApplications directive is added to mutations that create applications or tenants in other to synchronise the tenant access.
+"""
+directive @synchronizeApplicationTenancy(eventType: EventType!) on FIELD_DEFINITION
+"""
 Validate directive marks mutation arguments that will be validated.
 """
 directive @validate on ARGUMENT_DEFINITION
@@ -112,6 +116,12 @@ enum DocumentFormat {
 
 enum EventSpecType {
 	ASYNC_API
+}
+
+enum EventType {
+	NEW_APPLICATION
+	NEW_SINGLE_TENANT
+	NEW_MULTIPLE_TENANTS
 }
 
 enum FetchMode {
@@ -810,6 +820,7 @@ input WebhookInput {
 	url: String
 	auth: AuthInput
 	mode: WebhookMode
+	version: String
 	correlationIdKey: String
 	retryInterval: Int
 	timeout: Int
@@ -1519,7 +1530,7 @@ type Mutation {
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
-	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(operationType: CREATE, webhookType: REGISTER_APPLICATION)
+	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(operationType: CREATE, webhookType: REGISTER_APPLICATION) @synchronizeApplicationTenancy(eventType: NEW_APPLICATION)
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
@@ -1544,7 +1555,7 @@ type Mutation {
 	**Examples**
 	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
 	"""
-	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
+	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate") @synchronizeApplicationTenancy(eventType: NEW_APPLICATION)
 	"""
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
@@ -1797,8 +1808,8 @@ type Mutation {
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
-	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
-	writeTenant(in: BusinessTenantMappingInput!): String! @hasScopes(path: "graphql.mutation.writeTenants")
+	writeTenants(in: [BusinessTenantMappingInput!]): [String!] @hasScopes(path: "graphql.mutation.writeTenants") @synchronizeApplicationTenancy(eventType: NEW_MULTIPLE_TENANTS)
+	writeTenant(in: BusinessTenantMappingInput!): String! @hasScopes(path: "graphql.mutation.writeTenants") @synchronizeApplicationTenancy(eventType: NEW_SINGLE_TENANT)
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
 	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!, subscriptionPayload: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")

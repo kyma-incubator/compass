@@ -72,11 +72,12 @@ func (d *UnassignFormationOperationDetails) GetMatchingDetails() MatchingDetails
 
 // GenerateNotificationOperationDetails contains details applicable to generateNotifications join point
 type GenerateNotificationOperationDetails struct {
-	Operation       model.FormationOperation
-	FormationID     string
-	ResourceType    model.ResourceType
-	ResourceSubtype string
-	ResourceID      string
+	Operation             model.FormationOperation
+	FormationID           string
+	ResourceType          model.ResourceType
+	ResourceSubtype       string
+	ResourceID            string
+	CustomerTenantContext *webhook.CustomerTenantContext
 
 	// fields used when generating notifications from configuration changed webhooks
 	ApplicationTemplate *webhook.ApplicationTemplateWithLabels

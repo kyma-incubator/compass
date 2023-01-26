@@ -44,13 +44,13 @@ func (_m *NotificationBuilder) BuildNotificationRequest(ctx context.Context, for
 	return r0, r1
 }
 
-// PrepareDetailsForApplicationTenantMappingNotificationGeneration provides a mock function with given fields: operation, formationID, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment
-func (_m *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment) (*formationconstraint.GenerateNotificationOperationDetails, error) {
-	ret := _m.Called(operation, formationID, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment)
+// PrepareDetailsForApplicationTenantMappingNotificationGeneration provides a mock function with given fields: operation, formationID, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment, tenantContext
+func (_m *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateNotificationOperationDetails, error) {
+	ret := _m.Called(operation, formationID, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment, tenantContext)
 
 	var r0 *formationconstraint.GenerateNotificationOperationDetails
-	if rf, ok := ret.Get(0).(func(model.FormationOperation, string, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment) *formationconstraint.GenerateNotificationOperationDetails); ok {
-		r0 = rf(operation, formationID, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment)
+	if rf, ok := ret.Get(0).(func(model.FormationOperation, string, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment, *webhook.CustomerTenantContext) *formationconstraint.GenerateNotificationOperationDetails); ok {
+		r0 = rf(operation, formationID, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment, tenantContext)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*formationconstraint.GenerateNotificationOperationDetails)
@@ -58,8 +58,8 @@ func (_m *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.FormationOperation, string, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment) error); ok {
-		r1 = rf(operation, formationID, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment)
+	if rf, ok := ret.Get(1).(func(model.FormationOperation, string, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment, *webhook.CustomerTenantContext) error); ok {
+		r1 = rf(operation, formationID, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment, tenantContext)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -67,13 +67,13 @@ func (_m *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 	return r0, r1
 }
 
-// PrepareDetailsForConfigurationChangeNotificationGeneration provides a mock function with given fields: operation, formationID, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType
-func (_m *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType) (*formationconstraint.GenerateNotificationOperationDetails, error) {
-	ret := _m.Called(operation, formationID, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType)
+// PrepareDetailsForConfigurationChangeNotificationGeneration provides a mock function with given fields: operation, formationID, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType, tenantContext
+func (_m *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateNotificationOperationDetails, error) {
+	ret := _m.Called(operation, formationID, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType, tenantContext)
 
 	var r0 *formationconstraint.GenerateNotificationOperationDetails
-	if rf, ok := ret.Get(0).(func(model.FormationOperation, string, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment, model.ResourceType) *formationconstraint.GenerateNotificationOperationDetails); ok {
-		r0 = rf(operation, formationID, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType)
+	if rf, ok := ret.Get(0).(func(model.FormationOperation, string, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment, model.ResourceType, *webhook.CustomerTenantContext) *formationconstraint.GenerateNotificationOperationDetails); ok {
+		r0 = rf(operation, formationID, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType, tenantContext)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*formationconstraint.GenerateNotificationOperationDetails)
@@ -81,8 +81,8 @@ func (_m *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(model.FormationOperation, string, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment, model.ResourceType) error); ok {
-		r1 = rf(operation, formationID, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType)
+	if rf, ok := ret.Get(1).(func(model.FormationOperation, string, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment, model.ResourceType, *webhook.CustomerTenantContext) error); ok {
+		r1 = rf(operation, formationID, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType, tenantContext)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -90,13 +90,13 @@ func (_m *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	return r0, r1
 }
 
-type mockConstructorTestingTNewNotificationBuilder interface {
+type NewNotificationBuilderT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewNotificationBuilder creates a new instance of NotificationBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationBuilder(t mockConstructorTestingTNewNotificationBuilder) *NotificationBuilder {
+func NewNotificationBuilder(t NewNotificationBuilderT) *NotificationBuilder {
 	mock := &NotificationBuilder{}
 	mock.Mock.Test(t)
 

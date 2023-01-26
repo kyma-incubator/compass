@@ -2,7 +2,6 @@ package formation_test
 
 import (
 	"context"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -154,7 +153,6 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				spew.Dump(testCase.ExpectedNotification, actual)
 				assert.Equal(t, testCase.ExpectedNotification, actual)
 			} else {
 				require.Error(t, err)
@@ -357,12 +355,11 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			builder := formation.NewNotificationsBuilder(nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.PrepareDetailsForConfigurationChangeNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.ApplicationTemplate, testCase.Application, testCase.Runtime, testCase.RuntimeContext, testCase.Assignment, testCase.ReverseAssignment, testCase.TargetType)
+			actual, err := builder.PrepareDetailsForConfigurationChangeNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.ApplicationTemplate, testCase.Application, testCase.Runtime, testCase.RuntimeContext, testCase.Assignment, testCase.ReverseAssignment, testCase.TargetType, nil)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				spew.Dump(testCase.ExpectedNotificationDetails, actual)
 				assert.Equal(t, testCase.ExpectedNotificationDetails, actual)
 			} else {
 				require.Error(t, err)
@@ -455,12 +452,11 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 			builder := formation.NewNotificationsBuilder(nil, nil, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.SourceApplicationTemplate, testCase.SourceApplication, testCase.TargetApplicationTemplate, testCase.TargetApplication, testCase.Assignment, testCase.ReverseAssignment)
+			actual, err := builder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(testCase.Operation, testCase.FormationID, testCase.SourceApplicationTemplate, testCase.SourceApplication, testCase.TargetApplicationTemplate, testCase.TargetApplication, testCase.Assignment, testCase.ReverseAssignment, nil)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
-				spew.Dump(testCase.ExpectedNotificationDetails, actual)
 				assert.Equal(t, testCase.ExpectedNotificationDetails, actual)
 			} else {
 				require.Error(t, err)

@@ -3,10 +3,12 @@ package formation_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -16,10 +18,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"time"
 
-	"fmt"
-
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -29,6 +29,18 @@ var (
 	tenantID          = uuid.New()
 	externalTenantID  = uuid.New()
 	nilFormationModel *model.Formation
+
+	CustomerTenantContextPath = &webhook.CustomerTenantContext{
+		CustomerID: TntParentID,
+		AccountID:  nil,
+		Path:       str.Ptr(TntExternalID),
+	}
+
+	CustomerTenantContextAccount = &webhook.CustomerTenantContext{
+		CustomerID: TntParentID,
+		AccountID:  str.Ptr(TntExternalID),
+		Path:       nil,
+	}
 
 	modelFormation = model.Formation{
 		ID:                  FormationID,
@@ -49,8 +61,10 @@ var (
 	}
 	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType))}
 
-	TestConfigValueRawJSON = json.RawMessage(`{"configKey":"configValue"}`)
-	TestConfigValueStr     = "{\"configKey\":\"configValue\"}"
+	TestConfigValueRawJSON = json.RawMessage(
+		`{"configKey":"configValue"}`,
+	)
+	TestConfigValueStr = "{\"configKey\":\"configValue\"}"
 
 	emptyFormationAssignment = &webhook.FormationAssignment{Value: "\"\""}
 
@@ -583,6 +597,9 @@ const (
 	ApplicationTemplateID            = "58963c6f-24f6-4128-a05c-51d5356e7e09"
 	runtimeType                      = "runtimeType"
 	applicationType                  = "applicationType"
+	testProvider                     = "Compass"
+	TntExternalID                    = "ada4241d-caa1-4ee4-b8bf-f733e180fbf9"
+	TntParentID                      = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
 
 	// Formation Assignment constants
 	FormationAssignmentID          = "FormationAssignmentID"
@@ -617,6 +634,10 @@ func unusedASAEngine() *automock.AsaEngine {
 
 func unusedRuntimeRepo() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
+}
+
+func unusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
 }
 
 func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
@@ -798,6 +819,18 @@ func fixApplicationModel(applicationID string) *model.Application {
 			UpdatedAt: &time.Time{},
 			DeletedAt: &time.Time{},
 		},
+	}
+}
+
+func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             Tnt,
+		Name:           "test-name",
+		ExternalTenant: TntExternalID,
+		Parent:         TntParentID,
+		Type:           t,
+		Provider:       testProvider,
+		Status:         tnt.Active,
 	}
 }
 
