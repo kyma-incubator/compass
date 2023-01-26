@@ -562,7 +562,7 @@ func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant st
 	return nil
 }
 
-func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, delete func(context.Context, string) error) error {
+func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, deleteObject func(context.Context, string) error) error {
 	instancesLabel, err := s.labelSvc.GetByKey(ctx, tenant, objectType, objectID, InstancesLabelKey)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
@@ -571,7 +571,7 @@ func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, object
 
 	if err != nil && apperrors.IsNotFoundError(err) {
 		log.C(ctx).Debugf("Cannot find label with key %q for %q with ID %q. Triggering deletion of %q with ID %q...", InstancesLabelKey, objectType, objectID, objectType, objectID)
-		if err := delete(ctx, objectID); err != nil {
+		if err := deleteObject(ctx, objectID); err != nil {
 			return errors.Wrapf(err, "An error occurred while trying to delete %q with ID: %q", objectType, objectID)
 		}
 		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
@@ -585,7 +585,7 @@ func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, object
 
 	if instances <= 1 {
 		log.C(ctx).Debugf("The number of %q for %q with ID %q is <=1. Triggering deletion of %q with ID %q...", InstancesLabelKey, objectType, objectID, objectType, objectID)
-		if err := delete(ctx, objectID); err != nil {
+		if err := deleteObject(ctx, objectID); err != nil {
 			return errors.Wrapf(err, "An error occurred while deleting %q with ID: %q", objectType, objectID)
 		}
 		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
