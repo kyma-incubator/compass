@@ -119,6 +119,12 @@ func ListRuntimes(t require.TestingT, ctx context.Context, gqlClient *gcli.Clien
 	return runtimesPage
 }
 
+func DeleteRuntimeLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, runtimeID string, labelKey string) {
+	deleteRequest := FixDeleteRuntimeLabelRequest(runtimeID, labelKey)
+
+	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, deleteRequest, nil))
+}
+
 func SetRuntimeLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, runtimeID string, labelKey string, labelValue interface{}) *graphql.Label {
 	setLabelRequest := FixSetRuntimeLabelRequest(runtimeID, labelKey, labelValue)
 	label := graphql.Label{}
