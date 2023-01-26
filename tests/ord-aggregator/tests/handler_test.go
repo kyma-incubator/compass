@@ -340,10 +340,8 @@ func TestORDAggregator(stdT *testing.T) {
 		jobName := "ord-aggregator-test"
 		namespace := "compass-system"
 		k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
-		defer func() {
-			k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
-			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
-		}()
+		defer k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		defer k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -596,12 +594,12 @@ func TestORDAggregator(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
@@ -622,12 +620,12 @@ func TestORDAggregator(stdT *testing.T) {
 		t.Logf("Creating a subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -687,10 +685,8 @@ func TestORDAggregator(stdT *testing.T) {
 		jobName := "ord-aggregator-test"
 		namespace := "compass-system"
 		k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
-		defer func() {
-			k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
-			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
-		}()
+		defer k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		defer k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)

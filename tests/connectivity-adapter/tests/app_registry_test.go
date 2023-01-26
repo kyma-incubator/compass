@@ -81,15 +81,14 @@ func TestAppRegistry(t *testing.T) {
 		require.NoError(t, err)
 
 		mgmInfoResponse, errorResponse := adapterClient.GetMgmInfo(t, infoResponse.Api.ManagementInfoURL)
-		require.Nil(t, errorResponse)
-		require.NotEmpty(t, mgmInfoResponse.URLs.RenewCertURL)
-		require.NotEmpty(t, mgmInfoResponse.Certificate)
-		require.Equal(t, infoResponse.Certificate, mgmInfoResponse.Certificate)
-
 		defer func() {
 			errorResponse = adapterClient.RevokeCertificate(t, mgmInfoResponse.URLs.RevokeCertURL)
 			require.Nil(t, errorResponse)
 		}()
+		require.Nil(t, errorResponse)
+		require.NotEmpty(t, mgmInfoResponse.URLs.RenewCertURL)
+		require.NotEmpty(t, mgmInfoResponse.Certificate)
+		require.Equal(t, infoResponse.Certificate, mgmInfoResponse.Certificate)
 
 		metadataURL := infoResponse.Api.MetadataURL
 
