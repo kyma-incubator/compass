@@ -541,7 +541,7 @@ func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant st
 		return nil
 	}
 
-	instances, ok := instancesLabel.Value.(int)
+	instances, ok := instancesLabel.Value.(float64)
 	if !ok {
 		return errors.Errorf("cannot cast %q label value of type %T to int", InstancesLabelKey, instancesLabel.Value)
 	}
@@ -578,7 +578,7 @@ func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, object
 		return nil
 	}
 
-	instances, ok := instancesLabel.Value.(int)
+	instances, ok := instancesLabel.Value.(float64)
 	if !ok {
 		return errors.Errorf("cannot cast %q label value of type %T to int", InstancesLabelKey, instancesLabel.Value)
 	}
