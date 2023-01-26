@@ -95,14 +95,13 @@ func TestCallingCompassGateways(t *testing.T) {
 
 			t.Log("Executing request with big payload...")
 			resp, err := test.client.Do(bigBodyPOSTRequest)
-			require.NoError(t, err)
-
 			defer func() {
 				err := resp.Body.Close()
 				if err != nil {
 					logrus.Printf("WARNING: Unable to close response body. Cause: %v", err)
 				}
 			}()
+			require.NoError(t, err)
 
 			t.Log("Successfully executed request with big payload")
 
@@ -120,13 +119,13 @@ func TestCallingCompassGateways(t *testing.T) {
 
 			t.Log("Executing request for applications...")
 			appsResp, err := test.client.Do(applicationsPOSTRequest)
-			require.NoError(t, err)
 			defer func() {
 				err := appsResp.Body.Close()
 				if err != nil {
 					logrus.Printf("WARNING: Unable to close response body. Cause: %v", err)
 				}
 			}()
+			require.NoError(t, err)
 			t.Log("Successfully executed request for applications")
 
 			require.Equal(t, http.StatusOK, appsResp.StatusCode)

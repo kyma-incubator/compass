@@ -93,12 +93,12 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(stdT, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
@@ -394,12 +394,12 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(stdT, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription using the optional region and subdomain placeholders", func(t *testing.T) {
@@ -433,12 +433,12 @@ func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Clie
 
 	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
 	resp, err := httpClient.Do(subscribeReq)
-	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()
+	require.NoError(t, err)
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	if !expectedToPass {
