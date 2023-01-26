@@ -554,11 +554,11 @@ func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant st
 		ObjectType: instancesLabel.ObjectType,
 		Version:    instancesLabel.Version,
 	}); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while updating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
-		return errors.Wrapf(err, "An error occurred while updating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+		return errors.Wrapf(err, "An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
 	}
 
-	log.C(ctx).Debugf("Successfully increased %q label value to %q for %q with id %q", InstancesLabelKey, instances, objectType, objectID)
+	log.C(ctx).Debugf("Successfully increased %q label value to %f for %q with id %q", InstancesLabelKey, instances, objectType, objectID)
 	return nil
 }
 
@@ -598,9 +598,9 @@ func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, object
 			ObjectType: instancesLabel.ObjectType,
 			Version:    instancesLabel.Version,
 		}); err != nil {
-			return errors.Wrapf(err, "An error occurred while updating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+			return errors.Wrapf(err, "An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
 		}
-		log.C(ctx).Debugf("Successfully decreased %q label value to %q for %q with ID %q", InstancesLabelKey, instances, objectType, objectID)
+		log.C(ctx).Debugf("Successfully decreased %q label value to %f for %q with ID %q", InstancesLabelKey, instances, objectType, objectID)
 	}
 	return nil
 }
