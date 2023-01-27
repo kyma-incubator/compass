@@ -223,6 +223,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		applicationID
 		applicationTemplateID
 		runtimeID
+		formationTemplateID
 		type
 		mode
 		correlationIdKey
