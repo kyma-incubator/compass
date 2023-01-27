@@ -2,8 +2,9 @@ package apptemplate
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"os"
+
+	"github.com/pkg/errors"
 )
 
 // UnmarshalTenantMappingConfig unmarshalls a string into map[string]interface{}
