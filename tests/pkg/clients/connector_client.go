@@ -69,11 +69,11 @@ func (cc *connectorClient) GetInfo(t *testing.T, url string) (*model.InfoRespons
 	request := requestWithTenantHeaders(t, cc.tenant, url, http.MethodGet)
 
 	response, err := cc.httpClient.Do(request)
-	require.NoError(t, err)
 	defer func() {
 		err := response.Body.Close()
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 
 	if response.StatusCode != http.StatusOK {
 		return nil, parseErrorResponse(t, response)
@@ -99,11 +99,11 @@ func (cc *connectorClient) CreateCertChain(t *testing.T, csr, url string) (*mode
 	request.Header.Add("Content-Type", "application/json")
 
 	response, err := cc.httpClient.Do(request)
-	require.NoError(t, err)
 	defer func() {
 		err := response.Body.Close()
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 
 	if response.StatusCode != http.StatusCreated {
 		return nil, parseErrorResponse(t, response)

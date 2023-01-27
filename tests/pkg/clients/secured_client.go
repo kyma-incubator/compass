@@ -150,11 +150,11 @@ func (cc *securedConnectorClient) CleanupService(t *testing.T, url string, id st
 
 func (cc *securedConnectorClient) secureConnectorRequest(t *testing.T, request *http.Request, data interface{}, expectedStatus int) *testModel.Error {
 	response, err := cc.httpClient.Do(request)
-	require.NoError(t, err)
 	defer func() {
 		err := response.Body.Close()
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 
 	if response.StatusCode != expectedStatus {
 		return parseErrorResponse(t, response)
@@ -170,12 +170,11 @@ func (cc *securedConnectorClient) secureConnectorRequest(t *testing.T, request *
 
 func (cc *securedConnectorClient) cleanupRequest(t *testing.T, request *http.Request) *testModel.Error {
 	response, err := cc.httpClient.Do(request)
-	require.NoError(t, err)
-
 	defer func() {
 		err := response.Body.Close()
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 
 	if response.StatusCode == http.StatusNoContent || response.StatusCode == http.StatusNotFound {
 		return nil
