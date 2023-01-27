@@ -456,7 +456,6 @@ func (s *service) prepareDetailsForUnassign(ctx context.Context, tnt, objectID s
 	return joinPointDetails, nil
 }
 
-//todo if OK when checking labels
 func (s *service) getObjectSubtype(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType) (string, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
@@ -466,6 +465,9 @@ func (s *service) getObjectSubtype(ctx context.Context, tnt, objectID string, ob
 			ObjectType: model.ApplicationLabelableObject,
 		})
 		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return "", nil
+			}
 			return "", errors.Wrapf(err, "while getting label %q for application with ID %q", s.applicationTypeLabelKey, objectID)
 		}
 
@@ -482,6 +484,9 @@ func (s *service) getObjectSubtype(ctx context.Context, tnt, objectID string, ob
 			ObjectType: model.RuntimeLabelableObject,
 		})
 		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return "", nil
+			}
 			return "", errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, objectID)
 		}
 

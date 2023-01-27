@@ -40,7 +40,7 @@ func (s *service) Create(ctx context.Context, in *model.FormationTemplateConstra
 
 // Delete deletes formation template constraint reference by constraint ID and formation template ID
 func (s *service) Delete(ctx context.Context, constraintID, formationTemplateID string) error {
-	if err := s.repo.Delete(ctx, constraintID, formationTemplateID); err != nil {
+	if err := s.repo.Delete(ctx, formationTemplateID, constraintID); err != nil {
 		return errors.Wrapf(err, "while deleting Formation Template Constraint Reference for Constraint with ID %q and Formation Template with ID %q", constraintID, formationTemplateID)
 	}
 
