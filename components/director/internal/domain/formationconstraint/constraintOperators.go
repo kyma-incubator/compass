@@ -87,7 +87,6 @@ func (e *ConstraintEngine) IsNotAssignedToAnyFormationOfType(ctx context.Context
 	}
 
 	return true, nil
-
 }
 
 func (e *ConstraintEngine) participatesInFormationsOfType(ctx context.Context, assignedFormationNames []string, tenant, formationTemplateID string) (bool, error) {

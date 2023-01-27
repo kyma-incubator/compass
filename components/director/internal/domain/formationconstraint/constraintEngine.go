@@ -124,7 +124,6 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 				Reason:         fmt.Sprintf("Operator %q is not satisfied", mc.Operator),
 			})
 		}
-
 	}
 
 	return errs.ErrorOrNil()
