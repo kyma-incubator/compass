@@ -152,14 +152,15 @@ func (fp *GqlFieldsProvider) ForFormationWithStatus() string {
 
 // ForFormationTemplate missing godoc
 func (fp *GqlFieldsProvider) ForFormationTemplate() string {
-	return `
+	return fmt.Sprintf(`
 		id
 		name
         applicationTypes
 	    runtimeTypes
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
-	`
+        webhooks {%s}
+	`, fp.ForWebhooks())
 }
 
 // ForFormationAssignment missing godoc
