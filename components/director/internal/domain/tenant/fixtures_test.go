@@ -5,6 +5,8 @@ import (
 	"database/sql/driver"
 	"errors"
 
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -57,6 +59,19 @@ func newModelBusinessTenantMappingWithComputedValues(id, name string, initialize
 	return tenantModel
 }
 
+func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, tntType tenant.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             id,
+		Name:           name,
+		ExternalTenant: testExternal,
+		Parent:         parent,
+		Type:           tntType,
+		Provider:       testProvider,
+		Status:         tenant.Active,
+		Initialized:    ptr.Bool(true),
+	}
+}
+
 func newEntityBusinessTenantMapping(id, name string) *tenant.Entity {
 	return newEntityBusinessTenantMappingWithParent(id, name, "")
 }
@@ -71,6 +86,13 @@ func newEntityBusinessTenantMappingWithParent(id, name, parent string) *tenant.E
 		ProviderName:   testProvider,
 		Status:         tenant.Active,
 	}
+}
+
+func newEntityBusinessTenantMappingWithParentAndAccount(id, name, parent string, tntType tenant.Type) *tenant.Entity {
+	tnt := newEntityBusinessTenantMappingWithParent(id, name, parent)
+	tnt.Type = tntType
+
+	return tnt
 }
 
 func newEntityBusinessTenantMappingWithComputedValues(id, name string, initialized *bool) *tenant.Entity {

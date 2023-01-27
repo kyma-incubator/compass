@@ -14,6 +14,11 @@ func WriteTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Clien
 	return gqlClient.Run(ctx, req, nil)
 }
 
+func WriteTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant graphql.BusinessTenantMappingInput) error {
+	req := FixWriteTenantRequest(t, tenant)
+	return gqlClient.Run(ctx, req, nil)
+}
+
 func DeleteTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenants []graphql.BusinessTenantMappingInput) error {
 	req := FixDeleteTenantsRequest(t, tenants)
 	return gqlClient.Run(ctx, req, nil)
