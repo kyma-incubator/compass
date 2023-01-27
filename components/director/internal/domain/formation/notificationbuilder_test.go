@@ -167,9 +167,6 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 }
 
 func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGeneration(t *testing.T) {
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
-
 	applicationTemplate := &webhookdir.ApplicationTemplateWithLabels{
 		ApplicationTemplate: fixApplicationTemplateModel(),
 		Labels:              fixApplicationTemplateLabelsMap(),
@@ -372,9 +369,6 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 }
 
 func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificationGeneration(t *testing.T) {
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
-
 	applicationTemplate := &webhookdir.ApplicationTemplateWithLabels{
 		ApplicationTemplate: fixApplicationTemplateModel(),
 		Labels:              fixApplicationTemplateLabelsMap(),

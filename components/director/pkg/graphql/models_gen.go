@@ -1900,7 +1900,7 @@ type TargetOperation string
 
 const (
 	TargetOperationAssignFormation      TargetOperation = "ASSIGN_FORMATION"
-	TargetOperationUnassignedFormation  TargetOperation = "UNASSIGNED_FORMATION"
+	TargetOperationUnassignFormation    TargetOperation = "UNASSIGN_FORMATION"
 	TargetOperationCreateFormation      TargetOperation = "CREATE_FORMATION"
 	TargetOperationDeleteFormation      TargetOperation = "DELETE_FORMATION"
 	TargetOperationGenerateNotification TargetOperation = "GENERATE_NOTIFICATION"
@@ -1908,7 +1908,7 @@ const (
 
 var AllTargetOperation = []TargetOperation{
 	TargetOperationAssignFormation,
-	TargetOperationUnassignedFormation,
+	TargetOperationUnassignFormation,
 	TargetOperationCreateFormation,
 	TargetOperationDeleteFormation,
 	TargetOperationGenerateNotification,
@@ -1916,7 +1916,7 @@ var AllTargetOperation = []TargetOperation{
 
 func (e TargetOperation) IsValid() bool {
 	switch e {
-	case TargetOperationAssignFormation, TargetOperationUnassignedFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateNotification:
+	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateNotification:
 		return true
 	}
 	return false

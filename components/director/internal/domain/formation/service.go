@@ -895,6 +895,7 @@ func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Contex
 	return scenarios, nil
 }
 
+// MatchingFunc provides signature for functions used for matching asa against runtimeID
 type MatchingFunc func(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error)
 
 func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc modificationFunc) error {

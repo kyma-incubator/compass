@@ -2,13 +2,16 @@ package tests
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
+
+const IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
 
 func TestCreateFormationConstraint(t *testing.T) {
 	// GIVEN
@@ -47,7 +50,7 @@ func TestCreateFormationConstraint(t *testing.T) {
 		Name:            "test_constraint",
 		ConstraintType:  string(graphql.ConstraintTypePre),
 		TargetOperation: string(graphql.TargetOperationAssignFormation),
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    string(graphql.ResourceTypeTenant),
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
@@ -70,7 +73,7 @@ func TestDeleteFormationConstraint(t *testing.T) {
 		Name:            "test_constraint",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    graphql.ResourceTypeTenant,
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -106,7 +109,7 @@ func TestListFormationConstraints(t *testing.T) {
 		Name:            "test_constraint",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    graphql.ResourceTypeTenant,
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -122,7 +125,7 @@ func TestListFormationConstraints(t *testing.T) {
 		Name:            "test_constraint_second",
 		ConstraintType:  graphql.ConstraintTypePost,
 		TargetOperation: graphql.TargetOperationDeleteFormation,
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    graphql.ResourceTypeTenant,
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -147,7 +150,7 @@ func TestListFormationConstraints(t *testing.T) {
 			Name:            "test_constraint",
 			ConstraintType:  string(graphql.ConstraintTypePre),
 			TargetOperation: string(graphql.TargetOperationAssignFormation),
-			Operator:        "IsNotAssignedToAnyFormationOfType",
+			Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 			ResourceType:    string(graphql.ResourceTypeTenant),
 			ResourceSubtype: "subaccount",
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
@@ -157,7 +160,7 @@ func TestListFormationConstraints(t *testing.T) {
 			Name:            "test_constraint_second",
 			ConstraintType:  string(graphql.ConstraintTypePost),
 			TargetOperation: string(graphql.TargetOperationDeleteFormation),
-			Operator:        "IsNotAssignedToAnyFormationOfType",
+			Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 			ResourceType:    string(graphql.ResourceTypeTenant),
 			ResourceSubtype: "subaccount",
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
@@ -190,7 +193,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 		Name:            "test_constraint",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    graphql.ResourceTypeTenant,
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -206,7 +209,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 		Name:            "test_constraint_second",
 		ConstraintType:  graphql.ConstraintTypePost,
 		TargetOperation: graphql.TargetOperationDeleteFormation,
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    graphql.ResourceTypeTenant,
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -222,7 +225,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 		Name:            "test_constraint_other_template",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    graphql.ResourceTypeTenant,
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -247,7 +250,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 			Name:            "test_constraint",
 			ConstraintType:  string(graphql.ConstraintTypePre),
 			TargetOperation: string(graphql.TargetOperationAssignFormation),
-			Operator:        "IsNotAssignedToAnyFormationOfType",
+			Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 			ResourceType:    string(graphql.ResourceTypeTenant),
 			ResourceSubtype: "subaccount",
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
@@ -257,7 +260,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 			Name:            "test_constraint_second",
 			ConstraintType:  string(graphql.ConstraintTypePost),
 			TargetOperation: string(graphql.TargetOperationDeleteFormation),
-			Operator:        "IsNotAssignedToAnyFormationOfType",
+			Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 			ResourceType:    string(graphql.ResourceTypeTenant),
 			ResourceSubtype: "subaccount",
 			InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",

@@ -190,8 +190,8 @@ func UnusedTenantService() *automock.TenantService {
 	return &automock.TenantService{}
 }
 
-func UnusedASAService() *automock.AutomaticFormationAssignmentService {
-	return &automock.AutomaticFormationAssignmentService{}
+func UnusedASAService() *automock.AutomaticScenarioAssignmentService {
+	return &automock.AutomaticScenarioAssignmentService{}
 }
 
 func UnusedLabelRepo() *automock.LabelRepository {

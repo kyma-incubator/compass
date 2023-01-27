@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	formationconstraint2 "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,8 +22,8 @@ func TestConstraintEngine_EnforceConstraints(t *testing.T) {
 
 	testCases := []struct {
 		Name                         string
-		Location                     formationconstraint2.JoinPointLocation
-		Details                      formationconstraint2.JoinPointDetails
+		Location                     formationconstraintpkg.JoinPointLocation
+		Details                      formationconstraintpkg.JoinPointDetails
 		OperatorFunc                 func(ctx context.Context, input formationconstraint.OperatorInput) (bool, error)
 		SetEmptyOperatorInputBuilder bool
 		FormationConstraintService   func() *automock.FormationConstraintSvc

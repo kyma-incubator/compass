@@ -24,7 +24,7 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 		Name                  string
 		Input                 formationconstraint.OperatorInput
 		TenantServiceFn       func() *automock.TenantService
-		AsaServiceFn          func() *automock.AutomaticFormationAssignmentService
+		AsaServiceFn          func() *automock.AutomaticScenarioAssignmentService
 		LabelRepositoryFn     func() *automock.LabelRepository
 		FormationRepositoryFn func() *automock.FormationRepository
 		ExpectedResult        bool
@@ -38,8 +38,8 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				svc.On("GetInternalTenant", ctx, testID).Return(testInternalTenantID, nil).Once()
 				return svc
 			},
-			AsaServiceFn: func() *automock.AutomaticFormationAssignmentService {
-				svc := &automock.AutomaticFormationAssignmentService{}
+			AsaServiceFn: func() *automock.AutomaticScenarioAssignmentService {
+				svc := &automock.AutomaticScenarioAssignmentService{}
 				svc.On("ListForTargetTenant", ctx, testInternalTenantID).Return(assignments, nil).Once()
 				return svc
 			},
@@ -58,8 +58,8 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				svc.On("GetInternalTenant", ctx, testID).Return(testInternalTenantID, nil).Once()
 				return svc
 			},
-			AsaServiceFn: func() *automock.AutomaticFormationAssignmentService {
-				svc := &automock.AutomaticFormationAssignmentService{}
+			AsaServiceFn: func() *automock.AutomaticScenarioAssignmentService {
+				svc := &automock.AutomaticScenarioAssignmentService{}
 				svc.On("ListForTargetTenant", ctx, testInternalTenantID).Return(emptyAssignments, nil).Once()
 				return svc
 			},
@@ -73,8 +73,8 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				svc.On("GetInternalTenant", ctx, testID).Return(testInternalTenantID, nil).Once()
 				return svc
 			},
-			AsaServiceFn: func() *automock.AutomaticFormationAssignmentService {
-				svc := &automock.AutomaticFormationAssignmentService{}
+			AsaServiceFn: func() *automock.AutomaticScenarioAssignmentService {
+				svc := &automock.AutomaticScenarioAssignmentService{}
 				svc.On("ListForTargetTenant", ctx, testInternalTenantID).Return(assignments, nil).Once()
 				return svc
 			},
@@ -93,8 +93,8 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				svc.On("GetInternalTenant", ctx, testID).Return(testInternalTenantID, nil).Once()
 				return svc
 			},
-			AsaServiceFn: func() *automock.AutomaticFormationAssignmentService {
-				svc := &automock.AutomaticFormationAssignmentService{}
+			AsaServiceFn: func() *automock.AutomaticScenarioAssignmentService {
+				svc := &automock.AutomaticScenarioAssignmentService{}
 				svc.On("ListForTargetTenant", ctx, testInternalTenantID).Return(assignments, nil).Once()
 				return svc
 			},
@@ -114,8 +114,8 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				svc.On("GetInternalTenant", ctx, testID).Return(testInternalTenantID, nil).Once()
 				return svc
 			},
-			AsaServiceFn: func() *automock.AutomaticFormationAssignmentService {
-				svc := &automock.AutomaticFormationAssignmentService{}
+			AsaServiceFn: func() *automock.AutomaticScenarioAssignmentService {
+				svc := &automock.AutomaticScenarioAssignmentService{}
 				svc.On("ListForTargetTenant", ctx, testInternalTenantID).Return(nil, testErr).Once()
 				return svc
 			},

@@ -4829,7 +4829,7 @@ enum SystemAuthReferenceType {
 
 enum TargetOperation {
 	ASSIGN_FORMATION
-	UNASSIGNED_FORMATION
+	UNASSIGN_FORMATION
 	CREATE_FORMATION
 	DELETE_FORMATION
 	GENERATE_NOTIFICATION
@@ -6335,7 +6335,7 @@ type Mutation {
 	createFormationConstraint(formationConstraint: FormationConstraintInput! @validate): FormationConstraint! @hasScopes(path: "graphql.mutation.createFormationConstraint")
 	deleteFormationConstraint(id: ID!): FormationConstraint! @hasScopes(path: "graphql.mutation.deleteFormationConstraint")
 	attachConstraintToFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.attachConstraintToFormationTemplate")
-	detachConstraintFromFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.detachConstraintToFormationTemplate")
+	detachConstraintFromFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.detachConstraintFromFormationTemplate")
 	"""
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
@@ -20559,7 +20559,7 @@ func (ec *executionContext) _Mutation_detachConstraintFromFormationTemplate(ctx 
 			return ec.resolvers.Mutation().DetachConstraintFromFormationTemplate(rctx, args["constraintID"].(string), args["formationTemplateID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.detachConstraintToFormationTemplate")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.detachConstraintFromFormationTemplate")
 			if err != nil {
 				return nil, err
 			}

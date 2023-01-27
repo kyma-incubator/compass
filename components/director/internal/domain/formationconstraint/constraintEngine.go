@@ -21,8 +21,8 @@ type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-//go:generate mockery --exported --name=automaticFormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type automaticFormationAssignmentService interface {
+//go:generate mockery --exported --name=automaticScenarioAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type automaticScenarioAssignmentService interface {
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
 }
 
@@ -40,7 +40,7 @@ type labelRepository interface {
 type ConstraintEngine struct {
 	constraintSvc             formationConstraintSvc
 	tenantSvc                 tenantService
-	asaSvc                    automaticFormationAssignmentService
+	asaSvc                    automaticScenarioAssignmentService
 	formationRepo             formationRepository
 	labelRepo                 labelRepository
 	operators                 map[OperatorName]OperatorFunc
@@ -48,7 +48,7 @@ type ConstraintEngine struct {
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticFormationAssignmentService, formationRepo formationRepository, labelRepo labelRepository) *ConstraintEngine {
+func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository) *ConstraintEngine {
 	c := &ConstraintEngine{
 		constraintSvc:             constraintSvc,
 		tenantSvc:                 tenantSvc,

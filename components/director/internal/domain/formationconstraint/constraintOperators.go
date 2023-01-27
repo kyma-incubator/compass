@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	// IsNotAssignedToAnyFormationOfTypeOperator represents the IsNotAssignedToAnyFormationOfType operator
 	IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
 )
 
@@ -34,7 +35,7 @@ func NewIsNotAssignedToAnyFormationOfTypeInput() OperatorInput {
 
 // IsNotAssignedToAnyFormationOfType is a constraint operator. It checks if the resource from the OperatorInput is already part of formation of the type that the operator is associated with
 func (e *ConstraintEngine) IsNotAssignedToAnyFormationOfType(ctx context.Context, input OperatorInput) (bool, error) {
-	log.C(ctx).Infof("Executing operator: IsNotAssignedToAnyFormationOfType")
+	log.C(ctx).Infof("Executing operator: %s", IsNotAssignedToAnyFormationOfTypeOperator)
 
 	i, ok := input.(*formationconstraint.IsNotAssignedToAnyFormationOfTypeInput)
 	if !ok {

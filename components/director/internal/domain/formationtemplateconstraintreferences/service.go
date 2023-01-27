@@ -31,8 +31,7 @@ func NewService(repo formationTemplateConstraintReferenceRepository, converter c
 func (s *service) Create(ctx context.Context, in *model.FormationTemplateConstraintReference) error {
 	log.C(ctx).Infof("Creating an Formation Template Constraint Reference for Constraint with ID %q and Formation Template with ID %q", in.ConstraintID, in.FormationTemplateID)
 
-	err := s.repo.Create(ctx, in)
-	if err != nil {
+	if err := s.repo.Create(ctx, in); err != nil {
 		return errors.Wrapf(err, "while creating Formation Template Constraint Reference for Constraint with ID %q and Formation Template with ID %q", in.ConstraintID, in.FormationTemplateID)
 	}
 
