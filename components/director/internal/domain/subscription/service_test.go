@@ -93,6 +93,28 @@ var (
 		Value:      tntSubdomain,
 		ObjectType: model.TenantLabelableObject,
 	}
+
+	instancesLabelWithValueOne = &model.Label{
+		ID:    instancesLabelID,
+		Key:   subscription.InstancesLabelKey,
+		Value: float64(1),
+	}
+
+	instancesLabelWithValueTwo = &model.Label{
+		ID:    instancesLabelID,
+		Key:   subscription.InstancesLabelKey,
+		Value: float64(2),
+	}
+
+	instancesLabelInputWithValueOne = &model.LabelInput{
+		Key:   subscription.InstancesLabelKey,
+		Value: float64(1),
+	}
+
+	instancesLabelInputWithValueTwo = &model.LabelInput{
+		Key:   subscription.InstancesLabelKey,
+		Value: float64(2),
+	}
 )
 
 func TestSubscribeRegionalTenant(t *testing.T) {
@@ -183,17 +205,8 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				lblSvc := &automock.LabelService{}
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
-				labelInput := &model.LabelInput{
-					Key:   subscription.InstancesLabelKey,
-					Value: 2,
-				}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, "id", subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, labelInput).Return(nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, "id", subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
+				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, instancesLabelInputWithValueTwo).Return(nil)
 
 				return lblSvc
 			},
@@ -501,17 +514,8 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				lblSvc := &automock.LabelService{}
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
-				labelInput := &model.LabelInput{
-					Key:   subscription.InstancesLabelKey,
-					Value: 2,
-				}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, "id", subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, labelInput).Return(testError)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, "id", subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
+				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, instancesLabelInputWithValueTwo).Return(testError)
 
 				return lblSvc
 			},
@@ -773,13 +777,8 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, runtimeCtxID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, runtimeCtxID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
 				return lblSvc
 			},
 			UIDServiceFn: unusedUUIDSvc,
@@ -833,18 +832,9 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 2,
-				}
-				labelInput := &model.LabelInput{
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, runtimeCtxID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, labelInput).Return(nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, runtimeCtxID, subscription.InstancesLabelKey).Return(instancesLabelWithValueTwo, nil)
+				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, instancesLabelInputWithValueOne).Return(nil)
 
 				return lblSvc
 			},
@@ -968,13 +958,8 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, runtimeCtxID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, runtimeCtxID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
 				return lblSvc
 			},
 			UIDServiceFn:        unusedUUIDSvc,
@@ -1091,18 +1076,9 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 2,
-				}
-				labelInput := &model.LabelInput{
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, runtimeCtxID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, labelInput).Return(testError)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.RuntimeContextLabelableObject, runtimeCtxID, subscription.InstancesLabelKey).Return(instancesLabelWithValueTwo, nil)
+				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, instancesLabelInputWithValueOne).Return(testError)
 
 				return lblSvc
 			},
@@ -1705,18 +1681,9 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				return appSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
-				labelInput := &model.LabelInput{
-					Key:   subscription.InstancesLabelKey,
-					Value: 2,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.ApplicationLabelableObject, appTmplID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("UpdateLabel", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, instancesLabelID, labelInput).Return(nil)
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.ApplicationLabelableObject, appTmplID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
+				lblSvc.On("UpdateLabel", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, instancesLabelID, instancesLabelInputWithValueTwo).Return(nil)
 
 				return lblSvc
 			},
@@ -1922,18 +1889,9 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				return appSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
-				labelInput := &model.LabelInput{
-					Key:   subscription.InstancesLabelKey,
-					Value: 2,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.ApplicationLabelableObject, appTmplID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("UpdateLabel", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, instancesLabelID, labelInput).Return(testError)
+				lblSvc.On("GetByKey", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, model.ApplicationLabelableObject, appTmplID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
+				lblSvc.On("UpdateLabel", ctxWithTenantMatcher(subaccountTenantInternalID), subaccountTenantInternalID, instancesLabelID, instancesLabelInputWithValueTwo).Return(testError)
 
 				return lblSvc
 			},
@@ -2072,14 +2030,9 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
 				return lblSvc
 			},
 			IsSuccessful: true,
@@ -2129,19 +2082,10 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 2,
-				}
-				labelInput := &model.LabelInput{
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, labelInput).Return(nil).Twice()
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabelWithValueTwo, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.InstancesLabelKey).Return(instancesLabelWithValueTwo, nil)
+				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, instancesLabelInputWithValueOne).Return(nil).Twice()
 				return lblSvc
 			},
 			IsSuccessful: true,
@@ -2265,14 +2209,9 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, nil)
 				return lblSvc
 			},
 			IsSuccessful:        false,
@@ -2298,14 +2237,9 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabel, notFoundLabelErr)
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.InstancesLabelKey).Return(instancesLabel, notFoundLabelErr)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, notFoundLabelErr)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appSecondID, subscription.InstancesLabelKey).Return(instancesLabelWithValueOne, notFoundLabelErr)
 				return lblSvc
 			},
 			IsSuccessful:        false,
@@ -2384,18 +2318,9 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
-				instancesLabel := &model.Label{
-					ID:    instancesLabelID,
-					Key:   subscription.InstancesLabelKey,
-					Value: 2,
-				}
-				labelInput := &model.LabelInput{
-					Key:   subscription.InstancesLabelKey,
-					Value: 1,
-				}
 				lblSvc := &automock.LabelService{}
-				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabel, nil)
-				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, labelInput).Return(testError)
+				lblSvc.On("GetByKey", mock.Anything, subaccountTenantInternalID, model.ApplicationLabelableObject, appFirstID, subscription.InstancesLabelKey).Return(instancesLabelWithValueTwo, nil)
+				lblSvc.On("UpdateLabel", mock.Anything, subaccountTenantInternalID, instancesLabelID, instancesLabelInputWithValueOne).Return(testError)
 				return lblSvc
 			},
 			IsSuccessful:        false,

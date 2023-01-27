@@ -36,6 +36,8 @@ const (
 	RegionPrefix = "cf-"
 	// InstancesLabelKey is the key of the instances label, that stores the number of created instances.
 	InstancesLabelKey = "instances"
+	// DefaultNumberOfInstancesForAlreadySubscribedTenant is the default number of instances set to instances label value for already subscribed tenant
+	DefaultNumberOfInstancesForAlreadySubscribedTenant = 2
 )
 
 // RuntimeService is responsible for Runtime operations
@@ -521,20 +523,20 @@ func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemp
 
 func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
 	instancesLabel, err := s.labelSvc.GetByKey(ctx, tenant, objectType, objectID, InstancesLabelKey)
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
-		return errors.Wrapf(err, "An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
-	}
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+			return errors.Wrapf(err, "while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+		}
 
-	if err != nil && apperrors.IsNotFoundError(err) {
 		if err := s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
 			Key:        InstancesLabelKey,
-			Value:      2,
+			Value:      DefaultNumberOfInstancesForAlreadySubscribedTenant,
 			ObjectID:   objectID,
 			ObjectType: objectType,
 		}); err != nil {
-			log.C(ctx).WithError(err).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, 2, objectType, objectID)
-			return errors.Wrapf(err, "An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, 2, objectType, objectID)
+			log.C(ctx).WithError(err).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, DefaultNumberOfInstancesForAlreadySubscribedTenant, objectType, objectID)
+			return errors.Wrapf(err, "while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, DefaultNumberOfInstancesForAlreadySubscribedTenant, objectType, objectID)
 		}
 
 		log.C(ctx).Debugf("%q label created, for already subscibed tenant to %q with id %q", InstancesLabelKey, objectType, objectID)
@@ -555,7 +557,7 @@ func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant st
 		Version:    instancesLabel.Version,
 	}); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
-		return errors.Wrapf(err, "An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+		return errors.Wrapf(err, "while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
 	}
 
 	log.C(ctx).Debugf("Successfully increased %q label value to %f for %q with id %q", InstancesLabelKey, instances, objectType, objectID)
@@ -564,15 +566,16 @@ func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant st
 
 func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, deleteObject func(context.Context, string) error) error {
 	instancesLabel, err := s.labelSvc.GetByKey(ctx, tenant, objectType, objectID, InstancesLabelKey)
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
-		return errors.Wrapf(err, "An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
-	}
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+			return errors.Wrapf(err, "while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+		}
 
-	if err != nil && apperrors.IsNotFoundError(err) {
 		log.C(ctx).Debugf("Cannot find label with key %q for %q with ID %q. Triggering deletion of %q with ID %q...", InstancesLabelKey, objectType, objectID, objectType, objectID)
 		if err := deleteObject(ctx, objectID); err != nil {
-			return errors.Wrapf(err, "An error occurred while trying to delete %q with ID: %q", objectType, objectID)
+			log.C(ctx).WithError(err).Errorf("An error occurred while trying to delete %q with ID: %q", objectType, objectID)
+			return errors.Wrapf(err, "while trying to delete %q with ID: %q", objectType, objectID)
 		}
 		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
 		return nil
@@ -586,22 +589,26 @@ func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, object
 	if instances <= 1 {
 		log.C(ctx).Debugf("The number of %q for %q with ID %q is <=1. Triggering deletion of %q with ID %q...", InstancesLabelKey, objectType, objectID, objectType, objectID)
 		if err := deleteObject(ctx, objectID); err != nil {
-			return errors.Wrapf(err, "An error occurred while deleting %q with ID: %q", objectType, objectID)
+			log.C(ctx).WithError(err).Errorf("An error occurred while deleting %q with ID: %q", objectType, objectID)
+			return errors.Wrapf(err, "while deleting %q with ID: %q", objectType, objectID)
 		}
 		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
-	} else {
-		instances--
-		if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
-			Key:        instancesLabel.Key,
-			Value:      instances,
-			ObjectID:   instancesLabel.ObjectID,
-			ObjectType: instancesLabel.ObjectType,
-			Version:    instancesLabel.Version,
-		}); err != nil {
-			return errors.Wrapf(err, "An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
-		}
-		log.C(ctx).Debugf("Successfully decreased %q label value to %f for %q with ID %q", InstancesLabelKey, instances, objectType, objectID)
+		return nil
 	}
+
+	instances--
+	if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
+		Key:        instancesLabel.Key,
+		Value:      instances,
+		ObjectID:   instancesLabel.ObjectID,
+		ObjectType: instancesLabel.ObjectType,
+		Version:    instancesLabel.Version,
+	}); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+		return errors.Wrapf(err, "while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+	}
+	log.C(ctx).Debugf("Successfully decreased %q label value to %f for %q with ID %q", InstancesLabelKey, instances, objectType, objectID)
+
 	return nil
 }
 
