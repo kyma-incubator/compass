@@ -88,7 +88,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Success",
 			FormationConstraintReferenceRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
 				repo := &automock.FormationTemplateConstraintReferenceRepository{}
-				repo.On("Delete", ctx, constraintID, templateID).Return(nil).Once()
+				repo.On("Delete", ctx, templateID, constraintID).Return(nil).Once()
 				return repo
 			},
 			ExpectedErrorMsg: "",
@@ -97,7 +97,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Error when creating formation constraint",
 			FormationConstraintReferenceRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
 				repo := &automock.FormationTemplateConstraintReferenceRepository{}
-				repo.On("Delete", ctx, constraintID, templateID).Return(testErr).Once()
+				repo.On("Delete", ctx, templateID, constraintID).Return(testErr).Once()
 				return repo
 			},
 			ExpectedErrorMsg: "while deleting Formation Template Constraint Reference",
