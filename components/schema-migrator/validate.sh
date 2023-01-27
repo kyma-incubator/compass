@@ -73,7 +73,13 @@ fi
 echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
 
-docker build -t ${IMG_NAME} ./
+ARCH="amd64"
+
+if [[ $(uname -m) == 'arm64' ]]; then
+    ARCH="arm64"
+fi
+
+docker build --build-arg TARGETARCH=${ARCH} -t ${IMG_NAME} ./
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
