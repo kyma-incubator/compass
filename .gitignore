@@ -52,7 +52,7 @@ local/tmp/
 
 # Installer temporary files
 /temp-*
-components/schema-migrator/seeds/dump.sql
+components/schema-migrator/seeds/dump*
 
 mk-ca.crt
 override-local-minimal.yaml
