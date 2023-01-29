@@ -15,11 +15,11 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 
 validate:
 	@echo "Will validate UP and DOWN migrations without data"
-	rm -f ./seeds/dump.sql
+	rm -rf ./seeds/dump
 	./validate.sh
 	@echo "Will validate UP migrations with data"
 	./validate.sh --dump-db;
-	rm -f ./seeds/dump.sql
+	rm -rf ./seeds/dump
 
 verify:: validate
 

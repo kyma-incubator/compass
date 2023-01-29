@@ -14,10 +14,12 @@ set -e
 
 COMPONENT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
+DATA_DIR="${COMPONENT_PATH}/seeds"
+
 IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="11"
+POSTGRES_VERSION="12"
 
 PROJECT="sap-cp-cmp"
 ENV="dev"
@@ -53,22 +55,14 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 function cleanup() {
     echo -e "${GREEN}Cleanup Postgres container and network${NC}"
     docker rm --force ${POSTGRES_CONTAINER}
+    if [[ ${DUMP_DB} ]]; then
+      rm -rf "${DATA_DIR}"/dump || true
+    fi
+
     docker network rm ${NETWORK}
 }
 
 trap cleanup EXIT
-
-if [[ ${DUMP_DB} ]] ; then
-    echo -e "${GREEN}DB dump will be used to validate migrations${NC}"
-    if [[ ! -f ${COMPONENT_PATH}/seeds/dump.sql ]]; then
-        echo -e "${YELLOW}Will pull DB dump from GCR bucket${NC}"
-        gsutil cp gs://$PROJECT-$ENV-db-dump/dump.sql "${COMPONENT_PATH}"/seeds/dump.sql
-    else
-        echo -e "${GREEN}DB dump already exists on system, will reuse it${NC}"
-    fi
-else
-    rm -f ${COMPONENT_PATH}/seeds/dump.sql # necessary, so that a dump is not left behind by accident and used in the building of the image
-fi
 
 echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
@@ -89,7 +83,54 @@ docker run -d --name ${POSTGRES_CONTAINER} \
             -e POSTGRES_MULTIPLE_DATABASES="${POSTGRES_MULTIPLE_DATABASES}" \
             -p 5432:5432 \
             -v $(pwd)/multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/multiple-postgresql-databases.sh \
+            -v ${DATA_DIR}:/tmp \
             postgres:${POSTGRES_VERSION}
+
+if [[ ${DUMP_DB} ]]; then
+    echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
+
+    REMOTE_VERSIONS=($(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | sort -r))
+    LOCAL_VERSIONS=($(ls "$COMPONENT_PATH"/migrations/director | grep -o -E '^[0-9]+' | sed -e 's/^0\+//' | sort -ru))
+
+    SCHEMA_VERSION=""
+    for r in "${REMOTE_VERSIONS[@]}"; do
+       for l in "${LOCAL_VERSIONS[@]}"; do
+          if [[ "$r" == "$l" ]]; then
+            SCHEMA_VERSION=$r
+            break 2;
+          fi
+       done
+    done
+
+    if [[ -z $SCHEMA_VERSION ]]; then
+      echo -e "${RED}\$SCHEMA_VERSION variable cannot be empty${NC}"
+    fi
+
+    echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $SCHEMA_VERSION...${NC}"
+    gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}"/toc.dat
+    STATUS=$?
+
+    if [[ $STATUS ]]; then
+      echo -e "${GREEN}DB dump with migration number: $SCHEMA_VERSION exists in the bucket. Will use it...${NC}"
+    else
+      echo -e "${RED}There is no DB dump with migration number: $SCHEMA_VERSION in the bucket.${NC}"
+      exit 1
+    fi
+
+    if [[ ! -d ${DATA_DIR}/dump-${SCHEMA_VERSION} ]]; then
+        echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
+        mkdir ${DATA_DIR}/dump-${SCHEMA_VERSION}
+        gsutil cp -r gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"
+    else
+        echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
+    fi
+    rm -rf "${DATA_DIR}"/dump || true
+    cp -R "${DATA_DIR}"/dump-"${SCHEMA_VERSION}" "${DATA_DIR}"/dump
+
+    echo -e "${GREEN}Starting DB restore process...${NC}"
+    docker exec -i ${POSTGRES_CONTAINER} pg_restore --verbose --format=directory --jobs=8 --no-owner --no-privileges --username="${DB_USER}" --host="${DB_HOST}" --port="${DB_PORT}" --dbname="${DB_NAME}" tmp/dump
+
+fi
 
 function migrationUP() {
     echo -e "${GREEN}Run UP migrations ${NC}"
@@ -140,7 +181,7 @@ function migrationProcess() {
     echo -e "${GREEN}Migrations for \"${db}\" database and \"${path}\" path${NC}"
     migrationUP "${path}" "${db}"
 
-    if [[ ! -f seeds/dump.sql ]]; then
+    if [[ ! -f "${DATA_DIR}"/dump ]]; then
         migrationDOWN "${path}" "${db}"
     fi
 }
