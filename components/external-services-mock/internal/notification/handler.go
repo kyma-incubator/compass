@@ -47,8 +47,8 @@ type NotificationsConfiguration struct {
 
 type RequestBody struct {
 	State         ConfigurationState `json:"state"`
-	Configuration json.RawMessage    `json:"configuration"`
-	Error         string             `json:"error"`
+	Configuration json.RawMessage    `json:"configuration,omitempty"`
+	Error         string             `json:"error,omitempty"`
 }
 
 type ConfigurationState string
@@ -124,64 +124,6 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 		},
 	}
 	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
-}
-
-func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	id, ok := mux.Vars(r)["tenantId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
-		return
-	}
-
-	if _, ok = h.mappings[id]; !ok {
-		h.mappings[id] = make([]Response, 0, 1)
-	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	}
-	mappings := h.mappings[id]
-	mappings = append(h.mappings[id], Response{
-		Operation:   Assign,
-		RequestBody: bodyBytes,
-	})
-	h.mappings[id] = mappings
-
-	formationID := gjson.Get(string(bodyBytes), "ucl-formation-id").String()
-	if formationID == "" {
-		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation ID"))
-		return
-	}
-
-	formationAssignmentID := gjson.Get(string(bodyBytes), "formation-assignment-id").String()
-	if formationAssignmentID == "" {
-		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation assignment ID"))
-		return
-	}
-
-	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(ctx)
-	if err != nil {
-		httputils.RespondWithError(ctx, writer, 500, err)
-		return
-	}
-
-	go func() {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, formationID, formationAssignmentID)
-		if err != nil {
-			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
-		}
-	}()
-
-	writer.WriteHeader(http.StatusAccepted)
 }
 
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
@@ -274,6 +216,64 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 	})
 
 	writer.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id, ok := mux.Vars(r)["tenantId"]
+	if !ok {
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+		return
+	}
+
+	if _, ok = h.mappings[id]; !ok {
+		h.mappings[id] = make([]Response, 0, 1)
+	}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		return
+	}
+	mappings := h.mappings[id]
+	mappings = append(h.mappings[id], Response{
+		Operation:   Assign,
+		RequestBody: bodyBytes,
+	})
+	h.mappings[id] = mappings
+
+	formationID := gjson.Get(string(bodyBytes), "ucl-formation-id").String()
+	if formationID == "" {
+		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation ID"))
+		return
+	}
+
+	formationAssignmentID := gjson.Get(string(bodyBytes), "formation-assignment-id").String()
+	if formationAssignmentID == "" {
+		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation assignment ID"))
+		return
+	}
+
+	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(ctx)
+	if err != nil {
+		httputils.RespondWithError(ctx, writer, 500, err)
+		return
+	}
+
+	go func() {
+		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
+		}
+	}()
+
+	writer.WriteHeader(http.StatusAccepted)
 }
 
 func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {

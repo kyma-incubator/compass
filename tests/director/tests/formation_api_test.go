@@ -2638,7 +2638,7 @@ func TestFormationAssignments(stdT *testing.T) {
 
 		})
 
-		t.Run("Consecutive unassigns before formation assignments are processed unassigns both participants", func(t *testing.T) {
+		t.Run("Consecutive participants unassignment are still in formation before the formation assignments are processed by the async API call and removed afterwards", func(t *testing.T) {
 			var assignedFormation graphql.Formation
 
 			t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
@@ -2648,7 +2648,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, providerFormationName, assignedFormation.Name)
 
-			t.Logf("Assign application to formation %s", formation.Name)
+			t.Logf("Assign application with ID: %s to formation %s", actualApp.ID, formation.Name)
 			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
 			assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
@@ -2657,14 +2657,14 @@ func TestFormationAssignments(stdT *testing.T) {
 
 			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
 
-			t.Logf("Check that %s is assigned from formation %s", subscriptionConsumerAccountID, providerFormationName)
+			t.Logf("Check that the runtime context with ID: %s is assigned to formation: %s", rtCtx.ID, providerFormationName)
 			actualRtmCtx := fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
 			scenarios, hasScenarios := actualRtmCtx.Labels["scenarios"]
 			assert.True(t, hasScenarios)
 			assert.Len(t, scenarios, 1)
 			assert.Contains(t, scenarios, providerFormationName)
 
-			t.Logf("Check that %s is assigned from formation %s", actualApp.ID, providerFormationName)
+			t.Logf("Check that the application with ID: %s is assigned to formation: %s", actualApp.ID, providerFormationName)
 			app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 			scenarios, hasScenarios = app.Labels["scenarios"]
 			assert.True(t, hasScenarios)
@@ -2679,20 +2679,20 @@ func TestFormationAssignments(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, providerFormationName, unassignFormation.Name)
 
-			t.Logf("Unassign application from formation %s", formation.Name)
+			t.Logf("Unassign application with ID: %s from formation %s", actualApp.ID, formation.Name)
 			unassignReq = fixtures.FixUnassignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 			require.NoError(t, err)
 			require.Equal(t, formation.Name, assignedFormation.Name)
 
-			t.Logf("Check that %s is still assigned from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			t.Logf("Check that the runtime context with ID: %s is still assigned to formation: %s", rtCtx.ID, providerFormationName)
 			actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
 			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
 			assert.True(t, hasScenarios)
 			assert.Len(t, scenarios, 1)
 			assert.Contains(t, scenarios, providerFormationName)
 
-			t.Logf("Check that %s is still assigned from formation %s", actualApp.ID, providerFormationName)
+			t.Logf("Check that the application with ID: %s is still assigned to formation: %s", actualApp.ID, providerFormationName)
 			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 			scenarios, hasScenarios = app.Labels["scenarios"]
 			assert.True(t, hasScenarios)
