@@ -268,7 +268,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Equal(t, subscriptionConsumerSubaccountID, consumerSubaccountFromRtmCtxLabel)
 
 		t.Log("Assert the runtime context has instances label")
-		instancesLabel, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels["instances"].(float64)
+		instancesLabel, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.InstancesLabelKey].(float64)
 		require.True(t, ok)
 		require.Equal(t, float64(1), instancesLabel)
 
@@ -316,7 +316,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 
 		t.Log("Assert runtime context instances label has increased value")
 		consumerSubaccountRuntime = fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
-		instancesLabel, ok = consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels["instances"].(float64)
+		instancesLabel, ok = consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels[subscription.InstancesLabelKey].(float64)
 		require.True(t, ok)
 		require.Equal(t, float64(2), instancesLabel)
 
