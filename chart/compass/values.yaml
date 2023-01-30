@@ -159,7 +159,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2830"
+      version: "PR-2845"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2825"
+      version: "PR-2842"
       name: compass-external-services-mock
     console:
       dir:
