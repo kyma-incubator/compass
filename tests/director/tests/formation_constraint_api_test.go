@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -11,7 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
+const (
+	IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
+)
 
 func TestCreateFormationConstraint(t *testing.T) {
 	// GIVEN
@@ -33,12 +36,12 @@ func TestCreateFormationConstraint(t *testing.T) {
 	formationConstraintInputGQLString, err := testctx.Tc.Graphqlizer.FormationConstraintInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := fixtures.FixCreateFormationConstraintRequest(formationConstraintInputGQLString)
+	saveExample(t, createRequest.Query(), "create formation constraint")
+
 	formationConstraint := graphql.FormationConstraint{}
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createRequest, &formationConstraint))
 	require.NotEmpty(t, formationConstraint.ID)
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, formationConstraint.ID)
-
-	saveExample(t, createRequest.Query(), "create formation constraint")
 
 	expectedConstraint := &graphql.FormationConstraint{
 		Name:            "test_constraint",
@@ -75,12 +78,12 @@ func TestDeleteFormationConstraint(t *testing.T) {
 	// WHEN
 	t.Logf("Delete formation constraint with name: %s", in.Name)
 	deleteRequest := fixtures.FixDeleteFormationConstraintRequest(constraint.ID)
+	saveExample(t, deleteRequest.Query(), "delete formation constraint")
 
 	formationConstraint := graphql.FormationConstraint{}
 	err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteRequest, &formationConstraint)
 
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
-	saveExample(t, deleteRequest.Query(), "delete formation constraint")
 }
 
 func TestListFormationConstraints(t *testing.T) {
@@ -120,12 +123,10 @@ func TestListFormationConstraints(t *testing.T) {
 	require.NotEmpty(t, constraintSecond.ID)
 
 	queryRequest := fixtures.FixQueryFormationConstraintsRequest()
-
-	var formationConstraints []*graphql.FormationConstraint
-	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &formationConstraints))
-	require.Len(t, formationConstraints, 2)
-
 	saveExample(t, queryRequest.Query(), "list formation constraints")
+
+	var actualFormationConstraints []*graphql.FormationConstraint
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraints))
 
 	expectedConstraints := map[string]*graphql.FormationConstraint{
 		"test_constraint": {
@@ -150,8 +151,10 @@ func TestListFormationConstraints(t *testing.T) {
 		},
 	}
 
-	for _, f := range formationConstraints {
-		assertConstraint(t, expectedConstraints[f.Name], f)
+	// Require there are at least len(expectedConstraints) as there may be more constraints created outside the test
+	require.GreaterOrEqual(t, len(actualFormationConstraints), len(expectedConstraints))
+	for _, f := range expectedConstraints {
+		assert.Contains(t, actualFormationConstraints, f)
 	}
 }
 
@@ -229,12 +232,10 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplate.ID, secondFormationTemplate.ID)
 
 	queryRequest := fixtures.FixQueryFormationConstraintsForFormationTemplateRequest(formationTemplate.ID)
-
-	var formationConstraints []*graphql.FormationConstraint
-	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &formationConstraints))
-	require.Len(t, formationConstraints, 2)
-
 	saveExample(t, queryRequest.Query(), "list formation constraints for formation template")
+
+	var actualFormationConstraints []*graphql.FormationConstraint
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraints))
 
 	expectedConstraints := map[string]*graphql.FormationConstraint{
 		"test_constraint": {
@@ -259,8 +260,10 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 		},
 	}
 
-	for _, f := range formationConstraints {
-		assertConstraint(t, expectedConstraints[f.Name], f)
+	// Require there are at least len(expectedConstraints) as there may be more constraints created outside the test
+	require.GreaterOrEqual(t, len(actualFormationConstraints), len(expectedConstraints))
+	for _, f := range expectedConstraints {
+		assert.Contains(t, actualFormationConstraints, f)
 	}
 }
 

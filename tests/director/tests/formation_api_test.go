@@ -604,10 +604,10 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 
 	t.Logf("Attaching constraint to formation template")
 	createRequest := fixtures.FixAttachConstraintToFormationTemplateRequest(constraint.ID, formationTemplate.ID)
+	saveExample(t, createRequest.Query(), "attach constraint to formation template")
+
 	constraintReference := graphql.ConstraintReference{}
 	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createRequest, &constraintReference))
-
-	saveExample(t, createRequest.Query(), "attach constraint to formation template")
 
 	t.Logf("Should create formation: %s", firstFormation)
 
@@ -665,11 +665,11 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 
 	t.Logf("Detaching constraint from formation template")
 	deleteRequest := fixtures.FixDetachConstraintFromFormationTemplateRequest(constraint.ID, formationTemplate.ID)
+	saveExample(t, deleteRequest.Query(), "detach constraint from formation template")
+
 	constraintReference = graphql.ConstraintReference{}
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteRequest, &constraintReference)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
-
-	saveExample(t, deleteRequest.Query(), "detach constraint from frmation template")
 
 	t.Logf("Should succeed assigning tenant %s to second formation of type %s after constraint is detached", subaccountID, formationTemplateName)
 	assignReq = fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
