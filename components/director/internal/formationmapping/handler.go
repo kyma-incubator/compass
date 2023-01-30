@@ -295,9 +295,9 @@ func (b RequestBody) Validate() error {
 		fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyAssignmentState, model.ConfigPendingAssignmentState)))
 		fieldRules = append(fieldRules, validation.Field(&b.Error, validation.Empty))
 		return validation.ValidateStruct(&b, fieldRules...)
-	} else {
-		return errors.New("The request body cannot contains only state")
 	}
+
+	return nil
 }
 
 // processFormationAssignmentAsynchronousUnassign handles the async unassign formation assignment status update

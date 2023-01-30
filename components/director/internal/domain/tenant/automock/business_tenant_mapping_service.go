@@ -181,7 +181,7 @@ func (_m *BusinessTenantMappingService) Update(ctx context.Context, id string, t
 }
 
 // UpsertMany provides a mock function with given fields: ctx, tenantInputs
-func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
+func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
 	_va := make([]interface{}, len(tenantInputs))
 	for _i := range tenantInputs {
 		_va[_i] = tenantInputs[_i]
@@ -191,14 +191,23 @@ func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantIn
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) error); ok {
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) []string); ok {
 		r0 = rf(ctx, tenantInputs...)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, ...model.BusinessTenantMappingInput) error); ok {
+		r1 = rf(ctx, tenantInputs...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // UpsertSingle provides a mock function with given fields: ctx, tenantInput

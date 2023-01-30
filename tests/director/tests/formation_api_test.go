@@ -230,9 +230,6 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	createAsaFormationReq := fixtures.FixCreateFormationRequest(asaFormation)
 	var asaGqlFormation graphql.Formation
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAsaFormationReq, &asaGqlFormation)
-	require.NoError(t, err)
-	require.Equal(t, asaFormation, asaGqlFormation.Name)
-
 	defer func() {
 		t.Log("Should be able to delete ASA formation")
 		deleteASAFormationRequest := fixtures.FixDeleteFormationRequest(asaFormation)
@@ -241,6 +238,8 @@ func TestRuntimeFormationFlow(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, asaFormation, deleteASAFormation.Name)
 	}()
+	require.NoError(t, err)
+	require.Equal(t, asaFormation, asaGqlFormation.Name)
 
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
@@ -356,9 +355,6 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	createAsaFormationReq := fixtures.FixCreateFormationRequest(asaFormation)
 	var asaGqlFormation graphql.Formation
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAsaFormationReq, &asaGqlFormation)
-	require.NoError(t, err)
-	require.Equal(t, asaFormation, asaGqlFormation.Name)
-
 	defer func() {
 		t.Log("Should be able to delete ASA formation")
 		deleteASAFormationRequest := fixtures.FixDeleteFormationRequest(asaFormation)
@@ -367,6 +363,8 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, asaFormation, deleteASAFormation.Name)
 	}()
+	require.NoError(t, err)
+	require.Equal(t, asaFormation, asaGqlFormation.Name)
 
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
@@ -398,9 +396,6 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	createAsaFormationReq2 := fixtures.FixCreateFormationRequest(asaFormation2)
 	var asaGqlFormation2 graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAsaFormationReq2, &asaGqlFormation2)
-	require.NoError(t, err)
-	require.Equal(t, asaFormation2, asaGqlFormation2.Name)
-
 	defer func() {
 		t.Log("Should be able to delete ASA formation")
 		deleteASAFormationRequest2 := fixtures.FixDeleteFormationRequest(asaFormation2)
@@ -409,6 +404,8 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, asaFormation2, deleteASAFormation2.Name)
 	}()
+	require.NoError(t, err)
+	require.Equal(t, asaFormation2, asaGqlFormation2.Name)
 
 	formationInput2 := graphql.FormationInput{Name: asaFormation2}
 	t.Log("Creating second ASA")
@@ -648,12 +645,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
-			require.NoError(t, err)
 			defer func() {
 				if err := response.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
+			require.NoError(t, err)
 			require.Equal(t, http.StatusOK, response.StatusCode)
 
 			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -671,12 +668,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 			resp, err := httpClient.Do(subscribeReq)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			require.NoError(t, err)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
+			require.NoError(t, err)
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -731,12 +728,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
-			require.NoError(t, err)
 			defer func() {
 				if err := response.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
+			require.NoError(t, err)
 			require.Equal(t, http.StatusOK, response.StatusCode)
 
 			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -754,12 +751,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 			resp, err := httpClient.Do(subscribeReq)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			require.NoError(t, err)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
+			require.NoError(t, err)
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -867,12 +864,12 @@ func TestFormationNotificationsTenantHierarchy(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -890,12 +887,12 @@ func TestFormationNotificationsTenantHierarchy(stdT *testing.T) {
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -1127,12 +1124,12 @@ func TestFormationNotifications(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -1150,12 +1147,12 @@ func TestFormationNotifications(stdT *testing.T) {
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -1809,12 +1806,12 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -1832,12 +1829,12 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -2192,12 +2189,12 @@ func TestFormationAssignments(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -2215,12 +2212,12 @@ func TestFormationAssignments(stdT *testing.T) {
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -2484,7 +2481,7 @@ func TestFormationAssignments(stdT *testing.T) {
 
 		})
 
-		t.Run("Consecutive unassigns before formation assignments are processed unassigns both participants", func(t *testing.T) {
+		t.Run("Consecutive participants unassignment are still in formation before the formation assignments are processed by the async API call and removed afterwards", func(t *testing.T) {
 			var assignedFormation graphql.Formation
 
 			t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
@@ -2494,7 +2491,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			require.Equal(t, providerFormationName, assignedFormation.Name)
 			defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
-			t.Logf("Assign application to formation %s", formation.Name)
+			t.Logf("Assign application with ID: %s to formation %s", actualApp.ID, formation.Name)
 			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
 			assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
@@ -2503,14 +2500,14 @@ func TestFormationAssignments(stdT *testing.T) {
 
 			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
 
-			t.Logf("Check that %s is assigned from formation %s", subscriptionConsumerAccountID, providerFormationName)
+			t.Logf("Check that the runtime context with ID: %s is assigned to formation: %s", rtCtx.ID, providerFormationName)
 			actualRtmCtx := fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
 			scenarios, hasScenarios := actualRtmCtx.Labels["scenarios"]
 			assert.True(t, hasScenarios)
 			assert.Len(t, scenarios, 1)
 			assert.Contains(t, scenarios, providerFormationName)
 
-			t.Logf("Check that %s is assigned from formation %s", actualApp.ID, providerFormationName)
+			t.Logf("Check that the application with ID: %s is assigned to formation: %s", actualApp.ID, providerFormationName)
 			app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 			scenarios, hasScenarios = app.Labels["scenarios"]
 			assert.True(t, hasScenarios)
@@ -2525,20 +2522,20 @@ func TestFormationAssignments(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, providerFormationName, unassignFormation.Name)
 
-			t.Logf("Unassign application from formation %s", formation.Name)
+			t.Logf("Unassign application with ID: %s from formation %s", actualApp.ID, formation.Name)
 			unassignReq = fixtures.FixUnassignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 			require.NoError(t, err)
 			require.Equal(t, formation.Name, assignedFormation.Name)
 
-			t.Logf("Check that %s is still assigned from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			t.Logf("Check that the runtime context with ID: %s is still assigned to formation: %s", rtCtx.ID, providerFormationName)
 			actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
 			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
 			assert.True(t, hasScenarios)
 			assert.Len(t, scenarios, 1)
 			assert.Contains(t, scenarios, providerFormationName)
 
-			t.Logf("Check that %s is still assigned from formation %s", actualApp.ID, providerFormationName)
+			t.Logf("Check that the application with ID: %s is still assigned to formation: %s", actualApp.ID, providerFormationName)
 			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 			scenarios, hasScenarios = app.Labels["scenarios"]
 			assert.True(t, hasScenarios)
@@ -2738,12 +2735,12 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -2761,12 +2758,12 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -3078,12 +3075,12 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -3101,12 +3098,12 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -3362,12 +3359,12 @@ func resetShouldFailEndpointFromExternalSvcMock(t *testing.T, client *http.Clien
 func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []byte {
 	t.Logf("Getting formation notifications recieved in external services mock")
 	resp, err := client.Get(conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback")
-	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()
+	require.NoError(t, err)
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusOK, string(body)))

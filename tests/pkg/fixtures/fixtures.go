@@ -174,6 +174,15 @@ func FixWriteTenantsRequest(t require.TestingT, tenants []graphql.BusinessTenant
 	return gcli.NewRequest(tenantsQuery)
 }
 
+func FixWriteTenantRequest(t require.TestingT, tenant graphql.BusinessTenantMappingInput) *gcli.Request {
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.WriteTenantInputToGQL(tenant)
+	require.NoError(t, err)
+
+	tenantsQuery := fmt.Sprintf("mutation { writeTenant(in:%s)}", in)
+	return gcli.NewRequest(tenantsQuery)
+}
+
 func FixDeleteTenantsRequest(t require.TestingT, tenants []graphql.BusinessTenantMappingInput) *gcli.Request {
 	gqlizer := graphqlizer.Graphqlizer{}
 	in, err := gqlizer.DeleteTenantsInputToGQL(tenants)

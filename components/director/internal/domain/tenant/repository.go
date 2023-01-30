@@ -425,6 +425,22 @@ func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.B
 	return r.multipleFromEntities(entityCollection), nil
 }
 
+// ListByParentAndType list tenants by parent ID and tenant.Type
+func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error) {
+	var entityCollection tenant.EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(parentColumn, parentID),
+		repo.NewEqualCondition(typeColumn, tenantType),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entityCollection), nil
+}
+
 func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {
 	items := make([]*model.BusinessTenantMapping, 0, len(entities))
 

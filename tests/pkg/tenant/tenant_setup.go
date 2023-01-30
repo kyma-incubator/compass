@@ -14,9 +14,12 @@ const (
 	Active   TenantStatus = "Active"
 	Inactive TenantStatus = "Inactive"
 
-	Account    TenantType = "account"
-	Customer   TenantType = "customer"
-	Subaccount TenantType = "subaccount"
+	Account       TenantType = "account"
+	Customer      TenantType = "customer"
+	Subaccount    TenantType = "subaccount"
+	ResourceGroup TenantType = "resource-group"
+	Folder        TenantType = "folder"
+	Organization  TenantType = "organization"
 
 	TestDefaultCustomerTenant                                  = "Test_DefaultCustomer"
 	TestSystemFetcherTenant                                    = "TestSystemFetcherAccount"
@@ -40,6 +43,9 @@ const (
 	TestConsumerSubaccount                                     = "TestConsumerSubaccount"
 	TestIntegrationSystemManagedSubaccount                     = "TestIntegrationSystemManagedSubaccount"
 	TestIntegrationSystemManagedAccount                        = "TestIntegrationSystemManagedAccount"
+	TestAtomResourceGroup                                      = "TestAtomResourceGroup"
+	TestAtomFolder                                             = "TestAtomFolder"
+	TestAtomOrganization                                       = "TestAtomOrganization"
 )
 
 type Tenant struct {
@@ -227,6 +233,30 @@ func (mgr *TestTenantsManager) Init() {
 			ProviderName:   testProvider,
 			Type:           Account,
 			Status:         Active,
+		},
+		TestAtomOrganization: {
+			Name:           TestAtomOrganization,
+			ExternalTenant: "f2724f8e-1a58-4f32-bfd0-8b831de34e71",
+			ProviderName:   testProvider,
+			Type:           Organization,
+			Status:         Active,
+			Parent:         TestDefaultCustomerTenant,
+		},
+		TestAtomFolder: {
+			Name:           TestAtomFolder,
+			ExternalTenant: "4c31b7c7-2bea-4bd5-9ea5-e9a8d704f900",
+			ProviderName:   testProvider,
+			Type:           Folder,
+			Status:         Active,
+			Parent:         TestAtomOrganization,
+		},
+		TestAtomResourceGroup: {
+			Name:           TestAtomResourceGroup,
+			ExternalTenant: "ff30da87-7685-4462-869a-baae6441898b",
+			ProviderName:   testProvider,
+			Type:           ResourceGroup,
+			Status:         Active,
+			Parent:         TestAtomFolder,
 		},
 	}
 }

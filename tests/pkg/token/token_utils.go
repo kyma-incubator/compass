@@ -233,12 +233,12 @@ func GetTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, 
 	req.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationURLEncoded)
 
 	resp, err := client.Do(req)
-	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
 		}
 	}()
+	require.NoError(t, err)
 
 	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("failed to get token: unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
 	require.NotEmpty(t, resp.Body)

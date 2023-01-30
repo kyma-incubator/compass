@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/applicationtenancy"
+
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -295,11 +297,12 @@ func main() {
 	gqlCfg := graphql.Config{
 		Resolvers: rootResolver,
 		Directives: graphql.DirectiveRoot{
-			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
-			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
-			HasScopes:   scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
-			Sanitize:    scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
-			Validate:    inputvalidation.NewDirective().Validate,
+			Async:                         getAsyncDirective(ctx, cfg, transact, appRepo),
+			HasScenario:                   scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
+			HasScopes:                     scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
+			Sanitize:                      scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
+			Validate:                      inputvalidation.NewDirective().Validate,
+			SynchronizeApplicationTenancy: applicationtenancy.NewDirective(transact, tenant.NewService(tenant.NewRepository(tenant.NewConverter()), uid.NewService()), applicationSvc(transact, cfg, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping)).SynchronizeApplicationTenancy,
 		},
 	}
 

@@ -724,6 +724,8 @@ func TestResolver_Write(t *testing.T) {
 		},
 	}
 
+	upsertedTenantsIDs := []string{"6f4a589c-ac2e-4870-acb5-5a58abc85c6a", "eace9a3a-383b-44d1-8864-7e951ac5ec06"}
+
 	testCases := []struct {
 		Name           string
 		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
@@ -731,14 +733,14 @@ func TestResolver_Write(t *testing.T) {
 		TenantConvFn   func() *automock.BusinessTenantMappingConverter
 		TenantsInput   []*graphql.BusinessTenantMappingInput
 		ExpectedError  error
-		ExpectedResult int
+		ExpectedResult []string
 	}{
 		{
 			Name: "Success",
 			TxFn: txGen.ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := unusedTenantService()
-				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(nil).Once()
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsIDs, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -748,7 +750,7 @@ func TestResolver_Write(t *testing.T) {
 			},
 			TenantsInput:   tenantsToUpsertGQL,
 			ExpectedError:  nil,
-			ExpectedResult: 2,
+			ExpectedResult: upsertedTenantsIDs,
 		},
 		{
 			Name:           "Returns error when can not start transaction",
@@ -757,14 +759,14 @@ func TestResolver_Write(t *testing.T) {
 			TenantConvFn:   unusedTenantConverter,
 			TenantsInput:   tenantsToUpsertGQL,
 			ExpectedError:  testError,
-			ExpectedResult: -1,
+			ExpectedResult: nil,
 		},
 		{
 			Name: "Returns error when can not create the tenants",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(testError).Once()
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(nil, testError).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -774,14 +776,14 @@ func TestResolver_Write(t *testing.T) {
 			},
 			TenantsInput:   tenantsToUpsertGQL,
 			ExpectedError:  testError,
-			ExpectedResult: -1,
+			ExpectedResult: nil,
 		},
 		{
 			Name: "Returns error when can not commit",
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(nil).Once()
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsIDs, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -791,7 +793,7 @@ func TestResolver_Write(t *testing.T) {
 			},
 			TenantsInput:   tenantsToUpsertGQL,
 			ExpectedError:  testError,
-			ExpectedResult: -1,
+			ExpectedResult: nil,
 		},
 	}
 
