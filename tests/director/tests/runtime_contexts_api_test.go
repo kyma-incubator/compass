@@ -267,6 +267,11 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, subscriptionConsumerSubaccountID, consumerSubaccountFromRtmCtxLabel)
 
+		t.Log("Assert the runtime context has instances label")
+		instancesLabel, ok := consumerSubaccountRuntime.RuntimeContexts.Data[0].Labels["instances"].(float64)
+		require.True(t, ok)
+		require.Equal(t, float64(1), instancesLabel)
+
 		t.Log("Assert provider runtime is visible in the consumer's account after successful subscription")
 		consumerAccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerRuntime.ID)
 		require.Equal(t, providerRuntime.ID, consumerAccountRuntime.ID)
