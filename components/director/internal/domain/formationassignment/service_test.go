@@ -1672,6 +1672,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 	}
 
 	appToAppRequests, appToAppInputTemplate, appToAppInputTemplateReverse := fixNotificationRequestAndReverseRequest(appID, appID2, []string{appID, appID2}, matchedApplicationAssignment, matchedApplicationAssignmentReverse, "application", "application", true)
+	appToAppRequests2, appToAppInputTemplate2, appToAppInputTemplateReverse2 := fixNotificationRequestAndReverseRequest(appID, appID2, []string{appID, appID2}, matchedApplicationAssignment, matchedApplicationAssignmentReverse, "application", "application", true)
 	rtmCtxToAppRequests, rtmCtxToAppInputTemplate, rtmCtxToAppInputTemplateReverse := fixNotificationRequestAndReverseRequest(runtimeID, appID, []string{appID, runtimeCtxID}, matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse, "runtime", "application", true)
 
 	sourceNotMatchTemplateInput := &automock.TemplateInput{}
@@ -1685,7 +1686,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 		TemplateInputReverse           *automock.TemplateInput
 		FormationAssignments           []*model.FormationAssignment
 		Requests                       []*webhookclient.NotificationRequest
-		Operation                      func(context.Context, *formationassignment.AssignmentMappingPair) error
+		Operation                      func(context.Context, *formationassignment.AssignmentMappingPair) (bool, error)
 		RuntimeContextToRuntimeMapping map[string]string
 		ExpectedMappings               []*formationassignment.AssignmentMappingPair
 		ExpectedErrorMsg               string
@@ -1697,7 +1698,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			TemplateInputReverse: appToAppInputTemplateReverse,
 			FormationAssignments: []*model.FormationAssignment{matchedApplicationAssignment, matchedApplicationAssignmentReverse},
 			Requests:             appToAppRequests,
-			Operation:            operationContainer.append,
+			Operation:            operationContainer.appendThatDoesNotProcessedReverse,
 			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
 				{
 					Assignment: &formationassignment.FormationAssignmentRequestMapping{
@@ -1723,13 +1724,35 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			ExpectedErrorMsg: "",
 		},
 		{
+			Name:                 "Does not process assignments multiple times",
+			Context:              ctxWithTenant,
+			TemplateInput:        appToAppInputTemplate2,
+			TemplateInputReverse: appToAppInputTemplateReverse2,
+			FormationAssignments: []*model.FormationAssignment{matchedApplicationAssignment, matchedApplicationAssignmentReverse},
+			Requests:             appToAppRequests2,
+			Operation:            operationContainer.appendThatProcessedReverse,
+			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
+				{
+					Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						Request:             appToAppRequests2[0],
+						FormationAssignment: matchedApplicationAssignment,
+					},
+					ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						Request:             appToAppRequests2[1],
+						FormationAssignment: matchedApplicationAssignmentReverse,
+					},
+				},
+			},
+			ExpectedErrorMsg: "",
+		},
+		{
 			Name:                           "Success when match assignment for runtimeContext",
 			Context:                        ctxWithTenant,
 			TemplateInput:                  rtmCtxToAppInputTemplate,
 			TemplateInputReverse:           rtmCtxToAppInputTemplateReverse,
 			FormationAssignments:           []*model.FormationAssignment{matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse},
 			Requests:                       rtmCtxToAppRequests,
-			Operation:                      operationContainer.append,
+			Operation:                      operationContainer.appendThatDoesNotProcessedReverse,
 			RuntimeContextToRuntimeMapping: map[string]string{runtimeCtxID: runtimeID},
 			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
 				{
@@ -1768,7 +1791,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 					},
 					Object: sourceNotMatchTemplateInput},
 			},
-			Operation: operationContainer.append,
+			Operation: operationContainer.appendThatDoesNotProcessedReverse,
 			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
 				{
 					Assignment: &formationassignment.FormationAssignmentRequestMapping{
@@ -1800,7 +1823,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			TemplateInputReverse: &automock.TemplateInput{},
 			FormationAssignments: []*model.FormationAssignment{targetNotMatchedAssignment, targetNotMatchedAssignmentReverse},
 			Requests:             appToAppRequests,
-			Operation:            operationContainer.append,
+			Operation:            operationContainer.appendThatDoesNotProcessedReverse,
 			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
 				{
 					Assignment: &formationassignment.FormationAssignmentRequestMapping{
@@ -2021,6 +2044,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		FormationAssignmentConverter func() *automock.FormationAssignmentConverter
 		NotificationService          func() *automock.NotificationService
 		FormationAssignmentPair      *formationassignment.AssignmentMappingPair
+		ExpectedIsReverseProcessed   bool
 		ExpectedErrorMsg             string
 	}{
 		{
@@ -2358,8 +2382,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 			///WHEN
-			err := svc.ProcessFormationAssignmentPair(testCase.Context, testCase.FormationAssignmentPair)
+			isReverseProcessed, err := svc.ProcessFormationAssignmentPair(testCase.Context, testCase.FormationAssignmentPair)
 
+			require.Equal(t, testCase.ExpectedIsReverseProcessed, isReverseProcessed)
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
@@ -2441,8 +2466,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
+		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.NoError(t, err)
+		require.True(t, isReverseProcessed)
 
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
@@ -2510,9 +2536,10 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
+		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
+		require.True(t, isReverseProcessed)
 
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
@@ -2583,8 +2610,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
+		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.NoError(t, err)
+		require.True(t, isReverseProcessed)
 
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
@@ -3102,8 +3130,9 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 			// WHEN
-			err := svc.CleanupFormationAssignment(testCase.Context, testCase.FormationAssignmentMappingPair)
+			isReverseProcessed, err := svc.CleanupFormationAssignment(testCase.Context, testCase.FormationAssignmentMappingPair)
 
+			require.False(t, isReverseProcessed)
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
@@ -3122,13 +3151,18 @@ type operationContainer struct {
 	err     error
 }
 
-func (o *operationContainer) append(_ context.Context, a *formationassignment.AssignmentMappingPair) error {
+func (o *operationContainer) appendThatProcessedReverse(_ context.Context, a *formationassignment.AssignmentMappingPair) (bool, error) {
 	o.content = append(o.content, a)
-	return nil
+	return true, nil
 }
 
-func (o *operationContainer) fail(context.Context, *formationassignment.AssignmentMappingPair) error {
-	return o.err
+func (o *operationContainer) appendThatDoesNotProcessedReverse(_ context.Context, a *formationassignment.AssignmentMappingPair) (bool, error) {
+	o.content = append(o.content, a)
+	return false, nil
+}
+
+func (o *operationContainer) fail(context.Context, *formationassignment.AssignmentMappingPair) (bool, error) {
+	return false, o.err
 }
 
 func (o *operationContainer) clear() {
