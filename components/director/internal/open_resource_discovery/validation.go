@@ -212,7 +212,7 @@ func validateDocumentInput(doc *Document) error {
 func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&pkg.Title, validation.Required),
+		validation.Field(&pkg.Title, validation.Match(regexp.MustCompile("test"))),
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
 		validation.Field(&pkg.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&pkg.SupportInfo, validation.NilOrNotEmpty),
