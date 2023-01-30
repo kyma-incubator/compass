@@ -189,7 +189,7 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 	for _, rtmCtx := range rtmCtxPage.Data {
 		if rtmCtx.Value == consumerTenantID {
 			// Already subscribed
-			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
+			log.C(ctx).Infof("Consumer %q is already subscribed. Increasing the %q label value by one", consumerTenantID, InstancesLabelKey)
 			if err := s.manageInstancesLabelOnSubscribe(ctx, consumerInternalTenant, model.RuntimeContextLabelableObject, rtmCtx.ID); err != nil {
 				return false, err
 			}
@@ -248,6 +248,17 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 	}); err != nil {
 		log.C(ctx).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q: %v", s.consumerSubaccountLabelKey, subaccountTenantID, model.RuntimeContextLabelableObject, rtmCtxID, err)
 		return false, errors.Wrap(err, fmt.Sprintf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", s.consumerSubaccountLabelKey, subaccountTenantID, model.RuntimeContextLabelableObject, rtmCtxID))
+	}
+
+	log.C(ctx).Infof("Creating label for runtime context with ID: %q with key: %q and value: %q", rtmCtxID, InstancesLabelKey, 1)
+	if err := s.labelSvc.CreateLabel(ctx, consumerInternalTenant, s.uidSvc.Generate(), &model.LabelInput{
+		Key:        InstancesLabelKey,
+		Value:      1,
+		ObjectID:   rtmCtxID,
+		ObjectType: model.RuntimeContextLabelableObject,
+	}); err != nil {
+		log.C(ctx).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q: %v", InstancesLabelKey, 1, model.RuntimeContextLabelableObject, rtmCtxID, err)
+		return false, errors.Wrap(err, fmt.Sprintf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, 1, model.RuntimeContextLabelableObject, rtmCtxID))
 	}
 
 	return true, nil
@@ -330,7 +341,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 	for _, app := range applications {
 		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
 			// Already subscribed
-			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
+			log.C(ctx).Infof("Consumer %q is already subscribed. Increasing the %q label value by one", consumerTenantID, InstancesLabelKey)
 			if err := s.manageInstancesLabelOnSubscribe(ctx, consumerInternalTenant, model.ApplicationLabelableObject, app.ID); err != nil {
 				return false, err
 			}
@@ -548,6 +559,7 @@ func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant st
 		return errors.Errorf("cannot cast %q label value of type %T to int", InstancesLabelKey, instancesLabel.Value)
 	}
 
+	log.C(ctx).Debugf("Increasing %q label value. Current value %f", InstancesLabelKey, instances)
 	instances++
 	if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
 		Key:        instancesLabel.Key,
