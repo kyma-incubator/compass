@@ -339,7 +339,7 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 		mode: {{.Mode }},
 		{{- end }}
 		{{- if .Version }}
-		version: {{.Version}}
+		version: {{.Version}},
 		{{- end }}
 		{{- if .CorrelationIDKey }}
 		correlationIdKey: "{{.CorrelationIDKey }}",
