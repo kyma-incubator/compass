@@ -6332,8 +6332,20 @@ type Mutation {
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
+	"""
+	**Examples**
+	- [create formation constraint](examples/create-formation-constraint/create-formation-constraint.graphql)
+	"""
 	createFormationConstraint(formationConstraint: FormationConstraintInput! @validate): FormationConstraint! @hasScopes(path: "graphql.mutation.createFormationConstraint")
+	"""
+	**Examples**
+	- [delete formation constraint](examples/delete-formation-constraint/delete-formation-constraint.graphql)
+	"""
 	deleteFormationConstraint(id: ID!): FormationConstraint! @hasScopes(path: "graphql.mutation.deleteFormationConstraint")
+	"""
+	**Examples**
+	- [attach constraint to formation template](examples/attach-constraint-to-formation-template/attach-constraint-to-formation-template.graphql)
+	"""
 	attachConstraintToFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.attachConstraintToFormationTemplate")
 	detachConstraintFromFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.detachConstraintFromFormationTemplate")
 	"""
