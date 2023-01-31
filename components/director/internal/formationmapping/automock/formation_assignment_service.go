@@ -101,17 +101,24 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 }
 
 // ProcessFormationAssignmentPair provides a mock function with given fields: ctx, mappingPair
-func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error {
+func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error) {
 	ret := _m.Called(ctx, mappingPair)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPair) error); ok {
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPair) bool); ok {
 		r0 = rf(ctx, mappingPair)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(bool)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPair) error); ok {
+		r1 = rf(ctx, mappingPair)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // SetAssignmentToErrorState provides a mock function with given fields: ctx, assignment, errorMessage, errorCode, state

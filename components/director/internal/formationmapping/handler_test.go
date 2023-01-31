@@ -150,7 +150,7 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
-				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(nil).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, nil).Once()
 				return faSvc
 			},
 			faConverterFn: func() *automock.FormationAssignmentConverter {
@@ -394,7 +394,7 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
-				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(testErr).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, testErr).Once()
 				return faSvc
 			},
 			faConverterFn: func() *automock.FormationAssignmentConverter {
@@ -424,7 +424,7 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
-				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(nil).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, nil).Once()
 				return faSvc
 			},
 			faConverterFn: func() *automock.FormationAssignmentConverter {

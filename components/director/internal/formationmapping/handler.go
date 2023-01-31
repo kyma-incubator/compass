@@ -224,7 +224,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.C(ctx).Infof("Processing formation assignment pairs and their notifications")
-	err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
+	_, err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while processing formation assignment pairs and their notifications")
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
