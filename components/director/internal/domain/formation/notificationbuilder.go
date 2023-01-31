@@ -2,7 +2,6 @@ package formation
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -38,10 +37,7 @@ func (nb *NotificationBuilder) BuildNotificationRequest(
 	webhook *model.Webhook,
 ) (*webhookclient.NotificationRequest, error) {
 	log.C(ctx).Infof("Building notification request")
-	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.JoinPointLocation{
-		OperationName:  model.GenerateNotificationOperation,
-		ConstraintType: model.PreOperation,
-	}, joinPointDetails, formationTemplateID); err != nil {
+	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PreGenerateNotifications, joinPointDetails, formationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateNotificationOperation, model.PreOperation)
 	}
 
@@ -55,10 +51,7 @@ func (nb *NotificationBuilder) BuildNotificationRequest(
 		return nil, errors.Wrapf(err, "while creating webhook request")
 	}
 
-	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.JoinPointLocation{
-		OperationName:  model.GenerateNotificationOperation,
-		ConstraintType: model.PostOperation,
-	}, joinPointDetails, formationTemplateID); err != nil {
+	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PostGenerateNotifications, joinPointDetails, formationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateNotificationOperation, model.PostOperation)
 	}
 

@@ -261,7 +261,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		TenantID:            tnt,
 	}
 
-	if err = s.enforceConstraints(ctx, model.CreateFormationOperation, model.PreOperation, joinPointDetails, fTmpl.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreCreate, joinPointDetails, fTmpl.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PreOperation)
 	}
 
@@ -281,7 +281,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
-	if err = s.enforceConstraints(ctx, model.CreateFormationOperation, model.PostOperation, joinPointDetails, fTmpl.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, joinPointDetails, fTmpl.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
 	}
 
@@ -303,7 +303,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		TenantID:            tnt,
 	}
 
-	if err = s.enforceConstraints(ctx, model.DeleteFormationOperation, model.PreOperation, joinPointDetails, ft.formationTemplate.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreDelete, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
 	}
 
@@ -318,7 +318,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
 	}
 
-	if err = s.enforceConstraints(ctx, model.DeleteFormationOperation, model.PostOperation, joinPointDetails, ft.formationTemplate.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostDelete, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PostOperation)
 	}
 
@@ -367,7 +367,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		return nil, errors.Wrapf(err, "While preparing joinpoint details for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
 	}
 
-	if err = s.enforceConstraints(ctx, model.AssignFormationOperation, model.PreOperation, joinPointDetails, ft.formationTemplate.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
 	}
 
@@ -413,7 +413,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
 
-	if err = s.enforceConstraints(ctx, model.AssignFormationOperation, model.PostOperation, joinPointDetails, ft.formationTemplate.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PostOperation)
 	}
 
@@ -619,7 +619,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "While preparing joinpoint details for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
 
-	if err = s.enforceConstraints(ctx, model.UnassignFormationOperation, model.PreOperation, joinPointDetails, ft.formationTemplate.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
 
@@ -756,7 +756,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
 
-	if err = s.enforceConstraints(ctx, model.UnassignFormationOperation, model.PostOperation, joinPointDetails, ft.formationTemplate.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PostOperation)
 	}
 
@@ -1098,17 +1098,6 @@ func (s *service) getFormationWithTemplate(ctx context.Context, formationName, t
 	}
 
 	return &formationWithTemplate{formation: formation, formationTemplate: template}, nil
-}
-
-func (s *service) enforceConstraints(ctx context.Context, operation model.TargetOperation, constraintType model.FormationConstraintType, details formationconstraint.JoinPointDetails, formationTemplateID string) error {
-	return s.constraintEngine.EnforceConstraints(
-		ctx,
-		formationconstraint.JoinPointLocation{
-			OperationName:  operation,
-			ConstraintType: constraintType,
-		},
-		details,
-		formationTemplateID)
 }
 
 func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID string, formationTemplate *model.FormationTemplate) error {

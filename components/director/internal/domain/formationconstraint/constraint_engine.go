@@ -82,7 +82,7 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 
 	var errs *multierror.Error
 	for _, mc := range constraints {
-		operator, ok := e.operators[OperatorName(mc.Operator)]
+		operatorFunc, ok := e.operators[OperatorName(mc.Operator)]
 		if !ok {
 			errs = multierror.Append(errs, ConstraintError{
 				ConstraintName: mc.Name,
@@ -110,7 +110,7 @@ func (e *ConstraintEngine) EnforceConstraints(ctx context.Context, location form
 			continue
 		}
 
-		operatorResult, err := operator(ctx, operatorInput)
+		operatorResult, err := operatorFunc(ctx, operatorInput)
 		if err != nil {
 			errs = multierror.Append(errs, ConstraintError{
 				ConstraintName: mc.Name,
