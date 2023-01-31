@@ -18,7 +18,7 @@ func TestTechnicalClient(stdT *testing.T) {
 	ctx := context.Background()
 
 	t.Run("Successfully list tenants", func(stdT *testing.T) {
-		replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestIntSystemOUSubaccount, conf.ExternalCertCommonName, "technical-client-test")
+		replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestIntSystemOUSubaccount, conf.TestExternalCertCN, "technical-client-test")
 
 		externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 			ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,

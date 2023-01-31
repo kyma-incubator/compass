@@ -339,7 +339,7 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 		mode: {{.Mode }},
 		{{- end }}
 		{{- if .Version }}
-		version: {{.Version}},
+		version: "{{.Version}}",
 		{{- end }}
 		{{- if .CorrelationIDKey }}
 		correlationIdKey: "{{.CorrelationIDKey }}",
@@ -796,6 +796,21 @@ func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingIn
 			type: {{ quote .Type }},
 			provider: {{ quote .Provider }}
 		}`)
+}
+
+// CertificateSubjectMappingInputToGQL creates certificate subject mapping graphql input
+func (g *Graphqlizer) CertificateSubjectMappingInputToGQL(in graphql.CertificateSubjectMappingInput) (string, error) {
+	return g.genericToGQL(in, `{
+		subject: "{{.Subject}}"
+		consumerType: "{{.ConsumerType}}"
+        {{- if .InternalConsumerID }}
+		internalConsumerID: "{{.InternalConsumerID}}",
+		{{- end}}
+		tenantAccessLevels: [
+			{{- range $i, $e := .TenantAccessLevels}}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+	}`)
 }
 
 func (g *Graphqlizer) marshal(obj interface{}) string {

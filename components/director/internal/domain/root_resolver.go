@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 
@@ -99,6 +100,7 @@ type RootResolver struct {
 	formationTemplate   *formationtemplate.Resolver
 	formationConstraint *formationconstraint.Resolver
 	constraintReference *formationtemplateconstraintreferences.Resolver
+	certSubjectMapping  *certsubjectmapping.Resolver
 }
 
 // NewRootResolver missing godoc
@@ -163,6 +165,7 @@ func NewRootResolver(
 	formationConstraintConverter := formationconstraint.NewConverter()
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	constraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
+	certSubjectMappingConv := certsubjectmapping.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -189,6 +192,7 @@ func NewRootResolver(
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
 	constraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(constraintReferencesConverter)
+	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -226,6 +230,7 @@ func NewRootResolver(
 	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
 	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter, tenantSvc)
 	constraintReferenceSvc := formationtemplateconstraintreferences.NewService(constraintReferencesRepo, constraintReferencesConverter)
+	certSubjectMappingSvc := certsubjectmapping.NewService(certSubjectMappingRepo)
 
 	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
 	if err != nil {
@@ -259,6 +264,7 @@ func NewRootResolver(
 		formationTemplate:   formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc),
 		formationConstraint: formationconstraint.NewResolver(transact, formationConstraintConverter, formationConstraintSvc),
 		constraintReference: formationtemplateconstraintreferences.NewResolver(transact, constraintReferencesConverter, constraintReferenceSvc),
+		certSubjectMapping:  certsubjectmapping.NewResolver(transact, certSubjectMappingConv, certSubjectMappingSvc, uidSvc),
 	}, nil
 }
 
@@ -570,6 +576,14 @@ func (r *queryResolver) SystemAuth(ctx context.Context, id string) (graphql.Syst
 // SystemAuthByToken missing godoc
 func (r *queryResolver) SystemAuthByToken(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return r.systemAuth.SystemAuthByToken(ctx, id)
+}
+
+func (r *queryResolver) CertificateSubjectMapping(ctx context.Context, id string) (*graphql.CertificateSubjectMapping, error) {
+	return r.certSubjectMapping.CertificateSubjectMapping(ctx, id)
+}
+
+func (r *queryResolver) CertificateSubjectMappings(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.CertificateSubjectMappingPage, error) {
+	return r.certSubjectMapping.CertificateSubjectMappings(ctx, first, after)
 }
 
 type mutationResolver struct {
@@ -946,6 +960,18 @@ func (r *mutationResolver) UnsubscribeTenant(ctx context.Context, providerID, su
 
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
 	return r.tenant.Update(ctx, id, in)
+}
+
+func (r *mutationResolver) CreateCertificateSubjectMapping(ctx context.Context, in graphql.CertificateSubjectMappingInput) (*graphql.CertificateSubjectMapping, error) {
+	return r.certSubjectMapping.CreateCertificateSubjectMapping(ctx, in)
+}
+
+func (r *mutationResolver) UpdateCertificateSubjectMapping(ctx context.Context, id string, in graphql.CertificateSubjectMappingInput) (*graphql.CertificateSubjectMapping, error) {
+	return r.certSubjectMapping.UpdateCertificateSubjectMapping(ctx, id, in)
+}
+
+func (r *mutationResolver) DeleteCertificateSubjectMapping(ctx context.Context, id string) (*graphql.CertificateSubjectMapping, error) {
+	return r.certSubjectMapping.DeleteCertificateSubjectMapping(ctx, id)
 }
 
 type applicationResolver struct {

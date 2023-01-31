@@ -2,6 +2,7 @@ package subscription_test
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"

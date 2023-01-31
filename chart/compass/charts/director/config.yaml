@@ -32,6 +32,8 @@ graphql:
     systemAuthByToken: ["ory_internal"]
     formationConstraints: [ "formation_constraint:read" ]
     formationConstraintsByFormationType: [ "formation_constraint:read" ]
+    certificateSubjectMapping: ["certificate_subject_mapping:read"]
+    certificateSubjectMappings: ["certificate_subject_mapping:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -110,6 +112,9 @@ graphql:
     deleteFormationConstraint: [ "formation_constraint:write" ]
     attachConstraintToFormationTemplate: [ "formation_constraint:write" ]
     detachConstraintFromFormationTemplate: [ "formation_constraint:write" ]
+    createCertificateSubjectMapping: ["certificate_subject_mapping:write"]
+    updateCertificateSubjectMapping: ["certificate_subject_mapping:write"]
+    deleteCertificateSubjectMapping: ["certificate_subject_mapping:write"]
 
   field:
     fetch_request:
