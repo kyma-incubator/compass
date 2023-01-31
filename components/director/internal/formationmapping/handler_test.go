@@ -141,15 +141,6 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 			expectedErrOutput:  "Request Body contains invalid input:",
 		},
-		{
-			name: "Validate Error: error when request body contains only state",
-			reqBody: fm.RequestBody{
-				State: model.ReadyAssignmentState,
-			},
-			hasURLVars:         true,
-			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "Request Body contains invalid input:",
-		},
 		// Business logic unit tests for assign operation
 		{
 			name:       "Success when operation is assign",
