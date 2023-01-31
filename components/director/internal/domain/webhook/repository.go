@@ -120,6 +120,27 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant, objID 
 	return convertToWebhooks(entities, r)
 }
 
+// ListByReferenceObjectIDGlobal missing godoc
+// TODO Test
+func (r *repository) ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
+	var entities Collection
+
+	refColumn, err := getReferenceColumnForListByReferenceObjectType(objType)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(refColumn, objID),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return convertToWebhooks(entities, r)
+}
+
 // ListByReferenceObjectTypeAndWebhookType lists all webhooks of a given type for a given object type
 func (r *repository) ListByReferenceObjectTypeAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	var entities Collection

@@ -213,7 +213,7 @@ func NewRootResolver(
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
 	subscriptionSvc := subscription.NewService(runtimeSvc, runtimeContextSvc, tenantSvc, labelSvc, appTemplateSvc, appConverter, appTemplateConv, appSvc, uidSvc, subscriptionConfig.ConsumerSubaccountLabelKey, subscriptionConfig.SubscriptionLabelKey, subscriptionConfig.RuntimeTypeLabelKey, subscriptionConfig.ProviderLabelKey)
 	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
-	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter, tenantSvc, webhookRepo)
+	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter, tenantSvc, webhookRepo, webhookSvc)
 
 	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
 	if err != nil {
@@ -244,7 +244,7 @@ func NewRootResolver(
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc, tenantOnDemandSvc, formationSvc),
 		subscription:       subscription.NewResolver(transact, subscriptionSvc),
-		formationTemplate:  formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, webhookConverter, webhookSvc),
+		formationTemplate:  formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, webhookConverter),
 	}, nil
 }
 

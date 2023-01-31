@@ -21,6 +21,7 @@ type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
 	ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
+	ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, tenant string, item *model.Webhook) error
@@ -112,12 +113,12 @@ func (s *service) ListForRuntime(ctx context.Context, runtimeID string) ([]*mode
 }
 
 // ListForFormationTemplate lists all webhooks for a given formationTemplateID
-func (s *service) ListForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
+func (s *service) ListForFormationTemplate(ctx context.Context, tenant, formationTemplateID string) ([]*model.Webhook, error) {
+	if tenant == "" {
+		log.C(ctx).Infof("tenant was not loaded while getting webhooks for formation template with id %s", formationTemplateID)
+		return s.webhookRepo.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
 	}
-	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, formationTemplateID, model.FormationTemplateWebhookReference)
+	return s.webhookRepo.ListByReferenceObjectID(ctx, tenant, formationTemplateID, model.FormationTemplateWebhookReference)
 }
 
 // Create creates a model.Webhook with generated ID and CreatedAt properties. Returns the ID of the webhook.
@@ -151,8 +152,8 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, 
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	if len(webhook.ObjectID) == 0 || (webhook.ObjectType != model.ApplicationWebhookReference && webhook.ObjectType != model.ApplicationTemplateWebhookReference && webhook.ObjectType != model.RuntimeWebhookReference) {
-		return errors.New("while updating Webhook: webhook doesn't have neither of application_id, application_template_id and runtime_id")
+	if len(webhook.ObjectID) == 0 || (webhook.ObjectType != model.ApplicationWebhookReference && webhook.ObjectType != model.ApplicationTemplateWebhookReference && webhook.ObjectType != model.RuntimeWebhookReference && webhook.ObjectType != model.FormationTemplateWebhookReference) {
+		return errors.New("while updating Webhook: webhook doesn't have neither of application_id, application_template_id, runtime_id and formation_template_id")
 	}
 
 	webhook = in.ToWebhook(id, webhook.ObjectID, webhook.ObjectType)

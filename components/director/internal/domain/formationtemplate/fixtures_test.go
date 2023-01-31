@@ -215,3 +215,7 @@ func UnusedFormationTemplateConverter() *automock.FormationTemplateConverter {
 func UnusedTenantService() *automock.TenantService {
 	return &automock.TenantService{}
 }
+
+func UnusedWebhookService() *automock.WebhookService {
+	return &automock.WebhookService{}
+}

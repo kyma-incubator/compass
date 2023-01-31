@@ -395,6 +395,7 @@ func TestService_ListForFormationTemplate(t *testing.T) {
 		Name               string
 		RepositoryFn       func() *automock.WebhookRepository
 		ExpectedResult     []*model.Webhook
+		Tenant             string
 		ExpectedErrMessage string
 	}{
 		{
@@ -404,6 +405,28 @@ func TestService_ListForFormationTemplate(t *testing.T) {
 				repo.On("ListByReferenceObjectID", ctx, givenTenant(), formationTemplateID, model.FormationTemplateWebhookReference).Return(modelWebhooks, nil).Once()
 				return repo
 			},
+			Tenant:             givenTenant(),
+			ExpectedResult:     modelWebhooks,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:   "Returns error when webhook listing failed",
+			Tenant: givenTenant(),
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectID", ctx, givenTenant(), formationTemplateID, model.FormationTemplateWebhookReference).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Success global",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectIDGlobal", ctx, formationTemplateID, model.FormationTemplateWebhookReference).Return(modelWebhooks, nil).Once()
+				return repo
+			},
 			ExpectedResult:     modelWebhooks,
 			ExpectedErrMessage: "",
 		},
@@ -411,7 +434,7 @@ func TestService_ListForFormationTemplate(t *testing.T) {
 			Name: "Returns error when webhook listing failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectID", ctx, givenTenant(), formationTemplateID, model.FormationTemplateWebhookReference).Return(nil, testErr).Once()
+				repo.On("ListByReferenceObjectIDGlobal", ctx, formationTemplateID, model.FormationTemplateWebhookReference).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -425,7 +448,7 @@ func TestService_ListForFormationTemplate(t *testing.T) {
 			svc := webhook.NewService(repo, nil, nil)
 
 			// WHEN
-			webhooks, err := svc.ListForFormationTemplate(ctx, formationTemplateID)
+			webhooks, err := svc.ListForFormationTemplate(ctx, testCase.Tenant, formationTemplateID)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -438,13 +461,6 @@ func TestService_ListForFormationTemplate(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
-		// WHEN
-		_, err := svc.ListForFormationTemplate(context.TODO(), givenFormationTemplateID())
-		assert.True(t, apperrors.IsCannotReadTenant(err))
-	})
 }
 
 func TestService_ListAllApplicationWebhooks(t *testing.T) {
@@ -712,7 +728,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", tenantCtx, givenTenant(), id, model.ApplicationWebhookReference).Return(noIDWebhookModel, nil).Once()
 				return repo
 			},
-			ExpectedErrMessage: "webhook doesn't have neither of application_id, application_template_id and runtime_id",
+			ExpectedErrMessage: "webhook doesn't have neither of application_id, application_template_id, runtime_id and formation_template_id",
 			WebhookType:        model.ApplicationWebhookReference,
 			Context:            tenantCtx,
 		},

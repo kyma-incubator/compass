@@ -42,22 +42,30 @@ type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
+// WebhookService represents the Webhook service layer
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type WebhookService interface {
+	ListForFormationTemplate(ctx context.Context, tenant, formationTemplateID string) ([]*model.Webhook, error)
+}
+
 type service struct {
-	repo        FormationTemplateRepository
-	uidSvc      UIDService
-	converter   FormationTemplateConverter
-	tenantSvc   TenantService
-	webhookRepo WebhookRepository
+	repo           FormationTemplateRepository
+	uidSvc         UIDService
+	converter      FormationTemplateConverter
+	tenantSvc      TenantService
+	webhookRepo    WebhookRepository
+	webhookService WebhookService
 }
 
 // NewService creates a FormationTemplate service
-func NewService(repo FormationTemplateRepository, uidSvc UIDService, converter FormationTemplateConverter, tenantSvc TenantService, webhookRepo WebhookRepository) *service {
+func NewService(repo FormationTemplateRepository, uidSvc UIDService, converter FormationTemplateConverter, tenantSvc TenantService, webhookRepo WebhookRepository, webhookService WebhookService) *service {
 	return &service{
-		repo:        repo,
-		uidSvc:      uidSvc,
-		converter:   converter,
-		tenantSvc:   tenantSvc,
-		webhookRepo: webhookRepo,
+		repo:           repo,
+		uidSvc:         uidSvc,
+		converter:      converter,
+		tenantSvc:      tenantSvc,
+		webhookRepo:    webhookRepo,
+		webhookService: webhookService,
 	}
 }
 
@@ -81,7 +89,7 @@ func (s *service) Create(ctx context.Context, in *model.FormationTemplateInput) 
 		return "", errors.Wrapf(err, "while creating Formation Template with name %s", in.Name)
 	}
 
-	if err = s.webhookRepo.CreateMany(ctx, "", formationTemplateModel.Webhooks); err != nil {
+	if err = s.webhookRepo.CreateMany(ctx, tenantID, formationTemplateModel.Webhooks); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhooks for Formation Template with ID: %s", formationTemplateID)
 	}
 
@@ -150,6 +158,16 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+// ListWebhooksForFormationTemplate lists webhooks for a FormationTemplate matching ID `formationTemplateID`
+func (s *service) ListWebhooksForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error) {
+	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.webhookService.ListForFormationTemplate(ctx, tenantID, formationTemplateID)
 }
 
 // getTenantFromContext validates and returns the tenant present in the context:

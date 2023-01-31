@@ -131,7 +131,7 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
 
 			// WHEN
 			result, err := resolver.FormationTemplate(ctx, testID)
@@ -268,7 +268,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
 
 			// WHEN
 			result, err := resolver.FormationTemplates(ctx, testCase.First, &gqlAfter)
@@ -459,7 +459,7 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
 
 			// WHEN
 			result, err := resolver.UpdateFormationTemplate(ctx, testID, testCase.Input)
@@ -594,7 +594,7 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
 
 			// WHEN
 			result, err := resolver.DeleteFormationTemplate(ctx, testID)
@@ -785,7 +785,7 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
 
 			// WHEN
 			result, err := resolver.CreateFormationTemplate(ctx, testCase.Input)
@@ -815,21 +815,21 @@ func TestResolver_Webhooks(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	testCases := []struct {
-		Name             string
-		TxFn             func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		Input            *graphql.FormationTemplate
-		WebhookConverter func() *automock.WebhookConverter
-		WebhookSvc       func() *automock.WebhookService
-		ExpectedOutput   []*graphql.Webhook
-		ExpectedError    error
+		Name                     string
+		TxFn                     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		Input                    *graphql.FormationTemplate
+		WebhookConverter         func() *automock.WebhookConverter
+		FormationTemplateService func() *automock.FormationTemplateService
+		ExpectedOutput           []*graphql.Webhook
+		ExpectedError            error
 	}{
 		{
 			Name:  "Success",
 			TxFn:  txGen.ThatSucceeds,
 			Input: &graphQLFormationTemplate,
-			WebhookSvc: func() *automock.WebhookService {
-				svc := &automock.WebhookService{}
-				svc.On("ListForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelWebhooks, nil)
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListWebhooksForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelWebhooks, nil)
 				return svc
 			},
 			WebhookConverter: func() *automock.WebhookConverter {
@@ -844,9 +844,9 @@ func TestResolver_Webhooks(t *testing.T) {
 			Name:  "Error when listing webhooks fails",
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			Input: &graphQLFormationTemplate,
-			WebhookSvc: func() *automock.WebhookService {
-				svc := &automock.WebhookService{}
-				svc.On("ListForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(nil, testErr)
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListWebhooksForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(nil, testErr)
 				return svc
 			},
 			WebhookConverter: func() *automock.WebhookConverter {
@@ -859,9 +859,9 @@ func TestResolver_Webhooks(t *testing.T) {
 			Name:  "Error when converting webhooks fails",
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			Input: &graphQLFormationTemplate,
-			WebhookSvc: func() *automock.WebhookService {
-				svc := &automock.WebhookService{}
-				svc.On("ListForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelWebhooks, nil)
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListWebhooksForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelWebhooks, nil)
 				return svc
 			},
 			WebhookConverter: func() *automock.WebhookConverter {
@@ -876,9 +876,9 @@ func TestResolver_Webhooks(t *testing.T) {
 			Name:  "Returns error when failing on the committing of a transaction",
 			TxFn:  txGen.ThatFailsOnCommit,
 			Input: &graphQLFormationTemplate,
-			WebhookSvc: func() *automock.WebhookService {
-				svc := &automock.WebhookService{}
-				svc.On("ListForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelWebhooks, nil)
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListWebhooksForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelWebhooks, nil)
 				return svc
 			},
 			WebhookConverter: func() *automock.WebhookConverter {
@@ -893,8 +893,10 @@ func TestResolver_Webhooks(t *testing.T) {
 			Name:  "Returns error when failing on the beginning of a transaction",
 			TxFn:  txGen.ThatFailsOnBegin,
 			Input: &graphQLFormationTemplate,
-			WebhookSvc: func() *automock.WebhookService {
-				return &automock.WebhookService{}
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListWebhooksForFormationTemplate", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelWebhooks, nil)
+				return svc
 			},
 			WebhookConverter: func() *automock.WebhookConverter {
 				return &automock.WebhookConverter{}
@@ -906,8 +908,8 @@ func TestResolver_Webhooks(t *testing.T) {
 			Name:  "Returns error when input formation template is nil",
 			TxFn:  txGen.ThatFailsOnBegin,
 			Input: nil,
-			WebhookSvc: func() *automock.WebhookService {
-				return &automock.WebhookService{}
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				return &automock.FormationTemplateService{}
 			},
 			WebhookConverter: func() *automock.WebhookConverter {
 				return &automock.WebhookConverter{}
@@ -920,10 +922,10 @@ func TestResolver_Webhooks(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persist, transact := testCase.TxFn()
-			whSvc := testCase.WebhookSvc()
+			formationTemplateSvc := testCase.FormationTemplateService()
 			whConv := testCase.WebhookConverter()
 
-			resolver := formationtemplate.NewResolver(transact, nil, nil, whConv, whSvc)
+			resolver := formationtemplate.NewResolver(transact, nil, formationTemplateSvc, whConv)
 
 			// WHEN
 			result, err := resolver.Webhooks(ctx, testCase.Input)
@@ -937,7 +939,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			mock.AssertExpectationsForObjects(t, persist, whSvc, whConv)
+			mock.AssertExpectationsForObjects(t, persist, whConv)
 		})
 	}
 }

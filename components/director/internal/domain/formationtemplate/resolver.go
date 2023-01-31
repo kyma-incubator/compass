@@ -27,6 +27,7 @@ type FormationTemplateService interface {
 	List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error)
 	Update(ctx context.Context, id string, in *model.FormationTemplateInput) error
 	Delete(ctx context.Context, id string) error
+	ListWebhooksForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error)
 }
 
 // WebhookConverter converts between the graphql and model
@@ -36,12 +37,6 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
-// WebhookService represents the Webhook service layer
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type WebhookService interface {
-	ListForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error)
-}
-
 // Resolver is the FormationTemplate resolver
 type Resolver struct {
 	transact persistence.Transactioner
@@ -49,17 +44,15 @@ type Resolver struct {
 	formationTemplateSvc FormationTemplateService
 	converter            FormationTemplateConverter
 	webhookConverter     WebhookConverter
-	webhookSvc           WebhookService
 }
 
 // NewResolver creates FormationTemplate resolver
-func NewResolver(transact persistence.Transactioner, converter FormationTemplateConverter, formationTemplateSvc FormationTemplateService, webhookConverter WebhookConverter, webhookSvc WebhookService) *Resolver {
+func NewResolver(transact persistence.Transactioner, converter FormationTemplateConverter, formationTemplateSvc FormationTemplateService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		transact:             transact,
 		converter:            converter,
 		formationTemplateSvc: formationTemplateSvc,
 		webhookConverter:     webhookConverter,
-		webhookSvc:           webhookSvc,
 	}
 }
 
@@ -269,7 +262,7 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.FormationTemplate)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	webhooks, err := r.webhookSvc.ListForFormationTemplate(ctx, obj.ID)
+	webhooks, err := r.formationTemplateSvc.ListWebhooksForFormationTemplate(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
