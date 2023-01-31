@@ -34,6 +34,10 @@ const (
 	SubdomainLabelKey = "subdomain"
 	// RegionPrefix a prefix to be trimmed from the region placeholder value when creating an app from template
 	RegionPrefix = "cf-"
+	// InstancesLabelKey is the key of the instances label, that stores the number of created instances.
+	InstancesLabelKey = "instances"
+	// DefaultNumberOfInstancesForAlreadySubscribedTenant is the default number of instances set to instances label value for already subscribed tenant
+	DefaultNumberOfInstancesForAlreadySubscribedTenant = 2
 )
 
 // RuntimeService is responsible for Runtime operations
@@ -185,7 +189,10 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 	for _, rtmCtx := range rtmCtxPage.Data {
 		if rtmCtx.Value == consumerTenantID {
 			// Already subscribed
-			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
+			log.C(ctx).Infof("Consumer %q is already subscribed. Increasing the %q label value by one", consumerTenantID, InstancesLabelKey)
+			if err := s.manageInstancesLabelOnSubscribe(ctx, consumerInternalTenant, model.RuntimeContextLabelableObject, rtmCtx.ID); err != nil {
+				return false, err
+			}
 			return true, nil
 		}
 	}
@@ -243,6 +250,17 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		return false, errors.Wrap(err, fmt.Sprintf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", s.consumerSubaccountLabelKey, subaccountTenantID, model.RuntimeContextLabelableObject, rtmCtxID))
 	}
 
+	log.C(ctx).Infof("Creating label for runtime context with ID: %q with key: %q and value: %q", rtmCtxID, InstancesLabelKey, 1)
+	if err := s.labelSvc.CreateLabel(ctx, consumerInternalTenant, s.uidSvc.Generate(), &model.LabelInput{
+		Key:        InstancesLabelKey,
+		Value:      1,
+		ObjectID:   rtmCtxID,
+		ObjectType: model.RuntimeContextLabelableObject,
+	}); err != nil {
+		log.C(ctx).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q: %v", InstancesLabelKey, 1, model.RuntimeContextLabelableObject, rtmCtxID, err)
+		return false, errors.Wrap(err, fmt.Sprintf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, 1, model.RuntimeContextLabelableObject, rtmCtxID))
+	}
+
 	return true, nil
 }
 
@@ -285,12 +303,9 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 	for _, rtmCtx := range rtmCtxPage.Data {
 		// if the current subscription(runtime context) is the one for which the unsubscribe request is initiated, delete the record from the DB
 		if rtmCtx.Value == consumerTenantID {
-			log.C(ctx).Infof("Deleting runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
-			if err := s.runtimeCtxSvc.Delete(ctx, rtmCtx.ID); err != nil {
-				log.C(ctx).Errorf("An error occurred while deleting runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
+			if err := s.deleteOnUnsubscribe(ctx, consumerInternalTenant, model.RuntimeContextLabelableObject, rtmCtx.ID, s.runtimeCtxSvc.Delete); err != nil {
 				return false, err
 			}
-			log.C(ctx).Infof("Successfully deleted runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
 			break
 		}
 	}
@@ -326,7 +341,10 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 	for _, app := range applications {
 		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
 			// Already subscribed
-			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
+			log.C(ctx).Infof("Consumer %q is already subscribed. Increasing the %q label value by one", consumerTenantID, InstancesLabelKey)
+			if err := s.manageInstancesLabelOnSubscribe(ctx, consumerInternalTenant, model.ApplicationLabelableObject, app.ID); err != nil {
+				return false, err
+			}
 			return true, nil
 		}
 	}
@@ -450,6 +468,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
 	appCreateInputModel.Labels["managed"] = "false"
+	appCreateInputModel.Labels[InstancesLabelKey] = 1
 	appCreateInputModel.Labels[s.consumerSubaccountLabelKey] = subscribedSubaccountID
 	appCreateInputModel.LocalTenantID = &consumerTenantID
 
@@ -500,11 +519,107 @@ func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemp
 
 	for _, app := range applications {
 		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplateID {
-			if err := s.appSvc.Delete(ctx, app.ID); err != nil {
-				return errors.Wrapf(err, "while trying to delete Application with ID: %q", app.ID)
+			internalTenant, err := tenant.LoadFromContext(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "An error occurred while loading tenant from context")
+			}
+			if err := s.deleteOnUnsubscribe(ctx, internalTenant, model.ApplicationLabelableObject, app.ID, s.appSvc.Delete); err != nil {
+				return err
 			}
 		}
 	}
+
+	return nil
+}
+
+func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
+	instancesLabel, err := s.labelSvc.GetByKey(ctx, tenant, objectType, objectID, InstancesLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+			return errors.Wrapf(err, "while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+		}
+
+		if err := s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
+			Key:        InstancesLabelKey,
+			Value:      DefaultNumberOfInstancesForAlreadySubscribedTenant,
+			ObjectID:   objectID,
+			ObjectType: objectType,
+		}); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, DefaultNumberOfInstancesForAlreadySubscribedTenant, objectType, objectID)
+			return errors.Wrapf(err, "while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, DefaultNumberOfInstancesForAlreadySubscribedTenant, objectType, objectID)
+		}
+
+		log.C(ctx).Debugf("%q label created, for already subscibed tenant to %q with id %q", InstancesLabelKey, objectType, objectID)
+		return nil
+	}
+
+	instances, ok := instancesLabel.Value.(float64)
+	if !ok {
+		return errors.Errorf("cannot cast %q label value of type %T to int", InstancesLabelKey, instancesLabel.Value)
+	}
+
+	log.C(ctx).Debugf("Increasing %q label value. Current value %f", InstancesLabelKey, instances)
+	instances++
+	if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
+		Key:        instancesLabel.Key,
+		Value:      instances,
+		ObjectID:   instancesLabel.ObjectID,
+		ObjectType: instancesLabel.ObjectType,
+		Version:    instancesLabel.Version,
+	}); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+		return errors.Wrapf(err, "while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+	}
+
+	log.C(ctx).Debugf("Successfully increased %q label value to %f for %q with id %q", InstancesLabelKey, instances, objectType, objectID)
+	return nil
+}
+
+func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, deleteObject func(context.Context, string) error) error {
+	instancesLabel, err := s.labelSvc.GetByKey(ctx, tenant, objectType, objectID, InstancesLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+			return errors.Wrapf(err, "while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+		}
+
+		log.C(ctx).Debugf("Cannot find label with key %q for %q with ID %q. Triggering deletion of %q with ID %q...", InstancesLabelKey, objectType, objectID, objectType, objectID)
+		if err := deleteObject(ctx, objectID); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while trying to delete %q with ID: %q", objectType, objectID)
+			return errors.Wrapf(err, "while trying to delete %q with ID: %q", objectType, objectID)
+		}
+		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
+		return nil
+	}
+
+	instances, ok := instancesLabel.Value.(float64)
+	if !ok {
+		return errors.Errorf("cannot cast %q label value of type %T to int", InstancesLabelKey, instancesLabel.Value)
+	}
+
+	if instances <= 1 {
+		log.C(ctx).Debugf("The number of %q for %q with ID %q is <=1. Triggering deletion of %q with ID %q...", InstancesLabelKey, objectType, objectID, objectType, objectID)
+		if err := deleteObject(ctx, objectID); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while deleting %q with ID: %q", objectType, objectID)
+			return errors.Wrapf(err, "while deleting %q with ID: %q", objectType, objectID)
+		}
+		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
+		return nil
+	}
+
+	instances--
+	if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
+		Key:        instancesLabel.Key,
+		Value:      instances,
+		ObjectID:   instancesLabel.ObjectID,
+		ObjectType: instancesLabel.ObjectType,
+		Version:    instancesLabel.Version,
+	}); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+		return errors.Wrapf(err, "while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+	}
+	log.C(ctx).Debugf("Successfully decreased %q label value to %f for %q with ID %q", InstancesLabelKey, instances, objectType, objectID)
 
 	return nil
 }
