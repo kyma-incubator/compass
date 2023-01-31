@@ -441,6 +441,53 @@ func TestRepositoryListByFormationTemplateID(t *testing.T) {
 	})
 }
 
+func TestRepositoryListByFormationTemplateIDGlobal(t *testing.T) {
+	whID1 := "whID1"
+	whID2 := "whID2"
+	whModel1 := fixFormationTemplateModelWebhook(whID1, givenFormationTemplateID(), "http://kyma.io")
+	whEntity1 := fixFormationTemplateWebhookEntityWithID(t, whID1)
+
+	whModel2 := fixFormationTemplateModelWebhook(whID2, givenFormationTemplateID(), "http://kyma.io")
+	whEntity2 := fixFormationTemplateWebhookEntityWithID(t, whID2)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "List Webhooks by Formation Template ID Global",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE formation_template_id = $1`),
+				Args:     []driver.Value{givenFormationTemplateID()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(whModel1.ID, nil, nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, givenFormationTemplateID()).
+						AddRow(whModel2.ID, nil, nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, givenFormationTemplateID()),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   webhook.NewRepository,
+		ExpectedModelEntities: []interface{}{whModel1, whModel2},
+		ExpectedDBEntities:    []interface{}{whEntity1, whEntity2},
+		MethodArgs:            []interface{}{givenFormationTemplateID(), model.FormationTemplateWebhookReference},
+		MethodName:            "ListByReferenceObjectIDGlobal",
+	}
+
+	suite.Run(t)
+
+	t.Run("Error when webhookReferenceObjectType is not supported", func(t *testing.T) {
+		repository := webhook.NewRepository(nil)
+		_, err := repository.ListByReferenceObjectIDGlobal(context.TODO(), "", model.IntegrationSystemWebhookReference)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "referenced object should be one of application, runtime or formation template")
+	})
+}
+
 func testListByObjectID(t *testing.T, methodName string, lockClause string, args []interface{}) {
 	whID1 := "whID1"
 	whID2 := "whID2"

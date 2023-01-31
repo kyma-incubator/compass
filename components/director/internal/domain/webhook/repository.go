@@ -121,7 +121,6 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant, objID 
 }
 
 // ListByReferenceObjectIDGlobal missing godoc
-// TODO Test
 func (r *repository) ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	var entities Collection
 
