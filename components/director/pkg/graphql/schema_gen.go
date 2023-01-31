@@ -6072,7 +6072,15 @@ type Query {
 	- [query formation templates](examples/query-formation-templates/query-formation-templates.graphql)
 	"""
 	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
+	"""
+	**Examples**
+	- [query certificate subject mapping](examples/query-certificate-subject-mapping/query-certificate-subject-mapping.graphql)
+	"""
 	certificateSubjectMapping(id: ID!): CertificateSubjectMapping! @hasScopes(path: "graphql.query.certificateSubjectMapping")
+	"""
+	**Examples**
+	- [query certificate subject mappings](examples/query-certificate-subject-mappings/query-certificate-subject-mappings.graphql)
+	"""
 	certificateSubjectMappings(first: Int = 300, after: PageCursor): CertificateSubjectMappingPage! @hasScopes(path: "graphql.query.certificateSubjectMappings")
 }
 
@@ -6395,6 +6403,7 @@ type Mutation {
 	"""
 	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
 }
+
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
