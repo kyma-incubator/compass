@@ -21,6 +21,7 @@ const (
 	JobSucceededStatus = "COMPLETED"
 	EventuallyTimeout  = 60 * time.Second
 	EventuallyTick     = 2 * time.Second
+	InstancesLabelKey  = "instances"
 )
 
 func BuildAndExecuteUnsubscribeRequest(t *testing.T, resourceID, resourceName string, httpClient *http.Client, subscriptionURL, apiPath, subscriptionToken, propagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {
