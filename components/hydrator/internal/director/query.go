@@ -237,3 +237,23 @@ func RuntimeByTokenIssuerQuery(issuer string) string {
 	  	}
 	}`, issuer)
 }
+
+func ListCertificateSubjectMappingsQuery(first int, after string) string {
+	return fmt.Sprintf(`query {
+        result: certificateSubjectMappings(first: %d, after: "%s") {
+          data {
+            id
+            subject
+            consumerType
+            internalConsumerID
+            tenantAccessLevels
+          }
+          pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+          }
+          totalCount
+        }
+    }`, first, after)
+}

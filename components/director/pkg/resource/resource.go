@@ -66,6 +66,8 @@ const (
 	EventDefinition Type = "eventDefinition"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
+	// CertSubjectMapping type represents certificate subject mapping resource
+	CertSubjectMapping Type = "certSubjectMapping"
 	// Formations type represents formations resource.
 	Formations Type = "formations"
 	// FormationTemplate type represents formation template resource.

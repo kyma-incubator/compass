@@ -23,6 +23,7 @@ type Client interface {
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (UpdateAuthResult, error)
 	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error
 	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
+	ListCertificateSubjectMappings(ctx context.Context, after string) (*schema.CertificateSubjectMappingPage, error)
 }
 
 type Config struct {
@@ -58,6 +59,10 @@ type SystemAuthResponse struct {
 
 type RuntimeResponse struct {
 	Result *schema.Runtime `json:"result"`
+}
+
+type CertSubjectMappingResponse struct {
+	Result *schema.CertificateSubjectMappingPage `json:"result"`
 }
 
 type UpdateAuthResult struct {
@@ -172,6 +177,18 @@ func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID st
 func (c *client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error) {
 	query := RuntimeByTokenIssuerQuery(issuer)
 	var response RuntimeResponse
+
+	err := c.execute(ctx, c.gqlClient, query, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Result, nil
+}
+
+func (c *client) ListCertificateSubjectMappings(ctx context.Context, after string) (*schema.CertificateSubjectMappingPage, error) {
+	query := ListCertificateSubjectMappingsQuery(300, after)
+	var response CertSubjectMappingResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
