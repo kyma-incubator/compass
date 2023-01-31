@@ -8,6 +8,7 @@ mutation {
       applicationInput: {
         name: "new-app-create-input"
         description: "{{name}} {{display-name}}"
+        labels: { displayName: "{{display-name}}" }
         healthCheckURL: "http://url.valid"
       }
       placeholders: [{ name: "name" }, { name: "display-name" }]

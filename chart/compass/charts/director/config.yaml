@@ -30,6 +30,8 @@ graphql:
     formationTemplates: [ "formation_template:read" ]
     systemAuth: ["ory_internal"]
     systemAuthByToken: ["ory_internal"]
+    certificateSubjectMapping: ["certificate_subject_mapping:read"]
+    certificateSubjectMappings: ["certificate_subject_mapping:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -104,6 +106,9 @@ graphql:
     createFormationTemplate: [ "formation_template:write" ]
     deleteFormationTemplate: [ "formation_template:write" ]
     updateFormationTemplate: [ "formation_template:write" ]
+    createCertificateSubjectMapping: ["certificate_subject_mapping:write"]
+    updateCertificateSubjectMapping: ["certificate_subject_mapping:write"]
+    deleteCertificateSubjectMapping: ["certificate_subject_mapping:write"]
 
   field:
     fetch_request:

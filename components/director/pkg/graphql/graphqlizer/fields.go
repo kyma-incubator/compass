@@ -683,3 +683,14 @@ func (fp *GqlFieldsProvider) ForAutomaticScenarioAssignment() string {
 		scenarioName
 		selector {%s}`, fp.ForLabel())
 }
+
+// ForCertificateSubjectMapping returns certificate subject mappings fields
+func (fp *GqlFieldsProvider) ForCertificateSubjectMapping() string {
+	return `
+		id
+		subject
+        consumerType
+	    internalConsumerID
+		tenantAccessLevels	
+	`
+}
