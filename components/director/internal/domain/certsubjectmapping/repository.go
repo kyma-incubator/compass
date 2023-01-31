@@ -22,9 +22,9 @@ var (
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )
 
-// EntityConverter converts between the internal model and entity
-//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type EntityConverter interface {
+// entityConverter converts between the internal model and entity
+//go:generate mockery --exported --name=entityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type entityConverter interface {
 	ToEntity(in *model.CertSubjectMapping) (*Entity, error)
 	FromEntity(entity *Entity) (*model.CertSubjectMapping, error)
 }
@@ -37,11 +37,11 @@ type repository struct {
 	updaterGlobal         repo.UpdaterGlobal
 	deleterGlobal         repo.DeleterGlobal
 	listerGlobal          repo.ListerGlobal
-	conv                  EntityConverter
+	conv                  entityConverter
 }
 
 // NewRepository creates a new CertSubjectMapping repository
-func NewRepository(conv EntityConverter) *repository {
+func NewRepository(conv entityConverter) *repository {
 	return &repository{
 		creator:               repo.NewCreatorGlobal(resource.CertSubjectMapping, tableName, tableColumns),
 		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.CertSubjectMapping, tableName),

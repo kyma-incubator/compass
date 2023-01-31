@@ -27,6 +27,7 @@ graphql:
     formation: ["formation:read"]
     formations: ["formation:read"]
     certificateSubjectMapping: ["certificate_subject_mapping:read"]
+    certificateSubjectMappings: ["certificate_subject_mapping:read"]
 
   mutation:
     registerApplication: ["application:write"]

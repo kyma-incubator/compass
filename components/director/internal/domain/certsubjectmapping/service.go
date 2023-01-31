@@ -96,5 +96,10 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 300")
 	}
 
-	return s.repo.List(ctx, pageSize, cursor)
+	csmPage, err := s.repo.List(ctx, pageSize, cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing certificate subject mapping")
+	}
+
+	return csmPage, nil
 }

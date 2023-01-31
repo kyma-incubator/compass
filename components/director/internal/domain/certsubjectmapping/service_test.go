@@ -328,6 +328,17 @@ func TestService_List(t *testing.T) {
 			ExpectedOutput: nil,
 			ExpectedError:  invalidDataErr,
 		},
+		{
+			Name:           "Error when listing certificate subject mappings fail",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("List", emptyCtx, pageSize, "").Return(nil, testErr).Once()
+				return repo
+			},
+			PageSize:       pageSize,
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
 	}
 
 	for _, testCase := range testCases {

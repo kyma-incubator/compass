@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -89,8 +88,6 @@ func (cl *certSubjectMappingLoader) Run(ctx context.Context, certSubjectMappings
 			}
 			log.C(ctx).Info("Update certificate subject mapping cache with the newly fetched data")
 			cl.certSubjectMappingCache.Put(mappings)
-			// todo::: remove
-			spew.Dump(mappings)
 		case <-ctx.Done():
 			log.C(ctx).Infof("Context cancelled, stopping certificate subject mapping resyncer...")
 			t.Stop()
