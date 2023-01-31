@@ -211,7 +211,7 @@ func TestModifyFormationTemplateWebhooks(t *testing.T) {
 
 	actualWebhook := graphql.Webhook{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
-	require.Error(t, err)
+	require.Error(t, err) // TODO ADD
 
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
 	require.NoError(t, err)
@@ -383,7 +383,6 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 
 func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 	ctx := context.Background()
-	first := 100
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
@@ -393,99 +392,48 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 	scopedFormationTemplateInput := fixtures.FixFormationTemplateInput(scopedFormationTemplateName)
 	webhookSyncMode := graphql.WebhookModeSync
 
-	//urlUpdated := "http://test.updated.com"
-	/*scopedFormationTemplateInput.Webhooks = []*graphql.WebhookInput{
-		{
-			Type: graphql.WebhookTypeFormationLifecycle,
-			Mode: &webhookSyncMode,
-			URL:  str.Ptr("http://localhost:6439/"),
-		},
-	}*/
-
 	t.Logf("Create tenant scoped formation template with name: %q", scopedFormationTemplateName)
 	scopedFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplateInput) // tenant_id is extracted from the subject of the cert
 	defer fixtures.CleanupFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplate.ID)
 
 	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, scopedFormationTemplate)
-	t.Run("Add formation template webhook", func(t *testing.T) {
-		webhookInput := &graphql.WebhookInput{
-			Type: graphql.WebhookTypeFormationLifecycle,
-			Mode: &webhookSyncMode,
-			URL:  str.Ptr("http://localhost:6439/"),
-		}
-		webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(webhookInput)
-		addReq := fixtures.FixAddWebhookToFormationTemplateRequest(scopedFormationTemplate.ID, webhookInStr)
-		saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add formation template webhook")
-
+	urlUpdated := "http://updated.url"
+	webhookInput := &graphql.WebhookInput{
+		Type: graphql.WebhookTypeFormationLifecycle,
+		Mode: &webhookSyncMode,
+		URL:  str.Ptr("http://localhost:6439/"),
+	}
+	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(webhookInput)
+	addReq := fixtures.FixAddWebhookToFormationTemplateRequest(scopedFormationTemplate.ID, webhookInStr)
+	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add formation template webhook")
+	t.Run("Add formation template webhook with other tenant should result in unauthorized", func(t *testing.T) {
 		actualWebhook := graphql.Webhook{}
-		err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, addReq, &actualWebhook)
-		require.Error(t, err)
-
+		customTenant := tenant.TestTenants.GetIDByName(t, tenant.TestConsumerSubaccount)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, customTenant, addReq, &actualWebhook)
+		require.Error(t, err) // TODO Unauthorized
+	})
+	actualWebhook := graphql.Webhook{}
+	t.Run("Add formation template webhook with correct tenant should succeed", func(t *testing.T) {
 		err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, addReq, &actualWebhook)
 		require.NoError(t, err)
-
 		assert.NotNil(t, actualWebhook.URL)
 		id := actualWebhook.ID
 		require.NotNil(t, id)
-		assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
+		assert.Equal(t, "http://localhost:6439/", *actualWebhook.URL)
 		assert.Equal(t, graphql.WebhookTypeFormationLifecycle, actualWebhook.Type)
 	})
 
-	/*t.Run("Update formation template webhook", func(t *testing.T) {
-		webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+	t.Run("Update formation template webhook", func(t *testing.T) {
+		webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL: &urlUpdated, Type: graphql.WebhookTypeFormationLifecycle})
 
 		require.NoError(t, err)
-		updateReq := fixtures.FixUpdateWebhookRequest(scopedFormationTemplate.Webhooks[0].ID, webhookInStr)
+		updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
 
-		err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, updateReq, &scopedFormationTemplate.Webhooks[0].ID)
+		var updatedWebhook graphql.Webhook
+		err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, updateReq, &updatedWebhook)
 		require.NoError(t, err)
-		assert.NotNil(t, scopedFormationTemplate.Webhooks[0].URL)
-		assert.Equal(t, urlUpdated, *scopedFormationTemplate.Webhooks[0].URL)
-	})*/
-
-	t.Logf("List all formation templates for the tenant in which formation template with name: %q was created and verify that it is visible there", scopedFormationTemplateName)
-	formationTemplatePage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, directorCertSecuredClient, first)
-
-	assert.Greater(t, len(formationTemplatePage.Data), 1) // assert that both tenant scoped and global formation templates are visible
-	assert.Subset(t, formationTemplatePage.Data, []*graphql.FormationTemplate{
-		scopedFormationTemplate,
+		assert.NotNil(t, updatedWebhook.URL)
+		assert.Equal(t, urlUpdated, *updatedWebhook.URL)
 	})
-
-	t.Logf("List all formation templates for some other tenant in which formation template with name: %q was NOT created and verify that it is NOT visible there", scopedFormationTemplateName)
-	formationTemplatePageForOtherTenant := fixtures.QueryFormationTemplatesWithPageSizeAndTenant(t, ctx, directorCertSecuredClient, first, tenant.TestTenants.GetDefaultTenantID())
-
-	assert.NotEmpty(t, formationTemplatePageForOtherTenant.Data)
-	assert.NotContains(t, formationTemplatePageForOtherTenant.Data, []*graphql.FormationTemplate{
-		scopedFormationTemplate,
-	})
-
-	var globalFormationTemplateID string
-	for _, ft := range formationTemplatePage.Data {
-		if ft.Name == globalFormationTemplateName {
-			globalFormationTemplateID = ft.ID
-			break
-		}
-	}
-	require.NotEmpty(t, globalFormationTemplateID)
-
-	t.Logf("Verify that tenant scoped call can NOT delete global formation template with name: %q", globalFormationTemplateName)
-	deleteFormationTemplateRequest := fixtures.FixDeleteFormationTemplateRequest(globalFormationTemplateID)
-	output := graphql.FormationTemplate{}
-
-	err := testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, deleteFormationTemplateRequest, &output) // tenant_id is extracted from the subject of the cert
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Owner access is needed for resource modification")
-
-	t.Logf("Verify that tenant scoped call can NOT update global formation template with name: %q", globalFormationTemplateName)
-
-	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(updatedFormationTemplateInput)
-	require.NoError(t, err)
-
-	updateFormationTemplateRequest := fixtures.FixUpdateFormationTemplateRequest(globalFormationTemplateID, updatedFormationTemplateInputGQLString)
-	updateOutput := graphql.FormationTemplate{}
-
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, updateFormationTemplateRequest, &updateOutput) // tenant_id is extracted from the subject of the cert
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Owner access is needed for resource modification")
 }
