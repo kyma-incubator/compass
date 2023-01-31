@@ -130,6 +130,7 @@ func TestListFormationConstraints(t *testing.T) {
 
 	expectedConstraints := map[string]*graphql.FormationConstraint{
 		"test_constraint": {
+			ID:              constraint.ID,
 			Name:            "test_constraint",
 			ConstraintType:  string(graphql.ConstraintTypePre),
 			TargetOperation: string(graphql.TargetOperationAssignFormation),
@@ -140,6 +141,7 @@ func TestListFormationConstraints(t *testing.T) {
 			ConstraintScope: string(graphql.ConstraintScopeFormationType),
 		},
 		"test_constraint_second": {
+			ID:              constraintSecond.ID,
 			Name:            "test_constraint_second",
 			ConstraintType:  string(graphql.ConstraintTypePost),
 			TargetOperation: string(graphql.TargetOperationDeleteFormation),
@@ -239,6 +241,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 
 	expectedConstraints := map[string]*graphql.FormationConstraint{
 		"test_constraint": {
+			ID:              constraint.ID,
 			Name:            "test_constraint",
 			ConstraintType:  string(graphql.ConstraintTypePre),
 			TargetOperation: string(graphql.TargetOperationAssignFormation),
@@ -249,6 +252,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 			ConstraintScope: string(graphql.ConstraintScopeFormationType),
 		},
 		"test_constraint_second": {
+			ID:              constraintSecond.ID,
 			Name:            "test_constraint_second",
 			ConstraintType:  string(graphql.ConstraintTypePost),
 			TargetOperation: string(graphql.TargetOperationDeleteFormation),
