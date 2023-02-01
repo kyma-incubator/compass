@@ -35,6 +35,8 @@
     - "formation_template:read"
     - "formation_template:write"
     - "formation_template.webhooks:read"
+    - "formation_constraint:read"
+    - "formation_constraint:write"
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
 {{- end -}}
