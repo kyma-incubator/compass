@@ -213,7 +213,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
@@ -230,7 +231,6 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
 

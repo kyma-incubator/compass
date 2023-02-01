@@ -600,7 +600,17 @@ func webhookService() webhook.WebhookService {
 	webhookConverter := webhook.NewConverter(authConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
-	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+
+	labelConverter := label.NewConverter()
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefinitionConverter := labeldef.NewConverter()
+	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
+	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
+
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc, tenantSvc)
 }
 
 func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {

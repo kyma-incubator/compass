@@ -95,7 +95,7 @@ SELECT w.id,
        w.app_template_id,
        w.formation_template_id,
        btm.id,
-       false
+       true
 FROM webhooks w
          JOIN formation_templates ft on w.formation_template_id = ft.id
          JOIN business_tenant_mappings btm on ft.tenant_id = btm.parent;
@@ -196,7 +196,7 @@ SELECT w.id,
        w.app_template_id,
        w.formation_template_id,
        btm.id,
-       false
+       true
 FROM webhooks w
          JOIN formation_templates ft on w.formation_template_id = ft.id
          JOIN business_tenant_mappings btm on ft.tenant_id = btm.parent;
