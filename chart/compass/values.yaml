@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2832"
+      version: "PR-2855"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1032,7 +1032,7 @@ global:
       skipPattern: ""
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
-      skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs)"
+      skipPattern: "(.*Requesting_filtering_of_Bundles_that_have_only_ODATA_APIs|.*Requesting_filtering_of_Bundles_that_do_not_have_only_ODATA_APIs)"
     externalServicesMock:
       skipPattern: ""
       formationAsyncApi:
