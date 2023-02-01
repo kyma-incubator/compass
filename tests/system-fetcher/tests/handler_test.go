@@ -157,9 +157,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
 	for _, app := range resp.Data {
-		func(app *directorSchema.ApplicationExt) {
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}(app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
 
 	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
@@ -231,9 +229,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 
 	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
 	for _, app := range resp.Data {
-		func(app *directorSchema.ApplicationExt) {
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}(app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
 	require.ElementsMatch(t, expectedApps, actualApps)
 
@@ -332,9 +328,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 
 	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
 	for _, app := range resp.Data {
-		func(app *directorSchema.ApplicationExt) {
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}(app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
 	require.ElementsMatch(t, expectedApps, actualApps)
 
@@ -407,9 +401,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
-		func(app *directorSchema.ApplicationExt) {
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}(app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
 
 	require.ElementsMatch(t, expectedApps, actualApps)
@@ -626,9 +618,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
-		func(app *directorSchema.ApplicationExt) {
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}(app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
 
 	require.ElementsMatch(t, expectedApps, actualApps)
@@ -846,9 +836,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
-		func(app *directorSchema.ApplicationExt) {
-			defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
-		}(app)
+		defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
 	}
 
 	require.ElementsMatch(t, expectedApps, actualApps)

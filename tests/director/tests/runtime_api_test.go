@@ -312,9 +312,7 @@ func TestQueryRuntimes(t *testing.T) {
 	}
 	for _, id := range idsToRemove {
 		if id != "" {
-			func(id string) {
-				defer fixtures.UnregisterRuntime(t, ctx, certSecuredGraphQLClient, tenantId, id)
-			}(id)
+			defer fixtures.UnregisterRuntime(t, ctx, certSecuredGraphQLClient, tenantId, id)
 		}
 	}
 	actualPage := graphql.RuntimePage{}
@@ -645,9 +643,7 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 		}
 		for _, id := range idsToRemove {
 			if id != "" {
-				func(id string) {
-					defer fixtures.UnregisterRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, id)
-				}(id)
+				defer fixtures.UnregisterRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, id)
 			}
 		}
 		actualPage := graphql.RuntimePage{}
