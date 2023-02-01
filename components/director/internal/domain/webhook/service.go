@@ -132,7 +132,7 @@ func (s *service) ListForFormationTemplate(ctx context.Context, tenant, formatio
 
 // Create creates a model.Webhook with generated ID and CreatedAt properties. Returns the ID of the webhook.
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error) {
-	tenantId, err := s.getTenantForWebhook(ctx, objectType.GetResourceType())
+	tenantID, err := s.getTenantForWebhook(ctx, objectType.GetResourceType())
 	if apperrors.IsTenantRequired(err) {
 		log.C(ctx).Debugf("Creating Webhook with type: %q without tenant", in.Type)
 	} else if err != nil {
@@ -143,7 +143,7 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 
 	webhook := in.ToWebhook(id, owningResourceID, objectType)
 
-	if err = s.webhookRepo.Create(ctx, tenantId, webhook); err != nil {
+	if err = s.webhookRepo.Create(ctx, tenantID, webhook); err != nil {
 		return "", errors.Wrapf(err, "while creating %s with type: %q and ID: %q for: %q", objectType, webhook.Type, id, owningResourceID)
 	}
 	log.C(ctx).Infof("Successfully created %s with type: %q and ID: %q for: %q", objectType, webhook.Type, id, owningResourceID)
