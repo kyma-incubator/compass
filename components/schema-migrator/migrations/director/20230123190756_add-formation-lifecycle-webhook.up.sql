@@ -74,7 +74,31 @@ SELECT w.id,
        ft.tenant_id,
        true
 FROM webhooks w
-         JOIN formation_templates ft on w.formation_template_id = ft.id;
+         JOIN formation_templates ft on w.formation_template_id = ft.id
+UNION ALL
+SELECT w.id,
+       w.app_id,
+       w.url,
+       w.type,
+       w.auth,
+       w.mode,
+       w.correlation_id_key,
+       w.retry_interval,
+       w.timeout,
+       w.url_template,
+       w.input_template,
+       w.header_template,
+       w.output_template,
+       w.status_template,
+       w.runtime_id,
+       w.integration_system_id,
+       w.app_template_id,
+       w.formation_template_id,
+       btm.id,
+       false
+FROM webhooks w
+         JOIN formation_templates ft on w.formation_template_id = ft.id
+         JOIN business_tenant_mappings btm on ft.tenant_id = btm.parent;
 
 
 -- Recreate views
@@ -151,8 +175,31 @@ SELECT w.id,
        ft.tenant_id,
        true
 FROM webhooks w
-        JOIN formation_templates ft on w.formation_template_id = ft.id;
-
+        JOIN formation_templates ft on w.formation_template_id = ft.id
+UNION ALL
+SELECT w.id,
+       w.app_id,
+       w.url,
+       w.type,
+       w.auth,
+       w.mode,
+       w.correlation_id_key,
+       w.retry_interval,
+       w.timeout,
+       w.url_template,
+       w.input_template,
+       w.header_template,
+       w.output_template,
+       w.status_template,
+       w.runtime_id,
+       w.integration_system_id,
+       w.app_template_id,
+       w.formation_template_id,
+       btm.id,
+       false
+FROM webhooks w
+         JOIN formation_templates ft on w.formation_template_id = ft.id
+         JOIN business_tenant_mappings btm on ft.tenant_id = btm.parent;
 
 CREATE OR REPLACE VIEW runtime_webhooks_tenants
             (id, app_id, url, type, auth, mode, correlation_id_key, retry_interval, timeout, url_template,
