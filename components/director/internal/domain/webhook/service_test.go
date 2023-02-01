@@ -92,7 +92,7 @@ func TestService_Create(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			uidSvc := testCase.UIDServiceFn()
 
-			svc := webhook.NewService(repo, nil, uidSvc)
+			svc := webhook.NewService(repo, nil, uidSvc, nil)
 
 			// WHEN
 			result, err := svc.Create(testCase.Context, givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
@@ -111,7 +111,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -161,7 +161,7 @@ func TestService_Get(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.Get(ctx, id, model.ApplicationWebhookReference)
@@ -223,7 +223,7 @@ func TestService_ListForApplication(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListForApplication(ctx, applicationID)
@@ -241,7 +241,7 @@ func TestService_ListForApplication(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -292,7 +292,7 @@ func TestService_ListForRuntime(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListForRuntime(ctx, runtimeID)
@@ -310,7 +310,7 @@ func TestService_ListForRuntime(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForRuntime(context.TODO(), givenRuntimeID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -360,7 +360,7 @@ func TestService_ListForApplicationTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListForApplicationTemplate(ctx, applicationTemplateID)
@@ -445,7 +445,7 @@ func TestService_ListForFormationTemplate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListForFormationTemplate(ctx, testCase.Tenant, formationTemplateID)
@@ -618,7 +618,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			webhookRepo := testCase.WebhookRepositoryFn()
 			applicationRepo := testCase.ApplicationRepositoryFn()
-			svc := webhook.NewService(webhookRepo, applicationRepo, nil)
+			svc := webhook.NewService(webhookRepo, applicationRepo, nil, nil)
 
 			// WHEN
 			webhooks, err := svc.ListAllApplicationWebhooks(ctx, application.ID)
@@ -638,7 +638,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -737,7 +737,7 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.WebhookRepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			err := svc.Update(testCase.Context, id, *modelInput, testCase.WebhookType)
@@ -753,7 +753,7 @@ func TestService_Update(t *testing.T) {
 		})
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := webhook.NewService(nil, nil, nil)
+		svc := webhook.NewService(nil, nil, nil, nil)
 		// WHEN
 		err := svc.Update(context.TODO(), givenApplicationID(), model.WebhookInput{}, model.ApplicationWebhookReference)
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -811,7 +811,7 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := webhook.NewService(repo, nil, nil)
+			svc := webhook.NewService(repo, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, id, model.ApplicationWebhookReference)
