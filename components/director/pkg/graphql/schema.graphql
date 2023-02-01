@@ -530,6 +530,13 @@ input CertificateOAuthCredentialDataInput {
 	url: String!
 }
 
+input CertificateSubjectMappingInput {
+	subject: String!
+	consumerType: String!
+	internalConsumerID: String
+	tenantAccessLevels: [String!]!
+}
+
 """
 **Validation:** basic or oauth or certificateOAuth field required
 """
@@ -1005,6 +1012,20 @@ type CertificateOAuthCredentialData {
 	url: String!
 }
 
+type CertificateSubjectMapping {
+	id: ID!
+	subject: String!
+	consumerType: String!
+	internalConsumerID: String
+	tenantAccessLevels: [String!]!
+}
+
+type CertificateSubjectMappingPage implements Pageable {
+	data: [CertificateSubjectMapping!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type CredentialRequestAuth {
 	csrf: CSRFTokenCredentialRequestAuth
 }
@@ -1468,6 +1489,16 @@ type Query {
 	- [query formation templates](examples/query-formation-templates/query-formation-templates.graphql)
 	"""
 	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
+	"""
+	**Examples**
+	- [query certificate subject mapping](examples/query-certificate-subject-mapping/query-certificate-subject-mapping.graphql)
+	"""
+	certificateSubjectMapping(id: ID!): CertificateSubjectMapping! @hasScopes(path: "graphql.query.certificateSubjectMapping")
+	"""
+	**Examples**
+	- [query certificate subject mappings](examples/query-certificate-subject-mappings/query-certificate-subject-mappings.graphql)
+	"""
+	certificateSubjectMappings(first: Int = 300, after: PageCursor): CertificateSubjectMappingPage! @hasScopes(path: "graphql.query.certificateSubjectMappings")
 }
 
 type Mutation {
@@ -1773,5 +1804,20 @@ type Mutation {
 	- [update formation template](examples/update-formation-template/update-formation-template.graphql)
 	"""
 	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
+	"""
+	**Examples**
+	- [create certificate subject mapping](examples/create-certificate-subject-mapping/create-certificate-subject-mapping.graphql)
+	"""
+	createCertificateSubjectMapping(in: CertificateSubjectMappingInput! @validate): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.createCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [update certificate subject mapping](examples/update-certificate-subject-mapping/update-certificate-subject-mapping.graphql)
+	"""
+	updateCertificateSubjectMapping(id: ID!, in: CertificateSubjectMappingInput! @validate): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.updateCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [delete certificate subject mapping](examples/delete-certificate-subject-mapping/delete-certificate-subject-mapping.graphql)
+	"""
+	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
 }
 

@@ -141,15 +141,6 @@ func Test_StatusUpdate(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 			expectedErrOutput:  "Request Body contains invalid input:",
 		},
-		{
-			name: "Validate Error: error when request body contains only state",
-			reqBody: fm.RequestBody{
-				State: model.ReadyAssignmentState,
-			},
-			hasURLVars:         true,
-			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "Request Body contains invalid input:",
-		},
 		// Business logic unit tests for assign operation
 		{
 			name:       "Success when operation is assign",
@@ -159,7 +150,7 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
-				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(nil).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, nil).Once()
 				return faSvc
 			},
 			faConverterFn: func() *automock.FormationAssignmentConverter {
@@ -403,7 +394,7 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
-				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(testErr).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, testErr).Once()
 				return faSvc
 			},
 			faConverterFn: func() *automock.FormationAssignmentConverter {
@@ -433,7 +424,7 @@ func Test_StatusUpdate(t *testing.T) {
 				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
 				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
 				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
-				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(nil).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, nil).Once()
 				return faSvc
 			},
 			faConverterFn: func() *automock.FormationAssignmentConverter {
@@ -653,7 +644,7 @@ func Test_StatusUpdate(t *testing.T) {
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusBadRequest,
-			expectedErrOutput:  "Can not update formation assignment with source ",
+			expectedErrOutput:  "Cannot update formation assignment with source ",
 		},
 		{
 			name: "Error when unassigning target from formation fail when there are no formation assignment left",

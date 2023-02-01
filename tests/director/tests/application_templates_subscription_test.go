@@ -93,12 +93,12 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(stdT, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
@@ -107,7 +107,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true)
 
 			// THEN
 			actualAppPage := graphql.ApplicationPage{}
@@ -119,12 +119,39 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 		})
 
+		t.Run("Application instances number is increased when two subscriptions are made", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
+			// WHEN
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, false)
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// THEN
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			actualAppPage = graphql.ApplicationPage{}
+			getSrcAppReq = fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+			require.Len(t, actualAppPage.Data, 0)
+		})
+
 		t.Run("Application is deleted successfully in consumer subaccount as a result of unsubscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true)
 
 			actualAppPage := graphql.ApplicationPage{}
 			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
@@ -151,7 +178,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true)
 
 			// THEN
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
@@ -192,7 +219,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true)
 
 			// THEN
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
@@ -235,7 +262,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// Subscribe
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true)
 
 			// Ensure subscription is OK
 			actualAppPage := graphql.ApplicationPage{}
@@ -323,7 +350,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// Subscribe
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true)
 
 			// Ensure subscription is OK
 			actualAppPage := graphql.ApplicationPage{}
@@ -394,12 +421,12 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(stdT, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription using the optional region and subdomain placeholders", func(t *testing.T) {
@@ -409,7 +436,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// WHEN
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, conf.TestProviderSubaccountIDRegion2, conf.SubscriptionProviderAppNameValue, true)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, conf.TestProviderSubaccountIDRegion2, conf.SubscriptionProviderAppNameValue, true, true)
 
 			// THEN
 			actualAppPage := graphql.ApplicationPage{}
@@ -424,21 +451,23 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 	})
 }
 
-func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Client, appTmpl graphql.ApplicationTemplate, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, expectedToPass bool) {
+func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Client, appTmpl graphql.ApplicationTemplate, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue string, expectedToPass, unsubscribeFirst bool) {
 	subscribeReq := buildSubscriptionRequest(t, ctx, subscriptionProviderSubaccountID, subscriptionProviderAppNameValue)
 
-	//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
-	//In case there isn't subscription it will fail-safe without error
-	subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+	if unsubscribeFirst {
+		//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
+		//In case there isn't subscription it will fail-safe without error
+		subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+	}
 
 	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
 	resp, err := httpClient.Do(subscribeReq)
-	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()
+	require.NoError(t, err)
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	if !expectedToPass {

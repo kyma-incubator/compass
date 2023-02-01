@@ -27,9 +27,6 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	var formation graphql.Formation
 	createFirstFormationReq := fixtures.FixCreateFormationRequest(testScenario)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createFirstFormationReq, &formation)
-	require.NoError(b, err)
-	require.Equal(b, testScenario, formation.Name)
-
 	defer func() {
 		b.Logf("Deleting formation with name: %q", testScenario)
 		deleteRequest := fixtures.FixDeleteFormationRequest(testScenario)
@@ -37,6 +34,8 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, deleteRequest, &deleteFormation)
 		assertions.AssertNoErrorForOtherThanNotFound(b, err)
 	}()
+	require.NoError(b, err)
+	require.Equal(b, testScenario, formation.Name)
 
 	appsCount := 5
 	for i := 0; i < appsCount; i++ {

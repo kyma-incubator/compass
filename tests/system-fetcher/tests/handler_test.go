@@ -125,10 +125,8 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
-	}()
+	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
@@ -158,11 +156,9 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	}
 
 	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
-	defer func() {
-		for _, app := range resp.Data {
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}
-	}()
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+	}
 
 	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
 	var appResp directorSchema.ApplicationExt
@@ -201,10 +197,8 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	require.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
-	}()
+	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
@@ -234,11 +228,9 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	}
 
 	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
-	defer func() {
-		for _, app := range resp.Data {
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}
-	}()
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+	}
 	require.ElementsMatch(t, expectedApps, actualApps)
 
 	for _, app := range resp.Data {
@@ -304,10 +296,8 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	require.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
-	}()
+	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
@@ -337,11 +327,9 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	}
 
 	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
-	defer func() {
-		for _, app := range resp.Data {
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}
-	}()
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+	}
 	require.ElementsMatch(t, expectedApps, actualApps)
 
 	for _, app := range resp.Data {
@@ -378,10 +366,8 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	require.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
-	}()
+	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
@@ -415,12 +401,8 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
-	defer func() {
-		for _, app := range resp.Data {
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}
-	}()
 
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
@@ -480,10 +462,8 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	require.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
-	}()
+	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
@@ -513,16 +493,14 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	}
 
 	respDefaultTenant, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
-	defer func() {
-		for _, app := range respDefaultTenant.Data {
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}
-	}()
+	for _, app := range respDefaultTenant.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+	}
 
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
-//fail
+// fail
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	ctx := context.TODO()
 
@@ -588,10 +566,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	require.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
-	}()
+	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
@@ -642,12 +618,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 	}
-	defer func() {
-		for _, app := range resp.Data {
-			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-		}
-	}()
 
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
@@ -716,10 +688,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 	jobName := "system-fetcher-test"
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, jobName, systemFetcherJobNamespace)
-	defer func(jobName string) {
-		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
-	}(jobName)
+	defer k8s.DeleteJob(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, jobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
 
@@ -830,10 +800,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 	jobName = "system-fetcher-test2"
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, jobName, systemFetcherJobNamespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
-	}()
+	defer k8s.DeleteJob(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, jobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
 
@@ -868,13 +836,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
+		defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
 	}
-
-	defer func() {
-		for _, app := range resp2.Data {
-			fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app.ID)
-		}
-	}()
 
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
@@ -906,12 +869,12 @@ func setMockSystems(t *testing.T, mockSystems []byte, tenant string) {
 	reader := bytes.NewReader(mockSystems)
 	url := cfg.ExternalSvcMockURL + fmt.Sprintf("/systemfetcher/configure?tenant=%s", tenant)
 	response, err := http.DefaultClient.Post(url, "application/json", reader)
-	require.NoError(t, err)
 	defer func() {
 		if err := response.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()
+	require.NoError(t, err)
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
@@ -984,13 +947,13 @@ func cleanupMockSystems(t *testing.T) {
 	require.NoError(t, err)
 
 	response, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-
 	defer func() {
 		if err := response.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()
+	require.NoError(t, err)
+
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)

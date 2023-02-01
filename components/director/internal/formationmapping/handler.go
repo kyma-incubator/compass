@@ -111,7 +111,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if fa.Source == fa.Target && fa.SourceType == fa.TargetType {
-		errResp := errors.Errorf("Can not update formation assignment with source %q and target %q. X-Request-Id: %s", fa.Source, fa.Target, correlationID)
+		errResp := errors.Errorf("Cannot update formation assignment with source %q and target %q. X-Request-Id: %s", fa.Source, fa.Target, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
 		return
 	}
@@ -224,7 +224,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.C(ctx).Infof("Processing formation assignment pairs and their notifications")
-	err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
+	_, err = h.faService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while processing formation assignment pairs and their notifications")
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -295,9 +295,9 @@ func (b RequestBody) Validate() error {
 		fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyAssignmentState, model.ConfigPendingAssignmentState)))
 		fieldRules = append(fieldRules, validation.Field(&b.Error, validation.Empty))
 		return validation.ValidateStruct(&b, fieldRules...)
-	} else {
-		return errors.New("The request body cannot contains only state")
 	}
+
+	return nil
 }
 
 // processFormationAssignmentAsynchronousUnassign handles the async unassign formation assignment status update

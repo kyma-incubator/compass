@@ -57,7 +57,8 @@ func CreateFormationFromTemplateWithinTenant(t *testing.T, ctx context.Context, 
 	return formation
 }
 
-func DeleteFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationName string) *graphql.Formation {
+func DeleteFormation(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationName string) *graphql.Formation {
+	t.Logf("Deleting formation with name: %q", formationName)
 	deleteRequest := FixDeleteFormationRequest(formationName)
 	var deleteFormation graphql.Formation
 	err := testctx.Tc.RunOperation(ctx, gqlClient, deleteRequest, &deleteFormation)

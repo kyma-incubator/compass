@@ -35,6 +35,8 @@
     - "formation_template:read"
     - "formation_template:write"
     - "formation_template.webhooks:read"
+    - "certificate_subject_mapping:read"
+    - "certificate_subject_mapping:write"
 {{- end -}}
 {{ range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"

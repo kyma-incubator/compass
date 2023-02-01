@@ -50,11 +50,11 @@ func (vc *HydratorClient) ExecuteHydratorRequest(t *testing.T, path string, head
 	}
 
 	response, err := vc.httpClient.Do(req)
-	require.NoError(t, err)
 	defer func() {
 		err := response.Body.Close()
 		require.NoError(t, err)
 	}()
+	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, response.StatusCode)
 
 	var authSessionResponse oathkeeper.AuthenticationSession
