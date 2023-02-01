@@ -575,6 +575,28 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 	}`)
 }
 
+// FormationConstraintInputToGQL missing godoc
+func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstraintInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}"
+		constraintType: {{.ConstraintType}}
+		targetOperation: {{.TargetOperation}}
+		operator: "{{.Operator}}"
+		resourceType: {{.ResourceType}}
+		resourceSubtype: "{{.ResourceSubtype}}"
+		inputTemplate: "{{.InputTemplate}}"
+		constraintScope: {{.ConstraintScope}}
+	}`)
+}
+
+// FormationTemplateConstraintReferenceToGQL missing godoc
+func (g *Graphqlizer) FormationTemplateConstraintReferenceToGQL(in graphql.ConstraintReference) (string, error) {
+	return g.genericToGQL(in, `{
+		constraintId: "{{.ConstraintID}}"
+		formationTemplateId: {{.formationTemplateID}}
+	}`)
+}
+
 // ApplicationFromTemplateInputToGQL missing godoc
 func (g *Graphqlizer) ApplicationFromTemplateInputToGQL(in graphql.ApplicationFromTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{

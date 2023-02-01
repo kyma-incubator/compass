@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2854"
+      version: "PR-2832"
       name: compass-director
     hydrator:
       dir:
@@ -159,7 +159,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2839"
+      version: "PR-2832"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -1214,6 +1214,8 @@ global:
         - "webhook:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "formation_constraint:read"
+        - "formation_constraint:write"
         - "certificate_subject_mapping:read"
         - "certificate_subject_mapping:write"
       default:

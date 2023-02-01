@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
@@ -52,6 +51,13 @@ type webhookClient interface {
 	Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
+//go:generate mockery --exported --name=notificationBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
+type notificationBuilder interface {
+	BuildNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.NotificationRequest, error)
+	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhookdir.ApplicationTemplateWithLabels, application *webhookdir.ApplicationWithLabels, runtime *webhookdir.RuntimeWithLabels, runtimeContext *webhookdir.RuntimeContextWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, targetType model.ResourceType, tenantContext *webhookdir.CustomerTenantContext) (*formationconstraint.GenerateNotificationOperationDetails, error)
+	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, sourceApplication *webhookdir.ApplicationWithLabels, targetApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, targetApplication *webhookdir.ApplicationWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, tenantContext *webhookdir.CustomerTenantContext) (*formationconstraint.GenerateNotificationOperationDetails, error)
+}
+
 var emptyFormationAssignment = &webhookdir.FormationAssignment{Value: "\"\""}
 
 type notificationsService struct {
@@ -62,9 +68,9 @@ type notificationsService struct {
 	labelRepository               labelRepository
 	webhookRepository             webhookRepository
 	tenantRepository              tenantRepository
-	webhookConverter              webhookConverter
 	webhookClient                 webhookClient
 	webhookDataInputBuilder       databuilder.DataInputBuilder
+	notificationBuilder           notificationBuilder
 }
 
 // NewNotificationService creates notifications service for formation assignment and unassignment
@@ -76,9 +82,9 @@ func NewNotificationService(
 	labelRepository labelRepository,
 	webhookRepository webhookRepository,
 	tenantRepository tenantRepository,
-	webhookConverter webhookConverter,
 	webhookClient webhookClient,
 	webhookDataInputBuilder databuilder.DataInputBuilder,
+	notificationBuilder notificationBuilder,
 ) *notificationsService {
 	return &notificationsService{
 		applicationRepository:         applicationRepository,
@@ -89,8 +95,8 @@ func NewNotificationService(
 		webhookRepository:             webhookRepository,
 		tenantRepository:              tenantRepository,
 		webhookClient:                 webhookClient,
-		webhookConverter:              webhookConverter,
 		webhookDataInputBuilder:       webhookDataInputBuilder,
+		notificationBuilder:           notificationBuilder,
 	}
 }
 
@@ -245,22 +251,28 @@ func (ns *notificationsService) generateNotificationsAboutRuntimeAndRuntimeConte
 		if appTemplateWithLabels == nil {
 			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template in the input for webhook %s", appID, webhook.ID)
 		}
-		input := &webhookdir.FormationConfigurationChangeInput{
-			Operation:             operation,
-			FormationID:           formation.ID,
-			ApplicationTemplate:   appTemplateWithLabels,
-			Application:           applicationWithLabels,
-			Runtime:               runtime,
-			RuntimeContext:        rtCtx,
-			CustomerTenantContext: customerTenantContext,
-			Assignment:            emptyFormationAssignment,
-			ReverseAssignment:     emptyFormationAssignment,
-		}
-		req, err := ns.createWebhookRequest(ctx, webhook, input)
+
+		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
+			operation,
+			formation.ID,
+			appTemplateWithLabels,
+			applicationWithLabels,
+			runtime,
+			rtCtx,
+			emptyFormationAssignment,
+			emptyFormationAssignment,
+			model.ApplicationResourceType,
+			customerTenantContext)
 		if err != nil {
 			return nil, err
 		}
-		requests = append(requests, req)
+
+		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
+		if err != nil {
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
+		}
 	}
 	return requests, nil
 }
@@ -361,22 +373,28 @@ func (ns *notificationsService) generateNotificationsForRuntimeAboutTheApplicati
 		if appTemplateWithLabels == nil {
 			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template in the input for webhook %s", appID, webhooksToCall[rtID].ID)
 		}
-		input := &webhookdir.FormationConfigurationChangeInput{
-			Operation:             operation,
-			FormationID:           formation.ID,
-			ApplicationTemplate:   appTemplateWithLabels,
-			Application:           applicationWithLabels,
-			Runtime:               runtime,
-			RuntimeContext:        rtCtx,
-			CustomerTenantContext: customerTenantContext,
-			Assignment:            emptyFormationAssignment,
-			ReverseAssignment:     emptyFormationAssignment,
-		}
-		req, err := ns.createWebhookRequest(ctx, webhooksToCall[runtime.ID], input)
+
+		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
+			operation,
+			formation.ID,
+			appTemplateWithLabels,
+			applicationWithLabels,
+			runtime,
+			rtCtx,
+			emptyFormationAssignment,
+			emptyFormationAssignment,
+			model.RuntimeResourceType,
+			customerTenantContext)
 		if err != nil {
 			return nil, err
 		}
-		requests = append(requests, req)
+
+		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhooksToCall[runtime.ID])
+		if err != nil {
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
+		}
 	}
 
 	return requests, nil
@@ -441,22 +459,28 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheAppl
 			if appTemplateWithLabels == nil {
 				log.C(ctx).Infof("Application %s has no application template. Will proceed without application template for target application in the input for webhook %s", appID, webhook.ID)
 			}
-			input := &webhookdir.ApplicationTenantMappingInput{
-				Operation:                 operation,
-				FormationID:               formation.ID,
-				SourceApplicationTemplate: appTemplate,
-				SourceApplication:         sourceApp,
-				TargetApplicationTemplate: appTemplateWithLabels,
-				TargetApplication:         applicationWithLabels,
-				CustomerTenantContext:     customerTenantContext,
-				Assignment:                emptyFormationAssignment,
-				ReverseAssignment:         emptyFormationAssignment,
-			}
-			req, err := ns.createWebhookRequest(ctx, webhook, input)
+
+			details, err := ns.notificationBuilder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(
+				operation,
+				formation.ID,
+				appTemplate,
+				sourceApp,
+				appTemplateWithLabels,
+				applicationWithLabels,
+				emptyFormationAssignment,
+				emptyFormationAssignment,
+				customerTenantContext,
+			)
 			if err != nil {
 				return nil, err
 			}
-			requests = append(requests, req)
+
+			req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
+			if err != nil {
+				log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+			} else {
+				requests = append(requests, req)
+			}
 		}
 
 		delete(listeningAppIDs, appID)
@@ -524,22 +548,28 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheAppl
 		if appTemplateWithLabels == nil {
 			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template for source application in the input for webhook %s", appID, webhooksToCall[targetApp.ID].ID)
 		}
-		input := &webhookdir.ApplicationTenantMappingInput{
-			Operation:                 operation,
-			FormationID:               formation.ID,
-			SourceApplicationTemplate: appTemplateWithLabels,
-			SourceApplication:         applicationWithLabels,
-			TargetApplicationTemplate: appTemplate,
-			TargetApplication:         targetApp,
-			CustomerTenantContext:     customerTenantContext,
-			Assignment:                emptyFormationAssignment,
-			ReverseAssignment:         emptyFormationAssignment,
-		}
-		req, err := ns.createWebhookRequest(ctx, webhooksToCall[targetApp.ID], input)
+
+		details, err := ns.notificationBuilder.PrepareDetailsForApplicationTenantMappingNotificationGeneration(
+			operation,
+			formation.ID,
+			appTemplateWithLabels,
+			applicationWithLabels,
+			appTemplate,
+			targetApp,
+			emptyFormationAssignment,
+			emptyFormationAssignment,
+			customerTenantContext,
+		)
 		if err != nil {
 			return nil, err
 		}
-		requests = append(requests, req)
+
+		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhooksToCall[targetApp.ID])
+		if err != nil {
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
+		}
 	}
 
 	log.C(ctx).Infof("Total number of app-to-app notifications for application with ID %s that is being %s is %d", appID, operation, len(requests))
@@ -652,22 +682,28 @@ func (ns *notificationsService) generateNotificationsForApplicationsAboutTheRunt
 		} else {
 			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template in the input for webhook %s", app.ID, webhooksToCall[app.ID].ID)
 		}
-		input := &webhookdir.FormationConfigurationChangeInput{
-			Operation:             operation,
-			FormationID:           formation.ID,
-			ApplicationTemplate:   appTemplate,
-			Application:           app,
-			Runtime:               runtimeWithLabels,
-			RuntimeContext:        nil,
-			CustomerTenantContext: customerTenantContext,
-			Assignment:            emptyFormationAssignment,
-			ReverseAssignment:     emptyFormationAssignment,
-		}
-		req, err := ns.createWebhookRequest(ctx, webhooksToCall[app.ID], input)
+
+		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
+			operation,
+			formation.ID,
+			appTemplate,
+			app,
+			runtimeWithLabels,
+			nil,
+			emptyFormationAssignment,
+			emptyFormationAssignment,
+			model.ApplicationResourceType,
+			customerTenantContext)
 		if err != nil {
 			return nil, err
 		}
-		requests = append(requests, req)
+
+		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhooksToCall[app.ID])
+		if err != nil {
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
+		}
 	}
 	return requests, nil
 }
@@ -679,13 +715,58 @@ func (ns *notificationsService) generateNotificationsAboutApplicationsForTheRunt
 		return nil, errors.Wrap(err, "while preparing runtime context with labels")
 	}
 
-	requests, err := ns.generateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx, tenant, runtimeCtxWithLabels.RuntimeID, formation, operation, customerTenantContext)
+	runtimeID := runtimeCtxWithLabels.RuntimeID
+	runtimeWithLabels, err := ns.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while preparing runtime with labels")
+	}
+
+	webhook, err := ns.webhookRepository.GetByIDAndWebhookType(ctx, tenant, runtimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Infof("There is no configuration changed webhook for runtime %s. There are no notifications to be generated.", runtimeID)
+			return nil, nil
+		}
+		return nil, errors.Wrapf(err, "while listing configuration changed webhooks for runtime %s", runtimeID)
+	}
+
+	applicationMapping, applicationTemplatesMapping, err := ns.prepareApplicationMappingsInFormation(ctx, tenant, formation, runtimeID)
 	if err != nil {
 		return nil, err
 	}
-	for _, request := range requests {
-		request.Object.(*webhookdir.FormationConfigurationChangeInput).RuntimeContext = runtimeCtxWithLabels
+
+	requests := make([]*webhookclient.NotificationRequest, 0, len(applicationMapping))
+	for _, app := range applicationMapping {
+		var appTemplate *webhookdir.ApplicationTemplateWithLabels
+		if app.ApplicationTemplateID != nil {
+			appTemplate = applicationTemplatesMapping[*app.ApplicationTemplateID]
+		} else {
+			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template in the input for webhook %s", app.ID, webhook.ID)
+		}
+
+		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
+			operation,
+			formation.ID,
+			appTemplate,
+			app,
+			runtimeWithLabels,
+			runtimeCtxWithLabels,
+			emptyFormationAssignment,
+			emptyFormationAssignment,
+			model.RuntimeContextResourceType,
+			customerTenantContext)
+		if err != nil {
+			return nil, err
+		}
+
+		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
+		if err != nil {
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
+		}
 	}
+
 	return requests, nil
 }
 
@@ -718,22 +799,28 @@ func (ns *notificationsService) generateNotificationsAboutApplicationsForTheRunt
 		} else {
 			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template in the input for webhook %s", app.ID, webhook.ID)
 		}
-		input := &webhookdir.FormationConfigurationChangeInput{
-			Operation:             operation,
-			FormationID:           formation.ID,
-			ApplicationTemplate:   appTemplate,
-			Application:           app,
-			Runtime:               runtimeWithLabels,
-			RuntimeContext:        nil,
-			CustomerTenantContext: customerTenantContext,
-			Assignment:            emptyFormationAssignment,
-			ReverseAssignment:     emptyFormationAssignment,
-		}
-		req, err := ns.createWebhookRequest(ctx, webhook, input)
+
+		details, err := ns.notificationBuilder.PrepareDetailsForConfigurationChangeNotificationGeneration(
+			operation,
+			formation.ID,
+			appTemplate,
+			app,
+			runtimeWithLabels,
+			nil,
+			emptyFormationAssignment,
+			emptyFormationAssignment,
+			model.RuntimeResourceType,
+			customerTenantContext)
 		if err != nil {
 			return nil, err
 		}
-		requests = append(requests, req)
+
+		req, err := ns.notificationBuilder.BuildNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
+		if err != nil {
+			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+		} else {
+			requests = append(requests, req)
+		}
 	}
 
 	return requests, nil
@@ -786,18 +873,6 @@ func (ns *notificationsService) prepareApplicationMappingsInFormation(ctx contex
 	}
 
 	return applicationMapping, applicationTemplatesMapping, nil
-}
-
-func (ns *notificationsService) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.FormationAssignmentTemplateInput) (*webhookclient.NotificationRequest, error) {
-	gqlWebhook, err := ns.webhookConverter.ToGraphQL(webhook)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting webhook with ID %s", webhook.ID)
-	}
-	return &webhookclient.NotificationRequest{
-		Webhook:       *gqlWebhook,
-		Object:        input,
-		CorrelationID: correlation.CorrelationIDFromContext(ctx),
-	}, nil
 }
 
 func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context, internalTenantID string) (*webhookdir.CustomerTenantContext, error) {
