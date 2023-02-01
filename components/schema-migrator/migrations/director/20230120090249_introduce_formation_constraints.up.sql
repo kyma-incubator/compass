@@ -27,7 +27,7 @@ CREATE INDEX formation_constraint_id ON formation_template_constraint_references
 -- Create constraint that does not allow a Subaccount to be added to multiple EM formations
 insert into formation_constraints (id, name, constraint_type, target_operation, operator, resource_type,
                                    resource_subtype, input_template, constraint_scope)
-values (uuid_generate_v4(), 'SubaccountInAtMostOneEventMeshFormation', 'PRE', 'ASSIGN_FORMATION', 'participatesInFormationsOfType', 'TENANT',
+values (uuid_generate_v4(), 'SubaccountInAtMostOneEventMeshFormation', 'PRE', 'ASSIGN_FORMATION', 'IsNotAssignedToAnyFormationOfType', 'TENANT',
         'subaccount', '{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}', 'FORMATION_TYPE');
 
 COMMIT;
