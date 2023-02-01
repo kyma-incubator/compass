@@ -66,7 +66,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	t.Logf("Creating formation with name %s...", formationName)
 	createFormationReq := fixtures.FixCreateFormationRequest(formationName)
 	executeGQLRequest(t, ctx, createFormationReq, formationName, accountTenantID)
-	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, formationName, accountTenantID)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, accountTenantID, formationName)
 	t.Logf("Successfully created formation: %s", formationName)
 
 	t.Logf("Assign application to formation %s", formationName)
