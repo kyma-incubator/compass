@@ -1682,7 +1682,7 @@ func TestMergeApplications(t *testing.T) {
 
 	createReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, createReq, &formation)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, newFormation)
+	defer fixtures.DeleteFormation(t, ctx, oauthGraphQLClient, newFormation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
 
