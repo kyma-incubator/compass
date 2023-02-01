@@ -258,6 +258,11 @@ type ComplexityRoot struct {
 		TotalCount func(childComplexity int) int
 	}
 
+	ConstraintReference struct {
+		ConstraintID        func(childComplexity int) int
+		FormationTemplateID func(childComplexity int) int
+	}
+
 	CredentialRequestAuth struct {
 		Csrf func(childComplexity int) int
 	}
@@ -349,6 +354,18 @@ type ComplexityRoot struct {
 		TotalCount func(childComplexity int) int
 	}
 
+	FormationConstraint struct {
+		ConstraintScope func(childComplexity int) int
+		ConstraintType  func(childComplexity int) int
+		ID              func(childComplexity int) int
+		InputTemplate   func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Operator        func(childComplexity int) int
+		ResourceSubtype func(childComplexity int) int
+		ResourceType    func(childComplexity int) int
+		TargetOperation func(childComplexity int) int
+	}
+
 	FormationPage struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
@@ -433,10 +450,12 @@ type ComplexityRoot struct {
 		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
 		AddWebhook                                    func(childComplexity int, applicationID *string, applicationTemplateID *string, runtimeID *string, in WebhookInput) int
 		AssignFormation                               func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
+		AttachConstraintToFormationTemplate           func(childComplexity int, constraintID string, formationTemplateID string) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
 		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
 		CreateCertificateSubjectMapping               func(childComplexity int, in CertificateSubjectMappingInput) int
 		CreateFormation                               func(childComplexity int, formation FormationInput) int
+		CreateFormationConstraint                     func(childComplexity int, formationConstraint FormationConstraintInput) int
 		CreateFormationTemplate                       func(childComplexity int, in FormationTemplateInput) int
 		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
 		DeleteAPIDefinition                           func(childComplexity int, id string) int
@@ -451,6 +470,7 @@ type ComplexityRoot struct {
 		DeleteDocument                                func(childComplexity int, id string) int
 		DeleteEventDefinition                         func(childComplexity int, id string) int
 		DeleteFormation                               func(childComplexity int, formation FormationInput) int
+		DeleteFormationConstraint                     func(childComplexity int, id string) int
 		DeleteFormationTemplate                       func(childComplexity int, id string) int
 		DeleteRuntimeLabel                            func(childComplexity int, runtimeID string, key string) int
 		DeleteSystemAuthForApplication                func(childComplexity int, authID string) int
@@ -458,6 +478,7 @@ type ComplexityRoot struct {
 		DeleteSystemAuthForRuntime                    func(childComplexity int, authID string) int
 		DeleteTenants                                 func(childComplexity int, in []string) int
 		DeleteWebhook                                 func(childComplexity int, webhookID string) int
+		DetachConstraintFromFormationTemplate         func(childComplexity int, constraintID string, formationTemplateID string) int
 		InvalidateSystemAuthOneTimeToken              func(childComplexity int, authID string) int
 		MergeApplications                             func(childComplexity int, destinationID string, sourceID string) int
 		RefetchAPISpec                                func(childComplexity int, apiID string) int
@@ -564,6 +585,8 @@ type ComplexityRoot struct {
 		CertificateSubjectMappings              func(childComplexity int, first *int, after *PageCursor) int
 		Formation                               func(childComplexity int, id string) int
 		FormationByName                         func(childComplexity int, name string) int
+		FormationConstraints                    func(childComplexity int) int
+		FormationConstraintsByFormationType     func(childComplexity int, formationTemplateID string) int
 		FormationTemplate                       func(childComplexity int, id string) int
 		FormationTemplates                      func(childComplexity int, first *int, after *PageCursor) int
 		Formations                              func(childComplexity int, first *int, after *PageCursor) int
@@ -779,6 +802,10 @@ type MutationResolver interface {
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
+	CreateFormationConstraint(ctx context.Context, formationConstraint FormationConstraintInput) (*FormationConstraint, error)
+	DeleteFormationConstraint(ctx context.Context, id string) (*FormationConstraint, error)
+	AttachConstraintToFormationTemplate(ctx context.Context, constraintID string, formationTemplateID string) (*ConstraintReference, error)
+	DetachConstraintFromFormationTemplate(ctx context.Context, constraintID string, formationTemplateID string) (*ConstraintReference, error)
 	CreateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
 	UpdateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
 	SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*Label, error)
@@ -848,6 +875,8 @@ type QueryResolver interface {
 	Formation(ctx context.Context, id string) (*Formation, error)
 	FormationByName(ctx context.Context, name string) (*Formation, error)
 	Formations(ctx context.Context, first *int, after *PageCursor) (*FormationPage, error)
+	FormationConstraints(ctx context.Context) ([]*FormationConstraint, error)
+	FormationConstraintsByFormationType(ctx context.Context, formationTemplateID string) ([]*FormationConstraint, error)
 	FormationTemplate(ctx context.Context, id string) (*FormationTemplate, error)
 	FormationTemplates(ctx context.Context, first *int, after *PageCursor) (*FormationTemplatePage, error)
 	CertificateSubjectMapping(ctx context.Context, id string) (*CertificateSubjectMapping, error)
@@ -1849,6 +1878,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CertificateSubjectMappingPage.TotalCount(childComplexity), true
 
+	case "ConstraintReference.constraintID":
+		if e.complexity.ConstraintReference.ConstraintID == nil {
+			break
+		}
+
+		return e.complexity.ConstraintReference.ConstraintID(childComplexity), true
+
+	case "ConstraintReference.formationTemplateID":
+		if e.complexity.ConstraintReference.FormationTemplateID == nil {
+			break
+		}
+
+		return e.complexity.ConstraintReference.FormationTemplateID(childComplexity), true
+
 	case "CredentialRequestAuth.csrf":
 		if e.complexity.CredentialRequestAuth.Csrf == nil {
 			break
@@ -2265,6 +2308,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationAssignmentPage.TotalCount(childComplexity), true
 
+	case "FormationConstraint.constraintScope":
+		if e.complexity.FormationConstraint.ConstraintScope == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.ConstraintScope(childComplexity), true
+
+	case "FormationConstraint.constraintType":
+		if e.complexity.FormationConstraint.ConstraintType == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.ConstraintType(childComplexity), true
+
+	case "FormationConstraint.id":
+		if e.complexity.FormationConstraint.ID == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.ID(childComplexity), true
+
+	case "FormationConstraint.inputTemplate":
+		if e.complexity.FormationConstraint.InputTemplate == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.InputTemplate(childComplexity), true
+
+	case "FormationConstraint.name":
+		if e.complexity.FormationConstraint.Name == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.Name(childComplexity), true
+
+	case "FormationConstraint.operator":
+		if e.complexity.FormationConstraint.Operator == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.Operator(childComplexity), true
+
+	case "FormationConstraint.resourceSubtype":
+		if e.complexity.FormationConstraint.ResourceSubtype == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.ResourceSubtype(childComplexity), true
+
+	case "FormationConstraint.resourceType":
+		if e.complexity.FormationConstraint.ResourceType == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.ResourceType(childComplexity), true
+
+	case "FormationConstraint.targetOperation":
+		if e.complexity.FormationConstraint.TargetOperation == nil {
+			break
+		}
+
+		return e.complexity.FormationConstraint.TargetOperation(childComplexity), true
+
 	case "FormationPage.data":
 		if e.complexity.FormationPage.Data == nil {
 			break
@@ -2624,6 +2730,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AssignFormation(childComplexity, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput)), true
 
+	case "Mutation.attachConstraintToFormationTemplate":
+		if e.complexity.Mutation.AttachConstraintToFormationTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_attachConstraintToFormationTemplate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AttachConstraintToFormationTemplate(childComplexity, args["constraintID"].(string), args["formationTemplateID"].(string)), true
+
 	case "Mutation.createApplicationTemplate":
 		if e.complexity.Mutation.CreateApplicationTemplate == nil {
 			break
@@ -2671,6 +2789,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateFormation(childComplexity, args["formation"].(FormationInput)), true
+
+	case "Mutation.createFormationConstraint":
+		if e.complexity.Mutation.CreateFormationConstraint == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createFormationConstraint_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateFormationConstraint(childComplexity, args["formationConstraint"].(FormationConstraintInput)), true
 
 	case "Mutation.createFormationTemplate":
 		if e.complexity.Mutation.CreateFormationTemplate == nil {
@@ -2840,6 +2970,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteFormation(childComplexity, args["formation"].(FormationInput)), true
 
+	case "Mutation.deleteFormationConstraint":
+		if e.complexity.Mutation.DeleteFormationConstraint == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteFormationConstraint_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteFormationConstraint(childComplexity, args["id"].(string)), true
+
 	case "Mutation.deleteFormationTemplate":
 		if e.complexity.Mutation.DeleteFormationTemplate == nil {
 			break
@@ -2923,6 +3065,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteWebhook(childComplexity, args["webhookID"].(string)), true
+
+	case "Mutation.detachConstraintFromFormationTemplate":
+		if e.complexity.Mutation.DetachConstraintFromFormationTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_detachConstraintFromFormationTemplate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DetachConstraintFromFormationTemplate(childComplexity, args["constraintID"].(string), args["formationTemplateID"].(string)), true
 
 	case "Mutation.invalidateSystemAuthOneTimeToken":
 		if e.complexity.Mutation.InvalidateSystemAuthOneTimeToken == nil {
@@ -3835,6 +3989,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.FormationByName(childComplexity, args["name"].(string)), true
 
+	case "Query.formationConstraints":
+		if e.complexity.Query.FormationConstraints == nil {
+			break
+		}
+
+		return e.complexity.Query.FormationConstraints(childComplexity), true
+
+	case "Query.formationConstraintsByFormationType":
+		if e.complexity.Query.FormationConstraintsByFormationType == nil {
+			break
+		}
+
+		args, err := ec.field_Query_formationConstraintsByFormationType_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FormationConstraintsByFormationType(childComplexity, args["formationTemplateID"].(string)), true
+
 	case "Query.formationTemplate":
 		if e.complexity.Query.FormationTemplate == nil {
 			break
@@ -4687,6 +4860,16 @@ enum BundleInstanceAuthStatusCondition {
 	UNUSED
 }
 
+enum ConstraintScope {
+	GLOBAL
+	FORMATION_TYPE
+}
+
+enum ConstraintType {
+	PRE
+	POST
+}
+
 enum DocumentFormat {
 	MARKDOWN
 }
@@ -4757,6 +4940,14 @@ enum OperationType {
 	DELETE
 }
 
+enum ResourceType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+	TENANT
+	FORMATION
+}
+
 enum RuntimeStatusCondition {
 	INITIAL
 	PROVISIONING
@@ -4774,6 +4965,14 @@ enum SystemAuthReferenceType {
 	APPLICATION
 	RUNTIME
 	INTEGRATION_SYSTEM
+}
+
+enum TargetOperation {
+	ASSIGN_FORMATION
+	UNASSIGN_FORMATION
+	CREATE_FORMATION
+	DELETE_FORMATION
+	GENERATE_NOTIFICATION
 }
 
 enum ViewerType {
@@ -5210,6 +5409,17 @@ input FetchRequestInput {
 	filter: String
 }
 
+input FormationConstraintInput {
+	name: String!
+	constraintType: ConstraintType!
+	targetOperation: TargetOperation!
+	operator: String!
+	resourceType: ResourceType!
+	resourceSubtype: String!
+	inputTemplate: String!
+	constraintScope: ConstraintScope!
+}
+
 input FormationInput {
 	name: String!
 	templateName: String
@@ -5611,6 +5821,11 @@ type CertificateSubjectMappingPage implements Pageable {
 	totalCount: Int!
 }
 
+type ConstraintReference {
+	constraintID: ID!
+	formationTemplateID: ID!
+}
+
 type CredentialRequestAuth {
 	csrf: CSRFTokenCredentialRequestAuth
 }
@@ -5709,6 +5924,18 @@ type FormationAssignmentPage implements Pageable {
 	data: [FormationAssignment!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+type FormationConstraint {
+	id: ID!
+	name: String!
+	constraintType: String!
+	targetOperation: String!
+	operator: String!
+	resourceType: String!
+	resourceSubtype: String!
+	inputTemplate: String!
+	constraintScope: String!
 }
 
 type FormationPage implements Pageable {
@@ -6062,6 +6289,8 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
+	formationConstraintsByFormationType(formationTemplateID: ID!): [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
 	- [query formation template](examples/query-formation-template/query-formation-template.graphql)
@@ -6274,6 +6503,22 @@ type Mutation {
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
+	"""
+	**Examples**
+	- [create formation constraint](examples/create-formation-constraint/create-formation-constraint.graphql)
+	"""
+	createFormationConstraint(formationConstraint: FormationConstraintInput! @validate): FormationConstraint! @hasScopes(path: "graphql.mutation.createFormationConstraint")
+	"""
+	**Examples**
+	- [delete formation constraint](examples/delete-formation-constraint/delete-formation-constraint.graphql)
+	"""
+	deleteFormationConstraint(id: ID!): FormationConstraint! @hasScopes(path: "graphql.mutation.deleteFormationConstraint")
+	"""
+	**Examples**
+	- [attach constraint to formation template](examples/attach-constraint-to-formation-template/attach-constraint-to-formation-template.graphql)
+	"""
+	attachConstraintToFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.attachConstraintToFormationTemplate")
+	detachConstraintFromFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.detachConstraintFromFormationTemplate")
 	"""
 	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
@@ -6975,6 +7220,28 @@ func (ec *executionContext) field_Mutation_assignFormation_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_attachConstraintToFormationTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["constraintID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["constraintID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["formationTemplateID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["formationTemplateID"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createApplicationTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -7059,6 +7326,35 @@ func (ec *executionContext) field_Mutation_createCertificateSubjectMapping_args(
 		}
 	}
 	args["in"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createFormationConstraint_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 FormationConstraintInput
+	if tmp, ok := rawArgs["formationConstraint"]; ok {
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNFormationConstraintInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraintInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Validate == nil {
+				return nil, errors.New("directive validate is not implemented")
+			}
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if data, ok := tmp.(FormationConstraintInput); ok {
+			arg0 = data
+		} else {
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationConstraintInput`, tmp)
+		}
+	}
+	args["formationConstraint"] = arg0
 	return args, nil
 }
 
@@ -7311,6 +7607,20 @@ func (ec *executionContext) field_Mutation_deleteEventDefinition_args(ctx contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteFormationConstraint_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteFormationTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -7428,6 +7738,28 @@ func (ec *executionContext) field_Mutation_deleteWebhook_args(ctx context.Contex
 		}
 	}
 	args["webhookID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_detachConstraintFromFormationTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["constraintID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["constraintID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["formationTemplateID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["formationTemplateID"] = arg1
 	return args, nil
 }
 
@@ -8930,6 +9262,20 @@ func (ec *executionContext) field_Query_formationByName_args(ctx context.Context
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_formationConstraintsByFormationType_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["formationTemplateID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["formationTemplateID"] = arg0
 	return args, nil
 }
 
@@ -13816,6 +14162,74 @@ func (ec *executionContext) _CertificateSubjectMappingPage_totalCount(ctx contex
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ConstraintReference_constraintID(ctx context.Context, field graphql.CollectedField, obj *ConstraintReference) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConstraintReference",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConstraintID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConstraintReference_formationTemplateID(ctx context.Context, field graphql.CollectedField, obj *ConstraintReference) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ConstraintReference",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FormationTemplateID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _CredentialRequestAuth_csrf(ctx context.Context, field graphql.CollectedField, obj *CredentialRequestAuth) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -15800,6 +16214,312 @@ func (ec *executionContext) _FormationAssignmentPage_totalCount(ctx context.Cont
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_id(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_name(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_constraintType(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConstraintType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_targetOperation(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TargetOperation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_operator(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Operator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_resourceType(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_resourceSubtype(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceSubtype, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_inputTemplate(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InputTemplate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationConstraint_constraintScope(ctx context.Context, field graphql.CollectedField, obj *FormationConstraint) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationConstraint",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConstraintScope, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationPage_data(ctx context.Context, field graphql.CollectedField, obj *FormationPage) (ret graphql.Marshaler) {
@@ -20197,6 +20917,266 @@ func (ec *executionContext) _Mutation_unassignFormation(ctx context.Context, fie
 	res := resTmp.(*Formation)
 	fc.Result = res
 	return ec.marshalNFormation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createFormationConstraint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createFormationConstraint_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateFormationConstraint(rctx, args["formationConstraint"].(FormationConstraintInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createFormationConstraint")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*FormationConstraint); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationConstraint`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*FormationConstraint)
+	fc.Result = res
+	return ec.marshalNFormationConstraint2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteFormationConstraint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteFormationConstraint_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteFormationConstraint(rctx, args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteFormationConstraint")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*FormationConstraint); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationConstraint`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*FormationConstraint)
+	fc.Result = res
+	return ec.marshalNFormationConstraint2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_attachConstraintToFormationTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_attachConstraintToFormationTemplate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AttachConstraintToFormationTemplate(rctx, args["constraintID"].(string), args["formationTemplateID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.attachConstraintToFormationTemplate")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ConstraintReference); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.ConstraintReference`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ConstraintReference)
+	fc.Result = res
+	return ec.marshalNConstraintReference2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintReference(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_detachConstraintFromFormationTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_detachConstraintFromFormationTemplate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DetachConstraintFromFormationTemplate(rctx, args["constraintID"].(string), args["formationTemplateID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.detachConstraintFromFormationTemplate")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ConstraintReference); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.ConstraintReference`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ConstraintReference)
+	fc.Result = res
+	return ec.marshalNConstraintReference2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintReference(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createLabelDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -24927,6 +25907,129 @@ func (ec *executionContext) _Query_formations(ctx context.Context, field graphql
 	return ec.marshalNFormationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationPage(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_formationConstraints(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().FormationConstraints(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formationConstraints")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*FormationConstraint); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationConstraint`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*FormationConstraint)
+	fc.Result = res
+	return ec.marshalNFormationConstraint2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraintᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_formationConstraintsByFormationType(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_formationConstraintsByFormationType_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().FormationConstraintsByFormationType(rctx, args["formationTemplateID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formationConstraints")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*FormationConstraint); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationConstraint`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*FormationConstraint)
+	fc.Result = res
+	return ec.marshalNFormationConstraint2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraintᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_formationTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -29607,6 +30710,66 @@ func (ec *executionContext) unmarshalInputFetchRequestInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputFormationConstraintInput(ctx context.Context, obj interface{}) (FormationConstraintInput, error) {
+	var it FormationConstraintInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "constraintType":
+			var err error
+			it.ConstraintType, err = ec.unmarshalNConstraintType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "targetOperation":
+			var err error
+			it.TargetOperation, err = ec.unmarshalNTargetOperation2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTargetOperation(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "operator":
+			var err error
+			it.Operator, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "resourceType":
+			var err error
+			it.ResourceType, err = ec.unmarshalNResourceType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐResourceType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "resourceSubtype":
+			var err error
+			it.ResourceSubtype, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "inputTemplate":
+			var err error
+			it.InputTemplate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "constraintScope":
+			var err error
+			it.ConstraintScope, err = ec.unmarshalNConstraintScope2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintScope(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputFormationInput(ctx context.Context, obj interface{}) (FormationInput, error) {
 	var it FormationInput
 	var asMap = obj.(map[string]interface{})
@@ -31462,6 +32625,38 @@ func (ec *executionContext) _CertificateSubjectMappingPage(ctx context.Context, 
 	return out
 }
 
+var constraintReferenceImplementors = []string{"ConstraintReference"}
+
+func (ec *executionContext) _ConstraintReference(ctx context.Context, sel ast.SelectionSet, obj *ConstraintReference) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, constraintReferenceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConstraintReference")
+		case "constraintID":
+			out.Values[i] = ec._ConstraintReference_constraintID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "formationTemplateID":
+			out.Values[i] = ec._ConstraintReference_formationTemplateID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var credentialRequestAuthImplementors = []string{"CredentialRequestAuth"}
 
 func (ec *executionContext) _CredentialRequestAuth(ctx context.Context, sel ast.SelectionSet, obj *CredentialRequestAuth) graphql.Marshaler {
@@ -31953,6 +33148,73 @@ func (ec *executionContext) _FormationAssignmentPage(ctx context.Context, sel as
 			}
 		case "totalCount":
 			out.Values[i] = ec._FormationAssignmentPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var formationConstraintImplementors = []string{"FormationConstraint"}
+
+func (ec *executionContext) _FormationConstraint(ctx context.Context, sel ast.SelectionSet, obj *FormationConstraint) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, formationConstraintImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FormationConstraint")
+		case "id":
+			out.Values[i] = ec._FormationConstraint_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._FormationConstraint_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "constraintType":
+			out.Values[i] = ec._FormationConstraint_constraintType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "targetOperation":
+			out.Values[i] = ec._FormationConstraint_targetOperation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "operator":
+			out.Values[i] = ec._FormationConstraint_operator(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "resourceType":
+			out.Values[i] = ec._FormationConstraint_resourceType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "resourceSubtype":
+			out.Values[i] = ec._FormationConstraint_resourceSubtype(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "inputTemplate":
+			out.Values[i] = ec._FormationConstraint_inputTemplate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "constraintScope":
+			out.Values[i] = ec._FormationConstraint_constraintScope(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -32652,6 +33914,26 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "unassignFormation":
 			out.Values[i] = ec._Mutation_unassignFormation(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createFormationConstraint":
+			out.Values[i] = ec._Mutation_createFormationConstraint(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteFormationConstraint":
+			out.Values[i] = ec._Mutation_deleteFormationConstraint(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "attachConstraintToFormationTemplate":
+			out.Values[i] = ec._Mutation_attachConstraintToFormationTemplate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "detachConstraintFromFormationTemplate":
+			out.Values[i] = ec._Mutation_detachConstraintFromFormationTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -33406,6 +34688,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_formations(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "formationConstraints":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_formationConstraints(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "formationConstraintsByFormationType":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_formationConstraintsByFormationType(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -34910,6 +36220,38 @@ func (ec *executionContext) marshalNCertificateSubjectMappingPage2ᚖgithubᚗco
 	return ec._CertificateSubjectMappingPage(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNConstraintReference2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintReference(ctx context.Context, sel ast.SelectionSet, v ConstraintReference) graphql.Marshaler {
+	return ec._ConstraintReference(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNConstraintReference2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintReference(ctx context.Context, sel ast.SelectionSet, v *ConstraintReference) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ConstraintReference(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNConstraintScope2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintScope(ctx context.Context, v interface{}) (ConstraintScope, error) {
+	var res ConstraintScope
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNConstraintScope2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintScope(ctx context.Context, sel ast.SelectionSet, v ConstraintScope) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNConstraintType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintType(ctx context.Context, v interface{}) (ConstraintType, error) {
+	var res ConstraintType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNConstraintType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐConstraintType(ctx context.Context, sel ast.SelectionSet, v ConstraintType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNDocument2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐDocument(ctx context.Context, sel ast.SelectionSet, v Document) graphql.Marshaler {
 	return ec._Document(ctx, sel, &v)
 }
@@ -35218,6 +36560,61 @@ func (ec *executionContext) unmarshalNFormationAssignmentType2githubᚗcomᚋkym
 
 func (ec *executionContext) marshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx context.Context, sel ast.SelectionSet, v FormationAssignmentType) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNFormationConstraint2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraint(ctx context.Context, sel ast.SelectionSet, v FormationConstraint) graphql.Marshaler {
+	return ec._FormationConstraint(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFormationConstraint2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraintᚄ(ctx context.Context, sel ast.SelectionSet, v []*FormationConstraint) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFormationConstraint2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraint(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNFormationConstraint2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraint(ctx context.Context, sel ast.SelectionSet, v *FormationConstraint) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._FormationConstraint(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFormationConstraintInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraintInput(ctx context.Context, v interface{}) (FormationConstraintInput, error) {
+	return ec.unmarshalInputFormationConstraintInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNFormationInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationInput(ctx context.Context, v interface{}) (FormationInput, error) {
@@ -35763,6 +37160,15 @@ func (ec *executionContext) unmarshalNPlaceholderDefinitionInput2ᚖgithubᚗcom
 	return &res, err
 }
 
+func (ec *executionContext) unmarshalNResourceType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐResourceType(ctx context.Context, v interface{}) (ResourceType, error) {
+	var res ResourceType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNResourceType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐResourceType(ctx context.Context, sel ast.SelectionSet, v ResourceType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNRuntime2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx context.Context, sel ast.SelectionSet, v Runtime) graphql.Marshaler {
 	return ec._Runtime(ctx, sel, &v)
 }
@@ -36002,6 +37408,15 @@ func (ec *executionContext) marshalNSystemAuth2githubᚗcomᚋkymaᚑincubator�
 		return graphql.Null
 	}
 	return ec._SystemAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTargetOperation2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTargetOperation(ctx context.Context, v interface{}) (TargetOperation, error) {
+	var res TargetOperation
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNTargetOperation2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTargetOperation(ctx context.Context, sel ast.SelectionSet, v TargetOperation) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNTenant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v Tenant) graphql.Marshaler {

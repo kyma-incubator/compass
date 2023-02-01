@@ -19,6 +19,7 @@ var (
 	idTableColumns        = []string{"id"}
 	tableColumns          = []string{"id", "tenant_id", "formation_template_id", "name"}
 	tenantColumn          = "tenant_id"
+	formationNameColumn   = "name"
 )
 
 // EntityConverter converts between the internal model and entity
@@ -29,25 +30,27 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	creator               repo.CreatorGlobal
-	getter                repo.SingleGetter
-	pageableQuerierGlobal repo.PageableQuerier
-	updater               repo.UpdaterGlobal
-	deleter               repo.Deleter
-	existQuerier          repo.ExistQuerier
-	conv                  EntityConverter
+	creator         repo.CreatorGlobal
+	getter          repo.SingleGetter
+	pageableQuerier repo.PageableQuerier
+	lister          repo.Lister
+	updater         repo.UpdaterGlobal
+	deleter         repo.Deleter
+	existQuerier    repo.ExistQuerier
+	conv            EntityConverter
 }
 
 // NewRepository creates a new Formation repository
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:               repo.NewCreatorGlobal(resource.Formations, tableName, tableColumns),
-		getter:                repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		pageableQuerierGlobal: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		updater:               repo.NewUpdaterWithEmbeddedTenant(resource.Formations, tableName, updatableTableColumns, tenantColumn, idTableColumns),
-		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
-		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
-		conv:                  conv,
+		creator:         repo.NewCreatorGlobal(resource.Formations, tableName, tableColumns),
+		getter:          repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		updater:         repo.NewUpdaterWithEmbeddedTenant(resource.Formations, tableName, updatableTableColumns, tenantColumn, idTableColumns),
+		deleter:         repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
+		existQuerier:    repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
+		conv:            conv,
 	}
 }
 
@@ -89,7 +92,7 @@ func (r *repository) GetByName(ctx context.Context, name, tenantID string) (*mod
 // List returns all Formations sorted by id and paginated by the pageSize and cursor parameters
 func (r *repository) List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error) {
 	var entityCollection EntityCollection
-	page, totalCount, err := r.pageableQuerierGlobal.List(ctx, resource.Formations, tenant, pageSize, cursor, "id", &entityCollection)
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Formations, tenant, pageSize, cursor, "id", &entityCollection)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +109,23 @@ func (r *repository) List(ctx context.Context, tenant string, pageSize int, curs
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+// ListByFormationNames returns all Formations with name in formationNames
+func (r *repository) ListByFormationNames(ctx context.Context, formationNames []string, tenantID string) ([]*model.Formation, error) {
+	var entityCollection EntityCollection
+	if err := r.lister.List(ctx, resource.Formations, tenantID, &entityCollection, repo.NewInConditionForStringValues(formationNameColumn, formationNames)); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Formation, 0, entityCollection.Len())
+
+	for _, entity := range entityCollection {
+		formationModel := r.conv.FromEntity(entity)
+
+		items = append(items, formationModel)
+	}
+	return items, nil
 }
 
 // Update updates a Formation with the given input

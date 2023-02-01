@@ -3,35 +3,45 @@ package formation_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
-	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-
-	"fmt"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/mock"
 )
 
 var (
 	tenantID          = uuid.New()
 	externalTenantID  = uuid.New()
 	nilFormationModel *model.Formation
+
+	CustomerTenantContextPath = &webhook.CustomerTenantContext{
+		CustomerID: TntParentID,
+		AccountID:  nil,
+		Path:       str.Ptr(TntExternalID),
+	}
+
+	CustomerTenantContextAccount = &webhook.CustomerTenantContext{
+		CustomerID: TntParentID,
+		AccountID:  str.Ptr(TntExternalID),
+		Path:       nil,
+	}
 
 	modelFormation = model.Formation{
 		ID:                  FormationID,
@@ -52,8 +62,511 @@ var (
 	}
 	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType))}
 
-	TestConfigValueRawJSON = json.RawMessage(`{"configKey":"configValue"}`)
-	TestConfigValueStr     = "{\"configKey\":\"configValue\"}"
+	TestConfigValueRawJSON = json.RawMessage(
+		`{"configKey":"configValue"}`,
+	)
+	TestConfigValueStr = "{\"configKey\":\"configValue\"}"
+
+	emptyFormationAssignment = &webhook.FormationAssignment{Value: "\"\""}
+
+	notificationDetails = &formationconstraint.GenerateNotificationOperationDetails{}
+
+	generateConfigurationChangeNotificationDetails = &formationconstraint.GenerateNotificationOperationDetails{
+		Operation:   model.AssignFormation,
+		FormationID: fixUUID(),
+		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: fixApplicationTemplateModel(),
+			Labels:              fixApplicationTemplateLabelsMap(),
+		},
+		Application: &webhook.ApplicationWithLabels{
+			Application: fixApplicationModel(ApplicationID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+		Runtime: &webhook.RuntimeWithLabels{
+			Runtime: fixRuntimeModel(RuntimeID),
+			Labels:  fixRuntimeLabelsMap(),
+		},
+		Assignment:        emptyFormationAssignment,
+		ReverseAssignment: emptyFormationAssignment,
+	}
+
+	generateAppToAppNotificationDetails = &formationconstraint.GenerateNotificationOperationDetails{
+		Operation:                 model.AssignFormation,
+		FormationID:               fixUUID(),
+		SourceApplicationTemplate: nil,
+		SourceApplication: &webhook.ApplicationWithLabels{
+			Application: fixApplicationModelWithoutTemplate(Application2ID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+		TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+			ApplicationTemplate: fixApplicationTemplateModel(),
+			Labels:              fixApplicationTemplateLabelsMap(),
+		},
+		TargetApplication: &webhook.ApplicationWithLabels{
+			Application: fixApplicationModel(ApplicationID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+		Assignment:        emptyFormationAssignment,
+		ReverseAssignment: emptyFormationAssignment,
+	}
+
+	runtimeCtxNotificationWithAppTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext: &webhook.RuntimeContextWithLabels{
+				RuntimeContext: fixRuntimeContextModel(),
+				Labels:         fixRuntimeContextLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	runtimeCtxNotificationWithoutAppTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeContextRuntimeID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:           model.AssignFormation,
+			FormationID:         fixUUID(),
+			ApplicationTemplate: nil,
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModelWithoutTemplate(Application2ID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext: &webhook.RuntimeContextWithLabels{
+				RuntimeContext: fixRuntimeContextModel(),
+				Labels:         fixRuntimeContextLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	appNotificationWithRtmCtxAndTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext: &webhook.RuntimeContextWithLabels{
+				RuntimeContext: fixRuntimeContextModel(),
+				Labels:         fixRuntimeContextLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	appNotificationWithRtmCtxWithoutTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixApplicationWebhookGQLModel(Webhook2ID, Application2ID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:           model.AssignFormation,
+			FormationID:         fixUUID(),
+			ApplicationTemplate: nil,
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModelWithoutTemplate(Application2ID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext: &webhook.RuntimeContextWithLabels{
+				RuntimeContext: fixRuntimeContextModel(),
+				Labels:         fixRuntimeContextLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	runtimeNotificationWithAppTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext:    nil,
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	runtimeNotificationWithoutAppTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:           model.AssignFormation,
+			FormationID:         fixUUID(),
+			ApplicationTemplate: nil,
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModelWithoutTemplate(Application2ID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext:    nil,
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	applicationNotificationWithAppTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext:    nil,
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	applicationNotificationWithoutAppTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixApplicationWebhookGQLModel(Webhook2ID, Application2ID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:           model.AssignFormation,
+			FormationID:         fixUUID(),
+			ApplicationTemplate: nil,
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModelWithoutTemplate(Application2ID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext:    nil,
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	runtimeNotificationWithRtmCtxAndAppTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixRuntimeWebhookGQLModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeContextRuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext: &webhook.RuntimeContextWithLabels{
+				RuntimeContext: fixRuntimeContextModel(),
+				Labels:         fixRuntimeContextLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	appNotificationWithRtmCtxRtmIDAndTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
+		Object: &webhook.FormationConfigurationChangeInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			Application: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Runtime: &webhook.RuntimeWithLabels{
+				Runtime: fixRuntimeModel(RuntimeID),
+				Labels:  fixRuntimeLabelsMap(),
+			},
+			RuntimeContext: &webhook.RuntimeContextWithLabels{
+				RuntimeContext: fixRuntimeContextModelWithRuntimeID(RuntimeID),
+				Labels:         fixRuntimeContextLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	appToAppNotificationWithSourceTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp1, ApplicationID),
+		Object: &webhook.ApplicationTenantMappingInput{
+			Operation:                 model.AssignFormation,
+			FormationID:               fixUUID(),
+			SourceApplicationTemplate: nil,
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModelWithoutTemplate(Application2ID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	appToAppNotificationWithoutSourceTemplate = &webhookclient.NotificationRequest{
+		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
+		Object: &webhook.ApplicationTenantMappingInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			TargetApplicationTemplate: nil,
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModelWithoutTemplate(Application2ID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	preGenerateNotificationLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.GenerateNotificationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postGenerateNotificationLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.GenerateNotificationOperation,
+		ConstraintType: model.PostOperation,
+	}
+
+	preAssignLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.AssignFormationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postAssignLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.AssignFormationOperation,
+		ConstraintType: model.PostOperation,
+	}
+
+	preUnassignLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.UnassignFormationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postUnassignLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.UnassignFormationOperation,
+		ConstraintType: model.PostOperation,
+	}
+
+	preCreateLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.CreateFormationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postCreateLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.CreateFormationOperation,
+		ConstraintType: model.PostOperation,
+	}
+
+	createFormationDetails = &formationconstraint.CRUDFormationOperationDetails{
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationName:       testFormationName,
+		TenantID:            Tnt,
+	}
+
+	preDeleteLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.DeleteFormationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postDeleteLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.DeleteFormationOperation,
+		ConstraintType: model.PostOperation,
+	}
+
+	deleteFormationDetails = &formationconstraint.CRUDFormationOperationDetails{
+		FormationType:       "formation-tmpl-name",
+		FormationTemplateID: FormationTemplateID,
+		FormationName:       testFormationName,
+		TenantID:            Tnt,
+	}
+
+	assignAppDetails = &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.ApplicationResourceType,
+		ResourceSubtype:     applicationType,
+		ResourceID:          ApplicationID,
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	unassignAppDetails = &formationconstraint.UnassignFormationOperationDetails{
+		ResourceType:        model.ApplicationResourceType,
+		ResourceSubtype:     applicationType,
+		ResourceID:          ApplicationID,
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	assignAppInvalidTypeDetails = &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.ApplicationResourceType,
+		ResourceSubtype:     "invalidApplicationType",
+		ResourceID:          ApplicationID,
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	assignRuntimeDetails = &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.RuntimeResourceType,
+		ResourceSubtype:     runtimeType,
+		ResourceID:          RuntimeID,
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	unassignRuntimeDetails = &formationconstraint.UnassignFormationOperationDetails{
+		ResourceType:        model.RuntimeResourceType,
+		ResourceSubtype:     runtimeType,
+		ResourceID:          RuntimeID,
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	assignRuntimeOtherTemplateDetails = &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.RuntimeResourceType,
+		ResourceSubtype:     runtimeType,
+		ResourceID:          RuntimeID,
+		FormationType:       "some-other-template",
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	assignRuntimeContextDetails = &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.RuntimeContextResourceType,
+		ResourceSubtype:     runtimeType,
+		ResourceID:          RuntimeContextID,
+		FormationType:       testFormationTemplateName,
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	assignRuntimeContextOtherTemplateDetails = &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.RuntimeContextResourceType,
+		ResourceSubtype:     runtimeType,
+		ResourceID:          RuntimeContextID,
+		FormationType:       "some-other-template",
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	assignTenantDetails = &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.TenantResourceType,
+		ResourceSubtype:     "account",
+		ResourceID:          TargetTenant,
+		FormationType:       "formation-template",
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
+
+	unassignTenantDetails = &formationconstraint.UnassignFormationOperationDetails{
+		ResourceType:        model.TenantResourceType,
+		ResourceSubtype:     "account",
+		ResourceID:          TargetTenant,
+		FormationType:       "formation-template",
+		FormationTemplateID: FormationTemplateID,
+		FormationID:         FormationID,
+		TenantID:            Tnt,
+	}
 )
 
 const (
@@ -116,6 +629,10 @@ func unusedASARepo() *automock.AutomaticFormationAssignmentRepository {
 	return &automock.AutomaticFormationAssignmentRepository{}
 }
 
+func unusedASAEngine() *automock.AsaEngine {
+	return &automock.AsaEngine{}
+}
+
 func unusedRuntimeRepo() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
 }
@@ -162,6 +679,10 @@ func unusedLabelDefService() *automock.LabelDefService {
 	return &automock.LabelDefService{}
 }
 
+func unusedLabelDefRepository() *automock.LabelDefRepository {
+	return &automock.LabelDefRepository{}
+}
+
 func unusedUUIDService() *automock.UuidService {
 	return &automock.UuidService{}
 }
@@ -194,6 +715,22 @@ func noActionNotificationsService() *automock.NotificationsService {
 
 func unusedFormationTemplateRepo() *automock.FormationTemplateRepository {
 	return &automock.FormationTemplateRepository{}
+}
+
+func unusedProcessFunc() *automock.ProcessFunc {
+	return &automock.ProcessFunc{}
+}
+
+func unusedConstraintEngine() *automock.ConstraintEngine {
+	return &automock.ConstraintEngine{}
+}
+
+func unusedNotificationsBuilder() *automock.NotificationBuilder {
+	return &automock.NotificationBuilder{}
+}
+
+func unusedTenantService() *automock.TenantService {
+	return &automock.TenantService{}
 }
 
 func fixCtxWithTenant() context.Context {
@@ -358,9 +895,9 @@ func fixApplicationWebhookGQLModel(webhookID, appID string) *graphql.Webhook {
 
 func fixApplicationTenantMappingWebhookGQLModel(webhookID, appID string) *graphql.Webhook {
 	return &graphql.Webhook{
-		ID:        webhookID,
-		RuntimeID: str.Ptr(appID),
-		Type:      graphql.WebhookTypeApplicationTenantMapping,
+		ID:            webhookID,
+		ApplicationID: str.Ptr(appID),
+		Type:          graphql.WebhookTypeApplicationTenantMapping,
 	}
 }
 

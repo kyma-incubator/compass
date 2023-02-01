@@ -27,6 +27,11 @@ type ConditionTreeLister interface {
 	ListConditionTree(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, conditionTree *ConditionTree) error
 }
 
+// ConditionTreeListerGlobal is an interface for listing entities by conditionTree globally.
+type ConditionTreeListerGlobal interface {
+	ListConditionTreeGlobal(ctx context.Context, resourceType resource.Type, dest Collection, conditionTree *ConditionTree) error
+}
+
 // ListerGlobal is an interface for listing global entities.
 type ListerGlobal interface {
 	ListGlobal(ctx context.Context, dest Collection, additionalConditions ...Condition) error
@@ -70,6 +75,15 @@ func NewConditionTreeListerWithEmbeddedTenant(tableName string, tenantColumn str
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
 		tenantColumn:    &tenantColumn,
+		orderByParams:   NoOrderBy,
+	}
+}
+
+// NewConditionTreeListerGlobal is a constructor for ConditionTreeListerGlobal.
+func NewConditionTreeListerGlobal(tableName string, selectedColumns []string) ConditionTreeListerGlobal {
+	return &universalLister{
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
 		orderByParams:   NoOrderBy,
 	}
 }
@@ -123,6 +137,11 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 // ListConditionTree lists tenant scoped entities matching the provided condition tree with tenant isolation which is based on equal condition on tenantColumn.
 func (l *universalLister) ListConditionTree(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, conditionTree *ConditionTree) error {
 	return l.listConditionTreeWithEmbeddedTenant(ctx, resourceType, tenant, dest, NoLock, conditionTree)
+}
+
+// ListConditionTreeGlobal lists entities matching the provided condition tree globally.
+func (l *universalLister) ListConditionTreeGlobal(ctx context.Context, resourceType resource.Type, dest Collection, conditionTree *ConditionTree) error {
+	return l.listWithConditionTree(ctx, resourceType, dest, NoLock, conditionTree)
 }
 
 // ListWithSelectForUpdate lists tenant scoped entities with tenant isolation subquery and
