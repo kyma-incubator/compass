@@ -66,7 +66,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	t.Logf("Creating formation with name %s...", formationName)
 	createFormationReq := fixtures.FixCreateFormationRequest(formationName)
 	executeGQLRequest(t, ctx, createFormationReq, formationName, accountTenantID)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, accountTenantID, formationName)
 	t.Logf("Successfully created formation: %s", formationName)
 
 	t.Logf("Assign application to formation %s", formationName)
@@ -396,7 +396,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation with name %s...", consumerFormationName)
 		createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
 		executeGQLRequest(stdT, ctx, createFormationReq, consumerFormationName, secondaryTenant)
-		defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, consumerFormationName)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
 		stdT.Logf("Assign application to formation %s", consumerFormationName)
