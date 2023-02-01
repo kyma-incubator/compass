@@ -35,6 +35,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
+	// test
 	givenInput := fixRuntimeInput("runtime-create-update-delete")
 	givenInput.Description = ptr.String("runtime-1-description")
 	givenInput.Labels["ggg"] = []interface{}{"hhh"}
