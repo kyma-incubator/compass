@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
@@ -211,7 +212,10 @@ func TestModifyFormationTemplateWebhooks(t *testing.T) {
 
 	actualWebhook := graphql.Webhook{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
-	require.Error(t, err) // TODO ADD
+	require.Error(t, err)
+
+	expectedErrorMessage := fmt.Sprintf("does not have access to the parent resource formationTemplate with ID %s]", output.ID)
+	require.Contains(t, err.Error(), expectedErrorMessage)
 
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
 	require.NoError(t, err)
@@ -408,7 +412,10 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 		actualWebhook := graphql.Webhook{}
 		customTenant := tenant.TestTenants.GetIDByName(t, tenant.TestConsumerSubaccount)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, customTenant, addReq, &actualWebhook)
-		require.Error(t, err) // TODO Unauthorized
+		require.Error(t, err)
+
+		expectedErrorMessage := fmt.Sprintf("does not have access to the parent resource formationTemplate with ID %s]", scopedFormationTemplate.ID)
+		require.Contains(t, err.Error(), expectedErrorMessage)
 	})
 	actualWebhook := graphql.Webhook{}
 	t.Run("Add formation template webhook with correct tenant should succeed", func(t *testing.T) {
@@ -433,5 +440,14 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, updatedWebhook.URL)
 		assert.Equal(t, urlUpdated, *updatedWebhook.URL)
+	})
+	t.Run("Delete formation template webhook", func(t *testing.T) {
+		deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
+
+		var deletedWebhook graphql.Webhook
+		err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, deleteReq, &deletedWebhook)
+		require.NoError(t, err)
+
+		assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, scopedFormationTemplate)
 	})
 }
