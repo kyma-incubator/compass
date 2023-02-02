@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	pkgtenant "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -107,6 +108,189 @@ func TestService_Create(t *testing.T) {
 			}
 
 			mock.AssertExpectationsForObjects(t, repo, uidSvc)
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		svc := webhook.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.Create(context.TODO(), givenApplicationID(), *modelInput, model.ApplicationWebhookReference)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
+	})
+}
+
+func TestService_CreateWithFormationTemplateWebhookType(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+	modelInput := fixModelWebhookInput("foo")
+
+	webhookModel := mock.MatchedBy(func(webhook *model.Webhook) bool {
+		return webhook.Type == modelInput.Type && webhook.URL == modelInput.URL
+	})
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
+	ctxNoTenant := context.TODO()
+	ctxNoTenant = tenant.SaveToContext(ctx, "", "")
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.WebhookRepository
+		UIDServiceFn func() *automock.UIDService
+		TenantSvcFn  func() *automock.TenantService
+		ExpectedErr  error
+		Context      context.Context
+	}{
+		{
+			Name: "Success when tenant is GA",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("Create", ctx, givenTenant(), webhookModel).Return(nil).Once()
+				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Account), nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("foo").Once()
+				return svc
+			},
+			ExpectedErr: nil,
+			Context:     ctx,
+		},
+		{
+			Name: "Success when tenant is subaccount",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("Create", ctx, givenTenant(), webhookModel).Return(nil).Once()
+				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Subaccount), nil).Once()
+				svc.On("GetTenantByID", ctx, givenParentTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Account), nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("foo").Once()
+				return svc
+			},
+			ExpectedErr: nil,
+			Context:     ctx,
+		},
+		{
+			Name: "Success when tenant is missing",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("Create", ctxNoTenant, "", webhookModel).Return(nil).Once()
+				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				return &automock.TenantService{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("foo").Once()
+				return svc
+			},
+			ExpectedErr: nil,
+			Context:     ctxNoTenant,
+		},
+		{
+			Name: "Returns error when webhook creation failed",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("Create", ctx, givenTenant(), webhookModel).Return(testErr).Once()
+				return repo
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Account), nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("").Once()
+				return svc
+			},
+			ExpectedErr: testErr,
+			Context:     ctx,
+		},
+		{
+			Name: "Error when getting parent fails",
+			RepositoryFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Subaccount), nil).Once()
+				svc.On("GetTenantByID", ctx, givenParentTenant()).Return(nil, testErr).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			ExpectedErr: testErr,
+			Context:     ctx,
+		},
+		{
+			Name: "Error when getting tenant fails",
+			RepositoryFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, givenTenant()).Return(nil, testErr).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			ExpectedErr: testErr,
+			Context:     ctx,
+		},
+		{
+			Name: "Error when getting tenant is neither SA or GA",
+			RepositoryFn: func() *automock.WebhookRepository {
+				return &automock.WebhookRepository{}
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Customer), nil).Once()
+				return svc
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			ExpectedErr: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
+			Context:     ctx,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			uidSvc := testCase.UIDServiceFn()
+			tenantSvc := testCase.TenantSvcFn()
+			svc := webhook.NewService(repo, nil, uidSvc, tenantSvc)
+
+			// WHEN
+			result, err := svc.Create(testCase.Context, givenApplicationID(), *modelInput, model.FormationTemplateWebhookReference)
+
+			// THEN
+
+			if testCase.ExpectedErr == nil {
+				assert.NotEmpty(t, result)
+				require.NoError(t, err)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
+
+			mock.AssertExpectationsForObjects(t, repo, uidSvc, tenantSvc)
 		})
 	}
 

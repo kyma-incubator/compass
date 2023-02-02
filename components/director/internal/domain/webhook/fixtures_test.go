@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"testing"
 	"time"
 
@@ -229,6 +230,18 @@ func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
 	}
 }
 
+func newModelBusinessTenantMappingWithType(tenantType tenant.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             givenTenant(),
+		Name:           "name",
+		ExternalTenant: "external",
+		Parent:         givenParentTenant(),
+		Type:           tenantType,
+		Provider:       "test-provider",
+		Status:         tenant.Active,
+	}
+}
+
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 }
@@ -239,6 +252,10 @@ func anotherID() string {
 
 func givenTenant() string {
 	return "b91b59f7-2563-40b2-aba9-fef726037aa3"
+}
+
+func givenParentTenant() string {
+	return "b92b59f7-2563-40b2-aba9-fef726037aa3"
 }
 
 func givenExternalTenant() string {
