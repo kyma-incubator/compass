@@ -17,6 +17,7 @@ mutation {
       applicationID
       applicationTemplateID
       runtimeID
+      formationTemplateID
       type
       mode
       correlationIdKey
