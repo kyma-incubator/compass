@@ -69,7 +69,7 @@ func TestService_Create(t *testing.T) {
 			Input:   &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, testTenantID).Return(&formationTemplateModel).Once()
+				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, testParentTenantID).Return(&formationTemplateModel).Once()
 				return converter
 			},
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -81,7 +81,6 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.TenantService{}
 				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
 				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil)
 				return svc
 			},
 			ExpectedOutput: testID,
@@ -140,26 +139,6 @@ func TestService_Create(t *testing.T) {
 			},
 			ExpectedOutput: "",
 			ExpectedError:  errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
-			Name:    "Error when getting GA tenant object",
-			Context: ctx,
-			Input:   &formationTemplateModelInput,
-			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
-				return &automock.FormationTemplateConverter{}
-			},
-			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				return &automock.FormationTemplateRepository{}
-			},
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
-				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(nil, testErr)
-				return svc
-			},
-			ExpectedOutput: "",
-			ExpectedError:  testErr,
 		},
 		{
 			Name:    "Error when creating formation template",
@@ -341,14 +320,14 @@ func TestService_List(t *testing.T) {
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctx, testTenantID, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
+				repo.On("List", ctx, testParentTenantID, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
 				return repo
 			},
 			TenantSvc: func() *automock.TenantService {
 				svc := &automock.TenantService{}
 				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
 				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil)
+				//svc.On("GetTenantByID", ctx, saTenant.Parent).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil)
 				return svc
 			},
 			ExpectedOutput: &formationTemplateModelPage,
@@ -396,23 +375,6 @@ func TestService_List(t *testing.T) {
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
-			Name:     "Error when getting GA tenant object",
-			Context:  ctx,
-			PageSize: pageSize,
-			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				return &automock.FormationTemplateRepository{}
-			},
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
-				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(nil, testErr)
-				return svc
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testErr,
 		},
 		{
 			Name:     "Error when listing formation templates",
@@ -552,7 +514,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, testTenantID).Return(&formationTemplateModel).Once()
+				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID, testParentTenantID).Return(&formationTemplateModel).Once()
 
 				return converter
 			},
@@ -560,7 +522,6 @@ func TestService_Update(t *testing.T) {
 				svc := &automock.TenantService{}
 				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
 				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil)
 				return svc
 			},
 			ExpectedError: nil,
@@ -648,26 +609,6 @@ func TestService_Update(t *testing.T) {
 				return svc
 			},
 			ExpectedError: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
-			Name:                   "Error when getting GA tenant object",
-			Context:                ctx,
-			Input:                  testID,
-			InputFormationTemplate: &formationTemplateModelInput,
-			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Exists", ctx, testID).Return(true, nil).Once()
-				return repo
-			},
-			FormationTemplateConverter: UnusedFormationTemplateConverter,
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
-				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(nil, testErr)
-				return svc
-			},
-			ExpectedError: testErr,
 		},
 		{
 			Name:                   "Error when updating formation template fails",
@@ -797,14 +738,13 @@ func TestService_Delete(t *testing.T) {
 			Input:   testID,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Delete", ctx, testID, testTenantID).Return(nil).Once()
+				repo.On("Delete", ctx, testID, testParentTenantID).Return(nil).Once()
 				return repo
 			},
 			TenantSvc: func() *automock.TenantService {
 				svc := &automock.TenantService{}
 				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
 				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil)
 				return svc
 			},
 			ExpectedError: nil,
@@ -844,20 +784,6 @@ func TestService_Delete(t *testing.T) {
 				return svc
 			},
 			ExpectedError: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
-			Name:                        "Error when getting GA tenant object",
-			Context:                     ctx,
-			Input:                       testID,
-			FormationTemplateRepository: UnusedFormationTemplateRepository,
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
-				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(nil, testErr)
-				return svc
-			},
-			ExpectedError: testErr,
 		},
 		{
 			Name:    "Error when deleting formation template",

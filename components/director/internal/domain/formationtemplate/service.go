@@ -133,25 +133,24 @@ func (s *service) Delete(ctx context.Context, id string) error {
 }
 
 // getTenantFromContext validates and returns the tenant present in the context:
-// 		1. if only one ID is present -> throw TenantNotFoundError
-// 		2. if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
-// 		3. if both internalID and externalID are not present -> proceed with global formation templates (return empty id)
+//  - if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
+//  - if both internalID and externalID are NOT present -> -> proceed with global formation templates (return empty id)
+//  - otherwise return TenantNotFoundError
 func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 	tntCtx, err := tenant.LoadTenantPairFromContextNoChecks(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	if (tntCtx.InternalID == "" && tntCtx.ExternalID != "") || (tntCtx.InternalID != "" && tntCtx.ExternalID == "") {
-		return "", apperrors.NewTenantNotFoundError(tntCtx.ExternalID)
-	}
-
-	var internalTenantID string
 	if tntCtx.InternalID != "" && tntCtx.ExternalID != "" {
-		internalTenantID = tntCtx.InternalID
+		return tntCtx.InternalID, nil
 	}
 
-	return internalTenantID, nil
+	if tntCtx.InternalID == "" && tntCtx.ExternalID == "" {
+		return "", nil
+	}
+
+	return "", apperrors.NewTenantNotFoundError(tntCtx.ExternalID)
 }
 
 // extractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:
@@ -165,7 +164,7 @@ func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.C
 	}
 
 	if internalTenantID == "" {
-		return internalTenantID, nil
+		return "", nil
 	}
 
 	tenantObject, err := s.tenantSvc.GetTenantByID(ctx, internalTenantID)
@@ -181,10 +180,5 @@ func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.C
 		return tenantObject.ID, nil
 	}
 
-	gaTenantObject, err := s.tenantSvc.GetTenantByID(ctx, tenantObject.Parent)
-	if err != nil {
-		return "", err
-	}
-
-	return gaTenantObject.ID, nil
+	return tenantObject.Parent, nil
 }
