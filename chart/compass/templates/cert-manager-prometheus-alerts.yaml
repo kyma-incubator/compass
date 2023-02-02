@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: monitoring
+    release: monitoring
+  name: prometheus-cert-manager-rules
+  namespace: kyma-system
+spec:
+  groups:
+    - name: cert-manager-rules
+      rules:
+        - alert: CertificateExpiresIn5Days
+          expr: sum(certmanager_certificate_expiration_timestamp_seconds - time()) BY (name,exported_namespace) < (5 * 86400)
+          labels:
+            severity: critical
+          annotations:
+            description: Certificate {{ $labels.name }} on namespace {{ $labels.exported_namespace }} will expire in 5 days.
+        - alert: CertificateIsNotReady
+          expr: sum(certmanager_certificate_ready_status{condition!="True"}) BY (name,exported_namespace,condition) == 1
+          labels:
+            severity: critical
+          annotations:
+            description: Certificate {{ $labels.name }} on namespace {{ $labels.exported_namespace }} is not in ready state.
