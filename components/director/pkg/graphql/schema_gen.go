@@ -6432,6 +6432,7 @@ type Mutation {
 	**Examples**
 	- [add application template webhook](examples/add-webhook/add-application-template-webhook.graphql)
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
+	- [add formation template webhook](examples/add-webhook/add-formation-template-webhook.graphql)
 	- [add runtime webhook](examples/add-webhook/add-runtime-webhook.graphql)
 	"""
 	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, formationTemplateID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
@@ -6542,6 +6543,10 @@ type Mutation {
 	- [attach constraint to formation template](examples/attach-constraint-to-formation-template/attach-constraint-to-formation-template.graphql)
 	"""
 	attachConstraintToFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.attachConstraintToFormationTemplate")
+	"""
+	**Examples**
+	- [detach constraint from formation template](examples/detach-constraint-from-formation-template/detach-constraint-from-formation-template.graphql)
+	"""
 	detachConstraintFromFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.detachConstraintFromFormationTemplate")
 	"""
 	**Examples**
@@ -6643,6 +6648,7 @@ type Mutation {
 	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
+	- [create formation template with webhooks](examples/create-formation-template/create-formation-template-with-webhooks.graphql)
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
 	"""
 	createFormationTemplate(in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
