@@ -121,7 +121,6 @@ data:
               "expr": "sum(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$Namespace\"} - time()) BY (name,exported_namespace)",
               "instant": false,
               "intervalFactor": 1,
-              "legendFormat": " {{namespace}} / {{name}}",
               "refId": "A"
             }
           ],
