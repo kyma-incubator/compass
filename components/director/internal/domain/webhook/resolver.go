@@ -42,6 +42,11 @@ type runtimeService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
+//go:generate mockery --exported --name=formationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationTemplateService interface {
+	Exist(ctx context.Context, id string) (bool, error)
+}
+
 // WebhookConverter missing godoc
 //go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
@@ -55,28 +60,30 @@ type existsFunc func(ctx context.Context, id string) (bool, error)
 
 // Resolver missing godoc
 type Resolver struct {
-	webhookSvc       WebhookService
-	appSvc           ApplicationService
-	appTemplateSvc   ApplicationTemplateService
-	runtimeSvc       runtimeService
-	webhookConverter WebhookConverter
-	transact         persistence.Transactioner
+	webhookSvc           WebhookService
+	appSvc               ApplicationService
+	appTemplateSvc       ApplicationTemplateService
+	runtimeSvc           runtimeService
+	formationTemplateSvc formationTemplateService
+	webhookConverter     WebhookConverter
+	transact             persistence.Transactioner
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, applicationService ApplicationService, appTemplateService ApplicationTemplateService, runtimeService runtimeService, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, applicationService ApplicationService, appTemplateService ApplicationTemplateService, runtimeService runtimeService, formationTemplateService formationTemplateService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
-		webhookSvc:       webhookSvc,
-		appSvc:           applicationService,
-		appTemplateSvc:   appTemplateService,
-		runtimeSvc:       runtimeService,
-		webhookConverter: webhookConverter,
-		transact:         transact,
+		webhookSvc:           webhookSvc,
+		appSvc:               applicationService,
+		appTemplateSvc:       appTemplateService,
+		runtimeSvc:           runtimeService,
+		formationTemplateSvc: formationTemplateService,
+		webhookConverter:     webhookConverter,
+		transact:             transact,
 	}
 }
 
 // AddWebhook missing godoc
-func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, runtimeID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, runtimeID *string, formationTemplateID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -84,12 +91,13 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	appSpecified := applicationID != nil && applicationTemplateID == nil && runtimeID == nil
-	appTemplateSpecified := applicationID == nil && applicationTemplateID != nil && runtimeID == nil
-	runtimeSpecified := applicationID == nil && applicationTemplateID == nil && runtimeID != nil
+	appSpecified := applicationID != nil && applicationTemplateID == nil && runtimeID == nil && formationTemplateID == nil
+	appTemplateSpecified := applicationID == nil && applicationTemplateID != nil && runtimeID == nil && formationTemplateID == nil
+	runtimeSpecified := applicationID == nil && applicationTemplateID == nil && runtimeID != nil && formationTemplateID == nil
+	formationTemplateSpecified := applicationID == nil && applicationTemplateID == nil && runtimeID == nil && formationTemplateID != nil
 
-	if !(appSpecified || appTemplateSpecified || runtimeSpecified) {
-		return nil, apperrors.NewInvalidDataError("exactly one of applicationID, applicationTemplateID or runtimeID should be specified")
+	if !(appSpecified || appTemplateSpecified || runtimeSpecified || formationTemplateSpecified) {
+		return nil, apperrors.NewInvalidDataError("exactly one of applicationID, applicationTemplateID, runtimeID or formationTemplateID should be specified")
 	}
 
 	convertedIn, err := r.webhookConverter.InputFromGraphQL(&in)
@@ -108,6 +116,9 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 	} else if runtimeSpecified {
 		objectID = *runtimeID
 		objectType = model.RuntimeWebhookReference
+	} else if formationTemplateSpecified {
+		objectID = *formationTemplateID
+		objectType = model.FormationTemplateWebhookReference
 	}
 
 	id, err := r.checkForExistenceAndCreate(ctx, *convertedIn, objectID, objectType)
@@ -201,6 +212,8 @@ func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, input model.W
 		existsFunc = r.appTemplateSvc.Exists
 	case model.RuntimeWebhookReference:
 		existsFunc = r.runtimeSvc.Exist
+	case model.FormationTemplateWebhookReference:
+		existsFunc = r.formationTemplateSvc.Exist
 	}
 
 	err := r.genericCheckExistence(ctx, objectID, objectType, existsFunc)

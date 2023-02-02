@@ -603,7 +603,17 @@ func webhookService() webhook.WebhookService {
 	webhookConverter := webhook.NewConverter(authConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
-	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+
+	labelConverter := label.NewConverter()
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefinitionConverter := labeldef.NewConverter()
+	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
+	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
+
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc, tenantSvc)
 }
 
 func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {
@@ -675,7 +685,7 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, securedHTTPClien
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	tenantConverter := tenant.NewConverter()
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 	formationConstraintConverter := formationconstraint.NewConverter()
 	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
 
@@ -722,7 +732,7 @@ func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPCl
 	webhookConverter := webhook.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
 	docConverter := document.NewConverter(frConverter)
@@ -846,7 +856,7 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 
 	bundleSvc := bundle.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 	formationRepo := formation.NewRepository(formationConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
@@ -934,7 +944,7 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 	labelDefinitionConverter := labeldef.NewConverter()
 	asaConverter := scenarioassignment.NewConverter()
 	tenantConverter := tenant.NewConverter()

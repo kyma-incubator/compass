@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2832"
+      version: "PR-2840"
       name: compass-director
     hydrator:
       dir:
@@ -159,7 +159,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2856"
+      version: "PR-2840"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2857"
+      version: "PR-2840"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1124,6 +1124,7 @@ global:
         - "formation:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "formation_template.webhooks:read"
       technical_client:
         - "tenant:read"
         - "tenant:write"
@@ -1148,6 +1149,7 @@ global:
         - "application_template:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "formation_template.webhooks:read"
       application:
         - "application:read"
         - "application:write"
@@ -1180,6 +1182,7 @@ global:
         - "application.auths:read"
         - "webhook:write"
         - "formation_template:read"
+        - "formation_template.webhooks:read"
       super_admin:
         - "application:read"
         - "application:write"
@@ -1214,6 +1217,7 @@ global:
         - "webhook:write"
         - "formation_template:read"
         - "formation_template:write"
+        - "formation_template.webhooks:read"
         - "formation_constraint:read"
         - "formation_constraint:write"
         - "certificate_subject_mapping:read"

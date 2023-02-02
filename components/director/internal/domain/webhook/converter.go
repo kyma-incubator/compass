@@ -52,6 +52,7 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 	var runtimeID *string
 	var appTemplateID *string
 	var intSystemID *string
+	var formationTemplateID *string
 	switch in.ObjectType {
 	case model.ApplicationWebhookReference:
 		appID = &in.ObjectID
@@ -61,6 +62,8 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		appTemplateID = &in.ObjectID
 	case model.IntegrationSystemWebhookReference:
 		intSystemID = &in.ObjectID
+	case model.FormationTemplateWebhookReference:
+		formationTemplateID = &in.ObjectID
 	}
 
 	return &graphql.Webhook{
@@ -69,6 +72,7 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		ApplicationTemplateID: appTemplateID,
 		RuntimeID:             runtimeID,
 		IntegrationSystemID:   intSystemID,
+		FormationTemplateID:   formationTemplateID,
 		Type:                  graphql.WebhookType(in.Type),
 		Mode:                  webhookMode,
 		URL:                   in.URL,
@@ -172,6 +176,7 @@ func (c *converter) ToEntity(in *model.Webhook) (*Entity, error) {
 	var runtimeID sql.NullString
 	var appTemplateID sql.NullString
 	var intSystemID sql.NullString
+	var formationTemplateID sql.NullString
 	switch in.ObjectType {
 	case model.ApplicationWebhookReference:
 		appID = repo.NewValidNullableString(in.ObjectID)
@@ -181,6 +186,8 @@ func (c *converter) ToEntity(in *model.Webhook) (*Entity, error) {
 		appTemplateID = repo.NewValidNullableString(in.ObjectID)
 	case model.IntegrationSystemWebhookReference:
 		intSystemID = repo.NewValidNullableString(in.ObjectID)
+	case model.FormationTemplateWebhookReference:
+		formationTemplateID = repo.NewValidNullableString(in.ObjectID)
 	}
 
 	return &Entity{
@@ -189,6 +196,7 @@ func (c *converter) ToEntity(in *model.Webhook) (*Entity, error) {
 		ApplicationTemplateID: appTemplateID,
 		RuntimeID:             runtimeID,
 		IntegrationSystemID:   intSystemID,
+		FormationTemplateID:   formationTemplateID,
 		CollectionIDKey:       repo.NewNullableString(in.CorrelationIDKey),
 		Type:                  string(in.Type),
 		URL:                   repo.NewNullableString(in.URL),
@@ -297,6 +305,10 @@ func (c *converter) objectReferenceFromEntity(in Entity) (string, model.WebhookR
 
 	if in.IntegrationSystemID.Valid {
 		return in.IntegrationSystemID.String, model.IntegrationSystemWebhookReference, nil
+	}
+
+	if in.FormationTemplateID.Valid {
+		return in.FormationTemplateID.String, model.FormationTemplateWebhookReference, nil
 	}
 
 	return "", "", fmt.Errorf("incorrect Object Reference ID and its type for Entity with ID '%s'", in.ID)
