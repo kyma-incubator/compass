@@ -92,7 +92,7 @@ func TestService_Create(t *testing.T) {
 			},
 			WebhookRepo: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, testTenantID, formationTemplateModel.Webhooks).Return(nil)
+				repo.On("CreateMany", ctx, testParentTenantID, formationTemplateModel.Webhooks).Return(nil)
 				return repo
 			},
 			ExpectedOutput: testID,
@@ -1008,14 +1008,13 @@ func TestService_ListWebhooksForFormationTemplate(t *testing.T) {
 			Input:   testID,
 			WebhookSvc: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListForFormationTemplate", ctx, testTenantID, testID).Return([]*model.Webhook{testWebhook}, nil)
+				webhookSvc.On("ListForFormationTemplate", ctx, testParentTenantID, testID).Return([]*model.Webhook{testWebhook}, nil)
 				return webhookSvc
 			},
 			TenantSvc: func() *automock.TenantService {
 				svc := &automock.TenantService{}
 				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
 				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil)
 				return svc
 			},
 			ExpectedError:    nil,
@@ -1057,20 +1056,6 @@ func TestService_ListWebhooksForFormationTemplate(t *testing.T) {
 				return svc
 			},
 			ExpectedError: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
-			Name:       "Error when getting GA tenant object",
-			Context:    ctx,
-			Input:      testID,
-			WebhookSvc: UnusedWebhookService,
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				saTenant := newModelBusinessTenantMappingWithType(tenant.Subaccount)
-				svc.On("GetTenantByID", ctx, testTenantID).Return(saTenant, nil)
-				svc.On("GetTenantByID", ctx, saTenant.Parent).Return(nil, testErr)
-				return svc
-			},
-			ExpectedError: testErr,
 		},
 		{
 			Name:    "Error when listing formation template webhooks",
