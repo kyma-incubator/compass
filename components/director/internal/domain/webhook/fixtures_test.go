@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"testing"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at"}
+var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
 
 var emptyTemplate = `{}`
 
@@ -46,6 +47,22 @@ func fixRuntimeModelWebhook(id, runtimeID, url string) *model.Webhook {
 		ObjectID:       runtimeID,
 		ObjectType:     model.RuntimeWebhookReference,
 		Type:           model.WebhookTypeConfigurationChanged,
+		URL:            &url,
+		Auth:           fixBasicAuth(),
+		Mode:           &modelWebhookMode,
+		URLTemplate:    &emptyTemplate,
+		InputTemplate:  &emptyTemplate,
+		HeaderTemplate: &emptyTemplate,
+		OutputTemplate: &emptyTemplate,
+	}
+}
+
+func fixFormationTemplateModelWebhook(id, formationTemplateID, url string) *model.Webhook {
+	return &model.Webhook{
+		ID:             id,
+		ObjectID:       formationTemplateID,
+		ObjectType:     model.FormationTemplateWebhookReference,
+		Type:           model.WebhookTypeFormationLifecycle,
 		URL:            &url,
 		Auth:           fixBasicAuth(),
 		Mode:           &modelWebhookMode,
@@ -182,6 +199,21 @@ func fixRuntimeWebhookEntityWithID(t *testing.T, id string) *webhook.Entity {
 	}
 }
 
+func fixFormationTemplateWebhookEntityWithID(t *testing.T, id string) *webhook.Entity {
+	return &webhook.Entity{
+		ID:                  id,
+		FormationTemplateID: repo.NewValidNullableString(givenFormationTemplateID()),
+		Type:                string(model.WebhookTypeFormationLifecycle),
+		URL:                 repo.NewValidNullableString("http://kyma.io"),
+		Mode:                repo.NewValidNullableString(string(model.WebhookModeSync)),
+		Auth:                sql.NullString{Valid: true, String: fixAuthAsAString(t)},
+		URLTemplate:         repo.NewValidNullableString(emptyTemplate),
+		InputTemplate:       repo.NewValidNullableString(emptyTemplate),
+		HeaderTemplate:      repo.NewValidNullableString(emptyTemplate),
+		OutputTemplate:      repo.NewValidNullableString(emptyTemplate),
+	}
+}
+
 func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
 	return &webhook.Entity{
 		ID:                    givenID(),
@@ -198,6 +230,18 @@ func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
 	}
 }
 
+func newModelBusinessTenantMappingWithType(tenantType tenant.Type) *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             givenTenant(),
+		Name:           "name",
+		ExternalTenant: "external",
+		Parent:         givenParentTenant(),
+		Type:           tenantType,
+		Provider:       "test-provider",
+		Status:         tenant.Active,
+	}
+}
+
 func givenID() string {
 	return "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 }
@@ -210,6 +254,10 @@ func givenTenant() string {
 	return "b91b59f7-2563-40b2-aba9-fef726037aa3"
 }
 
+func givenParentTenant() string {
+	return "b92b59f7-2563-40b2-aba9-fef726037aa3"
+}
+
 func givenExternalTenant() string {
 	return "eeeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 }
@@ -219,6 +267,10 @@ func givenApplicationID() string {
 }
 
 func givenRuntimeID() string {
+	return "rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr"
+}
+
+func givenFormationTemplateID() string {
 	return "rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr"
 }
 

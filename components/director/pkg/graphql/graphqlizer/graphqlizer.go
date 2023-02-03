@@ -572,6 +572,12 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 			{{- end }} ],
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
 		runtimeArtifactKind: {{.RuntimeArtifactKind}}
+		{{- if .Webhooks }}
+		webhooks: [
+			{{- range $i, $e := .Webhooks }}
+				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
 	}`)
 }
 

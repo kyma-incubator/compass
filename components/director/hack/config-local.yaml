@@ -131,6 +131,8 @@ graphql:
     runtime:
       auths: ["runtime.auths:read"]
       webhooks: ["runtime.webhooks:read"]
+    formation_template:
+      webhooks: ["formation_template.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
 
@@ -177,6 +179,7 @@ clientCredentialsRegistrationScopes:
     - "application.auths:read"
     - "webhook:write"
     - "formation_template:read"
+    - "formation_template.webhooks:read"
   super_admin:
     - "application:read"
     - "application:write"
@@ -210,8 +213,9 @@ clientCredentialsRegistrationScopes:
     - "webhook:write"
     - "formation_template:read"
     - "formation_template:write"
-    - formation_constraint:read"
-    - formation_constraint:write"
+    - "formation_template.webhooks:read"
+    - "formation_constraint:read"
+    - "formation_constraint:write"
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
 applicationHideSelectors:

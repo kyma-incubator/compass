@@ -17,11 +17,14 @@ import (
 )
 
 const (
-	tableName = "public.webhooks"
+	tableName           = "public.webhooks"
+	applicationID       = "app_id"
+	runtimeID           = "runtime_id"
+	formationTemplateID = "formation_template_id"
 )
 
 var (
-	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at"}
+	webhookColumns         = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
 	updatableColumns       = []string{"type", "url", "auth", "mode", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template"}
 	missingInputModelError = apperrors.NewInternalError("model has to be provided")
 )
@@ -111,6 +114,26 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant, objID 
 	}
 
 	if err := r.lister.List(ctx, objType.GetResourceType(), tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return convertToWebhooks(entities, r)
+}
+
+// ListByReferenceObjectIDGlobal missing godoc
+func (r *repository) ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
+	var entities Collection
+
+	refColumn, err := getReferenceColumnForListByReferenceObjectType(objType)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(refColumn, objID),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -278,10 +301,12 @@ func convertToWebhooks(entities Collection, r *repository) ([]*model.Webhook, er
 func getReferenceColumnForListByReferenceObjectType(objType model.WebhookReferenceObjectType) (string, error) {
 	switch objType {
 	case model.ApplicationWebhookReference:
-		return "app_id", nil
+		return applicationID, nil
 	case model.RuntimeWebhookReference:
-		return "runtime_id", nil
+		return runtimeID, nil
+	case model.FormationTemplateWebhookReference:
+		return formationTemplateID, nil
 	default:
-		return "", errors.New("referenced object should be one of application and runtime")
+		return "", errors.New("referenced object should be one of application, runtime or formation template")
 	}
 }

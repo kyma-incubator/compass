@@ -172,6 +172,12 @@ models:
       labels:
         resolver: true
 
+  FormationTemplate:
+    model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationTemplate"
+    fields:
+      webhooks:
+        resolver: true
+
   Tenant:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant"
     fields:

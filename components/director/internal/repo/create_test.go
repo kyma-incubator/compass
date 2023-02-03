@@ -213,6 +213,27 @@ func TestCreate(t *testing.T) {
 			require.EqualError(t, err, "Internal Server Error: id cannot be empty, check if the entity implements Identifiable")
 		})
 	})
+
+	t.Run("Child Entity whose parent is with embedded tenant", func(t *testing.T) {
+		creator := repo.NewCreator(webhooksTableName, webhookColumns)
+		resourceType := resource.FormationTemplateWebhook
+		m2mTable, ok := resource.FormationTemplate.EmbeddedTenantTable()
+		require.True(t, ok)
+
+		t.Run("success", func(t *testing.T) {
+			db, mock := testdb.MockDatabase(t)
+			ctx := persistence.SaveToContext(context.TODO(), db)
+			defer mock.AssertExpectations(t)
+
+			mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT 1 FROM %s WHERE %s = $1 AND %s = $2", m2mTable, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn))).
+				WithArgs(tenantID, ftID).WillReturnRows(testdb.RowWhenObjectExist())
+			mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("INSERT INTO %s ( id, formation_template_id ) VALUES ( ?, ? )", webhooksTableName))).
+				WithArgs(whID, ftID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+			err := creator.Create(ctx, resourceType, tenantID, fixWebhook)
+			require.NoError(t, err)
+		})
+	})
 }
 
 func TestCreateGlobal(t *testing.T) {

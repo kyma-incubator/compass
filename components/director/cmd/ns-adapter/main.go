@@ -121,7 +121,7 @@ func main() {
 	bundleReferenceConverter := bundlereferences.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)

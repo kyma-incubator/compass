@@ -133,9 +133,9 @@ func (b *synchronizerBuilder) domainServices(featuresConfig features.Config) (Te
 	runtimeContextConverter := runtimectx.NewConverter()
 	tenantConverter := tenant.NewConverter()
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
 	formationConstraintConverter := formationconstraint.NewConverter()
 	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
@@ -153,10 +153,10 @@ func (b *synchronizerBuilder) domainServices(featuresConfig features.Config) (Te
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)

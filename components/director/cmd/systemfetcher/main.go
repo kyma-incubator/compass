@@ -169,7 +169,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	bundleReferenceConverter := bundlereferences.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
 	formationConverter := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 	assignmentConverter := scenarioassignment.NewConverter()
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	formationAssignmentConverter := formationassignment.NewConverter()

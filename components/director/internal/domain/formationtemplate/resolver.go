@@ -13,9 +13,9 @@ import (
 // FormationTemplateConverter converts between the graphql and model
 //go:generate mockery --name=FormationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateConverter interface {
-	FromInputGraphQL(in *graphql.FormationTemplateInput) *model.FormationTemplateInput
-	ToGraphQL(in *model.FormationTemplate) *graphql.FormationTemplate
-	MultipleToGraphQL(in []*model.FormationTemplate) []*graphql.FormationTemplate
+	FromInputGraphQL(in *graphql.FormationTemplateInput) (*model.FormationTemplateInput, error)
+	ToGraphQL(in *model.FormationTemplate) (*graphql.FormationTemplate, error)
+	MultipleToGraphQL(in []*model.FormationTemplate) ([]*graphql.FormationTemplate, error)
 	FromModelInputToModel(in *model.FormationTemplateInput, id string, tenantID string) *model.FormationTemplate
 }
 
@@ -27,6 +27,14 @@ type FormationTemplateService interface {
 	List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error)
 	Update(ctx context.Context, id string, in *model.FormationTemplateInput) error
 	Delete(ctx context.Context, id string) error
+	ListWebhooksForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error)
+}
+
+// WebhookConverter converts between the graphql and model
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type WebhookConverter interface {
+	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
+	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
 // Resolver is the FormationTemplate resolver
@@ -35,14 +43,16 @@ type Resolver struct {
 
 	formationTemplateSvc FormationTemplateService
 	converter            FormationTemplateConverter
+	webhookConverter     WebhookConverter
 }
 
 // NewResolver creates FormationTemplate resolver
-func NewResolver(transact persistence.Transactioner, converter FormationTemplateConverter, formationTemplateSvc FormationTemplateService) *Resolver {
+func NewResolver(transact persistence.Transactioner, converter FormationTemplateConverter, formationTemplateSvc FormationTemplateService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		transact:             transact,
 		converter:            converter,
 		formationTemplateSvc: formationTemplateSvc,
+		webhookConverter:     webhookConverter,
 	}
 }
 
@@ -69,12 +79,15 @@ func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *gr
 		return nil, err
 	}
 
-	err = tx.Commit()
+	gqlFormationTemplate, err := r.converter.MultipleToGraphQL(formationTemplatePage.Data)
 	if err != nil {
 		return nil, err
 	}
 
-	gqlFormationTemplate := r.converter.MultipleToGraphQL(formationTemplatePage.Data)
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
 
 	return &graphql.FormationTemplatePage{
 		Data:       gqlFormationTemplate,
@@ -105,12 +118,17 @@ func (r *Resolver) FormationTemplate(ctx context.Context, id string) (*graphql.F
 		return nil, err
 	}
 
+	gqlFormationTemplate, err := r.converter.ToGraphQL(formationTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.converter.ToGraphQL(formationTemplate), nil
+	return gqlFormationTemplate, nil
 }
 
 // CreateFormationTemplate creates a FormationTemplate using `in`
@@ -127,7 +145,12 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 		return nil, err
 	}
 
-	id, err := r.formationTemplateSvc.Create(ctx, r.converter.FromInputGraphQL(&in))
+	convertedIn, err := r.converter.FromInputGraphQL(&in)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := r.formationTemplateSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}
@@ -138,11 +161,16 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 		return nil, err
 	}
 
+	gqlFormationTemplate, err := r.converter.ToGraphQL(formationTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	return r.converter.ToGraphQL(formationTemplate), nil
+	return gqlFormationTemplate, nil
 }
 
 // DeleteFormationTemplate deletes the FormationTemplate matching ID `id`
@@ -165,12 +193,17 @@ func (r *Resolver) DeleteFormationTemplate(ctx context.Context, id string) (*gra
 		return nil, err
 	}
 
+	gqlFormationTemplate, err := r.converter.ToGraphQL(formationTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.converter.ToGraphQL(formationTemplate), nil
+	return gqlFormationTemplate, nil
 }
 
 // UpdateFormationTemplate updates the FormationTemplate matching ID `id` using `in`
@@ -187,7 +220,10 @@ func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in gr
 		return nil, err
 	}
 
-	convertedIn := r.converter.FromInputGraphQL(&in)
+	convertedIn, err := r.converter.FromInputGraphQL(&in)
+	if err != nil {
+		return nil, err
+	}
 
 	err = r.formationTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
@@ -199,10 +235,46 @@ func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in gr
 		return nil, err
 	}
 
+	gqlFormationTemplate, err := r.converter.ToGraphQL(formationTemplate)
+	if err != nil {
+		return nil, err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	return r.converter.ToGraphQL(formationTemplate), nil
+	return gqlFormationTemplate, nil
+}
+
+// Webhooks queries all webhooks related to the 'obj' Formation Template
+func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.FormationTemplate) ([]*graphql.Webhook, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Formation Template cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	webhooks, err := r.formationTemplateSvc.ListWebhooksForFormationTemplate(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlWebhooks, err := r.webhookConverter.MultipleToGraphQL(webhooks)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return gqlWebhooks, nil
 }

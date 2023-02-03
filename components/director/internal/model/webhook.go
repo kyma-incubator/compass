@@ -56,6 +56,8 @@ const (
 	WebhookTypeDeleteApplication WebhookType = "UNREGISTER_APPLICATION"
 	// WebhookTypeOpenResourceDiscovery represents a webhook that is called to aggregate ORD information of a system.
 	WebhookTypeOpenResourceDiscovery WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	// WebhookTypeFormationLifecycle represents a webhook that is called when lifecycle event (creation/deletion) of formation occurs
+	WebhookTypeFormationLifecycle WebhookType = "FORMATION_LIFECYCLE"
 )
 
 // WebhookMode represents the mode of the webhook.
@@ -86,6 +88,8 @@ const (
 	ApplicationTemplateWebhookReference WebhookReferenceObjectType = "ApplicationTemplateWebhook"
 	// IntegrationSystemWebhookReference is used when the webhook's reference entity is an integration system.
 	IntegrationSystemWebhookReference WebhookReferenceObjectType = "IntegrationSystemWebhook"
+	// FormationTemplateWebhookReference is used when the webhook's reference entity is a formation template.
+	FormationTemplateWebhookReference WebhookReferenceObjectType = "FormationTemplateWebhook"
 )
 
 // GetResourceType returns the resource type of the webhook based on the referenced entity.
@@ -101,6 +105,8 @@ func (obj WebhookReferenceObjectType) GetResourceType() resource.Type {
 		return resource.Webhook
 	case IntegrationSystemWebhookReference:
 		return resource.Webhook
+	case FormationTemplateWebhookReference:
+		return resource.FormationTemplateWebhook
 	}
 	return ""
 }

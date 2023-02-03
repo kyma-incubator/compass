@@ -1,6 +1,8 @@
 package model
 
-import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+)
 
 // RuntimeArtifactKind missing godoc
 type RuntimeArtifactKind string
@@ -23,6 +25,7 @@ type FormationTemplate struct {
 	RuntimeTypeDisplayName string              `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
 	TenantID               *string             `json:"tenant_id"`
+	Webhooks               []*Webhook          `json:"webhooks"`
 }
 
 // FormationTemplateInput missing godoc
@@ -32,6 +35,7 @@ type FormationTemplateInput struct {
 	RuntimeTypes           []string            `json:"runtimeTypes"`
 	RuntimeTypeDisplayName string              `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
+	Webhooks               []*WebhookInput     `json:"webhooks"`
 }
 
 // FormationTemplatePage missing godoc
