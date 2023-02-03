@@ -15,10 +15,10 @@ spec:
           labels:
             severity: critical
           annotations:
-            description: Certificate {{ $labels.name }} on namespace {{ $labels.exported_namespace }} will expire in 5 days.
+            description: Certificate {{ $labels.name | printf "%s" }} on namespace {{ $labels.exported_namespace | printf "%s" }} will expire in 5 days.
         - alert: CertificateIsNotReady
           expr: sum(certmanager_certificate_ready_status{condition!="True"}) BY (name,exported_namespace,condition) == 1
           labels:
             severity: critical
           annotations:
-            description: Certificate {{ $labels.name }} on namespace {{ $labels.exported_namespace }} is not in ready state.
+            description: Certificate {{ $labels.name | printf "%s" }} on namespace {{ $labels.exported_namespace | printf "%s" }} is not in ready state.
