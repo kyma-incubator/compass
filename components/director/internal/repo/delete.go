@@ -130,14 +130,14 @@ func (g *universalDeleter) delete(ctx context.Context, resourceType resource.Typ
 		return err
 	}
 
-	isTenantScopedUpdate := g.tenantColumn != nil
+	isTenantScopedDelete := g.tenantColumn != nil
 
 	if requireSingleRemoval {
 		affected, err := res.RowsAffected()
 		if err != nil {
 			return errors.Wrap(err, "while checking affected rows")
 		}
-		if (affected == 0 && hasTenantIsolationCondition(conditions)) || (affected == 0 && isTenantScopedUpdate) {
+		if (affected == 0 && hasTenantIsolationCondition(conditions)) || (affected == 0 && isTenantScopedDelete) {
 			return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
 		}
 		if affected != 1 {

@@ -114,12 +114,11 @@ func (r *repository) GetByNameAndTenant(ctx context.Context, templateName, tenan
 		}
 	} else {
 		if err := r.singleGetterWithEmbeddedTenant.Get(ctx, resource.FormationTemplate, tenantID, conditionsEqualName, repo.NoOrderBy, &entity); err != nil {
-			if apperrors.IsNotFoundError(err) {
-				entity = Entity{}
-				if err = r.singleGetterGlobal.GetGlobal(ctx, conditionsEqualNameAndNullTenant, repo.NoOrderBy, &entity); err != nil {
-					return nil, err
-				}
-			} else {
+			if !apperrors.IsNotFoundError(err) {
+				return nil, err
+			}
+			entity = Entity{}
+			if err = r.singleGetterGlobal.GetGlobal(ctx, conditionsEqualNameAndNullTenant, repo.NoOrderBy, &entity); err != nil {
 				return nil, err
 			}
 		}

@@ -19,7 +19,7 @@ const (
 	applicationTypesAsString = "[\"some-application-type\"]"
 	runtimeTypesAsString     = "[\"some-runtime-type\"]"
 	testTenantID             = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	parentTenantID           = "d8fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	testParentTenantID       = "d8fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	testWebhookID            = "test-wh-id"
 )
 
@@ -127,7 +127,7 @@ func newModelBusinessTenantMappingWithType(tenantType tenant.Type) *model.Busine
 		ID:             testTenantID,
 		Name:           "name",
 		ExternalTenant: "external",
-		Parent:         parentTenantID,
+		Parent:         testParentTenantID,
 		Type:           tenantType,
 		Provider:       "test-provider",
 		Status:         tenant.Active,
