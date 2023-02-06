@@ -38,6 +38,7 @@ func (j JSON) MarshalGQL(w io.Writer) {
 	}
 }
 
+// StrPtrToJSONPtr converts a string pointer to JSON pointer
 func StrPtrToJSONPtr(in *string) *JSON {
 	if in == nil {
 		return nil
@@ -46,6 +47,7 @@ func StrPtrToJSONPtr(in *string) *JSON {
 	return &out
 }
 
+// JsonPtrToStrPtr converts a JSON pointer to string pointer
 func JsonPtrToStrPtr(in *JSON) *string {
 	if in == nil {
 		return nil
