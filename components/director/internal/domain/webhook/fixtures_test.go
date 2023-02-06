@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
