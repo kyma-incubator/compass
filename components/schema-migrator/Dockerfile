@@ -24,6 +24,7 @@ WORKDIR /migrate
 RUN apk --update --no-cache add bash postgresql-client curl jq
 
 COPY --from=builder /migrate /migrate
+RUN chmod +x ./migrate
 
 RUN mv migrate /usr/local/bin/migrate
 
