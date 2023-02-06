@@ -86,6 +86,94 @@ func TestDeleteFormationConstraint(t *testing.T) {
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
+func TestFormationConstraint(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	firstConstraint := graphql.FormationConstraintInput{
+		Name:            "test_constraint",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+	}
+
+	t.Logf("Create formation constraint with name: %s", firstConstraint.Name)
+	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint)
+	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
+	require.NotEmpty(t, constraint.ID)
+
+	queryRequest := fixtures.FixQueryFormationConstraintRequest(constraint.ID)
+	saveExample(t, queryRequest.Query(), "query formation constraint")
+
+	var actualFormationConstraint *graphql.FormationConstraint
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryRequest, &actualFormationConstraint))
+
+	expectedConstraint := &graphql.FormationConstraint{
+		ID:              constraint.ID,
+		Name:            "test_constraint",
+		ConstraintType:  string(graphql.ConstraintTypePre),
+		TargetOperation: string(graphql.TargetOperationAssignFormation),
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
+		ResourceType:    string(graphql.ResourceTypeTenant),
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\"}",
+		ConstraintScope: string(graphql.ConstraintScopeFormationType),
+	}
+	require.Equal(t, expectedConstraint, actualFormationConstraint)
+}
+
+func TestUpdateFormationConstraint(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	firstConstraint := graphql.FormationConstraintInput{
+		Name:            "test_constraint",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+	}
+
+	t.Logf("Create formation constraint with name: %s", firstConstraint.Name)
+	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint)
+	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
+	require.NotEmpty(t, constraint.ID)
+
+	updateInput := graphql.FormationConstraintUpdateInput{
+		InputTemplate: "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"key\\\": \\\"value\\\"}",
+	}
+
+	formationConstraintGQL, err := testctx.Tc.Graphqlizer.FormationConstraintUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+
+	updateRequest := fixtures.FixUpdateFormationConstraintRequest(constraint.ID, formationConstraintGQL)
+	saveExample(t, updateRequest.Query(), "update formation constraint")
+
+	var actualFormationConstraint *graphql.FormationConstraint
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateRequest, &actualFormationConstraint))
+
+	expectedConstraint := &graphql.FormationConstraint{
+		ID:              constraint.ID,
+		Name:            "test_constraint",
+		ConstraintType:  string(graphql.ConstraintTypePre),
+		TargetOperation: string(graphql.TargetOperationAssignFormation),
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
+		ResourceType:    string(graphql.ResourceTypeTenant),
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\"formation_template_id\": \"{{.FormationTemplateID}}\",\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"resource_id\": \"{{.ResourceID}}\",\"tenant\": \"{{.TenantID}}\",\"key\": \"value\"}",
+		ConstraintScope: string(graphql.ConstraintScopeFormationType),
+	}
+
+	require.Equal(t, expectedConstraint, actualFormationConstraint)
+}
+
 func TestListFormationConstraints(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()

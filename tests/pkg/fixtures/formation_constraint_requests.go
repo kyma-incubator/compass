@@ -24,6 +24,24 @@ func FixDeleteFormationConstraintRequest(id string) *gcli.Request {
 				}`, id, testctx.Tc.GQLFieldsProvider.ForFormationConstraint()))
 }
 
+func FixQueryFormationConstraintRequest(id string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				  result: formationConstraint(id: "%s") {
+    					%s
+					}
+				}`, id, testctx.Tc.GQLFieldsProvider.ForFormationConstraint()))
+}
+
+func FixUpdateFormationConstraintRequest(constraintID, in string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				  result: updateFormationConstraint(id: "%s", in: %s) {
+    					%s
+					}
+				}`, constraintID, in, testctx.Tc.GQLFieldsProvider.ForFormationConstraint()))
+}
+
 func FixQueryFormationConstraintsRequest() *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
