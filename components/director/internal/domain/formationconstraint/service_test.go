@@ -492,7 +492,6 @@ func TestService_Update(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			repo := UnusedFormationConstraintRepository()
 			if testCase.FormationConstraintRepository != nil {
 				repo = testCase.FormationConstraintRepository()

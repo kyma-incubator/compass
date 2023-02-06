@@ -134,9 +134,6 @@ var (
 	formationConstraintUpdateInput = graphql.FormationConstraintUpdateInput{
 		InputTemplate: inputTemplateUpdated,
 	}
-	invalidFormationConstraintUpdateInput = graphql.FormationConstraintUpdateInput{
-		InputTemplate: inputTemplateUpdated,
-	}
 	entity = formationconstraint.Entity{
 		ID:              testID,
 		Name:            formationConstraintName,
