@@ -9,11 +9,12 @@ ARG DATABASE="postgres"
 ARG SOURCE="file"
 
 RUN git clone https://github.com/golang-migrate/migrate
-RUN cd migrate && git checkout $VERSION
+WORKDIR /migrate
+RUN git checkout $VERSION
 
 
 ARG TARGETOS TARGETARCH
-RUN cd migrate && GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -o migrate -ldflags="-X main.Version=$(VERSION) -extldflags \"-static\"" -tags "$(DATABASE) $(SOURCE)"
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -o migrate -ldflags="-X main.Version=$VERSION" -tags "$DATABASE $SOURCE" ./cmd/migrate
 
 FROM alpine:3.17.1
 
