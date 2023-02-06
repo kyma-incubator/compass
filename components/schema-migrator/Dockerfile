@@ -1,17 +1,34 @@
+FROM --platform=$BUILDPLATFORM golang:1.20.0-alpine3.17 as builder
+
+WORKDIR /
+RUN apk --update --no-cache add bash git
+
+# Currently the commit hash of the version, as there hasn't been a release since April 2022
+ARG VERSION="dc26c41ac9dac4a1023c87723ffda644e41af1fe"
+ARG DATABASE="postgres"
+ARG SOURCE="file"
+
+RUN git clone https://github.com/golang-migrate/migrate
+RUN cd migrate && git checkout $VERSION
+
+
+ARG TARGETOS TARGETARCH
+RUN cd migrate && GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -o migrate -ldflags="-X main.Version=$(VERSION) -extldflags \"-static\"" -tags "$(DATABASE) $(SOURCE)"
+
 FROM alpine:3.17.1
 
-ARG MIGRATE_VER=4.15.2
 ARG TARGETARCH
 
 WORKDIR /migrate
 
 RUN apk --update --no-cache add bash postgresql-client curl jq
 
-RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VER}/migrate.linux-${TARGETARCH}.tar.gz | tar -xz
+COPY --from=builder /migrate /migrate
+
 RUN mv migrate /usr/local/bin/migrate
 
 # kubectl is supported within one minor version (older or newer) of kube-apiserver
-ENV CLUSTER_VERSION=1.21.12
+ENV CLUSTER_VERSION=1.26.1
 
 RUN curl -L https://dl.k8s.io/release/v${CLUSTER_VERSION}/bin/linux/${TARGETARCH}/kubectl -o /usr/local/bin/kubectl  && chmod +x /usr/local/bin/kubectl 
 
