@@ -37,3 +37,19 @@ func (j JSON) MarshalGQL(w io.Writer) {
 		log.D().Errorf("while writing %T: %s", j, err)
 	}
 }
+
+func StrPtrToJSONPtr(in *string) *JSON {
+	if in == nil {
+		return nil
+	}
+	out := JSON(*in)
+	return &out
+}
+
+func JsonPtrToStrPtr(in *JSON) *string {
+	if in == nil {
+		return nil
+	}
+	out := string(*in)
+	return &out
+}

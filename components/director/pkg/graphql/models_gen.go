@@ -814,6 +814,7 @@ type Webhook struct {
 	OutputTemplate        *string      `json:"outputTemplate"`
 	StatusTemplate        *string      `json:"statusTemplate"`
 	CreatedAt             *Timestamp   `json:"createdAt"`
+	Parameters            *JSON        `json:"parameters"`
 }
 
 type WebhookInput struct {
@@ -831,6 +832,7 @@ type WebhookInput struct {
 	HeaderTemplate   *string      `json:"headerTemplate"`
 	OutputTemplate   *string      `json:"outputTemplate"`
 	StatusTemplate   *string      `json:"statusTemplate"`
+	Parameters       *JSON        `json:"parameters"`
 }
 
 type APISpecType string

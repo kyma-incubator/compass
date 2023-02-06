@@ -24,6 +24,7 @@ type Webhook struct {
 	OutputTemplate   *string
 	StatusTemplate   *string
 	CreatedAt        *time.Time
+	Parameters       *string
 }
 
 // WebhookInput represents a webhook input for creating/updating webhooks.
@@ -40,6 +41,7 @@ type WebhookInput struct {
 	HeaderTemplate   *string
 	OutputTemplate   *string
 	StatusTemplate   *string
+	Parameters       *string
 }
 
 // WebhookType represents the type of the webhook.
@@ -129,5 +131,6 @@ func (i *WebhookInput) ToWebhook(id, objID string, objectType WebhookReferenceOb
 		HeaderTemplate:   i.HeaderTemplate,
 		OutputTemplate:   i.OutputTemplate,
 		StatusTemplate:   i.StatusTemplate,
+		Parameters:       i.Parameters,
 	}
 }
