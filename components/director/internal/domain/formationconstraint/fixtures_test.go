@@ -16,6 +16,7 @@ const (
 	operatorName             = formationconstraint.IsNotAssignedToAnyFormationOfTypeOperator
 	resourceSubtype          = "test subtype"
 	inputTemplate            = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
+	inputTemplateUpdated     = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}", "newField": "value"}`
 	testTenantID             = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	testInternalTenantID     = "aaaddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	scenario                 = "test-scenario"
@@ -32,6 +33,17 @@ var (
 		ResourceType:    model.ApplicationResourceType,
 		ResourceSubtype: resourceSubtype,
 		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+	formationConstraintModelUpdated = &model.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
 		ConstraintScope: model.FormationTypeFormationConstraintScope,
 	}
 	formationConstraintUnsupportedOperatorModel = &model.FormationConstraint{
@@ -54,6 +66,17 @@ var (
 		ResourceType:    string(model.ApplicationResourceType),
 		ResourceSubtype: resourceSubtype,
 		InputTemplate:   inputTemplate,
+		ConstraintScope: string(model.FormationTypeFormationConstraintScope),
+	}
+	gqlFormationConstraintUpdated = &graphql.FormationConstraint{
+		ID:              testID,
+		Name:            formationConstraintName,
+		ConstraintType:  string(model.PreOperation),
+		TargetOperation: string(model.AssignFormationOperation),
+		Operator:        operatorName,
+		ResourceType:    string(model.ApplicationResourceType),
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
 		ConstraintScope: string(model.FormationTypeFormationConstraintScope),
 	}
 	formationConstraintModel2 = &model.FormationConstraint{
@@ -88,6 +111,16 @@ var (
 		InputTemplate:   inputTemplate,
 		ConstraintScope: graphql.ConstraintScopeFormationType,
 	}
+	formationConstraintInputUpdated = graphql.FormationConstraintInput{
+		Name:            formationConstraintName,
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        operatorName,
+		ResourceType:    graphql.ResourceTypeApplication,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplateUpdated,
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+	}
 	formationConstraintModelInput = &model.FormationConstraintInput{
 		Name:            formationConstraintName,
 		ConstraintType:  model.PreOperation,
@@ -97,6 +130,12 @@ var (
 		ResourceSubtype: resourceSubtype,
 		InputTemplate:   inputTemplate,
 		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+	formationConstraintUpdateInput = graphql.FormationConstraintUpdateInput{
+		InputTemplate: inputTemplateUpdated,
+	}
+	invalidFormationConstraintUpdateInput = graphql.FormationConstraintUpdateInput{
+		InputTemplate: inputTemplateUpdated,
 	}
 	entity = formationconstraint.Entity{
 		ID:              testID,
