@@ -6346,6 +6346,10 @@ type Query {
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
+	"""
+	**Examples**
+	- [query formation constraint](examples/query-formation-constraint/query-formation-constraint.graphql)
+	"""
 	formationConstraint(id: ID!): FormationConstraint! @hasScopes(path: "graphql.query.formationConstraint")
 	formationConstraintsByFormationType(formationTemplateID: ID!): [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
@@ -6571,6 +6575,10 @@ type Mutation {
 	- [delete formation constraint](examples/delete-formation-constraint/delete-formation-constraint.graphql)
 	"""
 	deleteFormationConstraint(id: ID!): FormationConstraint! @hasScopes(path: "graphql.mutation.deleteFormationConstraint")
+	"""
+	**Examples**
+	- [update formation constraint](examples/update-formation-constraint/update-formation-constraint.graphql)
+	"""
 	updateFormationConstraint(id: ID!, in: FormationConstraintUpdateInput!): FormationConstraint! @hasScopes(path: "graphql.mutation.updateFormationConstraint")
 	"""
 	**Examples**
