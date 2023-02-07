@@ -68,14 +68,14 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, err
 	}
 
-	if as.tenantProviderFunc != nil {
+	if as.tenantProviderFunc != nil && len(tnt) > 0 {
 		localTenantID, err := as.tenantProviderFunc(ctx)
 		if err != nil {
 			return nil, err
 		}
 
 		req.Header.Set(tenantHeader, localTenantID)
-	} else if len(tnt) > 0 {
+	} else {
 		req.Header.Set(tenantHeader, tnt)
 	}
 
