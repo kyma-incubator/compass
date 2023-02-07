@@ -47,8 +47,8 @@ func StrPtrToJSONPtr(in *string) *JSON {
 	return &out
 }
 
-// JsonPtrToStrPtr converts a JSON pointer to string pointer
-func JsonPtrToStrPtr(in *JSON) *string {
+// JSONPtrToStrPtr converts a JSON pointer to string pointer
+func JSONPtrToStrPtr(in *JSON) *string {
 	if in == nil {
 		return nil
 	}

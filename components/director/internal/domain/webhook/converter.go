@@ -140,7 +140,7 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 		HeaderTemplate:   in.HeaderTemplate,
 		OutputTemplate:   in.OutputTemplate,
 		StatusTemplate:   in.StatusTemplate,
-		Parameters:       graphql.JsonPtrToStrPtr(in.Parameters),
+		Parameters:       graphql.JSONPtrToStrPtr(in.Parameters),
 	}, nil
 }
 
