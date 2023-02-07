@@ -366,7 +366,7 @@ func (g *Graphqlizer) WebhookInputToGQL(in *graphql.WebhookInput) (string, error
 		statusTemplate: "{{.StatusTemplate }}",
 		{{- end }}
 		{{- if .Parameters }}
-		parameters: "{{.Parameters }}",
+		parameters: {{.Parameters }},
 		{{- end }}
 	}`)
 }
