@@ -26,6 +26,8 @@ const (
 	TechnicalClient ConsumerType = "Technical Client"
 	// BusinessIntegration missing godoc
 	BusinessIntegration ConsumerType = "Business Integration"
+	// ManagedApplicationProviderOperator is a consumer type that is used by Managed Application Provider operator
+	ManagedApplicationProviderOperator ConsumerType = "Managed Application Provider Operator"
 )
 
 // Consumer missing godoc
@@ -53,6 +55,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return TechnicalClient, nil
 	case model.BusinessIntegrationReference:
 		return BusinessIntegration, nil
+	case model.ManagedApplicationProviderOperatorReference:
+		return ManagedApplicationProviderOperator, nil
 	case model.SuperAdminReference:
 		return SuperAdmin, nil
 	}
