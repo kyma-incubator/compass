@@ -119,7 +119,7 @@ type securityConfig struct {
 	JwksEndpoint        string        `envconfig:"APP_JWKS_ENDPOINT"`
 	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
 	AllowJWTSigningNone bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
-	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord:sync"`
+	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord_aggregator:sync"`
 }
 
 func main() {
