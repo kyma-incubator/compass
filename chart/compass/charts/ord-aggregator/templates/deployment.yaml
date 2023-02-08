@@ -146,6 +146,8 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_ORD_WEBHOOK_MAPPINGS
               value: {{ .Values.global.director.ordWebhookMappings | quote }}
+            - name: APP_ORD_AGGREGATOR_SCHEDULE
+              value: {{ .Values.global.ordAggregator.jobSchedule | quote }}
           command:
             - "/bin/sh"
           args:

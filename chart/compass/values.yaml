@@ -812,7 +812,7 @@ global:
     prefix: /ord-aggregator
     name: ord-aggregator
     enabled: true
-    schedule: "*/1 * * * *"
+    jobSchedule: 60m
     lease:
       lockname: aggregatorlease
     authentication:

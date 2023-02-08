@@ -102,8 +102,6 @@ spec:
                   key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
-            - name: AGGREGATOR_SCHEDULE
-              value: "{{ .Values.global.ordAggregator.schedule }}"
             - name: DEFAULT_TEST_TENANT
               value: "{{ (index .Values.global.tenants 9).id }}"
             - name: APP_SUBSCRIPTION_CONFIG_URL
