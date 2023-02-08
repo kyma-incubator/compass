@@ -342,6 +342,18 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 	assert.ElementsMatch(t, in.RuntimeTypes, actual.RuntimeTypes)
 	assert.Equal(t, in.RuntimeTypeDisplayName, actual.RuntimeTypeDisplayName)
 	assert.Equal(t, in.RuntimeArtifactKind, actual.RuntimeArtifactKind)
+	var webhooks []graphql.Webhook
+	for _, webhook := range actual.Webhooks {
+		webhooks = append(webhooks, *webhook)
+	}
+	AssertWebhooks(t, in.Webhooks, webhooks)
+}
+
+func AssertCertificateSubjectMapping(t *testing.T, in *graphql.CertificateSubjectMappingInput, actual *graphql.CertificateSubjectMapping) {
+	require.Equal(t, in.Subject, actual.Subject)
+	require.Equal(t, in.ConsumerType, actual.ConsumerType)
+	require.Equal(t, in.InternalConsumerID, actual.InternalConsumerID)
+	require.Equal(t, in.TenantAccessLevels, actual.TenantAccessLevels)
 }
 
 func AssertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {

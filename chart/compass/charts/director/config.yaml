@@ -3,6 +3,7 @@ graphql:
   query:
     applications: ["application:read"]
     application: ["application:read"]
+    applicationBySystemNumber: ["application:read"]
     applicationsForRuntime: ["application:read"]
     applicationTemplates: ["application_template:read"]
     applicationTemplate: ["application_template:read"]
@@ -23,11 +24,16 @@ graphql:
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]
     formation: ["formation:read"]
+    formationByName: ["formation:read"]
     formations: ["formation:read"]
     formationTemplate: [ "formation_template:read" ]
     formationTemplates: [ "formation_template:read" ]
     systemAuth: ["ory_internal"]
     systemAuthByToken: ["ory_internal"]
+    formationConstraints: [ "formation_constraint:read" ]
+    formationConstraintsByFormationType: [ "formation_constraint:read" ]
+    certificateSubjectMapping: ["certificate_subject_mapping:read"]
+    certificateSubjectMappings: ["certificate_subject_mapping:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -102,6 +108,13 @@ graphql:
     createFormationTemplate: [ "formation_template:write" ]
     deleteFormationTemplate: [ "formation_template:write" ]
     updateFormationTemplate: [ "formation_template:write" ]
+    createFormationConstraint: [ "formation_constraint:write" ]
+    deleteFormationConstraint: [ "formation_constraint:write" ]
+    attachConstraintToFormationTemplate: [ "formation_constraint:write" ]
+    detachConstraintFromFormationTemplate: [ "formation_constraint:write" ]
+    createCertificateSubjectMapping: ["certificate_subject_mapping:write"]
+    updateCertificateSubjectMapping: ["certificate_subject_mapping:write"]
+    deleteCertificateSubjectMapping: ["certificate_subject_mapping:write"]
 
   field:
     fetch_request:
@@ -126,6 +139,8 @@ graphql:
     runtime:
       auths: ["runtime.auths:read"]
       webhooks: ["runtime.webhooks:read"]
+    formation_template:
+      webhooks: ["formation_template.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
 

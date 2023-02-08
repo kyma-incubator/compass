@@ -10,8 +10,8 @@ const (
 	longLongStringLengthLimit          = 512
 	descriptionStringLengthLimit       = 2000
 	jsonPathStringLengthLimit          = 2000
-	appNameLengthLimit                 = 36
-	groupLengthLimit                   = 36
+	appNameLengthLimit                 = 100
+	groupLengthLimit                   = 100
 	alphanumericUnderscoreRegexpString = "^[a-zA-Z0-9_]*$"
 )
 

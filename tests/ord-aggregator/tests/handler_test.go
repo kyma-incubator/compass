@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
@@ -23,6 +25,7 @@ import (
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -354,6 +357,12 @@ func TestORDAggregator(stdT *testing.T) {
 		}()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
+		//jobName := "ord-aggregator-test"
+		//namespace := "compass-system"
+		//k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
+		//defer k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		//defer k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
+
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
 
@@ -572,6 +581,20 @@ func TestORDAggregator(stdT *testing.T) {
 
 		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
+		placeholderName := "name"
+		placeholderDisplayName := "display-name"
+		appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:        "name",
+				Description: &placeholderName,
+				JSONPath:    str.Ptr(fmt.Sprintf("$.%s", testConfig.SubscriptionProviderAppNameProperty)),
+			},
+			{
+				Name:        "display-name",
+				Description: &placeholderDisplayName,
+				JSONPath:    str.Ptr(fmt.Sprintf("$.%s", testConfig.SubscriptionProviderAppNameProperty)),
+			},
+		}
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
 		require.NoError(t, err)
@@ -591,19 +614,18 @@ func TestORDAggregator(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
-		subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", testConfig.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.SubscriptionConfig.ClientID, testConfig.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -613,17 +635,17 @@ func TestORDAggregator(stdT *testing.T) {
 
 		//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		//In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 
-		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
+		t.Logf("Creating a subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -637,7 +659,7 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Eventually(t, func() bool {
 			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
-		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
+		t.Logf("Successfully created subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
@@ -702,6 +724,12 @@ func TestORDAggregator(stdT *testing.T) {
 			}
 		}()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		//jobName := "ord-aggregator-test"
+		//namespace := "compass-system"
+		//k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
+		//defer k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		//defer k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)

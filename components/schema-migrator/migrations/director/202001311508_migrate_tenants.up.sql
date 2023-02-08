@@ -6,24 +6,24 @@ UPDATE business_tenant_mappings SET external_name = 'Tenant' WHERE external_name
 UPDATE business_tenant_mappings SET provider_name = 'Compass' WHERE provider_name IS NULL;
 
 ALTER TABLE api_definitions
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT api_definitions_tenant_id_fkey1 FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE api_runtime_auths
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT api_runtime_auths_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE applications
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT applications_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE documents
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT documents_tenant_id_fkey1 FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE event_api_definitions
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT event_api_definitions_tenant_id_fkey1 FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE fetch_requests
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT fetch_requests_tenant_id_fkey3 FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE label_definitions
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT label_definitions_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE labels
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT labels_tenant_id_fkey2 FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE runtimes
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT runtimes_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE system_auths
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT system_auths_tenant_id_fkey2 FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
 ALTER TABLE webhooks
-ADD FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);
+ADD CONSTRAINT webhooks_tenant_id_fkey1 FOREIGN KEY (tenant_id) REFERENCES business_tenant_mappings(id);

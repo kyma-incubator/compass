@@ -154,6 +154,36 @@ func TestRepository_List(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ListByFormationNames(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List Formations ",
+		MethodName: "ListByFormationNames",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name FROM public.formations WHERE tenant_id = $1 AND name IN ($2)`),
+				Args:     []driver.Value{Tnt, formationModel.Name},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, Tnt, FormationTemplateID, testFormationName)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formation.NewRepository,
+		ExpectedModelEntities:     []interface{}{formationModel},
+		ExpectedDBEntities:        []interface{}{formationEntity},
+		MethodArgs:                []interface{}{[]string{formationModel.Name}, Tnt},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_Update(t *testing.T) {
 	updateStmt := regexp.QuoteMeta(`UPDATE public.formations SET name = ? WHERE id = ? AND tenant_id = ?`)
 	suite := testdb.RepoUpdateTestSuite{

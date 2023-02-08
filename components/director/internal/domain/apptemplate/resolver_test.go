@@ -2,6 +2,7 @@ package apptemplate_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -149,7 +150,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, "")
 
 			// WHEN
 			result, err := resolver.ApplicationTemplate(ctx, testID)
@@ -286,7 +287,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, "")
 
 			// WHEN
 			result, err := resolver.ApplicationTemplates(ctx, testCase.LabelFilter, &first, &gqlAfter)
@@ -396,7 +397,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			mockPersistence := testCase.PersistenceFn()
 			mockTransactioner := testCase.TransactionerFn(mockPersistence)
 
-			resolver := apptemplate.NewResolver(mockTransactioner, nil, nil, nil, nil, webhookSvc, converter, nil, nil)
+			resolver := apptemplate.NewResolver(mockTransactioner, nil, nil, nil, nil, webhookSvc, converter, nil, nil, nil, "")
 
 			// WHEN
 			result, err := resolver.Webhooks(context.TODO(), appTemplate)
@@ -449,6 +450,40 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		selfregmanager.RegionLabel:       fmt.Sprintf("\"%s\"", "region"),
 	}
 
+	syncMode := graphql.WebhookModeSync
+	asyncCallbackMode := graphql.WebhookModeAsyncCallback
+
+	gqlAppTemplateInputWithProviderAndWebhook := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
+	gqlAppTemplateInputWithProviderAndWebhook.Webhooks = []*graphql.WebhookInput{
+		{
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			URL:     &testURL,
+			Auth:    nil,
+			Mode:    &syncMode,
+			Version: str.Ptr("v1.0"),
+		},
+		{
+			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			URL:  &testURL,
+			Auth: nil,
+		},
+	}
+	gqlAppTemplateInputWithProviderAndWebhookWithAsyncCallback := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
+	gqlAppTemplateInputWithProviderAndWebhookWithAsyncCallback.Webhooks = []*graphql.WebhookInput{
+		{
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			URL:     &testURL,
+			Auth:    nil,
+			Mode:    &asyncCallbackMode,
+			Version: str.Ptr("v1.0"),
+		},
+		{
+			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			URL:  &testURL,
+			Auth: nil,
+		},
+	}
+
 	labels := map[string]interface{}{"cloneLabel": "clone"}
 	labelsContainingSelfRegistration := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal", RegionKey: "region"}
 	distinguishLabel := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal"}
@@ -461,16 +496,17 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name              string
-		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
-		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
-		WebhookSvcFn      func() *automock.WebhookService
-		WebhookConvFn     func() *automock.WebhookConverter
-		SelfRegManagerFn  func() *automock.SelfRegisterManager
-		Input             *graphql.ApplicationTemplateInput
-		ExpectedOutput    *graphql.ApplicationTemplate
-		ExpectedError     error
+		Name                  string
+		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		AppTemplateSvcFn      func() *automock.ApplicationTemplateService
+		AppTemplateConvFn     func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn          func() *automock.WebhookService
+		WebhookConvFn         func() *automock.WebhookConverter
+		SelfRegManagerFn      func() *automock.SelfRegisterManager
+		TenantMappingConfigFn func() map[string]interface{}
+		Input                 *graphql.ApplicationTemplateInput
+		ExpectedOutput        *graphql.ApplicationTemplate
+		ExpectedError         error
 	}{
 		{
 			Name: "Success",
@@ -496,11 +532,114 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInputWithProvider,
+			ExpectedOutput:        gqlAppTemplate,
+		},
+		{
+			Name: "Success with tenant mapping configuration",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				expectedGqlAppTemplateInputWithProviderAndWebhook := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
+				expectedGqlAppTemplateInputWithProviderAndWebhook.Webhooks = []*graphql.WebhookInput{
+					{
+						Type:           graphql.WebhookTypeConfigurationChanged,
+						Auth:           nil,
+						Mode:           &syncMode,
+						URLTemplate:    &testURL,
+						InputTemplate:  str.Ptr("input template"),
+						HeaderTemplate: str.Ptr("header template"),
+						OutputTemplate: str.Ptr("output template"),
+					},
+					{
+						Type: graphql.WebhookTypeOpenResourceDiscovery,
+						URL:  &testURL,
+						Auth: nil,
+					},
+				}
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *expectedGqlAppTemplateInputWithProviderAndWebhook).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
+				return appTemplateConv
+			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
-			Input:            gqlAppTemplateInputWithProvider,
-			ExpectedOutput:   gqlAppTemplate,
+			TenantMappingConfigFn: func() map[string]interface{} {
+				tenantMappingJSON := "{\"SYNC\": {\"v1.0\": [{ \"type\": \"CONFIGURATION_CHANGED\",\"urlTemplate\": \"%s\",\"inputTemplate\": \"input template\",\"headerTemplate\": \"header template\",\"outputTemplate\": \"output template\"}]}}"
+				return GetTenantMappingConfig(tenantMappingJSON)
+			},
+			Input:          gqlAppTemplateInputWithProviderAndWebhook,
+			ExpectedOutput: gqlAppTemplate,
+		},
+		{
+			Name: "Success with tenant mapping configuration with ASYNC_CALLBACK mode",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				expectedGqlAppTemplateInputWithProviderAndWebhook := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
+				expectedGqlAppTemplateInputWithProviderAndWebhook.Webhooks = []*graphql.WebhookInput{
+					{
+						Type:           graphql.WebhookTypeConfigurationChanged,
+						Auth:           nil,
+						Mode:           &asyncCallbackMode,
+						URLTemplate:    &testURL,
+						InputTemplate:  str.Ptr("input template"),
+						HeaderTemplate: &testURL,
+						OutputTemplate: str.Ptr("output template"),
+					},
+					{
+						Type: graphql.WebhookTypeOpenResourceDiscovery,
+						URL:  &testURL,
+						Auth: nil,
+					},
+				}
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *expectedGqlAppTemplateInputWithProviderAndWebhook).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			TenantMappingConfigFn: func() map[string]interface{} {
+				tenantMappingJSON := "{\"ASYNC_CALLBACK\": {\"v1.0\": [{ \"type\": \"CONFIGURATION_CHANGED\",\"urlTemplate\": \"%s\",\"inputTemplate\": \"input template\",\"headerTemplate\": \"%s\",\"outputTemplate\": \"output template\"}]}}"
+				return GetTenantMappingConfig(tenantMappingJSON)
+			},
+			Input:          gqlAppTemplateInputWithProviderAndWebhookWithAsyncCallback,
+			ExpectedOutput: gqlAppTemplate,
 		},
 		{
 			Name: "Success when self registered app template still does not exists",
@@ -527,11 +666,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplateWithSelfRegLabels, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labelsContainingSelfRegistration),
-			Input:            gqlAppTemplateInputWithSelfRegLabels,
-			ExpectedOutput:   gqlAppTemplateWithSelfRegLabels,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labelsContainingSelfRegistration),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInputWithSelfRegLabels,
+			ExpectedOutput:        gqlAppTemplateWithSelfRegLabels,
 		},
 		{
 			Name: "Error when self registered app template already exists for the given labels",
@@ -549,11 +689,66 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration),
-			Input:            gqlAppTemplateInputWithSelfRegLabels,
-			ExpectedError:    errors.New("Cannot have more than one application template with labels \"region\": \"region\" and \"test-distinguish-label\": \"selfRegVal\""),
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInputWithSelfRegLabels,
+			ExpectedError:         errors.New("Cannot have more than one application template with labels \"region\": \"region\" and \"test-distinguish-label\": \"selfRegVal\""),
+		},
+		{
+			Name: "Error when missing tenant mapping configuration for mode XXXX",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+
+				transact := &persistenceautomock.Transactioner{}
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn:      UnusedAppTemplateSvc,
+			AppTemplateConvFn:     UnusedAppTemplateConv,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      UnusedSelfRegManager,
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInputWithProviderAndWebhook,
+			ExpectedError:         errors.New("missing tenant mapping configuration for mode SYNC"),
+		},
+		{
+			Name: "Error when missing tenant mapping configuration for mode XXX and version XXX",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				transact := &persistenceautomock.Transactioner{}
+				return persistTx, transact
+			},
+			AppTemplateSvcFn:  UnusedAppTemplateSvc,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			SelfRegManagerFn:  UnusedSelfRegManager,
+			TenantMappingConfigFn: func() map[string]interface{} {
+				return GetTenantMappingConfig("{\"SYNC\": {}}")
+			},
+			Input:         gqlAppTemplateInputWithProviderAndWebhook,
+			ExpectedError: errors.New("missing tenant mapping configuration for mode SYNC and version v1.0"),
+		},
+		{
+			Name: "Error when unexpected mode type",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				transact := &persistenceautomock.Transactioner{}
+				return persistTx, transact
+			},
+			AppTemplateSvcFn:  UnusedAppTemplateSvc,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			SelfRegManagerFn:  UnusedSelfRegManager,
+			TenantMappingConfigFn: func() map[string]interface{} {
+				return GetTenantMappingConfig("{\"SYNC\": \"\"}")
+			},
+			Input:         gqlAppTemplateInputWithProviderAndWebhook,
+			ExpectedError: errors.New("unexpected mode type, should be a map, but was string"),
 		},
 		{
 			Name: "Error when checking if self registered app template already exists for the given labels",
@@ -571,11 +766,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration),
-			Input:            gqlAppTemplateInputWithSelfRegLabels,
-			ExpectedError:    testError,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInputWithSelfRegLabels,
+			ExpectedError:         testError,
 		},
 		{
 			Name: "Returns error when can't convert input from graphql",
@@ -593,11 +789,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
-			Input:            gqlAppTemplateInput,
-			ExpectedError:    testError,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.NoopSelfRegManager,
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         testError,
 		},
 		{
 			Name: "Returns error when creating application template failed",
@@ -623,11 +820,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
-			Input:            gqlAppTemplateInput,
-			ExpectedError:    testError,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         testError,
 		},
 		{
 			Name: "Returns error when getting application template failed",
@@ -653,11 +851,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
-			Input:            gqlAppTemplateInput,
-			ExpectedError:    testError,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         testError,
 		},
 		{
 			Name: "Returns error when beginning transaction",
@@ -674,11 +873,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			Input:            gqlAppTemplateInput,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
-			ExpectedError:    testError,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			Input:                 gqlAppTemplateInput,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			ExpectedError:         testError,
 		},
 		{
 			Name: "Returns error when committing transaction",
@@ -704,11 +904,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
-			Input:            gqlAppTemplateInput,
-			ExpectedError:    testError,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         testError,
 		},
 		{
 			Name: "Returns error when can't convert application template to graphql",
@@ -734,11 +935,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
-			Input:            gqlAppTemplateInput,
-			ExpectedError:    testError,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         testError,
 		},
 		{
 			Name: "Success when labels are nil after converting gql AppTemplateInput",
@@ -766,11 +968,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
-			Input:            gqlAppTemplateInput,
-			ExpectedOutput:   gqlAppTemplate,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedOutput:        gqlAppTemplate,
 		},
 		{
 			Name: "Returns error when app template self registration fails",
@@ -787,11 +990,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnPrep,
-			Input:            gqlAppTemplateInput,
-			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatReturnsErrorOnPrep,
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         errors.New(apptmpltest.SelfRegErrorMsg),
 		},
 		{
 			Name: "Returns error when self registered app template fails on create",
@@ -821,11 +1025,12 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration),
-			Input:            gqlAppTemplateInput,
-			ExpectedError:    testError,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         testError,
 		},
 		{
 			Name: "Success but couldn't cast region label value to string",
@@ -852,22 +1057,24 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatInitiatesCleanupButNotFinishIt(labels),
-			Input:            gqlAppTemplateInput,
-			ExpectedOutput:   gqlAppTemplate,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatInitiatesCleanupButNotFinishIt(labels),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 gqlAppTemplateInput,
+			ExpectedOutput:        gqlAppTemplate,
 		},
 		{
-			Name:              "Returns error when validating app template name",
-			TxFn:              txGen.ThatDoesntStartTransaction,
-			AppTemplateSvcFn:  UnusedAppTemplateSvc,
-			AppTemplateConvFn: UnusedAppTemplateConv,
-			WebhookConvFn:     UnusedWebhookConv,
-			WebhookSvcFn:      UnusedWebhookSvc,
-			SelfRegManagerFn:  UnusedSelfRegManager,
-			Input:             fixGQLAppTemplateInputWithPlaceholderAndProvider(testName),
-			ExpectedError:     errors.New("application template name \"bar\" does not comply with the following naming convention: \"SAP <product name>\""),
+			Name:                  "Returns error when validating app template name",
+			TxFn:                  txGen.ThatDoesntStartTransaction,
+			AppTemplateSvcFn:      UnusedAppTemplateSvc,
+			AppTemplateConvFn:     UnusedAppTemplateConv,
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      UnusedSelfRegManager,
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Input:                 fixGQLAppTemplateInputWithPlaceholderAndProvider(testName),
+			ExpectedError:         errors.New("application template name \"bar\" does not comply with the following naming convention: \"SAP <product name>\""),
 		},
 	}
 
@@ -879,9 +1086,10 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 			selfRegManager := testCase.SelfRegManagerFn()
+			tenantMappingConfig := testCase.TenantMappingConfigFn()
 			uuidSvc := uidSvcFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, uuidSvc)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, uuidSvc, tenantMappingConfig, testURL)
 
 			// WHEN
 			result, err := resolver.CreateApplicationTemplate(ctx, *testCase.Input)
@@ -907,7 +1115,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
-		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
 
 		// WHEN
 		_, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInputInvalid)
@@ -1018,7 +1226,7 @@ func TestResolver_Labels(t *testing.T) {
 			//persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, nil, nil, nil, nil, nil)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, nil, nil, nil, nil, nil, nil, "")
 
 			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlAppTemplate, testCase.InputKey)
@@ -1393,7 +1601,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			appSvc := testCase.AppSvcFn()
 			appConv := testCase.AppConvFn()
 
-			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
+			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, "")
 
 			// WHEN
 			result, err := resolver.RegisterApplicationFromTemplate(ctx, gqlAppFromTemplateInput)
@@ -1796,7 +2004,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, nil)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, nil, nil, "")
 
 			// WHEN
 			result, err := resolver.UpdateApplicationTemplate(ctx, testID, *testCase.Input)
@@ -1819,7 +2027,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
-		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
 
 		// WHEN
 		_, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInputInvalid)
@@ -2199,7 +2407,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := uidSvcFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, uuidSvc)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, uuidSvc, nil, "")
 
 			// WHEN
 			result, err := resolver.DeleteApplicationTemplate(ctx, testID)
@@ -2248,4 +2456,16 @@ func UnusedWebhookConv() *automock.WebhookConverter {
 
 func UnusedWebhookSvc() *automock.WebhookService {
 	return &automock.WebhookService{}
+}
+
+func EmptyTenantMappingConfig() map[string]interface{} {
+	return nil
+}
+
+func GetTenantMappingConfig(config string) map[string]interface{} {
+	var tenantMappingConfig map[string]interface{}
+	if err := json.Unmarshal([]byte(config), &tenantMappingConfig); err != nil {
+		return nil
+	}
+	return tenantMappingConfig
 }

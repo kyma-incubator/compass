@@ -2,6 +2,7 @@ package tenantmapping
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -283,7 +284,7 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 		if c.OnBehalfOf != "" { // i.e. make sure that regions match only during consumer-provider flow
 			for _, objCtx := range objectContexts {
 				if objCtx.TenantID != "" && objCtx.Region != region {
-					return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objCtx.ConsumerID, objCtx.Region, region)
+					return errors.Errorf("mismatched region for consumer ID REDACTED_%x: actual %s, expected: %s)", sha256.Sum256([]byte(objCtx.ConsumerID)), objCtx.Region, region)
 				}
 			}
 		}

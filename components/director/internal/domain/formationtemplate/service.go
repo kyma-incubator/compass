@@ -36,20 +36,36 @@ type TenantService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
+// WebhookRepository is responsible for repo-layer Webhook operations
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type WebhookRepository interface {
+	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
+}
+
+// WebhookService represents the Webhook service layer
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type WebhookService interface {
+	ListForFormationTemplate(ctx context.Context, tenant, formationTemplateID string) ([]*model.Webhook, error)
+}
+
 type service struct {
-	repo      FormationTemplateRepository
-	uidSvc    UIDService
-	converter FormationTemplateConverter
-	tenantSvc TenantService
+	repo           FormationTemplateRepository
+	uidSvc         UIDService
+	converter      FormationTemplateConverter
+	tenantSvc      TenantService
+	webhookRepo    WebhookRepository
+	webhookService WebhookService
 }
 
 // NewService creates a FormationTemplate service
-func NewService(repo FormationTemplateRepository, uidSvc UIDService, converter FormationTemplateConverter, tenantSvc TenantService) *service {
+func NewService(repo FormationTemplateRepository, uidSvc UIDService, converter FormationTemplateConverter, tenantSvc TenantService, webhookRepo WebhookRepository, webhookService WebhookService) *service {
 	return &service{
-		repo:      repo,
-		uidSvc:    uidSvc,
-		converter: converter,
-		tenantSvc: tenantSvc,
+		repo:           repo,
+		uidSvc:         uidSvc,
+		converter:      converter,
+		tenantSvc:      tenantSvc,
+		webhookRepo:    webhookRepo,
+		webhookService: webhookService,
 	}
 }
 
@@ -57,19 +73,31 @@ func NewService(repo FormationTemplateRepository, uidSvc UIDService, converter F
 func (s *service) Create(ctx context.Context, in *model.FormationTemplateInput) (string, error) {
 	formationTemplateID := s.uidSvc.Generate()
 
-	log.C(ctx).Debugf("ID %s generated for Formation Template with name %s", formationTemplateID, in.Name)
+	if in != nil {
+		log.C(ctx).Debugf("ID %s generated for Formation Template with name %s", formationTemplateID, in.Name)
+	}
 
 	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	err = s.repo.Create(ctx, s.converter.FromModelInputToModel(in, formationTemplateID, tenantID))
+	formationTemplateModel := s.converter.FromModelInputToModel(in, formationTemplateID, tenantID)
+
+	err = s.repo.Create(ctx, formationTemplateModel)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Formation Template with name %s", in.Name)
 	}
 
+	if err = s.webhookRepo.CreateMany(ctx, tenantID, formationTemplateModel.Webhooks); err != nil {
+		return "", errors.Wrapf(err, "while creating Webhooks for Formation Template with ID: %s", formationTemplateID)
+	}
+
 	return formationTemplateID, nil
+}
+
+func (s *service) Exist(ctx context.Context, id string) (bool, error) {
+	return s.repo.Exists(ctx, id)
 }
 
 // Get queries FormationTemplate matching ID `id`
@@ -132,26 +160,35 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// ListWebhooksForFormationTemplate lists webhooks for a FormationTemplate matching ID `formationTemplateID`
+func (s *service) ListWebhooksForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error) {
+	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.webhookService.ListForFormationTemplate(ctx, tenantID, formationTemplateID)
+}
+
 // getTenantFromContext validates and returns the tenant present in the context:
-// 		1. if only one ID is present -> throw TenantNotFoundError
-// 		2. if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
-// 		3. if both internalID and externalID are not present -> proceed with global formation templates (return empty id)
+//  - if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
+//  - if both internalID and externalID are NOT present -> -> proceed with global formation templates (return empty id)
+//  - otherwise return TenantNotFoundError
 func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 	tntCtx, err := tenant.LoadTenantPairFromContextNoChecks(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	if (tntCtx.InternalID == "" && tntCtx.ExternalID != "") || (tntCtx.InternalID != "" && tntCtx.ExternalID == "") {
-		return "", apperrors.NewTenantNotFoundError(tntCtx.ExternalID)
-	}
-
-	var internalTenantID string
 	if tntCtx.InternalID != "" && tntCtx.ExternalID != "" {
-		internalTenantID = tntCtx.InternalID
+		return tntCtx.InternalID, nil
 	}
 
-	return internalTenantID, nil
+	if tntCtx.InternalID == "" && tntCtx.ExternalID == "" {
+		return "", nil
+	}
+
+	return "", apperrors.NewTenantNotFoundError(tntCtx.ExternalID)
 }
 
 // extractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:
@@ -165,7 +202,7 @@ func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.C
 	}
 
 	if internalTenantID == "" {
-		return internalTenantID, nil
+		return "", nil
 	}
 
 	tenantObject, err := s.tenantSvc.GetTenantByID(ctx, internalTenantID)
@@ -181,10 +218,5 @@ func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.C
 		return tenantObject.ID, nil
 	}
 
-	gaTenantObject, err := s.tenantSvc.GetTenantByID(ctx, tenantObject.Parent)
-	if err != nil {
-		return "", err
-	}
-
-	return gaTenantObject.ID, nil
+	return tenantObject.Parent, nil
 }

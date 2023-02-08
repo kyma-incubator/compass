@@ -151,13 +151,13 @@ func (_m *RuntimeContextRepository) ListByScenariosAndRuntimeIDs(ctx context.Con
 	return r0, r1
 }
 
-type NewRuntimeContextRepositoryT interface {
+type mockConstructorTestingTNewRuntimeContextRepository interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewRuntimeContextRepository creates a new instance of RuntimeContextRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeContextRepository(t NewRuntimeContextRepositoryT) *RuntimeContextRepository {
+func NewRuntimeContextRepository(t mockConstructorTestingTNewRuntimeContextRepository) *RuntimeContextRepository {
 	mock := &RuntimeContextRepository{}
 	mock.Mock.Test(t)
 

@@ -209,6 +209,12 @@ func TestWebhookInput_Validate_Mode(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
+			Name:          "ExpectedValidSyncModeAndFormationLifecycleType",
+			Value:         webhookModePtr(graphql.WebhookModeSync),
+			Type:          webhookTypePtr(graphql.WebhookTypeFormationLifecycle),
+			ExpectedValid: true,
+		},
+		{
 			Name:          "ExpectedInvalidAsyncModeAndConfigurationChangedType",
 			Value:         webhookModePtr(graphql.WebhookModeAsync),
 			Type:          webhookTypePtr(graphql.WebhookTypeConfigurationChanged),
@@ -224,6 +230,12 @@ func TestWebhookInput_Validate_Mode(t *testing.T) {
 			Name:          "ExpectedInvalidAsyncCallbackModeAndRegisterAppType",
 			Value:         webhookModePtr(graphql.WebhookModeAsyncCallback),
 			Type:          webhookTypePtr(graphql.WebhookTypeRegisterApplication),
+			ExpectedValid: false,
+		},
+		{
+			Name:          "ExpectedInvalidAsyncCallbackModeAndFormationLifecycleType",
+			Value:         webhookModePtr(graphql.WebhookModeAsyncCallback),
+			Type:          webhookTypePtr(graphql.WebhookTypeFormationLifecycle),
 			ExpectedValid: false,
 		},
 		{

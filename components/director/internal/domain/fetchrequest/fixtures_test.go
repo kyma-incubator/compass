@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	refID    = "refID"
+	tenantID      = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	localTenantID = "local-tenant-id"
+	refID         = "refID"
 )
 
 func fixModelFetchRequest(t *testing.T, url, filter string) *model.FetchRequest {

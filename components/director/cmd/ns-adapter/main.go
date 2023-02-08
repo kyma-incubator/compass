@@ -8,6 +8,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
+
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -118,7 +121,7 @@ func main() {
 	bundleReferenceConverter := bundlereferences.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
 	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter(webhookConverter)
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -156,12 +159,21 @@ func main() {
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
+	formationConstraintConverter := formationconstraint.NewConverter()
+	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
+
+	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
+	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
+
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
-	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookConverter, webhookClient, webhookDataInputBuilder)
+	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
+	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tntSvc, scenarioAssignmentSvc, formationRepo, labelRepo)
+	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
+	notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, tenantRepo, webhookClient, webhookDataInputBuilder, notificationsBuilder)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
-	formationSvc := formation.NewService(transact, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(transact, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, constraintEngine, conf.RuntimeTypeLabelKey, conf.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, conf.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 
 	err = registerAppTemplate(ctx, transact, appTemplateSvc)
@@ -274,11 +286,12 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 			return errors.Wrap(err, fmt.Sprintf("error while getting application template with name: %s", appTemplateName))
 		}
 
+		log.C(ctx).Infof("Application Template with name %q not found. Triggering creation...", appTemplateName)
 		templateID, err := appTemplateSvc.Create(ctxWithTx, appTemplate)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error while registering application template with name: %s", appTemplateName))
 		}
-		log.C(ctx).Infof(fmt.Sprintf("Successfully registered application template with id: %s", templateID))
+		log.C(ctx).Infof(fmt.Sprintf("Successfully registered application template with id %q and name %q", templateID, appTemplateName))
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -296,6 +309,8 @@ func exitOnError(err error, context string) {
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, transact persistence.Transactioner) error {
+	log.C(ctx).Infof("Starting calculation of template mappings")
+
 	var systemToTemplateMappings []nsmodel.TemplateMapping
 	if err := json.Unmarshal([]byte(cfg.SystemToTemplateMappings), &systemToTemplateMappings); err != nil {
 		return errors.Wrap(err, "failed to read system template mappings")
@@ -344,6 +359,7 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	}
 
 	nsmodel.Mappings = systemToTemplateMappings
+	log.C(ctx).Infof("Calculation of template mappings finished successfully")
 	return nil
 }
 

@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"strings"
 
@@ -40,6 +41,7 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context) ([]*model.Application, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
@@ -210,7 +212,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if consumerInfo.OnBehalfOf != "" {
-		log.C(ctx).Infof("External tenant with id %s is retrieving application on behalf of tenant with id %s", consumerInfo.ConsumerID, consumerInfo.OnBehalfOf)
+		log.C(ctx).Infof("External tenant with id %s is retrieving application on behalf of tenant with id REDACTED_%x", consumerInfo.ConsumerID, sha256.Sum256([]byte(consumerInfo.OnBehalfOf)))
 		tenantApp, err := r.getApplicationProviderTenant(ctx, consumerInfo)
 		if err != nil {
 			return nil, err
@@ -265,30 +267,18 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	}, nil
 }
 
+// ApplicationBySystemNumber returns an application retrieved by systemNumber
+func (r *Resolver) ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*graphql.Application, error) {
+	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
+		return r.appSvc.GetBySystemNumber(ctx, systemNumber)
+	})
+}
+
 // Application missing godoc
 func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	app, err := r.appSvc.Get(ctx, id)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, tx.Commit()
-		}
-		return nil, err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.appConverter.ToGraphQL(app), nil
+	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
+		return r.appSvc.Get(ctx, id)
+	})
 }
 
 // ApplicationsForRuntime missing godoc
@@ -811,7 +801,7 @@ func (r *Resolver) getApplicationProviderTenant(ctx context.Context, consumerInf
 	// Derive application provider's app template
 	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
-		log.C(ctx).Infof("No app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
+		log.C(ctx).Infof("No app template found with filter %q = REDACTED_%x, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, sha256.Sum256([]byte(consumerInfo.ConsumerID)), tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
 		return nil, errors.Wrapf(err, "no app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
 	}
 
@@ -836,4 +826,29 @@ func (r *Resolver) getApplicationProviderTenant(ctx context.Context, consumerInf
 	}
 
 	return r.appConverter.ToGraphQL(foundApp), nil
+}
+
+func (r *Resolver) getApplication(ctx context.Context, get func(context.Context) (*model.Application, error)) (*graphql.Application, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	app, err := get(ctx)
+
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.appConverter.ToGraphQL(app), nil
 }

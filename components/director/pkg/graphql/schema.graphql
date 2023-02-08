@@ -15,6 +15,10 @@ Sanitize directive marks mutation arguments that will be validated.
 """
 directive @sanitize(path: String!) on FIELD_DEFINITION
 """
+SynchronizeApplications directive is added to mutations that create applications or tenants in other to synchronise the tenant access.
+"""
+directive @synchronizeApplicationTenancy(eventType: EventType!) on FIELD_DEFINITION
+"""
 Validate directive marks mutation arguments that will be validated.
 """
 directive @validate on ARGUMENT_DEFINITION
@@ -96,12 +100,28 @@ enum BundleInstanceAuthStatusCondition {
 	UNUSED
 }
 
+enum ConstraintScope {
+	GLOBAL
+	FORMATION_TYPE
+}
+
+enum ConstraintType {
+	PRE
+	POST
+}
+
 enum DocumentFormat {
 	MARKDOWN
 }
 
 enum EventSpecType {
 	ASYNC_API
+}
+
+enum EventType {
+	NEW_APPLICATION
+	NEW_SINGLE_TENANT
+	NEW_MULTIPLE_TENANTS
 }
 
 enum FetchMode {
@@ -160,6 +180,14 @@ enum OperationType {
 	DELETE
 }
 
+enum ResourceType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+	TENANT
+	FORMATION
+}
+
 enum RuntimeStatusCondition {
 	INITIAL
 	PROVISIONING
@@ -177,6 +205,14 @@ enum SystemAuthReferenceType {
 	APPLICATION
 	RUNTIME
 	INTEGRATION_SYSTEM
+}
+
+enum TargetOperation {
+	ASSIGN_FORMATION
+	UNASSIGN_FORMATION
+	CREATE_FORMATION
+	DELETE_FORMATION
+	GENERATE_NOTIFICATION
 }
 
 enum ViewerType {
@@ -198,6 +234,7 @@ enum WebhookType {
 	REGISTER_APPLICATION
 	UNREGISTER_APPLICATION
 	OPEN_RESOURCE_DISCOVERY
+	FORMATION_LIFECYCLE
 }
 
 interface OneTimeToken {
@@ -247,7 +284,7 @@ input APIDefinitionInput {
 	"""
 	targetURL: String!
 	"""
-	**Validation:** max=36
+	**Validation:** max=100
 	"""
 	group: String
 	spec: APISpecInput
@@ -519,6 +556,13 @@ input CertificateOAuthCredentialDataInput {
 	url: String!
 }
 
+input CertificateSubjectMappingInput {
+	subject: String!
+	consumerType: String!
+	internalConsumerID: String
+	tenantAccessLevels: [String!]!
+}
+
 """
 **Validation:** basic or oauth or certificateOAuth field required
 """
@@ -606,6 +650,17 @@ input FetchRequestInput {
 	filter: String
 }
 
+input FormationConstraintInput {
+	name: String!
+	constraintType: ConstraintType!
+	targetOperation: TargetOperation!
+	operator: String!
+	resourceType: ResourceType!
+	resourceSubtype: String!
+	inputTemplate: String!
+	constraintScope: ConstraintScope!
+}
+
 input FormationInput {
 	name: String!
 	templateName: String
@@ -617,6 +672,7 @@ input FormationTemplateInput {
 	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
+	webhooks: [WebhookInput!]
 }
 
 input IntegrationSystemInput {
@@ -773,6 +829,7 @@ input WebhookInput {
 	url: String
 	auth: AuthInput
 	mode: WebhookMode
+	version: String
 	correlationIdKey: String
 	retryInterval: Int
 	timeout: Int
@@ -992,6 +1049,25 @@ type CertificateOAuthCredentialData {
 	url: String!
 }
 
+type CertificateSubjectMapping {
+	id: ID!
+	subject: String!
+	consumerType: String!
+	internalConsumerID: String
+	tenantAccessLevels: [String!]!
+}
+
+type CertificateSubjectMappingPage implements Pageable {
+	data: [CertificateSubjectMapping!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
+type ConstraintReference {
+	constraintID: ID!
+	formationTemplateID: ID!
+}
+
 type CredentialRequestAuth {
 	csrf: CSRFTokenCredentialRequestAuth
 }
@@ -1082,9 +1158,6 @@ type FormationAssignment {
 	sourceType: FormationAssignmentType!
 	target: ID!
 	targetType: FormationAssignmentType!
-	lastOperation: String!
-	lastOperationInitiator: ID!
-	lastOperationInitiatorType: FormationAssignmentType!
 	state: String!
 	value: String
 }
@@ -1093,6 +1166,18 @@ type FormationAssignmentPage implements Pageable {
 	data: [FormationAssignment!]!
 	pageInfo: PageInfo!
 	totalCount: Int!
+}
+
+type FormationConstraint {
+	id: ID!
+	name: String!
+	constraintType: String!
+	targetOperation: String!
+	operator: String!
+	resourceType: String!
+	resourceSubtype: String!
+	inputTemplate: String!
+	constraintScope: String!
 }
 
 type FormationPage implements Pageable {
@@ -1119,6 +1204,7 @@ type FormationTemplate {
 	runtimeTypes: [String!]!
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1320,6 +1406,7 @@ type Webhook {
 	applicationTemplateID: ID
 	runtimeID: ID
 	integrationSystemID: ID
+	formationTemplateID: ID
 	type: WebhookType!
 	mode: WebhookMode
 	correlationIdKey: String
@@ -1349,6 +1436,7 @@ type Query {
 	- [query application](examples/query-application/query-application.graphql)
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
+	applicationBySystemNumber(systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationBySystemNumber")
 	"""
 	Maximum `first` parameter value is 100
 	
@@ -1437,9 +1525,16 @@ type Query {
 	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
 	"""
 	**Examples**
+	- [query formation by name](examples/query-formation-by-name/query-formation-by-name.graphql)
+	"""
+	formationByName(name: String!): Formation @hasScopes(path: "graphql.query.formationByName")
+	"""
+	**Examples**
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
+	formationConstraintsByFormationType(formationTemplateID: ID!): [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
 	- [query formation template](examples/query-formation-template/query-formation-template.graphql)
@@ -1450,6 +1545,16 @@ type Query {
 	- [query formation templates](examples/query-formation-templates/query-formation-templates.graphql)
 	"""
 	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
+	"""
+	**Examples**
+	- [query certificate subject mapping](examples/query-certificate-subject-mapping/query-certificate-subject-mapping.graphql)
+	"""
+	certificateSubjectMapping(id: ID!): CertificateSubjectMapping! @hasScopes(path: "graphql.query.certificateSubjectMapping")
+	"""
+	**Examples**
+	- [query certificate subject mappings](examples/query-certificate-subject-mappings/query-certificate-subject-mappings.graphql)
+	"""
+	certificateSubjectMappings(first: Int = 300, after: PageCursor): CertificateSubjectMappingPage! @hasScopes(path: "graphql.query.certificateSubjectMappings")
 }
 
 type Mutation {
@@ -1460,7 +1565,7 @@ type Mutation {
 	- [register application with webhooks](examples/register-application/register-application-with-webhooks.graphql)
 	- [register application](examples/register-application/register-application.graphql)
 	"""
-	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(operationType: CREATE, webhookType: REGISTER_APPLICATION)
+	registerApplication(in: ApplicationRegisterInput! @validate, mode: OperationMode = SYNC): Application! @hasScopes(path: "graphql.mutation.registerApplication") @async(operationType: CREATE, webhookType: REGISTER_APPLICATION) @synchronizeApplicationTenancy(eventType: NEW_APPLICATION)
 	"""
 	**Examples**
 	- [update application](examples/update-application/update-application.graphql)
@@ -1485,7 +1590,7 @@ type Mutation {
 	**Examples**
 	- [register application from template](examples/register-application-from-template/register-application-from-template.graphql)
 	"""
-	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate")
+	registerApplicationFromTemplate(in: ApplicationFromTemplateInput! @validate): Application! @hasScopes(path: "graphql.mutation.registerApplicationFromTemplate") @synchronizeApplicationTenancy(eventType: NEW_APPLICATION)
 	"""
 	**Examples**
 	- [update application template](examples/update-application-template/update-application-template.graphql)
@@ -1547,9 +1652,10 @@ type Mutation {
 	**Examples**
 	- [add application template webhook](examples/add-webhook/add-application-template-webhook.graphql)
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
+	- [add formation template webhook](examples/add-webhook/add-formation-template-webhook.graphql)
 	- [add runtime webhook](examples/add-webhook/add-runtime-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, formationTemplateID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update webhook](examples/update-webhook/update-webhook.graphql)
@@ -1644,6 +1750,26 @@ type Mutation {
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
 	"""
 	**Examples**
+	- [create formation constraint](examples/create-formation-constraint/create-formation-constraint.graphql)
+	"""
+	createFormationConstraint(formationConstraint: FormationConstraintInput! @validate): FormationConstraint! @hasScopes(path: "graphql.mutation.createFormationConstraint")
+	"""
+	**Examples**
+	- [delete formation constraint](examples/delete-formation-constraint/delete-formation-constraint.graphql)
+	"""
+	deleteFormationConstraint(id: ID!): FormationConstraint! @hasScopes(path: "graphql.mutation.deleteFormationConstraint")
+	"""
+	**Examples**
+	- [attach constraint to formation template](examples/attach-constraint-to-formation-template/attach-constraint-to-formation-template.graphql)
+	"""
+	attachConstraintToFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.attachConstraintToFormationTemplate")
+	"""
+	**Examples**
+	- [detach constraint from formation template](examples/detach-constraint-from-formation-template/detach-constraint-from-formation-template.graphql)
+	"""
+	detachConstraintFromFormationTemplate(constraintID: ID!, formationTemplateID: ID!): ConstraintReference! @hasScopes(path: "graphql.mutation.detachConstraintFromFormationTemplate")
+	"""
+	**Examples**
 	- [create label definition](examples/create-label-definition/create-label-definition.graphql)
 	"""
 	createLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.createLabelDefinition")
@@ -1734,14 +1860,15 @@ type Mutation {
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
 	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
-	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
-	writeTenant(in: BusinessTenantMappingInput!): String! @hasScopes(path: "graphql.mutation.writeTenants")
+	writeTenants(in: [BusinessTenantMappingInput!]): [String!] @hasScopes(path: "graphql.mutation.writeTenants") @synchronizeApplicationTenancy(eventType: NEW_MULTIPLE_TENANTS)
+	writeTenant(in: BusinessTenantMappingInput!): String! @hasScopes(path: "graphql.mutation.writeTenants") @synchronizeApplicationTenancy(eventType: NEW_SINGLE_TENANT)
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
+	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!, subscriptionPayload: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
 	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
+	- [create formation template with webhooks](examples/create-formation-template/create-formation-template-with-webhooks.graphql)
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
 	"""
 	createFormationTemplate(in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
@@ -1755,5 +1882,20 @@ type Mutation {
 	- [update formation template](examples/update-formation-template/update-formation-template.graphql)
 	"""
 	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
+	"""
+	**Examples**
+	- [create certificate subject mapping](examples/create-certificate-subject-mapping/create-certificate-subject-mapping.graphql)
+	"""
+	createCertificateSubjectMapping(in: CertificateSubjectMappingInput! @validate): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.createCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [update certificate subject mapping](examples/update-certificate-subject-mapping/update-certificate-subject-mapping.graphql)
+	"""
+	updateCertificateSubjectMapping(id: ID!, in: CertificateSubjectMappingInput! @validate): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.updateCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [delete certificate subject mapping](examples/delete-certificate-subject-mapping/delete-certificate-subject-mapping.graphql)
+	"""
+	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
 }
 

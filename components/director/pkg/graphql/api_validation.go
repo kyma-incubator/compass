@@ -10,7 +10,7 @@ import (
 // Validate missing godoc
 func (i APIDefinitionInput) Validate() error {
 	return validation.ValidateStruct(&i,
-		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, 100)),
+		validation.Field(&i.Name, validation.Required, is.PrintableASCII, validation.Length(1, appNameLengthLimit)),
 		validation.Field(&i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		validation.Field(&i.TargetURL, validation.Required, inputvalidation.IsURL, validation.RuneLength(1, longStringLengthLimit)),
 		validation.Field(&i.Group, validation.RuneLength(0, groupLengthLimit)),

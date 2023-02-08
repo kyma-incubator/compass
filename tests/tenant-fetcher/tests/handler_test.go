@@ -346,13 +346,13 @@ func TestGetDependenciesHandler(t *testing.T) {
 
 		// WHEN
 		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
+
 		body, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
 		require.Equal(t, "[]", string(body))
@@ -375,13 +375,13 @@ func TestGetDependenciesHandler(t *testing.T) {
 
 		// WHEN
 		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
+
 		body, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
 		require.NotEqual(t, "[]", string(body))
@@ -408,13 +408,13 @@ func TestGetDependenciesHandler(t *testing.T) {
 
 		// WHEN
 		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
+
 		body, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
 		require.NotEqual(t, "[]", string(body))
@@ -439,15 +439,15 @@ func TestGetDependenciesHandler(t *testing.T) {
 
 		// WHEN
 		response, err := httpClient.Do(request)
-		require.NoError(t, err)
-
-		// THEN
-		require.Equal(t, http.StatusBadRequest, response.StatusCode)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
+
+		// THEN
+		require.Equal(t, http.StatusBadRequest, response.StatusCode)
 		body, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
 		require.Equal(t, "Invalid region provided: invalid\n", string(body))
@@ -937,12 +937,12 @@ func genMockPage(events string, numEvents int) string {
 func setMockTenantEvents(t *testing.T, mockEvents string, subPath string) {
 	reader := bytes.NewReader([]byte(mockEvents))
 	response, err := http.DefaultClient.Post(config.ExternalServicesMockURL+fmt.Sprintf("/tenant-fetcher/%s/configure", subPath), "application/json", reader)
-	require.NoError(t, err)
 	defer func() {
 		if err := response.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()
+	require.NoError(t, err)
 	if response.StatusCode != http.StatusOK {
 		responseBytes, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
@@ -955,13 +955,12 @@ func cleanupMockEvents(t *testing.T, subPath string) {
 	require.NoError(t, err)
 
 	response, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-
 	defer func() {
 		if err := response.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()
+	require.NoError(t, err)
 	if response.StatusCode != http.StatusOK {
 		responseBytes, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)

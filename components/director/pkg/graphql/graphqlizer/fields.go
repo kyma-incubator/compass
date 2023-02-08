@@ -152,14 +152,15 @@ func (fp *GqlFieldsProvider) ForFormationWithStatus() string {
 
 // ForFormationTemplate missing godoc
 func (fp *GqlFieldsProvider) ForFormationTemplate() string {
-	return `
+	return fmt.Sprintf(`
 		id
 		name
         applicationTypes
 	    runtimeTypes
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
-	`
+        webhooks {%s}
+	`, fp.ForWebhooks())
 }
 
 // ForFormationAssignment missing godoc
@@ -194,6 +195,29 @@ func (fp *GqlFieldsProvider) ForFormationStatusErrors() string {
 	`
 }
 
+// ForFormationConstraint missing godoc
+func (fp *GqlFieldsProvider) ForFormationConstraint() string {
+	return `
+			id
+			name
+			constraintType
+			targetOperation
+			operator
+			resourceType
+			resourceSubtype
+			inputTemplate
+			constraintScope
+	`
+}
+
+// ForFormationTemplateConstraintReference missing godoc
+func (fp *GqlFieldsProvider) ForFormationTemplateConstraintReference() string {
+	return `
+			constraintID
+			formationTemplateID
+	`
+}
+
 // OmitForWebhooks missing godoc
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
 	return buildProperties(map[string]string{
@@ -222,6 +246,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		applicationID
 		applicationTemplateID
 		runtimeID
+		formationTemplateID
 		type
 		mode
 		correlationIdKey
@@ -682,4 +707,15 @@ func (fp *GqlFieldsProvider) ForAutomaticScenarioAssignment() string {
 	return fmt.Sprintf(`
 		scenarioName
 		selector {%s}`, fp.ForLabel())
+}
+
+// ForCertificateSubjectMapping returns certificate subject mappings fields
+func (fp *GqlFieldsProvider) ForCertificateSubjectMapping() string {
+	return `
+		id
+		subject
+        consumerType
+	    internalConsumerID
+		tenantAccessLevels	
+	`
 }

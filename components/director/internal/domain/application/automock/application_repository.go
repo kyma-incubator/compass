@@ -150,13 +150,13 @@ func (_m *ApplicationRepository) GetByIDForUpdate(ctx context.Context, tenant st
 	return r0, r1
 }
 
-// GetByNameAndSystemNumber provides a mock function with given fields: ctx, tenant, name, systemNumber
-func (_m *ApplicationRepository) GetByNameAndSystemNumber(ctx context.Context, tenant string, name string, systemNumber string) (*model.Application, error) {
-	ret := _m.Called(ctx, tenant, name, systemNumber)
+// GetBySystemNumber provides a mock function with given fields: ctx, tenant, systemNumber
+func (_m *ApplicationRepository) GetBySystemNumber(ctx context.Context, tenant string, systemNumber string) (*model.Application, error) {
+	ret := _m.Called(ctx, tenant, systemNumber)
 
 	var r0 *model.Application
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Application); ok {
-		r0 = rf(ctx, tenant, name, systemNumber)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
+		r0 = rf(ctx, tenant, systemNumber)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Application)
@@ -164,8 +164,8 @@ func (_m *ApplicationRepository) GetByNameAndSystemNumber(ctx context.Context, t
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, tenant, name, systemNumber)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, systemNumber)
 	} else {
 		r1 = ret.Error(1)
 	}

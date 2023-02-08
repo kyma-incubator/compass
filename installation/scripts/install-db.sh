@@ -8,7 +8,8 @@ source $SCRIPTS_DIR/utils.sh
 
 TIMEOUT=30m0s
 
-DATA_DIR="$( cd ${SCRIPTS_DIR}/../data && pwd )"
+DATA_DIR="${SCRIPTS_DIR}/../data"
+mkdir -p "${DATA_DIR}"
 DB_CHARTS="$( cd ${CURRENT_DIR}/../../chart/localdb && pwd )"
 
 function cleanup_trap() {

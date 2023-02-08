@@ -29,7 +29,6 @@ type asaService interface {
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
-	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 

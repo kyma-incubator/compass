@@ -26,6 +26,10 @@ graphql:
     formationTemplates: [ "formation_template:read" ]
     formation: ["formation:read"]
     formations: ["formation:read"]
+    formationConstraints: ["formation_constraint:read"]
+    formationConstraintsByFormationType: ["formation_constraint:read"]
+    certificateSubjectMapping: ["certificate_subject_mapping:read"]
+    certificateSubjectMappings: ["certificate_subject_mapping:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -93,9 +97,16 @@ graphql:
     updateTenant: ["tenant:write"]
     subscribeTenant: ["tenant_subscription:write"]
     unsubscribeTenant: ["tenant_subscription:write"]
-    createFormationTemplate: [ "formation_template:write" ]
-    deleteFormationTemplate: [ "formation_template:write" ]
-    updateFormationTemplate: [ "formation_template:write" ]
+    createFormationTemplate: ["formation_template:write"]
+    deleteFormationTemplate: ["formation_template:write"]
+    updateFormationTemplate: ["formation_template:write"]
+    createFormationConstraint: ["formation_constraint:write"]
+    deleteFormationConstraint: ["formation_constraint:write"]
+    attachConstraintToFormationTemplate: [ "formation_constraint:write" ]
+    detachConstraintFromFormationTemplate: [ "formation_constraint:write" ]
+    createCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
+    updateCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
+    deleteCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
 
   field:
     fetch_request:
@@ -120,6 +131,8 @@ graphql:
     runtime:
       auths: ["runtime.auths:read"]
       webhooks: ["runtime.webhooks:read"]
+    formation_template:
+      webhooks: ["formation_template.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
 
@@ -166,6 +179,7 @@ clientCredentialsRegistrationScopes:
     - "application.auths:read"
     - "webhook:write"
     - "formation_template:read"
+    - "formation_template.webhooks:read"
   super_admin:
     - "application:read"
     - "application:write"
@@ -199,6 +213,11 @@ clientCredentialsRegistrationScopes:
     - "webhook:write"
     - "formation_template:read"
     - "formation_template:write"
+    - "formation_template.webhooks:read"
+    - "formation_constraint:read"
+    - "formation_constraint:write"
+    - "certificate_subject_mapping:read"
+    - "certificate_subject_mapping:write"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

@@ -27,8 +27,8 @@ func TestApplicationRegisterInput_Validate_Name(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
-			Name:          "String longer than 37 chars",
-			Value:         inputvalidationtest.String37Long,
+			Name:          "String longer than 100 chars",
+			Value:         inputvalidationtest.String101Long,
 			ExpectedValid: false,
 		},
 	}

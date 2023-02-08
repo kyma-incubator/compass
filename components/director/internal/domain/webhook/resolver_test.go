@@ -28,6 +28,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 	givenAppID := "foo"
 	givenAppTemplateID := "test_app_template"
 	givenRuntimeID := "test_runtime"
+	givenFormationTemplateID := "ftID"
 	id := "bar"
 	gqlWebhookInput := fixGQLWebhookInput("foo")
 	modelWebhookInput := fixModelWebhookInput("foo")
@@ -36,16 +37,17 @@ func TestResolver_AddWebhook(t *testing.T) {
 	modelWebhook := fixApplicationModelWebhook(id, givenAppID, givenTenant(), "foo", time.Time{})
 
 	testCases := []struct {
-		Name                 string
-		PersistenceFn        func() *persistenceautomock.PersistenceTx
-		TransactionerFn      func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn            func() *automock.WebhookService
-		AppServiceFn         func() *automock.ApplicationService
-		AppTemplateServiceFn func() *automock.ApplicationTemplateService
-		RuntimeServiceFn     func() *automock.RuntimeService
-		ConverterFn          func() *automock.WebhookConverter
-		ExpectedWebhook      *graphql.Webhook
-		ExpectedErr          error
+		Name                       string
+		PersistenceFn              func() *persistenceautomock.PersistenceTx
+		TransactionerFn            func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn                  func() *automock.WebhookService
+		AppServiceFn               func() *automock.ApplicationService
+		AppTemplateServiceFn       func() *automock.ApplicationTemplateService
+		RuntimeServiceFn           func() *automock.RuntimeService
+		FormationTemplateServiceFn func() *automock.FormationTemplateService
+		ConverterFn                func() *automock.WebhookConverter
+		ExpectedWebhook            *graphql.Webhook
+		ExpectedErr                error
 	}{
 		{
 			Name:            "Success",
@@ -197,6 +199,27 @@ func TestResolver_AddWebhook(t *testing.T) {
 			ExpectedErr:     errors.New("cannot add RuntimeWebhook due to not existing reference entity"),
 		},
 		{
+			Name:            "Returns error when formation template does not exist",
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				return svc
+			},
+			FormationTemplateServiceFn: func() *automock.FormationTemplateService {
+				ftSvc := &automock.FormationTemplateService{}
+				ftSvc.On("Exist", txtest.CtxWithDBMatcher(), givenFormationTemplateID).Return(false, nil)
+				return ftSvc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("InputFromGraphQL", gqlWebhookInput).Return(modelWebhookInput, nil).Once()
+				return conv
+			},
+			ExpectedWebhook: nil,
+			ExpectedErr:     errors.New("cannot add FormationTemplateWebhook due to not existing reference entity"),
+		},
+		{
 			Name:            "Returns error when application existence check failed",
 			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
 			TransactionerFn: txtest.TransactionerThatSucceeds,
@@ -269,6 +292,7 @@ func TestResolver_AddWebhook(t *testing.T) {
 			var appSvc *automock.ApplicationService
 			var appTemplateSvc *automock.ApplicationTemplateService
 			var runtimeSvc *automock.RuntimeService
+			var formationTemplateSvc *automock.FormationTemplateService
 			svc := testCase.ServiceFn()
 			if testCase.AppServiceFn != nil {
 				appSvc = testCase.AppServiceFn()
@@ -279,25 +303,31 @@ func TestResolver_AddWebhook(t *testing.T) {
 			if testCase.RuntimeServiceFn != nil {
 				runtimeSvc = testCase.RuntimeServiceFn()
 			}
+			if testCase.FormationTemplateServiceFn != nil {
+				formationTemplateSvc = testCase.FormationTemplateServiceFn()
+			}
 
 			converter := testCase.ConverterFn()
 
 			persistTxMock := testCase.PersistenceFn()
 			transactionerMock := testCase.TransactionerFn(persistTxMock)
 
-			resolver := webhook.NewResolver(transactionerMock, svc, appSvc, appTemplateSvc, runtimeSvc, converter)
+			resolver := webhook.NewResolver(transactionerMock, svc, appSvc, appTemplateSvc, runtimeSvc, formationTemplateSvc, converter)
 
 			// WHEN
 			var err error
 			var result *graphql.Webhook
 			if testCase.AppServiceFn != nil {
-				result, err = resolver.AddWebhook(context.TODO(), stringPtr(givenAppID), nil, nil, *gqlWebhookInput)
+				result, err = resolver.AddWebhook(context.TODO(), stringPtr(givenAppID), nil, nil, nil, *gqlWebhookInput)
 			}
 			if testCase.AppTemplateServiceFn != nil {
-				result, err = resolver.AddWebhook(context.TODO(), nil, stringPtr(givenAppTemplateID), nil, *gqlWebhookInput)
+				result, err = resolver.AddWebhook(context.TODO(), nil, stringPtr(givenAppTemplateID), nil, nil, *gqlWebhookInput)
 			}
 			if testCase.RuntimeServiceFn != nil {
-				result, err = resolver.AddWebhook(context.TODO(), nil, nil, stringPtr(givenRuntimeID), *gqlWebhookInput)
+				result, err = resolver.AddWebhook(context.TODO(), nil, nil, stringPtr(givenRuntimeID), nil, *gqlWebhookInput)
+			}
+			if testCase.FormationTemplateServiceFn != nil {
+				result, err = resolver.AddWebhook(context.TODO(), nil, nil, nil, stringPtr(givenFormationTemplateID), *gqlWebhookInput)
 			}
 
 			// THEN
@@ -318,27 +348,30 @@ func TestResolver_AddWebhook(t *testing.T) {
 			if testCase.RuntimeServiceFn != nil {
 				runtimeSvc.AssertExpectations(t)
 			}
+			if testCase.FormationTemplateServiceFn != nil {
+				formationTemplateSvc.AssertExpectations(t)
+			}
 			converter.AssertExpectations(t)
 			persistTxMock.AssertExpectations(t)
 			transactionerMock.AssertExpectations(t)
 		})
-		t.Run("Error when more than one of application, application_template and runtime is specified", func(t *testing.T) {
+		t.Run("Error when more than one of application, application_template, runtime, formation_template is specified", func(t *testing.T) {
 			persistTxMock := txtest.PersistenceContextThatDoesntExpectCommit()
 			transactionerMock := txtest.TransactionerThatSucceeds(persistTxMock)
 
-			resolver := webhook.NewResolver(transactionerMock, nil, nil, nil, nil, nil)
-			_, err := resolver.AddWebhook(context.TODO(), stringPtr("app"), stringPtr("app_template"), stringPtr("runtime"), graphql.WebhookInput{})
+			resolver := webhook.NewResolver(transactionerMock, nil, nil, nil, nil, nil, nil)
+			_, err := resolver.AddWebhook(context.TODO(), stringPtr("app"), stringPtr("app_template"), stringPtr("runtime"), stringPtr("formation_template"), graphql.WebhookInput{})
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "exactly one of applicationID, applicationTemplateID or runtimeID should be specified")
+			assert.Contains(t, err.Error(), "exactly one of applicationID, applicationTemplateID, runtimeID or formationTemplateID should be specified")
 		})
-		t.Run("Error when none of application, application_template and runtime is specified", func(t *testing.T) {
+		t.Run("Error when none of application, application_template, runtime, formation_template is specified", func(t *testing.T) {
 			persistTxMock := txtest.PersistenceContextThatDoesntExpectCommit()
 			transactionerMock := txtest.TransactionerThatSucceeds(persistTxMock)
 
-			resolver := webhook.NewResolver(transactionerMock, nil, nil, nil, nil, nil)
-			_, err := resolver.AddWebhook(context.TODO(), nil, nil, nil, graphql.WebhookInput{})
+			resolver := webhook.NewResolver(transactionerMock, nil, nil, nil, nil, nil, nil)
+			_, err := resolver.AddWebhook(context.TODO(), nil, nil, nil, nil, graphql.WebhookInput{})
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "exactly one of applicationID, applicationTemplateID or runtimeID should be specified")
+			assert.Contains(t, err.Error(), "exactly one of applicationID, applicationTemplateID, runtimeID or formationTemplateID should be specified")
 		})
 	}
 }
@@ -479,7 +512,7 @@ func TestResolver_UpdateWebhook(t *testing.T) {
 			persistTxMock := testCase.PersistenceFn()
 			transactionerMock := testCase.TransactionerFn(persistTxMock)
 
-			resolver := webhook.NewResolver(transactionerMock, svc, nil, nil, nil, converter)
+			resolver := webhook.NewResolver(transactionerMock, svc, nil, nil, nil, nil, converter)
 
 			// WHEN
 			result, err := resolver.UpdateWebhook(context.TODO(), givenWebhookID, *gqlWebhookInput)
@@ -616,7 +649,7 @@ func TestResolver_DeleteWebhook(t *testing.T) {
 			persistTxMock := testCase.PersistenceFn()
 			transactionerMock := testCase.TransactionerFn(persistTxMock)
 
-			resolver := webhook.NewResolver(transactionerMock, svc, nil, nil, nil, converter)
+			resolver := webhook.NewResolver(transactionerMock, svc, nil, nil, nil, nil, converter)
 
 			// WHEN
 			result, err := resolver.DeleteWebhook(context.TODO(), givenWebhookID)

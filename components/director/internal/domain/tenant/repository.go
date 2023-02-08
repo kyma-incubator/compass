@@ -370,6 +370,45 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	return dest.TenantID, nil
 }
 
+// GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant
+func (r *pgRepository) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
+	recursiveQuery := `WITH RECURSIVE parents AS
+                   (SELECT t1.id, t1.parent, t1.external_tenant, t1.type
+                    FROM business_tenant_mappings t1
+                    WHERE id = $1
+                    UNION ALL
+                    SELECT t2.id, t2.parent, t2.external_tenant, t2.type
+                    FROM business_tenant_mappings t2
+                             INNER JOIN parents p on p.parent = t2.id)
+			SELECT external_tenant, type FROM parents WHERE parent is null`
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", recursiveQuery)
+
+	dest := struct {
+		ExternalCustomerTenant string `db:"external_tenant"`
+		Type                   string `db:"type"`
+	}{}
+
+	if err := persist.GetContext(ctx, &dest, recursiveQuery, tenantID); err != nil {
+		return "", persistence.MapSQLError(ctx, err, resource.Tenant, resource.Get, "while getting parent external customer ID for internal tenant: %q", tenantID)
+	}
+
+	if dest.Type != tenant.TypeToStr(tenant.Customer) {
+		return "", nil
+	}
+
+	if dest.ExternalCustomerTenant == "" {
+		return "", errors.Errorf("external parent customer ID for internal tenant ID: %s can not be empty", tenantID)
+	}
+
+	return dest.ExternalCustomerTenant, nil
+}
+
 func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 
@@ -377,6 +416,22 @@ func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.B
 		repo.NewInConditionForSubQuery(
 			idColumn, "SELECT DISTINCT tenant_id from tenant_runtime_contexts", []interface{}{}),
 		repo.NewNotNullCondition(parentColumn),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entityCollection), nil
+}
+
+// ListByParentAndType list tenants by parent ID and tenant.Type
+func (r *pgRepository) ListByParentAndType(ctx context.Context, parentID string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error) {
+	var entityCollection tenant.EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(parentColumn, parentID),
+		repo.NewEqualCondition(typeColumn, tenantType),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {

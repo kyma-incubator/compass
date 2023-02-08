@@ -128,9 +128,10 @@ func main() {
 
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
-		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
-		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		"tenantFetcherClaims":                claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		"subscriptionClaims":                 claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
+		"nsAdapterClaims":                    claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		"tenantFetcherClaimsTenantHierarchy": claimsFunc("test", "tenant-fetcher", "client_id", cfg.TenantConfig.TestConsumerSubaccountIDTenantHierarchy, "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -183,8 +184,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	// Subscription handlers that mock subscription manager API's. On real environment we use the same path but with different(real) host
 	jobID := "818cbe72-8dea-4e01-850d-bc1b54b00e78" // randomly chosen UUID
 	subHandler := subscription.NewHandler(httpClient, cfg.TenantConfig, cfg.TenantProviderConfig, jobID)
-	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Subscribe).Methods(http.MethodPost)
-	router.HandleFunc("/saas-manager/v1/application/tenants/{tenant_id}/subscriptions", subHandler.Unsubscribe).Methods(http.MethodDelete)
+	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Subscribe).Methods(http.MethodPost)
+	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Unsubscribe).Methods(http.MethodDelete)
 	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
 
 	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks

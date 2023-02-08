@@ -21,7 +21,7 @@ For more information about the Compass architecture, technical details, and comp
 - [Docker](https://www.docker.com/get-started)
 - [k3d](https://github.com/k3d-io/k3d) v5.2.2+
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.23.0+
-- [Kyma CLI](https://github.com/kyma-project/cli) 2.2.0
+- [Kyma CLI](https://github.com/kyma-project/cli) 2.3.0
 - [helm](https://github.com/helm/helm) v3.8.0+
 - [yq](https://github.com/mikefarah/yq) v4+
 

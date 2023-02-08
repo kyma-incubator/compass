@@ -2,8 +2,13 @@ package tests
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
 	"os"
 	"testing"
+	"time"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 
@@ -21,6 +26,7 @@ import (
 
 type DirectorConfig struct {
 	DirectorUrl                             string
+	DirectorInternalGatewayUrl              string
 	HealthUrl                               string `envconfig:"default=https://director.kyma.local/healthz"`
 	WebhookUrl                              string `envconfig:"default=https://kyma-project.io"`
 	InfoUrl                                 string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
@@ -37,6 +43,8 @@ type DirectorConfig struct {
 	TestProviderSubaccountID                        string
 	TestConsumerAccountID                           string
 	TestConsumerSubaccountID                        string
+	TestConsumerAccountIDTenantHierarchy            string
+	TestConsumerSubaccountIDTenantHierarchy         string
 	TestConsumerTenantID                            string
 	TestProviderSubaccountIDRegion2                 string
 	ExternalServicesMockBaseURL                     string
@@ -54,19 +62,21 @@ type DirectorConfig struct {
 	ProviderClientSecret                            string
 	BasicUsername                                   string
 	BasicPassword                                   string
-	ExternalCertCommonName                          string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
-	CertSvcInstanceSecretName                       string `envconfig:"CERT_SVC_INSTANCE_SECRET_NAME"`
-	ExternalCertTestIntSystemOUSubaccount           string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
-	ExternalCertTestIntSystemCommonName             string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
-	ExternalClientCertExpectedIssuerLocalityRegion2 string `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
-	SupportedORDApplicationType                     string `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
-	FormationMappingAsyncResponseDelay              int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
+	CertSvcInstanceSecretName                       string        `envconfig:"CERT_SVC_INSTANCE_SECRET_NAME"`
+	ExternalCertTestIntSystemOUSubaccount           string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
+	ExternalCertTestIntSystemCommonName             string        `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
+	ExternalClientCertExpectedIssuerLocalityRegion2 string        `envconfig:"APP_EXTERNAL_CLIENT_CERT_EXPECTED_ISSUER_LOCALITY_REGION2"`
+	SupportedORDApplicationType                     string        `envconfig:"APP_SUPPORTED_ORD_APPLICATION_TYPE"`
+	FormationMappingAsyncResponseDelay              int64         `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
+	SubscriptionProviderAppNameProperty             string        `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
+	CertSubjectMappingResyncInterval                time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
 }
 
 var (
-	conf                     = &DirectorConfig{}
-	certSecuredGraphQLClient *graphql.Client
-	cc                       certloader.Cache
+	conf                      = &DirectorConfig{}
+	certSecuredGraphQLClient  *graphql.Client
+	directorInternalGQLClient *graphql.Client
+	cc                        certloader.Cache
 )
 
 func TestMain(m *testing.M) {
@@ -87,6 +97,21 @@ func TestMain(m *testing.M) {
 	}
 
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, cc.Get()[conf.ExternalClientCertSecretName].PrivateKey, cc.Get()[conf.ExternalClientCertSecretName].Certificate, conf.SkipSSLValidation)
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	saTransport := httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), "Authorization")
+	client := &http.Client{
+		Transport: saTransport,
+		Timeout:   time.Second * 30,
+	}
+	directorInternalGQLClient = graphql.NewClient(conf.DirectorInternalGatewayUrl, graphql.WithHTTPClient(client))
+	directorInternalGQLClient.Log = func(s string) {
+		log.D().Info(s)
+	}
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

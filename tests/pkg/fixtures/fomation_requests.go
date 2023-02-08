@@ -17,6 +17,15 @@ func FixGetFormationRequest(formationID string) *gcli.Request {
 				}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
+func FixGetFormationByNameRequest(formationName string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query{
+				  result: formationByName(name: "%s"){
+					%s
+				  }
+				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
+}
+
 func FixListFormationsRequestWithPageSize(pageSize int) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {

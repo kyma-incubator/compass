@@ -124,7 +124,7 @@ func TestService_CreateIfNotExists(t *testing.T) {
 			FormationAssignmentInput: faInput,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("GetByTargetAndSource", ctxWithTenant, faModel.Target, faModel.Source, TestTenantID).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, faModel.Source)).Once()
+				repo.On("GetByTargetAndSource", ctxWithTenant, faModel.Target, faModel.Source, TestTenantID, faModel.FormationID).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, faModel.Source)).Once()
 				repo.On("Create", ctxWithTenant, faModel).Return(nil).Once()
 				return repo
 			},
@@ -138,7 +138,7 @@ func TestService_CreateIfNotExists(t *testing.T) {
 			UUIDService:              unusedUIDService,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("GetByTargetAndSource", ctxWithTenant, faModel.Target, faModel.Source, TestTenantID).Return(nil, testErr).Once()
+				repo.On("GetByTargetAndSource", ctxWithTenant, faModel.Target, faModel.Source, TestTenantID, faModel.FormationID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedErrorMsg: testErr.Error(),
@@ -150,7 +150,7 @@ func TestService_CreateIfNotExists(t *testing.T) {
 			UUIDService:              unusedUIDService,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("GetByTargetAndSource", ctxWithTenant, faModel.Target, faModel.Source, TestTenantID).Return(faModel, nil).Once()
+				repo.On("GetByTargetAndSource", ctxWithTenant, faModel.Target, faModel.Source, TestTenantID, faModel.FormationID).Return(faModel, nil).Once()
 				return repo
 			},
 			ExpectedOutput:   TestID,
@@ -1122,12 +1122,13 @@ func TestService_GenerateAssignments(t *testing.T) {
 	formationAssignmentsForApplication := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
 	formationAssignmentsForRuntime := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeRuntime, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
 	formationAssignmentsForRuntimeContext := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentsForSelf := fixFormationAssignmentsForSelf(applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
 	formationAssignmentsForRuntimeContextWithParentInTheFormation := fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimeContexts[0].ID)
 
-	allAssignments := append(formationAssignmentsForApplication, append(formationAssignmentsForRuntime, append(formationAssignmentsForRuntimeContext, formationAssignmentsForRuntimeContextWithParentInTheFormation...)...)...)
+	allAssignments := append(append(formationAssignmentsForApplication, append(formationAssignmentsForRuntime, append(formationAssignmentsForRuntimeContext, formationAssignmentsForRuntimeContextWithParentInTheFormation...)...)...), formationAssignmentsForSelf...)
 
-	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6"}
-	formationAssignmentIDsRtmCtxParentInFormation := []string{"ID1", "ID2", "ID3", "ID4"}
+	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6", "ID7"}
+	formationAssignmentIDsRtmCtxParentInFormation := []string{"ID1", "ID2", "ID3", "ID4", "ID5"}
 
 	formation := &model.Formation{
 		Name: "testFormation",
@@ -1153,7 +1154,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, formationParticipantsIDs).Return(allAssignments, nil).Once()
 				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
 					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
 				}
 				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
@@ -1191,10 +1192,10 @@ func TestService_GenerateAssignments(t *testing.T) {
 			ObjectType: graphql.FormationObjectTypeApplication,
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				unassignAppFormationAssignments := fixFormationAssignmentsWithObjectTypeAndIDAndLastOperation(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID, "unassign")
+				unassignAppFormationAssignments := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, objectID, runtimes[0].ID, runtimeContexts[0].ID}).Return(append(allAssignments, unassignAppFormationAssignments...), nil).Once()
 				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
 					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
 				}
 				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
@@ -1234,7 +1235,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, objectID, runtimes[0].ID, runtimeContexts[0].ID}).Return(allAssignments, nil).Once()
 				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
 					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
 				}
 				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForApplication, nil).Once()
@@ -1274,7 +1275,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, []string{applications[0].ID, runtimes[0].ID, objectID, runtimeContexts[0].ID}).Return(allAssignments, nil).Once()
 				for i := range formationAssignmentsForRuntime {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntime[i].Target, formationAssignmentsForRuntime[i].Source, TestTenantID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntime[i].Target, formationAssignmentsForRuntime[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
 					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntime[i]).Return(nil).Once()
 				}
 				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForRuntime, nil).Once()
@@ -1314,7 +1315,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
 				for i := range formationAssignmentsForRuntimeContext {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContext[i].Target, formationAssignmentsForRuntimeContext[i].Source, TestTenantID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContext[i].Target, formationAssignmentsForRuntimeContext[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
 					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntimeContext[i]).Return(nil).Once()
 				}
 				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(formationAssignmentsForRuntimeContext, nil).Once()
@@ -1355,7 +1356,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
 				for i := range formationAssignmentsForRuntimeContextWithParentInTheFormation {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContextWithParentInTheFormation[i].Target, formationAssignmentsForRuntimeContextWithParentInTheFormation[i].Source, TestTenantID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContextWithParentInTheFormation[i].Target, formationAssignmentsForRuntimeContextWithParentInTheFormation[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
 					repo.On("Create", ctxWithTenant, formationAssignmentsForRuntimeContextWithParentInTheFormation[i]).Return(nil).Once()
 				}
 				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDsRtmCtxParentInFormation).Return(formationAssignmentsForRuntimeContextWithParentInTheFormation, nil).Once()
@@ -1513,7 +1514,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, append(formationParticipantsIDs, objectID)).Return(allAssignments, nil).Once()
-				repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContext[0].Target, formationAssignmentsForRuntimeContext[0].Source, TestTenantID).Return(nil, testErr).Once()
+				repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForRuntimeContext[0].Target, formationAssignmentsForRuntimeContext[0].Source, TestTenantID, formationAssignmentsForRuntimeContext[0].FormationID).Return(nil, testErr).Once()
 				return repo
 			},
 			UIDService: func() *automock.UIDService {
@@ -1548,7 +1549,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("ListAllForObjectIDs", ctxWithTenant, TestTenantID, formation.ID, formationParticipantsIDs).Return(allAssignments, nil).Once()
 				for i := range formationAssignmentsForApplication {
-					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
+					repo.On("GetByTargetAndSource", ctxWithTenant, formationAssignmentsForApplication[i].Target, formationAssignmentsForApplication[i].Source, TestTenantID, formationAssignmentsForApplication[i].FormationID).Return(nil, apperrors.NewNotFoundErrorWithType(resource.FormationAssignment)).Once()
 					repo.On("Create", ctxWithTenant, formationAssignmentsForApplication[i]).Return(nil).Once()
 				}
 				repo.On("ListForIDs", ctxWithTenant, TestTenantID, formationAssignmentIDs).Return(nil, testErr).Once()
@@ -1671,6 +1672,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 	}
 
 	appToAppRequests, appToAppInputTemplate, appToAppInputTemplateReverse := fixNotificationRequestAndReverseRequest(appID, appID2, []string{appID, appID2}, matchedApplicationAssignment, matchedApplicationAssignmentReverse, "application", "application", true)
+	appToAppRequests2, appToAppInputTemplate2, appToAppInputTemplateReverse2 := fixNotificationRequestAndReverseRequest(appID, appID2, []string{appID, appID2}, matchedApplicationAssignment, matchedApplicationAssignmentReverse, "application", "application", true)
 	rtmCtxToAppRequests, rtmCtxToAppInputTemplate, rtmCtxToAppInputTemplateReverse := fixNotificationRequestAndReverseRequest(runtimeID, appID, []string{appID, runtimeCtxID}, matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse, "runtime", "application", true)
 
 	sourceNotMatchTemplateInput := &automock.TemplateInput{}
@@ -1684,7 +1686,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 		TemplateInputReverse           *automock.TemplateInput
 		FormationAssignments           []*model.FormationAssignment
 		Requests                       []*webhookclient.NotificationRequest
-		Operation                      func(context.Context, *formationassignment.AssignmentMappingPair) error
+		Operation                      func(context.Context, *formationassignment.AssignmentMappingPair) (bool, error)
 		RuntimeContextToRuntimeMapping map[string]string
 		ExpectedMappings               []*formationassignment.AssignmentMappingPair
 		ExpectedErrorMsg               string
@@ -1696,7 +1698,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			TemplateInputReverse: appToAppInputTemplateReverse,
 			FormationAssignments: []*model.FormationAssignment{matchedApplicationAssignment, matchedApplicationAssignmentReverse},
 			Requests:             appToAppRequests,
-			Operation:            operationContainer.append,
+			Operation:            operationContainer.appendThatDoesNotProcessedReverse,
 			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
 				{
 					Assignment: &formationassignment.FormationAssignmentRequestMapping{
@@ -1722,13 +1724,35 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			ExpectedErrorMsg: "",
 		},
 		{
+			Name:                 "Does not process assignments multiple times",
+			Context:              ctxWithTenant,
+			TemplateInput:        appToAppInputTemplate2,
+			TemplateInputReverse: appToAppInputTemplateReverse2,
+			FormationAssignments: []*model.FormationAssignment{matchedApplicationAssignment, matchedApplicationAssignmentReverse},
+			Requests:             appToAppRequests2,
+			Operation:            operationContainer.appendThatProcessedReverse,
+			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
+				{
+					Assignment: &formationassignment.FormationAssignmentRequestMapping{
+						Request:             appToAppRequests2[0],
+						FormationAssignment: matchedApplicationAssignment,
+					},
+					ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+						Request:             appToAppRequests2[1],
+						FormationAssignment: matchedApplicationAssignmentReverse,
+					},
+				},
+			},
+			ExpectedErrorMsg: "",
+		},
+		{
 			Name:                           "Success when match assignment for runtimeContext",
 			Context:                        ctxWithTenant,
 			TemplateInput:                  rtmCtxToAppInputTemplate,
 			TemplateInputReverse:           rtmCtxToAppInputTemplateReverse,
 			FormationAssignments:           []*model.FormationAssignment{matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse},
 			Requests:                       rtmCtxToAppRequests,
-			Operation:                      operationContainer.append,
+			Operation:                      operationContainer.appendThatDoesNotProcessedReverse,
 			RuntimeContextToRuntimeMapping: map[string]string{runtimeCtxID: runtimeID},
 			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
 				{
@@ -1767,7 +1791,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 					},
 					Object: sourceNotMatchTemplateInput},
 			},
-			Operation: operationContainer.append,
+			Operation: operationContainer.appendThatDoesNotProcessedReverse,
 			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
 				{
 					Assignment: &formationassignment.FormationAssignmentRequestMapping{
@@ -1799,7 +1823,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			TemplateInputReverse: &automock.TemplateInput{},
 			FormationAssignments: []*model.FormationAssignment{targetNotMatchedAssignment, targetNotMatchedAssignmentReverse},
 			Requests:             appToAppRequests,
-			Operation:            operationContainer.append,
+			Operation:            operationContainer.appendThatDoesNotProcessedReverse,
 			ExpectedMappings: []*formationassignment.AssignmentMappingPair{
 				{
 					Assignment: &formationassignment.FormationAssignmentRequestMapping{
@@ -2020,6 +2044,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		FormationAssignmentConverter func() *automock.FormationAssignmentConverter
 		NotificationService          func() *automock.NotificationService
 		FormationAssignmentPair      *formationassignment.AssignmentMappingPair
+		ExpectedIsReverseProcessed   bool
 		ExpectedErrorMsg             string
 	}{
 		{
@@ -2357,8 +2382,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 			///WHEN
-			err := svc.ProcessFormationAssignmentPair(testCase.Context, testCase.FormationAssignmentPair)
+			isReverseProcessed, err := svc.ProcessFormationAssignmentPair(testCase.Context, testCase.FormationAssignmentPair)
 
+			require.Equal(t, testCase.ExpectedIsReverseProcessed, isReverseProcessed)
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
@@ -2440,8 +2466,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
+		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.NoError(t, err)
+		require.True(t, isReverseProcessed)
 
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
@@ -2509,9 +2536,10 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
+		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
+		require.True(t, isReverseProcessed)
 
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
@@ -2582,8 +2610,9 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 		///WHEN
-		err = svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
+		isReverseProcessed, err := svc.ProcessFormationAssignmentPair(ctxWithTenant, assignmentPair)
 		require.NoError(t, err)
+		require.True(t, isReverseProcessed)
 
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
@@ -3101,8 +3130,9 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			svc := formationassignment.NewService(repo, nil, nil, nil, nil, conv, notificationSvc)
 
 			// WHEN
-			err := svc.CleanupFormationAssignment(testCase.Context, testCase.FormationAssignmentMappingPair)
+			isReverseProcessed, err := svc.CleanupFormationAssignment(testCase.Context, testCase.FormationAssignmentMappingPair)
 
+			require.False(t, isReverseProcessed)
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
@@ -3121,13 +3151,18 @@ type operationContainer struct {
 	err     error
 }
 
-func (o *operationContainer) append(_ context.Context, a *formationassignment.AssignmentMappingPair) error {
+func (o *operationContainer) appendThatProcessedReverse(_ context.Context, a *formationassignment.AssignmentMappingPair) (bool, error) {
 	o.content = append(o.content, a)
-	return nil
+	return true, nil
 }
 
-func (o *operationContainer) fail(context.Context, *formationassignment.AssignmentMappingPair) error {
-	return o.err
+func (o *operationContainer) appendThatDoesNotProcessedReverse(_ context.Context, a *formationassignment.AssignmentMappingPair) (bool, error) {
+	o.content = append(o.content, a)
+	return false, nil
+}
+
+func (o *operationContainer) fail(context.Context, *formationassignment.AssignmentMappingPair) (bool, error) {
+	return false, o.err
 }
 
 func (o *operationContainer) clear() {

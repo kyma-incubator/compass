@@ -237,8 +237,8 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 	namePlaceholder := "name-placeholder"
 	displayNamePlaceholder := "display-name-placeholder"
 	sapProvider := "SAP"
-	nameJSONPath := "name-json-path"
-	displayNameJSONPath := "display-name-json-path"
+	nameJSONPath := "$.name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
 
 	testCases := []struct {
 		Name                                  string
@@ -429,8 +429,8 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 	namePlaceholder := "name-placeholder"
 	displayNamePlaceholder := "display-name-placeholder"
 	sapProvider := "SAP"
-	nameJSONPath := "name-json-path"
-	displayNameJSONPath := "display-name-json-path"
+	nameJSONPath := "$.name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
 
 	testCases := []struct {
 		Name                                     string
@@ -657,8 +657,8 @@ func TestQueryApplicationTemplates(t *testing.T) {
 func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	nameJSONPath := "name-json-path"
-	displayNameJSONPath := "display-name-json-path"
+	nameJSONPath := "$.name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
 	appTemplateName := createAppTemplateName("template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
@@ -710,8 +710,8 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	nameJSONPath := "name"
-	displayNameJSONPath := "displayName"
+	nameJSONPath := "$.name"
+	displayNameJSONPath := "$.displayName"
 	placeholdersPayload := `{\"name\": \"appName\", \"displayName\":\"appDisplayName\"}`
 	appTemplateName := createAppTemplateName("templateForPlaceholdersPayload")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
@@ -756,8 +756,8 @@ func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
 func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
-	nameJSONPath := "name-json-path"
-	displayNameJSONPath := "display-name-json-path"
+	nameJSONPath := "$.name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
 	appTemplateName := createAppTemplateName("template")
 	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")

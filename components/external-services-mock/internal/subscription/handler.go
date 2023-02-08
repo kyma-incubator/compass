@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -15,16 +16,18 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+const tenantTokenClaimsKey = "tenant"
+
 type handler struct {
-	httpClient     *http.Client
-	tenantConfig   Config
-	providerConfig ProviderConfig
-	jobID          string
+	httpClient       *http.Client
+	tenantConfig     Config
+	providerConfig   ProviderConfig
+	jobID            string
+	tenantsHierarchy map[string]string // maps consumerSubaccount to consumerAccount
 }
 
 type JobStatus struct {
-	ID    string `json:"id"`
-	State string `json:"state"`
+	Status string `json:"status"`
 }
 
 var Subscriptions = make(map[string]string)
@@ -32,10 +35,11 @@ var Subscriptions = make(map[string]string)
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
 	return &handler{
-		httpClient:     httpClient,
-		tenantConfig:   tenantConfig,
-		providerConfig: providerConfig,
-		jobID:          jobID,
+		httpClient:       httpClient,
+		tenantConfig:     tenantConfig,
+		providerConfig:   providerConfig,
+		jobID:            jobID,
+		tenantsHierarchy: map[string]string{tenantConfig.TestConsumerSubaccountIDTenantHierarchy: tenantConfig.TestConsumerAccountIDTenantHierarchy, tenantConfig.TestConsumerSubaccountID: tenantConfig.TestConsumerAccountID},
 	}
 }
 
@@ -89,8 +93,7 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	jobStatus := &JobStatus{
-		ID:    h.jobID,
-		State: "SUCCEEDED",
+		Status: "COMPLETED",
 	}
 
 	payload, err := json.Marshal(jobStatus)
@@ -123,10 +126,10 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusUnauthorized, errors.New("token value is required")
 	}
 
-	consumerTenantID := mux.Vars(r)["tenant_id"]
-	if consumerTenantID == "" {
-		log.C(ctx).Error("parameter [tenant_id] not provided")
-		return http.StatusBadRequest, errors.New("parameter [tenant_id] not provided")
+	appName := mux.Vars(r)["app_name"]
+	if appName == "" {
+		log.C(ctx).Error("parameter [app_name] not provided")
+		return http.StatusBadRequest, errors.New("parameter [app_name] not provided")
 	}
 	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
 
@@ -139,9 +142,9 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	}
 
 	if httpMethod == http.MethodPut {
-		log.C(ctx).Infof("Creating subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
+		log.C(ctx).Infof("Creating subscription for application with name %s", appName)
 	} else {
-		log.C(ctx).Infof("Removing subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
+		log.C(ctx).Infof("Removing subscription for application with name %s", appName)
 	}
 	resp, err := h.httpClient.Do(request)
 	if err != nil {
@@ -164,9 +167,9 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
 	}
 	if httpMethod == http.MethodPut {
-		Subscriptions[consumerTenantID] = providerSubaccID
+		Subscriptions[appName] = providerSubaccID
 	} else if httpMethod == http.MethodDelete {
-		delete(Subscriptions, consumerTenantID)
+		delete(Subscriptions, appName)
 	}
 
 	return http.StatusOK, nil
@@ -178,14 +181,21 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		err  error
 	)
 
-	if len(h.tenantConfig.TestConsumerAccountID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.TenantIDProperty, h.tenantConfig.TestConsumerAccountID)
+	consumerSubaccountID, err := extractValueFromTokenClaims(token, tenantTokenClaimsKey)
+	if err != nil {
+		return nil, errors.New("error occurred when extracting consumer subaccount from token claims")
+	}
+
+	consumerAccountID := h.tenantsHierarchy[consumerSubaccountID]
+
+	if len(consumerAccountID) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.TenantIDProperty, consumerAccountID)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 		}
 	}
-	if len(h.tenantConfig.TestConsumerSubaccountID) > 0 {
-		body, err = sjson.Set(body, h.providerConfig.SubaccountTenantIDProperty, h.tenantConfig.TestConsumerSubaccountID)
+	if len(consumerSubaccountID) > 0 {
+		body, err = sjson.Set(body, h.providerConfig.SubaccountTenantIDProperty, consumerSubaccountID)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 		}
@@ -230,4 +240,26 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	return request, nil
+}
+
+func extractValueFromTokenClaims(consumerToken, claimsKey string) (string, error) {
+	// JWT format: <header>.<payload>.<signature>
+	tokenParts := strings.Split(consumerToken, ".")
+	if len(tokenParts) != 3 {
+		return "", errors.New("invalid token format")
+	}
+	payload := tokenParts[1]
+
+	consumerTokenPayload, err := base64.RawURLEncoding.DecodeString(payload)
+	if err != nil {
+		return "", err
+	}
+
+	var jsonMap map[string]interface{}
+	err = json.Unmarshal(consumerTokenPayload, &jsonMap)
+	if err != nil {
+		return "", err
+	}
+
+	return jsonMap[claimsKey].(string), nil
 }

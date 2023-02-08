@@ -66,13 +66,13 @@ func (_m *LabelService) UpdateLabel(ctx context.Context, tenant string, id strin
 	return r0
 }
 
-type NewLabelServiceT interface {
+type mockConstructorTestingTNewLabelService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewLabelService creates a new instance of LabelService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelService(t NewLabelServiceT) *LabelService {
+func NewLabelService(t mockConstructorTestingTNewLabelService) *LabelService {
 	mock := &LabelService{}
 	mock.Mock.Test(t)
 

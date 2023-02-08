@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -21,7 +22,7 @@ import (
 //go:generate mockery --name=FormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentRepository interface {
 	Create(ctx context.Context, item *model.FormationAssignment) error
-	GetByTargetAndSource(ctx context.Context, target, source, tenantID string) (*model.FormationAssignment, error)
+	GetByTargetAndSource(ctx context.Context, target, source, tenantID, formationID string) (*model.FormationAssignment, error)
 	Get(ctx context.Context, id, tenantID string) (*model.FormationAssignment, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
@@ -67,6 +68,12 @@ type webhookRepository interface {
 //go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type webhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
+}
+
+//go:generate mockery --exported --name=tenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantRepository interface {
+	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error)
 }
 
 //go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -140,7 +147,7 @@ func (s *service) CreateIfNotExists(ctx context.Context, in *model.FormationAssi
 		return "", errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	existingEntity, err := s.repo.GetByTargetAndSource(ctx, in.Target, in.Source, tenantID)
+	existingEntity, err := s.repo.GetByTargetAndSource(ctx, in.Target, in.Source, tenantID, in.FormationID)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return "", errors.Wrapf(err, "while getting formation assignment by target %q and source %q", in.Target, in.Source)
 	}
@@ -364,20 +371,20 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 	}
 
 	allIDs := make([]string, 0, len(applications)+len(runtimes)+len(runtimeContexts))
-	appIDs := make(map[string]struct{}, len(applications))
-	rtIDs := make(map[string]struct{}, len(runtimes))
-	rtCtxIDs := make(map[string]struct{}, len(runtimeContexts))
+	appIDs := make(map[string]bool, len(applications))
+	rtIDs := make(map[string]bool, len(runtimes))
+	rtCtxIDs := make(map[string]bool, len(runtimeContexts))
 	for _, app := range applications {
 		allIDs = append(allIDs, app.ID)
-		appIDs[app.ID] = struct{}{}
+		appIDs[app.ID] = false
 	}
 	for _, rt := range runtimes {
 		allIDs = append(allIDs, rt.ID)
-		rtIDs[rt.ID] = struct{}{}
+		rtIDs[rt.ID] = false
 	}
 	for _, rtCtx := range runtimeContexts {
 		allIDs = append(allIDs, rtCtx.ID)
-		rtCtxIDs[rtCtx.ID] = struct{}{}
+		rtCtxIDs[rtCtx.ID] = false
 	}
 
 	allAssignments, err := s.ListFormationAssignmentsForObjectIDs(ctx, formation.ID, allIDs)
@@ -387,23 +394,23 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 
 	// We should not generate notifications for formation participants that are being unassigned asynchronously
 	for _, assignment := range allAssignments {
-		if assignment.LastOperation == model.UnassignFormation {
-			switch assignment.LastOperationInitiatorType {
+		if assignment.Source == assignment.Target && assignment.SourceType == assignment.TargetType {
+			switch assignment.SourceType {
 			case model.FormationAssignmentTypeApplication:
-				delete(appIDs, assignment.LastOperationInitiator)
+				appIDs[assignment.Source] = true
 			case model.FormationAssignmentTypeRuntime:
-				delete(rtIDs, assignment.LastOperationInitiator)
+				rtIDs[assignment.Source] = true
 			case model.FormationAssignmentTypeRuntimeContext:
-				delete(rtCtxIDs, assignment.LastOperationInitiator)
+				rtCtxIDs[assignment.Source] = true
 			}
 		}
 	}
 
 	// When assigning an object to a formation we need to create two formation assignments per participant.
 	// In the first formation assignment the object we're assigning will be the source and in the second it will be the target
-	assignments := make([]*model.FormationAssignmentInput, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2)
-	for appID := range appIDs {
-		if appID == objectID {
+	assignments := make([]*model.FormationAssignmentInput, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2+1)
+	for appID, isAssigned := range appIDs {
+		if !isAssigned || appID == objectID {
 			continue
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeApplication, appID)...)
@@ -422,19 +429,29 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		}
 		parentID = rtmCtx.RuntimeID
 	}
-	for runtimeID := range rtIDs {
-		if runtimeID == objectID || runtimeID == parentID {
+	for runtimeID, isAssigned := range rtIDs {
+		if !isAssigned || runtimeID == objectID || runtimeID == parentID {
 			continue
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntime, runtimeID)...)
 	}
 
-	for runtimeCtxID := range rtCtxIDs {
-		if runtimeCtxID == objectID {
+	for runtimeCtxID, isAssigned := range rtCtxIDs {
+		if !isAssigned || runtimeCtxID == objectID {
 			continue
 		}
 		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtxID)...)
 	}
+
+	assignments = append(assignments, &model.FormationAssignmentInput{
+		FormationID: formation.ID,
+		Source:      objectID,
+		SourceType:  model.FormationAssignmentType(objectType),
+		Target:      objectID,
+		TargetType:  model.FormationAssignmentType(objectType),
+		State:       string(model.ReadyAssignmentState),
+		Value:       nil,
+	})
 
 	ids := make([]string, 0, len(assignments))
 	for _, assignment := range assignments {
@@ -457,28 +474,22 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participantID string) []*model.FormationAssignmentInput {
 	assignments := make([]*model.FormationAssignmentInput, 0, 2)
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID:                formation.ID,
-		Source:                     objectID,
-		SourceType:                 model.FormationAssignmentType(objectType),
-		Target:                     participantID,
-		TargetType:                 participantType,
-		LastOperation:              model.AssignFormation,
-		LastOperationInitiator:     objectID,
-		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
-		State:                      string(model.InitialAssignmentState),
-		Value:                      nil,
+		FormationID: formation.ID,
+		Source:      objectID,
+		SourceType:  model.FormationAssignmentType(objectType),
+		Target:      participantID,
+		TargetType:  participantType,
+		State:       string(model.InitialAssignmentState),
+		Value:       nil,
 	})
 	assignments = append(assignments, &model.FormationAssignmentInput{
-		FormationID:                formation.ID,
-		Source:                     participantID,
-		SourceType:                 participantType,
-		Target:                     objectID,
-		TargetType:                 model.FormationAssignmentType(objectType),
-		LastOperation:              model.AssignFormation,
-		LastOperationInitiator:     objectID,
-		LastOperationInitiatorType: model.FormationAssignmentType(objectType),
-		State:                      string(model.InitialAssignmentState),
-		Value:                      nil,
+		FormationID: formation.ID,
+		Source:      participantID,
+		SourceType:  participantType,
+		Target:      objectID,
+		TargetType:  model.FormationAssignmentType(objectType),
+		State:       string(model.InitialAssignmentState),
+		Value:       nil,
 	})
 	return assignments
 }
@@ -492,12 +503,20 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 // Mapping and reverseMapping example
 // mapping{notificationRequest=request, formationAssignment=assignment} - reverseMapping{notificationRequest=reverseRequest, formationAssignment=reverseAssignment}
 
-func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) error) error {
+func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) (bool, error)) error {
 	var errs *multierror.Error
 	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, requests)
+	alreadyProcessedFAs := make(map[string]bool, 0)
 	for _, mapping := range assignmentRequestMappings {
-		if err := formationAssignmentFunc(ctx, mapping); err != nil {
+		if alreadyProcessedFAs[mapping.Assignment.FormationAssignment.ID] {
+			continue
+		}
+		isReverseProcessed, err := formationAssignmentFunc(ctx, mapping)
+		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "while processing formation assignment with id %q", mapping.Assignment.FormationAssignment.ID))
+		}
+		if isReverseProcessed {
+			alreadyProcessedFAs[mapping.ReverseAssignment.FormationAssignment.ID] = true
 		}
 	}
 	log.C(ctx).Infof("Finished processing %d formation assignments", len(formationAssignmentsForObject))
@@ -506,11 +525,13 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssi
 }
 
 // ProcessFormationAssignmentPair prepares and update the `State` and `Config` of the formation assignment based on the response and process the notifications
-func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *AssignmentMappingPair) error {
-	return s.processFormationAssignmentsWithReverseNotification(ctx, mappingPair, 0)
+func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *AssignmentMappingPair) (bool, error) {
+	var isReverseProcessed bool
+	err := s.processFormationAssignmentsWithReverseNotification(ctx, mappingPair, 0, &isReverseProcessed)
+	return isReverseProcessed, err
 }
 
-func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPair, depth int) error {
+func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPair, depth int, isReverseProcessed *bool) error {
 	fa := mappingPair.Assignment.FormationAssignment
 	log.C(ctx).Infof("Processing formation assignment %q for formation %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType, fa.State)
 	assignmentClone := mappingPair.Assignment.Clone()
@@ -590,12 +611,14 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 
 	if shouldSendReverseNotification {
-		if depth >= model.NotificationRecursionDepthLimit {
-			log.C(ctx).Errorf("Depth limit exceeded for assignments: %q and %q", assignmentClone.FormationAssignment.ID, reverseClone.FormationAssignment.ID)
+		if reverseClone == nil {
 			return nil
 		}
 
-		if reverseClone == nil {
+		*isReverseProcessed = true
+
+		if depth >= model.NotificationRecursionDepthLimit {
+			log.C(ctx).Errorf("Depth limit exceeded for assignments: %q and %q", assignmentClone.FormationAssignment.ID, reverseClone.FormationAssignment.ID)
 			return nil
 		}
 
@@ -616,7 +639,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 			ReverseAssignment: newReverseAssignment,
 		}
 
-		if err = s.processFormationAssignmentsWithReverseNotification(ctx, newAssignmentMappingPair, depth+1); err != nil {
+		if err = s.processFormationAssignmentsWithReverseNotification(ctx, newAssignmentMappingPair, depth+1, isReverseProcessed); err != nil {
 			return errors.Wrap(err, "while sending reverse notification")
 		}
 	}
@@ -629,35 +652,35 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 // based on the response.
 // In the case the response is successful it deletes the formation assignment
 // In all other cases the `State` and `Config` are updated accordingly
-func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair) error {
+func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPair) (bool, error) {
 	assignment := mappingPair.Assignment.FormationAssignment
 	if mappingPair.Assignment.Request == nil {
 		if err := s.Delete(ctx, assignment.ID); err != nil {
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
 			updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
 			if updateError != nil {
-				return errors.Wrapf(
+				return false, errors.Wrapf(
 					updateError,
 					"while updating error state: %s",
 					errors.Wrapf(err, "while deleting formation assignment with id %q", assignment.ID).Error())
 			}
-			return errors.Wrapf(err, "while deleting formation assignment with id %q", assignment.ID)
+			return false, errors.Wrapf(err, "while deleting formation assignment with id %q", assignment.ID)
 		}
 		log.C(ctx).Infof("Assignment with ID %s was deleted", assignment.ID)
 
-		return nil
+		return false, nil
 	}
 
 	response, err := s.notificationService.SendNotification(ctx, mappingPair.Assignment.Request)
 	if err != nil {
 		updateError := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), TechnicalError, model.DeleteErrorAssignmentState)
 		if updateError != nil {
-			return errors.Wrapf(
+			return false, errors.Wrapf(
 				updateError,
 				"while updating error state: %s",
 				errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID).Error())
 		}
-		return errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID)
+		return false, errors.Wrapf(err, "while sending notification for formation assignment with ID %q", assignment.ID)
 	}
 
 	requestWebhookMode := mappingPair.Assignment.Request.Webhook.Mode
@@ -665,9 +688,9 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 		log.C(ctx).Infof("The Webhook in the notification is in %s mode. Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
 		assignment.State = string(model.DeletingAssignmentState)
 		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
-			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
+			return false, errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
 		}
-		return nil
+		return false, nil
 	}
 
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
@@ -675,36 +698,36 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 			// It is possible that the deletion fails due to some kind of DB constraint, so we will try to update the state
 			updateError := s.SetAssignmentToErrorState(ctx, assignment, "error while deleting assignment", TechnicalError, model.DeleteErrorAssignmentState)
 			if updateError != nil {
-				return errors.Wrapf(
+				return false, errors.Wrapf(
 					updateError,
 					"while updating error state: %s",
 					errors.Wrapf(err, "while deleting formation assignment with id %q", assignment.ID).Error())
 			}
-			return errors.Wrapf(err, "while deleting formation assignment with id %q", assignment.ID)
+			return false, errors.Wrapf(err, "while deleting formation assignment with id %q", assignment.ID)
 		}
 		log.C(ctx).Infof("Assignment with ID %s was deleted", assignment.ID)
 
-		return nil
+		return false, nil
 	}
 
 	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
 		err = errors.New("Error while deleting assignment: config propagation is not supported on unassign notifications")
 		updateErr := s.SetAssignmentToErrorState(ctx, assignment, err.Error(), ClientError, model.DeleteErrorAssignmentState)
 		if updateErr != nil {
-			return errors.Wrapf(updateErr, "while updating error state for formation with ID %q", assignment.ID)
+			return false, errors.Wrapf(updateErr, "while updating error state for formation with ID %q", assignment.ID)
 		}
-		return err
+		return false, err
 	}
 
 	if response.Error != nil && *response.Error != "" {
 		err = s.SetAssignmentToErrorState(ctx, assignment, *response.Error, ClientError, model.DeleteErrorAssignmentState)
 		if err != nil {
-			return errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
+			return false, errors.Wrapf(err, "while updating error state for formation with ID %q", assignment.ID)
 		}
-		return errors.Errorf("Received error from response: %v", *response.Error)
+		return false, errors.Errorf("Received error from response: %v", *response.Error)
 	}
 
-	return nil
+	return false, nil
 }
 
 func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *model.FormationAssignment, errorMessage string, errorCode AssignmentErrorCode, state model.FormationAssignmentState) error {
@@ -756,6 +779,10 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 
 			participants := request.Object.GetParticipantsIDs()
 			for _, id := range participants {
+				// We should not generate notifications for self
+				if assignment.Source == assignment.Target {
+					break assignment
+				}
 				if assignment.Source == id {
 					mappingObject.Request = requests[j]
 					break assignment
@@ -816,18 +843,15 @@ func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestM
 	return &FormationAssignmentRequestMapping{
 		Request: request,
 		FormationAssignment: &model.FormationAssignment{
-			ID:                         f.FormationAssignment.ID,
-			FormationID:                f.FormationAssignment.FormationID,
-			TenantID:                   f.FormationAssignment.TenantID,
-			Source:                     f.FormationAssignment.Source,
-			SourceType:                 f.FormationAssignment.SourceType,
-			Target:                     f.FormationAssignment.Target,
-			TargetType:                 f.FormationAssignment.TargetType,
-			LastOperation:              f.FormationAssignment.LastOperation,
-			LastOperationInitiator:     f.FormationAssignment.LastOperationInitiator,
-			LastOperationInitiatorType: f.FormationAssignment.LastOperationInitiatorType,
-			State:                      f.FormationAssignment.State,
-			Value:                      f.FormationAssignment.Value,
+			ID:          f.FormationAssignment.ID,
+			FormationID: f.FormationAssignment.FormationID,
+			TenantID:    f.FormationAssignment.TenantID,
+			Source:      f.FormationAssignment.Source,
+			SourceType:  f.FormationAssignment.SourceType,
+			Target:      f.FormationAssignment.Target,
+			TargetType:  f.FormationAssignment.TargetType,
+			State:       f.FormationAssignment.State,
+			Value:       f.FormationAssignment.Value,
 		},
 	}
 }

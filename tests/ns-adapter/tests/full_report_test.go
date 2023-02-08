@@ -633,7 +633,9 @@ func TestFullReport(stdT *testing.T) {
 		defer func() {
 			for {
 				apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
-				require.NoError(t, err, "failed to clean-up after test")
+				if err != nil {
+					log.C(ctx).Errorf("failed to clean-up after test: %v", err)
+				}
 
 				if len(apps) == 0 {
 					break

@@ -34,9 +34,14 @@ const (
 	SubdomainLabelKey = "subdomain"
 	// RegionPrefix a prefix to be trimmed from the region placeholder value when creating an app from template
 	RegionPrefix = "cf-"
+	// InstancesLabelKey is the key of the instances label, that stores the number of created instances.
+	InstancesLabelKey = "instances"
+	// DefaultNumberOfInstancesForAlreadySubscribedTenant is the default number of instances set to instances label value for already subscribed tenant
+	DefaultNumberOfInstancesForAlreadySubscribedTenant = 2
 )
 
 // RuntimeService is responsible for Runtime operations
+//
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	GetByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error)
@@ -44,6 +49,7 @@ type RuntimeService interface {
 }
 
 // RuntimeCtxService provide functionality to interact with the runtime contexts(create, list, delete).
+//
 //go:generate mockery --name=RuntimeCtxService --output=automock --outpkg=automock --case=underscore
 type RuntimeCtxService interface {
 	Create(ctx context.Context, in model.RuntimeContextInput) (string, error)
@@ -52,6 +58,7 @@ type RuntimeCtxService interface {
 }
 
 // TenantService provides functionality for retrieving, and creating tenants.
+//
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
@@ -59,6 +66,7 @@ type TenantService interface {
 }
 
 // LabelService is responsible updating already existing labels, and their label definitions.
+//
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
 	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
@@ -74,6 +82,7 @@ type uidService interface {
 }
 
 // ApplicationTemplateService is responsible for Application Template operations
+//
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
@@ -81,7 +90,15 @@ type ApplicationTemplateService interface {
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
+// ApplicationTemplateConverter missing godoc
+//
+//go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateConverter interface {
+	ApplicationFromTemplateInputFromGraphQL(appTemplate *model.ApplicationTemplate, in graphql.ApplicationFromTemplateInput) (model.ApplicationFromTemplateInput, error)
+}
+
 // ApplicationConverter is converting graphql and model Applications
+//
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
@@ -90,6 +107,7 @@ type ApplicationConverter interface {
 }
 
 // ApplicationService is responsible for Application operations
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
@@ -104,6 +122,7 @@ type service struct {
 	labelSvc                     LabelService
 	appTemplateSvc               ApplicationTemplateService
 	appConv                      ApplicationConverter
+	appTemplateConv              ApplicationTemplateConverter
 	appSvc                       ApplicationService
 	uidSvc                       uidService
 	consumerSubaccountLabelKey   string
@@ -113,7 +132,7 @@ type service struct {
 }
 
 // NewService returns a new object responsible for service-layer Subscription operations.
-func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appSvc ApplicationService, uidService uidService,
+func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appTemplateConv ApplicationTemplateConverter, appSvc ApplicationService, uidService uidService,
 	consumerSubaccountLabelKey, subscriptionLabelKey, runtimeTypeLabelKey, subscriptionProviderLabelKey string) *service {
 	return &service{
 		runtimeSvc:                   runtimeSvc,
@@ -122,6 +141,7 @@ func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tena
 		labelSvc:                     labelSvc,
 		appTemplateSvc:               appTemplateSvc,
 		appConv:                      appConv,
+		appTemplateConv:              appTemplateConv,
 		appSvc:                       appSvc,
 		uidSvc:                       uidService,
 		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
@@ -169,7 +189,10 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 	for _, rtmCtx := range rtmCtxPage.Data {
 		if rtmCtx.Value == consumerTenantID {
 			// Already subscribed
-			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
+			log.C(ctx).Infof("Consumer %q is already subscribed. Increasing the %q label value by one", consumerTenantID, InstancesLabelKey)
+			if err := s.manageInstancesLabelOnSubscribe(ctx, consumerInternalTenant, model.RuntimeContextLabelableObject, rtmCtx.ID); err != nil {
+				return false, err
+			}
 			return true, nil
 		}
 	}
@@ -227,6 +250,17 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		return false, errors.Wrap(err, fmt.Sprintf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", s.consumerSubaccountLabelKey, subaccountTenantID, model.RuntimeContextLabelableObject, rtmCtxID))
 	}
 
+	log.C(ctx).Infof("Creating label for runtime context with ID: %q with key: %q and value: %q", rtmCtxID, InstancesLabelKey, 1)
+	if err := s.labelSvc.CreateLabel(ctx, consumerInternalTenant, s.uidSvc.Generate(), &model.LabelInput{
+		Key:        InstancesLabelKey,
+		Value:      1,
+		ObjectID:   rtmCtxID,
+		ObjectType: model.RuntimeContextLabelableObject,
+	}); err != nil {
+		log.C(ctx).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q: %v", InstancesLabelKey, 1, model.RuntimeContextLabelableObject, rtmCtxID, err)
+		return false, errors.Wrap(err, fmt.Sprintf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, 1, model.RuntimeContextLabelableObject, rtmCtxID))
+	}
+
 	return true, nil
 }
 
@@ -269,12 +303,9 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 	for _, rtmCtx := range rtmCtxPage.Data {
 		// if the current subscription(runtime context) is the one for which the unsubscribe request is initiated, delete the record from the DB
 		if rtmCtx.Value == consumerTenantID {
-			log.C(ctx).Infof("Deleting runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
-			if err := s.runtimeCtxSvc.Delete(ctx, rtmCtx.ID); err != nil {
-				log.C(ctx).Errorf("An error occurred while deleting runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
+			if err := s.deleteOnUnsubscribe(ctx, consumerInternalTenant, model.RuntimeContextLabelableObject, rtmCtx.ID, s.runtimeCtxSvc.Delete); err != nil {
 				return false, err
 			}
-			log.C(ctx).Infof("Successfully deleted runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
 			break
 		}
 	}
@@ -283,7 +314,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName string) (bool, error) {
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName string, subscriptionPayload string) (bool, error) {
 	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
@@ -310,7 +341,10 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 	for _, app := range applications {
 		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
 			// Already subscribed
-			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
+			log.C(ctx).Infof("Consumer %q is already subscribed. Increasing the %q label value by one", consumerTenantID, InstancesLabelKey)
+			if err := s.manageInstancesLabelOnSubscribe(ctx, consumerInternalTenant, model.ApplicationLabelableObject, app.ID); err != nil {
+				return false, err
+			}
 			return true, nil
 		}
 	}
@@ -329,7 +363,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		}
 	}
 
-	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region); err != nil {
+	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionPayload); err != nil {
 		return false, err
 	}
 
@@ -401,13 +435,13 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string) error {
-	values := []*model.ApplicationTemplateValueInput{
-		{Placeholder: "name", Value: subscribedAppName},
-		{Placeholder: "display-name", Value: subscribedAppName},
-		{Placeholder: "subdomain", Value: subdomain},
-		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region string, subscriptionPayload string) error {
+	log.C(ctx).Debugf("Preparing Values for Application Template with name %q", appTemplate.Name)
+	values, err := s.preparePlaceholderValues(appTemplate, subdomain, region, subscriptionPayload)
+	if err != nil {
+		return errors.Wrapf(err, "while preparing the values for Application template %q", appTemplate.Name)
 	}
+
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
 	if err != nil {
@@ -434,6 +468,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
 	appCreateInputModel.Labels["managed"] = "false"
+	appCreateInputModel.Labels[InstancesLabelKey] = 1
 	appCreateInputModel.Labels[s.consumerSubaccountLabelKey] = subscribedSubaccountID
 	appCreateInputModel.LocalTenantID = &consumerTenantID
 
@@ -446,6 +481,36 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	return nil
 }
 
+func (s *service) preparePlaceholderValues(appTemplate *model.ApplicationTemplate, subdomain, region string, subscriptionPayload string) ([]*model.ApplicationTemplateValueInput, error) {
+	values := []*model.ApplicationTemplateValueInput{
+		{Placeholder: "subdomain", Value: subdomain},
+		{Placeholder: "region", Value: strings.TrimPrefix(region, RegionPrefix)},
+	}
+
+	oldPlaceholders := appTemplate.Placeholders
+
+	newPlaceholders := []model.ApplicationTemplatePlaceholder{}
+	for _, placeholder := range oldPlaceholders {
+		if placeholder.Name != "subdomain" && placeholder.Name != "region" {
+			newPlaceholders = append(newPlaceholders, placeholder)
+		}
+	}
+	appTemplate.Placeholders = newPlaceholders
+
+	appFromTemplateInput, err := s.appTemplateConv.ApplicationFromTemplateInputFromGraphQL(appTemplate, graphql.ApplicationFromTemplateInput{
+		TemplateName:        appTemplate.Name,
+		PlaceholdersPayload: &subscriptionPayload,
+	})
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing the callback payload with the Application template %q", appTemplate.Name)
+	}
+
+	appTemplate.Placeholders = oldPlaceholders
+	values = append(appFromTemplateInput.Values, values...)
+	return values, nil
+}
+
 func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemplateID string) error {
 	applications, err := s.appSvc.ListAll(ctx)
 	if err != nil {
@@ -454,11 +519,107 @@ func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemp
 
 	for _, app := range applications {
 		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplateID {
-			if err := s.appSvc.Delete(ctx, app.ID); err != nil {
-				return errors.Wrapf(err, "while trying to delete Application with ID: %q", app.ID)
+			internalTenant, err := tenant.LoadFromContext(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "An error occurred while loading tenant from context")
+			}
+			if err := s.deleteOnUnsubscribe(ctx, internalTenant, model.ApplicationLabelableObject, app.ID, s.appSvc.Delete); err != nil {
+				return err
 			}
 		}
 	}
+
+	return nil
+}
+
+func (s *service) manageInstancesLabelOnSubscribe(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
+	instancesLabel, err := s.labelSvc.GetByKey(ctx, tenant, objectType, objectID, InstancesLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+			return errors.Wrapf(err, "while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+		}
+
+		if err := s.labelSvc.CreateLabel(ctx, tenant, s.uidSvc.Generate(), &model.LabelInput{
+			Key:        InstancesLabelKey,
+			Value:      DefaultNumberOfInstancesForAlreadySubscribedTenant,
+			ObjectID:   objectID,
+			ObjectType: objectType,
+		}); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, DefaultNumberOfInstancesForAlreadySubscribedTenant, objectType, objectID)
+			return errors.Wrapf(err, "while creating label with key: %q and value: %q for object type: %q and ID: %q", InstancesLabelKey, DefaultNumberOfInstancesForAlreadySubscribedTenant, objectType, objectID)
+		}
+
+		log.C(ctx).Debugf("%q label created, for already subscibed tenant to %q with id %q", InstancesLabelKey, objectType, objectID)
+		return nil
+	}
+
+	instances, ok := instancesLabel.Value.(float64)
+	if !ok {
+		return errors.Errorf("cannot cast %q label value of type %T to int", InstancesLabelKey, instancesLabel.Value)
+	}
+
+	log.C(ctx).Debugf("Increasing %q label value. Current value %f", InstancesLabelKey, instances)
+	instances++
+	if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
+		Key:        instancesLabel.Key,
+		Value:      instances,
+		ObjectID:   instancesLabel.ObjectID,
+		ObjectType: instancesLabel.ObjectType,
+		Version:    instancesLabel.Version,
+	}); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+		return errors.Wrapf(err, "while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+	}
+
+	log.C(ctx).Debugf("Successfully increased %q label value to %f for %q with id %q", InstancesLabelKey, instances, objectType, objectID)
+	return nil
+}
+
+func (s *service) deleteOnUnsubscribe(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, deleteObject func(context.Context, string) error) error {
+	instancesLabel, err := s.labelSvc.GetByKey(ctx, tenant, objectType, objectID, InstancesLabelKey)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			log.C(ctx).WithError(err).Errorf("An error occurred while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+			return errors.Wrapf(err, "while getting label with key: %q for object type: %q and ID: %q", InstancesLabelKey, objectType, objectID)
+		}
+
+		log.C(ctx).Debugf("Cannot find label with key %q for %q with ID %q. Triggering deletion of %q with ID %q...", InstancesLabelKey, objectType, objectID, objectType, objectID)
+		if err := deleteObject(ctx, objectID); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while trying to delete %q with ID: %q", objectType, objectID)
+			return errors.Wrapf(err, "while trying to delete %q with ID: %q", objectType, objectID)
+		}
+		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
+		return nil
+	}
+
+	instances, ok := instancesLabel.Value.(float64)
+	if !ok {
+		return errors.Errorf("cannot cast %q label value of type %T to int", InstancesLabelKey, instancesLabel.Value)
+	}
+
+	if instances <= 1 {
+		log.C(ctx).Debugf("The number of %q for %q with ID %q is <=1. Triggering deletion of %q with ID %q...", InstancesLabelKey, objectType, objectID, objectType, objectID)
+		if err := deleteObject(ctx, objectID); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while deleting %q with ID: %q", objectType, objectID)
+			return errors.Wrapf(err, "while deleting %q with ID: %q", objectType, objectID)
+		}
+		log.C(ctx).Infof("Successfully deleted %q with ID %q", objectType, objectID)
+		return nil
+	}
+
+	instances--
+	if err := s.labelSvc.UpdateLabel(ctx, tenant, instancesLabel.ID, &model.LabelInput{
+		Key:        instancesLabel.Key,
+		Value:      instances,
+		ObjectID:   instancesLabel.ObjectID,
+		ObjectType: instancesLabel.ObjectType,
+		Version:    instancesLabel.Version,
+	}); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+		return errors.Wrapf(err, "while updating label with key: %q and value: %f for object type: %q and ID: %q", InstancesLabelKey, instances, objectType, objectID)
+	}
+	log.C(ctx).Debugf("Successfully decreased %q label value to %f for %q with ID %q", InstancesLabelKey, instances, objectType, objectID)
 
 	return nil
 }

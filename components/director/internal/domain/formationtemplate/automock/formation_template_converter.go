@@ -17,7 +17,7 @@ type FormationTemplateConverter struct {
 }
 
 // FromInputGraphQL provides a mock function with given fields: in
-func (_m *FormationTemplateConverter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.FormationTemplateInput {
+func (_m *FormationTemplateConverter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model.FormationTemplateInput, error) {
 	ret := _m.Called(in)
 
 	var r0 *model.FormationTemplateInput
@@ -29,7 +29,14 @@ func (_m *FormationTemplateConverter) FromInputGraphQL(in *graphql.FormationTemp
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*graphql.FormationTemplateInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // FromModelInputToModel provides a mock function with given fields: in, id, tenantID
@@ -49,7 +56,7 @@ func (_m *FormationTemplateConverter) FromModelInputToModel(in *model.FormationT
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
-func (_m *FormationTemplateConverter) MultipleToGraphQL(in []*model.FormationTemplate) []*graphql.FormationTemplate {
+func (_m *FormationTemplateConverter) MultipleToGraphQL(in []*model.FormationTemplate) ([]*graphql.FormationTemplate, error) {
 	ret := _m.Called(in)
 
 	var r0 []*graphql.FormationTemplate
@@ -61,11 +68,18 @@ func (_m *FormationTemplateConverter) MultipleToGraphQL(in []*model.FormationTem
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*model.FormationTemplate) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *FormationTemplateConverter) ToGraphQL(in *model.FormationTemplate) *graphql.FormationTemplate {
+func (_m *FormationTemplateConverter) ToGraphQL(in *model.FormationTemplate) (*graphql.FormationTemplate, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.FormationTemplate
@@ -77,7 +91,14 @@ func (_m *FormationTemplateConverter) ToGraphQL(in *model.FormationTemplate) *gr
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.FormationTemplate) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewFormationTemplateConverter creates a new instance of FormationTemplateConverter. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.

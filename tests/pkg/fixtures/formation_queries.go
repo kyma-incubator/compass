@@ -57,11 +57,13 @@ func CreateFormationFromTemplateWithinTenant(t *testing.T, ctx context.Context, 
 	return formation
 }
 
-func DeleteFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationName string) *graphql.Formation {
+func DeleteFormation(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationName string) *graphql.Formation {
+	t.Logf("Deleting formation with name: %q", formationName)
 	deleteRequest := FixDeleteFormationRequest(formationName)
 	var deleteFormation graphql.Formation
 	err := testctx.Tc.RunOperation(ctx, gqlClient, deleteRequest, &deleteFormation)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+	t.Logf("Deleted formation with name: %s", deleteFormation.Name)
 
 	return &deleteFormation
 }
@@ -72,6 +74,7 @@ func DeleteFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *g
 	var deleteFormation graphql.Formation
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, &deleteFormation)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+	t.Logf("Deleted formation with name: %s", deleteFormation.Name)
 
 	return &deleteFormation
 }

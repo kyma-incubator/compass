@@ -9,7 +9,7 @@ CREATE TABLE vendors
     ord_id    VARCHAR(256) PRIMARY KEY,
     tenant_id UUID         NOT NULL,
     app_id    UUID         NOT NULL,
-    FOREIGN KEY (tenant_id, app_id) REFERENCES applications (tenant_id, id),
+    CONSTRAINT vendors_tenant_id_fkey FOREIGN KEY (tenant_id, app_id) REFERENCES applications (tenant_id, id),
     title     VARCHAR(256) NOT NULL,
     type      vendor_type  NOT NULL,
     labels    JSONB
@@ -23,7 +23,7 @@ CREATE TABLE products
     ord_id             VARCHAR(256) PRIMARY KEY,
     tenant_id          UUID         NOT NULL,
     app_id             UUID         NOT NULL,
-    FOREIGN KEY (tenant_id, app_id) REFERENCES applications (tenant_id, id),
+    CONSTRAINT products_tenant_id_fkey FOREIGN KEY (tenant_id, app_id) REFERENCES applications (tenant_id, id),
     title              VARCHAR(256) NOT NULL,
     short_description  VARCHAR(255) NOT NULL,
     vendor             VARCHAR(256) NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE tombstones
     ord_id       VARCHAR(256) PRIMARY KEY,
     tenant_id    UUID         NOT NULL,
     app_id       UUID         NOT NULL,
-    FOREIGN KEY (tenant_id, app_id) REFERENCES applications (tenant_id, id),
+    CONSTRAINT tombstones_tenant_id_fkey FOREIGN KEY (tenant_id, app_id) REFERENCES applications (tenant_id, id),
     removal_date VARCHAR(256) NOT NULL
 );
 ------------------------------------------------------------

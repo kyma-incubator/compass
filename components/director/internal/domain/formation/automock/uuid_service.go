@@ -23,13 +23,13 @@ func (_m *UuidService) Generate() string {
 	return r0
 }
 
-type NewUuidServiceT interface {
+type mockConstructorTestingTNewUuidService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewUuidService creates a new instance of UuidService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewUuidService(t NewUuidServiceT) *UuidService {
+func NewUuidService(t mockConstructorTestingTNewUuidService) *UuidService {
 	mock := &UuidService{}
 	mock.Mock.Test(t)
 

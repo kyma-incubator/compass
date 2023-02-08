@@ -13,6 +13,7 @@ func (i FormationTemplateInput) Validate() error {
 		validation.Field(&i.RuntimeTypes, validation.Required, inputvalidation.Each(validation.Required, validation.RuneLength(0, longStringLengthLimit))),
 		validation.Field(&i.RuntimeTypeDisplayName, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.RuntimeArtifactKind, validation.Required, validation.In(ArtifactTypeSubscription, ArtifactTypeServiceInstance, ArtifactTypeEnvironmentInstance)),
+		validation.Field(&i.Webhooks, validation.By(webhooksRuleFunc)),
 	}
 
 	return validation.ValidateStruct(&i, fieldRules...)

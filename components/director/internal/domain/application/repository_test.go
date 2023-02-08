@@ -872,14 +872,14 @@ func TestPgRepository_ListByRuntimeScenarios(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_GetByNameAndSystemNumber(t *testing.T) {
+func TestPgRepository_GetBySystemNumber(t *testing.T) {
 	entity := fixDetailedEntityApplication(t, givenID(), givenTenant(), appName, "Test app description")
 	suite := testdb.RepoGetTestSuite{
-		Name: "Get Application By Name and System Number",
+		Name: "Get Application By System Number",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.applications WHERE name = $1 AND system_number = $2 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $3))`),
-				Args:     []driver.Value{appName, systemNumber, givenTenant()},
+				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM public.applications WHERE system_number = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`),
+				Args:     []driver.Value{systemNumber, givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{
@@ -900,8 +900,8 @@ func TestPgRepository_GetByNameAndSystemNumber(t *testing.T) {
 		RepoConstructorFunc:       application.NewRepository,
 		ExpectedModelEntity:       fixDetailedModelApplication(t, givenID(), givenTenant(), "Test app", "Test app description"),
 		ExpectedDBEntity:          entity,
-		MethodName:                "GetByNameAndSystemNumber",
-		MethodArgs:                []interface{}{givenTenant(), appName, systemNumber},
+		MethodName:                "GetBySystemNumber",
+		MethodArgs:                []interface{}{givenTenant(), systemNumber},
 		DisableConverterErrorTest: true,
 	}
 

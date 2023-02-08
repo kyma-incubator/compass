@@ -35,7 +35,7 @@ type APIDefinitionInput struct {
 	Description *string `json:"description"`
 	// **Validation:** valid URL, max=256
 	TargetURL string `json:"targetURL"`
-	// **Validation:** max=36
+	// **Validation:** max=100
 	Group   *string       `json:"group"`
 	Spec    *APISpecInput `json:"spec"`
 	Version *VersionInput `json:"version"`
@@ -357,6 +357,34 @@ type CertificateOAuthCredentialDataInput struct {
 	URL string `json:"url"`
 }
 
+type CertificateSubjectMapping struct {
+	ID                 string   `json:"id"`
+	Subject            string   `json:"subject"`
+	ConsumerType       string   `json:"consumerType"`
+	InternalConsumerID *string  `json:"internalConsumerID"`
+	TenantAccessLevels []string `json:"tenantAccessLevels"`
+}
+
+type CertificateSubjectMappingInput struct {
+	Subject            string   `json:"subject"`
+	ConsumerType       string   `json:"consumerType"`
+	InternalConsumerID *string  `json:"internalConsumerID"`
+	TenantAccessLevels []string `json:"tenantAccessLevels"`
+}
+
+type CertificateSubjectMappingPage struct {
+	Data       []*CertificateSubjectMapping `json:"data"`
+	PageInfo   *PageInfo                    `json:"pageInfo"`
+	TotalCount int                          `json:"totalCount"`
+}
+
+func (CertificateSubjectMappingPage) IsPageable() {}
+
+type ConstraintReference struct {
+	ConstraintID        string `json:"constraintID"`
+	FormationTemplateID string `json:"formationTemplateID"`
+}
+
 // **Validation:** basic or oauth or certificateOAuth field required
 type CredentialDataInput struct {
 	Basic            *BasicCredentialDataInput            `json:"basic"`
@@ -452,16 +480,13 @@ type FetchRequestStatus struct {
 }
 
 type FormationAssignment struct {
-	ID                         string                  `json:"id"`
-	Source                     string                  `json:"source"`
-	SourceType                 FormationAssignmentType `json:"sourceType"`
-	Target                     string                  `json:"target"`
-	TargetType                 FormationAssignmentType `json:"targetType"`
-	LastOperation              string                  `json:"lastOperation"`
-	LastOperationInitiator     string                  `json:"lastOperationInitiator"`
-	LastOperationInitiatorType FormationAssignmentType `json:"lastOperationInitiatorType"`
-	State                      string                  `json:"state"`
-	Value                      *string                 `json:"value"`
+	ID         string                  `json:"id"`
+	Source     string                  `json:"source"`
+	SourceType FormationAssignmentType `json:"sourceType"`
+	Target     string                  `json:"target"`
+	TargetType FormationAssignmentType `json:"targetType"`
+	State      string                  `json:"state"`
+	Value      *string                 `json:"value"`
 }
 
 type FormationAssignmentPage struct {
@@ -471,6 +496,29 @@ type FormationAssignmentPage struct {
 }
 
 func (FormationAssignmentPage) IsPageable() {}
+
+type FormationConstraint struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	ConstraintType  string `json:"constraintType"`
+	TargetOperation string `json:"targetOperation"`
+	Operator        string `json:"operator"`
+	ResourceType    string `json:"resourceType"`
+	ResourceSubtype string `json:"resourceSubtype"`
+	InputTemplate   string `json:"inputTemplate"`
+	ConstraintScope string `json:"constraintScope"`
+}
+
+type FormationConstraintInput struct {
+	Name            string          `json:"name"`
+	ConstraintType  ConstraintType  `json:"constraintType"`
+	TargetOperation TargetOperation `json:"targetOperation"`
+	Operator        string          `json:"operator"`
+	ResourceType    ResourceType    `json:"resourceType"`
+	ResourceSubtype string          `json:"resourceSubtype"`
+	InputTemplate   string          `json:"inputTemplate"`
+	ConstraintScope ConstraintScope `json:"constraintScope"`
+}
 
 type FormationInput struct {
 	Name         string  `json:"name"`
@@ -496,21 +544,13 @@ type FormationStatusError struct {
 	ErrorCode    int    `json:"errorCode"`
 }
 
-type FormationTemplate struct {
-	ID                     string       `json:"id"`
-	Name                   string       `json:"name"`
-	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeTypes           []string     `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
-}
-
 type FormationTemplateInput struct {
-	Name                   string       `json:"name"`
-	ApplicationTypes       []string     `json:"applicationTypes"`
-	RuntimeTypes           []string     `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
+	Name                   string          `json:"name"`
+	ApplicationTypes       []string        `json:"applicationTypes"`
+	RuntimeTypes           []string        `json:"runtimeTypes"`
+	RuntimeTypeDisplayName string          `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType    `json:"runtimeArtifactKind"`
+	Webhooks               []*WebhookInput `json:"webhooks"`
 }
 
 type FormationTemplatePage struct {
@@ -760,6 +800,7 @@ type Webhook struct {
 	ApplicationTemplateID *string      `json:"applicationTemplateID"`
 	RuntimeID             *string      `json:"runtimeID"`
 	IntegrationSystemID   *string      `json:"integrationSystemID"`
+	FormationTemplateID   *string      `json:"formationTemplateID"`
 	Type                  WebhookType  `json:"type"`
 	Mode                  *WebhookMode `json:"mode"`
 	CorrelationIDKey      *string      `json:"correlationIdKey"`
@@ -781,6 +822,7 @@ type WebhookInput struct {
 	URL              *string      `json:"url"`
 	Auth             *AuthInput   `json:"auth"`
 	Mode             *WebhookMode `json:"mode"`
+	Version          *string      `json:"version"`
 	CorrelationIDKey *string      `json:"correlationIdKey"`
 	RetryInterval    *int         `json:"retryInterval"`
 	Timeout          *int         `json:"timeout"`
@@ -1067,6 +1109,88 @@ func (e BundleInstanceAuthStatusCondition) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type ConstraintScope string
+
+const (
+	ConstraintScopeGlobal        ConstraintScope = "GLOBAL"
+	ConstraintScopeFormationType ConstraintScope = "FORMATION_TYPE"
+)
+
+var AllConstraintScope = []ConstraintScope{
+	ConstraintScopeGlobal,
+	ConstraintScopeFormationType,
+}
+
+func (e ConstraintScope) IsValid() bool {
+	switch e {
+	case ConstraintScopeGlobal, ConstraintScopeFormationType:
+		return true
+	}
+	return false
+}
+
+func (e ConstraintScope) String() string {
+	return string(e)
+}
+
+func (e *ConstraintScope) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConstraintScope(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConstraintScope", str)
+	}
+	return nil
+}
+
+func (e ConstraintScope) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ConstraintType string
+
+const (
+	ConstraintTypePre  ConstraintType = "PRE"
+	ConstraintTypePost ConstraintType = "POST"
+)
+
+var AllConstraintType = []ConstraintType{
+	ConstraintTypePre,
+	ConstraintTypePost,
+}
+
+func (e ConstraintType) IsValid() bool {
+	switch e {
+	case ConstraintTypePre, ConstraintTypePost:
+		return true
+	}
+	return false
+}
+
+func (e ConstraintType) String() string {
+	return string(e)
+}
+
+func (e *ConstraintType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConstraintType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConstraintType", str)
+	}
+	return nil
+}
+
+func (e ConstraintType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type DocumentFormat string
 
 const (
@@ -1142,6 +1266,49 @@ func (e *EventSpecType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e EventSpecType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type EventType string
+
+const (
+	EventTypeNewApplication     EventType = "NEW_APPLICATION"
+	EventTypeNewSingleTenant    EventType = "NEW_SINGLE_TENANT"
+	EventTypeNewMultipleTenants EventType = "NEW_MULTIPLE_TENANTS"
+)
+
+var AllEventType = []EventType{
+	EventTypeNewApplication,
+	EventTypeNewSingleTenant,
+	EventTypeNewMultipleTenants,
+}
+
+func (e EventType) IsValid() bool {
+	switch e {
+	case EventTypeNewApplication, EventTypeNewSingleTenant, EventTypeNewMultipleTenants:
+		return true
+	}
+	return false
+}
+
+func (e EventType) String() string {
+	return string(e)
+}
+
+func (e *EventType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EventType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EventType", str)
+	}
+	return nil
+}
+
+func (e EventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1567,6 +1734,53 @@ func (e OperationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type ResourceType string
+
+const (
+	ResourceTypeApplication    ResourceType = "APPLICATION"
+	ResourceTypeRuntime        ResourceType = "RUNTIME"
+	ResourceTypeRuntimeContext ResourceType = "RUNTIME_CONTEXT"
+	ResourceTypeTenant         ResourceType = "TENANT"
+	ResourceTypeFormation      ResourceType = "FORMATION"
+)
+
+var AllResourceType = []ResourceType{
+	ResourceTypeApplication,
+	ResourceTypeRuntime,
+	ResourceTypeRuntimeContext,
+	ResourceTypeTenant,
+	ResourceTypeFormation,
+}
+
+func (e ResourceType) IsValid() bool {
+	switch e {
+	case ResourceTypeApplication, ResourceTypeRuntime, ResourceTypeRuntimeContext, ResourceTypeTenant, ResourceTypeFormation:
+		return true
+	}
+	return false
+}
+
+func (e ResourceType) String() string {
+	return string(e)
+}
+
+func (e *ResourceType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ResourceType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ResourceType", str)
+	}
+	return nil
+}
+
+func (e ResourceType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type RuntimeStatusCondition string
 
 const (
@@ -1698,6 +1912,53 @@ func (e SystemAuthReferenceType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type TargetOperation string
+
+const (
+	TargetOperationAssignFormation      TargetOperation = "ASSIGN_FORMATION"
+	TargetOperationUnassignFormation    TargetOperation = "UNASSIGN_FORMATION"
+	TargetOperationCreateFormation      TargetOperation = "CREATE_FORMATION"
+	TargetOperationDeleteFormation      TargetOperation = "DELETE_FORMATION"
+	TargetOperationGenerateNotification TargetOperation = "GENERATE_NOTIFICATION"
+)
+
+var AllTargetOperation = []TargetOperation{
+	TargetOperationAssignFormation,
+	TargetOperationUnassignFormation,
+	TargetOperationCreateFormation,
+	TargetOperationDeleteFormation,
+	TargetOperationGenerateNotification,
+}
+
+func (e TargetOperation) IsValid() bool {
+	switch e {
+	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateNotification:
+		return true
+	}
+	return false
+}
+
+func (e TargetOperation) String() string {
+	return string(e)
+}
+
+func (e *TargetOperation) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TargetOperation(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TargetOperation", str)
+	}
+	return nil
+}
+
+func (e TargetOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type ViewerType string
 
 const (
@@ -1794,6 +2055,7 @@ const (
 	WebhookTypeRegisterApplication      WebhookType = "REGISTER_APPLICATION"
 	WebhookTypeUnregisterApplication    WebhookType = "UNREGISTER_APPLICATION"
 	WebhookTypeOpenResourceDiscovery    WebhookType = "OPEN_RESOURCE_DISCOVERY"
+	WebhookTypeFormationLifecycle       WebhookType = "FORMATION_LIFECYCLE"
 )
 
 var AllWebhookType = []WebhookType{
@@ -1802,11 +2064,12 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeRegisterApplication,
 	WebhookTypeUnregisterApplication,
 	WebhookTypeOpenResourceDiscovery,
+	WebhookTypeFormationLifecycle,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeFormationLifecycle:
 		return true
 	}
 	return false

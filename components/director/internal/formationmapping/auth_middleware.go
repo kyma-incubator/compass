@@ -37,7 +37,7 @@ type formationAssignmentConverter interface {
 type FormationAssignmentService interface {
 	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
-	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) error
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
 	Update(ctx context.Context, id string, in *model.FormationAssignmentInput) error
 	Delete(ctx context.Context, id string) error
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
@@ -214,7 +214,16 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID,
 				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
 			}
 
-			log.C(ctx).Infof("The caller with ID: %q and type: %q has owner access to the target of the formation assignment with ID: %q and type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
+			log.C(ctx).Infof("The caller with ID: %q and type: %q manages the target of the formation assignment with ID: %q and type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
+			return true, http.StatusOK, nil
+		}
+
+		if app.ApplicationTemplateID != nil && *app.ApplicationTemplateID == consumerID {
+			if err := tx.Commit(); err != nil {
+				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+			}
+
+			log.C(ctx).Infof("The caller with ID: %q and type: %q is the parent of the target of the formation assignment with ID: %q and type: %q that is being updated", consumerID, consumerType, fa.Target, fa.TargetType)
 			return true, http.StatusOK, nil
 		}
 

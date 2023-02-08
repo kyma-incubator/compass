@@ -166,7 +166,7 @@ spec:
                 RUNTIME_ID=$(echo $RESPONSE_BODY | jq -e '.data .result .id')
                 RUNTIME_ID="${RUNTIME_ID:1:${#RUNTIME_ID}-2}"
 
-                OTT_RESPONSE=$(curl "${DIRECTOR_URL}" \
+                OTT_RESPONSE=$(curl -k "${DIRECTOR_URL}" \
                     -H 'Content-Type: application/json' \
                     -H "Authorization: Bearer ${TOKEN}" \
                     -H "tenant: ${INTERNAL_TENANT_ID}" \

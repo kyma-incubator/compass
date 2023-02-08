@@ -133,6 +133,10 @@ spec:
                 value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID_TENANT_HIERARCHY
+                value: {{ .Values.global.tests.subscription.tenants.consumerAccountIDTenantHierarchy }}
+              - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID_TENANT_HIERARCHY
+                value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountIDTenantHierarchy }}
               - name: APP_TENANT_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
                 value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
               - name: APP_TENANT_CONFIG_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE

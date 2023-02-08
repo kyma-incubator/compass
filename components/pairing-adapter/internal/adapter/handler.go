@@ -49,7 +49,7 @@ func (a *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	logger.Infof("Got ApplicationData %v", reqData)
+	logger.Infof("Got ApplicationData %+v", reqData)
 	token, err := a.cli.Do(req.Context(), reqData)
 	if err != nil {
 		logger.Warnf("Got error on calling external pairing server: %v\n", err)

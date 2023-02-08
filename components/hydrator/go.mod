@@ -8,10 +8,10 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20221208133832-f14052c851a3
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20221208133832-f14052c851a3
-	github.com/kyma-incubator/compass/components/director v0.0.0-20221208133832-f14052c851a3
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20221208133832-f14052c851a3 // indirect
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230113212053-9511b220e4c8
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20230113212053-9511b220e4c8
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230125173445-b93a5ff29000
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230113212053-9511b220e4c8 // indirect
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -26,7 +26,8 @@ require (
 )
 
 require (
-	github.com/kyma-incubator/compass/tests v0.0.0-20221208133832-f14052c851a3
+	github.com/davecgh/go-spew v1.1.1
+	github.com/kyma-incubator/compass/tests v0.0.0-20230113212053-9511b220e4c8
 	github.com/prometheus/client_golang v1.13.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 )
@@ -43,8 +44,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210825215144-46a420572a7c // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect

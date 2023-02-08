@@ -27,6 +27,16 @@ func FixAddWebhookToRuntimeRequest(runtimeID, webhookInGQL string) *gcli.Request
 			runtimeID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
 }
 
+func FixAddWebhookToFormationTemplateRequest(formationTemplateID, webhookInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addWebhook(formationTemplateID: "%s", in: %s) {
+					%s
+				}
+			}`,
+			formationTemplateID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
+}
+
 func FixDeleteWebhookRequest(webhookID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

@@ -583,7 +583,7 @@ func TestSyncSystems(t *testing.T) {
 				systemSvc := &automock.SystemsService{}
 
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationRegisterInput"), mock.Anything).Return(nil).Once()
-				systemSvc.On("GetByNameAndSystemNumber", txtest.CtxWithDBMatcher(), appsInputs[1].Name, *appsInputs[1].SystemNumber).Return(&model.Application{
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[1].SystemNumber).Return(&model.Application{
 					BaseEntity: &model.BaseEntity{
 						ID: "id",
 					},

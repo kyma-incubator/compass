@@ -17,9 +17,10 @@ type ApplicationTenantMappingInput struct {
 	SourceApplication         *ApplicationWithLabels
 	TargetApplicationTemplate *ApplicationTemplateWithLabels
 	// TargetApplication is the application that the notification is for (the one with the webhook / the one receiving the notification)
-	TargetApplication *ApplicationWithLabels
-	Assignment        *FormationAssignment
-	ReverseAssignment *FormationAssignment
+	TargetApplication     *ApplicationWithLabels
+	CustomerTenantContext *CustomerTenantContext
+	Assignment            *FormationAssignment
+	ReverseAssignment     *FormationAssignment
 }
 
 // ParseURLTemplate missing godoc
@@ -51,6 +52,10 @@ func (rd *ApplicationTenantMappingInput) GetParticipantsIDs() []string {
 
 // SetAssignment sets the assignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.FormationAssignment) {
+	config := string(assignment.Value)
+	if config == "" {
+		config = "\"\""
+	}
 	rd.Assignment = &FormationAssignment{
 		ID:          assignment.ID,
 		FormationID: assignment.FormationID,
@@ -60,12 +65,16 @@ func (rd *ApplicationTenantMappingInput) SetAssignment(assignment *model.Formati
 		Target:      assignment.Target,
 		TargetType:  assignment.TargetType,
 		State:       assignment.State,
-		Value:       string(assignment.Value),
+		Value:       config,
 	}
 }
 
 // SetReverseAssignment sets the reverseAssignment for the ApplicationTenantMappingInput to the provided one
 func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment *model.FormationAssignment) {
+	config := string(reverseAssignment.Value)
+	if config == "" {
+		config = "\"\""
+	}
 	rd.ReverseAssignment = &FormationAssignment{
 		ID:          reverseAssignment.ID,
 		FormationID: reverseAssignment.FormationID,
@@ -75,7 +84,7 @@ func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment 
 		Target:      reverseAssignment.Target,
 		TargetType:  reverseAssignment.TargetType,
 		State:       reverseAssignment.State,
-		Value:       string(reverseAssignment.Value),
+		Value:       config,
 	}
 }
 
@@ -88,6 +97,7 @@ func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInpu
 		SourceApplication:         rd.SourceApplication,
 		TargetApplicationTemplate: rd.TargetApplicationTemplate,
 		TargetApplication:         rd.TargetApplication,
+		CustomerTenantContext:     rd.CustomerTenantContext,
 		Assignment:                rd.Assignment,
 		ReverseAssignment:         rd.ReverseAssignment,
 	}

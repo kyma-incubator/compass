@@ -4921,7 +4921,7 @@ func TestService_DeleteLabel(t *testing.T) {
 	}
 }
 
-func TestService_GetByNameAndSystemNumber(t *testing.T) {
+func TestService_GetBySystemNumber(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
@@ -4929,41 +4929,36 @@ func TestService_GetByNameAndSystemNumber(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	testError := errors.New("Test error")
-
-	applicationName := "name"
 	systemNumber := "1"
 
 	testCases := []struct {
-		Name                 string
-		RepositoryFn         func() *automock.ApplicationRepository
-		InputApplicationName string
-		InputSystemNumber    string
-		ExptectedValue       *model.Application
-		ExpectedError        error
+		Name              string
+		RepositoryFn      func() *automock.ApplicationRepository
+		InputSystemNumber string
+		ExptectedValue    *model.Application
+		ExpectedError     error
 	}{
 		{
 			Name: "Application found",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByNameAndSystemNumber", ctx, tnt, applicationName, systemNumber).Return(modelApp, nil)
+				repo.On("GetBySystemNumber", ctx, tnt, systemNumber).Return(modelApp, nil)
 				return repo
 			},
-			InputApplicationName: applicationName,
-			InputSystemNumber:    systemNumber,
-			ExptectedValue:       modelApp,
-			ExpectedError:        nil,
+			InputSystemNumber: systemNumber,
+			ExptectedValue:    modelApp,
+			ExpectedError:     nil,
 		},
 		{
 			Name: "Returns error",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByNameAndSystemNumber", ctx, tnt, applicationName, systemNumber).Return(nil, testError)
+				repo.On("GetBySystemNumber", ctx, tnt, systemNumber).Return(nil, testError)
 				return repo
 			},
-			InputApplicationName: applicationName,
-			InputSystemNumber:    systemNumber,
-			ExptectedValue:       nil,
-			ExpectedError:        testError,
+			InputSystemNumber: systemNumber,
+			ExptectedValue:    nil,
+			ExpectedError:     testError,
 		},
 	}
 
@@ -4974,7 +4969,7 @@ func TestService_GetByNameAndSystemNumber(t *testing.T) {
 			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
-			value, err := svc.GetByNameAndSystemNumber(ctx, testCase.InputApplicationName, testCase.InputSystemNumber)
+			value, err := svc.GetBySystemNumber(ctx, testCase.InputSystemNumber)
 
 			// THEN
 			if testCase.ExpectedError != nil {

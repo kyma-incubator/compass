@@ -289,13 +289,6 @@ func TestQueryRuntimes(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	idsToRemove := make([]string, 0)
-	defer func() {
-		for _, id := range idsToRemove {
-			if id != "" {
-				fixtures.UnregisterRuntime(t, ctx, certSecuredGraphQLClient, tenantId, id)
-			}
-		}
-	}()
 
 	inputRuntimes := []*graphql.Runtime{
 		{Name: "runtime-query-1", Description: ptr.String("test description")},
@@ -316,6 +309,11 @@ func TestQueryRuntimes(t *testing.T) {
 		require.NotEmpty(t, actualRuntime.ID)
 		rtm.ID = actualRuntime.ID
 		idsToRemove = append(idsToRemove, actualRuntime.ID)
+	}
+	for _, id := range idsToRemove {
+		if id != "" {
+			defer fixtures.UnregisterRuntime(t, ctx, certSecuredGraphQLClient, tenantId, id)
+		}
 	}
 	actualPage := graphql.RuntimePage{}
 
@@ -623,13 +621,6 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		idsToRemove := make([]string, 0)
-		defer func() {
-			for _, id := range idsToRemove {
-				if id != "" {
-					fixtures.UnregisterRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, id)
-				}
-			}
-		}()
 
 		inputRuntimes := []*graphql.Runtime{
 			{Name: "runtime-query-1", Description: ptr.String("test description")},
@@ -649,6 +640,11 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 			require.NotEmpty(t, actualRuntime.ID)
 			rtm.ID = actualRuntime.ID
 			idsToRemove = append(idsToRemove, actualRuntime.ID)
+		}
+		for _, id := range idsToRemove {
+			if id != "" {
+				defer fixtures.UnregisterRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, id)
+			}
 		}
 		actualPage := graphql.RuntimePage{}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -114,6 +115,22 @@ type automaticFormationAssignmentRepository interface {
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
+//go:generate mockery --exported --name=constraintEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
+type constraintEngine interface {
+	EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error
+}
+
+//go:generate mockery --exported --name=asaEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
+type asaEngine interface {
+	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
+	RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
+	GetMatchingFuncByFormationObjectType(objType graphql.FormationObjectType) (MatchingFunc, error)
+	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
+	IsFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error)
 }
 
 type service struct {
@@ -131,13 +148,15 @@ type service struct {
 	runtimeContextRepo          runtimeContextRepository
 	formationAssignmentService  formationAssignmentService
 	notificationsService        NotificationsService
+	constraintEngine            constraintEngine
 	transact                    persistence.Transactioner
+	asaEngine                   asaEngine
 	runtimeTypeLabelKey         string
 	applicationTypeLabelKey     string
 }
 
 // NewService creates formation service
-func NewService(transact persistence.Transactioner, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(transact persistence.Transactioner, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, constraintEngine constraintEngine, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		transact:                    transact,
 		labelDefRepository:          labelDefRepository,
@@ -154,12 +173,22 @@ func NewService(transact persistence.Transactioner, labelDefRepository labelDefR
 		runtimeContextRepo:          runtimeContextRepo,
 		formationAssignmentService:  formationAssignmentService,
 		notificationsService:        notificationsService,
+		constraintEngine:            constraintEngine,
 		runtimeTypeLabelKey:         runtimeTypeLabelKey,
 		applicationTypeLabelKey:     applicationTypeLabelKey,
+		asaEngine:                   NewASAEngine(asaRepo, runtimeRepo, runtimeContextRepo, formationRepository, formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey),
 	}
 }
 
-type processScenarioFunc func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
+//go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
+// Used for testing
+//nolint
+type processFunc interface {
+	ProcessScenarioFunc(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
+}
+
+// ProcessScenarioFunc provides the signature for functions that process scenarios
+type ProcessScenarioFunc func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
 
 // List returns paginated Formations based on pageSize and cursor
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
@@ -190,6 +219,16 @@ func (s *service) Get(ctx context.Context, id string) (*model.Formation, error) 
 	return formation, nil
 }
 
+func (s *service) GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
+	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
+	}
+
+	return f, nil
+}
+
 // GetFormationsForObject returns slice of formations for entity with ID objID and type objType
 func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error) {
 	labelInput := &model.LabelInput{
@@ -209,6 +248,23 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 // If the scenario label definition does not exist it will be created
 // Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error) {
+	fTmpl, err := s.formationTemplateRepository.GetByNameAndTenant(ctx, templateName, tnt)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
+	}
+
+	joinPointDetails := &formationconstraint.CRUDFormationOperationDetails{
+		FormationType:       templateName,
+		FormationTemplateID: fTmpl.ID,
+		FormationName:       formation.Name,
+		TenantID:            tnt,
+	}
+
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreCreate, joinPointDetails, fTmpl.ID); err != nil {
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PreOperation)
+	}
+
 	formationName := formation.Name
 	if err := s.modifyFormations(ctx, tnt, formationName, addFormation); err != nil {
 		if !apperrors.IsNotFoundError(err) {
@@ -220,19 +276,39 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-	return s.createFormation(ctx, tnt, templateName, formationName)
+	newFormation, err := s.createFormation(ctx, tnt, fTmpl.ID, formationName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, joinPointDetails, fTmpl.ID); err != nil {
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
+	}
+
+	return newFormation, nil
 }
 
 // DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
 // Also, removes the Formation entity from the DB
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
-	formationName := formation.Name
-	if err := s.modifyFormations(ctx, tnt, formationName, deleteFormation); err != nil {
-		return nil, err
+	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
+	if err != nil {
+		return nil, errors.Wrapf(err, "While deleting formation")
 	}
 
-	f, err := s.getFormationByName(ctx, formation.Name, tnt)
-	if err != nil {
+	joinPointDetails := &formationconstraint.CRUDFormationOperationDetails{
+		FormationType:       ft.formationTemplate.Name,
+		FormationTemplateID: ft.formationTemplate.ID,
+		FormationName:       ft.formation.Name,
+		TenantID:            tnt,
+	}
+
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreDelete, joinPointDetails, ft.formationTemplate.ID); err != nil {
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
+	}
+
+	formationName := ft.formation.Name
+	if err := s.modifyFormations(ctx, tnt, formationName, deleteFormation); err != nil {
 		return nil, err
 	}
 
@@ -242,7 +318,11 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
 	}
 
-	return f, nil
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostDelete, joinPointDetails, ft.formationTemplate.ID); err != nil {
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PostOperation)
+	}
+
+	return ft.formation, nil
 }
 
 // AssignFormation assigns object based on graphql.FormationObjectType.
@@ -275,11 +355,26 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	log.C(ctx).Infof("Assigning object with ID %q of type %q to formation %q", objectID, objectType, formation)
+	log.C(ctx).Infof("Assigning object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
 
+	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
+	if err != nil {
+		return nil, errors.Wrapf(err, "While assigning formation with name %q", formation.Name)
+	}
+
+	joinPointDetails, err := s.prepareDetailsForAssign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
+	if err != nil {
+		return nil, errors.Wrapf(err, "While preparing joinpoint details for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
+	}
+
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
+	}
+
+	formationFromDB := ft.formation
 	switch objectType {
 	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
+		err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
 		if err != nil {
 			return nil, err
 		}
@@ -304,56 +399,164 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		return formationFromDB, nil
-
 	case graphql.FormationObjectTypeTenant:
 		targetTenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
 			return nil, err
 		}
 
-		if _, err = s.CreateAutomaticScenarioAssignment(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, targetTenantID)); err != nil {
+		if _, err = s.CreateAutomaticScenarioAssignment(ctx, newAutomaticScenarioAssignmentModel(formationFromDB.Name, tnt, targetTenantID)); err != nil {
 			return nil, err
 		}
-
-		return s.getFormationByName(ctx, formation.Name, tnt)
 
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
-}
 
-func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting formation %q", formation.Name)
-	}
-	if err = s.checkFormationTemplateTypes(ctx, tnt, objectID, objectType, formationFromDB); err != nil {
-		return nil, err
-	}
-
-	if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation); err != nil {
-		if apperrors.IsNotFoundError(err) {
-			labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
-			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
-				return nil, err
-			}
-			return formationFromDB, nil
-		}
-		return nil, err
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PostOperation)
 	}
 
 	return formationFromDB, nil
 }
 
-func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
+func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint.AssignFormationOperationDetails, error) {
+	resourceSubtype, err := s.getObjectSubtype(ctx, tnt, objectID, objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	joinPointDetails := &formationconstraint.AssignFormationOperationDetails{
+		ResourceType:        model.ResourceType(objectType),
+		ResourceSubtype:     resourceSubtype,
+		ResourceID:          objectID,
+		FormationType:       formationTemplate.Name,
+		FormationTemplateID: formationTemplate.ID,
+		FormationID:         formation.ID,
+		TenantID:            tnt,
+	}
+	return joinPointDetails, nil
+}
+
+func (s *service) prepareDetailsForUnassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint.UnassignFormationOperationDetails, error) {
+	resourceSubtype, err := s.getObjectSubtype(ctx, tnt, objectID, objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	joinPointDetails := &formationconstraint.UnassignFormationOperationDetails{
+		ResourceType:        model.ResourceType(objectType),
+		ResourceSubtype:     resourceSubtype,
+		ResourceID:          objectID,
+		FormationType:       formationTemplate.Name,
+		FormationTemplateID: formationTemplate.ID,
+		FormationID:         formation.ID,
+		TenantID:            tnt,
+	}
+	return joinPointDetails, nil
+}
+
+func (s *service) getObjectSubtype(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType) (string, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		if err := s.isValidApplicationType(ctx, tnt, objectID, formation); err != nil {
+		applicationTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        s.applicationTypeLabelKey,
+			ObjectID:   objectID,
+			ObjectType: model.ApplicationLabelableObject,
+		})
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return "", nil
+			}
+			return "", errors.Wrapf(err, "while getting label %q for application with ID %q", s.applicationTypeLabelKey, objectID)
+		}
+
+		applicationType, ok := applicationTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing application type for application %q", objectID)
+		}
+		return applicationType, nil
+
+	case graphql.FormationObjectTypeRuntime:
+		runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        s.runtimeTypeLabelKey,
+			ObjectID:   objectID,
+			ObjectType: model.RuntimeLabelableObject,
+		})
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return "", nil
+			}
+			return "", errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, objectID)
+		}
+
+		runtimeType, ok := runtimeTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing runtime type for runtime %q", objectID)
+		}
+		return runtimeType, nil
+
+	case graphql.FormationObjectTypeRuntimeContext:
+		rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return "", errors.Wrapf(err, "while fetching runtime context with ID %q", objectID)
+		}
+
+		runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+			Key:        s.runtimeTypeLabelKey,
+			ObjectID:   rtmCtx.RuntimeID,
+			ObjectType: model.RuntimeLabelableObject,
+		})
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, objectID)
+		}
+
+		runtimeType, ok := runtimeTypeLabel.Value.(string)
+		if !ok {
+			return "", errors.Errorf("Missing runtime type for runtime %q", rtmCtx.RuntimeID)
+		}
+		return runtimeType, nil
+
+	case graphql.FormationObjectTypeTenant:
+		t, err := s.tenantSvc.GetTenantByExternalID(ctx, objectID)
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting tenant by external ID")
+		}
+
+		return string(t.Type), nil
+
+	default:
+		return "", fmt.Errorf("unknown formation type %s", objectType)
+	}
+}
+
+func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) error {
+	if err := s.checkFormationTemplateTypes(ctx, tnt, objectID, objectType, formationTemplate); err != nil {
+		return err
+	}
+
+	if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), addFormation); err != nil {
+		if apperrors.IsNotFoundError(err) {
+			labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
+			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
+				return err
+			}
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formationTemplate *model.FormationTemplate) error {
+	switch objectType {
+	case graphql.FormationObjectTypeApplication:
+		if err := s.isValidApplicationType(ctx, tnt, objectID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating application type for application %q", objectID)
 		}
 	case graphql.FormationObjectTypeRuntime:
-		if err := s.isValidRuntimeType(ctx, tnt, objectID, formation); err != nil {
+		if err := s.isValidRuntimeType(ctx, tnt, objectID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating runtime type")
 		}
 	case graphql.FormationObjectTypeRuntimeContext:
@@ -361,7 +564,7 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 		if err != nil {
 			return errors.Wrapf(err, "while getting runtime context")
 		}
-		if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation); err != nil {
+		if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating runtime type of runtime")
 		}
 	}
@@ -403,14 +606,27 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant which then will unassign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+	log.C(ctx).Infof("Unassigning object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
+
+	formationName := formation.Name
+	ft, err := s.getFormationWithTemplate(ctx, formationName, tnt)
+	if err != nil {
+		return nil, errors.Wrapf(err, "While unassigning formation with name %q", formationName)
+	}
+
+	joinPointDetails, err := s.prepareDetailsForUnassign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
+	if err != nil {
+		return nil, errors.Wrapf(err, "While preparing joinpoint details for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
+	}
+
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
+	}
+
+	formationFromDB := ft.formation
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			return nil, err
-		}
-
-		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
-		if err != nil {
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formationName, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
 			return nil, err
 		}
 
@@ -419,7 +635,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -456,28 +672,21 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		}
 
 		if len(pendingAsyncAssignments) > 0 {
-			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
-			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formationName)
+			err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is important to do the re-assign in the outer transaction.
 			if err != nil {
 				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
 		}
 
-		return formationFromDB, nil
-
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		if isFormationComingFromASA, err := s.isFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
+		if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formationName, objectType); err != nil {
 			return nil, err
 		} else if isFormationComingFromASA {
-			return &formation, nil
+			break
 		}
 
-		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
-		if err != nil {
-			return nil, err
-		}
-
-		if err = s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+		if err = s.modifyAssignedFormations(ctx, tnt, objectID, formationName, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				return formationFromDB, nil
 			}
@@ -489,7 +698,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 
-		formationAssignmentsForObject, err := s.listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx, formationFromDB.ID, objectID, objectType)
+		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
@@ -528,16 +737,14 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		if len(pendingAsyncAssignments) > 0 {
 			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
-			_, err := s.assign(ctx, tnt, objectID, objectType, formation) // It is importnat to do the re-assign in the outer transaction.
+			err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is importnat to do the re-assign in the outer transaction.
 			if err != nil {
 				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
 		}
 
-		return formationFromDB, nil
-
 	case graphql.FormationObjectTypeTenant:
-		asa, err := s.asaService.GetForScenarioName(ctx, formation.Name)
+		asa, err := s.asaService.GetForScenarioName(ctx, formationName)
 		if err != nil {
 			return nil, err
 		}
@@ -545,25 +752,15 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		return s.getFormationByName(ctx, formation.Name, tnt)
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
-}
 
-func (s *service) listFormationAssignmentsForObjectIDAndUpdateLastOperation(ctx context.Context, formationID, objectID string, objectType graphql.FormationObjectType) ([]*model.FormationAssignment, error) {
-	formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
+		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PostOperation)
 	}
 
-	for i := range formationAssignmentsForObject {
-		formationAssignmentsForObject[i].LastOperation = model.UnassignFormation
-		formationAssignmentsForObject[i].LastOperationInitiator = objectID
-		formationAssignmentsForObject[i].LastOperationInitiatorType = model.FormationAssignmentType(objectType)
-	}
-
-	return formationAssignmentsForObject, nil
+	return formationFromDB, nil
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
@@ -605,7 +802,7 @@ func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in mode
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
 	}
 
-	if err = s.EnsureScenarioAssigned(ctx, in); err != nil {
+	if err = s.asaEngine.EnsureScenarioAssigned(ctx, in, s.AssignFormation); err != nil {
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
 	}
 
@@ -624,77 +821,8 @@ func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in mode
 		return errors.Wrap(err, "while deleting the Assignment")
 	}
 
-	if err = s.RemoveAssignedScenario(ctx, in); err != nil {
+	if err = s.asaEngine.RemoveAssignedScenario(ctx, in, s.UnassignFormation); err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
-	}
-
-	return nil
-}
-
-// EnsureScenarioAssigned ensures that the scenario is assigned to all the runtimes and runtimeContexts that are in the ASAs target_tenant_id
-func (s *service) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	return s.processScenario(ctx, in, s.AssignFormation, model.AssignFormation)
-}
-
-// RemoveAssignedScenario removes all the scenarios that are coming from the provided ASA
-func (s *service) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	return s.processScenario(ctx, in, s.UnassignFormation, model.UnassignFormation)
-}
-
-func (s *service) processScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc processScenarioFunc, processingType model.FormationOperation) error {
-	runtimeTypes, err := s.getFormationTemplateRuntimeTypes(ctx, in.ScenarioName, in.Tenant)
-	if err != nil {
-		return err
-	}
-
-	lblFilters := make([]*labelfilter.LabelFilter, 0, len(runtimeTypes))
-	for _, runtimeType := range runtimeTypes {
-		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
-		lblFilters = append(lblFilters, labelfilter.NewForKeyWithQuery(s.runtimeTypeLabelKey, query))
-	}
-
-	ownedRuntimes, err := s.runtimeRepo.ListOwnedRuntimes(ctx, in.TargetTenantID, lblFilters)
-	if err != nil {
-		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
-	}
-
-	for _, r := range ownedRuntimes {
-		hasRuntimeContext, err := s.runtimeContextRepo.ExistsByRuntimeID(ctx, in.TargetTenantID, r.ID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting runtime contexts for runtime with id %q", r.ID)
-		}
-
-		// If the runtime has runtime context that is so called "multi-tenant" runtime, and we should not assign the runtime to formation.
-		// In such cases only the runtime context should be assigned to formation. That happens with the "for" cycle below.
-		if hasRuntimeContext {
-			continue
-		}
-
-		// If the runtime has not runtime context, then it's a "single tenant" runtime, and we have to assign it to formation.
-		if _, err = processScenarioFunc(ctx, in.Tenant, r.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName}); err != nil {
-			return errors.Wrapf(err, "while %s runtime with id %s from formation %s coming from ASA", processingType, r.ID, in.ScenarioName)
-		}
-	}
-
-	// The part below covers the "multi-tenant" runtime case that we skipped above and
-	// gets all runtimes(with and without owner access) and assign every runtime context(if there is any) for each of the runtimes to formation.
-	runtimes, err := s.runtimeRepo.ListAllWithUnionSetCombination(ctx, in.TargetTenantID, lblFilters)
-	if err != nil {
-		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
-	}
-
-	for _, r := range runtimes {
-		runtimeContext, err := s.runtimeContextRepo.GetByRuntimeID(ctx, in.TargetTenantID, r.ID)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				continue
-			}
-			return errors.Wrapf(err, "while getting runtime context for runtime with ID: %q", r.ID)
-		}
-
-		if _, err = processScenarioFunc(ctx, in.Tenant, runtimeContext.ID, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: in.ScenarioName}); err != nil {
-			return errors.Wrapf(err, "while %s runtime context with id %s from formation %s coming from ASA", processingType, runtimeContext.ID, in.ScenarioName)
-		}
 	}
 
 	return nil
@@ -703,7 +831,7 @@ func (s *service) processScenario(ctx context.Context, in model.AutomaticScenari
 // RemoveAssignedScenarios removes all the scenarios that are coming from any of the provided ASAs
 func (s *service) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	for _, asa := range in {
-		if err := s.RemoveAssignedScenario(ctx, *asa); err != nil {
+		if err := s.asaEngine.RemoveAssignedScenario(ctx, *asa, s.UnassignFormation); err != nil {
 			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
 		}
 	}
@@ -734,10 +862,14 @@ func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*mo
 	return nil
 }
 
+func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
+	return s.asaEngine.GetScenariosFromMatchingASAs(ctx, objectID, objType)
+}
+
 // MergeScenariosFromInputLabelsAndAssignments merges all the scenarios that are part of the resource labels (already added + to be added with the current operation)
 // with all the scenarios that should be assigned based on ASAs.
 func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
-	scenariosFromAssignments, err := s.GetScenariosFromMatchingASAs(ctx, runtimeID, graphql.FormationObjectTypeRuntime)
+	scenariosFromAssignments, err := s.asaEngine.GetScenariosFromMatchingASAs(ctx, runtimeID, graphql.FormationObjectTypeRuntime)
 	scenariosSet := make(map[string]struct{}, len(scenariosFromAssignments))
 
 	if err != nil {
@@ -768,134 +900,8 @@ func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Contex
 	return scenarios, nil
 }
 
-// GetScenariosFromMatchingASAs gets all the scenarios that should be added to the runtime based on the matching Automatic Scenario Assignments
-// In order to do that, the ASAs should be searched in the caller tenant as this is the tenant that modifies the runtime and this is the tenant that the ASA
-// produced labels should be added to.
-func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
-	log.C(ctx).Infof("Getting scenarios matching from ASA for object with ID: %q and type: %q", objectID, objType)
-	tenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	matchFunc, err := s.getMatchingFuncByFormationObjectType(objType)
-	if err != nil {
-		return nil, err
-	}
-
-	scenarioAssignments, err := s.repo.ListAll(ctx, tenantID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listinng Automatic Scenario Assignments in tenant: %s", tenantID)
-	}
-	log.C(ctx).Infof("Found %d ASA(s) in tenant with ID: %q", len(scenarioAssignments), tenantID)
-
-	matchingASAs := make([]*model.AutomaticScenarioAssignment, 0, len(scenarioAssignments))
-	for _, scenarioAssignment := range scenarioAssignments {
-		matches, err := matchFunc(ctx, scenarioAssignment, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while checkig if asa matches runtime with ID %s", objectID)
-		}
-		if matches {
-			matchingASAs = append(matchingASAs, scenarioAssignment)
-		}
-	}
-
-	scenarios := make([]string, 0)
-	for _, sa := range matchingASAs {
-		scenarios = append(scenarios, sa.ScenarioName)
-	}
-	log.C(ctx).Infof("Matched scenarios from ASA are: %v", scenarios)
-
-	return scenarios, nil
-}
-
-type matchingFunc func(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error)
-
-func (s *service) getMatchingFuncByFormationObjectType(objType graphql.FormationObjectType) (matchingFunc, error) {
-	switch objType {
-	case graphql.FormationObjectTypeRuntime:
-		return s.isASAMatchingRuntime, nil
-	case graphql.FormationObjectTypeRuntimeContext:
-		return s.isASAMatchingRuntimeContext, nil
-	}
-	return nil, errors.Errorf("unexpected formation object type %q", objType)
-}
-
-func (s *service) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {
-	runtimeTypes, err := s.getFormationTemplateRuntimeTypes(ctx, asa.ScenarioName, asa.Tenant)
-	if err != nil {
-		return false, err
-	}
-
-	lblFilters := make([]*labelfilter.LabelFilter, 0, len(runtimeTypes))
-	for _, runtimeType := range runtimeTypes {
-		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
-		lblFilters = append(lblFilters, labelfilter.NewForKeyWithQuery(s.runtimeTypeLabelKey, query))
-	}
-
-	runtimeExists, err := s.runtimeRepo.OwnerExistsByFiltersAndID(ctx, asa.TargetTenantID, runtimeID, lblFilters)
-	if err != nil {
-		return false, errors.Wrapf(err, "while checking if runtime with id %q have owner=true", runtimeID)
-	}
-
-	if !runtimeExists {
-		return false, nil
-	}
-
-	// If the runtime has runtime contexts then it's a "multi-tenant" runtime, and it should NOT be matched by the ASA and should NOT be added to formation.
-	hasRuntimeContext, err := s.runtimeContextRepo.ExistsByRuntimeID(ctx, asa.TargetTenantID, runtimeID)
-	if err != nil {
-		return false, errors.Wrapf(err, "while cheking runtime context existence for runtime with ID: %q", runtimeID)
-	}
-
-	return !hasRuntimeContext, nil
-}
-
-func (s *service) isASAMatchingRuntimeContext(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeContextID string) (bool, error) {
-	runtimeTypes, err := s.getFormationTemplateRuntimeTypes(ctx, asa.ScenarioName, asa.Tenant)
-	if err != nil {
-		return false, err
-	}
-
-	lblFilters := make([]*labelfilter.LabelFilter, 0, len(runtimeTypes))
-	for _, runtimeType := range runtimeTypes {
-		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType)
-		lblFilters = append(lblFilters, labelfilter.NewForKeyWithQuery(s.runtimeTypeLabelKey, query))
-	}
-
-	rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, asa.TargetTenantID, runtimeContextID)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return false, nil
-		}
-		return false, errors.Wrapf(err, "while getting runtime contexts with ID: %q", runtimeContextID)
-	}
-
-	_, err = s.runtimeRepo.GetByFiltersAndIDUsingUnion(ctx, asa.TargetTenantID, rtmCtx.RuntimeID, lblFilters)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return false, nil
-		}
-		return false, errors.Wrapf(err, "while getting runtime with ID: %q and label with key: %q and value: %q", rtmCtx.RuntimeID, s.runtimeTypeLabelKey, runtimeTypes)
-	}
-
-	return true, nil
-}
-
-func (s *service) isFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error) {
-	formationsFromASA, err := s.GetScenariosFromMatchingASAs(ctx, objectID, objectType)
-	if err != nil {
-		return false, errors.Wrapf(err, "while getting formations from ASAs for %s with id: %q", objectType, objectID)
-	}
-
-	for _, formationFromASA := range formationsFromASA {
-		if formation == formationFromASA {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
+// MatchingFunc provides signature for functions used for matching asa against runtimeID
+type MatchingFunc func(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error)
 
 func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc modificationFunc) error {
 	def, err := s.labelDefRepository.GetByKey(ctx, tnt, model.ScenariosKey)
@@ -934,10 +940,10 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 	})
 }
 
-func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) error {
-	log.C(ctx).Infof("Modifying formation with name: %q for object with type: %q and ID: %q", formation.Name, objectType, objectID)
+func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID, formationName string, objectType model.LabelableObject, modificationFunc modificationFunc) error {
+	log.C(ctx).Infof("Modifying formation with name: %q for object with type: %q and ID: %q", formationName, objectType, objectID)
 
-	labelInput := newLabelInput(formation.Name, objectID, objectType)
+	labelInput := newLabelInput(formationName, objectID, objectType)
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
 	if err != nil {
 		return err
@@ -948,7 +954,7 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID st
 		return err
 	}
 
-	formations := modificationFunc(existingFormations, formation.Name)
+	formations := modificationFunc(existingFormations, formationName)
 
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
@@ -1056,59 +1062,45 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 	return out, nil
 }
 
-func (s *service) createFormation(ctx context.Context, tenant, templateName, formationName string) (*model.Formation, error) {
-	fTmpl, err := s.formationTemplateRepository.GetByNameAndTenant(ctx, templateName, tenant)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
-		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
-	}
-
+func (s *service) createFormation(ctx context.Context, tenant, templateID, formationName string) (*model.Formation, error) {
 	formation := &model.Formation{
 		ID:                  s.uuidService.Generate(),
 		TenantID:            tenant,
-		FormationTemplateID: fTmpl.ID,
+		FormationTemplateID: templateID,
 		Name:                formationName,
 	}
-	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, fTmpl.ID)
-	if err = s.formationRepository.Create(ctx, formation); err != nil {
-		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
-		return nil, errors.Wrapf(err, "An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+
+	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, templateID)
+	if err := s.formationRepository.Create(ctx, formation); err != nil {
+		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, templateID)
+		return nil, errors.Wrapf(err, "An error occurred while creating formation with name: %q and template ID: %q", formationName, templateID)
 	}
 
 	return formation, nil
 }
 
-func (s *service) getFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
-	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
+type formationWithTemplate struct {
+	formation         *model.Formation
+	formationTemplate *model.FormationTemplate
+}
+
+func (s *service) getFormationWithTemplate(ctx context.Context, formationName, tnt string) (*formationWithTemplate, error) {
+	formation, err := s.formationRepository.GetByName(ctx, formationName, tnt)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
 		return nil, errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
 	}
 
-	return f, nil
+	template, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation template by ID: %q: %v", formation.FormationTemplateID, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation template by ID: %q", formation.FormationTemplateID)
+	}
+
+	return &formationWithTemplate{formation: formation, formationTemplate: template}, nil
 }
 
-func (s *service) getFormationTemplateRuntimeTypes(ctx context.Context, scenarioName, tenant string) ([]string, error) {
-	log.C(ctx).Debugf("Getting formation with name: %q in tenant: %q", scenarioName, tenant)
-	formation, err := s.formationRepository.GetByName(ctx, scenarioName, tenant)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting formation by name %q", scenarioName)
-	}
-
-	log.C(ctx).Debugf("Getting formation template with ID: %q", formation.FormationTemplateID)
-	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting formation template by id %q", formation.FormationTemplateID)
-	}
-
-	return formationTemplate.RuntimeTypes, nil
-}
-
-func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID string, formation *model.Formation) error {
-	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
-	}
+func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID string, formationTemplate *model.FormationTemplate) error {
 	runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
 		Key:        s.runtimeTypeLabelKey,
 		ObjectID:   runtimeID,
@@ -1135,11 +1127,7 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID 
 	return nil
 }
 
-func (s *service) isValidApplicationType(ctx context.Context, tnt string, applicationID string, formation *model.Formation) error {
-	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
-	}
+func (s *service) isValidApplicationType(ctx context.Context, tnt string, applicationID string, formationTemplate *model.FormationTemplate) error {
 	applicationTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
 		Key:        s.applicationTypeLabelKey,
 		ObjectID:   applicationID,

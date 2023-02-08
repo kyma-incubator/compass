@@ -20,6 +20,7 @@ var (
 	testErr          = errors.New("test error")
 	url              = "https://target-url.com"
 	token            = "token-value"
+	tokenWithClaim   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnQiOiJ0ZXN0In0.5Jg0ylN1CI1vH-tmHbqCoGvOj6j-j8iFg-fZlz1BdFc"
 	providerSubaccID = "c062f54a-5626-4ad1-907a-3cca6fe3b80d"
 )
 
@@ -40,8 +41,8 @@ func NewTestClient(fn RoundTripFunc) *http.Client {
 
 func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 	// GIVEN
-	consumerTenantID := "94764028-8cf8-11ec-9ffc-acde48001122"
-	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", consumerTenantID)
+	appName := "94764028-8cf8-11ec-9ffc-acde48001122"
+	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", appName)
 	reqBody := "{\"subscriptionParams\": {}}"
 	emptyTenantConfig := Config{}
 	emptyProviderConfig := ProviderConfig{}
@@ -113,7 +114,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 
 	t.Run("Error when missing tenant path param", func(t *testing.T) {
 		//GIVEN
-		subReq, err := http.NewRequest(http.MethodPost, url+fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", ""), bytes.NewBuffer([]byte(reqBody)))
+		subReq, err := http.NewRequest(http.MethodPost, url+fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", ""), bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
@@ -124,16 +125,34 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		resp := r.Result()
 
 		//THEN
-		expectedBody := "{\"error\":\"while executing subscribe request: parameter [tenant_id] not provided\"}\n"
+		expectedBody := "{\"error\":\"while executing subscribe request: parameter [app_name] not provided\"}\n"
 		assertExpectedResponse(t, resp, expectedBody, http.StatusBadRequest)
+	})
+
+	t.Run("Error when extracting tenant claim from token", func(t *testing.T) {
+		//GIVEN
+		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		require.NoError(t, err)
+		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
+		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.Subscribe(r, subscribeReq)
+		resp := r.Result()
+
+		//THEN
+		expectedBody := "{\"error\":\"while executing subscribe request: while creating subscription request: error occurred when extracting consumer subaccount from token claims\"}\n"
+		assertExpectedResponse(t, resp, expectedBody, http.StatusInternalServerError)
 	})
 
 	t.Run("Error when missing propagated provider subaccount header", func(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
-		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"tenant_id": consumerTenantID})
+		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
+		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
 		r := httptest.NewRecorder()
 
@@ -152,7 +171,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
-		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"tenant_id": consumerTenantID})
+		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 
 		testErr = errors.New("while executing subscribe request to tenant fetcher")
 		testClient := NewTestClient(func(req *http.Request) *http.Response {
@@ -178,9 +197,9 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
-		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
-		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"tenant_id": consumerTenantID})
+		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"app_name": appName})
 
 		testClient := NewTestClient(func(req *http.Request) *http.Response {
 			return &http.Response{
@@ -231,9 +250,9 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 			t.Run(testCase.Name, func(t *testing.T) {
 				//GIVEN
 				req := testCase.Request
-				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", tokenWithClaim))
 				req.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
-				req = mux.SetURLVars(req, map[string]string{"tenant_id": consumerTenantID})
+				req = mux.SetURLVars(req, map[string]string{"app_name": appName})
 
 				testClient := NewTestClient(func(req *http.Request) *http.Response {
 					return &http.Response{
@@ -319,7 +338,7 @@ func TestHandler_JobStatus(t *testing.T) {
 			Name:                 "Successful job status response",
 			RequestMethod:        http.MethodGet,
 			ExpectedResponseCode: http.StatusOK,
-			ExpectedBody:         fmt.Sprintf("{\"id\":\"%s\",\"state\":\"SUCCEEDED\"}", jobID),
+			ExpectedBody:         fmt.Sprintf("{\"status\":\"COMPLETED\"}"),
 			AuthHeader:           oauth2.AuthorizationHeader,
 			Token:                token,
 		},

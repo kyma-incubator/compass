@@ -28,13 +28,13 @@ func (_m *DirectorGraphQLClient) DeleteTenants(ctx context.Context, tenants []gr
 	return r0
 }
 
-// SubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName
-func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionProviderAppName string) error {
-	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
+// SubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload
+func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionProviderAppName string, subscriptionPayload string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) error); ok {
-		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) error); ok {
+		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload)
 	} else {
 		r0 = ret.Error(0)
 	}

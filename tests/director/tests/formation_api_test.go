@@ -44,6 +44,7 @@ const (
 	unassignFormationCategory = "unassign formation"
 	assignOperation           = "assign"
 	unassignOperation         = "unassign"
+	emptyParentCustomerID     = "" // in the respective tests, the used GA tenant does not have customer parent, thus we assert that it is empty
 )
 
 func TestGetFormation(t *testing.T) {
@@ -65,6 +66,13 @@ func TestGetFormation(t *testing.T) {
 	getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
 	saveExample(t, getFormationReq.Query(), "query formation")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
+	require.NoError(t, err)
+	require.Equal(t, formation, gotFormation)
+
+	t.Logf("Should get formation %q by name %q", testScenario, formation.Name)
+	getFormationByNameReq := fixtures.FixGetFormationByNameRequest(formation.Name)
+	saveExample(t, getFormationByNameReq.Query(), "query formation by name")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationByNameReq, &gotFormation)
 	require.NoError(t, err)
 	require.Equal(t, formation, gotFormation)
 
@@ -222,9 +230,6 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	createAsaFormationReq := fixtures.FixCreateFormationRequest(asaFormation)
 	var asaGqlFormation graphql.Formation
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAsaFormationReq, &asaGqlFormation)
-	require.NoError(t, err)
-	require.Equal(t, asaFormation, asaGqlFormation.Name)
-
 	defer func() {
 		t.Log("Should be able to delete ASA formation")
 		deleteASAFormationRequest := fixtures.FixDeleteFormationRequest(asaFormation)
@@ -233,6 +238,8 @@ func TestRuntimeFormationFlow(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, asaFormation, deleteASAFormation.Name)
 	}()
+	require.NoError(t, err)
+	require.Equal(t, asaFormation, asaGqlFormation.Name)
 
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
@@ -348,9 +355,6 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	createAsaFormationReq := fixtures.FixCreateFormationRequest(asaFormation)
 	var asaGqlFormation graphql.Formation
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAsaFormationReq, &asaGqlFormation)
-	require.NoError(t, err)
-	require.Equal(t, asaFormation, asaGqlFormation.Name)
-
 	defer func() {
 		t.Log("Should be able to delete ASA formation")
 		deleteASAFormationRequest := fixtures.FixDeleteFormationRequest(asaFormation)
@@ -359,6 +363,8 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, asaFormation, deleteASAFormation.Name)
 	}()
+	require.NoError(t, err)
+	require.Equal(t, asaFormation, asaGqlFormation.Name)
 
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
@@ -390,9 +396,6 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	createAsaFormationReq2 := fixtures.FixCreateFormationRequest(asaFormation2)
 	var asaGqlFormation2 graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAsaFormationReq2, &asaGqlFormation2)
-	require.NoError(t, err)
-	require.Equal(t, asaFormation2, asaGqlFormation2.Name)
-
 	defer func() {
 		t.Log("Should be able to delete ASA formation")
 		deleteASAFormationRequest2 := fixtures.FixDeleteFormationRequest(asaFormation2)
@@ -401,6 +404,8 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, asaFormation2, deleteASAFormation2.Name)
 	}()
+	require.NoError(t, err)
+	require.Equal(t, asaFormation2, asaGqlFormation2.Name)
 
 	formationInput2 := graphql.FormationInput{Name: asaFormation2}
 	t.Log("Creating second ASA")
@@ -557,6 +562,163 @@ func TestTenantFormationFlow(t *testing.T) {
 	assert.Equal(t, secondFormation, deleteUnusedFormation.Name)
 }
 
+func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
+	ctx := context.Background()
+	const (
+		firstFormation  = "FIRST"
+		secondFormation = "SECOND"
+	)
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+
+	formationTemplateName := "create-formation-template-name"
+	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
+	require.NoError(t, err)
+
+	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
+	formationTemplate := graphql.FormationTemplate{}
+
+	t.Logf("Create formation template with name: %q", formationTemplateName)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &formationTemplate)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
+	require.NoError(t, err)
+	require.NotEmpty(t, formationTemplate.ID)
+	require.NotEmpty(t, formationTemplate.Name)
+
+	in := graphql.FormationConstraintInput{
+		Name:            "TestSubaccountInAtMostOneFormationOfType",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        "IsNotAssignedToAnyFormationOfType",
+		ResourceType:    graphql.ResourceTypeTenant,
+		ResourceSubtype: "subaccount",
+		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+	}
+	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, in)
+	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
+	require.NotEmpty(t, constraint.ID)
+
+	t.Logf("Attaching constraint to formation template")
+	createRequest := fixtures.FixAttachConstraintToFormationTemplateRequest(constraint.ID, formationTemplate.ID)
+	saveExample(t, createRequest.Query(), "attach constraint to formation template")
+
+	constraintReference := graphql.ConstraintReference{}
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createRequest, &constraintReference))
+
+	t.Logf("Should create formation: %s", firstFormation)
+
+	formationInput := fixtures.FixFormationInput(firstFormation, str.Ptr(formationTemplateName))
+	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
+	require.NoError(t, err)
+
+	var formation graphql.Formation
+	createReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, firstFormation, formation.Name)
+
+	t.Logf("Should create formation: %s", secondFormation)
+
+	secondFormationInput := fixtures.FixFormationInput(secondFormation, str.Ptr(formationTemplateName))
+	secondFormationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(secondFormationInput)
+	require.NoError(t, err)
+
+	var unusedFormation graphql.Formation
+	createUnusedReq := fixtures.FixCreateFormationWithTemplateRequest(secondFormationInputGQL)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, secondFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createUnusedReq, &unusedFormation)
+	require.NoError(t, err)
+	require.Equal(t, secondFormation, unusedFormation.Name)
+
+	t.Logf("Assign tenant %s to formation %s", subaccountID, firstFormation)
+	assignReq := fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
+	var assignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, firstFormation, subaccountID, tenantId)
+	require.NoError(t, err)
+	require.Equal(t, firstFormation, assignFormation.Name)
+
+	t.Log("Should match expected ASA")
+	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
+	require.Equal(t, 1, len(asaPage.Data))
+
+	assignment := graphql.AutomaticScenarioAssignmentSetInput{
+		ScenarioName: firstFormation,
+		Selector: &graphql.LabelSelectorInput{
+			Key:   "global_subaccount_id",
+			Value: subaccountID,
+		},
+	}
+	assertions.AssertAutomaticScenarioAssignment(t, assignment, *asaPage.Data[0])
+
+	t.Logf("Should fail to assign tenant %s to second formation of type %s", subaccountID, formationTemplateName)
+	assignReq = fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, secondFormation, subaccountID, tenantId)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Operator \"IsNotAssignedToAnyFormationOfType\" is not satisfied")
+
+	t.Logf("Detaching constraint from formation template")
+	deleteRequest := fixtures.FixDetachConstraintFromFormationTemplateRequest(constraint.ID, formationTemplate.ID)
+	saveExample(t, deleteRequest.Query(), "detach constraint from formation template")
+
+	constraintReference = graphql.ConstraintReference{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteRequest, &constraintReference)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+
+	t.Logf("Should succeed assigning tenant %s to second formation of type %s after constraint is detached", subaccountID, formationTemplateName)
+	assignReq = fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, secondFormation, subaccountID, tenantId)
+	require.NoError(t, err)
+	require.Equal(t, secondFormation, assignFormation.Name)
+
+	t.Log("Should match expected ASAs")
+	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
+	require.Equal(t, 2, len(asaPage.Data))
+
+	assignments := []graphql.AutomaticScenarioAssignmentSetInput{
+		{
+			ScenarioName: firstFormation,
+			Selector: &graphql.LabelSelectorInput{
+				Key:   "global_subaccount_id",
+				Value: subaccountID,
+			},
+		},
+		{
+			ScenarioName: secondFormation,
+			Selector: &graphql.LabelSelectorInput{
+				Key:   "global_subaccount_id",
+				Value: subaccountID,
+			},
+		},
+	}
+	assertions.AssertAutomaticScenarioAssignments(t, assignments, asaPage.Data)
+
+	t.Logf("Unassign tenant %s from formation %s", subaccountID, firstFormation)
+	var unassignFormation graphql.Formation
+
+	unassignReq := fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
+	require.NoError(t, err)
+	require.Equal(t, firstFormation, unassignFormation.Name)
+
+	t.Logf("Unassign tenant %s from formation %s", subaccountID, secondFormation)
+	unassignReq = fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
+	require.NoError(t, err)
+	require.Equal(t, secondFormation, unassignFormation.Name)
+
+	t.Log("Should match expected ASA")
+	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
+	require.Equal(t, 0, len(asaPage.Data))
+}
+
 func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("Runtime context formation processing from ASA", func(t *testing.T) {
@@ -640,15 +802,15 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
-			require.NoError(t, err)
 			defer func() {
 				if err := response.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
+			require.NoError(t, err)
 			require.Equal(t, http.StatusOK, response.StatusCode)
 
-			apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 			subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 			require.NoError(t, err)
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -663,12 +825,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 			resp, err := httpClient.Do(subscribeReq)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			require.NoError(t, err)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
+			require.NoError(t, err)
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -723,15 +885,15 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 			require.NoError(t, err)
 			response, err := httpClient.Do(depConfigureReq)
-			require.NoError(t, err)
 			defer func() {
 				if err := response.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
+			require.NoError(t, err)
 			require.Equal(t, http.StatusOK, response.StatusCode)
 
-			apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+			apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 			subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 			require.NoError(t, err)
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -746,12 +908,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 			resp, err := httpClient.Do(subscribeReq)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-			require.NoError(t, err)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
 					t.Logf("Could not close response body %s", err)
 				}
 			}()
+			require.NoError(t, err)
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -778,14 +940,18 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 	})
 }
 
-func TestFormationNotifications(stdT *testing.T) {
+func TestFormationNotificationsTenantHierarchy(stdT *testing.T) {
 	t := testingx.NewT(stdT)
-	t.Run("Formation Notifications", func(t *testing.T) {
+	t.Run("Formation Notifications tenant hierarchy", func(t *testing.T) {
 		ctx := context.Background()
-		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
-		subscriptionConsumerAccountID := conf.TestConsumerAccountID
-		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // in local set up the parent is ApplicationsForRuntimeTenantName
-		subscriptionConsumerTenantID := conf.TestConsumerTenantID
+
+		subscriptionProviderSubaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+		subscriptionConsumerTenantID := conf.TestConsumerTenantID // randomly chosen id
+
+		// This test will be executed only on 'local' env and there is a requirement for the subscriptionConsumer tenants - to be related from SA up to CRM. The tenants below are randomly selected
+		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountIDTenantHierarchy                      // randomly selected child of subscriptionConsumerAccount (tenant.TestTenants.GetDefaultTenantID())
+		subscriptionConsumerAccountID := conf.TestConsumerAccountIDTenantHierarchy                            // this global account tenant is selected because it has both subaccount child and customer parent
+		subscriptionConsumerCustomerID := tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant) // this is the customer parent of `tenant.TestTenants.GetDefaultTenantID()`
 
 		certSecuredHTTPClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -811,7 +977,7 @@ func TestFormationNotifications(stdT *testing.T) {
 
 		mode := graphql.WebhookModeSync
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 		providerRuntimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
@@ -855,15 +1021,275 @@ func TestFormationNotifications(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
+		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+		require.NoError(t, err)
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaimsTenantHierarchy")
+		subscribeReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+		subscribeReq.Header.Add(util.ContentTypeHeader, util.ContentTypeApplicationJSON)
+		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
+
+		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
+		// In case there isn't subscription it will fail-safe without error
+		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
+		resp, err := httpClient.Do(subscribeReq)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.NoError(t, err)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
+		require.NotEmpty(t, subJobStatusPath)
+		subJobStatusURL := conf.SubscriptionConfig.URL + subJobStatusPath
+		require.Eventually(t, func() bool {
+			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
+		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
+		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
+
+		t.Log("Assert provider runtime is visible in the consumer's subaccount after successful subscription")
+		consumerSubaccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID)
+		require.Equal(t, providerRuntime.ID, consumerSubaccountRuntime.ID)
+
+		t.Log("Assert there is a runtime context(subscription) as part of the provider runtime")
+		require.Len(t, consumerSubaccountRuntime.RuntimeContexts.Data, 1)
+		require.NotEmpty(t, consumerSubaccountRuntime.RuntimeContexts.Data[0].ID)
+		require.Equal(t, conf.SubscriptionLabelKey, consumerSubaccountRuntime.RuntimeContexts.Data[0].Key)
+		require.Equal(t, subscriptionConsumerTenantID, consumerSubaccountRuntime.RuntimeContexts.Data[0].Value)
+		runtimeContextID := consumerSubaccountRuntime.RuntimeContexts.Data[0].ID
+
+		applicationType := "provider-app-type-1"
+		providerFormationTmplName := "provider-formation-template-name"
+
+		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
+		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+
+		providerFormationName := "provider-formation-name"
+		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		require.NotEmpty(t, formation.ID)
+
+		t.Log("Create integration system")
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-template-test")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, intSys.ID)
+		require.NotEmpty(t, intSysAuth)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		appRegion := "test-app-region"
+		appNamespace := "compass.test"
+		localTenantID := "local-tenant-id"
+		t.Logf("Create application template for type %q", applicationType)
+		appTemplateInput := graphql.ApplicationTemplateInput{
+			Name:        applicationType,
+			Description: &applicationType,
+			ApplicationInput: &graphql.ApplicationRegisterInput{
+				Name:          "{{name}}",
+				ProviderName:  str.Ptr("compass"),
+				Description:   ptr.String("test {{display-name}}"),
+				LocalTenantID: &localTenantID,
+				Labels: graphql.Labels{
+					"applicationType": applicationType,
+					"region":          appRegion,
+				},
+			},
+			Placeholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name: "name",
+				},
+				{
+					Name: "display-name",
+				},
+			},
+			ApplicationNamespace: &appNamespace,
+			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+		}
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
+		require.NoError(t, err)
+
+		appFromTmplSrc := graphql.ApplicationFromTemplateInput{
+			TemplateName: applicationType,
+			Values: []*graphql.TemplateValueInput{
+				{
+					Placeholder: "name",
+					Value:       "app1-formation-notifications-tests",
+				},
+				{
+					Placeholder: "display-name",
+					Value:       "App 1",
+				},
+			},
+		}
+
+		t.Logf("Create application 1 from template %q", applicationType)
+		appFromTmplSrcGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc)
+		require.NoError(t, err)
+		createAppFromTmplFirstRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
+		app1 := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, createAppFromTmplFirstRequest, &app1)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, &app1)
+		require.NoError(t, err)
+		require.NotEmpty(t, app1.ID)
+		t.Logf("app1 ID: %q", app1.ID)
+
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
+		t.Logf("Assign application 1 to formation %s", providerFormationName)
+		assignReq := fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
+		var assignedFormation graphql.Formation
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		require.NoError(t, err)
+		require.Equal(t, providerFormationName, assignedFormation.Name)
+
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		require.NoError(t, err)
+		require.Equal(t, providerFormationName, assignedFormation.Name)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
+
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			app1.ID: {
+				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			},
+			runtimeContextID: {
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
+			},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
+
+		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
+		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, subscriptionConsumerCustomerID)
+	})
+}
+
+func TestFormationNotifications(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+	t.Run("Formation Notifications", func(t *testing.T) {
+		ctx := context.Background()
+		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
+		subscriptionConsumerAccountID := conf.TestConsumerAccountID
+		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // in local set up the parent is ApplicationsForRuntimeTenantName
+		subscriptionConsumerTenantID := conf.TestConsumerTenantID
+
+		certSecuredHTTPClient := &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					Certificates: []tls.Certificate{
+						{
+							Certificate: cc.Get()[conf.ExternalClientCertSecretName].Certificate,
+							PrivateKey:  cc.Get()[conf.ExternalClientCertSecretName].PrivateKey,
+						},
+					},
+					ClientAuth:         tls.RequireAndVerifyClientCert,
+					InsecureSkipVerify: conf.SkipSSLValidation,
+				},
+			},
+		}
+		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+		mode := graphql.WebhookModeSync
+		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+		providerRuntimeInput := graphql.RuntimeRegisterInput{
+			Name:        "providerRuntime",
+			Description: ptr.String("providerRuntime-description"),
+			Labels: graphql.Labels{
+				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+			},
+			Webhooks: []*graphql.WebhookInput{
+				{
+					Type: graphql.WebhookTypeConfigurationChanged,
+					Auth: &graphql.AuthInput{
+						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
+					},
+					Mode:           &mode,
+					URLTemplate:    &urlTemplate,
+					InputTemplate:  &inputTemplate,
+					OutputTemplate: &outputTemplate,
+				},
+			},
+		}
+
+		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
+		require.NotEmpty(t, providerRuntime.ID)
+
+		selfRegLabelValue, ok := providerRuntime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+		require.True(t, ok)
+		require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+providerRuntime.ID)
+
+		saasAppLbl, ok := providerRuntime.Labels[conf.SaaSAppNameLabelKey].(string)
+		require.True(t, ok)
+		require.NotEmpty(t, saasAppLbl)
+
+		httpClient := &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
+			},
+		}
+
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		require.NoError(t, err)
+		response, err := httpClient.Do(depConfigureReq)
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, response.StatusCode)
+
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -878,12 +1304,12 @@ func TestFormationNotifications(stdT *testing.T) {
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -1014,29 +1440,39 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.NotEmpty(t, app2.ID)
 		t.Logf("app2 ID: %q", app2.ID)
 
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
 		t.Logf("Assign application 1 to formation %s", providerFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		var assignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		//list assignments - expect 0
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
-		//list assignments - expect 2
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID:          {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
-			runtimeContextID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			app1.ID: {
+				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			},
+			runtimeContextID: {
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
+			},
 		}
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1044,29 +1480,32 @@ func TestFormationNotifications(stdT *testing.T) {
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 		t.Logf("Assign application 2 to formation %s", providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		//list assignments - expect 6
+
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
+				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
 				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
 				app2.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 			runtimeContextID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
+				app2.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 			app2.ID: {
+				app2.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
 				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
 				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 		}
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 6, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 9, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1080,7 +1519,7 @@ func TestFormationNotifications(stdT *testing.T) {
 			t.Logf("Found notification for app %q", appIDFromNotification)
 			if appIDFromNotification == app2.ID {
 				notificationForApp2Found = true
-				assertFormationNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID, appNamespace, appRegion)
+				assertFormationNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 			}
 		}
 		require.True(t, notificationForApp2Found, "notification for assign app2 not found")
@@ -1091,12 +1530,18 @@ func TestFormationNotifications(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
-		//list assignments - expect 2
+
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app2.ID:          {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
-			runtimeContextID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+			app2.ID: {
+				app2.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			},
+			runtimeContextID: {
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app2.ID:          fixtures.AssignmentState{State: "READY", Config: nil},
+			},
 		}
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1108,7 +1553,7 @@ func TestFormationNotifications(stdT *testing.T) {
 			op := notification.Get("Operation").String()
 			if op == unassignOperation {
 				unassignNotificationFound = true
-				assertFormationNotification(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion)
+				assertFormationNotification(t, notification, unassignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 			}
 		}
 		require.True(t, unassignNotificationFound, "notification for unassign app1 not found")
@@ -1118,8 +1563,11 @@ func TestFormationNotifications(stdT *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
-		//list assignments - expect 0
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1133,21 +1581,30 @@ func TestFormationNotifications(stdT *testing.T) {
 			t.Logf("Found %q notification for app %q", op, appIDFromNotification)
 			if appIDFromNotification == app2.ID && op == unassignOperation {
 				unassignNotificationForApp2Found = true
-				assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID, appNamespace, appRegion)
+				assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 			}
 		}
 		require.True(t, unassignNotificationForApp2Found, "notification for unassign app2 not found")
+
+		t.Logf("Unassign Application 2 from formation %s", providerFormationName)
+		unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
+		require.NoError(t, err)
+		require.Equal(t, providerFormationName, unassignFormation.Name)
+
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 	})
 }
 
 func TestAppToAppFormationNotifications(t *testing.T) {
 	ctx := context.Background()
 	tnt := tenant.TestTenants.GetDefaultTenantID()
+	tntParentCustomer := tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant) // parent of `tenant.TestTenants.GetDefaultTenantID()` above
 
 	mode := graphql.WebhookModeSync
 
 	urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-	inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+	inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 	outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 	formationTmplName := "app-to-app-formation-template-name"
 
@@ -1320,6 +1777,9 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.NotEmpty(t, app2.ID)
 	t.Logf("app2 ID: %q", app2.ID)
 
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
 	t.Logf("Assign application 1 to formation %s", formationName)
 	assignReq := fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
 	var assignedFormation graphql.Formation
@@ -1327,7 +1787,10 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, formationName, assignedFormation.Name)
 
-	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
+	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+		app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+	}
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	t.Logf("Assign application 2 to formation %s", formationName)
@@ -1336,15 +1799,17 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, formationName, assignedFormation.Name)
 
-	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+	expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 		app1.ID: {
+			app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 			app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 		},
 		app2.ID: {
 			app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 		},
 	}
-	assertFormationAssignments(t, ctx, tnt, formation.ID, 2, expectedAssignments)
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
 	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1352,7 +1817,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 
 	notificationsForApp1 := gjson.GetBytes(body, app1.ID)
 	assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
-	assertFormationNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
+	assertFormationNotification(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 
 	t.Logf("Unassign Application 1 from formation %s", formationName)
 	unassignReq := fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
@@ -1361,7 +1826,10 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, formationName, unassignFormation.Name)
 
-	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
+	expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+	}
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -1373,7 +1841,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 		op := notification.Get("Operation").String()
 		if op == unassignOperation {
 			unassignNotificationFound = true
-			assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
+			assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 		}
 	}
 	require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
@@ -1384,6 +1852,19 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, formationName, assignedFormation.Name)
 
+	expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		app1.ID: {
+			app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+			app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+		},
+		app2.ID: {
+			app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+		},
+	}
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
 	body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	assertNotificationsCountForTenant(t, body, app1.ID, 3)
 
@@ -1393,7 +1874,7 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 		op := notification.Get("Operation").String()
 		if op == assignOperation {
 			assignNotificationsFound++
-			assertFormationNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
+			assertFormationNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 		}
 	}
 	require.Equal(t, 2, assignNotificationsFound, "two notifications for assign app2 expected")
@@ -1404,6 +1885,12 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, formationName, unassignFormation.Name)
 
+	expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+	}
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
 	body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	assertNotificationsCountForTenant(t, body, app1.ID, 4)
 
@@ -1413,10 +1900,19 @@ func TestAppToAppFormationNotifications(t *testing.T) {
 		op := notification.Get("Operation").String()
 		if op == unassignOperation {
 			unassignNotificationsFound++
-			assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion)
+			assertFormationNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
 		}
 	}
 	require.Equal(t, 2, unassignNotificationsFound, "two notifications for unassign app2 expected")
+
+	t.Logf("Unassign Application 1 from formation %s", formationName)
+	unassignReq = fixtures.FixUnassignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, unassignFormation.Name)
+
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 }
 
 func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
@@ -1467,15 +1963,15 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -1490,12 +1986,12 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -1532,7 +2028,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 
 		mode := graphql.WebhookModeSync
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.Application.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.RuntimeContext.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
+		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		t.Log("Create integration system")
@@ -1640,6 +2136,8 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
 		t.Logf("Assign application to formation %s", providerFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		var assignedFormation graphql.Formation
@@ -1647,24 +2145,30 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		//list assignments - expect 0
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			app.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
-		//list assignments - expect 2
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app.ID:   {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
-			rtCtx.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			app.ID: {
+				app.ID:   fixtures.AssignmentState{State: "READY", Config: nil},
+				rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+			rtCtx.ID: {
+				rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app.ID:   fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			},
 		}
 
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
 
 		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
@@ -1673,7 +2177,7 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, localTenantID)
 		assignNotificationForApp := notificationsForConsumerTenant.Array()[0]
-		err = verifyFormationNotificationForApplication(assignNotificationForApp, assignOperation, formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "")
+		err = verifyFormationNotificationForApplication(assignNotificationForApp, assignOperation, formation.ID, rtCtx.ID, rtCtx.Value, regionLbl, "", subscriptionConsumerAccountID, emptyParentCustomerID)
 		assert.NoError(t, err)
 
 		t.Logf("Unassign Application from formation %s", providerFormationName)
@@ -1683,14 +2187,16 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
-		//list assignments - expect 0
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			rtCtx.ID: {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 1)
+		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
 		t.Logf("Assign application to formation %s", providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
@@ -1699,20 +2205,24 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		//list assignments - expect 2
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app.ID:   {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
-			rtCtx.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
+			app.ID: {
+				app.ID:   fixtures.AssignmentState{State: "READY", Config: nil},
+				rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+			rtCtx.ID: {
+				rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				app.ID:   fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			},
 		}
 
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, localTenantID, 3)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, assignOperation, 2)
+		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, assignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 2)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
@@ -1720,11 +2230,24 @@ func TestRuntimeContextToApplicationFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			app.ID: {app.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
+
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, localTenantID, 4)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 2)
+		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 2)
+
+		t.Logf("Unassign Application from formation %s", providerFormationName)
+		unassignReq = fixtures.FixUnassignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
+		require.NoError(t, err)
+		require.Equal(t, providerFormationName, unassignFormation.Name)
+
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 	})
 }
 
@@ -1738,11 +2261,11 @@ func TestFormationAssignments(stdT *testing.T) {
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		urlTemplateRuntime := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+		inputTemplateRuntime := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplateRuntime := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
 		urlTemplateApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/configuration/{{.Application.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.RuntimeContext.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
+		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{.Runtime.Labels.region }}\\\",\\\"application-namespace\\\":\\\"\\\",\\\"application-tenant-id\\\":\\\"{{.RuntimeContext.Value}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.RuntimeContext.ID}}\\\"}]}"
 		outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		certSecuredHTTPClient := &http.Client{
@@ -1823,15 +2346,15 @@ func TestFormationAssignments(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -1846,12 +2369,12 @@ func TestFormationAssignments(stdT *testing.T) {
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -1887,7 +2410,6 @@ func TestFormationAssignments(stdT *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 		require.NotEmpty(t, formation.ID)
 
-		//list assignments - expect 0
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -1978,102 +2500,289 @@ func TestFormationAssignments(stdT *testing.T) {
 		require.NotEmpty(t, actualApp.ID)
 		t.Logf("actualApp ID: %q", actualApp.ID)
 
-		var assignedFormation graphql.Formation
-
-		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
-		require.NoError(t, err)
-		require.Equal(t, providerFormationName, assignedFormation.Name)
-		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
-
-		t.Logf("Assign application to formation %s", formation.Name)
-		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
-		assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
-		require.NoError(t, err)
-		require.Equal(t, providerFormationName, assignedFormation.Name)
-
 		expectedAssignmentsBySourceID := map[string]map[string]fixtures.AssignmentState{
-			rtCtx.ID:     {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
-			actualApp.ID: {rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")}},
+			rtCtx.ID: {
+				actualApp.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+				rtCtx.ID:     fixtures.AssignmentState{State: "READY", Config: nil},
+			},
+			actualApp.ID: {
+				actualApp.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				rtCtx.ID:     fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")},
+			},
 		}
-		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-		assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignmentsBySourceID)
-		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		t.Run("Normal case notifications are sent and formation assignments are correct", func(t *testing.T) {
+			var assignedFormation graphql.Formation
 
-		// rtCtx <- App notifications
-		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
-		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
-		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
-		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+			t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+			defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		// rtCtx -> App notifications
-		assertNotificationsCountForTenant(t, body, localTenantID, 2)
-		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertExpectationsForApplicationNotifications(t, notificationsForConsumerTenant.Array(), []*applicationFormationExpectations{
-			{
-				op:                 assignOperation,
-				formationID:        formation.ID,
-				objectID:           rtCtx.ID,
-				subscribedTenantID: rtCtx.Value,
-				objectRegion:       regionLbl,
-				configuration:      "",
-			},
-			{
-				op:                 assignOperation,
-				formationID:        formation.ID,
-				objectID:           rtCtx.ID,
-				subscribedTenantID: rtCtx.Value,
-				objectRegion:       regionLbl,
-				configuration:      "{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}",
-			},
-		})
+			t.Logf("Assign application to formation %s", formation.Name)
+			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
+			assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		var unassignFormation graphql.Formation
-		t.Logf("Unassign application from formation %s", formation.Name)
-		unassignReq := fixtures.FixUnassignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
-		require.NoError(t, err)
-		require.Equal(t, formation.Name, assignedFormation.Name)
+			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
+			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		// rtCtx <- App notifications
-		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
-		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
+			// rtCtx <- App notifications
+			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
+			notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
+			assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
+			assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
-		unassignNotificationFound := false
-		for _, notification := range notificationsForConsumerTenant.Array() {
-			op := notification.Get("Operation").String()
-			if op == unassignOperation {
-				appIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
-				t.Logf("Found notification for app %q", appIDFromNotification)
-				if appIDFromNotification == actualApp.ID {
-					unassignNotificationFound = true
-					assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+			// rtCtx -> App notifications
+			assertNotificationsCountForTenant(t, body, localTenantID, 2)
+			notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
+			assertExpectationsForApplicationNotifications(t, notificationsForConsumerTenant.Array(), []*applicationFormationExpectations{
+				{
+					op:                 assignOperation,
+					formationID:        formation.ID,
+					objectID:           rtCtx.ID,
+					subscribedTenantID: rtCtx.Value,
+					objectRegion:       regionLbl,
+					configuration:      "",
+					tenant:             subscriptionConsumerAccountID,
+					customerID:         emptyParentCustomerID,
+				},
+				{
+					op:                 assignOperation,
+					formationID:        formation.ID,
+					objectID:           rtCtx.ID,
+					subscribedTenantID: rtCtx.Value,
+					objectRegion:       regionLbl,
+					configuration:      "{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}",
+					tenant:             subscriptionConsumerAccountID,
+					customerID:         emptyParentCustomerID,
+				},
+			})
+
+			var unassignFormation graphql.Formation
+			t.Logf("Unassign application from formation %s", formation.Name)
+			unassignReq := fixtures.FixUnassignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
+			require.NoError(t, err)
+			require.Equal(t, formation.Name, assignedFormation.Name)
+
+			application := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+			scenarios, hasScenarios := application.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+			// rtCtx <- App notifications
+			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
+			notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
+
+			unassignNotificationFound := false
+			for _, notification := range notificationsForConsumerTenant.Array() {
+				op := notification.Get("Operation").String()
+				if op == unassignOperation {
+					appIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
+					t.Logf("Found notification for app %q", appIDFromNotification)
+					if appIDFromNotification == actualApp.ID {
+						unassignNotificationFound = true
+						assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+					}
 				}
 			}
-		}
-		require.True(t, unassignNotificationFound)
+			require.True(t, unassignNotificationFound)
 
-		// rtCtx -> App notifications
-		assertNotificationsCountForTenant(t, body, localTenantID, 3)
-		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, 1)
+			// rtCtx -> App notifications
+			assertNotificationsCountForTenant(t, body, localTenantID, 3)
+			notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
+			assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
-		//list assignments - expect 0
-		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
-		assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+				rtCtx.ID: {
+					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				},
+			}
+			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
+			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
-		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
-		require.NoError(t, err)
-		require.Equal(t, providerFormationName, unassignFormation.Name)
+			t.Logf("Check that %s is unassigned from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+			scenarios, hasScenarios = app.Labels["scenarios"]
+			assert.False(t, hasScenarios)
+
+			t.Logf("Check that %s is still assigned to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			actualRtmCtx := fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
+			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, unassignFormation.Name)
+
+			t.Logf("Check that %s is actually unassigned from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
+			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+			assert.False(t, hasScenarios)
+
+		})
+
+		t.Run("Consecutive participants unassignment are still in formation before the formation assignments are processed by the async API call and removed afterwards", func(t *testing.T) {
+			var assignedFormation graphql.Formation
+
+			t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+			defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, assignedFormation.Name)
+
+			t.Logf("Assign application with ID: %s to formation %s", actualApp.ID, formation.Name)
+			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
+			assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, assignedFormation.Name)
+
+			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
+
+			t.Logf("Check that the runtime context with ID: %s is assigned to formation: %s", rtCtx.ID, providerFormationName)
+			actualRtmCtx := fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
+			scenarios, hasScenarios := actualRtmCtx.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			t.Logf("Check that the application with ID: %s is assigned to formation: %s", actualApp.ID, providerFormationName)
+			app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+			scenarios, hasScenarios = app.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			var unassignFormation graphql.Formation
+
+			t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			unassignReq := fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, unassignFormation.Name)
+
+			t.Logf("Unassign application with ID: %s from formation %s", actualApp.ID, formation.Name)
+			unassignReq = fixtures.FixUnassignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
+			require.NoError(t, err)
+			require.Equal(t, formation.Name, assignedFormation.Name)
+
+			t.Logf("Check that the runtime context with ID: %s is still assigned to formation: %s", rtCtx.ID, providerFormationName)
+			actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
+			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			t.Logf("Check that the application with ID: %s is still assigned to formation: %s", actualApp.ID, providerFormationName)
+			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+			scenarios, hasScenarios = app.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
+			actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
+			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+			assert.False(t, hasScenarios)
+
+			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+			scenarios, hasScenarios = app.Labels["scenarios"]
+			assert.False(t, hasScenarios)
+		})
+
+		t.Run("Application is not unassigned when only tenant is unassigned", func(t *testing.T) {
+			var assignedFormation graphql.Formation
+
+			t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+			defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, assignedFormation.Name)
+
+			t.Logf("Assign application to formation %s", formation.Name)
+			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
+			assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, assignedFormation.Name)
+
+			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
+
+			t.Logf("Check that %s is assigned from formation %s", subscriptionConsumerAccountID, providerFormationName)
+			actualRtmCtx := fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
+			scenarios, hasScenarios := actualRtmCtx.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			t.Logf("Check that %s is assigned from formation %s", actualApp.ID, providerFormationName)
+			app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+			scenarios, hasScenarios = app.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			var unassignFormation graphql.Formation
+
+			t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			unassignReq := fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
+			require.NoError(t, err)
+			require.Equal(t, providerFormationName, unassignFormation.Name)
+
+			t.Logf("Check that %s is still assigned from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
+			actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
+			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			t.Logf("Check that %s is still assigned from formation %s", actualApp.ID, providerFormationName)
+			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+			scenarios, hasScenarios = app.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+
+			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+				actualApp.ID: {
+					actualApp.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+				},
+			}
+			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
+
+			actualRtmCtx = fixtures.GetRuntimeContext(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, consumerSubaccountRuntime.ID, rtCtx.ID)
+			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
+			assert.False(t, hasScenarios)
+
+			t.Logf("Check that %s is still assigned from formation %s", actualApp.ID, providerFormationName)
+			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+			scenarios, hasScenarios = app.Labels["scenarios"]
+			assert.True(t, hasScenarios)
+			assert.Len(t, scenarios, 1)
+			assert.Contains(t, scenarios, providerFormationName)
+		})
 	})
 }
 
@@ -2114,7 +2823,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{if eq .Operation \\\"assign\\\"}}fail-once/{{end}}{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		certSecuredHTTPClient := &http.Client{
@@ -2183,15 +2892,15 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -2206,12 +2915,12 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -2317,16 +3026,22 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		require.NotEmpty(t, actualApp.ID)
 		t.Logf("actualApp ID: %q", actualApp.ID)
 
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
 		var assignedFormation graphql.Formation
 
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			runtimeContextID: {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		// notification mock API should return error
@@ -2338,11 +3053,17 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
 		// target:source:state
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
-			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")}},
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			runtimeContextID: {
+				actualApp.ID:     fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+			},
+			actualApp.ID: {
+				actualApp.ID:     fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")},
+			},
 		}
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
 			Errors: []*graphql.FormationStatusError{{
@@ -2357,7 +3078,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
 
-		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 		t.Logf("Assign application to formation %s should succeed on retry", formation.Name)
 		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
@@ -2367,10 +3088,16 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
-			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
+			runtimeContextID: {
+				actualApp.ID:     fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+			},
+			actualApp.ID: {
+				actualApp.ID:     fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			},
 		}
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2379,7 +3106,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
 
-		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 		var unassignFormation graphql.Formation
 		t.Logf("Unassign application from formation %s", formation.Name)
@@ -2387,6 +3114,14 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, formation.Name, assignedFormation.Name)
+
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			runtimeContextID: {
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+			},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 3)
@@ -2401,19 +3136,20 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 				t.Logf("Found notification for app %q", appIDFromNotification)
 				if appIDFromNotification == actualApp.ID {
 					unassignNotificationFound = true
-					assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+					assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 				}
 			}
 		}
 		require.True(t, unassignNotificationFound)
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
+
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, expectedAssignments)
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 	})
 }
 
@@ -2427,7 +3163,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{if eq .Operation \\\"unassign\\\"}}fail-once/{{end}}{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
+		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 		certSecuredHTTPClient := &http.Client{
@@ -2496,15 +3232,15 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -2519,12 +3255,12 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(t, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -2632,15 +3368,22 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 
 		var assignedFormation graphql.Formation
 
+		// Expect no formation assignments to be created
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq := fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
-		// Expect no formation assignments to be created
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+		// Expect one formation assignment to be created
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			runtimeContextID: {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil}},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Assign application to formation %s", formation.Name)
@@ -2650,13 +3393,18 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		// target:source:state
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			runtimeContextID: {actualApp.ID: fixtures.AssignmentState{State: "READY", Config: nil}}, // Should expect CONFIG_PENDING state when reverse notifications are implemented
-			actualApp.ID:     {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")}},
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			runtimeContextID: {
+				actualApp.ID:     fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+			},
+			actualApp.ID: {
+				actualApp.ID:     fixtures.AssignmentState{State: "READY", Config: nil},
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			},
 		}
 
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -2665,7 +3413,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 := notificationsForConsumerTenant.Array()[0]
 
-		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, assignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 		var unassignFormation graphql.Formation
 		// notification mock api should return error
@@ -2675,9 +3423,14 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		require.Error(t, err)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			actualApp.ID: {runtimeContextID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")}},
+			actualApp.ID: {
+				runtimeContextID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")},
+			},
+			runtimeContextID: {
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+			},
 		}
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionError,
 			Errors: []*graphql.FormationStatusError{{
@@ -2692,7 +3445,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
 		assignNotificationForApp1 = notificationsForConsumerTenant.Array()[1]
 
-		assertFormationNotification(t, assignNotificationForApp1, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+		assertFormationNotification(t, assignNotificationForApp1, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 		t.Logf("Unassign application from formation %s should succeed on retry", formation.Name)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
@@ -2712,12 +3465,18 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 				t.Logf("Found notification for app %q", appIDFromNotification)
 				if appIDFromNotification == actualApp.ID {
 					unassignNotificationFound = true
-					assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion)
+					assertFormationNotification(t, notification, unassignOperation, formation.ID, actualApp.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 				}
 			}
 		}
 		require.True(t, unassignNotificationFound)
-		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+
+		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			runtimeContextID: {
+				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
+			},
+		}
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
@@ -2725,6 +3484,10 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, &unassignFormation)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
+
+		// Expect formation assignments to be cleared
+		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
+		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 	})
 }
 
@@ -2753,24 +3516,26 @@ func resetShouldFailEndpointFromExternalSvcMock(t *testing.T, client *http.Clien
 func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []byte {
 	t.Logf("Getting formation notifications recieved in external services mock")
 	resp, err := client.Get(conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback")
-	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			t.Logf("Could not close response body %s", err)
 		}
 	}()
+	require.NoError(t, err)
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusOK, string(body)))
 	return body
 }
 
-func assertFormationNotification(t *testing.T, notification gjson.Result, op string, formationID string, expectedAppID string, expectedLocalTenantID string, expectedAppNamespace string, expectedAppRegion string) {
+func assertFormationNotification(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string) {
 	require.Equal(t, op, notification.Get("Operation").String())
 	if op == unassignOperation {
 		require.Equal(t, expectedAppID, notification.Get("ApplicationID").String())
 	}
 	require.Equal(t, formationID, notification.Get("RequestBody.ucl-formation-id").String())
+	require.Equal(t, expectedTenant, notification.Get("RequestBody.globalAccountId").String())
+	require.Equal(t, expectedCustomerID, notification.Get("RequestBody.crmId").String())
 
 	notificationItems := notification.Get("RequestBody.items")
 	require.True(t, notificationItems.Exists())
@@ -2783,7 +3548,7 @@ func assertFormationNotification(t *testing.T, notification gjson.Result, op str
 	require.Equal(t, expectedAppRegion, app1FromNotification.Get("region").String())
 }
 
-func assertSeveralFormationNotifications(t *testing.T, notificationsForConsumerTenant gjson.Result, rtCtx *graphql.RuntimeContextExt, formationID, region, operationType string, expectedNumberOfNotifications int) {
+func assertSeveralFormationNotifications(t *testing.T, notificationsForConsumerTenant gjson.Result, rtCtx *graphql.RuntimeContextExt, formationID, region, operationType, expectedTenant, expectedCustomerID string, expectedNumberOfNotifications int) {
 	actualNumberOfNotifications := 0
 	for _, notification := range notificationsForConsumerTenant.Array() {
 		rtCtxIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
@@ -2791,7 +3556,7 @@ func assertSeveralFormationNotifications(t *testing.T, notificationsForConsumerT
 		t.Logf("Found notification about rtCtx %q", rtCtxIDFromNotification)
 		if rtCtxIDFromNotification == rtCtx.ID && op == operationType {
 			actualNumberOfNotifications++
-			err := verifyFormationNotificationForApplication(notification, operationType, formationID, rtCtx.ID, rtCtx.Value, region, "")
+			err := verifyFormationNotificationForApplication(notification, operationType, formationID, rtCtx.ID, rtCtx.Value, region, "", expectedTenant, expectedCustomerID)
 			assert.NoError(t, err)
 		}
 	}
@@ -2805,6 +3570,8 @@ type applicationFormationExpectations struct {
 	subscribedTenantID string
 	objectRegion       string
 	configuration      string
+	tenant             string
+	customerID         string
 }
 
 func assertExpectationsForApplicationNotifications(t *testing.T, notifications []gjson.Result, expectations []*applicationFormationExpectations) {
@@ -2812,7 +3579,7 @@ func assertExpectationsForApplicationNotifications(t *testing.T, notifications [
 	for _, expectation := range expectations {
 		found := false
 		for _, notification := range notifications {
-			err := verifyFormationNotificationForApplication(notification, expectation.op, expectation.formationID, expectation.objectID, expectation.subscribedTenantID, expectation.objectRegion, expectation.configuration)
+			err := verifyFormationNotificationForApplication(notification, expectation.op, expectation.formationID, expectation.objectID, expectation.subscribedTenantID, expectation.objectRegion, expectation.configuration, expectation.tenant, expectation.customerID)
 			if err == nil {
 				found = true
 			}
@@ -2821,7 +3588,7 @@ func assertExpectationsForApplicationNotifications(t *testing.T, notifications [
 	}
 }
 
-func verifyFormationNotificationForApplication(notification gjson.Result, op string, formationID string, expectedObjectID string, expectedSubscribedTenantID string, expectedObjectRegion string, expectedConfiguration string) error {
+func verifyFormationNotificationForApplication(notification gjson.Result, op, formationID, expectedObjectID, expectedSubscribedTenantID, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string) error {
 	actualOp := notification.Get("Operation").String()
 	if op != actualOp {
 		return errors.Errorf("Operation does not match: expected %q, but got %q", op, actualOp)
@@ -2837,6 +3604,16 @@ func verifyFormationNotificationForApplication(notification gjson.Result, op str
 	actualFormationID := notification.Get("RequestBody.ucl-formation-id").String()
 	if formationID != actualFormationID {
 		return errors.Errorf("FormationID does not match: expected %q, but got %q", formationID, actualFormationID)
+	}
+
+	actualTenantID := notification.Get("RequestBody.globalAccountId").String()
+	if actualTenantID != expectedTenant {
+		return errors.Errorf("Global Account does not match: expected %q, but got %q", expectedTenant, actualTenantID)
+	}
+
+	actualCustomerID := notification.Get("RequestBody.crmId").String()
+	if actualCustomerID != expectedCustomerID {
+		return errors.Errorf("Customer ID does not match: expected %q, but got %q", expectedCustomerID, actualCustomerID)
 	}
 
 	notificationItems := notification.Get("RequestBody.items")

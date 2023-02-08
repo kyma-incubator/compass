@@ -66,24 +66,13 @@ func TestSelfRegisterFlow(t *testing.T) {
 	t.Logf("Creating formation with name %s...", formationName)
 	createFormationReq := fixtures.FixCreateFormationRequest(formationName)
 	executeGQLRequest(t, ctx, createFormationReq, formationName, accountTenantID)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, accountTenantID, formationName)
 	t.Logf("Successfully created formation: %s", formationName)
-
-	defer func() {
-		t.Logf("Deleting formation with name: %s...", formationName)
-		deleteRequest := fixtures.FixDeleteFormationRequest(formationName)
-		executeGQLRequest(t, ctx, deleteRequest, formationName, accountTenantID)
-		t.Logf("Successfully deleted formation with name: %s...", formationName)
-	}()
 
 	t.Logf("Assign application to formation %s", formationName)
 	assignToFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
+	defer unassignFromFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
 	t.Logf("Successfully assigned application to formation %s", formationName)
-
-	defer func() {
-		t.Logf("Unassign application from formation %s", formationName)
-		unassignFromFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
-		t.Logf("Successfully unassigned application from formation %s", formationName)
-	}()
 
 	// Self register runtime
 	runtimeInput := graphql.RuntimeRegisterInput{
@@ -132,7 +121,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	secondaryTenant := conf.TestConsumerAccountID
 	subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
-	subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
@@ -197,34 +185,23 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation with name %s...", consumerFormationName)
 		createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
 		executeGQLRequest(stdT, ctx, createFormationReq, consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully created formation: %s", consumerFormationName)
-
 		defer func() {
 			stdT.Logf("Deleting formation with name: %s...", consumerFormationName)
 			deleteRequest := fixtures.FixDeleteFormationRequest(consumerFormationName)
 			executeGQLRequest(stdT, ctx, deleteRequest, consumerFormationName, secondaryTenant)
 			stdT.Logf("Successfully deleted formation with name: %s...", consumerFormationName)
 		}()
+		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
 		stdT.Logf("Assign application to formation %s", consumerFormationName)
 		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
-
-		defer func() {
-			stdT.Logf("Unassign application from formation %s", consumerFormationName)
-			unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-			stdT.Logf("Successfully unassigned application from formation %s", consumerFormationName)
-		}()
 
 		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
 		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-
-		defer func() {
-			stdT.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-			unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-			stdT.Logf("Successfully unassigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-		}()
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -240,15 +217,15 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(stdT, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(stdT, err)
 		subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -258,17 +235,17 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		// In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 
-		stdT.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
+		stdT.Logf("Creating a subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
-		defer subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-		require.NoError(stdT, err)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(stdT, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
@@ -279,7 +256,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Eventually(stdT, func() bool {
 			return subscription.GetSubscriptionJobStatus(stdT, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
-		stdT.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
+		stdT.Logf("Successfully created subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
 		// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
@@ -351,7 +328,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, destination.Name, destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String())
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
-		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
 		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -419,34 +396,18 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation with name %s...", consumerFormationName)
 		createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
 		executeGQLRequest(stdT, ctx, createFormationReq, consumerFormationName, secondaryTenant)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
-
-		defer func() {
-			stdT.Logf("Deleting formation with name: %s...", consumerFormationName)
-			deleteRequest := fixtures.FixDeleteFormationRequest(consumerFormationName)
-			executeGQLRequest(stdT, ctx, deleteRequest, consumerFormationName, secondaryTenant)
-			stdT.Logf("Successfully deleted formation with name: %s...", consumerFormationName)
-		}()
 
 		stdT.Logf("Assign application to formation %s", consumerFormationName)
 		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
-
-		defer func() {
-			stdT.Logf("Unassign application from formation %s", consumerFormationName)
-			unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-			stdT.Logf("Successfully unassigned application from formation %s", consumerFormationName)
-		}()
 
 		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
 		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-
-		defer func() {
-			stdT.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-			unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-			stdT.Logf("Successfully unassigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
-		}()
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -462,15 +423,15 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(stdT, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
 				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(stdT, err)
 		subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
@@ -480,21 +441,21 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		// In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 
-		stdT.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
+		stdT.Logf("Creating a subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
-		require.NoError(stdT, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
+		require.NoError(stdT, err)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
 
-		defer subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(stdT, subJobStatusPath)
@@ -502,7 +463,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Eventually(stdT, func() bool {
 			return subscription.GetSubscriptionJobStatus(stdT, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
-		stdT.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
+		stdT.Logf("Successfully created subscription between consumer with subaccount id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
@@ -577,7 +538,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, destination.Name, destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String())
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
-		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
 		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -603,8 +564,10 @@ func assignToFormation(t *testing.T, ctx context.Context, objectID, objectType, 
 }
 
 func unassignFromFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
+	t.Logf("Unassign object with type %s and id %s from formation %s", objectType, objectID, formationName)
 	unassignReq := fixtures.FixUnassignFormationRequest(objectID, objectType, formationName)
 	executeGQLRequest(t, ctx, unassignReq, formationName, tenantID)
+	t.Logf("Successfully unassigned object with type %s and id %s from formation %s", objectType, objectID, formationName)
 }
 
 func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Request, formationName, tenantID string) {

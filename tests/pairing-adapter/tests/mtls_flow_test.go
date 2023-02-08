@@ -44,16 +44,12 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 		updateAdaptersConfigmapWithDefaultValues(t, ctx, conf) // pre-clean-up
 
 		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
-		defer func() {
-			fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
-		}()
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
 
 		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
 
 		appTemplate = createAppTemplate(t, ctx, defaultTestTenant, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
-		defer func() {
-			fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, *appTemplate)
-		}()
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, *appTemplate)
 	}
 
 	appTmplInput := directorSchema.ApplicationFromTemplateInput{
@@ -204,8 +200,8 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	namePlaceholderDescription := "name-description"
 	displayNamePlaceholderDescription := "display-name-description"
 	integrationSystemID := newIntSysID
-	nameJSONPath := "name-json-path"
-	displayNameJSONPath := "display-name-json-path"
+	nameJSONPath := "$.name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
 
 	appTemplateInput := directorSchema.ApplicationTemplateInput{
 		Name:        templateName,

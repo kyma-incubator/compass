@@ -29,6 +29,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	testFormationAssignmentID := "testFormationAssignmentID"
 	consumerUUID := uuid.New().String()
 	appTemplateID := "testAppTemplateID"
+	intSystemID := "intSystemID"
 	runtimeID := "testRuntimeID"
 
 	testErr := errors.New("test error")
@@ -44,7 +45,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	faWithSourceAppAndTargetRuntimeContext := fixFormationAssignmentModel(testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntimeContext)
 
 	intSysApp := &model.Application{
-		IntegrationSystemID: &faTargetID,
+		IntegrationSystemID: &intSystemID,
 	}
 
 	appWithAppTemplate := &model.Application{
@@ -114,7 +115,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return faSvc
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -134,7 +135,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			name:       "Authorization fail: error when transaction begin fails",
 			transactFn: txGen.ThatFailsOnBegin,
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -150,7 +151,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return faSvc
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -166,7 +167,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return faSvc
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				ctxOnlyWithConsumer := consumer.SaveToContext(emptyCtx, c)
 				return ctxOnlyWithConsumer
 			},
@@ -183,7 +184,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return faSvc
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -205,7 +206,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return appRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Application)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -227,7 +228,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return appRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -249,7 +250,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return appRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -276,7 +277,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return appTemplateRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -303,7 +304,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return appTemplateRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -335,7 +336,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return lblRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -368,7 +369,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -401,7 +402,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -422,7 +423,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return appRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(faTargetID, consumer.IntegrationSystem)
+				c := fixGetConsumer(intSystemID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -430,7 +431,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Authorization fail: when the int system caller has owner access to the target FA with type application but the transaction fail",
+			name:       "Authorization fail: when the int system caller manages the target FA with type application but the transaction fail",
 			transactFn: txGen.ThatFailsOnCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
@@ -443,7 +444,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return appRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(faTargetID, consumer.IntegrationSystem)
+				c := fixGetConsumer(intSystemID, consumer.IntegrationSystem)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -451,7 +452,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
-			name:       "Authorization success: when the caller has owner access to the formation assignment target with type application",
+			name:       "Authorization success: when the int system caller manages the formation assignment target with type application",
 			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
@@ -461,11 +462,52 @@ func TestAuthenticator_Handler(t *testing.T) {
 			appRepoFn: func() *automock.ApplicationRepository {
 				appRepo := &automock.ApplicationRepository{}
 				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(intSysApp, nil)
-				appRepo.On("OwnerExists", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(true, nil)
 				return appRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(intSystemID, consumer.IntegrationSystem)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+		},
+		{
+			name:       "Authorization fail: when the caller is the parent of the formation assignment target with type application but the transaction fail",
+			transactFn: txGen.ThatFailsOnCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				return faSvc
+			},
+			appRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				return appRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(appTemplateID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization success: when the caller is the parent of the formation assignment target with type application",
+			transactFn: txGen.ThatSucceeds,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasTenant(internalTntID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				return faSvc
+			},
+			appRepoFn: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("GetByID", contextThatHasTenant(internalTntID), internalTntID, faTargetID).Return(appWithAppTemplate, nil)
+				return appRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(appTemplateID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -487,7 +529,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return appRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -520,7 +562,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -553,7 +595,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			},
 			consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.IntegrationSystem)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -575,7 +617,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -596,7 +638,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -617,7 +659,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -638,7 +680,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -660,7 +702,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmCtxRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -686,7 +728,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmCtxRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -712,7 +754,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmCtxRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -738,7 +780,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmCtxRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,
@@ -764,7 +806,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 				return rtmCtxRepo
 			},
 			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerUUID, consumer.Runtime)
+				c := fixGetConsumer(consumerUUID, consumer.ExternalCertificate)
 				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
 			},
 			hasURLVars:         true,

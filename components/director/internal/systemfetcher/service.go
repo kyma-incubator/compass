@@ -38,7 +38,7 @@ type tenantService interface {
 type systemsService interface {
 	TrustedUpsert(ctx context.Context, in model.ApplicationRegisterInput) error
 	TrustedUpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error
-	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
+	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
 }
 
 //go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -227,7 +227,7 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 
 			if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
 				log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
-				app, err := s.systemsService.GetByNameAndSystemNumber(ctx, system.DisplayName, system.SystemNumber)
+				app, err := s.systemsService.GetBySystemNumber(ctx, system.SystemNumber)
 				if err != nil {
 					log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
 					return nil

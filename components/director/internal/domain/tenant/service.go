@@ -3,6 +3,9 @@ package tenant
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -32,6 +35,8 @@ type TenantMappingRepository interface {
 	DeleteByExternalTenant(ctx context.Context, externalTenant string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	ListByExternalTenants(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error)
+	ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
+	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
@@ -169,15 +174,45 @@ func (s *service) Update(ctx context.Context, id string, tenantInput model.Busin
 	return nil
 }
 
+// GetCustomerIDParentRecursively gets the top parent external ID (customer_id) for a given tenant
+func (s *service) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
+	return s.tenantMappingRepo.GetCustomerIDParentRecursively(ctx, tenantID)
+}
+
+// CreateTenantAccessForResource creates a tenant access for a single resource.Type
+func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantID, resourceID string, isOwner bool, resourceType resource.Type) error {
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return errors.Errorf("entity %q does not have access table", resourceType)
+	}
+
+	ta := &repo.TenantAccess{
+		TenantID:   tenantID,
+		ResourceID: resourceID,
+		Owner:      isOwner,
+	}
+
+	if err := repo.CreateSingleTenantAccess(ctx, m2mTable, ta); err != nil {
+		return errors.Wrapf(err, "while creating tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
+	}
+
+	return nil
+}
+
+// ListByParentAndType list tenants by parent ID and tenant.Type
+func (s *service) ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantType)
+}
+
 // CreateManyIfNotExists creates all provided tenants if they do not exist.
 // It creates or updates the subdomain and region labels of the provided tenants, no matter if they are pre-existing or not.
-func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
+func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.UnsafeCreate)
 }
 
 // UpsertMany creates all provided tenants if they do not exist. If they do exist, they are internally updated.
 // It creates or updates the subdomain and region labels of the provided tenants, no matter if they are pre-existing or not.
-func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error {
+func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.Upsert)
 }
 
@@ -209,9 +244,11 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 	return tenantID, nil
 }
 
-func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) error {
+func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) error) ([]string, error) {
 	tenants := s.MultipleToTenantMapping(tenantInputs)
 	subdomains, regions := tenantLocality(tenantInputs)
+	tenantIDs := make([]string, 0, len(tenants))
+
 	for tenantIdx, tenant := range tenants {
 		subdomain := ""
 		region := ""
@@ -223,9 +260,10 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		}
 		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, upsertFunc)
 		if err != nil {
-			return errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
+			return nil, errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
 		// the tenant already exists in our DB with a different ID, and we should update all child resources to use the correct internal ID
+		tenantIDs = append(tenantIDs, tenantID)
 		if tenantID != tenant.ID {
 			for i := tenantIdx; i < len(tenants); i++ {
 				if tenants[i].Parent == tenant.ID {
@@ -235,7 +273,7 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		}
 	}
 
-	return nil
+	return tenantIDs, nil
 }
 
 func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region string, action func(context.Context, model.BusinessTenantMapping) error) (string, error) {

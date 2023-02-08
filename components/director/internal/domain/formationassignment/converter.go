@@ -35,16 +35,13 @@ func (c *converter) ToGraphQL(in *model.FormationAssignment) (*graphql.Formation
 	}
 
 	return &graphql.FormationAssignment{
-		ID:                         in.ID,
-		Source:                     in.Source,
-		SourceType:                 graphql.FormationAssignmentType(in.SourceType),
-		Target:                     in.Target,
-		TargetType:                 graphql.FormationAssignmentType(in.TargetType),
-		LastOperation:              string(in.LastOperation),
-		LastOperationInitiator:     in.LastOperationInitiator,
-		LastOperationInitiatorType: graphql.FormationAssignmentType(in.LastOperationInitiatorType),
-		State:                      in.State,
-		Value:                      strValue,
+		ID:         in.ID,
+		Source:     in.Source,
+		SourceType: graphql.FormationAssignmentType(in.SourceType),
+		Target:     in.Target,
+		TargetType: graphql.FormationAssignmentType(in.TargetType),
+		State:      in.State,
+		Value:      strValue,
 	}, nil
 }
 
@@ -77,16 +74,13 @@ func (c *converter) ToInput(assignment *model.FormationAssignment) *model.Format
 	}
 
 	return &model.FormationAssignmentInput{
-		FormationID:                assignment.FormationID,
-		Source:                     assignment.Source,
-		SourceType:                 assignment.SourceType,
-		Target:                     assignment.Target,
-		TargetType:                 assignment.TargetType,
-		LastOperation:              assignment.LastOperation,
-		LastOperationInitiator:     assignment.LastOperationInitiator,
-		LastOperationInitiatorType: assignment.LastOperationInitiatorType,
-		State:                      assignment.State,
-		Value:                      assignment.Value,
+		FormationID: assignment.FormationID,
+		Source:      assignment.Source,
+		SourceType:  assignment.SourceType,
+		Target:      assignment.Target,
+		TargetType:  assignment.TargetType,
+		State:       assignment.State,
+		Value:       assignment.Value,
 	}
 }
 
@@ -97,16 +91,13 @@ func (c *converter) FromInput(in *model.FormationAssignmentInput) *model.Formati
 	}
 
 	return &model.FormationAssignment{
-		FormationID:                in.FormationID,
-		Source:                     in.Source,
-		SourceType:                 in.SourceType,
-		Target:                     in.Target,
-		TargetType:                 in.TargetType,
-		LastOperation:              in.LastOperation,
-		LastOperationInitiator:     in.LastOperationInitiator,
-		LastOperationInitiatorType: in.LastOperationInitiatorType,
-		State:                      in.State,
-		Value:                      in.Value,
+		FormationID: in.FormationID,
+		Source:      in.Source,
+		SourceType:  in.SourceType,
+		Target:      in.Target,
+		TargetType:  in.TargetType,
+		State:       in.State,
+		Value:       in.Value,
 	}
 }
 
@@ -117,18 +108,15 @@ func (c *converter) ToEntity(in *model.FormationAssignment) *Entity {
 	}
 
 	return &Entity{
-		ID:                         in.ID,
-		FormationID:                in.FormationID,
-		TenantID:                   in.TenantID,
-		Source:                     in.Source,
-		SourceType:                 string(in.SourceType),
-		Target:                     in.Target,
-		TargetType:                 string(in.TargetType),
-		LastOperation:              string(in.LastOperation),
-		LastOperationInitiator:     in.LastOperationInitiator,
-		LastOperationInitiatorType: string(in.LastOperationInitiatorType),
-		State:                      in.State,
-		Value:                      repo.NewNullableStringFromJSONRawMessage(in.Value),
+		ID:          in.ID,
+		FormationID: in.FormationID,
+		TenantID:    in.TenantID,
+		Source:      in.Source,
+		SourceType:  string(in.SourceType),
+		Target:      in.Target,
+		TargetType:  string(in.TargetType),
+		State:       in.State,
+		Value:       repo.NewNullableStringFromJSONRawMessage(in.Value),
 	}
 }
 
@@ -139,17 +127,14 @@ func (c *converter) FromEntity(e *Entity) *model.FormationAssignment {
 	}
 
 	return &model.FormationAssignment{
-		ID:                         e.ID,
-		FormationID:                e.FormationID,
-		TenantID:                   e.TenantID,
-		Source:                     e.Source,
-		SourceType:                 model.FormationAssignmentType(e.SourceType),
-		Target:                     e.Target,
-		TargetType:                 model.FormationAssignmentType(e.TargetType),
-		LastOperation:              model.FormationOperation(e.LastOperation),
-		LastOperationInitiator:     e.LastOperationInitiator,
-		LastOperationInitiatorType: model.FormationAssignmentType(e.LastOperationInitiatorType),
-		State:                      e.State,
-		Value:                      repo.JSONRawMessageFromNullableString(e.Value),
+		ID:          e.ID,
+		FormationID: e.FormationID,
+		TenantID:    e.TenantID,
+		Source:      e.Source,
+		SourceType:  model.FormationAssignmentType(e.SourceType),
+		Target:      e.Target,
+		TargetType:  model.FormationAssignmentType(e.TargetType),
+		State:       e.State,
+		Value:       repo.JSONRawMessageFromNullableString(e.Value),
 	}
 }
