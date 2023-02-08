@@ -1125,6 +1125,13 @@ global:
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"
+      managed_application_provider_operator:
+        - "application.local_tenant_id:write"
+        - "application_template:write"
+        - "application_template.webhooks:read"
+        - "internal_visibility:read"
+        - "webhook:write"
+        - "certificate_subject_mapping:write"
       technical_client:
         - "tenant:read"
         - "tenant:write"
