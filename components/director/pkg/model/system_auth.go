@@ -67,6 +67,8 @@ const (
 	TechnicalClientReference SystemAuthReferenceObjectType = "Technical Client"
 	// BusinessIntegrationReference missing godoc
 	BusinessIntegrationReference SystemAuthReferenceObjectType = "Business Integration"
+	// ManagedApplicationProviderOperatorReference missing godoc
+	ManagedApplicationProviderOperatorReference SystemAuthReferenceObjectType = "Managed Application Provider Operator"
 )
 
 // IsIntegrationSystemNoTenantFlow missing godoc

@@ -19,6 +19,8 @@ const (
 	SuperAdminType = "Super Admin"
 	// BusinessIntegrationType represents a business integration consumer type
 	BusinessIntegrationType = "Business Integration"
+	// ManagedApplicationProviderOperatorType represents a managed application provider operator consumer type
+	ManagedApplicationProviderOperatorType = "Managed Application Provider Operator"
 	// TechnicalClient represents a technical client consumer type
 	TechnicalClient = "Technical Client"
 
@@ -28,12 +30,13 @@ const (
 
 // SupportedConsumerTypes is a map of all supported consumer types
 var SupportedConsumerTypes = map[string]bool{
-	RuntimeType:             true,
-	IntegrationSystemType:   true,
-	ApplicationType:         true,
-	SuperAdminType:          true,
-	BusinessIntegrationType: true,
-	TechnicalClient:         true,
+	RuntimeType:                            true,
+	IntegrationSystemType:                  true,
+	ApplicationType:                        true,
+	SuperAdminType:                         true,
+	BusinessIntegrationType:                true,
+	ManagedApplicationProviderOperatorType: true,
+	TechnicalClient:                        true,
 }
 
 // SupportedAccessLevels is a map of all supported tenant access levels
