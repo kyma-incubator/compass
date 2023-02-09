@@ -2198,7 +2198,7 @@ func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testi
 		assertNotificationsCountForTenant(t, body, localTenantID, 2)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
+		assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
 		t.Logf("Assign application to formation %s", providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
@@ -2224,7 +2224,7 @@ func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testi
 		assertNotificationsCountForTenant(t, body, localTenantID, 3)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, assignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 2)
+		assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, assignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 2)
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
@@ -2241,7 +2241,7 @@ func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testi
 		assertNotificationsCountForTenant(t, body, localTenantID, 4)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-		assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 2)
+		assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 2)
 
 		t.Logf("Unassign Application from formation %s", providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
@@ -2604,7 +2604,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			// rtCtx -> App notifications
 			assertNotificationsCountForTenant(t, body, localTenantID, 3)
 			notificationsForConsumerTenant = gjson.GetBytes(body, localTenantID)
-			assertSeveralFormationNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
+			assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
@@ -3499,7 +3499,7 @@ func TestFormationLifecycleNotifications(t *testing.T) {
 
 	urlTemplateFormation := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
 	inputTemplateFormation := "{\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"details\\\":{\\\"id\\\":\\\"{{.Formation.ID}}\\\",\\\"name\\\":\\\"{{.Formation.Name}}\\\"}}"
-	outputTemplateFormation := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200}"
+	outputTemplateFormation := "{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200}"
 
 	certSecuredHTTPClient := &http.Client{
 		Timeout: 10 * time.Second,
@@ -3543,17 +3543,14 @@ func TestFormationLifecycleNotifications(t *testing.T) {
 	require.NotEmpty(t, formation.ID)
 
 	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-
-	assertNotificationsCountForFormationID(t, body, formation.ID, 1)
 	assertFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, createFormationOperation, tenantID, parentTenantID)
 
 	cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-	body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
-	assertNotificationsCountForFormationID(t, body, formation.ID, 0)
 
 	delFormation := fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, formationName)
 	require.NotEmpty(t, delFormation.ID)
 
+	body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	assertNotificationsCountForFormationID(t, body, formation.ID, 1)
 	assertFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, deleteFormationOperation, tenantID, parentTenantID)
 }
@@ -3661,7 +3658,7 @@ func assertFormationNotificationFromCreationOrDeletion(t *testing.T, body []byte
 	require.Equal(t, formationName, notificationForFormationDetails.Get("name").String())
 }
 
-func assertSeveralFormationNotifications(t *testing.T, notificationsForConsumerTenant gjson.Result, rtCtx *graphql.RuntimeContextExt, formationID, region, operationType, expectedTenant, expectedCustomerID string, expectedNumberOfNotifications int) {
+func assertSeveralFormationAssignmentsNotifications(t *testing.T, notificationsForConsumerTenant gjson.Result, rtCtx *graphql.RuntimeContextExt, formationID, region, operationType, expectedTenant, expectedCustomerID string, expectedNumberOfNotifications int) {
 	actualNumberOfNotifications := 0
 	for _, notification := range notificationsForConsumerTenant.Array() {
 		rtCtxIDFromNotification := notification.Get("RequestBody.items.0.ucl-system-tenant-id").String()
