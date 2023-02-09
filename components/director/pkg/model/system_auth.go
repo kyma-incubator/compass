@@ -69,6 +69,8 @@ const (
 	BusinessIntegrationReference SystemAuthReferenceObjectType = "Business Integration"
 	// ManagedApplicationProviderOperatorReference missing godoc
 	ManagedApplicationProviderOperatorReference SystemAuthReferenceObjectType = "Managed Application Provider Operator"
+	// ManagedApplicationConsumerReference is a reference to the managed application consumer type
+	ManagedApplicationConsumerReference SystemAuthReferenceObjectType = "Managed Application Consumer"
 )
 
 // IsIntegrationSystemNoTenantFlow missing godoc

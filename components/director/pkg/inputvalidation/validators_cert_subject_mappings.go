@@ -21,6 +21,8 @@ const (
 	BusinessIntegrationType = "Business Integration"
 	// ManagedApplicationProviderOperatorType represents a managed application provider operator consumer type
 	ManagedApplicationProviderOperatorType = "Managed Application Provider Operator"
+	// ManagedApplicationConsumerType represents a managed application consumer type
+	ManagedApplicationConsumerType = "Managed Application Consumer"
 	// TechnicalClient represents a technical client consumer type
 	TechnicalClient = "Technical Client"
 
@@ -36,6 +38,7 @@ var SupportedConsumerTypes = map[string]bool{
 	SuperAdminType:                         true,
 	BusinessIntegrationType:                true,
 	ManagedApplicationProviderOperatorType: true,
+	ManagedApplicationConsumerType:         true,
 	TechnicalClient:                        true,
 }
 
