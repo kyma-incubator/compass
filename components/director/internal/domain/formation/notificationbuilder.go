@@ -36,18 +36,18 @@ func (nb *NotificationBuilder) BuildNotificationRequest(
 	formationTemplateID string,
 	joinPointDetails *formationconstraintpkg.GenerateNotificationOperationDetails,
 	webhook *model.Webhook,
-) (*webhookclient.NotificationRequest, error) {
+) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	log.C(ctx).Infof("Building notification request")
 	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PreGenerateNotifications, joinPointDetails, formationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateNotificationOperation, model.PreOperation)
 	}
 
-	inputBuilder, err := getInputBuilder(webhook.Type)
+	faInputBuilder, err := getFormationAssignmentInputBuilder(webhook.Type)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := nb.createWebhookRequest(ctx, webhook, inputBuilder(joinPointDetails))
+	req, err := nb.createWebhookRequest(ctx, webhook, faInputBuilder(joinPointDetails))
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating webhook request")
 	}
@@ -59,7 +59,7 @@ func (nb *NotificationBuilder) BuildNotificationRequest(
 	return req, nil
 }
 
-func getInputBuilder(webhookType model.WebhookType) (InputBuilder, error) {
+func getFormationAssignmentInputBuilder(webhookType model.WebhookType) (FormationAssignmentInputBuilder, error) {
 	switch webhookType {
 	case model.WebhookTypeConfigurationChanged:
 		return buildConfigurationChangeInputFromJoinpointDetails, nil
@@ -166,20 +166,20 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 	return details, nil
 }
 
-func (nb *NotificationBuilder) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input webhookdir.FormationAssignmentTemplateInput) (*webhookclient.NotificationRequest, error) {
+func (nb *NotificationBuilder) createWebhookRequest(ctx context.Context, webhook *model.Webhook, formationAssignmentTemplateInput webhookdir.FormationAssignmentTemplateInput) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	gqlWebhook, err := nb.webhookConverter.ToGraphQL(webhook)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting webhook with ID %s", webhook.ID)
 	}
-	return &webhookclient.NotificationRequest{
+	return &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       *gqlWebhook,
-		Object:        input,
+		Object:        formationAssignmentTemplateInput,
 		CorrelationID: correlation.CorrelationIDFromContext(ctx),
 	}, nil
 }
 
-// InputBuilder represents expected signature for methods that create operator input from the provided details
-type InputBuilder func(details *formationconstraintpkg.GenerateNotificationOperationDetails) webhookdir.FormationAssignmentTemplateInput
+// FormationAssignmentInputBuilder represents expected signature for methods that create operator input from the provided details
+type FormationAssignmentInputBuilder func(details *formationconstraintpkg.GenerateNotificationOperationDetails) webhookdir.FormationAssignmentTemplateInput
 
 func buildConfigurationChangeInputFromJoinpointDetails(details *formationconstraintpkg.GenerateNotificationOperationDetails) webhookdir.FormationAssignmentTemplateInput {
 	return &webhookdir.FormationConfigurationChangeInput{
@@ -206,6 +206,14 @@ func buildApplicationTenantMappingInputFromJoinpointDetails(details *formationco
 		CustomerTenantContext:     details.CustomerTenantContext,
 		Assignment:                details.Assignment,
 		ReverseAssignment:         details.ReverseAssignment,
+	}
+}
+
+func buildFormationLifecycleInput(operation model.FormationOperation, formation *model.Formation, customerTenantCtx *webhookdir.CustomerTenantContext) webhookdir.TemplateInput {
+	return &webhookdir.FormationLifecycleInput{
+		Operation:             operation,
+		Formation:             formation,
+		CustomerTenantContext: customerTenantCtx,
 	}
 }
 
