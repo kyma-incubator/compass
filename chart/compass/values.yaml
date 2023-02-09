@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2871"
+      version: "PR-2877"
       name: compass-director
     hydrator:
       dir:
@@ -159,7 +159,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2840"
+      version: "PR-2877"
       name: compass-schema-migrator
     system_broker:
       dir:
