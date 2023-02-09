@@ -838,6 +838,7 @@ input WebhookInput {
 	headerTemplate: String
 	outputTemplate: String
 	statusTemplate: String
+	parameters: JSON
 }
 
 type APIDefinition {
@@ -1420,6 +1421,7 @@ type Webhook {
 	outputTemplate: String
 	statusTemplate: String
 	createdAt: Timestamp
+	parameters: JSON
 }
 
 type Query {

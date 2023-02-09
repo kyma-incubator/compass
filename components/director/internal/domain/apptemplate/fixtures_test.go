@@ -433,6 +433,7 @@ func fixGQLApplicationWebhooks(webhookID, applicationID string) []*graphql.Webho
 }
 
 func fixGQLApplicationTemplateWebhooks(webhookID, applicationTemplateID string) []*graphql.Webhook {
+	whParameters := graphql.JSON("{}")
 	return []*graphql.Webhook{
 		{
 			ID:                    webhookID,
@@ -440,6 +441,7 @@ func fixGQLApplicationTemplateWebhooks(webhookID, applicationTemplateID string) 
 			Type:                  graphql.WebhookTypeConfigurationChanged,
 			URL:                   str.Ptr("foourl"),
 			Auth:                  &graphql.Auth{},
+			Parameters:            &whParameters,
 		},
 	}
 }

@@ -18,6 +18,7 @@ import (
 )
 
 // WebhookRepository missing godoc
+//
 //go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
@@ -32,18 +33,21 @@ type WebhookRepository interface {
 }
 
 // ApplicationRepository missing godoc
+//
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // TenantService is responsible for service-layer tenant operations
+//
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantService interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -225,9 +229,9 @@ func (s *service) getTenantForWebhook(ctx context.Context, whType resource.Type)
 }
 
 // getTenantFromContext validates and returns the tenant present in the context:
-// 		1. if only one ID is present -> throw TenantNotFoundError
-// 		2. if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
-// 		3. if both internalID and externalID are not present -> proceed with global formation templates (return empty id)
+//  1. if only one ID is present -> throw TenantNotFoundError
+//  2. if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
+//  3. if both internalID and externalID are not present -> proceed with global formation templates (return empty id)
 func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 	tntCtx, err := tenant.LoadTenantPairFromContextNoChecks(ctx)
 	if err != nil {
@@ -247,9 +251,9 @@ func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 }
 
 // extractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:
-//		1. If it's not SA or GA -> return error
-//		2. If it's GA -> return the GA id
-//		3. If it's a SA -> return its parent GA id
+//  1. If it's not SA or GA -> return error
+//  2. If it's GA -> return the GA id
+//  3. If it's a SA -> return its parent GA id
 func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.Context) (string, error) {
 	internalTenantID, err := s.getTenantFromContext(ctx)
 	if err != nil {
