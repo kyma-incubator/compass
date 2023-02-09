@@ -22,18 +22,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// WebhookResourceType represents the type of the object that is referenced by the webhook.
-type WebhookResourceType string
-
-const (
-	// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
-	MultiErrorSeparator string = "* "
-
-	// ApplicationWebhookResourceType todo
-	ApplicationWebhookResourceType WebhookResourceType = "Application"
-	// ApplicationTemplateWebhookResourceType todo
-	ApplicationTemplateWebhookResourceType WebhookResourceType = "ApplicationTemplate"
-)
+// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
+const MultiErrorSeparator string = "* "
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {

@@ -811,7 +811,6 @@ global:
     port: 3000
     prefix: /ord-aggregator
     name: ord-aggregator
-    enabled: true
     jobSchedule: 60m
     lease:
       lockname: aggregatorlease
