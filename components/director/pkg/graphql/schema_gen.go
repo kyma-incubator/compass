@@ -705,6 +705,7 @@ type ComplexityRoot struct {
 		IntegrationSystemID   func(childComplexity int) int
 		Mode                  func(childComplexity int) int
 		OutputTemplate        func(childComplexity int) int
+		Parameters            func(childComplexity int) int
 		RetryInterval         func(childComplexity int) int
 		RuntimeID             func(childComplexity int) int
 		StatusTemplate        func(childComplexity int) int
@@ -4665,6 +4666,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Webhook.OutputTemplate(childComplexity), true
 
+	case "Webhook.parameters":
+		if e.complexity.Webhook.Parameters == nil {
+			break
+		}
+
+		return e.complexity.Webhook.Parameters(childComplexity), true
+
 	case "Webhook.retryInterval":
 		if e.complexity.Webhook.RetryInterval == nil {
 			break
@@ -5618,6 +5626,7 @@ input WebhookInput {
 	headerTemplate: String
 	outputTemplate: String
 	statusTemplate: String
+	parameters: JSON
 }
 
 type APIDefinition {
@@ -6200,6 +6209,7 @@ type Webhook {
 	outputTemplate: String
 	statusTemplate: String
 	createdAt: Timestamp
+	parameters: JSON
 }
 
 type Query {
@@ -28689,6 +28699,37 @@ func (ec *executionContext) _Webhook_createdAt(ctx context.Context, field graphq
 	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Webhook_parameters(ctx context.Context, field graphql.CollectedField, obj *Webhook) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Webhook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Parameters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*JSON)
+	fc.Result = res
+	return ec.marshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31473,6 +31514,12 @@ func (ec *executionContext) unmarshalInputWebhookInput(ctx context.Context, obj 
 		case "statusTemplate":
 			var err error
 			it.StatusTemplate, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "parameters":
+			var err error
+			it.Parameters, err = ec.unmarshalOJSON2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -35496,6 +35543,8 @@ func (ec *executionContext) _Webhook(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Webhook_statusTemplate(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._Webhook_createdAt(ctx, field, obj)
+		case "parameters":
+			out.Values[i] = ec._Webhook_parameters(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
