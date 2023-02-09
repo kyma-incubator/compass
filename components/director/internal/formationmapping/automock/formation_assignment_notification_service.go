@@ -9,6 +9,8 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
+	testing "testing"
+
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -18,15 +20,15 @@ type FormationAssignmentNotificationService struct {
 }
 
 // GenerateNotification provides a mock function with given fields: ctx, formationAssignment
-func (_m *FormationAssignmentNotificationService) GenerateNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
+func (_m *FormationAssignmentNotificationService) GenerateNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, formationAssignment)
 
-	var r0 *webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment) *webhookclient.NotificationRequest); ok {
+	var r0 *webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment) *webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, formationAssignment)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).(*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 
@@ -40,13 +42,8 @@ func (_m *FormationAssignmentNotificationService) GenerateNotification(ctx conte
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationAssignmentNotificationService interface {
-	mock.TestingT
-	Cleanup(func())
-}
-
-// NewFormationAssignmentNotificationService creates a new instance of FormationAssignmentNotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentNotificationService(t mockConstructorTestingTNewFormationAssignmentNotificationService) *FormationAssignmentNotificationService {
+// NewFormationAssignmentNotificationService creates a new instance of FormationAssignmentNotificationService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
+func NewFormationAssignmentNotificationService(t testing.TB) *FormationAssignmentNotificationService {
 	mock := &FormationAssignmentNotificationService{}
 	mock.Mock.Test(t)
 

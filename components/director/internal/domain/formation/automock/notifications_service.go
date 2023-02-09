@@ -11,6 +11,10 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
+	testing "testing"
+
+	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -19,16 +23,16 @@ type NotificationsService struct {
 	mock.Mock
 }
 
-// GenerateNotifications provides a mock function with given fields: ctx, tenant, objectID, _a3, operation, objectType
-func (_m *NotificationsService) GenerateNotifications(ctx context.Context, tenant string, objectID string, _a3 *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.NotificationRequest, error) {
+// GenerateFormationAssignmentNotifications provides a mock function with given fields: ctx, tenant, objectID, _a3, operation, objectType
+func (_m *NotificationsService) GenerateFormationAssignmentNotifications(ctx context.Context, tenant string, objectID string, _a3 *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, objectID, _a3, operation, objectType)
 
-	var r0 []*webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) []*webhookclient.NotificationRequest); ok {
+	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, objectID, _a3, operation, objectType)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).([]*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 
@@ -42,13 +46,54 @@ func (_m *NotificationsService) GenerateNotifications(ctx context.Context, tenan
 	return r0, r1
 }
 
-type mockConstructorTestingTNewNotificationsService interface {
-	mock.TestingT
-	Cleanup(func())
+// GenerateFormationNotifications provides a mock function with given fields: ctx, tenantID, _a2, formationTemplateID, operation
+func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Context, tenantID string, _a2 *model.Formation, formationTemplateID string, operation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error) {
+	ret := _m.Called(ctx, tenantID, _a2, formationTemplateID, operation)
+
+	var r0 []*webhookclient.FormationNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Formation, string, model.FormationOperation) []*webhookclient.FormationNotificationRequest); ok {
+		r0 = rf(ctx, tenantID, _a2, formationTemplateID, operation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*webhookclient.FormationNotificationRequest)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Formation, string, model.FormationOperation) error); ok {
+		r1 = rf(ctx, tenantID, _a2, formationTemplateID, operation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// NewNotificationsService creates a new instance of NotificationsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationsService(t mockConstructorTestingTNewNotificationsService) *NotificationsService {
+// SendNotification provides a mock function with given fields: ctx, webhookNotificationReq
+func (_m *NotificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhook.Response, error) {
+	ret := _m.Called(ctx, webhookNotificationReq)
+
+	var r0 *webhook.Response
+	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookRequest) *webhook.Response); ok {
+		r0 = rf(ctx, webhookNotificationReq)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*webhook.Response)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookRequest) error); ok {
+		r1 = rf(ctx, webhookNotificationReq)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// NewNotificationsService creates a new instance of NotificationsService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
+func NewNotificationsService(t testing.TB) *NotificationsService {
 	mock := &NotificationsService{}
 	mock.Mock.Test(t)
 

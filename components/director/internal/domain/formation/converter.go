@@ -2,6 +2,7 @@ package formation
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
@@ -54,6 +55,8 @@ func (c *converter) ToEntity(in *model.Formation) *Entity {
 		TenantID:            in.TenantID,
 		FormationTemplateID: in.FormationTemplateID,
 		Name:                in.Name,
+		State:               string(in.State),
+		Error:               repo.NewNullableStringFromJSONRawMessage(in.Error),
 	}
 }
 
@@ -67,5 +70,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Formation {
 		TenantID:            entity.TenantID,
 		FormationTemplateID: entity.FormationTemplateID,
 		Name:                entity.Name,
+		State:               model.FormationState(entity.State),
+		Error:               repo.JSONRawMessageFromNullableString(entity.Error),
 	}
 }

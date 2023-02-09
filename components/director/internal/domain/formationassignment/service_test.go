@@ -1685,7 +1685,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 		TemplateInput                  *automock.TemplateInput
 		TemplateInputReverse           *automock.TemplateInput
 		FormationAssignments           []*model.FormationAssignment
-		Requests                       []*webhookclient.NotificationRequest
+		Requests                       []*webhookclient.FormationAssignmentNotificationRequest
 		Operation                      func(context.Context, *formationassignment.AssignmentMappingPair) (bool, error)
 		RuntimeContextToRuntimeMapping map[string]string
 		ExpectedMappings               []*formationassignment.AssignmentMappingPair
@@ -1784,7 +1784,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			TemplateInput:        sourceNotMatchTemplateInput,
 			TemplateInputReverse: &automock.TemplateInput{},
 			FormationAssignments: []*model.FormationAssignment{sourseNotMatchedAssignment, sourseNotMatchedAssignmentReverse},
-			Requests: []*webhookclient.NotificationRequest{
+			Requests: []*webhookclient.FormationAssignmentNotificationRequest{
 				{
 					Webhook: graphql.Webhook{
 						ApplicationID: &appID,
@@ -2018,7 +2018,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		Operation: model.AssignFormation,
 	}
 
-	reqWebhook := &webhookclient.NotificationRequest{
+	reqWebhook := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook: graphql.Webhook{
 			ID: TestWebhookID,
 		},
@@ -2027,7 +2027,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	}
 
 	whMode := graphql.WebhookModeAsyncCallback
-	reqWebhookWithAsyncCallbackMode := &webhookclient.NotificationRequest{
+	reqWebhookWithAsyncCallbackMode := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook: graphql.Webhook{
 			ID:   TestWebhookID,
 			Mode: &whMode,
@@ -2398,7 +2398,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	}
 
 	t.Run("success when propagating config to reverse assignment", func(t *testing.T) {
-		mappingRequest := &webhookclient.NotificationRequest{
+		mappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
 			Webhook: graphql.Webhook{
 				ID: TestWebhookID,
 			},
@@ -2407,7 +2407,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		inputMock.On("Clone").Return(inputMock)
 		mappingRequest.Object = inputMock
 
-		reverseMappingRequest := &webhookclient.NotificationRequest{
+		reverseMappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
 			Webhook: graphql.Webhook{
 				ID: TestReverseWebhookID,
 			},
@@ -2473,7 +2473,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
 	t.Run("error when updating to database in recursion call", func(t *testing.T) {
-		mappingRequest := &webhookclient.NotificationRequest{
+		mappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
 			Webhook: graphql.Webhook{
 				ID: TestWebhookID,
 			},
@@ -2482,7 +2482,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		inputMock.On("Clone").Return(inputMock).Times(3)
 		mappingRequest.Object = inputMock
 
-		reverseMappingRequest := &webhookclient.NotificationRequest{
+		reverseMappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
 			Webhook: graphql.Webhook{
 				ID: TestReverseWebhookID,
 			},
@@ -2544,7 +2544,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, inputMock, reverseInputMock, notificationSvc, repo, conv)
 	})
 	t.Run("success when reaching the maximum depth limit with two config pending assignments that return unfinished configurations", func(t *testing.T) {
-		mappingRequest := &webhookclient.NotificationRequest{
+		mappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
 			Webhook: graphql.Webhook{
 				ID: TestWebhookID,
 			},
@@ -2553,7 +2553,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		inputMock.On("Clone").Return(inputMock).Times(21)
 		mappingRequest.Object = inputMock
 
-		reverseMappingRequest := &webhookclient.NotificationRequest{
+		reverseMappingRequest := &webhookclient.FormationAssignmentNotificationRequest{
 			Webhook: graphql.Webhook{
 				ID: TestReverseWebhookID,
 			},
@@ -2626,13 +2626,13 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 	notFound := http.StatusNotFound
 	mode := graphql.WebhookModeAsyncCallback
 
-	req := &webhookclient.NotificationRequest{
+	req := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       graphql.Webhook{},
 		Object:        nil,
 		CorrelationID: "",
 	}
 
-	callbackReq := &webhookclient.NotificationRequest{
+	callbackReq := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook: graphql.Webhook{
 			Mode: &mode,
 		},

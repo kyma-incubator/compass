@@ -15,9 +15,9 @@ import (
 const tableName string = `public.formations`
 
 var (
-	updatableTableColumns = []string{"name"}
+	updatableTableColumns = []string{"name", "state", "error"}
 	idTableColumns        = []string{"id"}
-	tableColumns          = []string{"id", "tenant_id", "formation_template_id", "name"}
+	tableColumns          = []string{"id", "tenant_id", "formation_template_id", "name", "state", "error"}
 	tenantColumn          = "tenant_id"
 	formationNameColumn   = "name"
 )
