@@ -261,7 +261,8 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		auth {
 		  %s
 		}
-		createdAt`, fp.ForAuth())
+		createdAt
+		parameters`, fp.ForAuth())
 }
 
 // OmitForAPIDefinition missing godoc
