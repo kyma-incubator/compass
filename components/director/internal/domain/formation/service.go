@@ -2,7 +2,11 @@ package formation
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -64,6 +68,7 @@ type FormationRepository interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
+	Update(ctx context.Context, model *model.Formation) error
 }
 
 // FormationTemplateRepository represents the FormationTemplate repository layer
@@ -76,7 +81,9 @@ type FormationTemplateRepository interface {
 // NotificationsService represents the notification service for generating and sending notifications
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
-	GenerateNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.NotificationRequest, error)
+	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
+	GenerateFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation, formationTemplateID string, operation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
+	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -281,6 +288,19 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
+	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, tnt, newFormation, fTmpl.ID, model.CreateFormation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
+	}
+
+	for _, formationReq := range formationReqs {
+		if err := s.processFormationNotifications(ctx, newFormation, formationReq, model.CreateErrorFormationState); err != nil {
+			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
+			log.C(ctx).Error(processErr)
+			return nil, processErr
+		}
+	}
+
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, joinPointDetails, fTmpl.ID); err != nil {
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
 	}
@@ -307,7 +327,26 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
 	}
 
+	formationID := ft.formation.ID
 	formationName := ft.formation.Name
+	log.C(ctx).Infof("Updating formation with ID: %q and name: %q to state: %s", formationID, formationName, model.DeletingFormationState)
+	if err := s.formationRepository.Update(ctx, ft.formation); err != nil {
+		return nil, errors.Wrapf(err, "while updating formation with ID: %q and name: %q to state: %s", formationID, formationName, model.DeletingFormationState)
+	}
+
+	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, tnt, ft.formation, ft.formationTemplate.ID, model.DeleteFormation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formationID, formationName)
+	}
+
+	for _, formationReq := range formationReqs {
+		if err := s.processFormationNotifications(ctx, ft.formation, formationReq, model.DeleteErrorFormationState); err != nil {
+			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formationID, formationName)
+			log.C(ctx).Error(processErr)
+			return nil, processErr
+		}
+	}
+
 	if err := s.modifyFormations(ctx, tnt, formationName, deleteFormation); err != nil {
 		return nil, err
 	}
@@ -389,7 +428,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
@@ -630,7 +669,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
@@ -693,7 +732,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
@@ -912,14 +951,14 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 		return fmt.Errorf("missing schema for `%s` label definition", model.ScenariosKey)
 	}
 
-	formations, err := labeldef.ParseFormationsFromSchema(def.Schema)
+	formationNames, err := labeldef.ParseFormationsFromSchema(def.Schema)
 	if err != nil {
 		return err
 	}
 
-	formations = modificationFunc(formations, formationName)
+	formationNames = modificationFunc(formationNames, formationName)
 
-	schema, err := labeldef.NewSchemaForFormations(formations)
+	schema, err := labeldef.NewSchemaForFormations(formationNames)
 	if err != nil {
 		return errors.Wrap(err, "while parsing scenarios")
 	}
@@ -968,16 +1007,16 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID, f
 	return s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
 
-type modificationFunc func([]string, string) []string
+type modificationFunc func(formationNames []string, formationName string) []string
 
-func addFormation(formations []string, formation string) []string {
-	for _, f := range formations {
-		if f == formation {
-			return formations
+func addFormation(formationNames []string, formationName string) []string {
+	for _, f := range formationNames {
+		if f == formationName {
+			return formationNames
 		}
 	}
 
-	return append(formations, formation)
+	return append(formationNames, formationName)
 }
 
 func deleteFormation(formations []string, formation string) []string {
@@ -1068,6 +1107,7 @@ func (s *service) createFormation(ctx context.Context, tenant, templateID, forma
 		TenantID:            tenant,
 		FormationTemplateID: templateID,
 		Name:                formationName,
+		State:               model.InitialFormationState,
 	}
 
 	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, templateID)
@@ -1160,4 +1200,59 @@ func setToSlice(set map[string]bool) []string {
 		result = append(result, key)
 	}
 	return result
+}
+
+func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, state model.FormationState) error {
+	response, err := s.notificationsService.SendNotification(ctx, formationReq)
+	if err != nil {
+		updateError := s.setFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, state)
+		if updateError != nil {
+			return errors.Wrapf(updateError, "while updating error state: %s", errors.Wrapf(err, "while sending notification for formation with ID: %q", formation.ID).Error())
+		}
+		notificationErr := errors.Wrapf(err, "while sending notification for formation with ID: %q and name: %q", formation.ID, formation.Name)
+		log.C(ctx).Error(notificationErr)
+		return notificationErr
+	}
+
+	if response.Error != nil && *response.Error != "" {
+		err = s.setFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, state)
+		if err != nil {
+			return errors.Wrapf(err, "while updating error state for formation with ID: %q and name: %q", formation.ID, formation.Name)
+		}
+
+		err = errors.Errorf("Received error from formation webhook response: %v", *response.Error)
+		log.C(ctx).Error(err)
+		return err
+	}
+
+	if *response.ActualStatusCode == *response.SuccessStatusCode {
+		formation.State = model.ReadyFormationState
+		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to state: %s", formation.ID, formation.Name, model.ReadyFormationState)
+		if err := s.formationRepository.Update(ctx, formation); err != nil {
+			return errors.Wrapf(err, "while updating formation with ID: %q and name: %q to state: %s", formation.ID, formation.Name, model.ReadyFormationState)
+		}
+	}
+
+	return nil
+}
+
+func (s *service) setFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error {
+	formation.State = state
+
+	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
+		Message:   errorMessage,
+		ErrorCode: errorCode,
+	}}
+
+	marshaledErr, err := json.Marshal(formationError)
+	if err != nil {
+		return errors.Wrapf(err, "While preparing error message for formation with ID: %q", formation.ID)
+	}
+	formation.Error = marshaledErr
+
+	if err := s.formationRepository.Update(ctx, formation); err != nil {
+		return err
+	}
+	log.C(ctx).Infof("Formation with ID: %s set to state: %s", formation.ID, formation.State)
+	return nil
 }

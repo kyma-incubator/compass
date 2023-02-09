@@ -20,7 +20,7 @@ import (
 
 func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
+	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
 	testErr := errors.New("test error")
 
@@ -38,7 +38,7 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 		ConstraintEngineFn   func() *automock.ConstraintEngine
 		Details              *formationconstraint.GenerateNotificationOperationDetails
 		Webhook              *model.Webhook
-		ExpectedNotification *webhookclient.NotificationRequest
+		ExpectedNotification *webhookclient.FormationAssignmentNotificationRequest
 		ExpectedErrMessage   string
 	}{
 		{

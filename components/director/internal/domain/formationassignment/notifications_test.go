@@ -116,42 +116,42 @@ func Test_GenerateNotification(t *testing.T) {
 	}
 
 	testAppTenantMappingWebhookInputWithTenantPath := fixAppTenantMappingWebhookInput(TestFormationID, testAppWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppTemplateWithLabels, testCustomerTenantContextWithPath, fixConvertFAFromModel(faWithSourceAppAndTargetApp), fixConvertFAFromModel(faWithSourceAppAndTargetAppReverse))
-	testAppNotificationReqWithTenantMappingTypeWithTenantPath := &webhookclient.NotificationRequest{
+	testAppNotificationReqWithTenantMappingTypeWithTenantPath := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       *testGqlAppWebhook,
 		Object:        testAppTenantMappingWebhookInputWithTenantPath,
 		CorrelationID: "",
 	}
 
 	testAppTenantMappingWebhookInput := fixAppTenantMappingWebhookInput(TestFormationID, testAppWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppTemplateWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppAndTargetApp), fixConvertFAFromModel(faWithSourceAppAndTargetAppReverse))
-	testAppNotificationReqWithTenantMappingType := &webhookclient.NotificationRequest{
+	testAppNotificationReqWithTenantMappingType := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       *testGqlAppWebhook,
 		Object:        testAppTenantMappingWebhookInput,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceRuntimeAndTargetApp := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceRuntimeAndTargetApp), fixConvertFAFromModel(faWithSourceRuntimeAndTargetAppReverse))
-	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRuntimeAndTargetApp := &webhookclient.NotificationRequest{
+	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRuntimeAndTargetApp := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       *testGqlAppWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceRuntimeAndTargetApp,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceRtmCtxAndTargetApp := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceRuntimeCtxAndTargetApp), fixConvertFAFromModel(faWithSourceRuntimeCtxAndTargetAppReverse))
-	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRtmCtxAndTargetApp := &webhookclient.NotificationRequest{
+	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRtmCtxAndTargetApp := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       *testGqlAppWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceRtmCtxAndTargetApp,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceAppAndTargetRuntime := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, nil, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppAndTargetRuntime), fixConvertFAFromModel(faWithSourceAppAndTargetRuntimeReverse))
-	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRuntime := &webhookclient.NotificationRequest{
+	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRuntime := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       *testGqlRuntimeWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceAppAndTargetRuntime,
 		CorrelationID: "",
 	}
 
 	testFormationConfigurationChangeInputWithSourceAppAndTargetRtmCtx := fixFormationConfigurationChangeInput(TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, testCustomerTenantContext, fixConvertFAFromModel(faWithSourceAppCtxAndTargetRtmCtx), fixConvertFAFromModel(faWithSourceAppCtxAndTargetRtmCtxReverse))
-	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRtmCtx := &webhookclient.NotificationRequest{
+	testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRtmCtx := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       *testGqlRuntimeWebhook,
 		Object:        testFormationConfigurationChangeInputWithSourceAppAndTargetRtmCtx,
 		CorrelationID: "",
@@ -173,7 +173,7 @@ func Test_GenerateNotification(t *testing.T) {
 		formationRepo           func() *automock.FormationRepository
 		notificationBuilder     func() *automock.NotificationBuilder
 		tenantRepo              func() *automock.TenantRepository
-		expectedNotification    *webhookclient.NotificationRequest
+		expectedNotification    *webhookclient.FormationAssignmentNotificationRequest
 		expectedErrMsg          string
 	}{
 		{

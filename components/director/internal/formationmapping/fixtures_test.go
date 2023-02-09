@@ -87,8 +87,8 @@ func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sou
 	}
 }
 
-func fixEmptyNotificationRequest() *webhookclient.NotificationRequest {
-	return &webhookclient.NotificationRequest{
+func fixEmptyNotificationRequest() *webhookclient.FormationAssignmentNotificationRequest {
+	return &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       graphql.Webhook{},
 		Object:        nil,
 		CorrelationID: "",
