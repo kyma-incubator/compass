@@ -28,6 +28,7 @@ type Entity struct {
 	OutputTemplate        sql.NullString `db:"output_template"`
 	StatusTemplate        sql.NullString `db:"status_template"`
 	CreatedAt             *time.Time     `db:"created_at"`
+	Parameters            sql.NullString `db:"parameters"`
 }
 
 // GetID returns the ID of the entity.
