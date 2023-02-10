@@ -87,7 +87,6 @@ func (c *converter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 		OutputTemplate:        in.OutputTemplate,
 		StatusTemplate:        in.StatusTemplate,
 		CreatedAt:             timePtrToTimestampPtr(in.CreatedAt),
-		Parameters:            graphql.StrPtrToJSONPtr(in.Parameters),
 	}, nil
 }
 
@@ -140,7 +139,6 @@ func (c *converter) InputFromGraphQL(in *graphql.WebhookInput) (*model.WebhookIn
 		HeaderTemplate:   in.HeaderTemplate,
 		OutputTemplate:   in.OutputTemplate,
 		StatusTemplate:   in.StatusTemplate,
-		Parameters:       graphql.JSONPtrToStrPtr(in.Parameters),
 	}, nil
 }
 
@@ -213,7 +211,6 @@ func (c *converter) ToEntity(in *model.Webhook) (*Entity, error) {
 		OutputTemplate:        repo.NewNullableString(in.OutputTemplate),
 		StatusTemplate:        repo.NewNullableString(in.StatusTemplate),
 		CreatedAt:             in.CreatedAt,
-		Parameters:            repo.NewNullableString(in.Parameters),
 	}, nil
 }
 
@@ -269,7 +266,6 @@ func (c *converter) FromEntity(in *Entity) (*model.Webhook, error) {
 		OutputTemplate:   repo.StringPtrFromNullableString(in.OutputTemplate),
 		StatusTemplate:   repo.StringPtrFromNullableString(in.StatusTemplate),
 		CreatedAt:        in.CreatedAt,
-		Parameters:       repo.StringPtrFromNullableString(in.Parameters),
 	}, nil
 }
 
