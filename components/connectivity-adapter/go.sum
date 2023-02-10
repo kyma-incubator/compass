@@ -199,6 +199,10 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20230209143957-528
 github.com/kyma-incubator/compass/components/connector v0.0.0-20230209143957-528404437ab8/go.mod h1:7BXlvYdB6qaPaZOm21noxopHBh5+6ZAZNCI8D/tpu9Y=
 github.com/kyma-incubator/compass/components/director v0.0.0-20230209143957-528404437ab8 h1:4xpdR7bFY7A3ayYgwLheCkTmrPrVmwitaly3dsU+Bgw=
 github.com/kyma-incubator/compass/components/director v0.0.0-20230209143957-528404437ab8/go.mod h1:jI6b70lrlal7s/U0AmUiz/CB/7p+wcpWRkbPfA3Hn1A=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230210090328-8a279b91e6fa h1:7MG3JL1KuaKL//qjnWx05byP6rYAV34Xq7kgEN28A9w=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230210090328-8a279b91e6fa/go.mod h1:tUDkkWaTX7KPn5q7ZzTvvYhnwKphVspwlX1BVWJkwDc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230210101110-3c3378d92a1e h1:kjJ1SQdA2IjhPIVMfaGEjF1miWdxUipVUX1OPQS+XFU=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230210101110-3c3378d92a1e/go.mod h1:tUDkkWaTX7KPn5q7ZzTvvYhnwKphVspwlX1BVWJkwDc=
 github.com/lib/pq v1.10.4 h1:SO9z7FRPzA03QhHKJrH5BXA6HU1rS4V2nIVrrNC1iYk=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 h1:guHWmqIKr4G+gQ4uYU5vcZjsUhhklRA2uOcGVfcfqis=
