@@ -392,13 +392,13 @@ var (
 	emptyFormationLifecycleWebhooks []*model.Webhook
 
 	// Formation constraints join point location variables
-	preGenerateNotificationLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.GenerateNotificationOperation,
+	preGenerateFormationAssignmentNotificationLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.GenerateFormationAssignmentNotificationOperation,
 		ConstraintType: model.PreOperation,
 	}
 
-	postGenerateNotificationLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.GenerateNotificationOperation,
+	postGenerateFormationAssignmentNotificationLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.GenerateFormationAssignmentNotificationOperation,
 		ConstraintType: model.PostOperation,
 	}
 
@@ -557,9 +557,9 @@ var (
 		TenantID:            TntInternalID,
 	}
 
-	notificationDetails = &formationconstraint.GenerateNotificationOperationDetails{}
+	notificationDetails = &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{}
 
-	generateConfigurationChangeNotificationDetails = &formationconstraint.GenerateNotificationOperationDetails{
+	generateConfigurationChangeNotificationDetails = &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:   model.AssignFormation,
 		FormationID: fixUUID(),
 		ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
@@ -578,7 +578,7 @@ var (
 		ReverseAssignment: emptyFormationAssignment,
 	}
 
-	generateAppToAppNotificationDetails = &formationconstraint.GenerateNotificationOperationDetails{
+	generateAppToAppNotificationDetails = &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:                 model.AssignFormation,
 		FormationID:               fixUUID(),
 		SourceApplicationTemplate: nil,
@@ -1044,7 +1044,6 @@ func fixFormationModelWithoutError() *model.Formation {
 		TenantID:            TntInternalID,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
-		State:               model.InitialFormationState,
 	}
 }
 

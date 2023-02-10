@@ -82,7 +82,7 @@ type FormationTemplateRepository interface {
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
 	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
-	GenerateFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation, formationTemplateID string, operation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
+	GenerateFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
 	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
@@ -329,11 +329,6 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 
 	formationID := ft.formation.ID
 	formationName := ft.formation.Name
-	log.C(ctx).Infof("Updating formation with ID: %q and name: %q to state: %s", formationID, formationName, model.DeletingFormationState)
-	if err := s.formationRepository.Update(ctx, ft.formation); err != nil {
-		return nil, errors.Wrapf(err, "while updating formation with ID: %q and name: %q to state: %s", formationID, formationName, model.DeletingFormationState)
-	}
-
 	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, tnt, ft.formation, ft.formationTemplate.ID, model.DeleteFormation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formationID, formationName)
@@ -1107,7 +1102,6 @@ func (s *service) createFormation(ctx context.Context, tenant, templateID, forma
 		TenantID:            tenant,
 		FormationTemplateID: templateID,
 		Name:                formationName,
-		State:               model.InitialFormationState,
 	}
 
 	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, templateID)
@@ -1202,10 +1196,10 @@ func setToSlice(set map[string]bool) []string {
 	return result
 }
 
-func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, state model.FormationState) error {
+func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, errorState model.FormationState) error {
 	response, err := s.notificationsService.SendNotification(ctx, formationReq)
 	if err != nil {
-		updateError := s.setFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, state)
+		updateError := s.setFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, errorState)
 		if updateError != nil {
 			return errors.Wrapf(updateError, "while updating error state: %s", errors.Wrapf(err, "while sending notification for formation with ID: %q", formation.ID).Error())
 		}
@@ -1215,7 +1209,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		err = s.setFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, state)
+		err = s.setFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, errorState)
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID: %q and name: %q", formation.ID, formation.Name)
 		}

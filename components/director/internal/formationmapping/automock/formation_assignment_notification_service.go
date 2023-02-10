@@ -19,8 +19,8 @@ type FormationAssignmentNotificationService struct {
 	mock.Mock
 }
 
-// GenerateNotification provides a mock function with given fields: ctx, formationAssignment
-func (_m *FormationAssignmentNotificationService) GenerateNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+// GenerateFormationAssignmentNotification provides a mock function with given fields: ctx, formationAssignment
+func (_m *FormationAssignmentNotificationService) GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, formationAssignment)
 
 	var r0 *webhookclient.FormationAssignmentNotificationRequest

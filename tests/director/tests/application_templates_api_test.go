@@ -3,8 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
-	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 	"testing"
+
+	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

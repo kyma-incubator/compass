@@ -2,6 +2,7 @@ package formation_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -36,7 +37,7 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 		Name                 string
 		WebhookConverter     func() *automock.WebhookConverter
 		ConstraintEngineFn   func() *automock.ConstraintEngine
-		Details              *formationconstraint.GenerateNotificationOperationDetails
+		Details              *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails
 		Webhook              *model.Webhook
 		ExpectedNotification *webhookclient.FormationAssignmentNotificationRequest
 		ExpectedErrMessage   string
@@ -50,8 +51,8 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postGenerateNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			Details:              generateConfigurationChangeNotificationDetails,
@@ -68,8 +69,8 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateNotificationLocation, generateAppToAppNotificationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postGenerateNotificationLocation, generateAppToAppNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateAppToAppNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postGenerateFormationAssignmentNotificationLocation, generateAppToAppNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			Details:              generateAppToAppNotificationDetails,
@@ -81,18 +82,18 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			Name: "error while enforcing constraints pre operation",
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			Details:            generateConfigurationChangeNotificationDetails,
 			Webhook:            webhook,
-			ExpectedErrMessage: "While enforcing constraints for target operation \"GENERATE_NOTIFICATION\" and constraint type \"PRE\": test error",
+			ExpectedErrMessage: fmt.Sprintf("While enforcing constraints for target operation %q and constraint type %q: %s", model.GenerateFormationAssignmentNotificationOperation, model.PreOperation, testErr.Error()),
 		},
 		{
 			Name: "error when webhook type is not supported",
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			Details:            generateConfigurationChangeNotificationDetails,
@@ -108,7 +109,7 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			Details:            generateConfigurationChangeNotificationDetails,
@@ -124,13 +125,13 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postGenerateNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			Details:            generateConfigurationChangeNotificationDetails,
 			Webhook:            webhook,
-			ExpectedErrMessage: "While enforcing constraints for target operation \"GENERATE_NOTIFICATION\" and constraint type \"POST\": test error",
+			ExpectedErrMessage: fmt.Sprintf("While enforcing constraints for target operation %q and constraint type %q: %s", model.GenerateFormationAssignmentNotificationOperation, model.PostOperation, testErr.Error()),
 		},
 	}
 
@@ -149,7 +150,7 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			builder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := builder.BuildNotificationRequest(ctx, FormationTemplateID, testCase.Details, testCase.Webhook)
+			actual, err := builder.BuildFormationAssignmentNotificationRequest(ctx, FormationTemplateID, testCase.Details, testCase.Webhook)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -212,7 +213,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 		Assignment                  *webhookdir.FormationAssignment
 		ReverseAssignment           *webhookdir.FormationAssignment
 		TargetType                  model.ResourceType
-		ExpectedNotificationDetails *formationconstraint.GenerateNotificationOperationDetails
+		ExpectedNotificationDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails
 		ExpectedErrMessage          string
 	}{
 		{
@@ -226,7 +227,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			Assignment:          emptyFormationAssignment,
 			ReverseAssignment:   emptyFormationAssignment,
 			TargetType:          model.ApplicationResourceType,
-			ExpectedNotificationDetails: &formationconstraint.GenerateNotificationOperationDetails{
+			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
 				FormationID:         fixUUID(),
 				ResourceType:        model.ApplicationResourceType,
@@ -252,7 +253,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			Assignment:          emptyFormationAssignment,
 			ReverseAssignment:   emptyFormationAssignment,
 			TargetType:          model.RuntimeResourceType,
-			ExpectedNotificationDetails: &formationconstraint.GenerateNotificationOperationDetails{
+			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
 				FormationID:         fixUUID(),
 				ResourceType:        model.RuntimeResourceType,
@@ -278,7 +279,7 @@ func TestNotificationBuilder_PrepareDetailsForConfigurationChangeNotificationGen
 			Assignment:          emptyFormationAssignment,
 			ReverseAssignment:   emptyFormationAssignment,
 			TargetType:          model.RuntimeContextResourceType,
-			ExpectedNotificationDetails: &formationconstraint.GenerateNotificationOperationDetails{
+			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:           model.AssignFormation,
 				FormationID:         fixUUID(),
 				ResourceType:        model.RuntimeContextResourceType,
@@ -397,7 +398,7 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 		Assignment                  *webhookdir.FormationAssignment
 		ReverseAssignment           *webhookdir.FormationAssignment
 		TargetType                  model.ResourceType
-		ExpectedNotificationDetails *formationconstraint.GenerateNotificationOperationDetails
+		ExpectedNotificationDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails
 		ExpectedErrMessage          string
 	}{
 		{
@@ -411,7 +412,7 @@ func TestNotificationBuilder_PrepareDetailsForApplicationTenantMappingNotificati
 			Assignment:                emptyFormationAssignment,
 			ReverseAssignment:         emptyFormationAssignment,
 			TargetType:                model.ApplicationResourceType,
-			ExpectedNotificationDetails: &formationconstraint.GenerateNotificationOperationDetails{
+			ExpectedNotificationDetails: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{
 				Operation:                 model.AssignFormation,
 				FormationID:               fixUUID(),
 				ResourceType:              model.ApplicationResourceType,

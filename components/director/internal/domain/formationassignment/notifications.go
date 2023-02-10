@@ -28,9 +28,9 @@ type notificationService interface {
 
 //go:generate mockery --exported --name=notificationBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type notificationBuilder interface {
-	BuildNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
-	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateNotificationOperationDetails, error)
-	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateNotificationOperationDetails, error)
+	BuildFormationAssignmentNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
+	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 }
 
 type formationAssignmentNotificationService struct {
@@ -56,8 +56,8 @@ func NewFormationAssignmentNotificationService(formationAssignmentRepo Formation
 	}
 }
 
-// GenerateNotification generates notifications by provided model.FormationAssignment
-func (fan *formationAssignmentNotificationService) GenerateNotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+// GenerateFormationAssignmentNotification generates formation assignment notification by provided model.FormationAssignment
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	log.C(ctx).Infof("Generating notification for formation assignment with ID: %q and target type: %q and target ID: %q", fa.ID, fa.TargetType, fa.Target)
 
 	customerTenantContext, err := fan.extractCustomerTenantContext(ctx, fa.TenantID)
@@ -135,7 +135,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -176,7 +176,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -224,7 +224,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -292,7 +292,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 		return nil, err
 	}
 
-	notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
+	notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
 	if err != nil {
 		log.C(ctx).Errorf("while building notification request: %v", err)
 		return nil, err
@@ -366,7 +366,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 		return nil, err
 	}
 
-	notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
+	notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
 	if err != nil {
 		log.C(ctx).Errorf("while building notification request: %v", err)
 		return nil, err

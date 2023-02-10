@@ -186,7 +186,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
-	notificationReq, err := h.faNotificationService.GenerateNotification(ctx, fa)
+	notificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -201,7 +201,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
-	reverseNotificationReq, err := h.faNotificationService.GenerateNotification(ctx, reverseFA)
+	reverseNotificationReq, err := h.faNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", formationAssignmentID, formationID)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)

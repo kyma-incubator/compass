@@ -242,10 +242,9 @@ func TestServiceCreateFormation(t *testing.T) {
 		TenantID:            TntInternalID,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
-		State:               model.InitialFormationState,
 	}
 
-	formationWithInitialState := fixFormationModelWithState(model.InitialFormationState)
+	formationWithoutError := fixFormationModelWithoutError()
 	formationWithReadyState := fixFormationModelWithState(model.ReadyFormationState)
 	formationWithCreateErrorStateAndClientAssignmentError := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.ClientError)
 	formationWithCreateErrorStateAndTechnicalAssignmentError := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.TechnicalError)
@@ -675,7 +674,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Create", ctx, formationWithInitialState).Return(nil).Once()
+				formationRepoMock.On("Create", ctx, formationWithoutError).Return(nil).Once()
 				formationRepoMock.On("Update", ctx, formationWithReadyState).Return(nil).Once()
 				return formationRepoMock
 			},
@@ -720,7 +719,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Create", ctx, formationWithInitialState).Return(nil).Once()
+				formationRepoMock.On("Create", ctx, formationWithoutError).Return(nil).Once()
 				return formationRepoMock
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
@@ -764,7 +763,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Create", ctx, formationWithInitialState).Return(nil).Once()
+				formationRepoMock.On("Create", ctx, formationWithoutError).Return(nil).Once()
 				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndTechnicalAssignmentError).Return(nil).Once()
 				return formationRepoMock
 			},
@@ -809,7 +808,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Create", ctx, formationWithInitialState).Return(nil).Once()
+				formationRepoMock.On("Create", ctx, formationWithoutError).Return(nil).Once()
 				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndTechnicalAssignmentError).Return(testErr).Once()
 				return formationRepoMock
 			},
@@ -854,7 +853,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Create", ctx, formationWithInitialState).Return(nil).Once()
+				formationRepoMock.On("Create", ctx, formationWithoutError).Return(nil).Once()
 				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndClientAssignmentError).Return(testErr).Once()
 				return formationRepoMock
 			},
@@ -899,7 +898,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Create", ctx, formationWithInitialState).Return(nil).Once()
+				formationRepoMock.On("Create", ctx, formationWithoutError).Return(nil).Once()
 				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndClientAssignmentError).Return(nil).Once()
 				return formationRepoMock
 			},
@@ -1028,7 +1027,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 		TenantID:            TntInternalID,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
-		State:               model.InitialFormationState,
 	}
 
 	testSchema, err := labeldef.NewSchemaForFormations([]string{testScenario, testFormationName})
@@ -1075,7 +1073,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
@@ -1109,7 +1106,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
@@ -1140,7 +1136,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
@@ -1176,7 +1171,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
@@ -1213,7 +1207,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
@@ -1251,7 +1244,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
@@ -1300,7 +1292,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				formationRepoMock.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(testErr).Once()
 				return formationRepoMock
@@ -1359,7 +1350,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
@@ -1379,28 +1369,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			ExpectedErrMessage: "While enforcing constraints for target operation \"DELETE_FORMATION\" and constraint type \"POST\": Test error",
 		},
 		{
-			Name: "Error when updating formation to deleting state fails",
-			FormationRepoFn: func() *automock.FormationRepository {
-				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(testErr).Once()
-				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
-				return formationRepoMock
-			},
-			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
-				return repo
-			},
-			ConstraintEngineFn: func() *automock.ConstraintEngine {
-				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
-				return engine
-			},
-			InputFormation:     in,
-			ExpectedFormation:  nil,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
 			Name: "Error when generating formation notifications fails",
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
@@ -1409,7 +1377,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
@@ -1437,7 +1404,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Update", ctx, expectedFormation).Return(nil).Once()
 				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndTechnicalAssignmentError).Return(testErr).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
