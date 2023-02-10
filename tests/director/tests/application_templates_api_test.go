@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	gcli "github.com/machinebox/graphql"
