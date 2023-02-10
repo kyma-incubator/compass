@@ -452,7 +452,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 	syncMode := graphql.WebhookModeSync
 	asyncCallbackMode := graphql.WebhookModeAsyncCallback
-	whParameters := graphql.JSON("{}")
 
 	gqlAppTemplateInputWithProviderAndWebhook := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
 	gqlAppTemplateInputWithProviderAndWebhook.Webhooks = []*graphql.WebhookInput{
