@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"fmt"
+
 	gcli "github.com/machinebox/graphql"
 )
 
