@@ -37,21 +37,3 @@ func (j JSON) MarshalGQL(w io.Writer) {
 		log.D().Errorf("while writing %T: %s", j, err)
 	}
 }
-
-// StrPtrToJSONPtr converts a string pointer to JSON pointer
-func StrPtrToJSONPtr(in *string) *JSON {
-	if in == nil {
-		return nil
-	}
-	out := JSON(*in)
-	return &out
-}
-
-// JSONPtrToStrPtr converts a JSON pointer to string pointer
-func JSONPtrToStrPtr(in *JSON) *string {
-	if in == nil {
-		return nil
-	}
-	out := string(*in)
-	return &out
-}
