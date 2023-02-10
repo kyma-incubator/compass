@@ -68,6 +68,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, err
 	}
 
+	// if it's not request to global registry && the webhook is associated with app template use the local tenant id as header
 	if as.tenantProviderFunc != nil && len(tnt) > 0 {
 		localTenantID, err := as.tenantProviderFunc(ctx)
 		if err != nil {
