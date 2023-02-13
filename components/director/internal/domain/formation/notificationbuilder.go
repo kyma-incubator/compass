@@ -30,7 +30,7 @@ func NewNotificationsBuilder(webhookConverter webhookConverter, constraintEngine
 	}
 }
 
-// BuildNotificationRequest builds new notification request
+// BuildFormationAssignmentNotificationRequest builds new formation assignment notification request
 func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(
 	ctx context.Context,
 	formationTemplateID string,

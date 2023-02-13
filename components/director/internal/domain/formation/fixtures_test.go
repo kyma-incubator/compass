@@ -921,11 +921,13 @@ func fixApplicationTenantMappingWebhookModel(webhookID, appID string) *model.Web
 }
 
 func fixFormationLifecycleWebhookModel(webhookID, objectID string, objectType model.WebhookReferenceObjectType) *model.Webhook {
+	webhookModeSync := model.WebhookModeSync
 	return &model.Webhook{
 		ID:         webhookID,
 		ObjectID:   objectID,
 		ObjectType: objectType,
 		Type:       model.WebhookTypeFormationLifecycle,
+		Mode:       &webhookModeSync,
 	}
 }
 

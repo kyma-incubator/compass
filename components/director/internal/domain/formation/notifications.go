@@ -154,18 +154,13 @@ func (ns *notificationsService) GenerateFormationAssignmentNotifications(ctx con
 	}
 }
 
-func (ns *notificationsService) GenerateFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error) {
-	formationTemplateWebhooks, err := ns.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
-	if err != nil {
-		return nil, errors.Wrap(err, "when listing formation lifecycle webhooks for formation templates")
-	}
-
+func (ns *notificationsService) GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error) {
 	if len(formationTemplateWebhooks) == 0 {
-		log.C(ctx).Info("There are no formation templates listening for formation lifecycle notifications")
+		log.C(ctx).Infof("Formation template with ID: %q does not have any webhooks", formationTemplateID)
 		return nil, nil
 	}
 
-	log.C(ctx).Infof("There are %d formation template(s) listening for formation notifications", len(formationTemplateWebhooks))
+	log.C(ctx).Infof("There are %d formation template(s) listening for formation lifecycle notifications", len(formationTemplateWebhooks))
 
 	customerTenantContext, err := ns.extractCustomerTenantContext(ctx, tenantID)
 	if err != nil {

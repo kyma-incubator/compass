@@ -46,13 +46,13 @@ func (_m *NotificationsService) GenerateFormationAssignmentNotifications(ctx con
 	return r0, r1
 }
 
-// GenerateFormationNotifications provides a mock function with given fields: ctx, tenantID, _a2, formationTemplateID, formationOperation
-func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Context, tenantID string, _a2 *model.Formation, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error) {
-	ret := _m.Called(ctx, tenantID, _a2, formationTemplateID, formationOperation)
+// GenerateFormationNotifications provides a mock function with given fields: ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateID, formationOperation
+func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, _a3 *model.Formation, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error) {
+	ret := _m.Called(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateID, formationOperation)
 
 	var r0 []*webhookclient.FormationNotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Formation, string, model.FormationOperation) []*webhookclient.FormationNotificationRequest); ok {
-		r0 = rf(ctx, tenantID, _a2, formationTemplateID, formationOperation)
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.Webhook, string, *model.Formation, string, model.FormationOperation) []*webhookclient.FormationNotificationRequest); ok {
+		r0 = rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateID, formationOperation)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*webhookclient.FormationNotificationRequest)
@@ -60,8 +60,8 @@ func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Conte
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Formation, string, model.FormationOperation) error); ok {
-		r1 = rf(ctx, tenantID, _a2, formationTemplateID, formationOperation)
+	if rf, ok := ret.Get(1).(func(context.Context, []*model.Webhook, string, *model.Formation, string, model.FormationOperation) error); ok {
+		r1 = rf(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateID, formationOperation)
 	} else {
 		r1 = ret.Error(1)
 	}

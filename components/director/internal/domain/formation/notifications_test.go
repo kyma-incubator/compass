@@ -4410,19 +4410,15 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 
 	testCases := []struct {
 		name                              string
-		webhookRepo                       func() *automock.WebhookRepository
+		formationTemplateWebhooks         []*model.Webhook
 		webhookConv                       func() *automock.WebhookConverter
 		tenantRepo                        func() *automock.TenantRepository
 		expectedErrMsg                    string
 		expectedFormationNotificationReqs []*webhookclient.FormationNotificationRequest
 	}{
 		{
-			name: "Successfully generate formation notifications",
-			webhookRepo: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleWebhooks, nil).Once()
-				return webhookRepo
-			},
+			name:                      "Successfully generate formation notifications",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
 			webhookConv: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
 				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
@@ -4437,29 +4433,12 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			expectedFormationNotificationReqs: formationNotificationRequests,
 		},
 		{
-			name: "Error when listing formation template webhooks fails",
-			webhookRepo: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(nil, testErr).Once()
-				return webhookRepo
-			},
-			expectedErrMsg: testErr.Error(),
+			name:                      "Success when there are no formation template webhooks",
+			formationTemplateWebhooks: emptyFormationLifecycleWebhooks,
 		},
 		{
-			name: "Success when there are no formation template webhooks",
-			webhookRepo: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(emptyFormationLifecycleWebhooks, nil).Once()
-				return webhookRepo
-			},
-		},
-		{
-			name: "Error when extracting customer tenant context fails",
-			webhookRepo: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleWebhooks, nil).Once()
-				return webhookRepo
-			},
+			name:                      "Error when extracting customer tenant context fails",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
 			tenantRepo: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(nil, testErr).Once()
@@ -4468,12 +4447,8 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			expectedErrMsg: testErr.Error(),
 		},
 		{
-			name: "Error when converting formation template webhook to graphql one",
-			webhookRepo: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleWebhooks, nil).Once()
-				return webhookRepo
-			},
+			name:                      "Error when converting formation template webhook to graphql one",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
 			webhookConv: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
 				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(nil, testErr).Once()
@@ -4491,11 +4466,6 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			webhookRepo := unusedWebhookRepository()
-			if testCase.webhookRepo != nil {
-				webhookRepo = testCase.webhookRepo()
-			}
-
 			webhookConv := unusedWebhookConverter()
 			if testCase.webhookConv != nil {
 				webhookConv = testCase.webhookConv()
@@ -4506,11 +4476,11 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 				tenantRepo = testCase.tenantRepo()
 			}
 
-			defer mock.AssertExpectationsForObjects(t, webhookRepo, webhookConv, tenantRepo)
+			defer mock.AssertExpectationsForObjects(t, webhookConv, tenantRepo)
 
-			notificationSvc := formation.NewNotificationService(nil, nil, nil, nil, nil, webhookConv, webhookRepo, tenantRepo, nil, nil, nil)
+			notificationSvc := formation.NewNotificationService(nil, nil, nil, nil, nil, webhookConv, nil, tenantRepo, nil, nil, nil)
 
-			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, TntInternalID, formationInput, FormationTemplateID, model.CreateFormation)
+			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, testCase.formationTemplateWebhooks, TntInternalID, formationInput, FormationTemplateID, model.CreateFormation)
 
 			if testCase.expectedErrMsg != "" {
 				require.Error(t, err)
