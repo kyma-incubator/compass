@@ -139,11 +139,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2879"
+      version: "PR-2877"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2880"
+      version: "PR-2877"
       name: compass-hydrator
     gateway:
       dir:
@@ -1132,6 +1132,7 @@ global:
         - "internal_visibility:read"
         - "webhook:write"
         - "certificate_subject_mapping:write"
+      managed_application_consumer: []
       technical_client:
         - "tenant:read"
         - "tenant:write"
