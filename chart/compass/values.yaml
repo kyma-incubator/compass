@@ -1132,6 +1132,7 @@ global:
         - "internal_visibility:read"
         - "webhook:write"
         - "certificate_subject_mapping:write"
+      managed_application_consumer: []
       technical_client:
         - "tenant:read"
         - "tenant:write"
