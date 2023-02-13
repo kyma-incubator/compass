@@ -18,38 +18,36 @@ func NewWebhookStatusGoneErr(goneStatusCode int) WebhookStatusGoneErr {
 	return WebhookStatusGoneErr{error: fmt.Errorf("gone response status %d was met while calling webhook", goneStatusCode)}
 }
 
-// Request represents a webhook request to be executed
-type Request struct {
-	Webhook       graphql.Webhook
-	Object        webhook.TemplateInput
-	CorrelationID string
+// FormationNotificationRequest represents a formation webhook request to be executed
+type FormationNotificationRequest struct {
+	*Request
 }
 
-// NotificationRequest represents a webhook request to be executed
-type NotificationRequest struct {
+// FormationAssignmentNotificationRequest represents a formation assignment webhook request to be executed
+type FormationAssignmentNotificationRequest struct {
 	Webhook       graphql.Webhook
 	Object        webhook.FormationAssignmentTemplateInput
 	CorrelationID string
 }
 
-// GetWebhook returns the Webhook associated with the NotificationRequest
-func (nr *NotificationRequest) GetWebhook() graphql.Webhook {
+// GetWebhook returns the Webhook associated with the FormationAssignmentNotificationRequest
+func (nr *FormationAssignmentNotificationRequest) GetWebhook() graphql.Webhook {
 	return nr.Webhook
 }
 
-// GetObject returns the Object associated with the NotificationRequest
-func (nr *NotificationRequest) GetObject() webhook.TemplateInput {
+// GetObject returns the Object associated with the FormationAssignmentNotificationRequest
+func (nr *FormationAssignmentNotificationRequest) GetObject() webhook.TemplateInput {
 	return nr.Object
 }
 
-// GetCorrelationID returns the CorrelationID assigned to the NotificationRequest
-func (nr *NotificationRequest) GetCorrelationID() string {
+// GetCorrelationID returns the CorrelationID assigned to the FormationAssignmentNotificationRequest
+func (nr *FormationAssignmentNotificationRequest) GetCorrelationID() string {
 	return nr.CorrelationID
 }
 
-// Clone returns a copy of the NotificationRequest
-func (nr *NotificationRequest) Clone() *NotificationRequest {
-	return &NotificationRequest{
+// Clone returns a copy of the FormationAssignmentNotificationRequest
+func (nr *FormationAssignmentNotificationRequest) Clone() *FormationAssignmentNotificationRequest {
+	return &FormationAssignmentNotificationRequest{
 		Webhook:       nr.Webhook,
 		Object:        nr.Object.Clone(),
 		CorrelationID: nr.CorrelationID,
@@ -61,6 +59,13 @@ type WebhookRequest interface {
 	GetWebhook() graphql.Webhook
 	GetObject() webhook.TemplateInput
 	GetCorrelationID() string
+}
+
+// Request represents a webhook request to be executed
+type Request struct {
+	Webhook       graphql.Webhook
+	Object        webhook.TemplateInput
+	CorrelationID string
 }
 
 // GetWebhook return the Webhook associated with the Request
