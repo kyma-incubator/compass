@@ -25,6 +25,7 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 		Key:   "global_subaccount_id",
 		Value: subaccount,
 	}
+	// test
 
 	formation1 := graphql.FormationInput{
 		Name: testScenarioA,
