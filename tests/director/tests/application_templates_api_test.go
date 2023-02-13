@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	json2 "github.com/kyma-incubator/compass/tests/pkg/json"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -36,60 +35,6 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		ctx := context.Background()
 		appTemplateName := createAppTemplateName("app-template-name")
 		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
-
-		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
-		require.NoError(t, err)
-
-		createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
-		output := graphql.ApplicationTemplate{}
-
-		// WHEN
-		t.Log("Create application template")
-		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", output)
-
-		//THEN
-		require.NoError(t, err)
-		require.NotEmpty(t, output.ID)
-		require.NotEmpty(t, output.Name)
-
-		t.Log("Check if application template was created")
-
-		getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(output.ID)
-		appTemplateOutput := graphql.ApplicationTemplate{}
-
-		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
-
-		appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
-
-		require.NoError(t, err)
-		require.NotEmpty(t, appTemplateOutput)
-		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
-	})
-
-	t.Run("Success with JSON parameters in webhook", func(t *testing.T) {
-		// GIVEN
-		ctx := context.Background()
-		webhookURL := "https://test-url.com"
-
-		paramsPayload := map[string]interface{}{
-			"Param": "value",
-			"Param1": map[string]interface{}{
-				"Param2": "value2",
-			},
-		}
-		inputParams := json2.MarshalJSON(t, paramsPayload)
-
-		appTemplateName := createAppTemplateName("app-template-name-with-parameters-webhook")
-		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
-
-		appTemplateInput.Webhooks = []*graphql.WebhookInput{
-			{
-				Parameters: inputParams,
-				URL:        &webhookURL,
-				Type:       graphql.WebhookTypeConfigurationChanged,
-			},
-		}
 
 		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 		require.NoError(t, err)

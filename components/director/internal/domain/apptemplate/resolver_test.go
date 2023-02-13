@@ -452,40 +452,35 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 	syncMode := graphql.WebhookModeSync
 	asyncCallbackMode := graphql.WebhookModeAsyncCallback
-	whParameters := graphql.JSON("{}")
 
 	gqlAppTemplateInputWithProviderAndWebhook := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
 	gqlAppTemplateInputWithProviderAndWebhook.Webhooks = []*graphql.WebhookInput{
 		{
-			Type:       graphql.WebhookTypeConfigurationChanged,
-			URL:        &testURL,
-			Auth:       nil,
-			Mode:       &syncMode,
-			Version:    str.Ptr("v1.0"),
-			Parameters: &whParameters,
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			URL:     &testURL,
+			Auth:    nil,
+			Mode:    &syncMode,
+			Version: str.Ptr("v1.0"),
 		},
 		{
-			Type:       graphql.WebhookTypeOpenResourceDiscovery,
-			URL:        &testURL,
-			Auth:       nil,
-			Parameters: &whParameters,
+			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			URL:  &testURL,
+			Auth: nil,
 		},
 	}
 	gqlAppTemplateInputWithProviderAndWebhookWithAsyncCallback := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
 	gqlAppTemplateInputWithProviderAndWebhookWithAsyncCallback.Webhooks = []*graphql.WebhookInput{
 		{
-			Type:       graphql.WebhookTypeConfigurationChanged,
-			URL:        &testURL,
-			Auth:       nil,
-			Mode:       &asyncCallbackMode,
-			Version:    str.Ptr("v1.0"),
-			Parameters: &whParameters,
+			Type:    graphql.WebhookTypeConfigurationChanged,
+			URL:     &testURL,
+			Auth:    nil,
+			Mode:    &asyncCallbackMode,
+			Version: str.Ptr("v1.0"),
 		},
 		{
-			Type:       graphql.WebhookTypeOpenResourceDiscovery,
-			URL:        &testURL,
-			Auth:       nil,
-			Parameters: &whParameters,
+			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			URL:  &testURL,
+			Auth: nil,
 		},
 	}
 
@@ -573,13 +568,11 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 						InputTemplate:  str.Ptr("input template"),
 						HeaderTemplate: str.Ptr("header template"),
 						OutputTemplate: str.Ptr("output template"),
-						Parameters:     &whParameters,
 					},
 					{
-						Type:       graphql.WebhookTypeOpenResourceDiscovery,
-						URL:        &testURL,
-						Auth:       nil,
-						Parameters: &whParameters,
+						Type: graphql.WebhookTypeOpenResourceDiscovery,
+						URL:  &testURL,
+						Auth: nil,
 					},
 				}
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
@@ -626,13 +619,11 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 						InputTemplate:  str.Ptr("input template"),
 						HeaderTemplate: &testURL,
 						OutputTemplate: str.Ptr("output template"),
-						Parameters:     &whParameters,
 					},
 					{
-						Type:       graphql.WebhookTypeOpenResourceDiscovery,
-						URL:        &testURL,
-						Auth:       nil,
-						Parameters: &whParameters,
+						Type: graphql.WebhookTypeOpenResourceDiscovery,
+						URL:  &testURL,
+						Auth: nil,
 					},
 				}
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
