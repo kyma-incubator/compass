@@ -61,13 +61,36 @@ func (_m *WebhookRepository) ListByReferenceObjectTypeAndWebhookType(ctx context
 	return r0, r1
 }
 
-type mockConstructorTestingTNewWebhookRepository interface {
+// ListByReferenceObjectTypesAndWebhookType provides a mock function with given fields: ctx, tenant, whType, objTypes
+func (_m *WebhookRepository) ListByReferenceObjectTypesAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objTypes []model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
+	ret := _m.Called(ctx, tenant, whType, objTypes)
+
+	var r0 []*model.Webhook
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType, []model.WebhookReferenceObjectType) []*model.Webhook); ok {
+		r0 = rf(ctx, tenant, whType, objTypes)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Webhook)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookType, []model.WebhookReferenceObjectType) error); ok {
+		r1 = rf(ctx, tenant, whType, objTypes)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+type NewWebhookRepositoryT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewWebhookRepository creates a new instance of WebhookRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookRepository(t mockConstructorTestingTNewWebhookRepository) *WebhookRepository {
+func NewWebhookRepository(t NewWebhookRepositoryT) *WebhookRepository {
 	mock := &WebhookRepository{}
 	mock.Mock.Test(t)
 

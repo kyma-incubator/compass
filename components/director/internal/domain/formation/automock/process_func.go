@@ -40,13 +40,13 @@ func (_m *ProcessFunc) ProcessScenarioFunc(_a0 context.Context, _a1 string, _a2 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewProcessFunc interface {
+type NewProcessFuncT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewProcessFunc creates a new instance of ProcessFunc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewProcessFunc(t mockConstructorTestingTNewProcessFunc) *ProcessFunc {
+func NewProcessFunc(t NewProcessFuncT) *ProcessFunc {
 	mock := &ProcessFunc{}
 	mock.Mock.Test(t)
 

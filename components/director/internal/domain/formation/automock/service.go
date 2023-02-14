@@ -178,13 +178,13 @@ func (_m *Service) UnassignFormation(ctx context.Context, tnt string, objectID s
 	return r0, r1
 }
 
-type mockConstructorTestingTNewService interface {
+type NewServiceT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewService(t mockConstructorTestingTNewService) *Service {
+func NewService(t NewServiceT) *Service {
 	mock := &Service{}
 	mock.Mock.Test(t)
 

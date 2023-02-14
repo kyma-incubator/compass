@@ -40,13 +40,13 @@ func (_m *WebhookClient) Do(ctx context.Context, request webhookclient.WebhookRe
 	return r0, r1
 }
 
-type mockConstructorTestingTNewWebhookClient interface {
+type NewWebhookClientT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewWebhookClient creates a new instance of WebhookClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookClient(t mockConstructorTestingTNewWebhookClient) *WebhookClient {
+func NewWebhookClient(t NewWebhookClientT) *WebhookClient {
 	mock := &WebhookClient{}
 	mock.Mock.Test(t)
 
