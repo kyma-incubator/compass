@@ -770,6 +770,10 @@ const (
 	FormationAssignmentState       = "FormationAssignmentState"
 )
 
+func unusedApplicationRepository() *automock.ApplicationRepository {
+	return &automock.ApplicationRepository{}
+}
+
 func unusedLabelService() *automock.LabelService {
 	return &automock.LabelService{}
 }
