@@ -20,9 +20,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230125173445-b93a5ff29000
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230113212053-9511b220e4c8
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230113212053-9511b220e4c8
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230209143957-528404437ab8
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230209143957-528404437ab8
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230209143957-528404437ab8
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
 	github.com/lib/pq v1.10.4
@@ -35,7 +35,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.8.0
 	github.com/tidwall/gjson v1.14.0
 	github.com/tidwall/sjson v1.2.4
 	github.com/vektah/gqlparser/v2 v2.1.0
@@ -44,17 +44,17 @@ require (
 	golang.org/x/mod v0.6.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 	k8s.io/api v0.25.0
-	k8s.io/apimachinery v0.25.1
+	k8s.io/apimachinery v0.25.6
 	k8s.io/client-go v0.25.0
 	sigs.k8s.io/controller-runtime v0.13.0
 )
 
 require (
 	github.com/imdario/mergo v0.3.12
-	github.com/kyma-incubator/compass/tests v0.0.0-20230113212053-9511b220e4c8
-	golang.org/x/net v0.1.0
+	github.com/kyma-incubator/compass/tests v0.0.0-20230209143957-528404437ab8
+	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
-	golang.org/x/text v0.4.0
+	golang.org/x/text v0.5.0
 )
 
 require (
@@ -115,15 +115,15 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.3.0 // indirect
+	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	go.mongodb.org/mongo-driver v1.8.3 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/sys v0.1.0 // indirect
-	golang.org/x/term v0.1.0 // indirect
+	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/term v0.3.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	golang.org/x/tools v0.2.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect

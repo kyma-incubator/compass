@@ -1,0 +1,13 @@
+BEGIN;
+
+ALTER TABLE formations
+    ADD COLUMN state TEXT NOT NULL CHECK ( state IN ('INITIAL', 'READY', 'CREATE_ERROR', 'DELETE_ERROR', 'DELETING')) DEFAULT 'READY',
+    ADD COLUMN error JSONB;
+
+ALTER TABLE formation_constraints
+    DROP CONSTRAINT formation_constraints_target_operation_check;
+
+ALTER TABLE formation_constraints
+    ADD CONSTRAINT formation_constraints_target_operation_check CHECK ( target_operation in ('ASSIGN_FORMATION','UNASSIGN_FORMATION','CREATE_FORMATION','DELETE_FORMATION','GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION','GENERATE_FORMATION_NOTIFICATION') );
+
+COMMIT;

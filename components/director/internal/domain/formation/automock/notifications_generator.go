@@ -20,15 +20,15 @@ type NotificationsGenerator struct {
 }
 
 // GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned provides a mock function with given fields: ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext
-func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned(ctx context.Context, tenant string, runtimeCtxID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.NotificationRequest, error) {
+func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned(ctx context.Context, tenant string, runtimeCtxID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 
-	var r0 []*webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.NotificationRequest); ok {
+	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).([]*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 
@@ -43,15 +43,15 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 }
 
 // GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned provides a mock function with given fields: ctx, tenant, runtimeID, _a3, operation, customerTenantContext
-func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx context.Context, tenant string, runtimeID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.NotificationRequest, error) {
+func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx context.Context, tenant string, runtimeID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 
-	var r0 []*webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.NotificationRequest); ok {
+	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).([]*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 
@@ -66,15 +66,15 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 }
 
 // GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned provides a mock function with given fields: ctx, tenant, appID, _a3, operation, customerTenantContext
-func (_m *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.NotificationRequest, error) {
+func (_m *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, appID, _a3, operation, customerTenantContext)
 
-	var r0 []*webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.NotificationRequest); ok {
+	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).([]*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 
@@ -89,15 +89,15 @@ func (_m *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 }
 
 // GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned provides a mock function with given fields: ctx, tenant, appID, _a3, operation, customerTenantContext
-func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.NotificationRequest, error) {
+func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, appID, _a3, operation, customerTenantContext)
 
-	var r0 []*webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.NotificationRequest); ok {
+	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).([]*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 
@@ -112,15 +112,15 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 }
 
 // GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned provides a mock function with given fields: ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext
-func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned(ctx context.Context, tenant string, runtimeCtxID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.NotificationRequest, error) {
+func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned(ctx context.Context, tenant string, runtimeCtxID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 
-	var r0 []*webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.NotificationRequest); ok {
+	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, runtimeCtxID, _a3, operation, customerTenantContext)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).([]*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 
@@ -135,15 +135,15 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 }
 
 // GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned provides a mock function with given fields: ctx, tenant, runtimeID, _a3, operation, customerTenantContext
-func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(ctx context.Context, tenant string, runtimeID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.NotificationRequest, error) {
+func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(ctx context.Context, tenant string, runtimeID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 
-	var r0 []*webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.NotificationRequest); ok {
+	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, runtimeID, _a3, operation, customerTenantContext)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).([]*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 
@@ -158,15 +158,15 @@ func (_m *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 }
 
 // GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned provides a mock function with given fields: ctx, tenant, appID, _a3, operation, customerTenantContext
-func (_m *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.NotificationRequest, error) {
+func (_m *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, _a3 *model.Formation, operation model.FormationOperation, customerTenantContext *webhook.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, tenant, appID, _a3, operation, customerTenantContext)
 
-	var r0 []*webhookclient.NotificationRequest
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.NotificationRequest); ok {
+	var r0 []*webhookclient.FormationAssignmentNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, *webhook.CustomerTenantContext) []*webhookclient.FormationAssignmentNotificationRequest); ok {
 		r0 = rf(ctx, tenant, appID, _a3, operation, customerTenantContext)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*webhookclient.NotificationRequest)
+			r0 = ret.Get(0).([]*webhookclient.FormationAssignmentNotificationRequest)
 		}
 	}
 

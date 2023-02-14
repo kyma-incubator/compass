@@ -47,7 +47,7 @@ type FormationAssignmentService interface {
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
-	GenerateNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.NotificationRequest, error)
+	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
 }
 
 // formationService is responsible for the service-layer Formation operations

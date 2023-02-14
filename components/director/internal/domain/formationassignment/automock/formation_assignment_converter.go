@@ -28,13 +28,13 @@ func (_m *FormationAssignmentConverter) ToInput(assignment *model.FormationAssig
 	return r0
 }
 
-type mockConstructorTestingTNewFormationAssignmentConverter interface {
+type NewFormationAssignmentConverterT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationAssignmentConverter creates a new instance of FormationAssignmentConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentConverter(t mockConstructorTestingTNewFormationAssignmentConverter) *FormationAssignmentConverter {
+func NewFormationAssignmentConverter(t NewFormationAssignmentConverterT) *FormationAssignmentConverter {
 	mock := &FormationAssignmentConverter{}
 	mock.Mock.Test(t)
 

@@ -21,13 +21,13 @@ import (
 
 func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
+	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
 	inputFormation := &model.Formation{
 		ID:                  fixUUID(),
 		Name:                testFormationName,
 		FormationTemplateID: FormationTemplateID,
-		TenantID:            Tnt,
+		TenantID:            TntInternalID,
 	}
 
 	testCases := []struct {
@@ -38,7 +38,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		ObjectType             graphql.FormationObjectType
 		OperationType          model.FormationOperation
 		InputFormation         *model.Formation
-		ExpectedRequests       []*webhookclient.NotificationRequest
+		ExpectedRequests       []*webhookclient.FormationAssignmentNotificationRequest
 		ExpectedErrMessage     string
 	}{
 		// start testing 'generateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned' and 'generateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned' funcs
@@ -53,14 +53,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, Tnt, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						applicationNotificationWithAppTemplate,
 						applicationNotificationWithoutAppTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned", ctx, Tnt, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						runtimeNotificationWithAppTemplate,
 						runtimeNotificationWithoutAppTemplate,
 					}, nil).Once()
@@ -71,7 +71,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: inputFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithoutAppTemplate,
 				applicationNotificationWithAppTemplate,
@@ -90,14 +90,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, Tnt, RuntimeID, inputFormation, model.AssignFormation, rgCustomerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, rgCustomerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						applicationNotificationWithAppTemplate,
 						applicationNotificationWithoutAppTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned", ctx, Tnt, RuntimeID, inputFormation, model.AssignFormation, rgCustomerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, rgCustomerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						runtimeNotificationWithAppTemplate,
 						runtimeNotificationWithoutAppTemplate,
 					}, nil).Once()
@@ -108,7 +108,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: inputFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithoutAppTemplate,
 				applicationNotificationWithAppTemplate,
@@ -127,13 +127,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, Tnt, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						applicationNotificationWithAppTemplate,
 						applicationNotificationWithoutAppTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned", ctx, Tnt, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
+				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
 
 				return generator
 			},
@@ -154,7 +154,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, Tnt, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned", ctx, TntInternalID, RuntimeID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
 
 				return generator
 			},
@@ -176,14 +176,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned", ctx, Tnt, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned", ctx, TntInternalID, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						appNotificationWithRtmCtxAndTemplate,
 						appNotificationWithRtmCtxWithoutTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned", ctx, Tnt, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned", ctx, TntInternalID, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						runtimeCtxNotificationWithAppTemplate,
 						runtimeCtxNotificationWithoutAppTemplate,
 					}, nil).Once()
@@ -193,7 +193,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ObjectType:    graphql.FormationObjectTypeRuntimeContext,
 			OperationType: model.AssignFormation,
 			ObjectID:      RuntimeContextID,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeCtxNotificationWithAppTemplate,
 				runtimeCtxNotificationWithoutAppTemplate,
 				appNotificationWithRtmCtxAndTemplate,
@@ -213,13 +213,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned", ctx, Tnt, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned", ctx, TntInternalID, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						appNotificationWithRtmCtxAndTemplate,
 						appNotificationWithRtmCtxWithoutTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned", ctx, Tnt, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
+				generator.On("GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned", ctx, TntInternalID, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
 
 				return generator
 			},
@@ -240,7 +240,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned", ctx, Tnt, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
+				generator.On("GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned", ctx, TntInternalID, RuntimeContextID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
 
 				return generator
 			},
@@ -262,27 +262,27 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						appNotificationWithRtmCtxRtmIDAndTemplate,
 						appNotificationWithRtmCtxAndTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						runtimeNotificationWithAppTemplate,
 						runtimeNotificationWithRtmCtxAndAppTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						appToAppNotificationWithoutSourceTemplateWithTargetTemplate,
 						appToAppNotificationWithSourceTemplateWithoutTargetTemplate,
 					}, nil).Once()
 
 				return generator
 			},
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithRtmCtxAndAppTemplate,
 				appNotificationWithRtmCtxRtmIDAndTemplate,
@@ -307,19 +307,19 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						appNotificationWithRtmCtxRtmIDAndTemplate,
 						appNotificationWithRtmCtxAndTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						runtimeNotificationWithAppTemplate,
 						runtimeNotificationWithRtmCtxAndAppTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
+				generator.On("GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
 
 				return generator
 			},
@@ -340,13 +340,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
-					[]*webhookclient.NotificationRequest{
+				generator.On("GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(
+					[]*webhookclient.FormationAssignmentNotificationRequest{
 						appNotificationWithRtmCtxRtmIDAndTemplate,
 						appNotificationWithRtmCtxAndTemplate,
 					}, nil).Once()
 
-				generator.On("GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
+				generator.On("GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
 
 				return generator
 			},
@@ -367,7 +367,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			NotificationsGenerator: func() *automock.NotificationsGenerator {
 				generator := &automock.NotificationsGenerator{}
 
-				generator.On("GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned", ctx, Tnt, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
+				generator.On("GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned", ctx, TntInternalID, ApplicationID, inputFormation, model.AssignFormation, customerTenantContext).Return(nil, testErr).Once()
 
 				return generator
 			},
@@ -433,10 +433,10 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsGenerator = testCase.NotificationsGenerator()
 			}
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, nil, notificationsGenerator)
 
 			// WHEN
-			actual, err := notificationSvc.GenerateNotifications(ctx, Tnt, testCase.ObjectID, testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
+			actual, err := notificationSvc.GenerateFormationAssignmentNotifications(ctx, TntInternalID, testCase.ObjectID, testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -453,21 +453,112 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 	}
 }
 
+func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
+	ctx := context.Background()
+	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID)
+	formationInput := fixFormationModelWithoutError()
+
+	testCases := []struct {
+		name                              string
+		formationTemplateWebhooks         []*model.Webhook
+		webhookConv                       func() *automock.WebhookConverter
+		tenantRepo                        func() *automock.TenantRepository
+		expectedErrMsg                    string
+		expectedFormationNotificationReqs []*webhookclient.FormationNotificationRequest
+	}{
+		{
+			name:                      "Successfully generate formation notifications",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			webhookConv: func() *automock.WebhookConverter {
+				webhookConv := &automock.WebhookConverter{}
+				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
+				return webhookConv
+			},
+			tenantRepo: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
+				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				return tenantRepo
+			},
+			expectedFormationNotificationReqs: formationNotificationRequests,
+		},
+		{
+			name:                      "Success when there are no formation template webhooks",
+			formationTemplateWebhooks: emptyFormationLifecycleWebhooks,
+		},
+		{
+			name:                      "Error when extracting customer tenant context fails",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			tenantRepo: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("Get", ctx, TntInternalID).Return(nil, testErr).Once()
+				return tenantRepo
+			},
+			expectedErrMsg: testErr.Error(),
+		},
+		{
+			name:                      "Error when converting formation template webhook to graphql one",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			webhookConv: func() *automock.WebhookConverter {
+				webhookConv := &automock.WebhookConverter{}
+				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(nil, testErr).Once()
+				return webhookConv
+			},
+			tenantRepo: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
+				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMsg: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			webhookConv := unusedWebhookConverter()
+			if testCase.webhookConv != nil {
+				webhookConv = testCase.webhookConv()
+			}
+
+			tenantRepo := unusedTenantRepo()
+			if testCase.tenantRepo != nil {
+				tenantRepo = testCase.tenantRepo()
+			}
+
+			defer mock.AssertExpectationsForObjects(t, webhookConv, tenantRepo)
+
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, webhookConv, nil)
+
+			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, testCase.formationTemplateWebhooks, TntInternalID, formationInput, FormationTemplateID, model.CreateFormation)
+
+			if testCase.expectedErrMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.expectedErrMsg)
+				require.Empty(t, formationNotificationReqs)
+			} else {
+				require.NoError(t, err)
+				require.ElementsMatch(t, formationNotificationReqs, testCase.expectedFormationNotificationReqs)
+			}
+		})
+	}
+}
+
 func Test_NotificationsService_SendNotification(t *testing.T) {
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
+	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
 	testCases := []struct {
 		Name               string
 		WebhookClientFN    func() *automock.WebhookClient
-		InputRequest       *webhookclient.NotificationRequest
+		InputRequest       *webhookclient.FormationAssignmentNotificationRequest
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "success when webhook client call doesn't return error",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.NotificationRequest{
+				client.On("Do", ctx, &webhookclient.FormationAssignmentNotificationRequest{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -497,7 +588,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				}).Return(nil, nil)
 				return client
 			},
-			InputRequest: &webhookclient.NotificationRequest{
+			InputRequest: &webhookclient.FormationAssignmentNotificationRequest{
 				Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 				Object: &webhook.FormationConfigurationChangeInput{
 					Operation:   model.AssignFormation,
@@ -530,7 +621,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			Name: "fail when webhook client call fails",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.NotificationRequest{
+				client.On("Do", ctx, &webhookclient.FormationAssignmentNotificationRequest{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -560,7 +651,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				}).Return(nil, testErr)
 				return client
 			},
-			InputRequest: &webhookclient.NotificationRequest{
+			InputRequest: &webhookclient.FormationAssignmentNotificationRequest{
 				Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 				Object: &webhook.FormationConfigurationChangeInput{
 					Operation:   model.AssignFormation,
@@ -603,7 +694,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				webhookClient = testCase.WebhookClientFN()
 			}
 
-			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil)
+			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, nil)
 
 			// WHEN
 			_, err := notificationSvc.SendNotification(ctx, testCase.InputRequest)

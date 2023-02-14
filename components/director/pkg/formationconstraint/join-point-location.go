@@ -49,14 +49,24 @@ var (
 		OperationName:  model.DeleteFormationOperation,
 		ConstraintType: model.PostOperation,
 	}
-	// PreGenerateNotifications represents the location before GenerateNotification operation execution
-	PreGenerateNotifications = JoinPointLocation{
-		OperationName:  model.GenerateNotificationOperation,
+	// PreGenerateFormationAssignmentNotifications represents the location before GenerateFormationAssignmentNotifications operation execution
+	PreGenerateFormationAssignmentNotifications = JoinPointLocation{
+		OperationName:  model.GenerateFormationAssignmentNotificationOperation,
 		ConstraintType: model.PreOperation,
 	}
-	// PostGenerateNotifications represents the location after GenerateNotification operation execution
-	PostGenerateNotifications = JoinPointLocation{
-		OperationName:  model.GenerateNotificationOperation,
+	// PostGenerateFormationAssignmentNotifications represents the location after GenerateFormationAssignmentNotifications operation execution
+	PostGenerateFormationAssignmentNotifications = JoinPointLocation{
+		OperationName:  model.GenerateFormationAssignmentNotificationOperation,
+		ConstraintType: model.PostOperation,
+	}
+	// PreGenerateFormationNotifications represents the location before GenerateFormationNotifications operation execution
+	PreGenerateFormationNotifications = JoinPointLocation{
+		OperationName:  model.GenerateFormationNotificationOperation,
+		ConstraintType: model.PreOperation,
+	}
+	// PostGenerateFormationNotifications represents the location after GenerateFormationNotifications operation execution
+	PostGenerateFormationNotifications = JoinPointLocation{
+		OperationName:  model.GenerateFormationNotificationOperation,
 		ConstraintType: model.PostOperation,
 	}
 )

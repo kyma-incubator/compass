@@ -35,6 +35,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		ctx := context.Background()
 		appTemplateName := createAppTemplateName("app-template-name")
 		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
+
 		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 		require.NoError(t, err)
 

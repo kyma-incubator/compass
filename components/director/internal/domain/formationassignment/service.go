@@ -3,6 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -86,11 +87,6 @@ type templateInput interface {
 	SetAssignment(*model.FormationAssignment)
 	SetReverseAssignment(*model.FormationAssignment)
 	Clone() webhookdir.FormationAssignmentTemplateInput
-}
-
-//go:generate mockery --exported --name=notificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type notificationService interface {
-	SendNotification(ctx context.Context, notification *webhookclient.NotificationRequest) (*webhookdir.Response, error)
 }
 
 // UIDService generates UUIDs for new entities
@@ -502,7 +498,7 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 // Mapping and reverseMapping example
 // mapping{notificationRequest=request, formationAssignment=assignment} - reverseMapping{notificationRequest=reverseRequest, formationAssignment=reverseAssignment}
 
-func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.NotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) (bool, error)) error {
+func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPair) (bool, error)) error {
 	var errs *multierror.Error
 	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests)
 	alreadyProcessedFAs := make(map[string]bool, 0)
@@ -747,7 +743,7 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	return nil
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.NotificationRequest) []*AssignmentMappingPair {
+func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest) []*AssignmentMappingPair {
 	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
 		mappingObject := &FormationAssignmentRequestMapping{
@@ -836,13 +832,13 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 
 // FormationAssignmentRequestMapping represents the mapping between the notification request and formation assignment
 type FormationAssignmentRequestMapping struct {
-	Request             *webhookclient.NotificationRequest
+	Request             *webhookclient.FormationAssignmentNotificationRequest
 	FormationAssignment *model.FormationAssignment
 }
 
 // Clone returns a copy of the FormationAssignmentRequestMapping
 func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestMapping {
-	var request *webhookclient.NotificationRequest
+	var request *webhookclient.FormationAssignmentNotificationRequest
 	if f.Request != nil {
 		request = f.Request.Clone()
 	}

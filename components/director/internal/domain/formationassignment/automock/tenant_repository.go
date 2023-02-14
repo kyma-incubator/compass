@@ -59,13 +59,13 @@ func (_m *TenantRepository) GetCustomerIDParentRecursively(ctx context.Context, 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantRepository interface {
+type NewTenantRepositoryT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewTenantRepository creates a new instance of TenantRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantRepository(t mockConstructorTestingTNewTenantRepository) *TenantRepository {
+func NewTenantRepository(t NewTenantRepositoryT) *TenantRepository {
 	mock := &TenantRepository{}
 	mock.Mock.Test(t)
 

@@ -158,13 +158,13 @@ func (_m *TemplateInput) SetReverseAssignment(_a0 *model.FormationAssignment) {
 	_m.Called(_a0)
 }
 
-type mockConstructorTestingTNewTemplateInput interface {
+type NewTemplateInputT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewTemplateInput creates a new instance of TemplateInput. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTemplateInput(t mockConstructorTestingTNewTemplateInput) *TemplateInput {
+func NewTemplateInput(t NewTemplateInputT) *TemplateInput {
 	mock := &TemplateInput{}
 	mock.Mock.Test(t)
 

@@ -17,13 +17,13 @@ type NotificationService struct {
 	mock.Mock
 }
 
-// SendNotification provides a mock function with given fields: ctx, notification
-func (_m *NotificationService) SendNotification(ctx context.Context, notification *webhookclient.NotificationRequest) (*webhook.Response, error) {
-	ret := _m.Called(ctx, notification)
+// SendNotification provides a mock function with given fields: ctx, webhookNotificationReq
+func (_m *NotificationService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhook.Response, error) {
+	ret := _m.Called(ctx, webhookNotificationReq)
 
 	var r0 *webhook.Response
-	if rf, ok := ret.Get(0).(func(context.Context, *webhookclient.NotificationRequest) *webhook.Response); ok {
-		r0 = rf(ctx, notification)
+	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookRequest) *webhook.Response); ok {
+		r0 = rf(ctx, webhookNotificationReq)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*webhook.Response)
@@ -31,8 +31,8 @@ func (_m *NotificationService) SendNotification(ctx context.Context, notificatio
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *webhookclient.NotificationRequest) error); ok {
-		r1 = rf(ctx, notification)
+	if rf, ok := ret.Get(1).(func(context.Context, webhookclient.WebhookRequest) error); ok {
+		r1 = rf(ctx, webhookNotificationReq)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -40,13 +40,13 @@ func (_m *NotificationService) SendNotification(ctx context.Context, notificatio
 	return r0, r1
 }
 
-type mockConstructorTestingTNewNotificationService interface {
+type NewNotificationServiceT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewNotificationService creates a new instance of NotificationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationService(t mockConstructorTestingTNewNotificationService) *NotificationService {
+func NewNotificationService(t NewNotificationServiceT) *NotificationService {
 	mock := &NotificationService{}
 	mock.Mock.Test(t)
 
