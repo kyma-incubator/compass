@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -134,6 +133,7 @@ type asaEngine interface {
 }
 
 type service struct {
+	applicationRepository       applicationRepository
 	labelDefRepository          labelDefRepository
 	labelRepository             labelRepository
 	formationRepository         FormationRepository
@@ -156,9 +156,10 @@ type service struct {
 }
 
 // NewService creates formation service
-func NewService(transact persistence.Transactioner, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, constraintEngine constraintEngine, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(transact persistence.Transactioner, applicationRepository applicationRepository, labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, formationAssignmentService formationAssignmentService, notificationsService NotificationsService, constraintEngine constraintEngine, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		transact:                    transact,
+		applicationRepository:       applicationRepository,
 		labelDefRepository:          labelDefRepository,
 		labelRepository:             labelRepository,
 		formationRepository:         formationRepository,
@@ -389,12 +390,17 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
+		applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, assignments)
+		if err != nil {
+			return nil, err
+		}
+
 		requests, err := s.notificationsService.GenerateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, requests, s.formationAssignmentService.ProcessFormationAssignmentPair); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.ProcessFormationAssignmentPair); err != nil {
 			log.C(ctx).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
@@ -645,6 +651,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
+		applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, formationAssignmentsForObject)
+		if err != nil {
+			return nil, err
+		}
+
 		tx, err := s.transact.Begin()
 		if err != nil {
 			return nil, err
@@ -652,7 +663,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		transactionCtx := persistence.SaveToContext(ctx, tx)
 		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
@@ -708,6 +719,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
+		applicationIDToApplicationTemplateIDMapping, err := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, formationAssignmentsForObject)
+		if err != nil {
+			return nil, err
+		}
+
 		tx, err := s.transact.Begin()
 		if err != nil {
 			return nil, err
@@ -716,7 +732,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		transactionCtx := persistence.SaveToContext(ctx, tx)
 		defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, formationAssignmentsForObject, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 			commitErr := tx.Commit()
 			if commitErr != nil {
 				return nil, errors.Wrapf(err, "while committing transaction with error")
@@ -779,6 +795,26 @@ func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt
 		rtmContextIDsToRuntimeMap[rtmContext.ID] = rtmContext.RuntimeID
 	}
 	return rtmContextIDsToRuntimeMap, nil
+}
+
+func (s *service) getApplicationIDToApplicationTemplateIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
+	appIDs := make([]string, 0)
+	for _, assignment := range formationAssignmentsForObject {
+		if assignment.TargetType == model.FormationAssignmentTypeApplication {
+			appIDs = append(appIDs, assignment.Target)
+		}
+	}
+	applications, err := s.applicationRepository.ListAllByIDs(ctx, tnt, appIDs)
+	if err != nil {
+		return nil, err
+	}
+	appToAppTemplateMap := make(map[string]string, len(applications))
+	for i := range applications {
+		if applications[i].ApplicationTemplateID != nil {
+			appToAppTemplateMap[applications[i].ID] = *applications[i].ApplicationTemplateID
+		}
+	}
+	return appToAppTemplateMap, nil
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
