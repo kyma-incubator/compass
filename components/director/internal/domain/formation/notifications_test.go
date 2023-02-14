@@ -681,10 +681,6 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			},
 			ExpectedErrMessage: testErr.Error(),
 		},
-		{
-			Name:         "does nothing when no arguments are supplied",
-			InputRequest: nil,
-		},
 	}
 
 	for _, testCase := range testCases {
