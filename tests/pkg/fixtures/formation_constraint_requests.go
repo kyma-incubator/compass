@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 )

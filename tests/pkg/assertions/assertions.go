@@ -62,10 +62,6 @@ func AssertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.W
 				assert.NotNil(t, actWh.ID)
 				assert.Equal(t, inWh.Type, actWh.Type)
 
-				if inWh.Parameters != nil {
-					AssertGraphQLJSON(t, inWh.Parameters, actWh.Parameters)
-				}
-
 				AssertAuth(t, inWh.Auth, actWh.Auth)
 			}
 		}

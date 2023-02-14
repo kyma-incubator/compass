@@ -212,7 +212,8 @@ enum TargetOperation {
 	UNASSIGN_FORMATION
 	CREATE_FORMATION
 	DELETE_FORMATION
-	GENERATE_NOTIFICATION
+	GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION
+	GENERATE_FORMATION_NOTIFICATION
 }
 
 enum ViewerType {
@@ -838,7 +839,6 @@ input WebhookInput {
 	headerTemplate: String
 	outputTemplate: String
 	statusTemplate: String
-	parameters: JSON
 }
 
 type APIDefinition {
@@ -1421,7 +1421,6 @@ type Webhook {
 	outputTemplate: String
 	statusTemplate: String
 	createdAt: Timestamp
-	parameters: JSON
 }
 
 type Query {

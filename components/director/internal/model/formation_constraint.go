@@ -10,7 +10,7 @@ const (
 	PostOperation FormationConstraintType = "POST"
 )
 
-// TargetOperation represents the operation to which the constraint is applicable
+// TargetOperation represents the operation to which the constraint is applicable. Different values are defined in the GraphQL schema.
 type TargetOperation string
 
 const (
@@ -22,8 +22,10 @@ const (
 	CreateFormationOperation TargetOperation = "CREATE_FORMATION"
 	// DeleteFormationOperation represents the delete formation operation
 	DeleteFormationOperation TargetOperation = "DELETE_FORMATION"
-	// GenerateNotificationOperation represents the generate notifications operation
-	GenerateNotificationOperation TargetOperation = "GENERATE_NOTIFICATION"
+	// GenerateFormationAssignmentNotificationOperation represents the generate formation assignment notifications operation
+	GenerateFormationAssignmentNotificationOperation TargetOperation = "GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION"
+	// GenerateFormationNotificationOperation represents the generate formation notifications operation
+	GenerateFormationNotificationOperation TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
 )
 
 // ResourceType represents the type of resource the constraint is applicable to

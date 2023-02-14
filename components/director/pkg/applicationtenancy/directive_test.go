@@ -62,7 +62,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return(parentTenantID, nil)
 				tenantService.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), parentTenantID).Return(customerTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Account).Return([]*model.BusinessTenantMapping{accountTenantModel}, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantID, applicationID, false, resource.Application).Return(nil)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantID, applicationID, true, resource.Application).Return(nil)
 
 				return tenantService
 			},
@@ -203,7 +203,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return(parentTenantID, nil)
 				tenantService.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), parentTenantID).Return(customerTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Account).Return([]*model.BusinessTenantMapping{accountTenantModel}, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantID, applicationID, false, resource.Application).Return(testErr)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantID, applicationID, true, resource.Application).Return(testErr)
 				return tenantService
 			},
 			GetCtx:           fixContextWithTenant,

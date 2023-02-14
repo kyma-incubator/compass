@@ -814,7 +814,6 @@ type Webhook struct {
 	OutputTemplate        *string      `json:"outputTemplate"`
 	StatusTemplate        *string      `json:"statusTemplate"`
 	CreatedAt             *Timestamp   `json:"createdAt"`
-	Parameters            *JSON        `json:"parameters"`
 }
 
 type WebhookInput struct {
@@ -832,7 +831,6 @@ type WebhookInput struct {
 	HeaderTemplate   *string      `json:"headerTemplate"`
 	OutputTemplate   *string      `json:"outputTemplate"`
 	StatusTemplate   *string      `json:"statusTemplate"`
-	Parameters       *JSON        `json:"parameters"`
 }
 
 type APISpecType string
@@ -1917,11 +1915,12 @@ func (e SystemAuthReferenceType) MarshalGQL(w io.Writer) {
 type TargetOperation string
 
 const (
-	TargetOperationAssignFormation      TargetOperation = "ASSIGN_FORMATION"
-	TargetOperationUnassignFormation    TargetOperation = "UNASSIGN_FORMATION"
-	TargetOperationCreateFormation      TargetOperation = "CREATE_FORMATION"
-	TargetOperationDeleteFormation      TargetOperation = "DELETE_FORMATION"
-	TargetOperationGenerateNotification TargetOperation = "GENERATE_NOTIFICATION"
+	TargetOperationAssignFormation                         TargetOperation = "ASSIGN_FORMATION"
+	TargetOperationUnassignFormation                       TargetOperation = "UNASSIGN_FORMATION"
+	TargetOperationCreateFormation                         TargetOperation = "CREATE_FORMATION"
+	TargetOperationDeleteFormation                         TargetOperation = "DELETE_FORMATION"
+	TargetOperationGenerateFormationAssignmentNotification TargetOperation = "GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION"
+	TargetOperationGenerateFormationNotification           TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
 )
 
 var AllTargetOperation = []TargetOperation{
@@ -1929,12 +1928,13 @@ var AllTargetOperation = []TargetOperation{
 	TargetOperationUnassignFormation,
 	TargetOperationCreateFormation,
 	TargetOperationDeleteFormation,
-	TargetOperationGenerateNotification,
+	TargetOperationGenerateFormationAssignmentNotification,
+	TargetOperationGenerateFormationNotification,
 }
 
 func (e TargetOperation) IsValid() bool {
 	switch e {
-	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateNotification:
+	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification:
 		return true
 	}
 	return false

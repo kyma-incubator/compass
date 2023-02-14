@@ -17,7 +17,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id", "parameters"}
+var fixColumns = []string{"id", "app_id", "app_template_id", "type", "url", "auth", "runtime_id", "integration_system_id", "mode", "correlation_id_key", "retry_interval", "timeout", "url_template", "input_template", "header_template", "output_template", "status_template", "created_at", "formation_template_id"}
 
 var emptyTemplate = `{}`
 
@@ -38,7 +38,6 @@ func fixApplicationModelWebhook(id, appID, tenant, url string, createdAt time.Ti
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
-		Parameters:     &emptyTemplate,
 		CreatedAt:      &createdAt,
 	}
 }
@@ -56,7 +55,6 @@ func fixRuntimeModelWebhook(id, runtimeID, url string) *model.Webhook {
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
-		Parameters:     &emptyTemplate,
 	}
 }
 
@@ -73,7 +71,6 @@ func fixFormationTemplateModelWebhook(id, formationTemplateID, url string) *mode
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
-		Parameters:     &emptyTemplate,
 	}
 }
 
@@ -90,7 +87,6 @@ func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.We
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
-		Parameters:     &emptyTemplate,
 	}
 }
 
@@ -106,7 +102,6 @@ func fixGQLWebhook(id, appID, url string) *graphql.Webhook {
 		InputTemplate:  &emptyTemplate,
 		HeaderTemplate: &emptyTemplate,
 		OutputTemplate: &emptyTemplate,
-		Parameters:     graphql.StrPtrToJSONPtr(&emptyTemplate),
 		CreatedAt:      &graphql.Timestamp{},
 	}
 }
@@ -186,7 +181,6 @@ func fixApplicationWebhookEntityWithIDAndWebhookType(t *testing.T, id string, wh
 		InputTemplate:  repo.NewValidNullableString(emptyTemplate),
 		HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
 		OutputTemplate: repo.NewValidNullableString(emptyTemplate),
-		Parameters:     repo.NewValidNullableString(emptyTemplate),
 		CreatedAt:      &createdAt,
 	}
 }
@@ -203,7 +197,6 @@ func fixRuntimeWebhookEntityWithID(t *testing.T, id string) *webhook.Entity {
 		InputTemplate:  repo.NewValidNullableString(emptyTemplate),
 		HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
 		OutputTemplate: repo.NewValidNullableString(emptyTemplate),
-		Parameters:     repo.NewValidNullableString(emptyTemplate),
 	}
 }
 
@@ -219,7 +212,6 @@ func fixFormationTemplateWebhookEntityWithID(t *testing.T, id string) *webhook.E
 		InputTemplate:       repo.NewValidNullableString(emptyTemplate),
 		HeaderTemplate:      repo.NewValidNullableString(emptyTemplate),
 		OutputTemplate:      repo.NewValidNullableString(emptyTemplate),
-		Parameters:          repo.NewValidNullableString(emptyTemplate),
 	}
 }
 
@@ -235,7 +227,6 @@ func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
 		InputTemplate:         repo.NewValidNullableString(emptyTemplate),
 		HeaderTemplate:        repo.NewValidNullableString(emptyTemplate),
 		OutputTemplate:        repo.NewValidNullableString(emptyTemplate),
-		Parameters:            repo.NewValidNullableString(emptyTemplate),
 		CreatedAt:             nil,
 	}
 }
