@@ -17,10 +17,11 @@ import (
 )
 
 const (
-	tableName           = "public.webhooks"
-	applicationID       = "app_id"
-	runtimeID           = "runtime_id"
-	formationTemplateID = "formation_template_id"
+	tableName             = "public.webhooks"
+	applicationID         = "app_id"
+	runtimeID             = "runtime_id"
+	formationTemplateID   = "formation_template_id"
+	applicationTemplateID = "app_template_id"
 )
 
 var (
@@ -46,6 +47,7 @@ type repository struct {
 	deleterGlobal                  repo.DeleterGlobal
 	deleter                        repo.Deleter
 	lister                         repo.Lister
+	conditionTreeLister            repo.ConditionTreeLister
 	listerGlobal                   repo.ListerGlobal
 	listerGlobalOrderedByCreatedAt repo.ListerGlobal
 	conv                           EntityConverter
@@ -54,16 +56,17 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		singleGetter:       repo.NewSingleGetter(tableName, webhookColumns),
-		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
-		creator:            repo.NewCreator(tableName, webhookColumns),
-		globalCreator:      repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
-		webhookUpdater:     repo.NewUpdater(tableName, updatableColumns, []string{"id"}),
-		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
-		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
-		deleter:            repo.NewDeleter(tableName),
-		lister:             repo.NewLister(tableName, webhookColumns),
-		listerGlobal:       repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
+		singleGetter:        repo.NewSingleGetter(tableName, webhookColumns),
+		singleGetterGlobal:  repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
+		creator:             repo.NewCreator(tableName, webhookColumns),
+		globalCreator:       repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
+		webhookUpdater:      repo.NewUpdater(tableName, updatableColumns, []string{"id"}),
+		updaterGlobal:       repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
+		deleterGlobal:       repo.NewDeleterGlobal(resource.Webhook, tableName),
+		deleter:             repo.NewDeleter(tableName),
+		lister:              repo.NewLister(tableName, webhookColumns),
+		conditionTreeLister: repo.NewConditionTreeLister(tableName, webhookColumns),
+		listerGlobal:        repo.NewListerGlobal(resource.Webhook, tableName, webhookColumns),
 		listerGlobalOrderedByCreatedAt: repo.NewListerGlobalWithOrderBy(resource.Webhook, tableName, webhookColumns, repo.OrderByParams{
 			{
 				Field: "created_at",
@@ -156,6 +159,55 @@ func (r *repository) ListByReferenceObjectTypeAndWebhookType(ctx context.Context
 
 	if err := r.lister.List(ctx, objType.GetResourceType(), tenant, &entities, conditions...); err != nil {
 		return nil, err
+	}
+
+	return convertToWebhooks(entities, r)
+}
+
+// ListByReferenceObjectTypesAndWebhookType lists all webhooks of a given type for a given object types
+func (r *repository) ListByReferenceObjectTypesAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objTypes []model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
+	var entities Collection
+
+	objTypesConditions := repo.Conditions{}
+	for _, objType := range objTypes {
+		refColumn, err := getReferenceColumnForListByReferenceObjectType(objType)
+		if err != nil {
+			return nil, err
+		}
+		objTypesConditions = append(objTypesConditions, repo.NewNotNullCondition(refColumn))
+	}
+
+	conditions := repo.And(
+		append(
+			repo.ConditionTreesFromConditions(
+				[]repo.Condition{
+					repo.NewEqualCondition("type", whType),
+				},
+			),
+			repo.Or(repo.ConditionTreesFromConditions(
+				objTypesConditions,
+			)...),
+		)...,
+	)
+
+	if err := r.conditionTreeLister.ListConditionTree(ctx, resource.Webhook, tenant, &entities, conditions); err != nil {
+		return nil, err
+	}
+
+	if containsWebhookType(objTypes, model.ApplicationTemplateWebhookReference) {
+		var appTemplateWebhooks Collection
+
+		refColumn, err := getReferenceColumnForListByReferenceObjectType(model.ApplicationTemplateWebhookReference)
+		if err != nil {
+			return nil, err
+		}
+		conditionsForAppTemplate := repo.NewNotNullCondition(refColumn)
+
+		if err := r.listerGlobal.ListGlobal(ctx, &appTemplateWebhooks, conditionsForAppTemplate); err != nil {
+			return nil, err
+		}
+
+		entities = append(entities, appTemplateWebhooks...)
 	}
 
 	return convertToWebhooks(entities, r)
@@ -306,7 +358,18 @@ func getReferenceColumnForListByReferenceObjectType(objType model.WebhookReferen
 		return runtimeID, nil
 	case model.FormationTemplateWebhookReference:
 		return formationTemplateID, nil
+	case model.ApplicationTemplateWebhookReference:
+		return applicationTemplateID, nil
 	default:
 		return "", errors.New("referenced object should be one of application, runtime or formation template")
 	}
+}
+
+func containsWebhookType(objTypes []model.WebhookReferenceObjectType, objType model.WebhookReferenceObjectType) bool {
+	for _, t := range objTypes {
+		if t == objType {
+			return true
+		}
+	}
+	return false
 }

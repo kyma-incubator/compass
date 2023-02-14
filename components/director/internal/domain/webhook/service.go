@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
