@@ -239,7 +239,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 		resourceIDToWebhookMapping[webhook.ObjectID] = webhook
 	}
 
-	//list applications that either have WebhookTypeApplicationTenantMapping webhook or their applicationTemplate has WebhookTypeApplicationTenantMapping webhook
+	// list applications that either have WebhookTypeApplicationTenantMapping webhook or their applicationTemplate has WebhookTypeApplicationTenantMapping webhook
 	listeningApps, err := ns.applicationRepository.ListListeningApplications(ctx, model.WebhookTypeApplicationTenantMapping)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing listening applications")
@@ -286,7 +286,6 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 		log.C(ctx).Infof("There are %d applications in formation %s. Notification will be sent about them to application with id %s that is being %s.", appsInFormationCountExcludingAppCurrentlyAssigned, formation.Name, appID, operation)
 
 		for _, sourceApp := range applicationsInFormationMapping {
-
 			if sourceApp.ID == appID {
 				continue // Do not notify about itself
 			}

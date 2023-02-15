@@ -26,16 +26,6 @@ const (
 )
 
 var (
-	expectedFormation = model.Formation{
-		ID:                  fixUUID(),
-		Name:                testFormationName,
-		FormationTemplateID: FormationTemplateID,
-		TenantID:            Tnt,
-	}
-
-	emptyRuntimeContextWithLabels *webhook.RuntimeContextWithLabels
-	emptyAppTemplateWithLabels    *webhook.ApplicationTemplateWithLabels
-
 	applicationMappings = map[string]*webhook.ApplicationWithLabels{
 		ApplicationID: {
 			Application: fixApplicationModel(ApplicationID),
@@ -76,10 +66,6 @@ var (
 		},
 	}
 )
-
-func fixUUID() string {
-	return FormationID
-}
 
 func fixApplicationLabelsMap() map[string]interface{} {
 	return map[string]interface{}{
