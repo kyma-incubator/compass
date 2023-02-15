@@ -16,6 +16,7 @@ type formationConstraintRepository interface {
 	ListAll(ctx context.Context) ([]*model.FormationConstraint, error)
 	ListByIDs(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error)
 	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, model *model.FormationConstraint) error
 	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
 }
 
@@ -125,4 +126,14 @@ func (s *service) ListMatchingConstraints(ctx context.Context, formationTemplate
 	}
 
 	return constraints, nil
+}
+
+// Update updates a FormationConstraint matching ID `id` using `in`
+func (s *service) Update(ctx context.Context, id string, in *model.FormationConstraintInput) error {
+	err := s.repo.Update(ctx, s.converter.FromModelInputToModel(in, id))
+	if err != nil {
+		return errors.Wrapf(err, "while updating Formation Constraint with ID %s", id)
+	}
+
+	return nil
 }

@@ -439,3 +439,81 @@ func TestService_ListMatchingConstraints(t *testing.T) {
 		})
 	}
 }
+
+func TestService_Update(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+
+	testErr := errors.New("test error")
+
+	testCases := []struct {
+		Name                          string
+		Context                       context.Context
+		InputConstraintTemplate       *model.FormationConstraintInput
+		FormationConstraintRepository func() *automock.FormationConstraintRepository
+		FormationConstraintConverter  func() *automock.FormationConstraintConverter
+		ExpectedErrorMessage          string
+	}{
+		{
+			Name:                    "Success",
+			Context:                 ctx,
+			InputConstraintTemplate: formationConstraintModelInput,
+			FormationConstraintRepository: func() *automock.FormationConstraintRepository {
+				repo := &automock.FormationConstraintRepository{}
+				repo.On("Update", ctx, formationConstraintModel).Return(nil).Once()
+				return repo
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("FromModelInputToModel", formationConstraintModelInput, testID).Return(formationConstraintModel).Once()
+
+				return converter
+			},
+			ExpectedErrorMessage: "",
+		},
+		{
+			Name:                    "Error when updating fails",
+			Context:                 ctx,
+			InputConstraintTemplate: formationConstraintModelInput,
+			FormationConstraintRepository: func() *automock.FormationConstraintRepository {
+				repo := &automock.FormationConstraintRepository{}
+				repo.On("Update", ctx, formationConstraintModel).Return(testErr).Once()
+				return repo
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("FromModelInputToModel", formationConstraintModelInput, testID).Return(formationConstraintModel).Once()
+
+				return converter
+			},
+			ExpectedErrorMessage: "while updating Formation Constraint with ID",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := UnusedFormationConstraintRepository()
+			if testCase.FormationConstraintRepository != nil {
+				repo = testCase.FormationConstraintRepository()
+			}
+			conv := UnusedFormationConstraintConverter()
+			if testCase.FormationConstraintConverter != nil {
+				conv = testCase.FormationConstraintConverter()
+			}
+			svc := formationconstraint.NewService(repo, nil, nil, conv)
+
+			// WHEN
+			err := svc.Update(testCase.Context, testID, testCase.InputConstraintTemplate)
+
+			// THEN
+			if testCase.ExpectedErrorMessage != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorMessage)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo, conv)
+		})
+	}
+}
