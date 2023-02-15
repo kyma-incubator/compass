@@ -16,6 +16,7 @@ import (
 )
 
 // BusinessTenantMappingService is responsible for the service-layer tenant operations.
+//
 //go:generate mockery --name=BusinessTenantMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingService interface {
 	CreateTenantAccessForResource(ctx context.Context, tenantID, resourceID string, isOwner bool, resourceType resource.Type) error
@@ -26,6 +27,7 @@ type BusinessTenantMappingService interface {
 }
 
 // ApplicationService is responsible for the service-layer application operations.
+//
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	ListAll(ctx context.Context) ([]*model.Application, error)
@@ -145,7 +147,7 @@ func (d *directive) createTenantAccessForNewApplication(ctx context.Context, tnt
 	}
 
 	for _, tenant := range tenants {
-		if err := d.tenantService.CreateTenantAccessForResource(ctx, tenant.ID, appID, false, resource.Application); err != nil {
+		if err := d.tenantService.CreateTenantAccessForResource(ctx, tenant.ID, appID, true, resource.Application); err != nil {
 			log.C(ctx).WithError(err).Errorf("An error occurred while creating tenant access for tenant %s and application %s", tenant.ID, appID)
 			return errors.Wrap(err, "while creating tenant access")
 		}

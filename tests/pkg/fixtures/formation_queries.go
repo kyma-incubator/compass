@@ -74,7 +74,7 @@ func DeleteFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *g
 	var deleteFormation graphql.Formation
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, &deleteFormation)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
-	t.Logf("Deleted formation with name: %s", deleteFormation.Name)
+	t.Logf("Deleted formation with name: %q", formationName)
 
 	return &deleteFormation
 }

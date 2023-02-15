@@ -27,7 +27,7 @@ import (
 
 func TestServiceUnassignFormation(t *testing.T) {
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
+	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
 	testErr := errors.New("test error")
 	transactionError := errors.New("transaction error")
@@ -42,7 +42,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{ID: "id1"},
 	}
 
-	requests := []*webhookclient.NotificationRequest{
+	requests := []*webhookclient.FormationAssignmentNotificationRequest{
 		{
 			Webhook:       graphql.Webhook{},
 			Object:        nil,
@@ -66,18 +66,18 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ID:                  fixUUID(),
 		Name:                testFormationName,
 		FormationTemplateID: FormationTemplateID,
-		TenantID:            Tnt,
+		TenantID:            TntInternalID,
 	}
 	secondFormation := model.Formation{
 		ID:                  fixUUID(),
 		Name:                secondTestFormationName,
 		FormationTemplateID: FormationTemplateID,
-		TenantID:            Tnt,
+		TenantID:            TntInternalID,
 	}
 
 	applicationLblSingleFormation := &model.Label{
 		ID:         "123",
-		Tenant:     str.Ptr(Tnt),
+		Tenant:     str.Ptr(TntInternalID),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormationName},
 		ObjectID:   ApplicationID,
@@ -86,7 +86,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 	}
 	applicationLbl := &model.Label{
 		ID:         "123",
-		Tenant:     str.Ptr(Tnt),
+		Tenant:     str.Ptr(TntInternalID),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormationName, secondTestFormationName},
 		ObjectID:   ApplicationID,
@@ -103,7 +103,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 
 	runtimeLblSingleFormation := &model.Label{
 		ID:         "123",
-		Tenant:     str.Ptr(Tnt),
+		Tenant:     str.Ptr(TntInternalID),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormationName},
 		ObjectID:   RuntimeID,
@@ -112,7 +112,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 	}
 	runtimeLbl := &model.Label{
 		ID:         "123",
-		Tenant:     str.Ptr(Tnt),
+		Tenant:     str.Ptr(TntInternalID),
 		Key:        model.ScenariosKey,
 		Value:      []interface{}{testFormationName, secondTestFormationName},
 		ObjectID:   RuntimeID,
@@ -128,7 +128,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 	}
 	asa := model.AutomaticScenarioAssignment{
 		ScenarioName:   testFormationName,
-		Tenant:         Tnt,
+		Tenant:         TntInternalID,
 		TargetTenantID: TargetTenant,
 	}
 	expectedFormationTemplate := &model.FormationTemplate{
@@ -147,7 +147,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ID:         "123",
 		Key:        applicationType,
 		Value:      applicationType,
-		Tenant:     str.Ptr(Tnt),
+		Tenant:     str.Ptr(TntInternalID),
 		ObjectID:   ApplicationID,
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
@@ -162,7 +162,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ID:         "123",
 		Key:        runtimeType,
 		Value:      runtimeType,
-		Tenant:     str.Ptr(Tnt),
+		Tenant:     str.Ptr(TntInternalID),
 		ObjectID:   RuntimeID,
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
@@ -196,9 +196,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -210,7 +210,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -223,7 +223,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -248,16 +248,16 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Twice()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Twice()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
 				}).Return(nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName, secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -269,7 +269,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -287,7 +287,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
@@ -307,9 +307,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -320,14 +320,14 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			LabelRepoFn:          unusedLabelRepo,
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -359,25 +359,25 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
 
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLblSingleFormation, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLblSingleFormation, nil).Once()
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Delete", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID, model.ScenariosKey).Return(nil).Once()
+				repo.On("Delete", ctx, TntInternalID, model.ApplicationLabelableObject, ApplicationID, model.ScenariosKey).Return(nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -409,9 +409,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -422,13 +422,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -466,16 +466,16 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Twice()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Twice()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Twice()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Twice()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
 				}).Return(nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName, secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -486,13 +486,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -529,12 +529,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "success for runtime when formation is coming from ASA",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -551,7 +551,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					FormationType:       "formation-template",
 					FormationTemplateID: FormationTemplateID,
 					FormationID:         FormationID,
-					TenantID:            Tnt,
+					TenantID:            TntInternalID,
 				}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, details, FormationTemplateID).Return(nil).Once()
 				engine.On("EnforceConstraints", ctx, postUnassignLocation, details, FormationTemplateID).Return(nil).Once()
@@ -573,15 +573,15 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
 				}).Return(runtimeLblSingleFormation, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName},
 					ObjectID:   RuntimeID,
@@ -592,18 +592,18 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, secondTestFormationName, Tnt).Return(&secondFormation, nil).Once()
+				formationRepo.On("GetByName", ctx, secondTestFormationName, TntInternalID).Return(&secondFormation, nil).Once()
 				return formationRepo
 			},
 			LabelRepoFn: unusedLabelRepo,
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, Tnt, []string{}).Return(nil, nil).Once()
+				repo.On("ListByIDs", ctx, TntInternalID, []string{}).Return(nil, nil).Once()
 				return repo
 			},
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, &secondFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, &secondFormation, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -627,7 +627,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					FormationType:       "formation-template",
 					FormationTemplateID: FormationTemplateID,
 					FormationID:         FormationID,
-					TenantID:            Tnt,
+					TenantID:            TntInternalID,
 				}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, details, FormationTemplateID).Return(nil).Once()
 				engine.On("EnforceConstraints", ctx, postUnassignLocation, details, FormationTemplateID).Return(nil).Once()
@@ -649,28 +649,28 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLblSingleFormation, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLblSingleFormation, nil).Once()
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("Delete", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID, model.ScenariosKey).Return(nil).Once()
+				repo.On("Delete", ctx, TntInternalID, model.RuntimeLabelableObject, RuntimeID, model.ScenariosKey).Return(nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, Tnt, []string{}).Return(nil, nil).Once()
+				repo.On("ListByIDs", ctx, TntInternalID, []string{}).Return(nil, nil).Once()
 				return repo
 			},
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -694,7 +694,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					FormationType:       "formation-template",
 					FormationTemplateID: FormationTemplateID,
 					FormationID:         FormationID,
-					TenantID:            Tnt,
+					TenantID:            TntInternalID,
 				}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, details, FormationTemplateID).Return(nil).Once()
 				engine.On("EnforceConstraints", ctx, postUnassignLocation, details, FormationTemplateID).Return(nil).Once()
@@ -716,7 +716,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 
-				asaRepo.On("DeleteForScenarioName", ctx, Tnt, testFormationName).Return(nil).Once()
+				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(nil).Once()
 
 				return asaRepo
 			},
@@ -732,7 +732,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -761,13 +761,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for application while getting label",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(nil, testErr).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(nil, testErr).Once()
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -789,8 +789,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for application while converting label values to string slice",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName},
 					ObjectID:   ApplicationID,
@@ -798,7 +798,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					Version:    0,
 				}).Return(&model.Label{
 					ID:         "123",
-					Tenant:     str.Ptr(Tnt),
+					Tenant:     str.Ptr(TntInternalID),
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName},
 					ObjectID:   ApplicationID,
@@ -809,7 +809,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -831,10 +831,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for application while converting label value to string",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(&model.Label{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(&model.Label{
 					ID:         "123",
-					Tenant:     str.Ptr(Tnt),
+					Tenant:     str.Ptr(TntInternalID),
 					Key:        model.ScenariosKey,
 					Value:      []interface{}{5},
 					ObjectID:   ApplicationID,
@@ -845,7 +845,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -867,18 +867,18 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for application when formation is last and delete fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLblSingleFormation, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLblSingleFormation, nil).Once()
 				return labelService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Delete", ctx, Tnt, model.ApplicationLabelableObject, ApplicationID, model.ScenariosKey).Return(testErr).Once()
+				labelRepo.On("Delete", ctx, TntInternalID, model.ApplicationLabelableObject, ApplicationID, model.ScenariosKey).Return(testErr).Once()
 				return labelRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -900,9 +900,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for application when updating label fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -913,7 +913,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -935,12 +935,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime when fails to check if formations are coming from ASAs",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -968,13 +968,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime while getting label",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(nil, testErr).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(nil, testErr).Once()
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1001,8 +1001,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime while converting label values to string slice",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName},
 					ObjectID:   RuntimeID,
@@ -1010,7 +1010,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					Version:    0,
 				}).Return(&model.Label{
 					ID:         "123",
-					Tenant:     str.Ptr(Tnt),
+					Tenant:     str.Ptr(TntInternalID),
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName},
 					ObjectID:   RuntimeID,
@@ -1021,7 +1021,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1048,10 +1048,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime while converting label value to string",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(&model.Label{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(&model.Label{
 					ID:         "123",
-					Tenant:     str.Ptr(Tnt),
+					Tenant:     str.Ptr(TntInternalID),
 					Key:        model.ScenariosKey,
 					Value:      []interface{}{5},
 					ObjectID:   RuntimeID,
@@ -1062,7 +1062,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1089,18 +1089,18 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime when formation is last and delete fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLblSingleFormation, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLblSingleFormation, nil).Once()
 				return labelService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Delete", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID, model.ScenariosKey).Return(testErr).Once()
+				labelRepo.On("Delete", ctx, TntInternalID, model.RuntimeLabelableObject, RuntimeID, model.ScenariosKey).Return(testErr).Once()
 				return labelRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1127,18 +1127,18 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime when formation is last and delete fails with not found",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLblSingleFormation, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLblSingleFormation, nil).Once()
 				return labelService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("Delete", ctx, Tnt, model.RuntimeLabelableObject, RuntimeID, model.ScenariosKey).Return(apperrors.NewNotFoundErrorWithType(resource.Formations)).Once()
+				labelRepo.On("Delete", ctx, TntInternalID, model.RuntimeLabelableObject, RuntimeID, model.ScenariosKey).Return(apperrors.NewNotFoundErrorWithType(resource.Formations)).Once()
 				return labelRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1166,9 +1166,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime when updating label fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -1179,7 +1179,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1207,7 +1207,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 
-				asaRepo.On("DeleteForScenarioName", ctx, Tnt, testFormationName).Return(testErr).Once()
+				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(testErr).Once()
 
 				return asaRepo
 			},
@@ -1223,7 +1223,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1260,7 +1260,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1282,7 +1282,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error when fetching formation fails",
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(nil, testErr).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(nil, testErr).Once()
 				return formationRepo
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -1295,7 +1295,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error when object type is unknown",
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1311,9 +1311,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for application if generating notifications fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1325,12 +1325,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			NotificationServiceFN: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(nil, testErr).Once()
+				notificationSvc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(nil, testErr).Once()
 				return notificationSvc
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1352,9 +1352,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime if generating notifications fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -1365,12 +1365,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			NotificationServiceFN: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, testErr).Once()
+				notificationSvc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(nil, testErr).Once()
 				return notificationSvc
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1398,9 +1398,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for application if listing formation assignments for formation fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil)
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1418,7 +1418,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1441,9 +1441,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1455,7 +1455,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1468,7 +1468,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1492,9 +1492,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1506,7 +1506,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1518,7 +1518,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1541,9 +1541,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1555,7 +1555,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1568,7 +1568,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1591,10 +1591,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(nil, testErr).Once()
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(nil, testErr).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1606,7 +1606,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1624,7 +1624,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
@@ -1642,11 +1642,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(nil, testErr).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(nil, testErr).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1658,7 +1658,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1676,7 +1676,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
@@ -1694,17 +1694,17 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Twice()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Twice()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
 				}).Return(nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName, secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1716,7 +1716,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1734,7 +1734,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 
@@ -1753,9 +1753,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1767,7 +1767,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1779,7 +1779,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1801,9 +1801,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for application if listing runtime contexts fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -1814,12 +1814,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", mock.Anything, Tnt, []string{}).Return(nil, testErr).Once()
+				repo.On("ListByIDs", mock.Anything, TntInternalID, []string{}).Return(nil, testErr).Once()
 				return repo
 			},
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1830,7 +1830,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -1852,9 +1852,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime if listing runtime contexts fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -1865,17 +1865,17 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", mock.Anything, Tnt, []string{}).Return(nil, testErr).Once()
+				repo.On("ListByIDs", mock.Anything, TntInternalID, []string{}).Return(nil, testErr).Once()
 				return repo
 			},
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1908,9 +1908,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			Name: "error for runtime if listing formation assignments for formation fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -1921,12 +1921,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -1960,9 +1960,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -1973,13 +1973,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2016,9 +2016,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -2029,13 +2029,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2070,9 +2070,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -2083,13 +2083,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2125,10 +2125,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(nil, testErr).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(nil, testErr).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -2139,7 +2139,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2150,7 +2150,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2181,11 +2181,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(nil, testErr).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(nil, testErr).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -2196,7 +2196,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2207,7 +2207,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2238,17 +2238,17 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Twice()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Twice()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
 				}).Return(nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormationName, secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -2259,7 +2259,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2270,7 +2270,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2301,9 +2301,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -2314,13 +2314,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2355,9 +2355,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatFailsOnBegin,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -2369,7 +2369,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2380,7 +2380,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2404,9 +2404,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatFailsOnBegin,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
+				labelService.On("GetLabel", ctx, TntInternalID, runtimeLblInput).Return(runtimeLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   RuntimeID,
@@ -2417,13 +2417,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, RuntimeID, expected, model.UnassignFormation, graphql.FormationObjectTypeRuntime).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2458,9 +2458,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil).Once()
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, applicationLblInput).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormationName},
 					ObjectID:   ApplicationID,
@@ -2472,7 +2472,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			NotificationServiceFN: func() *automock.NotificationsService {
 				svc := &automock.NotificationsService{}
-				svc.On("GenerateNotifications", ctx, Tnt, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
+				svc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expected, model.UnassignFormation, graphql.FormationObjectTypeApplication).Return(requests, nil).Once()
 				return svc
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2485,7 +2485,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			LabelRepoFn: unusedLabelRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2510,12 +2510,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2539,12 +2539,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(nil, testErr)
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(nil, testErr)
 				return labelService
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2627,7 +2627,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			svc := formation.NewServiceWithAsaEngine(transact, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine)
 
 			// WHEN
-			actual, err := svc.UnassignFormation(ctx, Tnt, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
+			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

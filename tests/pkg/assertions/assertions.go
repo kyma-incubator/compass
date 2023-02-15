@@ -61,6 +61,7 @@ func AssertWebhooks(t *testing.T, in []*graphql.WebhookInput, actual []graphql.W
 				found = true
 				assert.NotNil(t, actWh.ID)
 				assert.Equal(t, inWh.Type, actWh.Type)
+
 				AssertAuth(t, inWh.Auth, actWh.Auth)
 			}
 		}
