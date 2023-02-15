@@ -25,6 +25,7 @@ type formationConstraintService interface {
 	List(ctx context.Context) ([]*model.FormationConstraint, error)
 	ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationConstraint, error)
 	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, id string, in *model.FormationConstraintInput) error
 }
 
 // Resolver is the FormationConstraint resolver
@@ -164,6 +165,57 @@ func (r *Resolver) DeleteFormationConstraint(ctx context.Context, id string) (*g
 	}
 
 	err = r.svc.Delete(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.converter.ToGraphQL(formationConstraint), nil
+}
+
+// UpdateFormationConstraint updates the FormationConstraint matching ID `id` using `in`
+func (r *Resolver) UpdateFormationConstraint(ctx context.Context, id string, in graphql.FormationConstraintUpdateInput) (*graphql.FormationConstraint, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	currentConstraint, err := r.svc.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// constraintType and targetOperation are needed for the template validation
+	updatedConstraintInput := &graphql.FormationConstraintInput{
+		Name:            currentConstraint.Name,
+		ConstraintType:  graphql.ConstraintType(currentConstraint.ConstraintType),
+		TargetOperation: graphql.TargetOperation(currentConstraint.TargetOperation),
+		Operator:        currentConstraint.Operator,
+		ResourceType:    graphql.ResourceType(currentConstraint.ResourceType),
+		ResourceSubtype: currentConstraint.ResourceSubtype,
+		InputTemplate:   in.InputTemplate,
+		ConstraintScope: graphql.ConstraintScope(currentConstraint.ConstraintScope),
+	}
+
+	if err = updatedConstraintInput.Validate(); err != nil {
+		return nil, err
+	}
+
+	convertedIn := r.converter.FromInputGraphQL(updatedConstraintInput)
+
+	err = r.svc.Update(ctx, id, convertedIn)
+	if err != nil {
+		return nil, err
+	}
+
+	formationConstraint, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
