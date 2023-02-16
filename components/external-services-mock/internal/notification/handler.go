@@ -58,6 +58,8 @@ type RequestBody struct {
 type ConfigurationState string
 
 const ReadyConfigurationState ConfigurationState = "READY"
+const CreateErrorConfigurationState ConfigurationState = "CREATE_ERROR"
+const DeleteErrorConfigurationState ConfigurationState = "DELETE_ERROR"
 
 type Handler struct {
 	// mappings is a map of string to Response, where the string value currently can be `formationID` or `tenantID`
@@ -286,14 +288,45 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		err := h.executeStatusUpdateRequest(client, ReadyConfigurationState, config, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
+		}
+	}
+	h.asyncResponse(writer, r, Assign, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, responseFunc)
+
+	writer.WriteHeader(http.StatusAccepted)
+}
+
+func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
+	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		err := h.executeStatusUpdateRequest(client, ReadyConfigurationState, config, formationID, formationAssignmentID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
+		}
+	}
+	h.asyncResponse(writer, r, Unassign, "", responseFunc)
+}
+
+func (h *Handler) AsyncNoResponseAssign(writer http.ResponseWriter, r *http.Request) {
+	h.asyncResponse(writer, r, Assign, "", func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {})
+}
+
+func (h *Handler) AsyncNoResponseUnassign(writer http.ResponseWriter, r *http.Request) {
+	h.asyncResponse(writer, r, Unassign, "", func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {})
+}
+
+func (h *Handler) asyncResponse(writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string)) {
 	ctx := r.Context()
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
 		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
 		return
 	}
-
-	if _, ok = h.mappings[id]; !ok {
+	if _, ok := h.mappings[id]; !ok {
 		h.mappings[id] = make([]Response, 0, 1)
 	}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
@@ -307,11 +340,21 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
 		return
 	}
-	mappings := h.mappings[id]
-	mappings = append(h.mappings[id], Response{
-		Operation:   Assign,
+	response := Response{
+		Operation:   operation,
 		RequestBody: bodyBytes,
-	})
+	}
+	if r.Method == http.MethodDelete {
+		applicationId, ok := mux.Vars(r)["applicationId"]
+		if !ok {
+			httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
+			return
+		}
+		response.ApplicationID = &applicationId
+	}
+
+	mappings := h.mappings[id]
+	mappings = append(h.mappings[id], response)
 	h.mappings[id] = mappings
 
 	formationID := gjson.Get(string(bodyBytes), "ucl-formation-id").String()
@@ -332,76 +375,40 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go func() {
-		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`, formationID, formationAssignmentID)
-		if err != nil {
-			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
-		}
-	}()
+	go responseFunc(ctx, certAuthorizedHTTPClient, formationID, formationAssignmentID, config)
 
 	writer.WriteHeader(http.StatusAccepted)
 }
 
-func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	id, ok := mux.Vars(r)["tenantId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
-		return
+func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
+	operation := Assign
+	if r.Method == http.MethodPatch {
+		operation = Assign
+	} else if r.Method == http.MethodDelete {
+		operation = Unassign
 	}
-	applicationId, ok := mux.Vars(r)["applicationId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
-		return
-	}
-
-	if _, ok := h.mappings[id]; !ok {
-		h.mappings[id] = make([]Response, 0, 1)
-	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	}
-
-	h.mappings[id] = append(h.mappings[id], Response{
-		Operation:     Unassign,
-		ApplicationID: &applicationId,
-		RequestBody:   bodyBytes,
-	})
-
-	formationID := gjson.Get(string(bodyBytes), "ucl-formation-id").String()
-	if formationID == "" {
-		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation ID"))
-		return
-	}
-
-	formationAssignmentID := gjson.Get(string(bodyBytes), "formation-assignment-id").String()
-	if formationAssignmentID == "" {
-		httputils.RespondWithError(ctx, writer, 500, errors.New("Missing formation assignment ID"))
-		return
-	}
-
-	certAuthorizedHTTPClient, err := h.getCertAuthorizedHTTPClient(ctx)
-	if err != nil {
-		httputils.RespondWithError(ctx, writer, 500, err)
-		return
-	}
-
-	go func() {
+	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err = h.executeStatusUpdateRequest(certAuthorizedHTTPClient, ReadyConfigurationState, "", formationID, formationAssignmentID)
+		state := ReadyConfigurationState
+		if operation == Assign && h.shouldReturnError {
+			state = CreateErrorConfigurationState
+			h.shouldReturnError = false
+		} else if operation == Unassign && h.shouldReturnError {
+			state = DeleteErrorConfigurationState
+			h.shouldReturnError = false
+		}
+		err := h.executeStatusUpdateRequest(client, state, config, formationID, formationAssignmentID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
 		}
-	}()
+	}
+	if h.shouldReturnError {
+		config := "test error"
+		h.asyncResponse(writer, r, operation, config, responseFunc)
+	} else {
+		config := `{"asyncKey": "asyncValue", "asyncKey2": {"asyncNestedKey": "asyncNestedValue"}}`
+		h.asyncResponse(writer, r, operation, config, responseFunc)
+	}
 
 	writer.WriteHeader(http.StatusAccepted)
 }
@@ -554,7 +561,12 @@ func (h *Handler) executeStatusUpdateRequest(certSecuredHTTPClient *http.Client,
 		State: state,
 	}
 	if testConfig != "" {
-		reqBody.Configuration = json.RawMessage(testConfig)
+		if state == CreateErrorConfigurationState || state == DeleteErrorConfigurationState {
+			reqBody.Error = testConfig
+		}
+		if state == ReadyConfigurationState {
+			reqBody.Configuration = json.RawMessage(testConfig)
+		}
 	}
 	marshalBody, err := json.Marshal(reqBody)
 	if err != nil {
