@@ -179,3 +179,29 @@ func TestRepository_Delete(t *testing.T) {
 
 	suite.Run(t)
 }
+
+func TestRepository_Update(t *testing.T) {
+	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_constraints SET input_template = ? WHERE id = ?`)
+	suite := testdb.RepoUpdateTestSuite{
+		Name: "Update Formation Constraint By ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         updateStmt,
+				Args:          []driver.Value{entity.InputTemplate, entity.ID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		RepoConstructorFunc: formationconstraint.NewRepository,
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ModelEntity:               formationConstraintModel,
+		DBEntity:                  &entity,
+		NilModelEntity:            nilModelEntity,
+		DisableConverterErrorTest: true,
+		IsGlobal:                  true,
+	}
+
+	suite.Run(t)
+}
