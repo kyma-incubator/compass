@@ -129,12 +129,14 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 	if err != nil {
 		return err
 	}
+
+	log.C(ctx).Infof("Number of webhooks: %d", len(ordWebhooks))
 	for _, w := range ordWebhooks {
 		if w.ObjectType == model.ApplicationTemplateWebhookReference {
-			log.C(ctx).Infof("Application with id %s", w.ObjectID)
+			log.C(ctx).Infof("Application Template with id %s", w.ObjectID)
 		}
 		if w.ObjectType == model.ApplicationWebhookReference {
-			log.C(ctx).Infof("Application Template with id %s", w.ObjectID)
+			log.C(ctx).Infof("Application with id %s", w.ObjectID)
 		}
 	}
 
