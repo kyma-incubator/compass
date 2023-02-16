@@ -108,6 +108,17 @@ func CleanupFormationWithTenantObjectType(t require.TestingT, ctx context.Contex
 	return &formation
 }
 
+func ResynchronizeFormationNotifications(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID string) *graphql.Formation {
+	resynchronizeRequest := FixResynchronizeFormationNotificationsRequest(formationID)
+
+	formation := graphql.Formation{}
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, resynchronizeRequest, &formation)
+	require.NoError(t, err)
+
+	return &formation
+}
+
 func AssignFormationWithApplicationObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, appID, tenantID string) *graphql.Formation {
 	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID)
 }
