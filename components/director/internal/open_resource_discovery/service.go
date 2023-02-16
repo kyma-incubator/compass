@@ -129,6 +129,14 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 	if err != nil {
 		return err
 	}
+	for _, w := range ordWebhooks {
+		if w.ObjectType == model.ApplicationTemplateWebhookReference {
+			log.C(ctx).Infof("Application with id %s", w.ObjectID)
+		}
+		if w.ObjectType == model.ApplicationWebhookReference {
+			log.C(ctx).Infof("Application Template with id %s", w.ObjectID)
+		}
+	}
 
 	queue := make(chan *model.Webhook)
 	var webhookErrors = int32(0)
@@ -1244,6 +1252,7 @@ func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID stri
 }
 
 func (s *Service) processApplicationWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
+	log.C(ctx).Infof("Starting processing of Application with id %q", appID)
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
