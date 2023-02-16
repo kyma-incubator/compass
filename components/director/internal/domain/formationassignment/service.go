@@ -175,10 +175,6 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 // GetAssignmentsForFormationWithStates retrieves formation assignments matching formation ID `formationID` and with state among `states` for tenant with ID `tenantID`
 // TODO: Unit Test
 func (s *service) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error) {
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
 	formationAssignments, err := s.repo.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID, states)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation assignments with error states for formation with ID: %q and tenant: %q", formationID, tenantID)
