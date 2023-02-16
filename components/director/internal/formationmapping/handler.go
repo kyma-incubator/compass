@@ -31,11 +31,17 @@ type malformedRequest struct {
 	msg    string
 }
 
-// RequestBody contains the request input of the formation mapping async request
-type RequestBody struct {
+// FormationAssignmentRequestBody contains the request input of the formation assignment async status request
+type FormationAssignmentRequestBody struct {
 	State         model.FormationAssignmentState `json:"state"`
 	Configuration json.RawMessage                `json:"configuration,omitempty"`
 	Error         string                         `json:"error,omitempty"`
+}
+
+// FormationRequestBody contains the request input of the formation async status request
+type FormationRequestBody struct {
+	State model.FormationState `json:"state"`
+	Error string               `json:"error,omitempty"`
 }
 
 // Handler is the base struct definition of the FormationMappingHandler
@@ -58,13 +64,13 @@ func NewFormationMappingHandler(transact persistence.Transactioner, faConverter 
 	}
 }
 
-// UpdateStatus handles asynchronous formation mapping update operations
-func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+// UpdateFormationAssignmentStatus handles asynchronous formation mapping update operations
+func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
-	var reqBody RequestBody
+	var reqBody FormationAssignmentRequestBody
 	err := decodeJSONBody(w, r, &reqBody)
 	if err != nil {
 		var mr *malformedRequest
@@ -78,7 +84,7 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.C(ctx).Info("Validating request body...")
+	log.C(ctx).Info("Validating formation assignment request body...")
 	if err = reqBody.Validate(); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while validating the request body")
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Request Body contains invalid input: %s. X-Request-Id: %s", err.Error(), correlationID))
@@ -240,6 +246,61 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	httputils.Respond(w, http.StatusOK)
 }
 
+func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
+
+	var reqBody FormationRequestBody
+	err := decodeJSONBody(w, r, &reqBody)
+	if err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			log.C(ctx).Error(mr.msg)
+			respondWithError(ctx, w, mr.status, mr)
+		} else {
+			log.C(ctx).Error(err.Error())
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		}
+		return
+	}
+
+	log.C(ctx).Info("Validating formation request body...")
+	if err = reqBody.Validate(); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while validating the request body")
+		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Request Body contains invalid input: %s. X-Request-Id: %s", err.Error(), correlationID))
+		return
+	}
+
+	routeVars := mux.Vars(r)
+	formationID := routeVars[FormationIDParam]
+
+	if formationID == "" {
+		log.C(ctx).Errorf("Missing required parameters: %q", FormationIDParam)
+		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Not all of the required parameters are provided. X-Request-Id: %s", correlationID))
+		return
+	}
+
+	tx, err := h.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Error("unable to establish connection with database")
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	// todo:: implement business logic here
+
+	if err = tx.Commit(); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+	}
+
+	log.C(ctx).Info("The formation status update was successfully processed")
+	httputils.Respond(w, http.StatusOK)
+}
+
 func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *model.FormationAssignment) error {
 	unassignTx, err := h.transact.Begin()
 	if err != nil {
@@ -282,8 +343,8 @@ func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(
 	return nil
 }
 
-// Validate validates the request body input
-func (b RequestBody) Validate() error {
+// Validate validates the formation assignment's request body input
+func (b FormationAssignmentRequestBody) Validate() error {
 	var fieldRules []*validation.FieldRules
 	fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyAssignmentState, model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState, model.ConfigPendingAssignmentState)))
 
@@ -300,8 +361,20 @@ func (b RequestBody) Validate() error {
 	return nil
 }
 
+// Validate validates the formation's request body input
+func (b FormationRequestBody) Validate() error {
+	var fieldRules []*validation.FieldRules
+	fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyFormationState, model.CreateErrorFormationState, model.DeleteErrorFormationState)))
+
+	if b.Error != "" {
+		fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.CreateErrorFormationState, model.DeleteErrorFormationState)))
+	}
+
+	return validation.ValidateStruct(&b, fieldRules...)
+}
+
 // processFormationAssignmentAsynchronousUnassign handles the async unassign formation assignment status update
-func (h *Handler) processFormationAssignmentAsynchronousUnassign(ctx context.Context, fa *model.FormationAssignment, reqBody RequestBody) (bool, error) {
+func (h *Handler) processFormationAssignmentAsynchronousUnassign(ctx context.Context, fa *model.FormationAssignment, reqBody FormationAssignmentRequestBody) (bool, error) {
 	if reqBody.State != model.DeleteErrorAssignmentState && reqBody.State != model.ReadyAssignmentState {
 		return false, errors.Errorf("An invalid state: %q is provided for %s operation", reqBody.State, model.UnassignFormation)
 	}

@@ -94,6 +94,18 @@ type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
+// FormationRepository is responsible for the repo-layer formation operations
+//go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationRepository interface {
+	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
+}
+
+// FormationTemplateRepository is responsible for the repo-layer formation template operations
+//go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationTemplateRepository interface {
+	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
+}
+
 // ErrorResponse structure used for the JSON encoded response
 type ErrorResponse struct {
 	Message string `json:"error"`
@@ -108,6 +120,8 @@ type Authenticator struct {
 	appRepo                    ApplicationRepository
 	appTemplateRepo            ApplicationTemplateRepository
 	labelRepo                  LabelRepository
+	formationRepo              FormationRepository
+	formationTemplateRepo      FormationTemplateRepository
 	consumerSubaccountLabelKey string
 }
 
@@ -120,6 +134,8 @@ func NewFormationMappingAuthenticator(
 	appRepo ApplicationRepository,
 	appTemplateRepo ApplicationTemplateRepository,
 	labelRepo LabelRepository,
+	formationRepo FormationRepository,
+	formationTemplateRepo FormationTemplateRepository,
 	consumerSubaccountLabelKey string,
 ) *Authenticator {
 	return &Authenticator{
@@ -130,12 +146,14 @@ func NewFormationMappingAuthenticator(
 		appRepo:                    appRepo,
 		appTemplateRepo:            appTemplateRepo,
 		labelRepo:                  labelRepo,
+		formationRepo:              formationRepo,
+		formationTemplateRepo:      formationTemplateRepo,
 		consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 	}
 }
 
-// Handler is a handler middleware that executes authorization check for the formation mapping requests
-func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
+// FormationAssignmentHandler is a handler middleware that executes authorization check for the formation assignments requests reporting status
+func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -155,7 +173,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			isAuthorized, statusCode, err := a.isAuthorized(ctx, formationAssignmentID, formationID)
+			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
 				respondWithError(ctx, w, statusCode, errors.New("An unexpected error occurred while processing the request"))
@@ -172,8 +190,95 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	}
 }
 
-// isAuthorized verify through custom logic the caller is authorized to update the formation assignment status
-func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID, formationID string) (bool, int, error) {
+// FormationHandler is a handler middleware that executes authorization check for the formation requests reporting status
+func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			if r.Method != http.MethodPatch {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+
+			routeVars := mux.Vars(r)
+			formationID := routeVars[FormationIDParam]
+
+			if formationID == "" {
+				log.C(ctx).Errorf("Missing required parameters: %q", FormationIDParam)
+				respondWithError(ctx, w, http.StatusBadRequest, errors.New("Not all of the required parameters are provided"))
+				return
+			}
+
+			isAuthorized, statusCode, err := a.isFormationAuthorized(ctx, formationID)
+			if err != nil {
+				log.C(ctx).Error(err.Error())
+				respondWithError(ctx, w, statusCode, errors.New("An unexpected error occurred while processing the request"))
+				return
+			}
+
+			if !isAuthorized {
+				httputils.Respond(w, http.StatusUnauthorized)
+				return
+			}
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID string) (bool, int, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
+	}
+	consumerID := consumerInfo.ConsumerID
+	consumerType := consumerInfo.ConsumerType
+	log.C(ctx).Infof("Consumer with ID: %q and type: %q is trying to update formation with ID: %q", consumerID, consumerType, formationID)
+
+	tx, err := a.transact.Begin()
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrap(err, "Unable to establish connection with database")
+	}
+	defer a.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	internalTenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrap(err, "while loading tenant from context")
+	}
+
+	f, err := a.formationRepo.Get(ctx, formationID, internalTenantID)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation with ID: %q", formationID)
+	}
+
+	ft, err := a.formationTemplateRepo.Get(ctx, f.FormationTemplateID)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation template with ID: %q", f.FormationTemplateID)
+	}
+
+	for _, id := range ft.LeadingProductIDs {
+		if id != nil && *id == consumerID {
+			if err = tx.Commit(); err != nil {
+				log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
+				return false, http.StatusInternalServerError, errors.Wrap(err, "unable to finalize database operation")
+			}
+
+			return true, http.StatusOK, nil
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
+		return false, http.StatusInternalServerError, errors.Wrap(err, "unable to finalize database operation")
+	}
+
+	return false, http.StatusUnauthorized, nil
+}
+
+// isFormationAssignmentAuthorized verify through custom logic the caller is authorized to update the formation assignment status
+func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, formationAssignmentID, formationID string) (bool, int, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")

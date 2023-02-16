@@ -39,6 +39,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
 		Webhooks:               webhooks,
+		LeadingProductIDs:      in.LeadingProductIDs,
 	}, nil
 }
 
@@ -69,6 +70,7 @@ func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id, 
 		RuntimeArtifactKind:    in.RuntimeArtifactKind,
 		TenantID:               tntID,
 		Webhooks:               webhooks,
+		LeadingProductIDs:      in.LeadingProductIDs,
 	}
 }
 
@@ -91,6 +93,7 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) (*graphql.FormationTe
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    graphql.ArtifactType(in.RuntimeArtifactKind),
 		Webhooks:               webhooks,
+		LeadingProductIDs:      in.LeadingProductIDs,
 	}, nil
 }
 
@@ -129,6 +132,10 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling application types")
 	}
+	marshalledLeadingProductIDs, err := json.Marshal(in.LeadingProductIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshalling leading product IDs")
+	}
 
 	return &Entity{
 		ID:                     in.ID,
@@ -137,6 +144,7 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 		RuntimeTypes:           string(marshalledRuntimeTypes),
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    string(in.RuntimeArtifactKind),
+		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(marshalledLeadingProductIDs),
 		TenantID:               repo.NewNullableString(in.TenantID),
 	}, nil
 }
@@ -159,6 +167,12 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		return nil, errors.Wrap(err, "while unmarshalling runtime types")
 	}
 
+	var unmarshalledLeadingProductIDs []*string
+	err = json.Unmarshal(repo.JSONRawMessageFromNullableString(in.LeadingProductIDs), &unmarshalledLeadingProductIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling runtime types")
+	}
+
 	return &model.FormationTemplate{
 		ID:                     in.ID,
 		Name:                   in.Name,
@@ -166,6 +180,7 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		RuntimeTypes:           unmarshalledRuntimeTypes,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
+		LeadingProductIDs:      unmarshalledLeadingProductIDs,
 		TenantID:               repo.StringPtrFromNullableString(in.TenantID),
 	}, nil
 }
