@@ -15,7 +15,6 @@
     - "eventing:manage"
     - "tenant:read"
     - "automatic_scenario_assignment:read"
-    - "automatic_scenario_assignment:write"
     - "application.auths:read"
     - "application.webhooks:read"
     - "application_template.webhooks:read"
