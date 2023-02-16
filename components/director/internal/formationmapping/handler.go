@@ -64,7 +64,7 @@ func NewFormationMappingHandler(transact persistence.Transactioner, faConverter 
 	}
 }
 
-// UpdateFormationAssignmentStatus handles asynchronous formation mapping update operations
+// UpdateFormationAssignmentStatus handles asynchronous formation assignment status updates
 func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -246,6 +246,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	httputils.Respond(w, http.StatusOK)
 }
 
+// UpdateFormationStatus handles asynchronous formation status updates
 func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
