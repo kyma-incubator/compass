@@ -520,6 +520,10 @@ type FormationConstraintInput struct {
 	ConstraintScope ConstraintScope `json:"constraintScope"`
 }
 
+type FormationConstraintUpdateInput struct {
+	InputTemplate string `json:"inputTemplate"`
+}
+
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`
