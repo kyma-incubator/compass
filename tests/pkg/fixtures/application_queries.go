@@ -244,12 +244,11 @@ func GenerateOneTimeTokenForApplicationWithSuggestedToken(t require.TestingT, ct
 	return oneTimeToken
 }
 
-func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string) {
-	labelKey := "scenarios"
-
-	deleteLabelRequest := FixDeleteApplicationLabelRequest(applicationID, labelKey)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteLabelRequest, nil)
-	if err != nil && !strings.Contains(err.Error(), "Object not found") {
-		require.NoError(t, err)
+func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string, scenarios []string) {
+	for _, scenario := range scenarios {
+		fi := graphql.FormationInput{
+			Name: scenario,
+		}
+		CleanupFormation(t, ctx, gqlClient, fi, applicationID, graphql.FormationObjectTypeApplication, tenantID)
 	}
 }

@@ -2481,7 +2481,7 @@ func TestService_Delete(t *testing.T) {
 				return repo
 			},
 			InputID:            id,
-			ExpectedErrMessage: "System foo is still used and cannot be deleted. Unassign the system from the following formations first:",
+			ExpectedErrMessage: "System foo is part of the following formations : Easter",
 		},
 		{
 			Name: "Return error when fails to get application by ID",

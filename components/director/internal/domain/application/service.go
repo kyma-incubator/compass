@@ -1019,7 +1019,7 @@ func (s *service) ensureApplicationNotPartOfAnyScenario(ctx context.Context, ten
 		if err != nil {
 			return errors.Wrapf(err, "while getting application with id %s", appID)
 		}
-		msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s.", application.Name, strings.Join(scenarios, ", "))
+		msg := fmt.Sprintf("System %s is part of the following formations : %s", application.Name, strings.Join(scenarios, ", "))
 		return apperrors.NewInvalidOperationError(msg)
 	}
 
