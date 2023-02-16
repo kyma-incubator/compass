@@ -595,6 +595,13 @@ func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstrai
 	}`)
 }
 
+// FormationConstraintUpdateInputToGQL creates formation constraint update input
+func (g *Graphqlizer) FormationConstraintUpdateInputToGQL(in graphql.FormationConstraintUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		inputTemplate: "{{.InputTemplate}}"
+	}`)
+}
+
 // FormationTemplateConstraintReferenceToGQL missing godoc
 func (g *Graphqlizer) FormationTemplateConstraintReferenceToGQL(in graphql.ConstraintReference) (string, error) {
 	return g.genericToGQL(in, `{

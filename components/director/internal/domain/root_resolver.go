@@ -397,6 +397,10 @@ type queryResolver struct {
 	*RootResolver
 }
 
+func (r *queryResolver) FormationConstraint(ctx context.Context, id string) (*graphql.FormationConstraint, error) {
+	return r.formationConstraint.FormationConstraint(ctx, id)
+}
+
 func (r *queryResolver) FormationConstraints(ctx context.Context) ([]*graphql.FormationConstraint, error) {
 	return r.formationConstraint.FormationConstraints(ctx)
 }
@@ -588,6 +592,10 @@ func (r *queryResolver) CertificateSubjectMappings(ctx context.Context, first *i
 
 type mutationResolver struct {
 	*RootResolver
+}
+
+func (r *mutationResolver) UpdateFormationConstraint(ctx context.Context, id string, in graphql.FormationConstraintUpdateInput) (*graphql.FormationConstraint, error) {
+	return r.formationConstraint.UpdateFormationConstraint(ctx, id, in)
 }
 
 func (r *mutationResolver) AttachConstraintToFormationTemplate(ctx context.Context, constraintID string, formationTemplateID string) (*graphql.ConstraintReference, error) {
