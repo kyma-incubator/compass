@@ -168,9 +168,12 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 	}
 
 	var unmarshalledLeadingProductIDs []*string
-	err = json.Unmarshal(repo.JSONRawMessageFromNullableString(in.LeadingProductIDs), &unmarshalledLeadingProductIDs)
-	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling runtime types")
+	leadingProductIDs := repo.JSONRawMessageFromNullableString(in.LeadingProductIDs)
+	if leadingProductIDs != nil {
+		err = json.Unmarshal(leadingProductIDs, &unmarshalledLeadingProductIDs)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling leading product IDs")
+		}
 	}
 
 	return &model.FormationTemplate{

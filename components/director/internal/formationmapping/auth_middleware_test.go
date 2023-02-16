@@ -941,7 +941,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			transactFn: txGen.ThatSucceeds,
 			formationRepoFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", contextThatHasTenant(internalTntID), testFormationID, internalTntID).Return(formation, nil).Once()
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
 				return formationRepo
 			},
 			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -961,7 +961,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			transactFn: txGen.ThatFailsOnCommit,
 			formationRepoFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", contextThatHasTenant(internalTntID), testFormationID, internalTntID).Return(formation, nil).Once()
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
 				return formationRepo
 			},
 			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -982,7 +982,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			transactFn: txGen.ThatSucceeds,
 			formationRepoFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", contextThatHasTenant(internalTntID), testFormationID, internalTntID).Return(formation, nil).Once()
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
 				return formationRepo
 			},
 			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -1018,23 +1018,11 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
-			name:       "Authorization fail: error when loading tenant from the context",
-			transactFn: txGen.ThatDoesntExpectCommit,
-			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
-				ctxOnlyWithConsumer := consumer.SaveToContext(emptyCtx, c)
-				return ctxOnlyWithConsumer
-			},
-			hasURLVars:         true,
-			expectedStatusCode: http.StatusInternalServerError,
-			expectedErrOutput:  "An unexpected error occurred while processing the request",
-		},
-		{
 			name:       "Authorization fail: error when getting formation fails",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			formationRepoFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", contextThatHasTenant(internalTntID), testFormationID, internalTntID).Return(nil, testErr).Once()
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(nil, testErr).Once()
 				return formationRepo
 			},
 			contextFn: func() context.Context {
@@ -1050,7 +1038,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			transactFn: txGen.ThatDoesntExpectCommit,
 			formationRepoFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", contextThatHasTenant(internalTntID), testFormationID, internalTntID).Return(formation, nil).Once()
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
 				return formationRepo
 			},
 			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -1071,7 +1059,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			transactFn: txGen.ThatFailsOnCommit,
 			formationRepoFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("Get", contextThatHasTenant(internalTntID), testFormationID, internalTntID).Return(formation, nil).Once()
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
 				return formationRepo
 			},
 			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {

@@ -17,13 +17,13 @@ type FormationRepository struct {
 	mock.Mock
 }
 
-// Get provides a mock function with given fields: ctx, id, tenantID
-func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID string) (*model.Formation, error) {
-	ret := _m.Called(ctx, id, tenantID)
+// GetGlobalByID provides a mock function with given fields: ctx, id
+func (_m *FormationRepository) GetGlobalByID(ctx context.Context, id string) (*model.Formation, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *model.Formation
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Formation); ok {
-		r0 = rf(ctx, id, tenantID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Formation)
@@ -31,8 +31,8 @@ func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID stri
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, id, tenantID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}

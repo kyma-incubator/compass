@@ -97,7 +97,7 @@ type LabelRepository interface {
 // FormationRepository is responsible for the repo-layer formation operations
 //go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationRepository interface {
-	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 }
 
 // FormationTemplateRepository is responsible for the repo-layer formation template operations
@@ -243,12 +243,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 	defer a.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	internalTenantID, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return false, http.StatusInternalServerError, errors.Wrap(err, "while loading tenant from context")
-	}
-
-	f, err := a.formationRepo.Get(ctx, formationID, internalTenantID)
+	f, err := a.formationRepo.GetGlobalByID(ctx, formationID)
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation with ID: %q", formationID)
 	}
@@ -265,6 +260,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 				return false, http.StatusInternalServerError, errors.Wrap(err, "unable to finalize database operation")
 			}
 
+			log.C(ctx).Infof("Consumer with ID: %q is contained in the leading product IDs list from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
 			return true, http.StatusOK, nil
 		}
 	}
@@ -274,6 +270,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 		return false, http.StatusInternalServerError, errors.Wrap(err, "unable to finalize database operation")
 	}
 
+	log.C(ctx).Infof("Consumer with ID: %q did not match any of the leading product IDs from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
 	return false, http.StatusUnauthorized, nil
 }
 
