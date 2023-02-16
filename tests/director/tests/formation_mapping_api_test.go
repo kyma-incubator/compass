@@ -100,9 +100,9 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		t.Logf("Assign tenant: %q to formation: %q", parentTenantID, asyncFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), asyncFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, parentTenantID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subaccountID, parentTenantID)
 		require.NoError(t, err)
 		require.Equal(t, asyncFormationName, assignedFormation.Name)
-		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subaccountID, parentTenantID)
 
 		t.Logf("Listing formation assignments for formation with ID: %q", formationID)
 		listFormationAssignmentsReq := fixtures.FixListFormationAssignmentRequest(formationID, 100)
