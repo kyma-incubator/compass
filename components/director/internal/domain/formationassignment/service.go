@@ -27,6 +27,7 @@ type FormationAssignmentRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
+	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
@@ -167,6 +168,23 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 	}
 
 	return fa, nil
+}
+
+// TODO: Unit Test
+// GetAssignmentsForFormationWithStates retrieves formation assignments matching formation ID `formationID` and with state among `states` for tenant with ID `tenantID`
+func (s *service) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	formationAssignments, err := s.repo.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID, states)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation assignments with error states for formation with ID: %q and tenant: %q", formationID, tenantID)
+	}
+
+	return formationAssignments, nil
+
 }
 
 // GetGlobalByID retrieves the formation assignment matching ID `id` globally without tenant parameter

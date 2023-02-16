@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
@@ -86,6 +88,12 @@ type NotificationsService interface {
 	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
+// FormationAssignmentNotificationsService represents the notification service for generating and sending notifications
+//go:generate mockery --name=FormationAssignmentNotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationAssignmentNotificationsService interface {
+	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
+}
+
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
@@ -141,26 +149,27 @@ type asaEngine interface {
 }
 
 type service struct {
-	labelDefRepository          labelDefRepository
-	labelRepository             labelRepository
-	formationRepository         FormationRepository
-	formationTemplateRepository FormationTemplateRepository
-	labelService                labelService
-	labelDefService             labelDefService
-	asaService                  automaticFormationAssignmentService
-	uuidService                 uuidService
-	tenantSvc                   tenantService
-	repo                        automaticFormationAssignmentRepository
-	runtimeRepo                 runtimeRepository
-	runtimeContextRepo          runtimeContextRepository
-	formationAssignmentService  formationAssignmentService
-	notificationsService        NotificationsService
-	constraintEngine            constraintEngine
-	webhookRepository           webhookRepository
-	transact                    persistence.Transactioner
-	asaEngine                   asaEngine
-	runtimeTypeLabelKey         string
-	applicationTypeLabelKey     string
+	labelDefRepository                     labelDefRepository
+	labelRepository                        labelRepository
+	formationRepository                    FormationRepository
+	formationTemplateRepository            FormationTemplateRepository
+	labelService                           labelService
+	labelDefService                        labelDefService
+	asaService                             automaticFormationAssignmentService
+	uuidService                            uuidService
+	tenantSvc                              tenantService
+	repo                                   automaticFormationAssignmentRepository
+	runtimeRepo                            runtimeRepository
+	runtimeContextRepo                     runtimeContextRepository
+	formationAssignmentService             formationAssignmentService
+	formationAssignmentNotificationService FormationAssignmentNotificationsService
+	notificationsService                   NotificationsService
+	constraintEngine                       constraintEngine
+	webhookRepository                      webhookRepository
+	transact                               persistence.Transactioner
+	asaEngine                              asaEngine
+	runtimeTypeLabelKey                    string
+	applicationTypeLabelKey                string
 }
 
 // NewService creates formation service
@@ -179,32 +188,34 @@ func NewService(
 	runtimeRepo runtimeRepository,
 	runtimeContextRepo runtimeContextRepository,
 	formationAssignmentService formationAssignmentService,
+	formationAssignmentNotificationService FormationAssignmentNotificationsService,
 	notificationsService NotificationsService,
 	constraintEngine constraintEngine,
 	webhookRepository webhookRepository,
 	runtimeTypeLabelKey, applicationTypeLabelKey string,
 ) *service {
 	return &service{
-		transact:                    transact,
-		labelDefRepository:          labelDefRepository,
-		labelRepository:             labelRepository,
-		formationRepository:         formationRepository,
-		formationTemplateRepository: formationTemplateRepository,
-		labelService:                labelService,
-		labelDefService:             labelDefService,
-		asaService:                  asaService,
-		uuidService:                 uuidService,
-		tenantSvc:                   tenantSvc,
-		repo:                        asaRepo,
-		runtimeRepo:                 runtimeRepo,
-		runtimeContextRepo:          runtimeContextRepo,
-		formationAssignmentService:  formationAssignmentService,
-		notificationsService:        notificationsService,
-		constraintEngine:            constraintEngine,
-		runtimeTypeLabelKey:         runtimeTypeLabelKey,
-		applicationTypeLabelKey:     applicationTypeLabelKey,
-		asaEngine:                   NewASAEngine(asaRepo, runtimeRepo, runtimeContextRepo, formationRepository, formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey),
-		webhookRepository:           webhookRepository,
+		transact:                               transact,
+		labelDefRepository:                     labelDefRepository,
+		labelRepository:                        labelRepository,
+		formationRepository:                    formationRepository,
+		formationTemplateRepository:            formationTemplateRepository,
+		labelService:                           labelService,
+		labelDefService:                        labelDefService,
+		asaService:                             asaService,
+		uuidService:                            uuidService,
+		tenantSvc:                              tenantSvc,
+		repo:                                   asaRepo,
+		runtimeRepo:                            runtimeRepo,
+		runtimeContextRepo:                     runtimeContextRepo,
+		formationAssignmentNotificationService: formationAssignmentNotificationService,
+		formationAssignmentService:             formationAssignmentService,
+		notificationsService:                   notificationsService,
+		constraintEngine:                       constraintEngine,
+		runtimeTypeLabelKey:                    runtimeTypeLabelKey,
+		applicationTypeLabelKey:                applicationTypeLabelKey,
+		asaEngine:                              NewASAEngine(asaRepo, runtimeRepo, runtimeContextRepo, formationRepository, formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey),
+		webhookRepository:                      webhookRepository,
 	}
 }
 
@@ -831,6 +842,86 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	return formationFromDB, nil
+}
+
+// TODO: Unit Test
+// ResynchronizeFormationNotifications sends all notifications that are in error or pending state
+func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) error {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	failedFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID,
+		[]string{string(model.InitialAssignmentState),
+			string(model.DeletingAssignmentState),
+			string(model.CreateErrorAssignmentState),
+			string(model.DeleteErrorAssignmentState)})
+
+	failedCreateFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
+	failedDeleteFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
+	if err != nil {
+		return err
+	}
+	failedCreateRequests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(failedFormationAssignments))
+	failedDeleteRequests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(failedFormationAssignments))
+	var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
+	for _, fa := range failedFormationAssignments {
+		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
+		if err != nil {
+			return err
+		}
+
+		reverseFA, err := s.formationAssignmentService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return err
+		}
+		if reverseFA != nil {
+			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA)
+			if err != nil && !apperrors.IsNotFoundError(err) {
+				return err
+			}
+		}
+
+		if fa.State == string(model.InitialAssignmentState) || fa.State == string(model.CreateErrorAssignmentState) {
+			failedCreateFormationAssignments = append(failedCreateFormationAssignments, fa)
+			if reverseFA != nil {
+				failedCreateFormationAssignments = append(failedCreateFormationAssignments, reverseFA)
+			}
+			if notificationForFA != nil {
+				failedCreateRequests = append(failedCreateRequests, notificationForFA)
+			}
+			if notificationForReverseFA != nil {
+				failedCreateRequests = append(failedCreateRequests, notificationForReverseFA)
+			}
+		}
+		if fa.State == string(model.DeletingAssignmentState) || fa.State == string(model.DeleteErrorAssignmentState) {
+			failedDeleteFormationAssignments = append(failedDeleteFormationAssignments, fa)
+			if reverseFA != nil {
+				failedDeleteFormationAssignments = append(failedDeleteFormationAssignments, reverseFA)
+			}
+			if notificationForFA != nil {
+				failedDeleteRequests = append(failedDeleteRequests, notificationForFA)
+			}
+			if notificationForReverseFA != nil {
+				failedDeleteRequests = append(failedDeleteRequests, notificationForReverseFA)
+			}
+		}
+	}
+	rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tenantID, failedFormationAssignments)
+	if err != nil {
+		return err
+	}
+
+	var errs *multierror.Error
+	if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, failedCreateFormationAssignments, rtmContextIDsMapping, failedCreateRequests, s.formationAssignmentService.ProcessFormationAssignmentPair); err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, failedDeleteFormationAssignments, rtmContextIDsMapping, failedDeleteRequests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
+		errs = multierror.Append(errs, err)
+	}
+	return errs.ErrorOrNil()
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {

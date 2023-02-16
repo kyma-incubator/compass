@@ -113,9 +113,15 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		}
 
 		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
-		if err != nil {
+		reverseFAModel := &webhook.FormationAssignment{
+			Value: "\"\"",
+		}
+		if err != nil && !apperrors.IsNotFoundError(err) {
 			log.C(ctx).Error(err)
 			return nil, err
+		}
+		if reverseFA != nil {
+			reverseFAModel = convertFormationAssignmentFromModel(reverseFA)
 		}
 
 		log.C(ctx).Infof("Preparing join point details for application tenant mapping notification generation")
@@ -127,7 +133,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			appTemplateWithLabels,
 			applicationWithLabels,
 			convertFormationAssignmentFromModel(fa),
-			convertFormationAssignmentFromModel(reverseFA),
+			reverseFAModel,
 			customerTenantContext,
 		)
 		if err != nil {
@@ -153,9 +159,13 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		}
 
 		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
-		if err != nil {
+		reverseFAModel := &webhook.FormationAssignment{Value: "\"\""}
+		if err != nil && !apperrors.IsNotFoundError(err) {
 			log.C(ctx).Error(err)
 			return nil, err
+		}
+		if reverseFA != nil {
+			reverseFAModel = convertFormationAssignmentFromModel(reverseFA)
 		}
 
 		log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
@@ -167,7 +177,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			runtimeWithLabels,
 			runtimeContextWithLabels,
 			convertFormationAssignmentFromModel(fa),
-			convertFormationAssignmentFromModel(reverseFA),
+			reverseFAModel,
 			model.ApplicationResourceType,
 			customerTenantContext,
 		)
@@ -201,9 +211,15 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		}
 
 		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
-		if err != nil {
+		reverseFAModel := &webhook.FormationAssignment{
+			Value: "\"\"",
+		}
+		if err != nil && !apperrors.IsNotFoundError(err) {
 			log.C(ctx).Error(err)
 			return nil, err
+		}
+		if reverseFA != nil {
+			reverseFAModel = convertFormationAssignmentFromModel(reverseFA)
 		}
 
 		log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
@@ -215,7 +231,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			runtimeWithLabels,
 			runtimeContextWithLabels,
 			convertFormationAssignmentFromModel(fa),
-			convertFormationAssignmentFromModel(reverseFA),
+			reverseFAModel,
 			model.ApplicationResourceType,
 			customerTenantContext,
 		)
@@ -269,9 +285,15 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	}
 
 	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
-	if err != nil {
+	reverseFAModel := &webhook.FormationAssignment{
+		Value: "\"\"",
+	}
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		log.C(ctx).Error(err)
 		return nil, err
+	}
+	if reverseFA != nil {
+		reverseFAModel = convertFormationAssignmentFromModel(reverseFA)
 	}
 
 	log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
@@ -283,7 +305,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 		runtimeWithLabels,
 		nil,
 		convertFormationAssignmentFromModel(fa),
-		convertFormationAssignmentFromModel(reverseFA),
+		reverseFAModel,
 		model.RuntimeResourceType,
 		customerTenantContext,
 	)
@@ -343,9 +365,15 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	}
 
 	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
-	if err != nil {
+	reverseFAModel := &webhook.FormationAssignment{
+		Value: "\"\"",
+	}
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		log.C(ctx).Error(err)
 		return nil, err
+	}
+	if reverseFA != nil {
+		reverseFAModel = convertFormationAssignmentFromModel(reverseFA)
 	}
 
 	log.C(ctx).Infof("Preparing join point details for configuration change notification generation")
@@ -357,7 +385,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 		runtimeWithLabels,
 		runtimeContextWithLabels,
 		convertFormationAssignmentFromModel(fa),
-		convertFormationAssignmentFromModel(reverseFA),
+		reverseFAModel,
 		model.RuntimeContextResourceType,
 		customerTenantContext,
 	)

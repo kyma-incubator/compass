@@ -147,12 +147,14 @@ func (h *Handler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState {
+		//if reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState && reqBody.State != model.DeleteErrorAssignmentState {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %s operation", reqBody.State, model.AssignFormation)
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", reqBody.State, model.AssignFormation, correlationID))
 		return
 	}
 
 	if reqBody.State == model.CreateErrorAssignmentState {
+		//if reqBody.State == model.CreateErrorAssignmentState || reqBody.State == model.DeleteErrorAssignmentState {
 		err = h.faService.SetAssignmentToErrorState(ctx, fa, reqBody.Error, formationassignment.ClientError, reqBody.State)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("while updating error state to: %s for formation assignment with ID: %q", reqBody.State, formationAssignmentID)

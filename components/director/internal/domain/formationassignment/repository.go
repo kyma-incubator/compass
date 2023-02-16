@@ -127,6 +127,23 @@ func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formatio
 	return r.conv.FromEntity(&formationAssignmentEnt), nil
 }
 
+// TODO: Unit Test
+// GetAssignmentsForFormationWithStates retrieves formation assignments matching formation ID `formationID` and with state among `states` for tenant with ID `tenantID`
+func (r *repository) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error) {
+	var formationAssignmentCollection EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("formation_id", formationID),
+		repo.NewInConditionForStringValues("state", states),
+	}
+
+	if err := r.lister.List(ctx, resource.FormationAssignment, tenantID, &formationAssignmentCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(formationAssignmentCollection), nil
+}
+
 // GetBySourceAndTarget retrieves formation assignment by source and target
 func (r *repository) GetBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error) {
 	var formationAssignmentEnt Entity
