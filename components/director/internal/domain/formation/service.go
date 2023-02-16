@@ -63,6 +63,7 @@ type runtimeContextRepository interface {
 }
 
 // FormationRepository represents the Formations repository layer
+//
 //go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationRepository interface {
 	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
@@ -74,6 +75,7 @@ type FormationRepository interface {
 }
 
 // FormationTemplateRepository represents the FormationTemplate repository layer
+//
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
@@ -81,6 +83,7 @@ type FormationTemplateRepository interface {
 }
 
 // NotificationsService represents the notification service for generating and sending notifications
+//
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
 	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
@@ -89,6 +92,7 @@ type NotificationsService interface {
 }
 
 // FormationAssignmentNotificationsService represents the notification service for generating and sending notifications
+//
 //go:generate mockery --name=FormationAssignmentNotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationsService interface {
 	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
@@ -219,9 +223,10 @@ func NewService(
 	}
 }
 
-//go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 // Used for testing
-//nolint
+// nolint
+//
+//go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type processFunc interface {
 	ProcessScenarioFunc(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
 }
@@ -417,14 +422,14 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // with source=objectID and target=X are generated.
 //
 // Additionally, notifications are sent to the interested participants for that formation change.
-// 		- If objectType is graphql.FormationObjectTypeApplication:
-//				- A notification about the assigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
-//  			- A notification about the assigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
-//				- If the assigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
-//				- If the assigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
-// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
-//				- If the assigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
-//				- A notification about the assigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
+//   - If objectType is graphql.FormationObjectTypeApplication:
+//   - A notification about the assigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
+//   - A notification about the assigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
+//   - If the assigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
+//   - If the assigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
+//   - If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
+//   - If the assigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
+//   - A notification about the assigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
 //
 // If an error occurs during the formationAssignment processing the failed formationAssignment's value is updated with the error and the processing proceeds. The error should not
 // be returned but only logged. If the error is returned the assign operation will be rolled back and all the created resources(labels, formationAssignments etc.) will be rolled
@@ -661,24 +666,24 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 // it removes the formation from the scenario label of the runtime/runtime context if the provided
 // formation is NOT assigned from ASA and does nothing if it is assigned from ASA.
 //
-//  Additionally, notifications are sent to the interested participants for that formation change.
-// 		- If objectType is graphql.FormationObjectTypeApplication:
-//				- A notification about the unassigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
-//  			- A notification about the unassigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
-//				- If the unassigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
-//				- If the unassigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
-// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
-//				- If the unassigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
-//   			- A notification about the unassigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
+//	 Additionally, notifications are sent to the interested participants for that formation change.
+//			- If objectType is graphql.FormationObjectTypeApplication:
+//					- A notification about the unassigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
+//	 			- A notification about the unassigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
+//					- If the unassigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
+//					- If the unassigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
+//			- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
+//					- If the unassigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
+//	  			- A notification about the unassigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
 //
 // For the formationAssignments that have their source or target field set to objectID:
-// 		- If the formationAssignment does not have notification associated with it
-//				- the formation assignment is deleted
-//		- If the formationAssignment is associated with a notification
-//				- If the response from the notification is success
-//						- the formationAssignment is deleted
-// 				- If the response from the notification is different from success
-//						- the formation assignment is updated with an error
+//   - If the formationAssignment does not have notification associated with it
+//   - the formation assignment is deleted
+//   - If the formationAssignment is associated with a notification
+//   - If the response from the notification is success
+//   - the formationAssignment is deleted
+//   - If the response from the notification is different from success
+//   - the formation assignment is updated with an error
 //
 // After the processing of the formationAssignments the state is persisted regardless of whether there were any errors.
 // If an error has occurred during the formationAssignment processing the unassign operation is rolled back(the updated
@@ -844,8 +849,8 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	return formationFromDB, nil
 }
 
-// TODO: Unit Test
 // ResynchronizeFormationNotifications sends all notifications that are in error or pending state
+// TODO: Unit Test
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {

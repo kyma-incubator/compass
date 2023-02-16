@@ -3,7 +3,6 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -19,6 +18,7 @@ import (
 )
 
 // FormationAssignmentRepository represents the Formation Assignment repository layer
+//
 //go:generate mockery --name=FormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentRepository interface {
 	Create(ctx context.Context, item *model.FormationAssignment) error
@@ -77,9 +77,10 @@ type tenantRepository interface {
 	GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error)
 }
 
-//go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
 // Used for testing
-//nolint
+// nolint
+//
+//go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
 type templateInput interface {
 	webhookdir.TemplateInput
 	GetParticipantsIDs() []string
@@ -91,6 +92,7 @@ type templateInput interface {
 }
 
 // UIDService generates UUIDs for new entities
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -170,10 +172,9 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 	return fa, nil
 }
 
-// TODO: Unit Test
 // GetAssignmentsForFormationWithStates retrieves formation assignments matching formation ID `formationID` and with state among `states` for tenant with ID `tenantID`
+// TODO: Unit Test
 func (s *service) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error) {
-	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
@@ -184,7 +185,6 @@ func (s *service) GetAssignmentsForFormationWithStates(ctx context.Context, tena
 	}
 
 	return formationAssignments, nil
-
 }
 
 // GetGlobalByID retrieves the formation assignment matching ID `id` globally without tenant parameter

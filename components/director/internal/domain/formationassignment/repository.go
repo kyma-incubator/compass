@@ -24,6 +24,7 @@ var (
 )
 
 // EntityConverter converts between the internal model and entity
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.FormationAssignment) *Entity
@@ -127,8 +128,8 @@ func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formatio
 	return r.conv.FromEntity(&formationAssignmentEnt), nil
 }
 
-// TODO: Unit Test
 // GetAssignmentsForFormationWithStates retrieves formation assignments matching formation ID `formationID` and with state among `states` for tenant with ID `tenantID`
+// TODO: Unit Test
 func (r *repository) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error) {
 	var formationAssignmentCollection EntityCollection
 

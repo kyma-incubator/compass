@@ -19,6 +19,7 @@ import (
 )
 
 // Service missing godoc
+//
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	Get(ctx context.Context, id string) (*model.Formation, error)
@@ -32,6 +33,7 @@ type Service interface {
 }
 
 // Converter missing godoc
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	FromGraphQL(i graphql.FormationInput) model.Formation
@@ -55,6 +57,7 @@ type formationAssignmentService interface {
 }
 
 // FormationAssignmentConverter converts FormationAssignment between the model.FormationAssignment service-layer representation and graphql.FormationAssignment.
+//
 //go:generate mockery --name=FormationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentConverter interface {
 	MultipleToGraphQL(in []*model.FormationAssignment) ([]*graphql.FormationAssignment, error)
@@ -62,6 +65,7 @@ type FormationAssignmentConverter interface {
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
 	FetchOnDemand(tenant, parentTenant string) error
@@ -448,8 +452,8 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	return gqlFormationStatuses, nil
 }
 
-// TODO: Unit Test
 // ResynchronizeFormationNotifications sends all notifications that are in error or pending state
+// TODO: Unit Test
 func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -469,7 +473,7 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 
 	formationModel, err := r.service.Get(ctx, formationID)
 	if err != nil {
-
+		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
