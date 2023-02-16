@@ -224,7 +224,7 @@ func NewService(
 }
 
 // Used for testing
-// nolint
+//nolint
 //
 //go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type processFunc interface {
