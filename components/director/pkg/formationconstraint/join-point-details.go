@@ -70,8 +70,8 @@ func (d *UnassignFormationOperationDetails) GetMatchingDetails() MatchingDetails
 	}
 }
 
-// GenerateNotificationOperationDetails contains details applicable to generateNotifications join point
-type GenerateNotificationOperationDetails struct {
+// GenerateFormationAssignmentNotificationOperationDetails contains details applicable to generate formation assignment notifications join point
+type GenerateFormationAssignmentNotificationOperationDetails struct {
 	Operation             model.FormationOperation
 	FormationID           string
 	ResourceType          model.ResourceType
@@ -98,10 +98,29 @@ type GenerateNotificationOperationDetails struct {
 	TenantID string
 }
 
-// GetMatchingDetails returns matching details for GenerateNotificationOperationDetails
-func (d *GenerateNotificationOperationDetails) GetMatchingDetails() MatchingDetails {
+// GetMatchingDetails returns matching details for GenerateFormationAssignmentNotificationOperationDetails
+func (d *GenerateFormationAssignmentNotificationOperationDetails) GetMatchingDetails() MatchingDetails {
 	return MatchingDetails{
 		ResourceType:    d.ResourceType,
 		ResourceSubtype: d.ResourceSubtype,
+	}
+}
+
+// GenerateFormationNotificationOperationDetails contains details applicable to generate formation notifications join point
+type GenerateFormationNotificationOperationDetails struct {
+	Operation             model.FormationOperation
+	FormationID           string
+	FormationName         string
+	FormationType         string
+	FormationTemplateID   string
+	TenantID              string
+	CustomerTenantContext *webhook.CustomerTenantContext
+}
+
+// GetMatchingDetails returns matching details for GenerateFormationAssignmentNotificationOperationDetails
+func (d *GenerateFormationNotificationOperationDetails) GetMatchingDetails() MatchingDetails {
+	return MatchingDetails{
+		ResourceType:    model.FormationResourceType,
+		ResourceSubtype: d.FormationType,
 	}
 }

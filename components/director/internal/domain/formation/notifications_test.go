@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	databuilderautomock "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -21,16 +19,13 @@ import (
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_NotificationsService_GenerateNotifications(t *testing.T) {
+func Test_NotificationsService_GenerateFormationAssignmentNotifications(t *testing.T) {
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
-
-	testErr := errors.New("test error")
+	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
 	inputFormation := model.Formation{
 		Name: testFormationName,
@@ -39,7 +34,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		ID:                  fixUUID(),
 		Name:                testFormationName,
 		FormationTemplateID: FormationTemplateID,
-		TenantID:            Tnt,
+		TenantID:            TntInternalID,
 	}
 
 	runtimeWithLabels := fixRuntimeWithLabels(RuntimeID)
@@ -73,7 +68,6 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		Application: fixApplicationModelWithoutTemplate(Application2ID),
 		Labels:      fixApplicationLabelsMap(),
 	}
-	gaTenantObject := fixModelBusinessTenantMappingWithType(tnt.Account)
 	rgTenantObject := fixModelBusinessTenantMappingWithType(tnt.ResourceGroup)
 
 	testCases := []struct {
@@ -92,7 +86,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 		ObjectType                graphql.FormationObjectType
 		OperationType             model.FormationOperation
 		InputFormation            model.Formation
-		ExpectedRequests          []*webhookclient.NotificationRequest
+		ExpectedRequests          []*webhookclient.FormationAssignmentNotificationRequest
 		ExpectedErrMessage        string
 	}{
 		// start testing 'generateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned' and 'generateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned' funcs
@@ -102,14 +96,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -119,40 +113,40 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Twice()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -160,7 +154,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithoutAppTemplate,
 				applicationNotificationWithAppTemplate,
@@ -174,14 +168,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(rgTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -191,40 +185,40 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Twice()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextPath).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextPath).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextPath).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextPath).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -232,7 +226,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithoutAppTemplate,
 				applicationNotificationWithAppTemplate,
@@ -266,18 +260,18 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Error when building NotificationRequest results in not generating notification",
+			Name: "Error when building FormationAssignmentNotificationRequest results in not generating notification",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -287,40 +281,40 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Twice()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -328,7 +322,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithoutAppTemplate,
 				applicationNotificationWithAppTemplate,
 			},
@@ -339,12 +333,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
 				return repo
 			},
@@ -355,23 +349,23 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
@@ -381,7 +375,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 
 				// the method we are testing iterates over map, so it is not certain whether this will be invoked or not
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -396,14 +390,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -413,40 +407,40 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Twice()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
 
 				// the method we are testing iterates over map, so it is not certain whether this will be invoked or not
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -461,12 +455,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -476,21 +470,21 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -503,12 +497,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -518,7 +512,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
@@ -526,12 +520,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -544,27 +538,27 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -577,13 +571,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -593,34 +587,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -628,7 +622,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithoutAppTemplate,
 			},
@@ -639,12 +633,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -654,34 +648,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -689,7 +683,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithoutAppTemplate,
 			},
@@ -700,22 +694,22 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return(nil, testErr)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -728,17 +722,17 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return(nil, testErr)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return(nil, testErr)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -751,12 +745,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(nil, testErr).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(nil, testErr).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
@@ -769,13 +763,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -785,35 +779,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -828,13 +822,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -845,34 +839,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -887,13 +881,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -903,35 +897,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -946,12 +940,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -961,34 +955,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.RuntimeWebhook, WebhookID))
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.RuntimeWebhook, WebhookID))
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -996,7 +990,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ObjectType:     graphql.FormationObjectTypeRuntime,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				applicationNotificationWithAppTemplate,
 				applicationNotificationWithoutAppTemplate,
 			},
@@ -1006,13 +1000,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1022,34 +1016,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1057,7 +1051,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ObjectType:     graphql.FormationObjectTypeRuntime,
 			ObjectID:       RuntimeID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				applicationNotificationWithAppTemplate,
 				applicationNotificationWithoutAppTemplate,
 			},
@@ -1068,13 +1062,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return(nil, testErr)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return(nil, testErr)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1084,34 +1078,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1126,12 +1120,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1141,34 +1135,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1183,12 +1177,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1198,34 +1192,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(runtimeWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeID).Return(nil, testErr).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(runtimeWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeID).Return(nil, testErr).Once()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(applicationNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(applicationNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1241,14 +1235,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1258,48 +1252,48 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Twice()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
 			ObjectType:    graphql.FormationObjectTypeRuntimeContext,
 			OperationType: model.AssignFormation,
 			ObjectID:      RuntimeContextID,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeCtxNotificationWithAppTemplate,
 				runtimeCtxNotificationWithoutAppTemplate,
 				appNotificationWithRtmCtxAndTemplate,
@@ -1343,14 +1337,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1360,48 +1354,48 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Twice()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
 			ObjectType:    graphql.FormationObjectTypeRuntimeContext,
 			OperationType: model.AssignFormation,
 			ObjectID:      RuntimeContextID,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeCtxNotificationWithoutAppTemplate,
 				appNotificationWithRtmCtxWithoutTemplate,
 			},
@@ -1413,12 +1407,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
 				return repo
 			},
@@ -1429,24 +1423,24 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
@@ -1455,7 +1449,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -1470,14 +1464,14 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1487,40 +1481,40 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Twice()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -1535,12 +1529,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1550,22 +1544,22 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1578,12 +1572,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1593,7 +1587,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
@@ -1601,13 +1595,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1620,28 +1614,28 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1654,13 +1648,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1670,35 +1664,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1706,7 +1700,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeContextID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeCtxNotificationWithAppTemplate,
 				runtimeCtxNotificationWithoutAppTemplate,
 			},
@@ -1717,12 +1711,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1732,35 +1726,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeContextResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeCtxNotificationWithoutAppTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1768,7 +1762,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			OperationType:  model.AssignFormation,
 			ObjectID:       RuntimeContextID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeCtxNotificationWithAppTemplate,
 				runtimeCtxNotificationWithoutAppTemplate,
 			},
@@ -1779,23 +1773,23 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return(nil, testErr)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1808,18 +1802,18 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return(nil, testErr)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return(nil, testErr)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1832,12 +1826,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(nil, testErr).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(nil, testErr).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1850,12 +1844,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, testErr).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, testErr).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
@@ -1868,13 +1862,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1884,36 +1878,36 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1928,13 +1922,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -1945,35 +1939,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -1988,13 +1982,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2004,36 +1998,36 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -2048,13 +2042,13 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return(nil, testErr)
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return(nil, testErr)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2064,34 +2058,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, RuntimeContextRuntimeID, model.RuntimeWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			}, NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -2106,12 +2100,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2121,35 +2115,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -2164,12 +2158,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2179,35 +2173,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.RuntimeWebhook, WebhookID))
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, RuntimeContextRuntimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.RuntimeWebhook, WebhookID))
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -2215,7 +2209,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ObjectType:     graphql.FormationObjectTypeRuntimeContext,
 			ObjectID:       RuntimeContextID,
 			InputFormation: expectedFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				appNotificationWithRtmCtxAndTemplate,
 				appNotificationWithRtmCtxWithoutTemplate,
 			},
@@ -2225,12 +2219,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2240,35 +2234,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(nil, testErr).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(nil, testErr).Once()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -2283,12 +2277,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{expectedFormation.Name}, []string{ApplicationID, Application2ID}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2298,36 +2292,36 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.ApplicationWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
-				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, Tnt, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, Tnt, RuntimeContextRuntimeID).Return(nil, testErr).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(fixRuntimeWithLabels(RuntimeContextRuntimeID), nil).Once()
+				dataInputBuilder.On("PrepareRuntimeContextWithLabels", ctx, TntInternalID, RuntimeContextID).Return(runtimeCtxWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareRuntimeWithLabels", ctx, TntInternalID, RuntimeContextRuntimeID).Return(nil, testErr).Once()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, runtimeWithRtmCtxWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(Webhook2ID, Application2ID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxWithoutTemplate, nil)
 
 				return notificationsBuilder
 			},
@@ -2343,46 +2337,46 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID: fixRuntimeContextLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{}).Return(nil, nil)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{}).Return(nil, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2393,46 +2387,46 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenariosAndRuntimeIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(appToAppNotificationWithoutSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(appToAppNotificationWithoutSourceTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithRtmCtxAndAppTemplate,
 				appNotificationWithRtmCtxRtmIDAndTemplate,
@@ -2447,50 +2441,50 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "Error when building NotificationRequest results in not generating notification",
+			Name: "Error when building FormationAssignmentNotificationRequest results in not generating notification",
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID: fixRuntimeContextLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{}).Return(nil, nil)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{}).Return(nil, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2501,46 +2495,46 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenariosAndRuntimeIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(nil, testErr).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(appToAppNotificationWithoutSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(appToAppNotificationWithoutSourceTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithRtmCtxAndAppTemplate,
 				appNotificationWithRtmCtxAndTemplate,
 				appToAppNotificationWithoutSourceTemplate,
@@ -2588,16 +2582,16 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil)
@@ -2605,23 +2599,23 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
@@ -2630,7 +2624,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -2645,19 +2639,19 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID: fixRuntimeContextLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil)
@@ -2665,41 +2659,41 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenariosAndRuntimeIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -2714,41 +2708,41 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Twice()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID: fixRuntimeContextLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2758,41 +2752,41 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Twice()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenariosAndRuntimeIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(nil, testErr).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Maybe()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(appToAppNotificationWithoutSourceTemplate, nil).Maybe()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(appToAppNotificationWithoutSourceTemplate, nil).Maybe()
 
 				return notificationsBuilder
 			},
@@ -2807,43 +2801,43 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2854,31 +2848,31 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -2893,42 +2887,42 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -2939,31 +2933,31 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -2978,40 +2972,40 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{Application2ID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{Application2ID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -3021,31 +3015,31 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3060,39 +3054,39 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{Application2ID}).Return(nil, testErr)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{Application2ID}).Return(nil, testErr)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -3102,31 +3096,31 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3141,36 +3135,36 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -3180,28 +3174,28 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3216,25 +3210,25 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
@@ -3242,9 +3236,9 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -3254,28 +3248,28 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3290,58 +3284,58 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3356,21 +3350,21 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return(nil, testErr).Once()
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return(nil, testErr).Once()
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
@@ -3378,35 +3372,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3421,16 +3415,16 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
@@ -3438,35 +3432,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return(nil, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return(nil, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3475,7 +3469,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     expectedFormation,
 			ExpectedErrMessage: "",
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				appNotificationWithRtmCtxRtmIDAndTemplate,
 				appNotificationWithRtmCtxAndTemplate,
 			},
@@ -3485,16 +3479,16 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
@@ -3502,35 +3496,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return(nil, testErr)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return(nil, testErr)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3545,16 +3539,16 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
@@ -3562,35 +3556,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(2)
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(nil, nil, testErr).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(2)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(nil, nil, testErr).Once()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3605,58 +3599,58 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, []string{RuntimeContextRuntimeID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, []string{RuntimeContextRuntimeID}).Return(map[string]map[string]interface{}{
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenariosAndRuntimeIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3671,57 +3665,57 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, []string{RuntimeContextRuntimeID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, []string{RuntimeContextRuntimeID}).Return(map[string]map[string]interface{}{
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenariosAndRuntimeIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3736,56 +3730,56 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, []string{RuntimeContextRuntimeID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, []string{RuntimeContextRuntimeID}).Return(map[string]map[string]interface{}{
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3800,53 +3794,53 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, []string{RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID)}, nil).Once()
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3861,16 +3855,16 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
@@ -3878,35 +3872,35 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByIDs", ctx, Tnt, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3921,16 +3915,16 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
@@ -3938,34 +3932,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, testErr)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, testErr)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Twice()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -3980,16 +3974,16 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID:  fixRuntimeContextLabelsMap(),
 					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
 				}, nil).Once()
@@ -3997,34 +3991,34 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(nil, nil, testErr).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(nil, nil, testErr).Once()
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, runtimeCtx2WithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxRtmIDAndTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.ApplicationResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)).Return(appNotificationWithRtmCtxAndTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -4039,37 +4033,37 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4082,33 +4076,33 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(nil, testErr)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(nil, testErr)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4121,28 +4115,28 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return(nil, testErr)
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return(nil, testErr)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4155,27 +4149,27 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return(nil, testErr)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return(nil, testErr)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4188,22 +4182,22 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference), nil)
 				return repo
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", ctx, Tnt, []string{inputFormation.Name}).Return(nil, testErr)
+				repo.On("ListByScenarios", ctx, TntInternalID, []string{inputFormation.Name}).Return(nil, testErr)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4216,42 +4210,42 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				repo.On("ListByScenariosNoPaging", ctx, TntInternalID, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{Application2ID}).Return([]*model.Application{fixApplicationModelWithoutTemplate(Application2ID)}, nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID}) })).Return(map[string]map[string]interface{}{
 					RuntimeID:               fixRuntimeLabelsMap(),
 					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
 				}, nil).Once()
-				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.RuntimeContextLabelableObject, []string{RuntimeContextID}).Return(map[string]map[string]interface{}{
 					RuntimeContextID: fixRuntimeContextLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
 					ApplicationID:  fixApplicationLabelsMap(),
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
 					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.ApplicationLabelableObject, []string{Application2ID}).Return(map[string]map[string]interface{}{
 					Application2ID: fixApplicationLabelsMap(),
 				}, nil)
-				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{}).Return(nil, nil)
+				repo.On("ListForObjectIDs", ctx, TntInternalID, model.AppTemplateLabelableObject, []string{}).Return(nil, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.AppWebhook, WebhookID))
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return([]*model.Webhook{fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference), fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)}, nil)
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping, model.ApplicationWebhookReference).Return([]*model.Webhook{fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID), fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)}, nil)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.AppWebhook, WebhookID))
 				return repo
 			},
 			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
@@ -4262,39 +4256,39 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenariosAndIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
+				repo.On("ListByIDs", ctx, TntInternalID, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID}) })).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenariosAndIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil)
 				return repo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
+				repo.On("ListByScenariosAndRuntimeIDs", ctx, TntInternalID, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Times(3)
 				return dataInputBuilder
 			},
 			NotificationsBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithLabels, emptyRuntimeContextWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookID, RuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, runtimeWithRtmCtxWithLabels, runtimeCtxWithLabels, emptyFormationAssignment, emptyFormationAssignment, model.RuntimeResourceType, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixConfigurationChangedWebhookModel(WebhookForRuntimeContextID, RuntimeContextRuntimeID, model.RuntimeWebhookReference)).Return(runtimeNotificationWithRtmCtxAndAppTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, appTemplateWithLabels, appWithLabels, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp1, ApplicationID)).Return(appToAppNotificationWithSourceTemplate, nil).Once()
 
 				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, FormationID, appTemplateWithLabels, appWithLabels, emptyAppTemplateWithLabels, appWithLabelsWithoutTemplate, emptyFormationAssignment, emptyFormationAssignment, CustomerTenantContextAccount).Return(notificationDetails, nil).Once()
-				notificationsBuilder.On("BuildNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(appToAppNotificationWithoutSourceTemplate, nil).Once()
+				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, FormationTemplateID, notificationDetails, fixApplicationTenantMappingWebhookModel(AppTenantMappingWebhookIDForApp2, Application2ID)).Return(appToAppNotificationWithoutSourceTemplate, nil).Once()
 
 				return notificationsBuilder
 			},
 			OperationType: model.AssignFormation,
-			ExpectedRequests: []*webhookclient.NotificationRequest{
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
 				runtimeNotificationWithAppTemplate,
 				runtimeNotificationWithRtmCtxAndAppTemplate,
 				appToAppNotificationWithSourceTemplate,
@@ -4310,17 +4304,17 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("GetByIDAndWebhookType", ctx, Tnt, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr)
+				repo.On("GetByIDAndWebhookType", ctx, TntInternalID, ApplicationID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4333,12 +4327,12 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 			TenantRepoFn: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("Get", ctx, expectedFormation.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntParentID, nil)
+				repo.On("GetCustomerIDParentRecursively", ctx, expectedFormation.TenantID).Return(TntCustomerID, nil)
 				return repo
 			},
 			DataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				dataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, Tnt, ApplicationID).Return(nil, nil, testErr).Once()
+				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(nil, nil, testErr).Once()
 				return dataInputBuilder
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
@@ -4389,10 +4383,10 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsBuilder = testCase.NotificationsBuilder()
 			}
 
-			notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, tenantRepo, nil, dataInputBuilder, notificationsBuilder)
+			notificationSvc := formation.NewNotificationService(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, nil, webhookRepo, tenantRepo, nil, dataInputBuilder, notificationsBuilder)
 
 			// WHEN
-			actual, err := notificationSvc.GenerateNotifications(ctx, Tnt, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
+			actual, err := notificationSvc.GenerateFormationAssignmentNotifications(ctx, TntInternalID, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -4409,25 +4403,112 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 	}
 }
 
+func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
+	ctx := context.Background()
+	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID)
+	formationInput := fixFormationModelWithoutError()
+
+	testCases := []struct {
+		name                              string
+		formationTemplateWebhooks         []*model.Webhook
+		webhookConv                       func() *automock.WebhookConverter
+		tenantRepo                        func() *automock.TenantRepository
+		expectedErrMsg                    string
+		expectedFormationNotificationReqs []*webhookclient.FormationNotificationRequest
+	}{
+		{
+			name:                      "Successfully generate formation notifications",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			webhookConv: func() *automock.WebhookConverter {
+				webhookConv := &automock.WebhookConverter{}
+				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
+				return webhookConv
+			},
+			tenantRepo: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
+				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				return tenantRepo
+			},
+			expectedFormationNotificationReqs: formationNotificationRequests,
+		},
+		{
+			name:                      "Success when there are no formation template webhooks",
+			formationTemplateWebhooks: emptyFormationLifecycleWebhooks,
+		},
+		{
+			name:                      "Error when extracting customer tenant context fails",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			tenantRepo: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("Get", ctx, TntInternalID).Return(nil, testErr).Once()
+				return tenantRepo
+			},
+			expectedErrMsg: testErr.Error(),
+		},
+		{
+			name:                      "Error when converting formation template webhook to graphql one",
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			webhookConv: func() *automock.WebhookConverter {
+				webhookConv := &automock.WebhookConverter{}
+				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(nil, testErr).Once()
+				return webhookConv
+			},
+			tenantRepo: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
+				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMsg: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			webhookConv := unusedWebhookConverter()
+			if testCase.webhookConv != nil {
+				webhookConv = testCase.webhookConv()
+			}
+
+			tenantRepo := unusedTenantRepo()
+			if testCase.tenantRepo != nil {
+				tenantRepo = testCase.tenantRepo()
+			}
+
+			defer mock.AssertExpectationsForObjects(t, webhookConv, tenantRepo)
+
+			notificationSvc := formation.NewNotificationService(nil, nil, nil, nil, nil, webhookConv, nil, tenantRepo, nil, nil, nil)
+
+			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, testCase.formationTemplateWebhooks, TntInternalID, formationInput, FormationTemplateID, model.CreateFormation)
+
+			if testCase.expectedErrMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.expectedErrMsg)
+				require.Empty(t, formationNotificationReqs)
+			} else {
+				require.NoError(t, err)
+				require.ElementsMatch(t, formationNotificationReqs, testCase.expectedFormationNotificationReqs)
+			}
+		})
+	}
+}
+
 func Test_NotificationsService_SendNotification(t *testing.T) {
 	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, Tnt, ExternalTnt)
-
-	emptyFormationAssignment := &webhook.FormationAssignment{Value: "\"\""}
-
-	testErr := errors.New("test error")
+	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
 	testCases := []struct {
 		Name               string
 		WebhookClientFN    func() *automock.WebhookClient
-		InputRequest       *webhookclient.NotificationRequest
+		InputRequest       *webhookclient.FormationAssignmentNotificationRequest
 		ExpectedErrMessage string
 	}{
 		{
 			Name: "success when webhook client call doesn't return error",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.NotificationRequest{
+				client.On("Do", ctx, &webhookclient.FormationAssignmentNotificationRequest{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -4444,20 +4525,16 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 							Runtime: fixRuntimeModel(RuntimeID),
 							Labels:  fixRuntimeLabelsMap(),
 						},
-						RuntimeContext: nil,
-						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: TntParentID,
-							AccountID:  str.Ptr(TntExternalID),
-							Path:       nil,
-						},
-						Assignment:        emptyFormationAssignment,
-						ReverseAssignment: emptyFormationAssignment,
+						RuntimeContext:        nil,
+						CustomerTenantContext: CustomerTenantContextAccount,
+						Assignment:            emptyFormationAssignment,
+						ReverseAssignment:     emptyFormationAssignment,
 					},
 					CorrelationID: "",
 				}).Return(nil, nil)
 				return client
 			},
-			InputRequest: &webhookclient.NotificationRequest{
+			InputRequest: &webhookclient.FormationAssignmentNotificationRequest{
 				Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 				Object: &webhook.FormationConfigurationChangeInput{
 					Operation:   model.AssignFormation,
@@ -4474,14 +4551,10 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 						Runtime: fixRuntimeModel(RuntimeID),
 						Labels:  fixRuntimeLabelsMap(),
 					},
-					RuntimeContext: nil,
-					CustomerTenantContext: &webhook.CustomerTenantContext{
-						CustomerID: TntParentID,
-						AccountID:  str.Ptr(TntExternalID),
-						Path:       nil,
-					},
-					Assignment:        emptyFormationAssignment,
-					ReverseAssignment: emptyFormationAssignment,
+					RuntimeContext:        nil,
+					CustomerTenantContext: CustomerTenantContextAccount,
+					Assignment:            emptyFormationAssignment,
+					ReverseAssignment:     emptyFormationAssignment,
 				},
 				CorrelationID: "",
 			},
@@ -4490,7 +4563,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 			Name: "fail when webhook client call fails",
 			WebhookClientFN: func() *automock.WebhookClient {
 				client := &automock.WebhookClient{}
-				client.On("Do", ctx, &webhookclient.NotificationRequest{
+				client.On("Do", ctx, &webhookclient.FormationAssignmentNotificationRequest{
 					Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 					Object: &webhook.FormationConfigurationChangeInput{
 						Operation:   model.AssignFormation,
@@ -4507,20 +4580,16 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 							Runtime: fixRuntimeModel(RuntimeID),
 							Labels:  fixRuntimeLabelsMap(),
 						},
-						RuntimeContext: nil,
-						CustomerTenantContext: &webhook.CustomerTenantContext{
-							CustomerID: TntParentID,
-							AccountID:  str.Ptr(TntExternalID),
-							Path:       nil,
-						},
-						Assignment:        emptyFormationAssignment,
-						ReverseAssignment: emptyFormationAssignment,
+						RuntimeContext:        nil,
+						CustomerTenantContext: CustomerTenantContextAccount,
+						Assignment:            emptyFormationAssignment,
+						ReverseAssignment:     emptyFormationAssignment,
 					},
 					CorrelationID: "",
 				}).Return(nil, testErr)
 				return client
 			},
-			InputRequest: &webhookclient.NotificationRequest{
+			InputRequest: &webhookclient.FormationAssignmentNotificationRequest{
 				Webhook: *fixRuntimeWebhookGQLModel(WebhookID, RuntimeID),
 				Object: &webhook.FormationConfigurationChangeInput{
 					Operation:   model.AssignFormation,
@@ -4537,22 +4606,14 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 						Runtime: fixRuntimeModel(RuntimeID),
 						Labels:  fixRuntimeLabelsMap(),
 					},
-					RuntimeContext: nil,
-					CustomerTenantContext: &webhook.CustomerTenantContext{
-						CustomerID: TntParentID,
-						AccountID:  str.Ptr(TntExternalID),
-						Path:       nil,
-					},
-					Assignment:        emptyFormationAssignment,
-					ReverseAssignment: emptyFormationAssignment,
+					RuntimeContext:        nil,
+					CustomerTenantContext: CustomerTenantContextAccount,
+					Assignment:            emptyFormationAssignment,
+					ReverseAssignment:     emptyFormationAssignment,
 				},
 				CorrelationID: "",
 			},
 			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name:         "does nothing when no arguments are supplied",
-			InputRequest: nil,
 		},
 	}
 
@@ -4563,7 +4624,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				webhookClient = testCase.WebhookClientFN()
 			}
 
-			notificationSvc := formation.NewNotificationService(nil, nil, nil, nil, nil, nil, nil, webhookClient, nil, nil)
+			notificationSvc := formation.NewNotificationService(nil, nil, nil, nil, nil, nil, nil, nil, webhookClient, nil, nil)
 
 			// WHEN
 			_, err := notificationSvc.SendNotification(ctx, testCase.InputRequest)
@@ -4594,13 +4655,4 @@ func checkIfEqual(first, second []string) bool {
 		}
 	}
 	return true
-}
-
-func checkIfIDInSet(wh *model.Webhook, ids []string) bool {
-	for _, id := range ids {
-		if wh.ID == id {
-			return true
-		}
-	}
-	return false
 }

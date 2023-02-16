@@ -28,6 +28,9 @@ const (
 	BusinessIntegration ConsumerType = "Business Integration"
 	// ManagedApplicationProviderOperator is a consumer type that is used by Managed Application Provider operator
 	ManagedApplicationProviderOperator ConsumerType = "Managed Application Provider Operator"
+	// ManagedApplicationConsumer is a consumer type that is used by Managed Application Provider operator
+	// when creating Certificate Subject Mappings
+	ManagedApplicationConsumer ConsumerType = "Managed Application Consumer"
 )
 
 // Consumer missing godoc
@@ -57,6 +60,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return BusinessIntegration, nil
 	case model.ManagedApplicationProviderOperatorReference:
 		return ManagedApplicationProviderOperator, nil
+	case model.ManagedApplicationConsumerReference:
+		return ManagedApplicationConsumer, nil
 	case model.SuperAdminReference:
 		return SuperAdmin, nil
 	}
