@@ -146,7 +146,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		runtimeID := fa.Source
 		log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeRuntime, runtimeID)
 
-		runtimeWithLabels, runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeAndRuntimeContextWithLabels(ctx, tenantID, runtimeID)
+		runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenantID, runtimeID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
@@ -165,7 +165,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			appTemplateWithLabels,
 			applicationWithLabels,
 			runtimeWithLabels,
-			runtimeContextWithLabels,
+			nil,
 			convertFormationAssignmentFromModel(fa),
 			convertFormationAssignmentFromModel(reverseFA),
 			model.ApplicationResourceType,

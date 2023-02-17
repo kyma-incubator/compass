@@ -549,7 +549,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
+				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
 			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
@@ -565,7 +565,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			notificationBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(details, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, emptyRuntimeCtx, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(details, nil).Once()
 				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, TestFormationTemplateID, details, testAppWebhook).Return(testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRuntimeAndTargetApp, nil).Once()
 
 				return notificationsBuilder
@@ -626,7 +626,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, nil, testErr).Once()
+				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestSource).Return(nil, testErr).Once()
 				return webhookDataInputBuilder
 			},
 			formationRepo: func() *automock.FormationRepository {
@@ -648,7 +648,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
+				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
 			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
@@ -675,7 +675,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
+				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
 			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
@@ -691,7 +691,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			notificationBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(nil, testErr).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, emptyRuntimeCtx, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(nil, testErr).Once()
 
 				return notificationsBuilder
 			},
@@ -714,7 +714,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
+				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
 			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
@@ -730,7 +730,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			notificationBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(details, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, emptyRuntimeCtx, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(details, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -752,7 +752,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
+				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
 			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
@@ -768,7 +768,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			notificationBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(details, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, emptyRuntimeCtx, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(details, nil).Once()
 
 				return notificationsBuilder
 			},
@@ -791,7 +791,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
 				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
 				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				webhookDataInputBuilder.On("PrepareRuntimeAndRuntimeContextWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, testRuntimeCtxWithLabels, nil).Once()
+				webhookDataInputBuilder.On("PrepareRuntimeWithLabels", emptyCtx, TestTenantID, TestSource).Return(testRuntimeWithLabels, nil).Once()
 				return webhookDataInputBuilder
 			},
 			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
@@ -807,7 +807,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			notificationBuilder: func() *automock.NotificationBuilder {
 				notificationsBuilder := &automock.NotificationBuilder{}
 
-				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, testRuntimeCtxWithLabels, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(details, nil).Once()
+				notificationsBuilder.On("PrepareDetailsForConfigurationChangeNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testRuntimeWithLabels, emptyRuntimeCtx, convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetApp), convertFormationAssignmentFromModel(faWithSourceRuntimeAndTargetAppReverse), model.ApplicationResourceType, testCustomerTenantContext).Return(details, nil).Once()
 				notificationsBuilder.On("BuildFormationAssignmentNotificationRequest", ctx, TestFormationTemplateID, details, testAppWebhook).Return(nil, testErr).Once()
 
 				return notificationsBuilder
