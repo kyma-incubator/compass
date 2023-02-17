@@ -957,27 +957,6 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
-			name:       "Authorization fail: when the consumer ID is one of the formation templates product IDs but the committing transaction fails",
-			transactFn: txGen.ThatFailsOnCommit,
-			formationRepoFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
-				return formationRepo
-			},
-			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
-				ftRepo := &automock.FormationTemplateRepository{}
-				ftRepo.On("Get", contextThatHasTenant(internalTntID), testFormationTemplateID).Return(formationTemplate, nil).Once()
-				return ftRepo
-			},
-			contextFn: func() context.Context {
-				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
-				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
-			},
-			hasURLVars:         true,
-			expectedStatusCode: http.StatusInternalServerError,
-			expectedErrOutput:  "An unexpected error occurred while processing the request",
-		},
-		{
 			name:       "Unauthorized error when authorization check is unsuccessful but there is no error",
 			transactFn: txGen.ThatSucceeds,
 			formationRepoFn: func() *automock.FormationRepository {

@@ -87,7 +87,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	log.C(ctx).Info("Validating formation assignment request body...")
 	if err = reqBody.Validate(); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while validating the request body")
-		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Request Body contains invalid input: %s. X-Request-Id: %s", err.Error(), correlationID))
+		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Request Body contains invalid input: %q. X-Request-Id: %s", err.Error(), correlationID))
 		return
 	}
 
@@ -269,7 +269,7 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 	log.C(ctx).Info("Validating formation request body...")
 	if err = reqBody.Validate(); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while validating the request body")
-		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Request Body contains invalid input: %s. X-Request-Id: %s", err.Error(), correlationID))
+		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Request Body contains invalid input: %q. X-Request-Id: %s", err.Error(), correlationID))
 		return
 	}
 

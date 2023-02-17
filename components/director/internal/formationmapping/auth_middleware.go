@@ -3,6 +3,7 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -157,6 +158,7 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+			correlationID := correlation.CorrelationIDFromContext(ctx)
 
 			if r.Method != http.MethodPatch {
 				w.WriteHeader(http.StatusMethodNotAllowed)
@@ -176,7 +178,7 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
-				respondWithError(ctx, w, statusCode, errors.New("An unexpected error occurred while processing the request"))
+				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
 				return
 			}
 
@@ -195,6 +197,7 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+			correlationID := correlation.CorrelationIDFromContext(ctx)
 
 			if r.Method != http.MethodPatch {
 				w.WriteHeader(http.StatusMethodNotAllowed)
@@ -213,7 +216,7 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 			isAuthorized, statusCode, err := a.isFormationAuthorized(ctx, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
-				respondWithError(ctx, w, statusCode, errors.New("An unexpected error occurred while processing the request"))
+				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
 				return
 			}
 
@@ -245,7 +248,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 
 	f, err := a.formationRepo.GetGlobalByID(ctx, formationID)
 	if err != nil {
-		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation with ID: %q", formationID)
+		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
 	}
 
 	ft, err := a.formationTemplateRepo.Get(ctx, f.FormationTemplateID)
@@ -253,21 +256,16 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation template with ID: %q", f.FormationTemplateID)
 	}
 
-	for _, id := range ft.LeadingProductIDs {
-		if id != nil && *id == consumerID {
-			if err = tx.Commit(); err != nil {
-				log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
-				return false, http.StatusInternalServerError, errors.Wrap(err, "unable to finalize database operation")
-			}
-
-			log.C(ctx).Infof("Consumer with ID: %q is contained in the leading product IDs list from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
-			return true, http.StatusOK, nil
-		}
-	}
-
 	if err = tx.Commit(); err != nil {
 		log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
 		return false, http.StatusInternalServerError, errors.Wrap(err, "unable to finalize database operation")
+	}
+
+	for _, id := range ft.LeadingProductIDs {
+		if id != nil && *id == consumerID {
+			log.C(ctx).Infof("Consumer with ID: %q is contained in the leading product IDs list from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
+			return true, http.StatusOK, nil
+		}
 	}
 
 	log.C(ctx).Infof("Consumer with ID: %q did not match any of the leading product IDs from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
@@ -292,7 +290,7 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 
 	fa, err := a.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
-		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation assignment with ID: %q and formation ID: %q globally", formationAssignmentID, formationID)
+		return false, http.StatusInternalServerError, err
 	}
 
 	consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
