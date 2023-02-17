@@ -2,6 +2,7 @@ package formationmapping
 
 // Config holds the configuration available for the formation mapping
 type Config struct {
-	AsyncAPIPathPrefix string `envconfig:"APP_FORMATION_MAPPING_API_PATH_PREFIX"`
-	AsyncAPIEndpoint   string `envconfig:"APP_FORMATION_MAPPING_API_ENDPOINT"`
+	AsyncAPIPathPrefix                        string `envconfig:"APP_FORMATION_MAPPING_API_PATH_PREFIX"`
+	AsyncFormationAssignmentStatusAPIEndpoint string `envconfig:"APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_API_ENDPOINT"`
+	AsyncFormationStatusAPIEndpoint           string `envconfig:"APP_FORMATION_ASYNC_STATUS_API_ENDPOINT"`
 }

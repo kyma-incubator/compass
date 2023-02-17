@@ -41,12 +41,12 @@ const (
 )
 
 type NotificationsConfiguration struct {
-	ExternalClientCertTestSecretName        string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
-	ExternalClientCertTestSecretNamespace   string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
-	ExternalClientCertCertKey               string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
-	ExternalClientCertKeyKey                string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
-	DirectorExternalCertFormationMappingURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL"`
-	FormationMappingAsyncResponseDelay      int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
+	ExternalClientCertTestSecretName      string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
+	ExternalClientCertTestSecretNamespace string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
+	ExternalClientCertCertKey             string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
+	ExternalClientCertKeyKey              string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
+	DirectorExternalCertFAAsyncStatusURL  string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
+	FormationMappingAsyncResponseDelay    int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
 }
 
 type RequestBody struct {
@@ -561,7 +561,7 @@ func (h *Handler) executeStatusUpdateRequest(certSecuredHTTPClient *http.Client,
 		return err
 	}
 
-	formationMappingEndpoint := strings.Replace(h.config.DirectorExternalCertFormationMappingURL, fmt.Sprintf("{%s}", "ucl-formation-id"), formationID, 1)
+	formationMappingEndpoint := strings.Replace(h.config.DirectorExternalCertFAAsyncStatusURL, fmt.Sprintf("{%s}", "ucl-formation-id"), formationID, 1)
 	formationMappingEndpoint = strings.Replace(formationMappingEndpoint, fmt.Sprintf("{%s}", "ucl-assignment-id"), formationAssignmentID, 1)
 
 	request, err := http.NewRequest(http.MethodPatch, formationMappingEndpoint, bytes.NewBuffer(marshalBody))

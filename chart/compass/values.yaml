@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2883"
+      version: "PR-2886"
       name: compass-director
     hydrator:
       dir:
@@ -151,7 +151,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2876"
+      version: "PR-2886"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -159,7 +159,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2876"
+      version: "PR-2886"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2876"
+      version: "PR-2886"
       name: compass-external-services-mock
     console:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2885"
+      version: "PR-2886"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -226,9 +226,10 @@ global:
     useClone: "false"
   director:
     host: compass-director.compass-system.svc.cluster.local
-    formationAsyncApi:
+    formationMappingAsyncStatusApi:
       pathPrefix: "/v1/businessIntegrations"
-      path: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
+      formationAssignmentPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
+      formationPath: "/{ucl-formation-id}/status"
     prefix: /director
     graphql:
       external:

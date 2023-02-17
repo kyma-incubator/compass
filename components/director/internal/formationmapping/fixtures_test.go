@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -17,6 +20,19 @@ import (
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	emptyCtx = context.Background()
+	testErr  = errors.New("test error")
+	txGen    = txtest.NewTransactionContextGenerator(testErr)
+
+	internalTntID = "testInternalID"
+	externalTntID = "testExternalID"
+
+	testFormationID         = "testFormationID"
+	testFormationName       = "testFormationName"
+	testFormationTemplateID = "testFormationTemplateID"
 )
 
 func fixTestHandler(t *testing.T) http.HandlerFunc {
@@ -42,7 +58,6 @@ func fixGetConsumer(consumerID string, consumerType consumer.ConsumerType) consu
 }
 
 func fixContextWithTenantAndConsumer(c consumer.Consumer, internalTntID, externalTntID string) context.Context {
-	emptyCtx := context.Background()
 	tenantCtx := tenant.SaveToContext(emptyCtx, internalTntID, externalTntID)
 	consumerAndTenantCtx := consumer.SaveToContext(tenantCtx, c)
 
@@ -150,4 +165,12 @@ func fixUnusedAppTemplateRepo() *automock.ApplicationTemplateRepository {
 
 func fixUnusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
+}
+
+func fixUnusedFormationRepo() *automock.FormationRepository {
+	return &automock.FormationRepository{}
+}
+
+func fixUnusedFormationTemplateRepo() *automock.FormationTemplateRepository {
+	return &automock.FormationTemplateRepository{}
 }

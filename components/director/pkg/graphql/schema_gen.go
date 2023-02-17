@@ -387,6 +387,7 @@ type ComplexityRoot struct {
 	FormationTemplate struct {
 		ApplicationTypes       func(childComplexity int) int
 		ID                     func(childComplexity int) int
+		LeadingProductIDs      func(childComplexity int) int
 		Name                   func(childComplexity int) int
 		RuntimeArtifactKind    func(childComplexity int) int
 		RuntimeTypeDisplayName func(childComplexity int) int
@@ -2450,6 +2451,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationTemplate.ID(childComplexity), true
+
+	case "FormationTemplate.leadingProductIDs":
+		if e.complexity.FormationTemplate.LeadingProductIDs == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.LeadingProductIDs(childComplexity), true
 
 	case "FormationTemplate.name":
 		if e.complexity.FormationTemplate.Name == nil {
@@ -5486,6 +5494,7 @@ input FormationTemplateInput {
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 	webhooks: [WebhookInput!]
+	leadingProductIDs: [String]
 }
 
 input IntegrationSystemInput {
@@ -6018,6 +6027,7 @@ type FormationTemplate {
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
+	leadingProductIDs: [String]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -17165,6 +17175,37 @@ func (ec *executionContext) _FormationTemplate_webhooks(ctx context.Context, fie
 	res := resTmp.([]*Webhook)
 	fc.Result = res
 	return ec.marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationTemplate_leadingProductIDs(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LeadingProductIDs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*string)
+	fc.Result = res
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *FormationTemplatePage) (ret graphql.Marshaler) {
@@ -31187,6 +31228,12 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
+		case "leadingProductIDs":
+			var err error
+			it.LeadingProductIDs, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -33741,6 +33788,8 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 				res = ec._FormationTemplate_webhooks(ctx, field, obj)
 				return res
 			})
+		case "leadingProductIDs":
+			out.Values[i] = ec._FormationTemplate_leadingProductIDs(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39532,6 +39581,38 @@ func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel
 	ret := make(graphql.Array, len(v))
 	for i := range v {
 		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
 	}
 
 	return ret
