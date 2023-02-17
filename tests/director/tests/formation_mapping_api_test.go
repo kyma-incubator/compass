@@ -525,7 +525,7 @@ func Test_UpdateFormationStatus(t *testing.T) {
 		leadingProductID := "leading-product-id"
 		leadingProductIDs := []*string{&leadingProductID}
 
-		ft := createFormationTemplateWithLeadingProductIDs(t, ctx, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
+		ft := fixtures.CreateFormationTemplateWithLeadingProductIDs(t, ctx, certSecuredGraphQLClient, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
@@ -599,18 +599,4 @@ func resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID string) strin
 	faAsyncStatusAPIURL := strings.Replace(conf.DirectorExternalCertFAAsyncStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
 	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
 	return faAsyncStatusAPIURL
-}
-
-func createFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []*string) graphql.FormationTemplate {
-	formationTmplInput := fixtures.FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, runtimeType, applicationTypes, runtimeArtifactKind, leadingProductIDs)
-
-	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
-	require.NoError(t, err)
-	formationTmplRequest := fixtures.FixCreateFormationTemplateRequest(formationTmplGQLInput)
-
-	ft := graphql.FormationTemplate{}
-	t.Logf("Creating formation template with name: %q", formationTemplateName)
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, formationTmplRequest, &ft)
-	require.NoError(t, err)
-	return ft
 }

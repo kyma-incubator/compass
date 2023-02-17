@@ -3,8 +3,9 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
