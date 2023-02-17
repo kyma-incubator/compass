@@ -4,9 +4,9 @@ Automatic Scenario Assignment (ASA) feature allows you to define an external sub
 
 ![](./assets/automatic-scenario-assign.svg) 
 
-1. Administrator defines Scenarios in a tenant of type `account`.
-2. Administrator defines conditions to label Runtimes using Automatic Scenario Assignment. 
-3. User registers a Runtime that matches the conditions specified in the ASA.
+1. Administrator creates a Formation in a tenant of type `account`.
+2. Administrator assigns subaccount X to the Formation. 
+3. User registers a Runtime in subaccount X.
 4. Runtime is automatically assigned to the matching Scenario. 
 
 ## API
@@ -29,18 +29,11 @@ A tenant-matching condition is defined as a label selector in the `selector` fie
 
 ### Mutations
 
-Director API contains the following mutations for managing Automatic Scenario Assignments:
+Automatic Scenario Assignments can not be created or deleted directly using a Director API. Rather Automatic Scenario Assignments are created implicitly when assigning tenant of type `subaccount` to a Formation and is deleted when the tenant is unassigned from the Formation:
 ```graphql
-   createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput! @validate): AutomaticScenarioAssignment 
-   deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment 
-   deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! 
+   assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation!
+   unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! 
 ```
-When you create an assignment, make sure that the following conditions are met:
-- Only one Assignment exists for a given Scenario.
-- The given Scenario exists.
-- The selector key is of type `global_subaccount_id`.
-- The selector value type is an external tenant ID of type `subaccount`.
-- The subaccount tenant ID is a child tenant of the request tenant.
 
 ### Queries
 
@@ -53,36 +46,36 @@ Director API contains queries that allow you to fetch all assignments, fetch ass
 
 ## Assign Runtime to Scenario
 
-You can assign a Runtime to a Scenario either by:
-- Creating ASA and then creating a Runtime that matches
-- Creating ASA when the Runtime already exists
+You can assign a Runtime to a Scenario by:
+1. Create Formation
+2. Assign Runtime to the formation using `assignFromation` mutation with `objectType` - `RUNTIME`
 
 ### Create ASA and Runtime
 
-1. Create or update the `scenarios` LabelDefinition and specify the following scenarios: 
-* DEFAULT
-* MARKETING
-* WAREHOUSE
+1. Create Formation with name `WAREHOUSE`: 
 
 ```graphql
-mutation  {
-  createLabelDefinition(in: {key: "scenarios", schema: "{\"items\":{\"enum\":[\"DEFAULT\",\"MARKETING\",\"WAREHOUSE\"],\"maxLength\":128,\"pattern\":\"^[A-Za-z0-9]([-_A-Za-z0-9\\\\s]*[A-Za-z0-9])$\",\"type\":\"string\"},\"minItems\":1,\"type\":\"array\",\"uniqueItems\":true}"}) {
-    key
-    schema
-  }
+mutation {
+   result: createFormation(formation: { name: "WAREHOUSE" }) {
+      id
+      name
+      formationTemplateId
+   }
 }
 ```
 
-2. Create an assignment with a condition that Runtimes created by a `WAREHOUSE` Administrator are assigned to the `WAREHOUSE` Scenario:
+2. Assign the WEAREHOUSE Administrators subaccount to the Formation. This will implicitly create Automatic Scenario Assignment with a condition that Runtimes created by a `WAREHOUSE` Administrator are assigned to the `WAREHOUSE` Scenario:
 ```graphql
-mutation  {
-  createAutomaticScenarioAssignment(in: {scenarioName: "WAREHOUSE", selector: {key: "global_subaccount_id", value: "0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
-    scenarioName
-    selector {
-      key
-      value
-    }
-  }
+mutation {
+   result: assignFormation(
+      objectID: "0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"
+      objectType: TENANT
+      formation: { name: "WAREHOUSE" }
+   ) {
+      id
+      name
+      formationTemplateId
+   }
 }
 ```
 
@@ -116,13 +109,20 @@ Automatic Scenario Assignment assigns the Runtime to the `WAREHOUSE` Scenario:
 }
 ```
 
-4. Remove Automatic Scenario Assignment:
+4. Unassign the subaccount from the Formation. This will result in removing the Automatic Scenario Assignment:
 ```graphql
-mutation  {
-  deleteAutomaticScenarioAssignmentForScenario(scenarioName: "WAREHOUSE") {
-    scenarioName
-  }
+mutation {
+   result: unassignFormation(
+      objectID: "0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"
+      objectType: TENANT
+      formation: { name: "WAREHOUSE" }
+   ) {
+      id
+      name
+      formationTemplateId
+   }
 }
+
 ```
 
 5. Fetch information about previously created Runtime, for example by listing all Runtimes
@@ -174,20 +174,34 @@ All requests below are done in the context of a tenant of type `account` which i
         }
       ```
 
-2. Create an assignment:
+2. Create Formation with name `MARKETING`:
+
 ```graphql
-mutation  {
-  createAutomaticScenarioAssignment(in: {scenarioName: "MARKETING", selector: {key: "global_subaccount_id", value: "0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
-    scenarioName
-    selector {
-      key
-      value
-    }
-  }
+mutation {
+   result: createFormation(formation: { name: "MARKETING" }) {
+      id
+      name
+      formationTemplateId
+   }
 }
 ```
 
-3. Check if the Runtime is assigned to the `MARKETING` Scenario:
+3. Assign subaccount to the Formation, this will implicitly create the Automatic Scenario Assignment:
+```graphql
+mutation {
+   result: assignFormation(
+      objectID: "0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"
+      objectType: TENANT
+      formation: { name: "MARKETING" }
+   ) {
+      id
+      name
+      formationTemplateId
+   }
+}
+```
+
+4. Check if the Runtime is assigned to the `MARKETING` Scenario:
 ```graphql
 query  {
   runtimes {
