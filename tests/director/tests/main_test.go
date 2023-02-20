@@ -25,18 +25,19 @@ import (
 )
 
 type DirectorConfig struct {
-	DirectorUrl                             string
-	DirectorInternalGatewayUrl              string
-	HealthUrl                               string `envconfig:"default=https://director.kyma.local/healthz"`
-	WebhookUrl                              string `envconfig:"default=https://kyma-project.io"`
-	InfoUrl                                 string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
-	DefaultNormalizationPrefix              string `envconfig:"default=mp-"`
-	GatewayOauth                            string
-	DirectorExternalCertSecuredURL          string
-	DirectorExternalCertFormationMappingURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL"`
-	SkipSSLValidation                       bool   `envconfig:"default=false"`
-	ConsumerID                              string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
-	CertLoaderConfig                        certloader.Config
+	DirectorUrl                                 string
+	DirectorInternalGatewayUrl                  string
+	HealthUrl                                   string `envconfig:"default=https://director.kyma.local/healthz"`
+	WebhookUrl                                  string `envconfig:"default=https://kyma-project.io"`
+	InfoUrl                                     string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
+	DefaultNormalizationPrefix                  string `envconfig:"default=mp-"`
+	GatewayOauth                                string
+	DirectorExternalCertSecuredURL              string
+	DirectorExternalCertFAAsyncStatusURL        string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
+	DirectorExternalCertFormationAsyncStatusURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
+	SkipSSLValidation                           bool   `envconfig:"default=false"`
+	ConsumerID                                  string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
+	CertLoaderConfig                            certloader.Config
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                              subscription.Config
 	TestProviderAccountID                           string

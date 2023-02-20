@@ -20,16 +20,18 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
 var JoinPointDetailsByLocation = map[formationconstraint.JoinPointLocation]formationconstraint.JoinPointDetails{
-	formationconstraint.PreAssign:                 &formationconstraint.AssignFormationOperationDetails{},
-	formationconstraint.PostAssign:                &formationconstraint.AssignFormationOperationDetails{},
-	formationconstraint.PreUnassign:               &formationconstraint.UnassignFormationOperationDetails{},
-	formationconstraint.PostUnassign:              &formationconstraint.UnassignFormationOperationDetails{},
-	formationconstraint.PreCreate:                 &formationconstraint.CRUDFormationOperationDetails{},
-	formationconstraint.PostCreate:                &formationconstraint.CRUDFormationOperationDetails{},
-	formationconstraint.PreDelete:                 &formationconstraint.CRUDFormationOperationDetails{},
-	formationconstraint.PostDelete:                &formationconstraint.CRUDFormationOperationDetails{},
-	formationconstraint.PreGenerateNotifications:  &formationconstraint.GenerateNotificationOperationDetails{},
-	formationconstraint.PostGenerateNotifications: &formationconstraint.GenerateNotificationOperationDetails{},
+	formationconstraint.PreAssign:                                    &formationconstraint.AssignFormationOperationDetails{},
+	formationconstraint.PostAssign:                                   &formationconstraint.AssignFormationOperationDetails{},
+	formationconstraint.PreUnassign:                                  &formationconstraint.UnassignFormationOperationDetails{},
+	formationconstraint.PostUnassign:                                 &formationconstraint.UnassignFormationOperationDetails{},
+	formationconstraint.PreCreate:                                    &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PostCreate:                                   &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PreDelete:                                    &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PostDelete:                                   &formationconstraint.CRUDFormationOperationDetails{},
+	formationconstraint.PreGenerateFormationAssignmentNotifications:  &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{},
+	formationconstraint.PostGenerateFormationAssignmentNotifications: &formationconstraint.GenerateFormationAssignmentNotificationOperationDetails{},
+	formationconstraint.PreGenerateFormationNotifications:            &formationconstraint.GenerateFormationNotificationOperationDetails{},
+	formationconstraint.PostGenerateFormationNotifications:           &formationconstraint.GenerateFormationNotificationOperationDetails{},
 }
 
 // Validate validates FormationConstraintInput
@@ -37,7 +39,7 @@ func (i FormationConstraintInput) Validate() error {
 	if err := validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required),
 		validation.Field(&i.ConstraintType, validation.Required, validation.In(ConstraintTypePre, ConstraintTypePost)),
-		validation.Field(&i.TargetOperation, validation.Required, validation.In(TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateNotification)),
+		validation.Field(&i.TargetOperation, validation.Required, validation.In(TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification)),
 		validation.Field(&i.Operator, validation.Required),
 		validation.Field(&i.ResourceType, validation.Required, validation.In(ResourceTypeApplication, ResourceTypeRuntime, ResourceTypeFormation, ResourceTypeTenant, ResourceTypeRuntimeContext)),
 		validation.Field(&i.ResourceSubtype, validation.Required),

@@ -205,7 +205,7 @@ func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMa
 	}
 }
 
-func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.NotificationRequest) *formationassignment.AssignmentMappingPair {
+func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPair {
 	return &formationassignment.AssignmentMappingPair{
 		Assignment: &formationassignment.FormationAssignmentRequestMapping{
 			Request:             req,
@@ -215,7 +215,7 @@ func fixAssignmentMappingPairWithIDAndRequest(id string, req *webhookclient.Noti
 	}
 }
 
-func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.NotificationRequest) *formationassignment.AssignmentMappingPair {
+func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPair {
 	return &formationassignment.AssignmentMappingPair{
 		Assignment: &formationassignment.FormationAssignmentRequestMapping{
 			Request:             req,
@@ -460,9 +460,9 @@ func fixFormationAssignmentsForRtmCtxWithAppAndRtmCtx(objectType model.Formation
 	}
 }
 
-func fixNotificationRequestAndReverseRequest(objectID, object2ID string, participants []string, assignment, assignmentReverse *model.FormationAssignment, webhookType, reverseWebhookType string, hasReverseWebhook bool) ([]*webhookclient.NotificationRequest, *automock.TemplateInput, *automock.TemplateInput) {
-	var request *webhookclient.NotificationRequest
-	var requestReverse *webhookclient.NotificationRequest
+func fixNotificationRequestAndReverseRequest(objectID, object2ID string, participants []string, assignment, assignmentReverse *model.FormationAssignment, webhookType, reverseWebhookType string, hasReverseWebhook bool) ([]*webhookclient.FormationAssignmentNotificationRequest, *automock.TemplateInput, *automock.TemplateInput) {
+	var request *webhookclient.FormationAssignmentNotificationRequest
+	var requestReverse *webhookclient.FormationAssignmentNotificationRequest
 
 	templateInput := &automock.TemplateInput{}
 	templateInputReverse := &automock.TemplateInput{}
@@ -480,7 +480,7 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	templateInput.Mock.On("SetAssignment", assignment).Times(2)
 	templateInput.Mock.On("SetReverseAssignment", assignmentReverse).Times(2)
 
-	request = &webhookclient.NotificationRequest{Webhook: webhook, Object: templateInput}
+	request = &webhookclient.FormationAssignmentNotificationRequest{Webhook: webhook, Object: templateInput}
 
 	if hasReverseWebhook {
 		switch reverseWebhookType {
@@ -494,12 +494,12 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 		templateInputReverse.Mock.On("SetAssignment", assignmentReverse).Times(2)
 		templateInputReverse.Mock.On("SetReverseAssignment", assignment).Times(2)
 
-		requestReverse = &webhookclient.NotificationRequest{Webhook: webhookReverse, Object: templateInputReverse}
+		requestReverse = &webhookclient.FormationAssignmentNotificationRequest{Webhook: webhookReverse, Object: templateInputReverse}
 	} else {
 		requestReverse = nil
 	}
 
-	return []*webhookclient.NotificationRequest{request, requestReverse}, templateInput, templateInputReverse
+	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
 }
 
 func fixUUIDService() *automock.UIDService {

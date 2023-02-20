@@ -10,6 +10,7 @@ import (
 
 // FormationLifecycleInput struct contains the input for FORMATION_LIFECYCLE webhook
 type FormationLifecycleInput struct {
+	Operation             model.FormationOperation
 	Formation             *model.Formation
 	CustomerTenantContext *CustomerTenantContext
 }

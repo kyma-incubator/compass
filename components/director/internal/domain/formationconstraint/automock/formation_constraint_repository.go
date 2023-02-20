@@ -137,13 +137,27 @@ func (_m *FormationConstraintRepository) ListMatchingFormationConstraints(ctx co
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationConstraintRepository interface {
+// Update provides a mock function with given fields: ctx, _a1
+func (_m *FormationConstraintRepository) Update(ctx context.Context, _a1 *model.FormationConstraint) error {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationConstraint) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+type NewFormationConstraintRepositoryT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationConstraintRepository creates a new instance of FormationConstraintRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationConstraintRepository(t mockConstructorTestingTNewFormationConstraintRepository) *FormationConstraintRepository {
+func NewFormationConstraintRepository(t NewFormationConstraintRepositoryT) *FormationConstraintRepository {
 	mock := &FormationConstraintRepository{}
 	mock.Mock.Test(t)
 

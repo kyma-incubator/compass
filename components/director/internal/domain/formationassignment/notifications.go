@@ -7,11 +7,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
 )
@@ -22,11 +21,16 @@ type formationRepository interface {
 	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
 }
 
+//go:generate mockery --exported --name=notificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type notificationService interface {
+	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhook.Response, error)
+}
+
 //go:generate mockery --exported --name=notificationBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type notificationBuilder interface {
-	BuildNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.NotificationRequest, error)
-	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateNotificationOperationDetails, error)
-	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateNotificationOperationDetails, error)
+	BuildFormationAssignmentNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
+	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 }
 
 type formationAssignmentNotificationService struct {
@@ -52,8 +56,8 @@ func NewFormationAssignmentNotificationService(formationAssignmentRepo Formation
 	}
 }
 
-// GenerateNotification generates notifications by provided model.FormationAssignment
-func (fan *formationAssignmentNotificationService) GenerateNotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.NotificationRequest, error) {
+// GenerateFormationAssignmentNotification generates formation assignment notification by provided model.FormationAssignment
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNotification(ctx context.Context, fa *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	log.C(ctx).Infof("Generating notification for formation assignment with ID: %q and target type: %q and target ID: %q", fa.ID, fa.TargetType, fa.Target)
 
 	customerTenantContext, err := fan.extractCustomerTenantContext(ctx, fa.TenantID)
@@ -79,20 +83,11 @@ func (fan *formationAssignmentNotificationService) GenerateNotification(ctx cont
 }
 
 // generateApplicationFANotification generates application formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateApplicationFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.NotificationRequest, error) {
-	tenant := fa.TenantID
+func (fan *formationAssignmentNotificationService) generateApplicationFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+	tenantID := fa.TenantID
 	appID := fa.Target
 
-	appWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenant, appID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged)
-	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			log.C(ctx).Infof("There is no configuration changed webhook for runtime with ID: %q. There are no notifications to be generated.", appID)
-			return nil, nil
-		}
-		return nil, errors.Wrapf(err, "while getting configuration changed webhook for runtime with ID: %q", appID)
-	}
-
-	applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
+	applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenantID, appID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
@@ -102,13 +97,13 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		reverseAppID := fa.Source
 		log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeApplication, reverseAppID)
 
-		reverseAppWithLabels, reverseAppTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, reverseAppID)
+		reverseAppWithLabels, reverseAppTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenantID, reverseAppID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
 
-		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
@@ -131,7 +126,16 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
+		appToAppWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenantID, appID, model.ApplicationWebhookReference, model.WebhookTypeApplicationTenantMapping)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.C(ctx).Infof("There is no %q webhook for application with ID: %q. There are no notifications to be generated.", model.WebhookTypeApplicationTenantMapping, appID)
+				return nil, nil
+			}
+			return nil, errors.Wrapf(err, "while getting %q webhook for application with ID: %q", model.WebhookTypeApplicationTenantMapping, appID)
+		}
+
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appToAppWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -142,13 +146,13 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		runtimeID := fa.Source
 		log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeRuntime, runtimeID)
 
-		runtimeWithLabels, runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeAndRuntimeContextWithLabels(ctx, tenant, runtimeID)
+		runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenantID, runtimeID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
 
-		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
@@ -161,7 +165,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			appTemplateWithLabels,
 			applicationWithLabels,
 			runtimeWithLabels,
-			runtimeContextWithLabels,
+			nil,
 			convertFormationAssignmentFromModel(fa),
 			convertFormationAssignmentFromModel(reverseFA),
 			model.ApplicationResourceType,
@@ -172,7 +176,16 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
+		appWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenantID, appID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.C(ctx).Infof("There is no %q webhook for application with ID: %q. There are no notifications to be generated.", model.WebhookTypeConfigurationChanged, appID)
+				return nil, nil
+			}
+			return nil, errors.Wrapf(err, "while getting %q webhook for application with ID: %q", model.WebhookTypeConfigurationChanged, appID)
+		}
+
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -183,20 +196,20 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		runtimeCtxID := fa.Source
 		log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeRuntimeContext, runtimeCtxID)
 
-		runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
+		runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenantID, runtimeCtxID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
 
 		runtimeID := runtimeContextWithLabels.RuntimeContext.RuntimeID
-		runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
+		runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenantID, runtimeID)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
 
-		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
 		if err != nil {
 			log.C(ctx).Error(err)
 			return nil, err
@@ -220,7 +233,16 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
+		appWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenantID, appID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				log.C(ctx).Infof("There is no %q webhook for application with ID: %q. There are no notifications to be generated.", model.WebhookTypeConfigurationChanged, appID)
+				return nil, nil
+			}
+			return nil, errors.Wrapf(err, "while getting %q webhook for application with ID: %q", model.WebhookTypeConfigurationChanged, appID)
+		}
+
+		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
 		if err != nil {
 			log.C(ctx).Errorf("while building notification request: %v", err)
 			return nil, err
@@ -231,11 +253,11 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 }
 
 // generateRuntimeFANotification generates runtime formation assignment notification based on the reverse(source) type of the formation
-func (fan *formationAssignmentNotificationService) generateRuntimeFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.NotificationRequest, error) {
-	tenant := fa.TenantID
+func (fan *formationAssignmentNotificationService) generateRuntimeFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+	tenantID := fa.TenantID
 	runtimeID := fa.Target
 
-	runtimeWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenant, runtimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged)
+	runtimeWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenantID, runtimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			log.C(ctx).Infof("There is no configuration changed webhook for runtime with ID: %q. There are no notifications to be generated", runtimeID)
@@ -252,19 +274,19 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	appID := fa.Source
 	log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeApplication, appID)
 
-	applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
+	applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenantID, appID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
 
-	runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
+	runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenantID, runtimeID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
 
-	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
@@ -288,7 +310,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 		return nil, err
 	}
 
-	notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
+	notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
 	if err != nil {
 		log.C(ctx).Errorf("while building notification request: %v", err)
 		return nil, err
@@ -298,18 +320,18 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 }
 
 // generateRuntimeContextFANotification generates runtime context formation assignment notification based on the reverse(source) type of the formation assignment
-func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.NotificationRequest, error) {
-	tenant := fa.TenantID
+func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotification(ctx context.Context, fa *model.FormationAssignment, referencedFormation *model.Formation, customerTenantContext *webhook.CustomerTenantContext) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+	tenantID := fa.TenantID
 	runtimeCtxID := fa.Target
 
-	runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
+	runtimeContextWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenantID, runtimeCtxID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
 
 	runtimeID := runtimeContextWithLabels.RuntimeContext.RuntimeID
-	runtimeWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenant, runtimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged)
+	runtimeWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenantID, runtimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			log.C(ctx).Infof("There is no configuration changed webhook for runtime with ID: %q. There are no notifications to be generated", runtimeID)
@@ -326,19 +348,19 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	appID := fa.Source
 	log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeApplication, appID)
 
-	applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
+	applicationWithLabels, appTemplateWithLabels, err := fan.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenantID, appID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
 
-	runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
+	runtimeWithLabels, err := fan.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenantID, runtimeID)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
 
-	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenant, fa.FormationID, fa.Source, fa.Target)
+	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
 	if err != nil {
 		log.C(ctx).Error(err)
 		return nil, err
@@ -362,7 +384,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 		return nil, err
 	}
 
-	notificationReq, err := fan.notificationBuilder.BuildNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
+	notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, runtimeWebhook)
 	if err != nil {
 		log.C(ctx).Errorf("while building notification request: %v", err)
 		return nil, err

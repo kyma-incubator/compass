@@ -5,7 +5,7 @@ mutation {
       name: "create-formation-template-name"
       applicationTypes: ["app-type-1", "app-type-2"]
       runtimeTypes: ["runtime-type"]
-      runtimeTypeDisplayName: "test-display-name"
+      runtimeTypeDisplayName: "runtime-type-display-name"
       runtimeArtifactKind: SUBSCRIPTION
     }
   ) {
@@ -15,6 +15,7 @@ mutation {
     runtimeTypes
     runtimeTypeDisplayName
     runtimeArtifactKind
+    leadingProductIDs
     webhooks {
       id
       applicationID
