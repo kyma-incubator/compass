@@ -1129,6 +1129,7 @@ global:
       managed_application_provider_operator:
         - "application.local_tenant_id:write"
         - "application_template:write"
+        - "application_template:read"
         - "application_template.webhooks:read"
         - "internal_visibility:read"
         - "webhook:write"
