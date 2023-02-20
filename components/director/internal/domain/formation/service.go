@@ -635,6 +635,32 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 	return nil
 }
 
+func (s *service) unassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) (bool, error) {
+	switch objectType {
+	case graphql.FormationObjectTypeApplication:
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+			return false, err
+		}
+	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
+		if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
+			return false, err
+		} else if isFormationComingFromASA {
+			return true, nil
+		}
+
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return true, nil
+			}
+			return false, err
+		}
+
+	default:
+		return false, nil
+	}
+	return false, nil
+}
+
 func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formationTemplate *model.FormationTemplate) error {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
@@ -712,10 +738,10 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	formationFromDB := ft.formation
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formationName, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			return nil, err
+		_, err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While unassigning from formation")
 		}
-
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
@@ -766,17 +792,13 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		}
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formationName, objectType); err != nil {
-			return nil, err
-		} else if isFormationComingFromASA {
-			break
+		isComingFromASA, err := s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+		if err != nil {
+			return nil, errors.Wrapf(err, "While unassigning from formation")
 		}
-
-		if err = s.modifyAssignedFormations(ctx, tnt, objectID, formationName, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return formationFromDB, nil
-			}
-			return nil, err
+		if isComingFromASA {
+			// No need to enforce post-constraints as nothing is done
+			return formationFromDB, nil
 		}
 
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
@@ -865,6 +887,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 
 	failedCreateFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
 	failedDeleteFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
+	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
 	if err != nil {
 		return err
 	}
@@ -912,6 +935,9 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 				failedDeleteRequests = append(failedDeleteRequests, notificationForReverseFA)
 			}
 		}
+		if fa.State == string(model.DeleteErrorFormationState) {
+			failedDeleteErrorFormationAssignments = append(failedDeleteErrorFormationAssignments, fa)
+		}
 	}
 	rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tenantID, failedFormationAssignments)
 	if err != nil {
@@ -926,6 +952,35 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, failedDeleteFormationAssignments, rtmContextIDsMapping, failedDeleteRequests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
 		errs = multierror.Append(errs, err)
 	}
+
+	if len(failedDeleteErrorFormationAssignments) > 0 {
+		formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
+		if err != nil {
+			return errors.Wrapf(err, "While getting formation with ID %q for tenant %q", tenantID, formationID)
+		}
+
+		objectIDsSet := make(map[string]graphql.FormationObjectType, len(failedDeleteErrorFormationAssignments) * 2)
+		for _, assignment := range failedDeleteErrorFormationAssignments {
+			objectIDsSet[assignment.Source] = formationAssignmentTypeToFormationObjectType(assignment.SourceType)
+			objectIDsSet[assignment.Target] = formationAssignmentTypeToFormationObjectType(assignment.TargetType)
+		}
+
+		for objectID, objectType := range objectIDsSet {
+			leftAssignmentsInFormation, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
+			if err != nil {
+				return errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			}
+
+			if len(leftAssignmentsInFormation) == 0 {
+				log.C(ctx).Infof("There are no formation assignments left for sync formation. Unassigning the object with type %q and ID %q to formation %q", objectID, objectID, formationID)
+				_, err = s.unassign(ctx, tenantID, objectID, objectType, formation)
+				if err != nil {
+					return errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+				}
+			}
+		}
+	}
+
 	return errs.ErrorOrNil()
 }
 
@@ -1187,6 +1242,18 @@ func objectTypeToLabelableObject(objectType graphql.FormationObjectType) (labela
 		labelableObj = model.RuntimeContextLabelableObject
 	}
 	return labelableObj
+}
+
+func formationAssignmentTypeToFormationObjectType(objectType model.FormationAssignmentType) (formationObjectType graphql.FormationObjectType) {
+	switch objectType {
+	case model.FormationAssignmentTypeApplication:
+		formationObjectType = graphql.FormationObjectTypeApplication
+	case model.FormationAssignmentTypeRuntime:
+		formationObjectType = graphql.FormationObjectTypeRuntime
+	case model.FormationAssignmentTypeRuntimeContext:
+		formationObjectType = graphql.FormationObjectTypeRuntimeContext
+	}
+	return formationObjectType
 }
 
 func (s *service) ensureSameTargetTenant(in []*model.AutomaticScenarioAssignment) (string, error) {

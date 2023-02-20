@@ -129,8 +129,10 @@ func (r *repository) GetForFormation(ctx context.Context, tenantID, id, formatio
 }
 
 // GetAssignmentsForFormationWithStates retrieves formation assignments matching formation ID `formationID` and with state among `states` for tenant with ID `tenantID`
-// TODO: Unit Test
 func (r *repository) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error) {
+	if len(states) == 0 {
+		return nil, nil
+	}
 	var formationAssignmentCollection EntityCollection
 
 	conditions := repo.Conditions{

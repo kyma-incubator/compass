@@ -1331,6 +1331,112 @@ func TestResolver_Status(t *testing.T) {
 	})
 }
 
+func TestResynchronizeFormationNotifications(t *testing.T) {
+	tnt := "tenant"
+	externalTnt := "external-tenant"
+	testErr := errors.New("test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	t.Run("successfully resynchronized formation notifications", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatSucceeds()
+
+		mockService := &automock.Service{}
+		mockConverter := &automock.Converter{}
+		mockService.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(nil)
+		mockService.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
+
+		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+
+		// WHEN
+		actual, err := sut.ResynchronizeFormationNotifications(ctx, FormationID)
+
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, testFormationName, actual.Name)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
+	})
+	t.Run("failed to get formation after resynchronizing", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockService := &automock.Service{}
+		mockConverter := &automock.Converter{}
+		mockService.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(nil)
+		mockService.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(nil,testErr).Once()
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+
+		// WHEN
+		_, err := sut.ResynchronizeFormationNotifications(ctx, FormationID)
+
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
+	})
+	t.Run("failed during resynchronizing", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockService := &automock.Service{}
+		mockConverter := &automock.Converter{}
+		mockService.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(testErr)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+
+		// WHEN
+		_, err := sut.ResynchronizeFormationNotifications(ctx, FormationID)
+
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
+	})
+	t.Run("failed to get commit after resynchronizing", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatFailsOnCommit()
+
+		mockService := &automock.Service{}
+		mockConverter := &automock.Converter{}
+		mockService.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(nil)
+		mockService.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
+
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+
+		// WHEN
+		_, err := sut.ResynchronizeFormationNotifications(ctx, FormationID)
+
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter)
+	})
+	t.Run("returns error when can not start db transaction", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+
+		persist, transact := txGen.ThatFailsOnBegin()
+		sut := formation.NewResolver(transact, nil, nil, nil, nil, nil)
+
+		// WHEN
+		_, err := sut.ResynchronizeFormationNotifications(ctx, "")
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+
+		mock.AssertExpectationsForObjects(t, persist, transact)
+	})
+}
+
 func contextThatHasTenant(expectedTenant string) interface{} {
 	return mock.MatchedBy(func(actual context.Context) bool {
 		actualTenant, err := tenant.LoadFromContext(actual)

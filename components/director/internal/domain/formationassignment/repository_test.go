@@ -652,3 +652,49 @@ func TestRepository_ListByFormationIDsNoPaging(t *testing.T) {
 		assert.Nil(t, actual)
 	})
 }
+
+func TestRepository_GetAssignmentsForFormationWithStates(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "ListAllForObjectIDs Formations Assignments",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND state IN ($3, $4)`),
+				Args:     []driver.Value{TestTenantID, TestFormationID, TestState, TestReadyState},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestState, TestConfigValueStr)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ExpectedModelEntities:     []interface{}{faModel},
+		ExpectedDBEntities:        []interface{}{faEntity},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		MethodArgs:                []interface{}{TestTenantID, TestFormationID, []string{TestState, TestReadyState}},
+		MethodName:                "GetAssignmentsForFormationWithStates",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+
+	// Additional test - empty slice because test suite returns empty result given valid query
+	t.Run("returns empty slice given no scenarios", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		repository := formationassignment.NewRepository(nil)
+
+		// WHEN
+		actual, err := repository.GetAssignmentsForFormationWithStates(ctx, TestTenantID, TestFormationID, []string{})
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	})
+}
+
+

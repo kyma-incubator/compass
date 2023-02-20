@@ -453,7 +453,6 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 }
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or pending state
-// TODO: Unit Test
 func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -465,9 +464,6 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 
 	err = r.service.ResynchronizeFormationNotifications(ctx, formationID)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, tx.Commit()
-		}
 		return nil, err
 	}
 

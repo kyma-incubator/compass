@@ -764,6 +764,70 @@ func TestService_ListByFormationIDsNoPaging(t *testing.T) {
 	}
 }
 
+func TestService_GetAssignmentsForFormationWithStates(t *testing.T) {
+	// GIVEN
+	faModels := []*model.FormationAssignment{faModel}
+
+
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		ExpectedOutput          []*model.FormationAssignment
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetAssignmentsForFormationWithStates", ctxWithTenant, TestTenantID, TestFormationID, []string{TestState}).Return(faModels, nil).Once()
+				return repo
+			},
+			ExpectedOutput:   faModels,
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:    "Error when listing formation assignments by formations IDs",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("GetAssignmentsForFormationWithStates", ctxWithTenant, TestTenantID, TestFormationID, []string{TestState}).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput:   nil,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			faRepo := &automock.FormationAssignmentRepository{}
+			if testCase.FormationAssignmentRepo != nil {
+				faRepo = testCase.FormationAssignmentRepo()
+			}
+
+			svc := formationassignment.NewService(faRepo, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			r, err := svc.GetAssignmentsForFormationWithStates(testCase.Context, TestTenantID, TestFormationID, []string{TestState})
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, testCase.ExpectedOutput, r)
+
+			mock.AssertExpectationsForObjects(t, faRepo)
+		})
+	}
+}
+
+
 func TestService_ListFormationAssignmentsForObjectID(t *testing.T) {
 	// GIVEN
 

@@ -3897,6 +3897,12 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 		}
 		require.True(t, unassignNotificationFound)
 
+		t.Logf("Check that the application with ID: %s is still assigned to formation: %s", actualApp.ID, providerFormationName)
+		app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+		scenarios, hasScenarios := app.Labels["scenarios"]
+		assert.True(t, hasScenarios)
+		assert.Len(t, scenarios, 1)
+
 		t.Logf("Resynchronize formation %s should retry and succeed", formation.Name)
 		resynchronizeReq = fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, resynchronizeReq, &unassignFormation)
@@ -3908,6 +3914,13 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 		}
+
+		t.Logf("Check that the application with ID: %s is unassigned to formation after resyonchronization: %s", actualApp.ID, providerFormationName)
+		assert.Contains(t, scenarios, providerFormationName)
+		app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
+		scenarios, hasScenarios = app.Labels["scenarios"]
+		assert.False(t, hasScenarios)
+
 
 		t.Logf("Unassign tenant %s from formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		unassignReq = fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
