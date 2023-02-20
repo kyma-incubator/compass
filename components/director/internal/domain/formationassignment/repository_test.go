@@ -655,7 +655,7 @@ func TestRepository_ListByFormationIDsNoPaging(t *testing.T) {
 
 func TestRepository_GetAssignmentsForFormationWithStates(t *testing.T) {
 	suite := testdb.RepoListTestSuite{
-		Name:       "ListAllForObjectIDs Formations Assignments",
+		Name: "ListAllForObjectIDs Formations Assignments",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND state IN ($3, $4)`),
@@ -696,5 +696,3 @@ func TestRepository_GetAssignmentsForFormationWithStates(t *testing.T) {
 		assert.Nil(t, actual)
 	})
 }
-
-

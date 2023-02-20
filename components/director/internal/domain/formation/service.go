@@ -872,7 +872,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 }
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or pending state
-// TODO: Unit Test
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -884,13 +883,13 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 			string(model.DeletingAssignmentState),
 			string(model.CreateErrorAssignmentState),
 			string(model.DeleteErrorAssignmentState)})
+	if err != nil {
+		return errors.Wrap(err, "while getting formation assignments with synchronizing and error states")
+	}
 
 	failedCreateFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
 	failedDeleteFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
 	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
-	if err != nil {
-		return err
-	}
 	failedCreateRequests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(failedFormationAssignments))
 	failedDeleteRequests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(failedFormationAssignments))
 	var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
@@ -959,7 +958,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 			return errors.Wrapf(err, "While getting formation with ID %q for tenant %q", tenantID, formationID)
 		}
 
-		objectIDsSet := make(map[string]graphql.FormationObjectType, len(failedDeleteErrorFormationAssignments) * 2)
+		objectIDsSet := make(map[string]graphql.FormationObjectType, len(failedDeleteErrorFormationAssignments)*2)
 		for _, assignment := range failedDeleteErrorFormationAssignments {
 			objectIDsSet[assignment.Source] = formationAssignmentTypeToFormationObjectType(assignment.SourceType)
 			objectIDsSet[assignment.Target] = formationAssignmentTypeToFormationObjectType(assignment.TargetType)
@@ -975,7 +974,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 				log.C(ctx).Infof("There are no formation assignments left for sync formation. Unassigning the object with type %q and ID %q to formation %q", objectID, objectID, formationID)
 				_, err = s.unassign(ctx, tenantID, objectID, objectType, formation)
 				if err != nil {
-					return errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+					return errors.Wrapf(err, "While unassigning the object with type %q and ID %q that is unassigned", objectType, objectID)
 				}
 			}
 		}
@@ -985,11 +984,15 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
-	rtmContextIDs := make([]string, 0)
+	rtmContextIDsSet := make(map[string]struct{}, 0)
 	for _, assignment := range formationAssignmentsForObject {
 		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
-			rtmContextIDs = append(rtmContextIDs, assignment.Target)
+			rtmContextIDsSet[assignment.Target] = struct{}{}
 		}
+	}
+	rtmContextIDs := make([]string, 0, len(rtmContextIDsSet))
+	for assignmentID := range rtmContextIDsSet {
+		rtmContextIDs = append(rtmContextIDs, assignmentID)
 	}
 	rtmContexts, err := s.runtimeContextRepo.ListByIDs(ctx, tnt, rtmContextIDs)
 	if err != nil {

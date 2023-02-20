@@ -768,7 +768,6 @@ func TestService_GetAssignmentsForFormationWithStates(t *testing.T) {
 	// GIVEN
 	faModels := []*model.FormationAssignment{faModel}
 
-
 	testCases := []struct {
 		Name                    string
 		Context                 context.Context
@@ -826,7 +825,6 @@ func TestService_GetAssignmentsForFormationWithStates(t *testing.T) {
 		})
 	}
 }
-
 
 func TestService_ListFormationAssignmentsForObjectID(t *testing.T) {
 	// GIVEN

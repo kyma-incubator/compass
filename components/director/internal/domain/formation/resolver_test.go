@@ -1366,7 +1366,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 		mockService := &automock.Service{}
 		mockConverter := &automock.Converter{}
 		mockService.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(nil)
-		mockService.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(nil,testErr).Once()
+		mockService.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(nil, testErr).Once()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
@@ -1406,7 +1406,6 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		mockService.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(nil)
 		mockService.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
-
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
