@@ -263,7 +263,7 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 
 		defer httputils.Close(ctx, resp.Body)
 
-		verifier = h.tokenVerifierProvider(ctx, m)
+		verifier := h.tokenVerifierProvider(ctx, m)
 
 		h.verifiersMutex.Lock()
 		h.verifiers[issuerURL] = verifier
