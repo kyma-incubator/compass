@@ -753,6 +753,7 @@ input PlaceholderDefinitionInput {
 	**Validation:**  max=2000
 	"""
 	jsonPath: String
+	optional: Boolean = false
 }
 
 input RuntimeContextInput {
@@ -1303,6 +1304,7 @@ type PlaceholderDefinition {
 	name: String!
 	description: String
 	jsonPath: String
+	optional: Boolean
 }
 
 type Runtime {

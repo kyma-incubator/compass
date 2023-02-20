@@ -569,6 +569,7 @@ type ComplexityRoot struct {
 		Description func(childComplexity int) int
 		JSONPath    func(childComplexity int) int
 		Name        func(childComplexity int) int
+		Optional    func(childComplexity int) int
 	}
 
 	Query struct {
@@ -3822,6 +3823,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PlaceholderDefinition.Name(childComplexity), true
 
+	case "PlaceholderDefinition.optional":
+		if e.complexity.PlaceholderDefinition.Optional == nil {
+			break
+		}
+
+		return e.complexity.PlaceholderDefinition.Optional(childComplexity), true
+
 	case "Query.application":
 		if e.complexity.Query.Application == nil {
 			break
@@ -5277,7 +5285,7 @@ input BundleInstanceAuthStatusInput {
 	- CredentialsProvided
 	- CredentialsNotProvided
 	- PendingDeletion
-	
+
 	**Validation**: required, if condition is FAILED
 	"""
 	reason: String!
@@ -5533,6 +5541,7 @@ input PlaceholderDefinitionInput {
 	**Validation:**  max=2000
 	"""
 	jsonPath: String
+	optional: Boolean = false
 }
 
 input RuntimeContextInput {
@@ -6083,6 +6092,7 @@ type PlaceholderDefinition {
 	name: String!
 	description: String
 	jsonPath: String
+	optional: Boolean
 }
 
 type Runtime {
@@ -6205,7 +6215,7 @@ type Webhook {
 type Query {
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
 	- [query applications](examples/query-applications/query-applications.graphql)
@@ -6219,14 +6229,14 @@ type Query {
 	applicationBySystemNumber(systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationBySystemNumber")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query applications for runtime](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
 	"""
 	applicationsForRuntime(runtimeID: ID!, first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
@@ -6238,7 +6248,7 @@ type Query {
 	applicationTemplate(id: ID!): ApplicationTemplate @hasScopes(path: "graphql.query.applicationTemplate")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query runtimes with label filter](examples/query-runtimes/query-runtimes-with-label-filter.graphql)
 	- [query runtimes with pagination](examples/query-runtimes/query-runtimes-with-pagination.graphql)
@@ -6262,7 +6272,7 @@ type Query {
 	healthChecks(types: [HealthCheckType!], origin: ID, first: Int = 200, after: PageCursor): HealthCheckPage! @hasScopes(path: "graphql.query.healthChecks")
 	"""
 	Maximum ` + "`" + `first` + "`" + ` parameter value is 100
-	
+
 	**Examples**
 	- [query integration systems](examples/query-integration-systems/query-integration-systems.graphql)
 	"""
@@ -6560,14 +6570,14 @@ type Mutation {
 	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
-	
+
 	**Examples**
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
-	
+
 	**Examples**
 	- [delete application label](examples/delete-application-label/delete-application-label.graphql)
 	"""
@@ -6584,9 +6594,9 @@ type Mutation {
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
 	When BundleInstanceAuth is not in pending state, the operation returns error.
-	
+
 	When used without error, the status of pending auth is set to success.
-	
+
 	**Examples**
 	- [set bundle instance auth](examples/set-bundle-instance-auth/set-bundle-instance-auth.graphql)
 	"""
@@ -6598,14 +6608,14 @@ type Mutation {
 	deleteBundleInstanceAuth(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.deleteBundleInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to PENDING.
-	
+
 	**Examples**
 	- [request bundle instance auth creation](examples/request-bundle-instance-auth-creation/request-bundle-instance-auth-creation.graphql)
 	"""
 	requestBundleInstanceAuthCreation(bundleID: ID!, in: BundleInstanceAuthRequestInput! @validate): BundleInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByBundle", idField: "bundleID") @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deleteBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to UNUSED.
-	
+
 	**Examples**
 	- [request bundle instance auth deletion](examples/request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
 	"""
@@ -24190,6 +24200,37 @@ func (ec *executionContext) _PlaceholderDefinition_jsonPath(ctx context.Context,
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PlaceholderDefinition_optional(ctx context.Context, field graphql.CollectedField, obj *PlaceholderDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PlaceholderDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Optional, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_applications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31206,6 +31247,12 @@ func (ec *executionContext) unmarshalInputPlaceholderDefinitionInput(ctx context
 			if err != nil {
 				return it, err
 			}
+		case "optional":
+			var err error
+			it.Optional, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -34453,6 +34500,8 @@ func (ec *executionContext) _PlaceholderDefinition(ctx context.Context, sel ast.
 			out.Values[i] = ec._PlaceholderDefinition_description(ctx, field, obj)
 		case "jsonPath":
 			out.Values[i] = ec._PlaceholderDefinition_jsonPath(ctx, field, obj)
+		case "optional":
+			out.Values[i] = ec._PlaceholderDefinition_optional(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

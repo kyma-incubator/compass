@@ -1399,6 +1399,7 @@ func TestService_Delete(t *testing.T) {
 func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 	// GIVEN
 	svc := apptemplate.NewService(nil, nil, nil, nil, nil)
+	isPlaceholderOptional := false
 
 	testCases := []struct {
 		Name             string
@@ -1422,7 +1423,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName")},
+					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName"), Optional: isPlaceholderOptional},
 				},
 			},
 			InputValues: []*model.ApplicationTemplateValueInput{
@@ -1436,7 +1437,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName")},
+					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName"), Optional: isPlaceholderOptional},
 				},
 			},
 			InputValues:    []*model.ApplicationTemplateValueInput{},
