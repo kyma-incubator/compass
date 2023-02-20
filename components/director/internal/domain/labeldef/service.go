@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -124,7 +126,21 @@ func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schem
 		return errors.Wrap(err, "while listing labels by key")
 	}
 
+	formationNames, err := ParseFormationsFromSchema(&schema)
+	if err != nil {
+		return err
+	}
+
+	if len(formationNames) == 0 && len(existingLabels) != 0 {
+		labelInfo := make([]string, 0, len(existingLabels))
+		for _, label := range existingLabels {
+			labelInfo = append(labelInfo, fmt.Sprintf("key=%q and value=%q", label.Key, label.Value))
+		}
+		return apperrors.NewInvalidDataError(fmt.Sprintf(`labels: %s are not valid against empty schema`, strings.Join(labelInfo, ",")))
+	}
+
 	validator, err := jsonschema.NewValidatorFromRawSchema(schema)
+	spew.Dump(validator)
 	if err != nil {
 		return errors.Wrap(err, "while creating validator for new schema")
 	}
@@ -179,8 +195,9 @@ func NewSchemaForFormations(formations []string) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("items property could not be converted")
 	}
-
+	spew.Dump(newSchema)
 	itemsMap["enum"] = formations
+	spew.Dump(newSchema)
 	return newSchema, nil
 }
 
