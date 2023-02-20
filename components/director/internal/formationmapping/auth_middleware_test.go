@@ -13,27 +13,18 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func TestAuthenticator_Handler(t *testing.T) {
-	emptyCtx := context.Background()
-	internalTntID := "testInternalID"
-	externalTntID := "testExternalID"
+func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 	faSourceID := "testSourceID"
 	faTargetID := "testTargetID"
-	testFormationID := "testFormationID"
 	testFormationAssignmentID := "testFormationAssignmentID"
 	consumerUUID := uuid.New().String()
 	appTemplateID := "testAppTemplateID"
 	intSystemID := "intSystemID"
 	runtimeID := "testRuntimeID"
-
-	testErr := errors.New("test error")
-	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	urlVars := map[string]string{
 		fm.FormationIDParam:           testFormationID,
@@ -107,7 +98,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 			expectedErrOutput:  fixBuildExpectedErrResponse(t, "Not all of the required parameters are provided"),
 		},
 		{
-			name:       "Unauthorized error when authorization check is unsuccessful",
+			name:       "Unauthorized error when authorization check is unsuccessful but there is no error",
 			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
@@ -855,8 +846,8 @@ func TestAuthenticator_Handler(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, persist, transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo)
 
 			// GIVEN
-			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, tCase.consumerSubaccountLabelKey)
-			fmAuthMiddleware := fmAuthenticator.Handler()
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, faSvc, rtmRepo, rtmCtxRepo, appRepo, appTemplateRepo, labelRepo, nil, nil, tCase.consumerSubaccountLabelKey)
+			fmAuthMiddleware := fmAuthenticator.FormationAssignmentHandler()
 			rw := httptest.NewRecorder()
 
 			httpMethod := http.MethodPatch
@@ -872,6 +863,236 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 			// WHEN
 			fmAuthMiddleware(fixTestHandler(t)).ServeHTTP(rw, httpReq)
+
+			// THEN
+			require.Equal(t, tCase.expectedStatusCode, rw.Code)
+			require.Contains(t, rw.Body.String(), tCase.expectedErrOutput)
+		})
+	}
+}
+
+func TestAuthenticator_FormationHandler(t *testing.T) {
+	urlVars := map[string]string{
+		fm.FormationIDParam: testFormationID,
+	}
+
+	consumerID := "2c755564-97ef-4499-8c88-7b8518edc171"
+	leadingProductID := consumerID
+	leadingProductID2 := "leading-product-id-2"
+	leadingProductIDs := []*string{&leadingProductID, &leadingProductID2}
+
+	formation := &model.Formation{
+		ID:                  testFormationID,
+		TenantID:            internalTntID,
+		FormationTemplateID: testFormationTemplateID,
+		Name:                testFormationName,
+	}
+
+	formationTemplate := &model.FormationTemplate{
+		ID:                     testFormationTemplateID,
+		Name:                   "formationTemplateName",
+		RuntimeTypeDisplayName: "runtimeTypeDisplayName",
+		TenantID:               &internalTntID,
+		LeadingProductIDs:      leadingProductIDs,
+	}
+
+	formationTemplateWithNonMatchingProductIDs := &model.FormationTemplate{
+		ID:                     testFormationTemplateID,
+		Name:                   "formationTemplateName",
+		RuntimeTypeDisplayName: "runtimeTypeDisplayName",
+		TenantID:               &internalTntID,
+		LeadingProductIDs:      []*string{&leadingProductID2},
+	}
+
+	testCases := []struct {
+		name                       string
+		transactFn                 func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		formationRepoFn            func() *automock.FormationRepository
+		formationTemplateRepoFn    func() *automock.FormationTemplateRepository
+		consumerSubaccountLabelKey string
+		hasURLVars                 bool
+		contextFn                  func() context.Context
+		httpMethod                 string
+		expectedStatusCode         int
+		expectedErrOutput          string
+	}{
+		// Common authorization checks
+		{
+			name:       "Error when the http request method is not PATCH",
+			transactFn: fixUnusedTransactioner,
+			contextFn: func() context.Context {
+				return emptyCtx
+			},
+			hasURLVars:         true,
+			httpMethod:         http.MethodGet,
+			expectedStatusCode: http.StatusMethodNotAllowed,
+			expectedErrOutput:  "",
+		},
+		{
+			name: "Error when the required parameter is missing",
+			contextFn: func() context.Context {
+				return emptyCtx
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrOutput:  fixBuildExpectedErrResponse(t, "Not all of the required parameters are provided"),
+		},
+		{
+			name:       "Authorization success: when the consumer ID is one of the formation templates product IDs",
+			transactFn: txGen.ThatSucceeds,
+			formationRepoFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
+				return formationRepo
+			},
+			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				ftRepo := &automock.FormationTemplateRepository{}
+				ftRepo.On("Get", contextThatHasTenant(internalTntID), testFormationTemplateID).Return(formationTemplate, nil).Once()
+				return ftRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+		},
+		{
+			name:       "Unauthorized error when authorization check is unsuccessful but there is no error",
+			transactFn: txGen.ThatSucceeds,
+			formationRepoFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
+				return formationRepo
+			},
+			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				ftRepo := &automock.FormationTemplateRepository{}
+				ftRepo.On("Get", contextThatHasTenant(internalTntID), testFormationTemplateID).Return(formationTemplateWithNonMatchingProductIDs, nil).Once()
+				return ftRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusUnauthorized,
+		},
+		{
+			name: "Authorization fail: error when consumer info is missing in the context",
+			contextFn: func() context.Context {
+				return emptyCtx
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization fail: error when transaction begin fails",
+			transactFn: txGen.ThatFailsOnBegin,
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization fail: error when getting formation fails",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			formationRepoFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(nil, testErr).Once()
+				return formationRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization fail: error when getting formation template fails",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			formationRepoFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
+				return formationRepo
+			},
+			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				ftRepo := &automock.FormationTemplateRepository{}
+				ftRepo.On("Get", contextThatHasTenant(internalTntID), testFormationTemplateID).Return(nil, testErr).Once()
+				return ftRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
+			name:       "Authorization fail: error when committing transaction",
+			transactFn: txGen.ThatFailsOnCommit,
+			formationRepoFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetGlobalByID", contextThatHasTenant(internalTntID), testFormationID).Return(formation, nil).Once()
+				return formationRepo
+			},
+			formationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				ftRepo := &automock.FormationTemplateRepository{}
+				ftRepo.On("Get", contextThatHasTenant(internalTntID), testFormationTemplateID).Return(formationTemplateWithNonMatchingProductIDs, nil).Once()
+				return ftRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerID, consumer.ExternalCertificate)
+				return fixContextWithTenantAndConsumer(c, internalTntID, externalTntID)
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+	}
+
+	for _, tCase := range testCases {
+		t.Run(tCase.name, func(t *testing.T) {
+			persist, transact := fixUnusedTransactioner()
+			if tCase.transactFn != nil {
+				persist, transact = tCase.transactFn()
+			}
+
+			formationRepo := fixUnusedFormationRepo()
+			if tCase.formationRepoFn != nil {
+				formationRepo = tCase.formationRepoFn()
+			}
+
+			formationTemplateRepo := fixUnusedFormationTemplateRepo()
+			if tCase.formationTemplateRepoFn != nil {
+				formationTemplateRepo = tCase.formationTemplateRepoFn()
+			}
+
+			defer mock.AssertExpectationsForObjects(t, persist, transact, formationRepo, formationTemplateRepo)
+
+			// GIVEN
+			fmAuthenticator := fm.NewFormationMappingAuthenticator(transact, nil, nil, nil, nil, nil, nil, formationRepo, formationTemplateRepo, tCase.consumerSubaccountLabelKey)
+			formationAuthMiddleware := fmAuthenticator.FormationHandler()
+			rw := httptest.NewRecorder()
+
+			httpMethod := http.MethodPatch
+			if tCase.httpMethod != "" {
+				httpMethod = tCase.httpMethod
+			}
+
+			httpReq := fixRequestWithContext(t, tCase.contextFn(), httpMethod)
+
+			if tCase.hasURLVars {
+				httpReq = mux.SetURLVars(httpReq, urlVars)
+			}
+
+			// WHEN
+			formationAuthMiddleware(fixTestHandler(t)).ServeHTTP(rw, httpReq)
 
 			// THEN
 			require.Equal(t, tCase.expectedStatusCode, rw.Code)

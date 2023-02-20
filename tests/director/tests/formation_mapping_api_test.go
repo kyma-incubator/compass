@@ -31,10 +31,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type RequestBody struct {
+type FormationAssignmentRequestBody struct {
 	State         string          `json:"state"`
 	Configuration json.RawMessage `json:"configuration"`
 	Error         string          `json:"error"`
+}
+
+type FormationRequestBody struct {
+	State string `json:"state"`
+	Error string `json:"error"`
 }
 
 const (
@@ -42,7 +47,7 @@ const (
 	formationAssignmentIDPathParam = "ucl-assignment-id"
 )
 
-func Test_UpdateStatus(baseT *testing.T) {
+func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 	t := testingx.NewT(baseT)
 	ctx := context.Background()
 
@@ -107,12 +112,12 @@ func Test_UpdateStatus(baseT *testing.T) {
 
 		t.Run("Runtime caller successfully updates his formation assignment", func(t *testing.T) {
 			formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntime, app.ID)
-			executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formationID, formationAssignmentID, http.StatusOK)
+			executeFAStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formationID, formationAssignmentID, http.StatusOK)
 		})
 
 		t.Run("Application caller successfully updates his formation assignment", func(t *testing.T) {
 			formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeApplication, runtime.ID)
-			executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formationID, formationAssignmentID, http.StatusOK)
+			executeFAStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formationID, formationAssignmentID, http.StatusOK)
 		})
 	})
 
@@ -320,7 +325,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 4)
 
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeRuntimeContext, asyncApp.ID)
-		executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formation.ID, formationAssignmentID, http.StatusOK)
+		executeFAStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClient, testConfig, formation.ID, formationAssignmentID, http.StatusOK)
 	})
 
 	t.Run("Application caller successfully updates formation assignment with target type application made through subscription", func(t *testing.T) {
@@ -444,7 +449,7 @@ func Test_UpdateStatus(baseT *testing.T) {
 		assignmentsPage := assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 4)
 		formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeApplication, runtime.ID)
 
-		executeStatusUpdateReqWithExpectedStatusCode(t, appProviderCertSecuredHTTPClient, testConfig, formation.ID, formationAssignmentID, http.StatusOK)
+		executeFAStatusUpdateReqWithExpectedStatusCode(t, appProviderCertSecuredHTTPClient, testConfig, formation.ID, formationAssignmentID, http.StatusOK)
 	})
 
 	t.Run("Unauthorized call", func(t *testing.T) {
@@ -505,20 +510,64 @@ func Test_UpdateStatus(baseT *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		certSecuredHTTPClientWithDifferentTenant := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		executeStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClientWithDifferentTenant, testConfig, formation.ID, formationAssignmentID, http.StatusUnauthorized)
+		executeFAStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClientWithDifferentTenant, testConfig, formation.ID, formationAssignmentID, http.StatusUnauthorized)
 	})
 }
 
-func executeStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, formationID, formationAssignmentID string, expectedStatusCode int) {
-	reqBody := RequestBody{
+func Test_UpdateFormationStatus(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Unauthorized call", func(t *testing.T) {
+		parentTenantID := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
+
+		appType := "async-app-type-1"
+		asyncFormationTmplName := "async-formation-template-name"
+		leadingProductID := "leading-product-id"
+		leadingProductIDs := []*string{&leadingProductID}
+
+		ft := fixtures.CreateFormationTemplateWithLeadingProductIDs(t, ctx, certSecuredGraphQLClient, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+
+		asyncFormationName := "async-formation-name"
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
+		formationID := formation.ID
+		require.NotEmpty(t, formationID)
+
+		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
+		certSecuredHTTPClientWithDifferentTenant := gql.NewCertAuthorizedHTTPClient(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+		executeFormationStatusUpdateReqWithExpectedStatusCode(t, certSecuredHTTPClientWithDifferentTenant, formation.ID, http.StatusUnauthorized)
+	})
+}
+
+func executeFAStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, testConfig, formationID, formationAssignmentID string, expectedStatusCode int) {
+	reqBody := FormationAssignmentRequestBody{
 		State:         "READY",
 		Configuration: json.RawMessage(testConfig),
 	}
 	marshalBody, err := json.Marshal(reqBody)
 	require.NoError(t, err)
 
-	formationMappingEndpoint := resolveFormationMappingURL(formationID, formationAssignmentID)
-	request, err := http.NewRequest(http.MethodPatch, formationMappingEndpoint, bytes.NewBuffer(marshalBody))
+	formationAssignmentAsyncStatusAPIEndpoint := resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID)
+	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
+	require.NoError(t, err)
+	request.Header.Add("Content-Type", "application/json")
+	response, err := certSecuredHTTPClient.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatusCode, response.StatusCode)
+}
+
+func executeFormationStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, formationID string, expectedStatusCode int) {
+	reqBody := FormationRequestBody{
+		State: "READY",
+	}
+	marshalBody, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	formationAsyncStatusAPIEndpoint := strings.Replace(conf.DirectorExternalCertFormationAsyncStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
+	request, err := http.NewRequest(http.MethodPatch, formationAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
 	response, err := certSecuredHTTPClient.Do(request)
@@ -546,8 +595,8 @@ func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPa
 	return formationAssignmentID
 }
 
-func resolveFormationMappingURL(formationID, formationAssignmentID string) string {
-	formationMappingEndpoint := strings.Replace(conf.DirectorExternalCertFormationMappingURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
-	formationMappingEndpoint = strings.Replace(formationMappingEndpoint, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
-	return formationMappingEndpoint
+func resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID string) string {
+	faAsyncStatusAPIURL := strings.Replace(conf.DirectorExternalCertFAAsyncStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
+	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
+	return faAsyncStatusAPIURL
 }
