@@ -21,13 +21,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
-
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+	"time"
 
 	"golang.org/x/oauth2"
 
@@ -199,9 +200,8 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 			protocol = issuer.Protocol
 		}
 		issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
-
 		h.verifiersMutex.RLock()
-		verifier, found := h.verifiers[issuerURL]
+		verifier, found := h.verifiers[issuerURL] // cash found = false
 		h.verifiersMutex.RUnlock()
 
 		if found {
@@ -227,9 +227,11 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 			protocol = issuer.Protocol
 		}
 		issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
-
+		n := rand.Intn(10) // n will be between 0 and 10
+		fmt.Printf("Sleeping %d seconds...\n", n)
+		time.Sleep(time.Duration(n) * time.Second)
 		h.verifiersMutex.RLock()
-		verifier, found := h.verifiers[issuerURL]
+		verifier, found := h.verifiers[issuerURL] // found = false
 		h.verifiersMutex.RUnlock()
 
 		if found {
