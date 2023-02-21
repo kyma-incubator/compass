@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2886"
+      version: "PR-2887"
       name: compass-external-services-mock
     console:
       dir:
