@@ -38,7 +38,7 @@ RUN mkdir /app && mv ./director /app/director \
   && mv ./systemfetcher /app/systemfetcher \
   && mv ./destinationfetcher /app/destinationfetcher
 
-FROM alpine:3.17.1
+FROM alpine:3.17.2
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
