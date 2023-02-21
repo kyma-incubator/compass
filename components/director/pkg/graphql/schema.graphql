@@ -678,6 +678,7 @@ input FormationTemplateInput {
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 	webhooks: [WebhookInput!]
+	leadingProductIDs: [String]
 }
 
 input IntegrationSystemInput {
@@ -1210,6 +1211,7 @@ type FormationTemplate {
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
+	leadingProductIDs: [String]
 }
 
 type FormationTemplatePage implements Pageable {

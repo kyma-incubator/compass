@@ -16,6 +16,7 @@ mutation {
     runtimeTypes
     runtimeTypeDisplayName
     runtimeArtifactKind
+    leadingProductIDs
     webhooks {
       id
       applicationID

@@ -5,7 +5,7 @@ mutation {
       name: "create-formation-template-with-webhook-name"
       applicationTypes: ["app-type-1", "app-type-2"]
       runtimeTypes: ["runtime-type"]
-      runtimeTypeDisplayName: "test-display-name"
+      runtimeTypeDisplayName: "runtime-type-display-name"
       runtimeArtifactKind: SUBSCRIPTION
       webhooks: [
         { type: FORMATION_LIFECYCLE, url: "http://localhost:6439/", mode: SYNC }
@@ -18,6 +18,7 @@ mutation {
     runtimeTypes
     runtimeTypeDisplayName
     runtimeArtifactKind
+    leadingProductIDs
     webhooks {
       id
       applicationID
