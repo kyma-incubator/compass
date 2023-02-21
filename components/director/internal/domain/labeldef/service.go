@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -140,7 +139,6 @@ func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schem
 	}
 
 	validator, err := jsonschema.NewValidatorFromRawSchema(schema)
-	spew.Dump(validator)
 	if err != nil {
 		return errors.Wrap(err, "while creating validator for new schema")
 	}
@@ -195,9 +193,8 @@ func NewSchemaForFormations(formations []string) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("items property could not be converted")
 	}
-	spew.Dump(newSchema)
+
 	itemsMap["enum"] = formations
-	spew.Dump(newSchema)
 	return newSchema, nil
 }
 
