@@ -33,6 +33,7 @@ WHERE l.app_id IS NOT NULL AND l.key = 'scenarios';
 -- adapt views that relied on 'apps_subaccounts' view to respect its new formation_id column
 -- if the given entity is just owned by the tenant and does not come from a formation, we set a default/hardcoded value 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' for backwards compatibility
 -- if the given entity comes from a formation, we use that formation ID from 'apps_subaccounts'
+-- if the given entity comes from a formation, we set the default/hardcoded value 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' as formation_id as well for backwards compatibility - so that we have a record between the subaccount, system and the default value
 
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
@@ -95,6 +96,11 @@ FROM api_definitions apis
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON apis.app_id = t_apps.id;
 
@@ -136,6 +142,11 @@ FROM applications apps
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON apps.id = t_apps.id;
 
@@ -174,6 +185,11 @@ FROM bundles b
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON b.app_id = t_apps.id;
 
@@ -199,6 +215,11 @@ FROM destinations dests
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) dst ON dests.id = dst.id;
 
 --
@@ -254,6 +275,11 @@ FROM event_api_definitions events
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON events.app_id = t_apps.id;
 
@@ -296,6 +322,11 @@ FROM packages p
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON p.app_id = t_apps.id;
 
@@ -326,6 +357,11 @@ FROM products p
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON p.app_id = t_apps.id OR p.app_id IS NULL;
 
@@ -375,6 +411,11 @@ FROM tombstones t
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON t.app_id = t_apps.id;
 
@@ -401,6 +442,11 @@ FROM vendors v
                SELECT apps_subaccounts.id,
                       apps_subaccounts.tenant_id,
                       apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON v.app_id = t_apps.id OR v.app_id IS NULL;
 
