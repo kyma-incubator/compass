@@ -549,6 +549,7 @@ type FormationTemplateInput struct {
 	RuntimeTypeDisplayName string          `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType    `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput `json:"webhooks"`
+	LeadingProductIDs      []*string       `json:"leadingProductIDs"`
 }
 
 type FormationTemplatePage struct {

@@ -49,9 +49,9 @@ spec:
             {{- end }}
     - match:
       - uri:
-          exact: {{ .Values.global.director.formationAsyncApi.pathPrefix }}
+          exact: {{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}
       redirect:
-        uri: {{ .Values.global.director.formationAsyncApi.pathPrefix }}/
+        uri: {{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}/
       headers:
         request:
           remove:

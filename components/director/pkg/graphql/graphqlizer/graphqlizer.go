@@ -572,6 +572,12 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 			{{- end }} ],
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
 		runtimeArtifactKind: {{.RuntimeArtifactKind}}
+		{{- if .LeadingProductIDs }} 
+		leadingProductIDs: [
+			{{- range $i, $e := .LeadingProductIDs }}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+		{{- end}}
 		{{- if .Webhooks }}
 		webhooks: [
 			{{- range $i, $e := .Webhooks }}
