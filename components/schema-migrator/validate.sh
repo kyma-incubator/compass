@@ -73,7 +73,7 @@ if [[ $(uname -m) == 'arm64' ]]; then
     ARCH="arm64"
 fi
 
-docker build --build-arg BUILDPLATFORM=${ARCH} --build-arg TARGETARCH=${ARCH} -t ${IMG_NAME} ./
+docker build -t ${IMG_NAME} ./
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \

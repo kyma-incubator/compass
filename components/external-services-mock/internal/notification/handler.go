@@ -34,15 +34,19 @@ const (
 	Assign Operation = "assign"
 	// Unassign represents the unassign operation done on a given formation
 	Unassign Operation = "unassign"
+	// CreateFormation represents the create operation on a given formation
+	CreateFormation Operation = "createFormation"
+	// DeleteFormation represents the delete operation on a given formation
+	DeleteFormation Operation = "deleteFormation"
 )
 
 type NotificationsConfiguration struct {
-	ExternalClientCertTestSecretName        string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
-	ExternalClientCertTestSecretNamespace   string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
-	ExternalClientCertCertKey               string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
-	ExternalClientCertKeyKey                string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
-	DirectorExternalCertFormationMappingURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_MAPPING_ASYNC_URL"`
-	FormationMappingAsyncResponseDelay      int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
+	ExternalClientCertTestSecretName      string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
+	ExternalClientCertTestSecretNamespace string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
+	ExternalClientCertCertKey             string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
+	ExternalClientCertKeyKey              string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
+	DirectorExternalCertFAAsyncStatusURL  string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
+	FormationMappingAsyncResponseDelay    int64  `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
 }
 
 type RequestBody struct {
@@ -56,6 +60,8 @@ type ConfigurationState string
 const ReadyConfigurationState ConfigurationState = "READY"
 
 type Handler struct {
+	// mappings is a map of string to Response, where the string value currently can be `formationID` or `tenantID`
+	// mapped to a particular Response that later will be validated in the E2E tests
 	mappings          map[string][]Response
 	shouldReturnError bool
 	config            NotificationsConfiguration
@@ -124,6 +130,67 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 		},
 	}
 	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+}
+
+func (h *Handler) PostFormation(writer http.ResponseWriter, r *http.Request) {
+	formationID, ok := mux.Vars(r)["uclFormationId"]
+	if !ok {
+		httphelpers.WriteError(writer, errors.New("missing uclFormationId in url"), http.StatusBadRequest)
+		return
+	}
+
+	if _, ok = h.mappings[formationID]; !ok {
+		h.mappings[formationID] = make([]Response, 0, 1)
+	}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		return
+	}
+	mappings := h.mappings[formationID]
+	mappings = append(h.mappings[formationID], Response{
+		Operation:   CreateFormation,
+		RequestBody: bodyBytes,
+	})
+	h.mappings[formationID] = mappings
+
+	httputils.Respond(writer, http.StatusOK)
+}
+
+func (h *Handler) DeleteFormation(writer http.ResponseWriter, r *http.Request) {
+	formationID, ok := mux.Vars(r)["uclFormationId"]
+	if !ok {
+		httphelpers.WriteError(writer, errors.New("missing uclFormationId in url"), http.StatusBadRequest)
+		return
+	}
+
+	if _, ok := h.mappings[formationID]; !ok {
+		h.mappings[formationID] = make([]Response, 0, 1)
+	}
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+		return
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+		return
+	}
+
+	h.mappings[formationID] = append(h.mappings[formationID], Response{
+		Operation:   DeleteFormation,
+		RequestBody: bodyBytes,
+	})
+
+	writer.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
@@ -494,7 +561,7 @@ func (h *Handler) executeStatusUpdateRequest(certSecuredHTTPClient *http.Client,
 		return err
 	}
 
-	formationMappingEndpoint := strings.Replace(h.config.DirectorExternalCertFormationMappingURL, fmt.Sprintf("{%s}", "ucl-formation-id"), formationID, 1)
+	formationMappingEndpoint := strings.Replace(h.config.DirectorExternalCertFAAsyncStatusURL, fmt.Sprintf("{%s}", "ucl-formation-id"), formationID, 1)
 	formationMappingEndpoint = strings.Replace(formationMappingEndpoint, fmt.Sprintf("{%s}", "ucl-assignment-id"), formationAssignmentID, 1)
 
 	request, err := http.NewRequest(http.MethodPatch, formationMappingEndpoint, bytes.NewBuffer(marshalBody))

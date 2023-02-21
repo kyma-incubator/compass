@@ -20,11 +20,11 @@ func TestRepository_Get(t *testing.T) {
 		MethodName: "Get",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, leading_product_ids, tenant_id FROM public.formation_templates WHERE id = $1`),
 				Args:     []driver.Value{testID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.TenantID)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntity.TenantID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -50,11 +50,11 @@ func TestRepository_GetByNameAndTenant(t *testing.T) {
 		MethodName: "GetByNameAndTenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE tenant_id = $1 AND name = $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, leading_product_ids, tenant_id FROM public.formation_templates WHERE tenant_id = $1 AND name = $2`),
 				Args:     []driver.Value{testTenantID, formationTemplateName},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.TenantID)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntity.TenantID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -72,11 +72,11 @@ func TestRepository_GetByNameAndTenant(t *testing.T) {
 		ExpectNotFoundError:       true,
 		AfterNotFoundErrorSQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE name = $1 AND tenant_id IS NULL`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, leading_product_ids, tenant_id FROM public.formation_templates WHERE name = $1 AND tenant_id IS NULL`),
 				Args:     []driver.Value{formationTemplateName},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntityNullTenant.TenantID)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntityNullTenant.TenantID)}
 				},
 			},
 		},
@@ -89,11 +89,11 @@ func TestRepository_GetByNameAndTenant(t *testing.T) {
 		MethodName: "GetByNameAndTenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE name = $1 AND tenant_id IS NULL`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, leading_product_ids, tenant_id FROM public.formation_templates WHERE name = $1 AND tenant_id IS NULL`),
 				Args:     []driver.Value{formationTemplateName},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntityNullTenant.TenantID)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntityNullTenant.TenantID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -121,7 +121,7 @@ func TestRepository_Create(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.formation_templates \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.TenantID},
+				Args:        []driver.Value{formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntity.TenantID},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -214,10 +214,10 @@ func TestRepository_List(t *testing.T) {
 		MethodName: "List",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE tenant_id IS NULL ORDER BY id LIMIT 3 OFFSET 0`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, leading_product_ids, tenant_id FROM public.formation_templates WHERE tenant_id IS NULL ORDER BY id LIMIT 3 OFFSET 0`),
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntityNullTenant.TenantID)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntityNullTenant.TenantID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -259,11 +259,11 @@ func TestRepository_List(t *testing.T) {
 		MethodName: "List",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, tenant_id FROM public.formation_templates WHERE (tenant_id IS NULL OR tenant_id = $1) ORDER BY id LIMIT 3 OFFSET 0`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, runtime_type_display_name, runtime_artifact_kind, leading_product_ids, tenant_id FROM public.formation_templates WHERE (tenant_id IS NULL OR tenant_id = $1) ORDER BY id LIMIT 3 OFFSET 0`),
 				Args:     []driver.Value{testTenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.TenantID)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntity.TenantID)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -305,13 +305,13 @@ func TestRepository_List(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmtWithoutTenant := regexp.QuoteMeta(`UPDATE public.formation_templates SET name = ?, application_types = ?, runtime_types = ?, runtime_type_display_name = ?, runtime_artifact_kind = ? WHERE id = ?`)
+	updateStmtWithoutTenant := regexp.QuoteMeta(`UPDATE public.formation_templates SET name = ?, application_types = ?, runtime_types = ?, runtime_type_display_name = ?, runtime_artifact_kind = ?, leading_product_ids = ? WHERE id = ?`)
 	suiteWithoutTenant := testdb.RepoUpdateTestSuite{
 		Name: "Update Formation Template By ID without tenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmtWithoutTenant,
-				Args:          []driver.Value{formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.ID},
+				Args:          []driver.Value{formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntity.ID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -326,13 +326,13 @@ func TestRepository_Update(t *testing.T) {
 		IsGlobal:       true,
 	}
 
-	updateStmtWithTenant := regexp.QuoteMeta(`UPDATE public.formation_templates SET name = ?, application_types = ?, runtime_types = ?, runtime_type_display_name = ?, runtime_artifact_kind = ? WHERE id = ? AND tenant_id = ?`)
+	updateStmtWithTenant := regexp.QuoteMeta(`UPDATE public.formation_templates SET name = ?, application_types = ?, runtime_types = ?, runtime_type_display_name = ?, runtime_artifact_kind = ?, leading_product_ids = ? WHERE id = ? AND tenant_id = ?`)
 	suiteWithTenant := testdb.RepoUpdateTestSuite{
 		Name: "Update Formation Template By ID with tenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmtWithTenant,
-				Args:          []driver.Value{formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.ID, formationTemplateEntity.TenantID},
+				Args:          []driver.Value{formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.LeadingProductIDs, formationTemplateEntity.ID, formationTemplateEntity.TenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

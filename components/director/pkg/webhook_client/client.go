@@ -222,7 +222,7 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 	if len(respBody) > 0 {
 		tmpBody := make(map[string]interface{})
 		if err := json.Unmarshal(respBody, &tmpBody); err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("failed to unmarshall HTTP response with body %s", respBody))
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to unmarshall HTTP response with body: %q", respBody))
 		}
 
 		for k, v := range tmpBody {

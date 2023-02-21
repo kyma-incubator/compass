@@ -3,6 +3,7 @@ package ord
 import (
 	"encoding/json"
 	"net/url"
+	"path"
 	"regexp"
 
 	"github.com/hashicorp/go-multierror"
@@ -594,7 +595,12 @@ func rewriteRelativeURIsInJSON(j json.RawMessage, baseURL, jsonPath string) (jso
 	} else if parsedJSON.IsObject() {
 		uriProperty := gjson.GetBytes(j, jsonPath)
 		if uriProperty.Exists() && !isAbsoluteURL(uriProperty.String()) {
-			return sjson.SetBytes(j, jsonPath, baseURL+uriProperty.String())
+			u, err := url.Parse(baseURL)
+			if err != nil {
+				return nil, err
+			}
+			u.Path = path.Join(u.Path, uriProperty.String())
+			return sjson.SetBytes(j, jsonPath, u.String())
 		}
 	}
 	return j, nil

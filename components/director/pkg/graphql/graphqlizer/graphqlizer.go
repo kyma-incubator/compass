@@ -572,6 +572,12 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 			{{- end }} ],
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
 		runtimeArtifactKind: {{.RuntimeArtifactKind}}
+		{{- if .LeadingProductIDs }} 
+		leadingProductIDs: [
+			{{- range $i, $e := .LeadingProductIDs }}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+		{{- end}}
 		{{- if .Webhooks }}
 		webhooks: [
 			{{- range $i, $e := .Webhooks }}
@@ -592,6 +598,13 @@ func (g *Graphqlizer) FormationConstraintInputToGQL(in graphql.FormationConstrai
 		resourceSubtype: "{{.ResourceSubtype}}"
 		inputTemplate: "{{.InputTemplate}}"
 		constraintScope: {{.ConstraintScope}}
+	}`)
+}
+
+// FormationConstraintUpdateInputToGQL creates formation constraint update input
+func (g *Graphqlizer) FormationConstraintUpdateInputToGQL(in graphql.FormationConstraintUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		inputTemplate: "{{.InputTemplate}}"
 	}`)
 }
 

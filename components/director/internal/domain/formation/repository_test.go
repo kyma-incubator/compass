@@ -26,7 +26,7 @@ func TestRepository_Create(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.formations \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{FormationID, Tnt, FormationTemplateID, testFormationName},
+				Args:        []driver.Value{FormationID, TntInternalID, FormationTemplateID, testFormationName, testFormationState, testFormationEmptyError},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -50,11 +50,11 @@ func TestRepository_Get(t *testing.T) {
 		MethodName: "Get",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name FROM public.formations WHERE tenant_id = $1 AND id = $2`),
-				Args:     []driver.Value{Tnt, FormationID},
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error FROM public.formations WHERE tenant_id = $1 AND id = $2`),
+				Args:     []driver.Value{TntInternalID, FormationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, Tnt, FormationTemplateID, testFormationName)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, testFormationState, testFormationEmptyError)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -67,7 +67,37 @@ func TestRepository_Get(t *testing.T) {
 		RepoConstructorFunc:       formation.NewRepository,
 		ExpectedModelEntity:       formationModel,
 		ExpectedDBEntity:          formationEntity,
-		MethodArgs:                []interface{}{FormationID, Tnt},
+		MethodArgs:                []interface{}{FormationID, TntInternalID},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_GetGlobalByID(t *testing.T) {
+	suite := testdb.RepoGetTestSuite{
+		Name:       "Get Formation Globally by ID",
+		MethodName: "GetGlobalByID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error FROM public.formations WHERE id = $1`),
+				Args:     []driver.Value{FormationID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, testFormationState, testFormationEmptyError)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formation.NewRepository,
+		ExpectedModelEntity:       formationModel,
+		ExpectedDBEntity:          formationEntity,
+		MethodArgs:                []interface{}{FormationID},
 		DisableConverterErrorTest: true,
 	}
 
@@ -80,11 +110,11 @@ func TestRepository_GetByName(t *testing.T) {
 		MethodName: "GetByName",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name FROM public.formations WHERE tenant_id = $1 AND name = $2`),
-				Args:     []driver.Value{Tnt, testFormationName},
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error FROM public.formations WHERE tenant_id = $1 AND name = $2`),
+				Args:     []driver.Value{TntInternalID, testFormationName},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, Tnt, FormationTemplateID, testFormationName)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, testFormationState, testFormationEmptyError)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -97,7 +127,7 @@ func TestRepository_GetByName(t *testing.T) {
 		RepoConstructorFunc:       formation.NewRepository,
 		ExpectedModelEntity:       formationModel,
 		ExpectedDBEntity:          formationEntity,
-		MethodArgs:                []interface{}{testFormationName, Tnt},
+		MethodArgs:                []interface{}{testFormationName, TntInternalID},
 		DisableConverterErrorTest: true,
 	}
 
@@ -110,11 +140,11 @@ func TestRepository_List(t *testing.T) {
 		MethodName: "List",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name FROM public.formations WHERE tenant_id = $1 ORDER BY id LIMIT 4 OFFSET 0`),
-				Args:     []driver.Value{Tnt},
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error FROM public.formations WHERE tenant_id = $1 ORDER BY id LIMIT 4 OFFSET 0`),
+				Args:     []driver.Value{TntInternalID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, Tnt, FormationTemplateID, testFormationName)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, testFormationState, testFormationEmptyError)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -147,7 +177,7 @@ func TestRepository_List(t *testing.T) {
 				},
 			},
 		},
-		MethodArgs:                []interface{}{Tnt, 4, ""},
+		MethodArgs:                []interface{}{TntInternalID, 4, ""},
 		DisableConverterErrorTest: true,
 	}
 
@@ -160,11 +190,11 @@ func TestRepository_ListByFormationNames(t *testing.T) {
 		MethodName: "ListByFormationNames",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name FROM public.formations WHERE tenant_id = $1 AND name IN ($2)`),
-				Args:     []driver.Value{Tnt, formationModel.Name},
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error FROM public.formations WHERE tenant_id = $1 AND name IN ($2)`),
+				Args:     []driver.Value{TntInternalID, formationModel.Name},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, Tnt, FormationTemplateID, testFormationName)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, testFormationState, testFormationEmptyError)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -177,7 +207,7 @@ func TestRepository_ListByFormationNames(t *testing.T) {
 		RepoConstructorFunc:       formation.NewRepository,
 		ExpectedModelEntities:     []interface{}{formationModel},
 		ExpectedDBEntities:        []interface{}{formationEntity},
-		MethodArgs:                []interface{}{[]string{formationModel.Name}, Tnt},
+		MethodArgs:                []interface{}{[]string{formationModel.Name}, TntInternalID},
 		DisableConverterErrorTest: true,
 	}
 
@@ -185,13 +215,13 @@ func TestRepository_ListByFormationNames(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := regexp.QuoteMeta(`UPDATE public.formations SET name = ? WHERE id = ? AND tenant_id = ?`)
+	updateStmt := regexp.QuoteMeta(`UPDATE public.formations SET name = ?, state = ?, error = ? WHERE id = ? AND tenant_id = ?`)
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Formation by ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmt,
-				Args:          []driver.Value{testFormationName, FormationID, Tnt},
+				Args:          []driver.Value{testFormationName, testFormationState, testFormationEmptyError, FormationID, TntInternalID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -215,7 +245,7 @@ func TestRepository_Delete(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         regexp.QuoteMeta(`DELETE FROM public.formations WHERE tenant_id = $1 AND name = $2`),
-				Args:          []driver.Value{Tnt, testFormationName},
+				Args:          []driver.Value{TntInternalID, testFormationName},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 2),
 			},
@@ -225,7 +255,7 @@ func TestRepository_Delete(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		MethodName: "DeleteByName",
-		MethodArgs: []interface{}{Tnt, testFormationName},
+		MethodArgs: []interface{}{TntInternalID, testFormationName},
 	}
 
 	suite.Run(t)
@@ -237,7 +267,7 @@ func TestRepository_Exists(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.formations WHERE tenant_id = $1 AND id = $2`),
-				Args:     []driver.Value{Tnt, FormationID},
+				Args:     []driver.Value{TntInternalID, FormationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
@@ -252,9 +282,9 @@ func TestRepository_Exists(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		TargetID:   FormationID,
-		TenantID:   Tnt,
+		TenantID:   TntInternalID,
 		MethodName: "Exists",
-		MethodArgs: []interface{}{FormationID, Tnt},
+		MethodArgs: []interface{}{FormationID, TntInternalID},
 	}
 
 	suite.Run(t)
