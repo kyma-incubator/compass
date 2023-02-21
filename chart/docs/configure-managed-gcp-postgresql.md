@@ -38,11 +38,11 @@ When you add a workload (deployment, job, etc.) that needs access to the databas
 To connect to managed database, we use [cloudsql-proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy) provided by Google, which consumes `instanceConnectionName` value.
 
 To find `Instance connection name`, go to the [SQL Instances page](https://console.cloud.google.com/sql/instances) and open desired database overview.
-![Instance connection String](./assets/sql-instances-list.png)
+![Instance connection String](./png/sql-instances-list.png)
 
 Then, look for `Instance connection name` box inside `Connect to this instance` section.
 
-![Instance connection String](./assets/instance-connection-string.png)
+![Instance connection String](./png/instance-connection-string.png)
 
 For the `director.user`, `director.password` values, use one of the accounts from the **USERS** tab. The `director.name` is the name of the available database. For the list of available names, see the **DATABASES** tab.
 
