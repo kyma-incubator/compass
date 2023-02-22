@@ -328,6 +328,8 @@ github.com/kyma-incubator/compass/components/operations-controller v0.0.0-202302
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222152154-1cb8aa622a1e/go.mod h1:m/nNgf3AjUfu2KagA7jm7HsbkTMr7WyTwJOic+qN2xc=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222152535-cb59a52b5d49 h1:Oulx2E9UkEPBl17+3XYbqrEKG3K/pmwghJxnrC8zwKc=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222152535-cb59a52b5d49/go.mod h1:m/nNgf3AjUfu2KagA7jm7HsbkTMr7WyTwJOic+qN2xc=
+github.com/kyma-incubator/compass/tests v0.0.0-20230222152946-f605c2ad57b8 h1:kHRv2dU2UgssN6ayRQLUvpaUe6YUPKrUBkKgoRKJ5d4=
+github.com/kyma-incubator/compass/tests v0.0.0-20230222152946-f605c2ad57b8/go.mod h1:F7+nRPwmKM5Z1GQPA3m/j/pMJE4/X//bemrCufjtooE=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
 github.com/lestrrat-go/backoff/v2 v2.0.8/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/blackmagic v1.0.0 h1:XzdxDbuQTz0RZZEmdU7cnQxUtFUzgCSPq8RCz4BxIi4=

@@ -92,6 +92,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230222152535-cb59a52b5d49 // indirect
+	github.com/kyma-incubator/compass/tests v0.0.0-20230222152946-f605c2ad57b8 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect
