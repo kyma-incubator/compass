@@ -58,6 +58,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20230222151253-9b04755ef93d // indirect
 	github.com/kyma-incubator/compass/components/director v0.0.0-20230222150725-3d635abbc858 // indirect
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222145034-03a4726d9349 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
