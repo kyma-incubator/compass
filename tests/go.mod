@@ -5,9 +5,9 @@ go 1.18
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20230222143442-023c9983978b
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20230222144120-16041749baea
 	github.com/kyma-incubator/compass/components/director v0.0.0-20230222143825-0581e2a4c92d
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230222143825-0581e2a4c92d
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230222144120-16041749baea
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron/v3 v3.0.1
@@ -51,8 +51,8 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230222143442-023c9983978b // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222143442-023c9983978b // indirect
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230222144120-16041749baea // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222144120-16041749baea // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
