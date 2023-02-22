@@ -65,6 +65,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID, []string{testScenario})
 	require.NoError(t, err)
 
 	//THEN
@@ -198,6 +199,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 	// THIRD APP WITH DIFFERENT APP NAME WHEN NORMALIZED
 	actualThirdApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "appwordpress", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualThirdApp)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, actualThirdApp.ID, []string{testScenario})
 	require.NoError(t, err)
 	require.NotEmpty(t, actualThirdApp.ID)
 
@@ -272,6 +274,7 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID, []string{testScenario})
 
 	//THEN
 	require.NoError(t, err)
@@ -314,6 +317,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with webhooks")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID, []string{testScenario})
 
 	//THEN
 	require.NoError(t, err)
@@ -341,6 +345,7 @@ func TestRegisterApplicationWithBundles(t *testing.T) {
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application with bundles")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), actualApp.ID, []string{testScenario})
 
 	//THEN
 	require.NoError(t, err)
@@ -372,6 +377,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName, conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"))
 		err := testctx.Tc.NewOperation(ctx).Run(request, certSecuredGraphQLClient, &actualApp)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &graphql.ApplicationExt{Application: actualApp.Application})
+		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, actualApp.ID, tenant.TestTenants.GetDefaultTenantID())
 		require.NoError(t, err)
 
 		appID := actualApp.ID
@@ -717,7 +723,7 @@ func TestDeleteApplication(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Success when application is in scenario but not with runtime", func(t *testing.T) {
+	t.Run("Error when application is in scenario but not with runtime", func(t *testing.T) {
 		//GIVEN
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
@@ -733,7 +739,8 @@ func TestDeleteApplication(t *testing.T) {
 		application := graphql.ApplicationExt{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationReq, &application)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &application)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, []string{testScenario})
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -743,12 +750,12 @@ func TestDeleteApplication(t *testing.T) {
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, nil)
 
 		//THEN
-		require.NoError(t, err)
+		require.ErrorContains(t, err, "System first is part of the following formations : test-scenario")
 	})
 
 	t.Run("Error when application is in scenario with runtime", func(t *testing.T) {
 		//GIVEN
-		expectedErrorMsg := "graphql: The operation is not allowed [reason=System first is still used and cannot be deleted. Unassign the system from the following formations first: test-scenario. Then, unassign the system from the following runtimes, too: one-runtime]"
+		expectedErrorMsg := "graphql: The operation is not allowed [reason=System first is part of the following formations : test-scenario]"
 
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
@@ -770,10 +777,10 @@ func TestDeleteApplication(t *testing.T) {
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationReq, &application)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, []string{testScenario})
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 		//WHEN
 		req := fixtures.FixUnregisterApplicationRequest(application.ID)
@@ -827,10 +834,10 @@ func TestUnpairApplication(t *testing.T) {
 		application := graphql.ApplicationExt{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationReq, &application)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, []string{testScenario})
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 		//WHEN
 		req := fixtures.FixUnpairApplicationRequest(application.ID)
@@ -865,7 +872,7 @@ func TestUnpairApplication(t *testing.T) {
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationReq, &application)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, []string{testScenario})
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -1145,8 +1152,13 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 	t.Run("Query Application With Consumer Runtime in same scenario", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, ScenariosLabel, scenarios[1:])
-		defer fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, ScenariosLabel)
+
+		scenariosToAssign := scenarios[1:]
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, appID, scenariosToAssign)
+		for i := range scenariosToAssign {
+			fi := graphql.FormationInput{Name: scenariosToAssign[i]}
+			fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, fi, appID, tenantId)
+		}
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
@@ -1164,9 +1176,12 @@ func TestQuerySpecificApplication(t *testing.T) {
 	})
 
 	t.Run("Query Application With Consumer Runtime not in same scenario", func(t *testing.T) {
-		// set application scenarios label
-		fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, ScenariosLabel, scenarios[:1])
-		defer fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, appID, ScenariosLabel)
+		scenariosToAssign := scenarios[:1]
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, appID, scenariosToAssign)
+		for i := range scenariosToAssign {
+			fi := graphql.FormationInput{Name: scenariosToAssign[i]}
+			fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, fi, appID, tenantId)
+		}
 
 		// set runtime scenarios label
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
@@ -1232,7 +1247,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 		},
 	}
 
-	for _, testApp := range applications {
+	for i, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInput(testApp.ApplicationName)
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: testApp.Scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
@@ -1243,7 +1258,7 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testApp.Tenant, createApplicationReq, &application)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testApp.Tenant, &graphql.ApplicationExt{Application: application})
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, testApp.Tenant, application.ID)
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, testApp.Tenant, application.ID, applications[i].Scenarios)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
@@ -1379,7 +1394,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	applicationHideSelectorKey := "applicationHideSelectorKey"
 	applicationHideSelectorValue := "applicationHideSelectorValue"
 
-	for _, testApp := range applications {
+	for i, testApp := range applications {
 		applicationInput := fixtures.FixSampleApplicationRegisterInput(testApp.ApplicationName)
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
 		if testApp.Hidden {
@@ -1395,7 +1410,7 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, application.ID)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &graphql.ApplicationExt{Application: application})
-		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
+		defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, applications[i].Scenarios)
 
 		if !testApp.Hidden {
 			expectedApplications = append(expectedApplications, &application)
@@ -1528,6 +1543,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	actualApp := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, &actualApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, actualApp.ID, scenarios)
 	require.NoError(t, err)
 
 	inRuntime := fixRuntimeInput("test-runtime")
@@ -1540,13 +1556,11 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), fmt.Sprintf("The operation is not allowed [reason=System wordpress is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: test-runtime", testScenario))
+	assert.Contains(t, err.Error(), fmt.Sprintf("The operation is not allowed [reason=System wordpress is part of the following formations : %s", testScenario))
 
 	request = fixtures.FixDeleteRuntimeLabel(runtime.ID, ScenariosLabel)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
 	require.NoError(t, err)
-
-	fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
 }
 
 func TestMergeApplications(t *testing.T) {
@@ -1686,19 +1700,19 @@ func TestMergeApplications(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
 
-	t.Logf("Assign application to formation %s", newFormation)
-	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
+	t.Logf("Assign application %s to formation %s", outputDestApp.Name, newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(outputDestApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, assignReq, &assignFormation)
 	defer func() {
-		t.Logf("Unassigning src-app from formation %s", newFormation)
-		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
+		t.Logf("Unassigning %s from formation %s", outputDestApp.Name, newFormation)
+		request := fixtures.FixUnassignFormationRequest(outputDestApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 		var response graphql.Formation
 		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, request, &response)
 		if nil == err {
-			t.Logf("Src-app was unassigned from formation %s", newFormation)
+			t.Logf("%s was unassigned from formation %s", outputDestApp.Name, newFormation)
 		} else {
-			t.Logf("Src-app was not removed from formation %s: %v", newFormation, err)
+			t.Logf("%s was not removed from formation %s: %v", outputDestApp.Name, newFormation, err)
 		}
 	}()
 	require.NoError(t, err)
@@ -1710,17 +1724,6 @@ func TestMergeApplications(t *testing.T) {
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
 	saveExample(t, mergeRequest.Query(), "merge applications")
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, mergeRequest, &destApp)
-	defer func() {
-		t.Logf("Unassigning dst-app from formation %s", newFormation)
-		request := fixtures.FixUnassignFormationRequest(destApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
-		var response graphql.Formation
-		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, request, &response)
-		if nil == err {
-			t.Logf("Dst-app was unassigned from formation %s", newFormation)
-		} else {
-			t.Logf("Dst-app was not removed from formation %s: %v", newFormation, err)
-		}
-	}()
 
 	// THEN
 	require.NoError(t, err)
