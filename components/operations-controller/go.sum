@@ -333,6 +333,10 @@ github.com/kr/text v0.0.0-20160504234017-7cafcd837844/go.mod h1:sjUstKUATFIcff4q
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230222093537-9361d5210c63 h1:oPVuXCKNGSo1pKn5QmM/gzQpnJdprjbBvzq6ZG2W8ls=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230222093537-9361d5210c63/go.mod h1:tUDkkWaTX7KPn5q7ZzTvvYhnwKphVspwlX1BVWJkwDc=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222093537-9361d5210c63 h1:kRPl8cI/US8LBy6rW4bydUP4JfPP4PUEBYGjgmSjttI=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222093537-9361d5210c63/go.mod h1:0JwT+RraX3EuFOGq17UnqvrJPHsLyWiaHRVV3ZsjxJA=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.10.4 h1:SO9z7FRPzA03QhHKJrH5BXA6HU1rS4V2nIVrrNC1iYk=
 github.com/lib/pq v1.10.4/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
