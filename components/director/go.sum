@@ -332,10 +332,6 @@ github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222134203
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222134203-e9397ad1324d/go.mod h1:A8qRSOAAq1U+PKPSlh+HMfdIXQ/pnxJwlSQKcSkfZz0=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222134751-b9a8b6941196 h1:alqi6lttbcmec1MLt7T6srpmt/18xv6bha586ZmlF/E=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222134751-b9a8b6941196/go.mod h1:bVatY6Bxg+rvV5FtyIOvj4w9+tVqymcV5kZT7cZTkTk=
-github.com/kyma-incubator/compass/tests v0.0.0-20230222134203-e9397ad1324d h1:dLniSoq3cEoHxrqPRItbJOJOxKTvI0Epbch6M15QMfo=
-github.com/kyma-incubator/compass/tests v0.0.0-20230222134203-e9397ad1324d/go.mod h1:LUy6s+Aybjp8iRkfelZIPsXzq1ATiT6IjYySOnmFllw=
-github.com/kyma-incubator/compass/tests v0.0.0-20230222134751-b9a8b6941196 h1:1Fj0u1MDs5Fz+QkOh5wt4QfK4bgbZpuMVO2UegBundY=
-github.com/kyma-incubator/compass/tests v0.0.0-20230222134751-b9a8b6941196/go.mod h1:nI8+7vYiG4zOGZP/gg0XcPP4sGMzMYwDDk2zuNyFgzk=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
 github.com/lestrrat-go/backoff/v2 v2.0.8/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/blackmagic v1.0.0 h1:XzdxDbuQTz0RZZEmdU7cnQxUtFUzgCSPq8RCz4BxIi4=
