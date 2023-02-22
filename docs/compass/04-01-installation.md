@@ -124,12 +124,12 @@ global:
 Start the Database installation by using the following command:
 
 ```bash
-<script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s> --sql-helm-backend
+<script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
 ```
 Once the Database is provisioned procced and start the Compass installation by using the following command:
 
 ```bash
-<script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
+<script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s> --sql-helm-backend
 ```
 
 ### Certificate Management
