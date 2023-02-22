@@ -21,13 +21,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
-
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"golang.org/x/oauth2"
 
@@ -46,6 +45,7 @@ import (
 )
 
 // TokenData represents the authentication token
+//
 //go:generate mockery --name=TokenData --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenData interface {
 	// Claims reads the Claims from the token into the specified struct
@@ -53,6 +53,7 @@ type TokenData interface {
 }
 
 // TokenVerifier attempts to verify a token and returns it or an error if the verification was not successful
+//
 //go:generate mockery --name=TokenVerifier --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenVerifier interface {
 	// Verify verifies that the token is valid and returns a token if so, otherwise returns an error
@@ -60,6 +61,7 @@ type TokenVerifier interface {
 }
 
 // ReqDataParser parses request data
+//
 //go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
@@ -228,15 +230,6 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 		}
 		issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
 
-		h.verifiersMutex.RLock()
-		verifier, found := h.verifiers[issuerURL]
-		h.verifiersMutex.RUnlock()
-
-		if found {
-			// Cached verifiers were already tried in the loop above
-			continue
-		}
-
 		log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
 		resp, err := h.getOpenIDConfig(ctx, issuerURL)
 		if err != nil {
@@ -257,7 +250,7 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 
 		defer httputils.Close(ctx, resp.Body)
 
-		verifier = h.tokenVerifierProvider(ctx, m)
+		verifier := h.tokenVerifierProvider(ctx, m)
 
 		h.verifiersMutex.Lock()
 		h.verifiers[issuerURL] = verifier

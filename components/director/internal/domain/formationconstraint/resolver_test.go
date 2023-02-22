@@ -588,3 +588,173 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 		})
 	}
 }
+
+func TestResolver_UpdateFormationConstraint(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+
+	testErr := errors.New("test error")
+
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name                         string
+		Input                        graphql.FormationConstraintUpdateInput
+		TxFn                         func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		FormationConstraintConverter func() *automock.FormationConstraintConverter
+		FormationConstraintService   func() *automock.FormationConstraintService
+		ExpectedOutput               *graphql.FormationConstraint
+		ExpectedError                error
+	}{
+		{
+			Name:  "Success",
+			Input: formationConstraintUpdateInput,
+			TxFn:  txGen.ThatSucceeds,
+			FormationConstraintService: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInput).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModelUpdated, nil).Once()
+
+				return svc
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdated).Return(formationConstraintModelInput)
+				converter.On("ToGraphQL", formationConstraintModelUpdated).Return(gqlFormationConstraintUpdated)
+
+				return converter
+			},
+			ExpectedOutput: gqlFormationConstraintUpdated,
+			ExpectedError:  nil,
+		},
+		{
+			Name:  "Error when getting constraint",
+			Input: formationConstraintUpdateInput,
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			FormationConstraintService: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testErr).Once()
+
+				return svc
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:  "Error when updating constraint",
+			Input: formationConstraintUpdateInput,
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			FormationConstraintService: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInput).Return(testErr).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
+
+				return svc
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdated).Return(formationConstraintModelInput, nil)
+
+				return converter
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:  "Error when getting updated constraint",
+			Input: formationConstraintUpdateInput,
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			FormationConstraintService: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInput).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testErr).Once()
+
+				return svc
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdated).Return(formationConstraintModelInput)
+
+				return converter
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:  "Returns error when failing on the committing of a transaction",
+			Input: formationConstraintUpdateInput,
+			TxFn:  txGen.ThatFailsOnCommit,
+			FormationConstraintService: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), testID, formationConstraintModelInput).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModelUpdated, nil).Once()
+
+				return svc
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("FromInputGraphQL", &formationConstraintInputUpdated).Return(formationConstraintModelInput)
+
+				return converter
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:  "Returns error when input validation fails",
+			Input: graphql.FormationConstraintUpdateInput{},
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			FormationConstraintService: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(formationConstraintModel, nil).Once()
+
+				return svc
+			},
+			FormationConstraintConverter: UnusedFormationConstraintConverter,
+			ExpectedOutput:               nil,
+			ExpectedError:                errors.New("cannot be blank"),
+		},
+		{
+			Name:                         "Returns error when failing on the beginning of a transaction",
+			TxFn:                         txGen.ThatFailsOnBegin,
+			Input:                        formationConstraintUpdateInput,
+			FormationConstraintService:   UnusedFormationConstraintService,
+			FormationConstraintConverter: UnusedFormationConstraintConverter,
+			ExpectedOutput:               nil,
+			ExpectedError:                testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+
+			formationConstraintSvc := UnusedFormationConstraintService()
+			if testCase.FormationConstraintService != nil {
+				formationConstraintSvc = testCase.FormationConstraintService()
+			}
+			formationConstraintConverter := UnusedFormationConstraintConverter()
+			if testCase.FormationConstraintConverter != nil {
+				formationConstraintConverter = testCase.FormationConstraintConverter()
+			}
+
+			resolver := formationconstraint.NewResolver(transact, formationConstraintConverter, formationConstraintSvc)
+
+			// WHEN
+			result, err := resolver.UpdateFormationConstraint(ctx, testID, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, persist, formationConstraintSvc, formationConstraintConverter)
+		})
+	}
+}

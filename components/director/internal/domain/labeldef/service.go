@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -12,6 +13,7 @@ import (
 )
 
 // Repository missing godoc
+//
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
@@ -23,12 +25,14 @@ type Repository interface {
 }
 
 // ScenarioAssignmentLister missing godoc
+//
 //go:generate mockery --name=ScenarioAssignmentLister --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenarioAssignmentLister interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 }
 
 // LabelRepository missing godoc
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
@@ -40,12 +44,14 @@ type LabelRepository interface {
 }
 
 // TenantRepository missing godoc
+//
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -122,6 +128,19 @@ func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schem
 	existingLabels, err := s.labelRepo.ListByKey(ctx, tenant, key)
 	if err != nil {
 		return errors.Wrap(err, "while listing labels by key")
+	}
+
+	formationNames, err := ParseFormationsFromSchema(&schema)
+	if err != nil {
+		return err
+	}
+
+	if len(formationNames) == 0 && len(existingLabels) != 0 {
+		labelInfo := make([]string, 0, len(existingLabels))
+		for _, label := range existingLabels {
+			labelInfo = append(labelInfo, fmt.Sprintf("key=%q and value=%q", label.Key, label.Value))
+		}
+		return apperrors.NewInvalidDataError(fmt.Sprintf(`labels: %s are not valid against empty schema`, strings.Join(labelInfo, ",")))
 	}
 
 	validator, err := jsonschema.NewValidatorFromRawSchema(schema)

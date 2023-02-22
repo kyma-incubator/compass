@@ -19,14 +19,15 @@ const (
 )
 
 var (
-	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind"}
 	idTableColumns            = []string{idColumn}
+	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids"}
 	tenantTableColumn         = []string{tenantIDColumn}
 	tableColumnsWithoutTenant = append(idTableColumns, updatableTableColumns...)
 	tableColumns              = append(tableColumnsWithoutTenant, tenantTableColumn...)
 )
 
 // EntityConverter converts between the internal model and entity
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.FormationTemplate) (*Entity, error)
@@ -93,7 +94,8 @@ func (r *repository) Get(ctx context.Context, id string) (*model.FormationTempla
 	return result, nil
 }
 
-// GetByNameAndTenant returns a single FormationTemplate by given name and tenant ID
+// GetByNameAndTenant check if the provided tenant is not empty and tries to retrieve the formation template with tenant. If it fails with not found error then the formation template is retrieved globally.
+// If the tenant is empty in the first place the formation template is retrieved globally.
 func (r *repository) GetByNameAndTenant(ctx context.Context, templateName, tenantID string) (*model.FormationTemplate, error) {
 	log.C(ctx).Debugf("Getting formation template by name: %q and tenant %q ...", templateName, tenantID)
 	var entity Entity

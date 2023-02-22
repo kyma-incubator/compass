@@ -9,4 +9,5 @@ type FormationTemplate struct {
 	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
 	Webhooks               []*Webhook   `json:"webhooks"`
+	LeadingProductIDs      []*string    `json:"leadingProductIDs"`
 }

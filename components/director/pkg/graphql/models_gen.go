@@ -520,6 +520,10 @@ type FormationConstraintInput struct {
 	ConstraintScope ConstraintScope `json:"constraintScope"`
 }
 
+type FormationConstraintUpdateInput struct {
+	InputTemplate string `json:"inputTemplate"`
+}
+
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`
@@ -551,6 +555,7 @@ type FormationTemplateInput struct {
 	RuntimeTypeDisplayName string          `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType    `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput `json:"webhooks"`
+	LeadingProductIDs      []*string       `json:"leadingProductIDs"`
 }
 
 type FormationTemplatePage struct {

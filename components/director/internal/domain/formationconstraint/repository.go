@@ -16,10 +16,13 @@ const tableName string = `public.formation_constraints`
 const idColumn string = "id"
 
 var (
-	tableColumns = []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope"}
+	tableColumns     = []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope"}
+	updatableColumns = []string{"input_template"}
+	idColumns        = []string{"id"}
 )
 
 // EntityConverter converts between the internal model and entity
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.FormationConstraint) *Entity
@@ -32,6 +35,7 @@ type repository struct {
 	creator             repo.CreatorGlobal
 	singleGetter        repo.SingleGetterGlobal
 	deleter             repo.DeleterGlobal
+	updater             repo.UpdaterGlobal
 	conv                EntityConverter
 }
 
@@ -43,6 +47,7 @@ func NewRepository(conv EntityConverter) *repository {
 		creator:             repo.NewCreatorGlobal(resource.FormationConstraint, tableName, tableColumns),
 		singleGetter:        repo.NewSingleGetterGlobal(resource.FormationConstraint, tableName, tableColumns),
 		deleter:             repo.NewDeleterGlobal(resource.FormationConstraint, tableName),
+		updater:             repo.NewUpdaterGlobal(resource.FormationConstraint, tableName, updatableColumns, idColumns),
 		conv:                conv,
 	}
 }
@@ -131,6 +136,17 @@ func (r *repository) ListMatchingFormationConstraints(ctx context.Context, forma
 		return nil, errors.Wrap(err, "while listing constraints")
 	}
 	return r.multipleFromEntities(entityCollection)
+}
+
+// Update updates the FormationConstraint matching the ID of the input model
+func (r *repository) Update(ctx context.Context, model *model.FormationConstraint) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be empty")
+	}
+
+	entity := r.conv.ToEntity(model)
+
+	return r.updater.UpdateSingleGlobal(ctx, entity)
 }
 
 func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.FormationConstraint, error) {

@@ -10,6 +10,7 @@ type Entity struct {
 	RuntimeTypes           string         `db:"runtime_types"`
 	RuntimeTypeDisplayName string         `db:"runtime_type_display_name"`
 	RuntimeArtifactKind    string         `db:"runtime_artifact_kind"`
+	LeadingProductIDs      sql.NullString `db:"leading_product_ids"`
 	TenantID               sql.NullString `db:"tenant_id"`
 }
 

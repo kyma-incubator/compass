@@ -439,7 +439,7 @@ spec:
     url: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
   match:
     methods: ["PATCH"]
-    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.director.formationAsyncApi.pathPrefix }}/<.*>
+    url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}/<.*>
   authenticators:
     - handler: noop
   authorizer:

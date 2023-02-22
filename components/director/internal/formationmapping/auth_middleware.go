@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -33,6 +35,7 @@ type formationAssignmentConverter interface {
 }
 
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
+//
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
@@ -45,12 +48,14 @@ type FormationAssignmentService interface {
 }
 
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
+//
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
 	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
 }
 
 // formationService is responsible for the service-layer Formation operations
+//
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -58,18 +63,21 @@ type formationService interface {
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations
+//
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 // RuntimeContextRepository is responsible for the repo-layer runtime context operations
+//
 //go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 }
 
 // ApplicationRepository is responsible for the repo-layer application operations
+//
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
@@ -77,21 +85,38 @@ type ApplicationRepository interface {
 }
 
 // TenantRepository is responsible for the repo-layer tenant operations
+//
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // ApplicationTemplateRepository is responsible for the repo-layer application template operations
+//
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelRepository is responsible for the repo-layer label operations
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+}
+
+// FormationRepository is responsible for the repo-layer formation operations
+//
+//go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationRepository interface {
+	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
+}
+
+// FormationTemplateRepository is responsible for the repo-layer formation template operations
+//
+//go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationTemplateRepository interface {
+	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
 }
 
 // ErrorResponse structure used for the JSON encoded response
@@ -108,6 +133,8 @@ type Authenticator struct {
 	appRepo                    ApplicationRepository
 	appTemplateRepo            ApplicationTemplateRepository
 	labelRepo                  LabelRepository
+	formationRepo              FormationRepository
+	formationTemplateRepo      FormationTemplateRepository
 	consumerSubaccountLabelKey string
 }
 
@@ -120,6 +147,8 @@ func NewFormationMappingAuthenticator(
 	appRepo ApplicationRepository,
 	appTemplateRepo ApplicationTemplateRepository,
 	labelRepo LabelRepository,
+	formationRepo FormationRepository,
+	formationTemplateRepo FormationTemplateRepository,
 	consumerSubaccountLabelKey string,
 ) *Authenticator {
 	return &Authenticator{
@@ -130,15 +159,18 @@ func NewFormationMappingAuthenticator(
 		appRepo:                    appRepo,
 		appTemplateRepo:            appTemplateRepo,
 		labelRepo:                  labelRepo,
+		formationRepo:              formationRepo,
+		formationTemplateRepo:      formationTemplateRepo,
 		consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 	}
 }
 
-// Handler is a handler middleware that executes authorization check for the formation mapping requests
-func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
+// FormationAssignmentHandler is a handler middleware that executes authorization check for the formation assignments requests reporting status
+func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
+			correlationID := correlation.CorrelationIDFromContext(ctx)
 
 			if r.Method != http.MethodPatch {
 				w.WriteHeader(http.StatusMethodNotAllowed)
@@ -155,10 +187,10 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			isAuthorized, statusCode, err := a.isAuthorized(ctx, formationAssignmentID, formationID)
+			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
-				respondWithError(ctx, w, statusCode, errors.New("An unexpected error occurred while processing the request"))
+				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
 				return
 			}
 
@@ -172,8 +204,88 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 	}
 }
 
-// isAuthorized verify through custom logic the caller is authorized to update the formation assignment status
-func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID, formationID string) (bool, int, error) {
+// FormationHandler is a handler middleware that executes authorization check for the formation requests reporting status
+func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			correlationID := correlation.CorrelationIDFromContext(ctx)
+
+			if r.Method != http.MethodPatch {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+
+			routeVars := mux.Vars(r)
+			formationID := routeVars[FormationIDParam]
+
+			if formationID == "" {
+				log.C(ctx).Errorf("Missing required parameters: %q", FormationIDParam)
+				respondWithError(ctx, w, http.StatusBadRequest, errors.New("Not all of the required parameters are provided"))
+				return
+			}
+
+			isAuthorized, statusCode, err := a.isFormationAuthorized(ctx, formationID)
+			if err != nil {
+				log.C(ctx).Error(err.Error())
+				respondWithError(ctx, w, statusCode, errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID))
+				return
+			}
+
+			if !isAuthorized {
+				httputils.Respond(w, http.StatusUnauthorized)
+				return
+			}
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID string) (bool, int, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
+	}
+	consumerID := consumerInfo.ConsumerID
+	consumerType := consumerInfo.ConsumerType
+	log.C(ctx).Infof("Consumer with ID: %q and type: %q is trying to update formation with ID: %q", consumerID, consumerType, formationID)
+
+	tx, err := a.transact.Begin()
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrap(err, "Unable to establish connection with database")
+	}
+	defer a.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	f, err := a.formationRepo.GetGlobalByID(ctx, formationID)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation with ID: %q globally", formationID)
+	}
+
+	ft, err := a.formationTemplateRepo.Get(ctx, f.FormationTemplateID)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation template with ID: %q", f.FormationTemplateID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.C(ctx).Errorf("An error occurred while closing database transaction: %s", err.Error())
+		return false, http.StatusInternalServerError, errors.Wrap(err, "unable to finalize database operation")
+	}
+
+	for _, id := range ft.LeadingProductIDs {
+		if id != nil && *id == consumerID {
+			log.C(ctx).Infof("Consumer with ID: %q is contained in the leading product IDs list from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
+			return true, http.StatusOK, nil
+		}
+	}
+
+	log.C(ctx).Infof("Consumer with ID: %q did not match any of the leading product IDs from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
+	return false, http.StatusUnauthorized, nil
+}
+
+// isFormationAssignmentAuthorized verify through custom logic the caller is authorized to update the formation assignment status
+func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, formationAssignmentID, formationID string) (bool, int, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
@@ -190,7 +302,7 @@ func (a *Authenticator) isAuthorized(ctx context.Context, formationAssignmentID,
 
 	fa, err := a.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
 	if err != nil {
-		return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting formation assignment with ID: %q and formation ID: %q globally", formationAssignmentID, formationID)
+		return false, http.StatusInternalServerError, err
 	}
 
 	consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
