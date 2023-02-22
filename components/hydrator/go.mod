@@ -22,6 +22,10 @@ require (
 )
 
 require (
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230222133636-599dc85a5dde
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20230222132951-324f2481bbc2
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230222132951-324f2481bbc2
+	github.com/kyma-incubator/compass/tests v0.0.0-20230222132633-ca80ee87cc50
 	github.com/prometheus/client_golang v1.13.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 )
@@ -58,7 +62,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230222132951-324f2481bbc2 // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222132633-ca80ee87cc50 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect
