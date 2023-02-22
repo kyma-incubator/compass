@@ -57,6 +57,7 @@ func TestAppRegistry(t *testing.T) {
 		err = directorClient.CleanupApplication(appID)
 		require.NoError(t, err)
 	}()
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, appID, testConfig.Tenant)
 	require.NoError(t, err)
 
 	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, runtimeInput, testConfig.GatewayOauth)
