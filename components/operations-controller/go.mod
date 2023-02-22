@@ -4,6 +4,8 @@ go 1.18
 
 require (
 	github.com/go-logr/logr v1.2.3
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230222154157-fbf58ac2dfa9
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222154157-fbf58ac2dfa9
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
@@ -55,8 +57,6 @@ require (
 	github.com/jmoiron/sqlx v1.3.4 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230222153722-303ba4d6ddf9 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222153722-303ba4d6ddf9 // indirect
 	github.com/lib/pq v1.10.4 // indirect
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
