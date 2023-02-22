@@ -74,6 +74,36 @@ func TestRepository_Get(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_GetGlobalByID(t *testing.T) {
+	suite := testdb.RepoGetTestSuite{
+		Name:       "Get Formation Globally by ID",
+		MethodName: "GetGlobalByID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error FROM public.formations WHERE id = $1`),
+				Args:     []driver.Value{FormationID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, testFormationState, testFormationEmptyError)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formation.NewRepository,
+		ExpectedModelEntity:       formationModel,
+		ExpectedDBEntity:          formationEntity,
+		MethodArgs:                []interface{}{FormationID},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_GetByName(t *testing.T) {
 	suite := testdb.RepoGetTestSuite{
 		Name:       "Get Formation By Name",

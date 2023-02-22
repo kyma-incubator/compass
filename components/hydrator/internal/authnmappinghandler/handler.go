@@ -21,13 +21,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
-
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"golang.org/x/oauth2"
 
@@ -228,15 +227,6 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 		}
 		issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
 
-		h.verifiersMutex.RLock()
-		verifier, found := h.verifiers[issuerURL]
-		h.verifiersMutex.RUnlock()
-
-		if found {
-			// Cached verifiers were already tried in the loop above
-			continue
-		}
-
 		log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
 		resp, err := h.getOpenIDConfig(ctx, issuerURL)
 		if err != nil {
@@ -257,7 +247,7 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 
 		defer httputils.Close(ctx, resp.Body)
 
-		verifier = h.tokenVerifierProvider(ctx, m)
+		verifier := h.tokenVerifierProvider(ctx, m)
 
 		h.verifiersMutex.Lock()
 		h.verifiers[issuerURL] = verifier
