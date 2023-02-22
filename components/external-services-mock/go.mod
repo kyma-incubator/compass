@@ -30,7 +30,7 @@ require (
 )
 
 require (
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230222145034-03a4726d9349
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230222152535-cb59a52b5d49
 	github.com/tidwall/sjson v1.2.4
 	k8s.io/apimachinery v0.25.6
 )
@@ -51,7 +51,7 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230222151253-9b04755ef93d // indirect
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230222152535-cb59a52b5d49 // indirect
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matryer/is v1.4.0 // indirect
