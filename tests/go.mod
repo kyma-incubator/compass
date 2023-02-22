@@ -50,7 +50,11 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230222153437-743634bc555a // indirect
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20230222153437-743634bc555a // indirect
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230222152535-cb59a52b5d49 // indirect
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230222153437-743634bc555a // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222153437-743634bc555a // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
