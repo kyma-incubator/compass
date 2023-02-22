@@ -276,22 +276,11 @@ if [[ ! ${SKIP_DB_INSTALL} ]]; then
   echo "DB installation status ${STATUS}"
 fi
 
-DB_USER=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-username']}"))
-DB_PWD=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
-DB_NAME=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-directorDatabaseName']}"))
-DB_PORT=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-servicePort']}"))
-
-kubectl port-forward --namespace compass-system svc/compass-postgresql 5432:5432 &
-export HELM_DRIVER=sql
-export HELM_DRIVER_SQL_CONNECTION_STRING=postgres://${DB_USER}:${DB_PWD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable
-
 echo 'Installing Compass'
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
-bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s
+bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
 STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
 echo "Compass installation status ${STATUS}"
-
-pkill kubectl
 
 prometheusMTLSPatch
 
