@@ -631,7 +631,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "success when generating notifications for application about applications in formation",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -670,7 +670,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "success when generating notifications for application with templates",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -709,7 +709,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "success when using webhook from application template",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -748,7 +748,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "success - error while generating notification for currently assigned application results in skipping generating the notification",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -786,7 +786,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "success - error while generating notification for already assigned application results in skipping generating the notification",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -824,7 +824,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "success when there are no listening applications",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return([]*model.Application{}, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return([]*model.Application{}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -847,7 +847,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "error when preparing details for notification for already assigned application",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -881,7 +881,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "error when preparing details for notification for currently assigned application",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -912,7 +912,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "error when preparing application mappings",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(listeningApplications, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -936,7 +936,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			Name: "error when listing listening applications",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeApplicationTenantMapping).Return(nil, testErr).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeApplicationTenantMapping).Return(nil, testErr).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -1068,7 +1068,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			Name: "success when generating notifications for all listening applications about the assigned runtime context in that formation",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1109,7 +1109,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			Name: "success when using webhook from application template",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1150,7 +1150,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			Name: "success - using webhook from application when bot application and application template have webhooks",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1191,7 +1191,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			Name: "Error when building NotificationRequest results in not generating notification",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1231,7 +1231,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			Name: "Error when generating details for application notification about runtime",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1268,7 +1268,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			Name: "error when preparing applications mapping and application template mapping",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1294,7 +1294,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			Name: "success when there are no listening applications",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return([]*model.Application{}, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return([]*model.Application{}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -1318,7 +1318,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			Name: "error when listing listening applications",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(nil, testErr).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(nil, testErr).Once()
 
 				return repo
 			},
@@ -1472,7 +1472,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			Name: "success when generating notifications for all listening applications about the assigned runtime in that formation",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1512,7 +1512,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			Name: "success when using webhook from application template",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1552,7 +1552,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			Name: "success - using webhook from application when bot application and application template have webhooks",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1592,7 +1592,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			Name: "Error when building NotificationRequest results in not generating notification",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1631,7 +1631,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			Name: "Error when generating details for application notification about runtime",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1667,7 +1667,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			Name: "error when preparing applications mapping and application template mapping",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(listeningApplications, nil).Once()
 
 				return repo
 			},
@@ -1692,7 +1692,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			Name: "success when there are no listening applications",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return([]*model.Application{}, nil).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return([]*model.Application{}, nil).Once()
 				return repo
 			},
 			WebhookRepoFN: func() *automock.WebhookRepository {
@@ -1715,7 +1715,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			Name: "error when listing listening applications",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListListeningApplications", ctx, model.WebhookTypeConfigurationChanged).Return(nil, testErr).Once()
+				repo.On("ListListeningApplications", ctx, TntInternalID, model.WebhookTypeConfigurationChanged).Return(nil, testErr).Once()
 
 				return repo
 			},

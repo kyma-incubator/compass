@@ -868,13 +868,13 @@ func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt
 }
 
 func (s *service) getApplicationIDToApplicationTemplateIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
-	appIDs := make([]string, 0)
+	appIDsMap := make(map[string]bool, 0)
 	for _, assignment := range formationAssignmentsForObject {
 		if assignment.TargetType == model.FormationAssignmentTypeApplication {
-			appIDs = append(appIDs, assignment.Target)
+			appIDsMap[assignment.Target] = true
 		}
 	}
-	applications, err := s.applicationRepository.ListAllByIDs(ctx, tnt, appIDs)
+	applications, err := s.applicationRepository.ListAllByIDs(ctx, tnt, setToSlice(appIDsMap))
 	if err != nil {
 		return nil, err
 	}

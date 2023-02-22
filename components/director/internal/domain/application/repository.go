@@ -48,7 +48,7 @@ type pgRepository struct {
 	globalGetter          repo.SingleGetterGlobal
 	globalDeleter         repo.DeleterGlobal
 	lister                repo.Lister
-	listeningAppsLister   repo.ListerGlobal
+	listeningAppsLister   repo.Lister
 	listerGlobal          repo.ListerGlobal
 	deleter               repo.Deleter
 	pageableQuerier       repo.PageableQuerier
@@ -71,7 +71,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
 		deleter:               repo.NewDeleter(applicationTable),
 		lister:                repo.NewLister(applicationTable, applicationColumns),
-		listeningAppsLister:   repo.NewListerGlobal(resource.Application, listeningApplicationsView, applicationColumns),
+		listeningAppsLister:   repo.NewLister(listeningApplicationsView, applicationColumns),
 		listerGlobal:          repo.NewListerGlobal(resource.Application, applicationTable, applicationColumns),
 		pageableQuerier:       repo.NewPageableQuerier(applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
@@ -487,14 +487,14 @@ func (r *pgRepository) ListAllByIDs(ctx context.Context, tenantID string, ids []
 }
 
 // ListListeningApplications lists all application that either have webhook of type whType, or their application template has a webhook of type whType
-func (r *pgRepository) ListListeningApplications(ctx context.Context, whType model.WebhookType) ([]*model.Application, error) {
+func (r *pgRepository) ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error) {
 	var entities EntityCollection
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("webhook_type", whType),
 	}
 
-	if err := r.listeningAppsLister.ListGlobal(ctx, &entities, conditions...); err != nil {
+	if err := r.listeningAppsLister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 

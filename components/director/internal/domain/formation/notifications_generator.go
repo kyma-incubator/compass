@@ -21,7 +21,7 @@ type applicationRepository interface {
 	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
 	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error)
-	ListListeningApplications(ctx context.Context, whType model.WebhookType) ([]*model.Application, error)
+	ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error)
 }
 
 //go:generate mockery --exported --name=applicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -240,7 +240,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 	}
 
 	// list applications that either have WebhookTypeApplicationTenantMapping webhook or their applicationTemplate has WebhookTypeApplicationTenantMapping webhook
-	listeningApps, err := ns.applicationRepository.ListListeningApplications(ctx, model.WebhookTypeApplicationTenantMapping)
+	listeningApps, err := ns.applicationRepository.ListListeningApplications(ctx, tenant, model.WebhookTypeApplicationTenantMapping)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing listening applications")
 	}
@@ -408,7 +408,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 		resourceIDToWebhookMapping[webhook.ObjectID] = webhook
 	}
 
-	listeningApps, err := ns.applicationRepository.ListListeningApplications(ctx, model.WebhookTypeConfigurationChanged)
+	listeningApps, err := ns.applicationRepository.ListListeningApplications(ctx, tenant, model.WebhookTypeConfigurationChanged)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing listening applications")
 	}

@@ -2048,63 +2048,22 @@ func TestUseApplicationTemplateWebhookIfAppDoesNotHaveOneForNotifications(t *tes
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 	require.NoError(t, err)
 
-	appFromTmplSrc := graphql.ApplicationFromTemplateInput{
-		TemplateName: applicationType, Values: []*graphql.TemplateValueInput{
-			{
-				Placeholder: "name",
-				Value:       "app1-formation-notifications-tests",
-			},
-			{
-				Placeholder: "display-name",
-				Value:       "App 1",
-			},
-		},
-	}
-
 	t.Logf("Create application 1 from template %q", applicationType)
-	appFromTmplSrcGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc)
-	require.NoError(t, err)
-	createAppFromTmplFirstRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
-	app1 := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, createAppFromTmplFirstRequest, &app1)
+	app1 := fixtures.RegisterApplicationFromTemplate(t, ctx, certSecuredGraphQLClient, applicationType, "app1-formation-notifications-tests", "App 1", tnt)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &app1)
-	require.NoError(t, err)
-	require.NotEmpty(t, app1.ID)
 	t.Logf("app1 ID: %q", app1.ID)
 
-	appFromTmplSrc2 := graphql.ApplicationFromTemplateInput{
-		TemplateName: applicationType2, Values: []*graphql.TemplateValueInput{
-			{
-				Placeholder: "name",
-				Value:       "app2-formation-notifications-tests",
-			},
-			{
-				Placeholder: "display-name",
-				Value:       "App 2",
-			},
-		},
-	}
-
 	t.Logf("Create application 2 from template %q", applicationType2)
-	appFromTmplSrc2GQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc2)
-	require.NoError(t, err)
-	createAppFromTmplSecondRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrc2GQL)
-	app2 := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, createAppFromTmplSecondRequest, &app2)
+	app2 := fixtures.RegisterApplicationFromTemplate(t, ctx, certSecuredGraphQLClient, applicationType2, "app2-formation-notifications-tests", "App 2", tnt)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &app2)
-	require.NoError(t, err)
-	require.NotEmpty(t, app2.ID)
 	t.Logf("app2 ID: %q", app2.ID)
 
 	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
 	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	t.Logf("Assign application 1 to formation %s", formationName)
-	assignReq := fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
-	var assignedFormation graphql.Formation
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
-	require.NoError(t, err)
-	require.Equal(t, formationName, assignedFormation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
 
 	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 		app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
@@ -2113,10 +2072,8 @@ func TestUseApplicationTemplateWebhookIfAppDoesNotHaveOneForNotifications(t *tes
 	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	t.Logf("Assign application 2 to formation %s", formationName)
-	assignReq = fixtures.FixAssignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
-	require.NoError(t, err)
-	require.Equal(t, formationName, assignedFormation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
 
 	expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 		app1.ID: {

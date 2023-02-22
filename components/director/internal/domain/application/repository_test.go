@@ -844,8 +844,8 @@ func TestPgRepository_ListListeningApplications(t *testing.T) {
 		Name: "List listening Applications",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM listening_applications WHERE webhook_type = $1`),
-				Args:     []driver.Value{model.WebhookTypeConfigurationChanged},
+				Query:    regexp.QuoteMeta(`SELECT id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM listening_applications WHERE webhook_type = $1 AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $2))`),
+				Args:     []driver.Value{model.WebhookTypeConfigurationChanged, givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixAppColumns()).
@@ -864,7 +864,7 @@ func TestPgRepository_ListListeningApplications(t *testing.T) {
 		RepoConstructorFunc:       application.NewRepository,
 		ExpectedModelEntities:     []interface{}{appModel1, appModel2},
 		ExpectedDBEntities:        []interface{}{appEntity1, appEntity2},
-		MethodArgs:                []interface{}{model.WebhookTypeConfigurationChanged},
+		MethodArgs:                []interface{}{givenTenant(), model.WebhookTypeConfigurationChanged},
 		MethodName:                "ListListeningApplications",
 		DisableConverterErrorTest: true,
 	}

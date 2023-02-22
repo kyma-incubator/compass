@@ -362,7 +362,7 @@ func getReferenceColumnForListByReferenceObjectType(objType model.WebhookReferen
 	case model.ApplicationTemplateWebhookReference:
 		return applicationTemplateID, nil
 	default:
-		return "", errors.New("referenced object should be one of application, runtime or formation template")
+		return "", errors.New("referenced object should be one of application, application template, runtime or formation template")
 	}
 }
 

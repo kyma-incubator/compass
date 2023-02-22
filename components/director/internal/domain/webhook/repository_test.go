@@ -390,7 +390,7 @@ func TestRepositoryListByRuntimeID(t *testing.T) {
 		repository := webhook.NewRepository(nil)
 		_, err := repository.ListByReferenceObjectID(context.TODO(), "", "", model.IntegrationSystemWebhookReference)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "referenced object should be one of application, runtime or formation template")
+		assert.Contains(t, err.Error(), "referenced object should be one of application, application template, runtime or formation template")
 	})
 }
 
@@ -437,7 +437,7 @@ func TestRepositoryListByFormationTemplateID(t *testing.T) {
 		repository := webhook.NewRepository(nil)
 		_, err := repository.ListByReferenceObjectID(context.TODO(), "", "", model.IntegrationSystemWebhookReference)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "referenced object should be one of application, runtime or formation template")
+		assert.Contains(t, err.Error(), "referenced object should be one of application, application template, runtime or formation template")
 	})
 }
 
@@ -484,7 +484,7 @@ func TestRepositoryListByFormationTemplateIDGlobal(t *testing.T) {
 		repository := webhook.NewRepository(nil)
 		_, err := repository.ListByReferenceObjectIDGlobal(context.TODO(), "", model.IntegrationSystemWebhookReference)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "referenced object should be one of application, runtime or formation template")
+		assert.Contains(t, err.Error(), "referenced object should be one of application, application template, runtime or formation template")
 	})
 }
 

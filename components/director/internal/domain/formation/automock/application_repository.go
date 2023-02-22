@@ -107,13 +107,13 @@ func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, te
 	return r0, r1
 }
 
-// ListListeningApplications provides a mock function with given fields: ctx, whType
-func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, whType model.WebhookType) ([]*model.Application, error) {
-	ret := _m.Called(ctx, whType)
+// ListListeningApplications provides a mock function with given fields: ctx, tenant, whType
+func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error) {
+	ret := _m.Called(ctx, tenant, whType)
 
 	var r0 []*model.Application
-	if rf, ok := ret.Get(0).(func(context.Context, model.WebhookType) []*model.Application); ok {
-		r0 = rf(ctx, whType)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType) []*model.Application); ok {
+		r0 = rf(ctx, tenant, whType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Application)
@@ -121,8 +121,8 @@ func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.WebhookType) error); ok {
-		r1 = rf(ctx, whType)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookType) error); ok {
+		r1 = rf(ctx, tenant, whType)
 	} else {
 		r1 = ret.Error(1)
 	}
