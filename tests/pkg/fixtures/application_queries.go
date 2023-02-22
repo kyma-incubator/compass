@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"strings"
 	"time"
 
@@ -102,7 +101,7 @@ func RegisterApplicationFromTemplate(t require.TestingT, ctx context.Context, gq
 
 	appFromTmplSrc2GQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 	require.NoError(t, err)
-	createRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrc2GQL)
+	createRequest := FixRegisterApplicationFromTemplate(appFromTmplSrc2GQL)
 	app := graphql.ApplicationExt{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createRequest, &app)
 	require.NoError(t, err)
