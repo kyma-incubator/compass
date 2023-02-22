@@ -275,7 +275,7 @@ func TestHandler(t *testing.T) {
 
 		verifierMock := &automock.TokenVerifier{}
 		verifierMock.On("Verify", mock.Anything, mockedToken1).Return(tokenDataMock, nil).Once()
-		verifierMock.On("Verify", mock.Anything, mockedToken2).Return(nil, mockErr).Once()
+		verifierMock.On("Verify", mock.Anything, mockedToken2).Return(nil, mockErr).Twice()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock

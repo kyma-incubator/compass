@@ -127,15 +127,15 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2876"
+      version: "PR-2897"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2876"
+      version: "PR-2897"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2876"
+      version: "PR-2897"
       name: compass-pairing-adapter
     director:
       dir:
@@ -143,15 +143,15 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2876"
+      version: "PR-2897"
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2876"
+      version: "PR-2897"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2876"
+      version: "PR-2886"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -163,7 +163,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2876"
+      version: "PR-2897"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2876"
+      version: "PR-2897"
       name: compass-external-services-mock
     console:
       dir:
@@ -226,9 +226,10 @@ global:
     useClone: "false"
   director:
     host: compass-director.compass-system.svc.cluster.local
-    formationAsyncApi:
+    formationMappingAsyncStatusApi:
       pathPrefix: "/v1/businessIntegrations"
-      path: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
+      formationAssignmentPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
+      formationPath: "/{ucl-formation-id}/status"
     prefix: /director
     graphql:
       external:
@@ -1128,6 +1129,7 @@ global:
       managed_application_provider_operator:
         - "application.local_tenant_id:write"
         - "application_template:write"
+        - "application_template:read"
         - "application_template.webhooks:read"
         - "internal_visibility:read"
         - "webhook:write"

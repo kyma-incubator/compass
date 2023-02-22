@@ -13,12 +13,9 @@ WORKDIR /migrate
 RUN git checkout $VERSION
 
 
-ARG TARGETOS TARGETARCH
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -a -o migrate -ldflags="-X main.Version=$VERSION" -tags "$DATABASE $SOURCE" ./cmd/migrate
+RUN go build -a -o migrate -ldflags="-X main.Version=$VERSION" -tags "$DATABASE $SOURCE" ./cmd/migrate
 
-FROM alpine:3.17.1
-
-ARG TARGETARCH
+FROM alpine:3.17.2
 
 WORKDIR /migrate
 
@@ -32,7 +29,7 @@ RUN mv migrate /usr/local/bin/migrate
 # kubectl is supported within one minor version (older or newer) of kube-apiserver
 ENV CLUSTER_VERSION=1.26.1
 
-RUN curl -L https://dl.k8s.io/release/v${CLUSTER_VERSION}/bin/linux/${TARGETARCH}/kubectl -o /usr/local/bin/kubectl  && chmod +x /usr/local/bin/kubectl 
+RUN curl -L https://dl.k8s.io/release/v${CLUSTER_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl  && chmod +x /usr/local/bin/kubectl
 
 COPY ./migrations/ ./migrations
 COPY ./seeds/ ./seeds

@@ -1,6 +1,8 @@
 package formationtemplate_test
 
 import (
+	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -12,15 +14,16 @@ import (
 )
 
 const (
-	testID                   = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	formationTemplateName    = "formation-template-name"
-	runtimeTypeDisplayName   = "display-name-for-runtime"
-	artifactKindAsString     = "SUBSCRIPTION"
-	applicationTypesAsString = "[\"some-application-type\"]"
-	runtimeTypesAsString     = "[\"some-runtime-type\"]"
-	testTenantID             = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	testParentTenantID       = "d8fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	testWebhookID            = "test-wh-id"
+	testID                    = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	formationTemplateName     = "formation-template-name"
+	runtimeTypeDisplayName    = "display-name-for-runtime"
+	artifactKindAsString      = "SUBSCRIPTION"
+	applicationTypesAsString  = "[\"some-application-type\"]"
+	runtimeTypesAsString      = "[\"some-runtime-type\"]"
+	testTenantID              = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	testParentTenantID        = "d8fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	testWebhookID             = "test-wh-id"
+	leadingProductIDsAsString = "[\"leading-product-id\",\"leading-product-id-2\"]"
 )
 
 var (
@@ -31,12 +34,16 @@ var (
 	graphqlWebhookMode          = graphql.WebhookModeSync
 	applicationTypes            = []string{"some-application-type"}
 	runtimeTypes                = []string{"some-runtime-type"}
+	leadingProductID            = "leading-product-id"
+	leadingProductID2           = "leading-product-id-2"
+	leadingProductIDs           = []*string{&leadingProductID, &leadingProductID2}
 	formationTemplateModelInput = model.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
+		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixModelWebhookInput(),
 	}
 	formationTemplateGraphQLInput = graphql.FormationTemplateInput{
@@ -45,6 +52,7 @@ var (
 		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
+		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixGQLWebhookInput(),
 	}
 	formationTemplateModel = model.FormationTemplate{
@@ -54,6 +62,7 @@ var (
 		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
+		LeadingProductIDs:      leadingProductIDs,
 		TenantID:               str.Ptr(testTenantID),
 		Webhooks:               []*model.Webhook{fixFormationTemplateModelWebhook()},
 	}
@@ -64,6 +73,7 @@ var (
 		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
+		LeadingProductIDs:      leadingProductIDs,
 		TenantID:               nil,
 	}
 	formationTemplateEntity = formationtemplate.Entity{
@@ -73,6 +83,7 @@ var (
 		RuntimeTypes:           runtimeTypesAsString,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
+		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(testTenantID),
 	}
 	formationTemplateEntityNullTenant = formationtemplate.Entity{
@@ -82,6 +93,7 @@ var (
 		RuntimeTypes:           runtimeTypesAsString,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
+		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(""),
 	}
 	graphQLFormationTemplate = graphql.FormationTemplate{
@@ -91,6 +103,7 @@ var (
 		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
+		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               []*graphql.Webhook{fixFormationTemplateGQLWebhook()},
 	}
 	formationTemplateModelPage = model.FormationTemplatePage{
@@ -197,7 +210,7 @@ func fixFormationTemplateGQLWebhook() *graphql.Webhook {
 }
 
 func fixColumns() []string {
-	return []string{"id", "name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "tenant_id"}
+	return []string{"id", "name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "tenant_id"}
 }
 
 func UnusedFormationTemplateService() *automock.FormationTemplateService {
