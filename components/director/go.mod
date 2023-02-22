@@ -48,6 +48,10 @@ require (
 
 require (
 	github.com/imdario/mergo v0.3.12
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230222132951-324f2481bbc2
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230222132951-324f2481bbc2
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222132951-324f2481bbc2
+	github.com/kyma-incubator/compass/tests v0.0.0-20230222132951-324f2481bbc2
 	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/text v0.5.0
@@ -89,10 +93,6 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230222132633-ca80ee87cc50 // indirect
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230222132633-ca80ee87cc50 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222132633-ca80ee87cc50 // indirect
-	github.com/kyma-incubator/compass/tests v0.0.0-20230222132633-ca80ee87cc50 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect
