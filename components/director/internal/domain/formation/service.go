@@ -63,7 +63,6 @@ type runtimeContextRepository interface {
 }
 
 // FormationRepository represents the Formations repository layer
-//
 //go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationRepository interface {
 	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
@@ -75,7 +74,6 @@ type FormationRepository interface {
 }
 
 // FormationTemplateRepository represents the FormationTemplate repository layer
-//
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
@@ -83,7 +81,6 @@ type FormationTemplateRepository interface {
 }
 
 // NotificationsService represents the notification service for generating and sending notifications
-//
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
 	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
@@ -92,7 +89,6 @@ type NotificationsService interface {
 }
 
 // FormationAssignmentNotificationsService represents the notification service for generating and sending notifications
-//
 //go:generate mockery --name=FormationAssignmentNotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationsService interface {
 	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
@@ -225,7 +221,6 @@ func NewService(
 
 // Used for testing
 //nolint
-//
 //go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type processFunc interface {
 	ProcessScenarioFunc(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
@@ -422,14 +417,14 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // with source=objectID and target=X are generated.
 //
 // Additionally, notifications are sent to the interested participants for that formation change.
-//   - If objectType is graphql.FormationObjectTypeApplication:
-//   - A notification about the assigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
-//   - A notification about the assigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
-//   - If the assigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
-//   - If the assigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
-//   - If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
-//   - If the assigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
-//   - A notification about the assigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
+// 		- If objectType is graphql.FormationObjectTypeApplication:
+//				- A notification about the assigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
+//  			- A notification about the assigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
+//				- If the assigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
+//				- If the assigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
+// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
+//				- If the assigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
+//				- A notification about the assigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
 //
 // If an error occurs during the formationAssignment processing the failed formationAssignment's value is updated with the error and the processing proceeds. The error should not
 // be returned but only logged. If the error is returned the assign operation will be rolled back and all the created resources(labels, formationAssignments etc.) will be rolled
@@ -639,6 +634,9 @@ func (s *service) unassign(ctx context.Context, tnt, objectID string, objectType
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
 		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return true, nil
+			}
 			return false, err
 		}
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
@@ -692,24 +690,24 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 // it removes the formation from the scenario label of the runtime/runtime context if the provided
 // formation is NOT assigned from ASA and does nothing if it is assigned from ASA.
 //
-//	 Additionally, notifications are sent to the interested participants for that formation change.
-//			- If objectType is graphql.FormationObjectTypeApplication:
-//					- A notification about the unassigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
-//	 			- A notification about the unassigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
-//					- If the unassigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
-//					- If the unassigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
-//			- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
-//					- If the unassigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
-//	  			- A notification about the unassigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
+//  Additionally, notifications are sent to the interested participants for that formation change.
+// 		- If objectType is graphql.FormationObjectTypeApplication:
+//				- A notification about the unassigned application is sent to all the runtimes that are in the formation (either directly or via runtimeContext) and has configuration change webhook.
+//  			- A notification about the unassigned application is sent to all the applications that are in the formation and has application tenant mapping webhook.
+//				- If the unassigned application has an application tenant mapping webhook, a notification about each application in the formation is sent to this application.
+//				- If the unassigned application has a configuration change webhook, a notification about each runtime/runtimeContext in the formation is sent to this application.
+// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext:
+//				- If the unassigned runtime/runtimeContext has configuration change webhook, a notification about each application in the formation is sent to this runtime.
+//   			- A notification about the unassigned runtime/runtimeContext is sent to all the applications that are in the formation and have configuration change webhook.
 //
 // For the formationAssignments that have their source or target field set to objectID:
-//   - If the formationAssignment does not have notification associated with it
-//   - the formation assignment is deleted
-//   - If the formationAssignment is associated with a notification
-//   - If the response from the notification is success
-//   - the formationAssignment is deleted
-//   - If the response from the notification is different from success
-//   - the formation assignment is updated with an error
+// 		- If the formationAssignment does not have notification associated with it
+//				- the formation assignment is deleted
+//		- If the formationAssignment is associated with a notification
+//				- If the response from the notification is success
+//						- the formationAssignment is deleted
+// 				- If the response from the notification is different from success
+//						- the formation assignment is updated with an error
 //
 // After the processing of the formationAssignments the state is persisted regardless of whether there were any errors.
 // If an error has occurred during the formationAssignment processing the unassign operation is rolled back(the updated
@@ -736,9 +734,18 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	formationFromDB := ft.formation
+
+	isComingFromASA, err := s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+	if err != nil {
+		return nil, errors.Wrapf(err, "While unassigning from formation")
+	}
+	if isComingFromASA {
+		// No need to enforce post-constraints as nothing is done
+		return formationFromDB, nil
+	}
+
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		_, err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, errors.Wrapf(err, "While unassigning from formation")
 		}
@@ -792,15 +799,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		}
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		isComingFromASA, err := s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
-		if err != nil {
-			return nil, errors.Wrapf(err, "While unassigning from formation")
-		}
-		if isComingFromASA {
-			// No need to enforce post-constraints as nothing is done
-			return formationFromDB, nil
-		}
-
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
@@ -887,13 +885,10 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 		return errors.Wrap(err, "while getting formation assignments with synchronizing and error states")
 	}
 
-	failedCreateFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
-	failedDeleteFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
 	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
-	failedCreateRequests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(failedFormationAssignments))
-	failedDeleteRequests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(failedFormationAssignments))
-	var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
+	var errs *multierror.Error
 	for _, fa := range failedFormationAssignments {
+		var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
 		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
 		if err != nil {
 			return err
@@ -910,46 +905,35 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 			}
 		}
 
-		if fa.State == string(model.InitialAssignmentState) || fa.State == string(model.CreateErrorAssignmentState) {
-			failedCreateFormationAssignments = append(failedCreateFormationAssignments, fa)
-			if reverseFA != nil {
-				failedCreateFormationAssignments = append(failedCreateFormationAssignments, reverseFA)
-			}
-			if notificationForFA != nil {
-				failedCreateRequests = append(failedCreateRequests, notificationForFA)
-			}
-			if notificationForReverseFA != nil {
-				failedCreateRequests = append(failedCreateRequests, notificationForReverseFA)
-			}
+		faReqMapping := formationassignment.FormationAssignmentRequestMapping{
+			Request:             notificationForFA,
+			FormationAssignment: fa,
 		}
-		if fa.State == string(model.DeletingAssignmentState) || fa.State == string(model.DeleteErrorAssignmentState) {
-			failedDeleteFormationAssignments = append(failedDeleteFormationAssignments, fa)
-			if reverseFA != nil {
-				failedDeleteFormationAssignments = append(failedDeleteFormationAssignments, reverseFA)
+
+		reverseFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
+			Request:             notificationForReverseFA,
+			FormationAssignment: reverseFA,
+		}
+
+		assignmentPair := formationassignment.AssignmentMappingPair{
+			Assignment:        &faReqMapping,
+			ReverseAssignment: &reverseFAReqMapping,
+		}
+		switch fa.State {
+		case string(model.InitialFormationState), string(model.CreateErrorFormationState):
+			_, err = s.formationAssignmentService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
+			if err != nil {
+				errs = multierror.Append(errs, err)
 			}
-			if notificationForFA != nil {
-				failedDeleteRequests = append(failedDeleteRequests, notificationForFA)
-			}
-			if notificationForReverseFA != nil {
-				failedDeleteRequests = append(failedDeleteRequests, notificationForReverseFA)
+		case string(model.DeletingFormationState), string(model.DeleteErrorFormationState):
+			_, err = s.formationAssignmentService.CleanupFormationAssignment(ctx, &assignmentPair)
+			if err != nil {
+				errs = multierror.Append(errs, err)
 			}
 		}
 		if fa.State == string(model.DeleteErrorFormationState) {
 			failedDeleteErrorFormationAssignments = append(failedDeleteErrorFormationAssignments, fa)
 		}
-	}
-	rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tenantID, failedFormationAssignments)
-	if err != nil {
-		return err
-	}
-
-	var errs *multierror.Error
-	if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, failedCreateFormationAssignments, rtmContextIDsMapping, failedCreateRequests, s.formationAssignmentService.ProcessFormationAssignmentPair); err != nil {
-		errs = multierror.Append(errs, err)
-	}
-
-	if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, failedDeleteFormationAssignments, rtmContextIDsMapping, failedDeleteRequests, s.formationAssignmentService.CleanupFormationAssignment); err != nil {
-		errs = multierror.Append(errs, err)
 	}
 
 	if len(failedDeleteErrorFormationAssignments) > 0 {
@@ -984,16 +968,14 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 }
 
 func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
-	rtmContextIDsSet := make(map[string]struct{}, 0)
+	rtmContextIDsSet := make(map[string]bool, 0)
 	for _, assignment := range formationAssignmentsForObject {
 		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
-			rtmContextIDsSet[assignment.Target] = struct{}{}
+			rtmContextIDsSet[assignment.Target] = true
 		}
 	}
-	rtmContextIDs := make([]string, 0, len(rtmContextIDsSet))
-	for assignmentID := range rtmContextIDsSet {
-		rtmContextIDs = append(rtmContextIDs, assignmentID)
-	}
+	rtmContextIDs := setToSlice(rtmContextIDsSet)
+
 	rtmContexts, err := s.runtimeContextRepo.ListByIDs(ctx, tnt, rtmContextIDs)
 	if err != nil {
 		return nil, err

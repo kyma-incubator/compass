@@ -174,12 +174,12 @@ func AssignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 	return &formation
 }
 
-func UnassignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID string, objectType graphql.FormationObjectType) *graphql.Formation {
-	unassignRequest := FixUnassignFormationRequest(tenantID, string(objectType), in.Name)
+func UnassignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, objectID string, objectType graphql.FormationObjectType) *graphql.Formation {
+	unassignRequest := FixUnassignFormationRequest(objectID, string(objectType), in.Name)
 
 	formation := graphql.Formation{}
 
-	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, unassignRequest, &formation))
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, unassignRequest, &formation))
 	require.NotEmpty(t, formation.Name)
 	return &formation
 }

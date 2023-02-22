@@ -554,7 +554,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 					TenantID:            TntInternalID,
 				}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, details, FormationTemplateID).Return(nil).Once()
-				//engine.On("EnforceConstraints", ctx, postUnassignLocation, details, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {

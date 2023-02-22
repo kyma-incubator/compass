@@ -795,7 +795,7 @@ func TestService_GetAssignmentsForFormationWithStates(t *testing.T) {
 				return repo
 			},
 			ExpectedOutput:   nil,
-			ExpectedErrorMsg: testErr.Error(),
+			ExpectedErrorMsg: "while getting formation assignments with error states for formation with ID",
 		},
 	}
 

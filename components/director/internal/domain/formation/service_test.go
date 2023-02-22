@@ -2393,6 +2393,19 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 		},
 	}
+	var formationAssignmentPairs []*formationassignment.AssignmentMappingPair
+	for i := range formationAssignments {
+		formationAssignmentPairs = append(formationAssignmentPairs, &formationassignment.AssignmentMappingPair{
+			Assignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             notificationsForAssignments[i],
+				FormationAssignment: formationAssignments[i],
+			},
+			ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+				Request:             nil,
+				FormationAssignment: nil,
+			},
+		})
+	}
 
 	testCases := []struct {
 		Name                                     string
@@ -2416,8 +2429,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, ""))
 				}
 
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0], formationAssignments[1]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[0], notificationsForAssignments[1]}, mock.Anything).Return(nil)
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[2], formationAssignments[3]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[2], notificationsForAssignments[3]}, mock.Anything).Return(nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil)
 
 				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil)
 				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Target).Return([]*model.FormationAssignment{{ID: "id7"}}, nil)
@@ -2430,11 +2445,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil)
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil)
 				return svc
-			},
-			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, TntInternalID, []string{"RTCTX1"}).Return(nil, nil).Once()
-				return repo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -2453,8 +2463,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, ""))
 				}
 
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0], formationAssignments[1]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[0], notificationsForAssignments[1]}, mock.Anything).Return(nil)
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[2], formationAssignments[3]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[2], notificationsForAssignments[3]}, mock.Anything).Return(nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil)
 
 				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil)
 				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Target).Return([]*model.FormationAssignment{}, nil)
@@ -2467,11 +2479,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil)
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil)
 				return svc
-			},
-			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, TntInternalID, []string{"RTCTX1"}).Return(nil, nil).Once()
-				return repo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -2495,8 +2502,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, ""))
 				}
 
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0], formationAssignments[1]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[0], notificationsForAssignments[1]}, mock.Anything).Return(nil)
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[2], formationAssignments[3]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[2], notificationsForAssignments[3]}, mock.Anything).Return(nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil)
 
 				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Target).Return([]*model.FormationAssignment{}, nil)
 
@@ -2509,11 +2518,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil)
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil)
 				return svc
-			},
-			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, TntInternalID, []string{"RTCTX1"}).Return(nil, nil).Once()
-				return repo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -2537,8 +2541,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, ""))
 				}
 
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0], formationAssignments[1]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[0], notificationsForAssignments[1]}, mock.Anything).Return(nil)
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[2], formationAssignments[3]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[2], notificationsForAssignments[3]}, mock.Anything).Return(nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil)
 
 				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, mock.Anything).Return(nil, testErr)
 				return svc
@@ -2550,11 +2556,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil)
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil)
 				return svc
-			},
-			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, TntInternalID, []string{"RTCTX1"}).Return(nil, nil).Once()
-				return repo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -2573,8 +2574,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, ""))
 				}
 
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0], formationAssignments[1]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[0], notificationsForAssignments[1]}, mock.Anything).Return(nil)
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[2], formationAssignments[3]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[2], notificationsForAssignments[3]}, mock.Anything).Return(nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, nil)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, nil)
 
 				return svc
 			},
@@ -2585,11 +2588,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil)
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil)
 				return svc
-			},
-			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, TntInternalID, []string{"RTCTX1"}).Return(nil, nil).Once()
-				return repo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -2608,8 +2606,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, ""))
 				}
 
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[0], formationAssignments[1]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[0], notificationsForAssignments[1]}, mock.Anything).Return(testErr)
-				svc.On("ProcessFormationAssignments", ctx, []*model.FormationAssignment{formationAssignments[2], formationAssignments[3]}, make(map[string]string, 0), []*webhookclient.FormationAssignmentNotificationRequest{notificationsForAssignments[2], notificationsForAssignments[3]}, mock.Anything).Return(testErr)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[0]).Return(false, testErr)
+				svc.On("ProcessFormationAssignmentPair", ctx, formationAssignmentPairs[1]).Return(false, testErr)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[2]).Return(false, testErr)
+				svc.On("CleanupFormationAssignment", ctx, formationAssignmentPairs[3]).Return(false, testErr)
 
 				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Source).Return([]*model.FormationAssignment{{ID: "id6"}}, nil)
 				svc.On("ListFormationAssignmentsForObjectID", ctx, FormationID, formationAssignments[3].Target).Return([]*model.FormationAssignment{}, nil)
@@ -2623,11 +2623,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil)
 				return svc
 			},
-			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, TntInternalID, []string{"RTCTX1"}).Return(nil, nil).Once()
-				return repo
-			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
 				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil)
@@ -2637,33 +2632,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				engine := &automock.AsaEngine{}
 				engine.On("IsFormationComingFromASA", ctx, "RTCTX1", testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(true, nil)
 				return engine
-			},
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "returns error when generating runtime context to runtime mapping",
-			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
-				svc := &automock.FormationAssignmentService{}
-				svc.On("GetAssignmentsForFormationWithStates", ctx, TntInternalID, FormationID, allStates).Return(formationAssignments, nil)
-
-				for _, fa := range formationAssignments {
-					svc.On("GetReverseBySourceAndTarget", ctx, FormationID, fa.Source, fa.Target).Return(nil, apperrors.NewNotFoundError(resource.FormationAssignment, ""))
-				}
-
-				return svc
-			},
-			FormationAssignmentNotificationServiceFN: func() *automock.FormationAssignmentNotificationsService {
-				svc := &automock.FormationAssignmentNotificationsService{}
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[0]).Return(notificationsForAssignments[0], nil)
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[1]).Return(notificationsForAssignments[1], nil)
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[2]).Return(notificationsForAssignments[2], nil)
-				svc.On("GenerateFormationAssignmentNotification", ctx, formationAssignments[3]).Return(notificationsForAssignments[3], nil)
-				return svc
-			},
-			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByIDs", ctx, TntInternalID, []string{"RTCTX1"}).Return(nil, testErr).Once()
-				return repo
 			},
 			ExpectedErrMessage: testErr.Error(),
 		},

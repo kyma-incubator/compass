@@ -84,6 +84,32 @@ func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlCl
 	return app, err
 }
 
+func RegisterApplicationFromTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, templateName, appName, displayName, tenantID string) graphql.ApplicationExt {
+	appFromTmpl := graphql.ApplicationFromTemplateInput{
+		TemplateName: templateName,
+		Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: "name",
+				Value:       appName,
+			},
+			{
+				Placeholder: "display-name",
+				Value:       displayName,
+			},
+		},
+	}
+
+	appFromTmplSrc2GQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createRequest := FixRegisterApplicationFromTemplate(appFromTmplSrc2GQL)
+	app := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createRequest, &app)
+	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
+
+	return app
+}
+
 func AppsForRuntime(ctx context.Context, gqlClient *gcli.Client, tenantID, runtimeID string) (graphql.ApplicationPageExt, error) {
 	req := FixApplicationForRuntimeRequest(runtimeID)
 	var applicationPage graphql.ApplicationPageExt
