@@ -112,7 +112,6 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	t.Log("Create application")
 	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -387,6 +386,7 @@ func TestListLabelDefinitions(t *testing.T) {
 	assert.Contains(t, labelDefinitions, firstLabelDefinition)
 }
 
+// TODO remove when set scenarios label for application is forbidden
 func TestDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
@@ -413,7 +413,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, scenarios)
 
 	//WHEN
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{scenarios[0]})
