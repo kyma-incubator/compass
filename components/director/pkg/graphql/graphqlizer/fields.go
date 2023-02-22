@@ -159,6 +159,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 	    runtimeTypes
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
+        leadingProductIDs
         webhooks {%s}
 	`, fp.ForWebhooks())
 }

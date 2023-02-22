@@ -126,7 +126,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	newFormation := "ADDITIONAL"
-	unusedFormationName := "UNUSED"
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -135,13 +134,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
-
-	t.Logf("Should create formation: %s", unusedFormationName)
-	var unusedFormation graphql.Formation
-	createUnusedReq := fixtures.FixCreateFormationRequest(unusedFormationName)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createUnusedReq, &unusedFormation)
-	require.NoError(t, err)
-	require.Equal(t, unusedFormationName, unusedFormation.Name)
 
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation
@@ -189,6 +181,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	var nilFormation *graphql.Formation
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteRequest, nilFormation)
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "are not valid against empty schema")
 	assert.Nil(t, nilFormation)
 
 	t.Logf("Unassign Application from formation %s", newFormation)
@@ -208,13 +201,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	assert.Equal(t, newFormation, deleteFormation.Name)
 
 	saveExample(t, deleteRequest.Query(), "delete formation")
-
-	t.Log("Should be able to delete formation")
-	deleteUnusedRequest := fixtures.FixDeleteFormationRequest(unusedFormationName)
-	var deleteUnusedFormation graphql.Formation
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteUnusedRequest, &deleteUnusedFormation)
-	assert.NoError(t, err)
-	assert.Equal(t, unusedFormationName, deleteUnusedFormation.Name)
 }
 
 func TestRuntimeFormationFlow(t *testing.T) {
