@@ -124,7 +124,7 @@ global:
 Start the Database installation by using the following command:
 
 ```bash
-<script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
+<script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s> --sql-helm-backend
 ```
 Once the Database is provisioned procced and start the Compass installation by using the following command:
 
@@ -390,7 +390,7 @@ Start Database installation:
 ```
 Then, install compass component:
 ```bash
-<script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
+<script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s> --sql-helm-backend
 ```
 
 Once Compass is installed, the Runtime Agent will be configured to fetch the Runtime configuration from the Compass installation within the same cluster.
