@@ -1705,14 +1705,14 @@ func TestMergeApplications(t *testing.T) {
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, assignReq, &assignFormation)
 	defer func() {
-		t.Logf("Unassigning src-app from formation %s", newFormation)
+		t.Logf("Unassigning %s from formation %s", outputDestApp.Name, newFormation)
 		request := fixtures.FixUnassignFormationRequest(outputDestApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 		var response graphql.Formation
 		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, request, &response)
 		if nil == err {
-			t.Logf("Src-app was unassigned from formation %s", newFormation)
+			t.Logf("%s was unassigned from formation %s", outputDestApp.Name, newFormation)
 		} else {
-			t.Logf("Src-app was not removed from formation %s: %v", newFormation, err)
+			t.Logf("%s was not removed from formation %s: %v", outputDestApp.Name, newFormation, err)
 		}
 	}()
 	require.NoError(t, err)
