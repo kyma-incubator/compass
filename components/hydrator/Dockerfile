@@ -12,7 +12,7 @@ ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o hydrator ./cmd/main.go
 RUN mkdir /app && mv ./hydrator /app/hydrator
 
-FROM alpine:3.17.1
+FROM alpine:3.17.2
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 

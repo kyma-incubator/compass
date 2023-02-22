@@ -15,7 +15,7 @@ RUN git checkout $VERSION
 
 RUN go build -a -o migrate -ldflags="-X main.Version=$VERSION" -tags "$DATABASE $SOURCE" ./cmd/migrate
 
-FROM alpine:3.17.1
+FROM alpine:3.17.2
 
 WORKDIR /migrate
 
