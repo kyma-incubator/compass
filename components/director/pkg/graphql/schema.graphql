@@ -675,8 +675,8 @@ input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeTypes: [String!]
-	runtimeTypeDisplayName: String!
-	runtimeArtifactKind: ArtifactType!
+	runtimeTypeDisplayName: String
+	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String]
 }

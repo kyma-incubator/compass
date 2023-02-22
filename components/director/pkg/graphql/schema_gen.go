@@ -5491,8 +5491,8 @@ input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeTypes: [String!]
-	runtimeTypeDisplayName: String!
-	runtimeArtifactKind: ArtifactType!
+	runtimeTypeDisplayName: String
+	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String]
 }
@@ -31212,13 +31212,13 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			}
 		case "runtimeTypeDisplayName":
 			var err error
-			it.RuntimeTypeDisplayName, err = ec.unmarshalNString2string(ctx, v)
+			it.RuntimeTypeDisplayName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "runtimeArtifactKind":
 			var err error
-			it.RuntimeArtifactKind, err = ec.unmarshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
+			it.RuntimeArtifactKind, err = ec.unmarshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -38397,6 +38397,30 @@ func (ec *executionContext) marshalOApplicationTemplate2ᚖgithubᚗcomᚋkyma�
 		return graphql.Null
 	}
 	return ec._ApplicationTemplate(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, v interface{}) (ArtifactType, error) {
+	var res ArtifactType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, sel ast.SelectionSet, v ArtifactType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, v interface{}) (*ArtifactType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, sel ast.SelectionSet, v *ArtifactType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {
