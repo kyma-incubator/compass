@@ -300,9 +300,8 @@ func TestORDService(stdT *testing.T) {
 	require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 
 	// assign application to scenario
-	appLabelRequest := fixtures.FixSetApplicationLabelRequest(appInScenario.ID, scenariosLabel, []string{scenarioName})
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantFilteringTenant, appLabelRequest, nil))
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInScenario.ID)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: scenarioName}, appInScenario.ID, tenantFilteringTenant)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: scenarioName}, appInScenario.ID, tenantFilteringTenant)
 
 	for _, testData := range []struct {
 		msg       string

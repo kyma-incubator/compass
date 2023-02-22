@@ -29,7 +29,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C)},
 	})
 	defer fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &firstApp)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, firstApp.ID)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, firstApp.ID, []string{TestScenario})
 	require.NoError(t, err)
 	require.NotEmpty(t, firstApp.ID)
 
@@ -64,7 +64,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C)},
 	})
 	defer fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &secondApp)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, secondApp.ID)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, secondApp.ID, []string{TestScenario})
 	require.NoError(t, err)
 	require.NotEmpty(t, secondApp.ID)
 
