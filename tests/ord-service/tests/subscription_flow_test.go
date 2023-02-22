@@ -165,6 +165,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, app.ID)
 
+		// Register application directly in subscriptionConsumerSubaccountID that is in the formation and validate that this system won't be visible for the SaaS app calling as part of the formation. That way we test the ORD filtering based on formations.
+		subaccountApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-test-subaccount-app", subscriptionConsumerSubaccountID)
+		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &subaccountApp)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, subaccountApp.ID)
+
 		// Register consumer application
 		const localTenantID = "localTenantID"
 		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), localTenantID, secondaryTenant)
@@ -375,6 +381,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, app.ID)
+
+		// Register application directly in subscriptionConsumerSubaccountID that is in the formation and validate that this system won't be visible for the SaaS app calling as part of the formation. That way we test the ORD filtering based on formations.
+		subaccountApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-test-subaccount-app", subscriptionConsumerSubaccountID)
+		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &subaccountApp)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, subaccountApp.ID)
 
 		// Register consumer application
 		const localTenantID = "localTenantID"
