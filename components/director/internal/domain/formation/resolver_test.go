@@ -1438,7 +1438,6 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, conv, formationService, persist, transact)
 		})
 	}
-
 }
 
 func contextThatHasTenant(expectedTenant string) interface{} {
