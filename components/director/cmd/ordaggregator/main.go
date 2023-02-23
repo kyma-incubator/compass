@@ -91,11 +91,12 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=120s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
-	RetryConfig           retry.Config
-	CertLoaderConfig      certloader.Config
-	GlobalRegistryConfig  ord.GlobalRegistryConfig
-	ElectionConfig        cronjob.ElectionConfig
-	ORDAggregatorSchedule time.Duration `envconfig:"APP_ORD_AGGREGATOR_SCHEDULE,default=60m"`
+	RetryConfig                    retry.Config
+	CertLoaderConfig               certloader.Config
+	GlobalRegistryConfig           ord.GlobalRegistryConfig
+	ElectionConfig                 cronjob.ElectionConfig
+	ORDAggregatorJobSchedulePeriod time.Duration `envconfig:"APP_ORD_AGGREGATOR_JOB_SCHEDULE_PERIOD,default=60m"`
+	IsORDAggregatorJobScheduleable bool          `envconfig:"APP_ORD_AGGREGATOR_JOB_IS_SCHEDULABLE,default=true"`
 
 	MaxParallelWebhookProcessors       int `envconfig:"APP_MAX_PARALLEL_WEBHOOK_PROCESSORS,default=1"`
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
@@ -187,12 +188,17 @@ func main() {
 		shutdownMainSrv()
 	}()
 
-	go func() {
-		if err := startSyncORDDocumentsJob(ctx, ordAggregator, cfg); err != nil {
-			log.C(ctx).WithError(err).Error("Failed to start sync ORD documents cronjob. Stopping app...")
-		}
-		cancel()
-	}()
+	if cfg.IsORDAggregatorJobScheduleable {
+		go func() {
+			if !cfg.IsORDAggregatorJobScheduleable {
+				return
+			}
+			if err := startSyncORDDocumentsJob(ctx, ordAggregator, cfg); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to start sync ORD documents cronjob. Stopping app...")
+			}
+			cancel()
+		}()
+	}
 
 	runMainSrv()
 }
@@ -207,7 +213,7 @@ func startSyncORDDocumentsJob(ctx context.Context, ordAggregator *ord.Service, c
 			}
 			log.C(jobCtx).Infof("ORD documents aggregation finished.")
 		},
-		SchedulePeriod: cfg.ORDAggregatorSchedule,
+		SchedulePeriod: cfg.ORDAggregatorJobSchedulePeriod,
 	}
 	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
 }

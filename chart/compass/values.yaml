@@ -812,7 +812,9 @@ global:
     port: 3000
     prefix: /ord-aggregator
     name: ord-aggregator
-    jobSchedule: 60m
+    job:
+      schedulePeriod: 60m
+      isSchedulable: true
     lease:
       lockname: aggregatorlease
     authentication:
