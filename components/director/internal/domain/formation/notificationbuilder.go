@@ -3,6 +3,8 @@ package formation
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -11,6 +13,11 @@ import (
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
 )
+
+//go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookConverter interface {
+	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
+}
 
 // NotificationBuilder is responsible for building notification requests
 type NotificationBuilder struct {
