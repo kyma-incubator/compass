@@ -102,4 +102,6 @@ const (
 	ShouldUpsertSingleRowButUpsertedMsgF = "should upsert single row, but upserted %d rows"
 	// ShouldBeOwnerMsg is the error message for unauthorized due to missing owner access errors.
 	ShouldBeOwnerMsg = "Owner access is needed for resource modification"
+	// CannotUnassignRuntimeContextFromASA  is the error message returned when trying to unassign a Runtime Context that comes from an ASA.
+	CannotUnassignRuntimeContextFromASA = "Can not unassign object with ID coming from ASA"
 )

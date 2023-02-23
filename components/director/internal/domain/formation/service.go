@@ -630,33 +630,27 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 	return nil
 }
 
-func (s *service) unassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) (bool, error) {
+func (s *service) unassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
 		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return true, nil
-			}
-			return false, err
+			return err
 		}
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
 		if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
-			return false, err
+			return err
 		} else if isFormationComingFromASA {
-			return true, nil
+			return apperrors.NewCannotUnassignObjectComingFromASAError(objectID)
 		}
 
 		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return true, nil
-			}
-			return false, err
+			return err
 		}
 
 	default:
-		return false, nil
+		return nil
 	}
-	return false, nil
+	return nil
 }
 
 func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formationTemplate *model.FormationTemplate) error {
@@ -735,11 +729,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	formationFromDB := ft.formation
 
-	isComingFromASA, err := s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
-	if err != nil {
+	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+	if err != nil && !apperrors.IsCannotUnassignRuntimeContextComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "While unassigning from formation")
 	}
-	if isComingFromASA {
+	if apperrors.IsCannotUnassignRuntimeContextComingFromASAError(err) || apperrors.IsNotFoundError(err) {
 		// No need to enforce post-constraints as nothing is done
 		return formationFromDB, nil
 	}
@@ -956,8 +950,8 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 
 			if len(leftAssignmentsInFormation) == 0 {
 				log.C(ctx).Infof("There are no formation assignments left for sync formation. Unassigning the object with type %q and ID %q to formation %q", objectID, objectID, formationID)
-				_, err = s.unassign(ctx, tenantID, objectID, objectType, formation)
-				if err != nil {
+				err = s.unassign(ctx, tenantID, objectID, objectType, formation)
+				if err != nil && !apperrors.IsCannotUnassignRuntimeContextComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
 					return errors.Wrapf(err, "While unassigning the object with type %q and ID %q that is unassigned", objectType, objectID)
 				}
 			}
