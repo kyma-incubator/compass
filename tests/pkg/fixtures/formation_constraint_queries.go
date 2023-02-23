@@ -31,3 +31,11 @@ func CleanupFormationConstraint(t require.TestingT, ctx context.Context, gqlClie
 
 	return &formationConstraint
 }
+
+func ListFormationConstraintsForFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationTemplateID string) []*graphql.FormationConstraint {
+	queryRequest := FixQueryFormationConstraintsForFormationTemplateRequest(formationTemplateID)
+
+	var actualFormationConstraints []*graphql.FormationConstraint
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &actualFormationConstraints))
+	return actualFormationConstraints
+}
