@@ -36,8 +36,8 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
 		RuntimeTypes:           in.RuntimeTypes,
-		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
-		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
+		RuntimeTypeDisplayName: *in.RuntimeTypeDisplayName,
+		RuntimeArtifactKind:    model.RuntimeArtifactKind(*in.RuntimeArtifactKind),
 		Webhooks:               webhooks,
 		LeadingProductIDs:      in.LeadingProductIDs,
 	}, nil

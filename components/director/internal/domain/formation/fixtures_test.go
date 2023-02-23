@@ -63,9 +63,11 @@ var (
 	testScenario = "test-scenario"
 
 	formationTemplate = model.FormationTemplate{
-		ID:           FormationTemplateID,
-		Name:         "formation-template",
-		RuntimeTypes: []string{runtimeType},
+		ID:                     FormationTemplateID,
+		RuntimeArtifactKind:    "SUBSCRIPTION",
+		RuntimeTypeDisplayName: "display name",
+		Name:                   "formation-template",
+		RuntimeTypes:           []string{runtimeType},
 	}
 	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType))}
 

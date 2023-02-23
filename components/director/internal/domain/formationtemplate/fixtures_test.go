@@ -27,6 +27,7 @@ const (
 )
 
 var (
+	artifactKind                = graphql.ArtifactTypeSubscription
 	nilModelEntity              *model.FormationTemplate
 	emptyTemplate               = `{}`
 	url                         = "http://foo.com"
@@ -50,8 +51,8 @@ var (
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: str.Ptr(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    &artifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixGQLWebhookInput(),
 	}
