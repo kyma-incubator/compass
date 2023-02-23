@@ -321,7 +321,9 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 	appCreateInputJSON := appTemplate.ApplicationInputJSON
 	for _, placeholder := range appTemplate.Placeholders {
 		newValue, err := values.FindPlaceholderValue(placeholder.Name)
-		if err != nil {
+		optional := *placeholder.Optional
+
+		if err != nil && !optional {
 			return "", errors.Wrap(err, "required placeholder not provided")
 		}
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)

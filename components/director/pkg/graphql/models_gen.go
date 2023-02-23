@@ -680,6 +680,7 @@ type PlaceholderDefinition struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	JSONPath    *string `json:"jsonPath"`
+	Optional    *bool   `json:"optional"`
 }
 
 type PlaceholderDefinitionInput struct {
@@ -689,6 +690,7 @@ type PlaceholderDefinitionInput struct {
 	Description *string `json:"description"`
 	// **Validation:**  max=2000
 	JSONPath *string `json:"jsonPath"`
+	Optional *bool   `json:"optional"`
 }
 
 type RuntimeContextInput struct {
