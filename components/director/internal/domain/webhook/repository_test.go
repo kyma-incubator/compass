@@ -390,7 +390,7 @@ func TestRepositoryListByRuntimeID(t *testing.T) {
 		repository := webhook.NewRepository(nil)
 		_, err := repository.ListByReferenceObjectID(context.TODO(), "", "", model.IntegrationSystemWebhookReference)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "referenced object should be one of application, runtime or formation template")
+		assert.Contains(t, err.Error(), "referenced object should be one of application, application template, runtime or formation template")
 	})
 }
 
@@ -437,7 +437,7 @@ func TestRepositoryListByFormationTemplateID(t *testing.T) {
 		repository := webhook.NewRepository(nil)
 		_, err := repository.ListByReferenceObjectID(context.TODO(), "", "", model.IntegrationSystemWebhookReference)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "referenced object should be one of application, runtime or formation template")
+		assert.Contains(t, err.Error(), "referenced object should be one of application, application template, runtime or formation template")
 	})
 }
 
@@ -484,7 +484,7 @@ func TestRepositoryListByFormationTemplateIDGlobal(t *testing.T) {
 		repository := webhook.NewRepository(nil)
 		_, err := repository.ListByReferenceObjectIDGlobal(context.TODO(), "", model.IntegrationSystemWebhookReference)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "referenced object should be one of application, runtime or formation template")
+		assert.Contains(t, err.Error(), "referenced object should be one of application, application template, runtime or formation template")
 	})
 }
 
@@ -705,6 +705,61 @@ func Test_ListByReferenceObjectTypeAndWebhookType(t *testing.T) {
 		ExpectedDBEntities:    []interface{}{whEntity1, whEntity2},
 		MethodArgs:            []interface{}{givenTenant(), whType, model.ApplicationWebhookReference},
 		MethodName:            "ListByReferenceObjectTypeAndWebhookType",
+	}
+
+	suite.Run(t)
+}
+
+func Test_ListByReferenceObjectTypesAndWebhookType(t *testing.T) {
+	whID1 := "whID1"
+	whID2 := "whID2"
+	whType := model.WebhookTypeConfigurationChanged
+	createdAt := time.Now()
+
+	whModel1 := fixApplicationModelWebhook(whID1, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whEntity1 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID1, whType, createdAt)
+
+	whModel2 := fixApplicationModelWebhook(whID2, givenApplicationID(), givenTenant(), "http://kyma.io", createdAt)
+	whEntity2 := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID2, whType, createdAt)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "List Webhooks by Application ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE ((id IN (SELECT id FROM webhooks_tenants WHERE tenant_id = $1)) AND (type = $2 AND (app_id IS NOT NULL OR app_template_id IS NOT NULL)))`),
+				Args:     []driver.Value{givenTenant(), whType},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(whModel1.ID, givenApplicationID(), nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), nil, nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate, whModel1.CreatedAt, nil),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE app_template_id IS NOT NULL`),
+				Args:     []driver.Value{},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(whModel2.ID, givenApplicationID(), nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), nil, nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate, whModel2.CreatedAt, nil),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   webhook.NewRepository,
+		ExpectedModelEntities: []interface{}{whModel1, whModel2},
+		ExpectedDBEntities:    []interface{}{whEntity1, whEntity2},
+		MethodArgs:            []interface{}{givenTenant(), whType, []model.WebhookReferenceObjectType{model.ApplicationWebhookReference, model.ApplicationTemplateWebhookReference}},
+		MethodName:            "ListByReferenceObjectTypesAndWebhookType",
 	}
 
 	suite.Run(t)

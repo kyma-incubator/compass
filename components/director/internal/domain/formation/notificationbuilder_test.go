@@ -75,7 +75,7 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			},
 			Details:              generateAppToAppNotificationDetails,
 			Webhook:              applicationTenantMappingWebhook,
-			ExpectedNotification: appToAppNotificationWithSourceTemplate,
+			ExpectedNotification: appToAppNotificationWithoutSourceTemplateWithTargetTemplate,
 			ExpectedErrMessage:   "",
 		},
 		{
