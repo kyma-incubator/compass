@@ -21,12 +21,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/tidwall/sjson"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/tidwall/sjson"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
