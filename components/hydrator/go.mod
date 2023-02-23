@@ -26,7 +26,6 @@ require (
 )
 
 require (
-	github.com/kyma-incubator/compass/tests v0.0.0-20230209143957-528404437ab8
 	github.com/prometheus/client_golang v1.13.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 )

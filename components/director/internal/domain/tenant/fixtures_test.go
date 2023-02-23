@@ -5,8 +5,6 @@ import (
 	"database/sql/driver"
 	"errors"
 
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -68,7 +66,7 @@ func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, tnt
 		Type:           tntType,
 		Provider:       testProvider,
 		Status:         tenant.Active,
-		Initialized:    ptr.Bool(true),
+		Initialized:    boolToPtr(true),
 	}
 }
 
@@ -173,4 +171,8 @@ func fixTenantAccesses() []repo.TenantAccess {
 
 func fixTenantAccessesRow() []driver.Value {
 	return []driver.Value{testID, "resourceID", true}
+}
+
+func boolToPtr(in bool) *bool {
+	return &in
 }

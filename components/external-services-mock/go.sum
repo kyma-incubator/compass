@@ -176,8 +176,6 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20230216113137-e7d9
 github.com/kyma-incubator/compass/components/director v0.0.0-20230216113137-e7d98d0fd78d/go.mod h1:tUDkkWaTX7KPn5q7ZzTvvYhnwKphVspwlX1BVWJkwDc=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20230209143957-528404437ab8 h1:1oN1teZwmi4B23jYM2WW+aggOWEXQqzSWwcoidaGmRU=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20230209143957-528404437ab8/go.mod h1:VRPb06hTVsLNK8C2MYEMo22keBCpU+ViYC7WE4M/xiw=
-github.com/kyma-incubator/compass/tests v0.0.0-20230209143957-528404437ab8 h1:4mw4W/ZDrsHF+3MbSqghw7b5whNElWfFnHuKiL5Obqs=
-github.com/kyma-incubator/compass/tests v0.0.0-20230209143957-528404437ab8/go.mod h1:pfkvJD+aV4j6b4kJ/Y4QrPdqIBNf0OV0PcWemcnoa+s=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
 github.com/lestrrat-go/backoff/v2 v2.0.8/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/blackmagic v1.0.0 h1:XzdxDbuQTz0RZZEmdU7cnQxUtFUzgCSPq8RCz4BxIi4=
@@ -191,15 +189,11 @@ github.com/lestrrat-go/jwx v1.2.19/go.mod h1:bWTBO7IHHVMtNunM8so9MT8wD+euEY1PzGE
 github.com/lestrrat-go/option v1.0.0 h1:WqAWL8kh8VcSoD6xjSH34/1m8yxluXQbDeKNfvFeEO4=
 github.com/lestrrat-go/option v1.0.0/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmtT7T5nBBp3I=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
-github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 h1:guHWmqIKr4G+gQ4uYU5vcZjsUhhklRA2uOcGVfcfqis=
-github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225/go.mod h1:F+kbVMHuwrQ5tYgU9JXlnskM8nOaFxCAEolaQybkjWA=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.7.6/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
 github.com/mailru/easyjson v0.7.7 h1:UGYAvKxe3sBsEDzO8ZeWOSlIQfWFlxbzLZe7hwFURr0=
 github.com/mailru/easyjson v0.7.7/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJJLY9Nlc=
-github.com/matryer/is v1.4.0 h1:sosSmIWwkYITGrxZ25ULNDeKiMNzFSr4V/eqBQP0PeE=
-github.com/matryer/is v1.4.0/go.mod h1:8I/i5uYgLzgsgEloJE1U6xx5HkBQpAZvepWuujKwMRU=
 github.com/matryer/moq v0.0.0-20200106131100-75d0ddfc0007/go.mod h1:9ELz6aaclSIGnZBoaSLZ3NAl1VTufbOrXBPvtcy6WiQ=
 github.com/mattn/go-colorable v0.1.4/go.mod h1:U0ppj6V5qS13XJ6of8GYAs25YV2eR4EVcfRqFIhoBtE=
 github.com/mattn/go-isatty v0.0.8/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hdxcsrc5s=

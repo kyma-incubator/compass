@@ -144,7 +144,7 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 		RuntimeTypes:           string(marshalledRuntimeTypes),
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
 		RuntimeArtifactKind:    string(in.RuntimeArtifactKind),
-		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(marshalledLeadingProductIDs),
+		LeadingProductIDs:      string(marshalledLeadingProductIDs),
 		TenantID:               repo.NewNullableString(in.TenantID),
 	}, nil
 }
@@ -167,13 +167,10 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		return nil, errors.Wrap(err, "while unmarshalling runtime types")
 	}
 
-	var unmarshalledLeadingProductIDs []*string
-	leadingProductIDs := repo.JSONRawMessageFromNullableString(in.LeadingProductIDs)
-	if leadingProductIDs != nil {
-		err = json.Unmarshal(leadingProductIDs, &unmarshalledLeadingProductIDs)
-		if err != nil {
-			return nil, errors.Wrap(err, "while unmarshalling leading product IDs")
-		}
+	var unmarshalledLeadingProductIDs []string
+	err = json.Unmarshal([]byte(in.LeadingProductIDs), &unmarshalledLeadingProductIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling leading product IDs")
 	}
 
 	return &model.FormationTemplate{
