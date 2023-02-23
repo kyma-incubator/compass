@@ -172,6 +172,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		Name                          string
 		TxFn                          func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		UIDServiceFn                  func() *automock.UuidService
+		ApplicationRepoFn             func() *automock.ApplicationRepository
 		LabelServiceFn                func() *automock.LabelService
 		LabelRepoFn                   func() *automock.LabelRepository
 		AsaServiceFN                  func() *automock.AutomaticFormationAssignmentService
@@ -194,6 +195,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "success for application",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -216,7 +224,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -246,6 +254,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "success for application if async unassignments exist",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -280,7 +295,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(pendingAsyncAssignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -305,6 +320,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "success for application if formation do not exist",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -333,7 +355,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -357,6 +379,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "success for application when formation is last",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -383,7 +412,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -407,6 +436,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "success for runtime",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil)
@@ -434,7 +470,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -464,6 +500,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "success for runtime if async unassignments exist",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Twice()
@@ -498,7 +541,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(pendingAsyncAssignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -527,6 +570,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for runtime when formation is coming from ASA",
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -570,6 +620,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "success for runtime if formation do not exist",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -608,7 +665,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -646,6 +703,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "success for runtime when formation is last",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -675,7 +739,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -758,6 +822,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while getting label",
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -786,6 +857,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application while converting label values to string slice",
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -1438,6 +1516,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for application if transaction commit fails after successful assignments processing",
 			TxFn: txGen.ThatFailsOnCommit,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -1460,7 +1545,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -1489,6 +1574,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for application if processing formation assignments fails",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -1511,7 +1603,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(testErr).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(testErr).Once()
 				return formationAssignmentSvc
 			},
 			LabelRepoFn: unusedLabelRepo,
@@ -1538,6 +1630,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for application if list pending formation assignments fail",
 			TxFn: txGen.ThatDoesntExpectCommit,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -1560,7 +1659,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(nil, testErr).Once()
 				return formationAssignmentSvc
 			},
@@ -1588,6 +1687,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for application if assign due to async pending assignments fail - get application type label fail",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
@@ -1611,7 +1717,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(pendingAsyncAssignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -1639,6 +1745,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for application if assign due to async pending assignments fail - get scenario label fail",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
@@ -1663,7 +1776,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(pendingAsyncAssignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -1691,6 +1804,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for application if assign due to async pending assignments fail - update scenario label fail",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
@@ -1721,7 +1841,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(pendingAsyncAssignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -1750,6 +1870,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for application if transaction commit fails after processing formation assignments fails",
 			TxFn: txGen.ThatFailsOnCommit,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
@@ -1772,7 +1899,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(testErr).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(testErr).Once()
 				return formationAssignmentSvc
 			},
 			LabelRepoFn: unusedLabelRepo,
@@ -1798,6 +1925,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for application if listing runtime contexts fails",
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Once()
@@ -1849,6 +1983,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for runtime if listing runtime contexts fails",
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -1905,6 +2046,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for runtime if listing formation assignments for formation fails",
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -1957,6 +2105,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for runtime if transaction commit fails",
 			TxFn: txGen.ThatFailsOnCommit,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -1984,7 +2139,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2013,6 +2168,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for runtime if processing formation assignments fails",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2040,7 +2202,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(testErr).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(testErr).Once()
 				return formationAssignmentSvc
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2067,6 +2229,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for runtime if list pending formation assignments fail",
 			TxFn: txGen.ThatDoesntExpectCommit,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2094,7 +2263,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(nil, testErr).Once()
 				return formationAssignmentSvc
 			},
@@ -2122,6 +2291,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for runtime if assign due to async pending assignments fail - get application type label fail",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2155,7 +2331,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(pendingAsyncAssignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2178,6 +2354,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for runtime if assign due to async pending assignments fail - get scenario label fail",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2212,7 +2395,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(pendingAsyncAssignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2235,6 +2418,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for runtime if assign due to async pending assignments fail - update scenario label fail",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2275,7 +2465,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, RuntimeID).Return(pendingAsyncAssignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2298,6 +2488,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for runtime if transaction commit fails after processing formation assignments fails",
 			TxFn: txGen.ThatFailsOnCommit,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2325,7 +2522,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, RuntimeID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(testErr).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(testErr).Once()
 				return formationAssignmentSvc
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -2352,6 +2549,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for application if transaction begin fails",
 			TxFn: txGen.ThatFailsOnBegin,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -2401,6 +2605,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error for runtime if transaction fails on begin",
 			TxFn: txGen.ThatFailsOnBegin,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Once()
@@ -2455,6 +2666,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error while enforcing post constraints",
 			TxFn: txGen.ThatSucceeds,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -2477,7 +2695,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, ApplicationID).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, make(map[string]string, 0), make(map[string]string, 0), requests, mock.Anything).Return(nil).Once()
 				formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, ApplicationID).Return(nil, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2507,6 +2725,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error while enforcing pre constraints",
 			TxFn: txGen.ThatDoesntExpectCommit,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -2536,6 +2761,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		{
 			Name: "error while preparing details",
 			TxFn: txGen.ThatDoesntExpectCommit,
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
+
+				return repo
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(nil, testErr)
@@ -2569,6 +2801,10 @@ func TestServiceUnassignFormation(t *testing.T) {
 			uidService := unusedUUIDService()
 			if testCase.UIDServiceFn != nil {
 				uidService = testCase.UIDServiceFn()
+			}
+			applicationRepository := unusedApplicationRepository()
+			if testCase.ApplicationRepoFn != nil {
+				applicationRepository = testCase.ApplicationRepoFn()
 			}
 			labelService := unusedLabelService()
 			if testCase.LabelServiceFn != nil {
@@ -2623,7 +2859,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				asaEngine = testCase.ASAEngineFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(transact, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine)
+			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
