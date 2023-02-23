@@ -259,6 +259,10 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	formationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
 
+	t.Logf("Assert there are no formation constraints for the formation template")
+	constraintsForFormationTemplate := fixtures.ListFormationConstraintsForFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
+	require.Len(t, constraintsForFormationTemplate, 0)
+
 	secondFormationTemplateName := "second-formation-template-name"
 	secondFormationTemplateInput := fixtures.FixFormationTemplateInput(secondFormationTemplateName)
 
