@@ -288,6 +288,29 @@ func (_m *ApplicationRepository) ListAllByFilter(ctx context.Context, tenant str
 	return r0, r1
 }
 
+// ListAllByIDs provides a mock function with given fields: ctx, tenantID, ids
+func (_m *ApplicationRepository) ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error) {
+	ret := _m.Called(ctx, tenantID, ids)
+
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Application); ok {
+		r0 = rf(ctx, tenantID, ids)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
+		r1 = rf(ctx, tenantID, ids)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByScenarios provides a mock function with given fields: ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors
 func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
@@ -373,6 +396,29 @@ func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, c
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListListeningApplications provides a mock function with given fields: ctx, tenant, whType
+func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error) {
+	ret := _m.Called(ctx, tenant, whType)
+
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType) []*model.Application); ok {
+		r0 = rf(ctx, tenant, whType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookType) error); ok {
+		r1 = rf(ctx, tenant, whType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -471,13 +517,13 @@ func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewApplicationRepository interface {
+type NewApplicationRepositoryT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationRepository(t mockConstructorTestingTNewApplicationRepository) *ApplicationRepository {
+func NewApplicationRepository(t NewApplicationRepositoryT) *ApplicationRepository {
 	mock := &ApplicationRepository{}
 	mock.Mock.Test(t)
 
