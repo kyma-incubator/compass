@@ -212,7 +212,7 @@ func validateDocumentInput(doc *Document) error {
 func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&pkg.Title, validation.Required),
+		validation.Field(&pkg.Title, validation.Length(1, 255), validation.Required),
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
 		validation.Field(&pkg.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&pkg.SupportInfo, validation.NilOrNotEmpty),
@@ -425,7 +425,7 @@ func validateProductInput(product *model.ProductInput) error {
 
 	return validation.ValidateStruct(product,
 		validation.Field(&product.OrdID, validation.Required, validation.Match(regexp.MustCompile(ProductOrdIDRegex))),
-		validation.Field(&product.Title, validation.Required),
+		validation.Field(&product.Title, validation.Length(1, 255), validation.Required),
 		validation.Field(&product.ShortDescription, shortDescriptionRules...),
 		validation.Field(&product.Vendor, validation.Required,
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)),
@@ -443,7 +443,7 @@ func validateProductInput(product *model.ProductInput) error {
 func validateVendorInput(vendor *model.VendorInput) error {
 	return validation.ValidateStruct(vendor,
 		validation.Field(&vendor.OrdID, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
-		validation.Field(&vendor.Title, validation.Required),
+		validation.Field(&vendor.Title, validation.Length(1, 255), validation.Required),
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
 		validation.Field(&vendor.Partners, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(VendorPartnersRegex))
@@ -580,6 +580,7 @@ func validateORDChangeLogEntries(value interface{}) error {
 func validateORDLinks(value interface{}) error {
 	return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"title": {
+			validation.Length(1, 255),
 			validation.Required,
 		},
 		"url": {
