@@ -20,6 +20,7 @@ const (
 	invalidURL                    = "invalidURL"
 	invalidOrdID                  = "invalidOrdId"
 	invalidShortDescriptionLength = 257 // max allowed: 256
+	invalidTitleLength            = 256 // max allowed: 255
 	maxDescriptionLength          = 5000
 	invalidVersion                = "invalidVersion"
 	invalidPolicyLevel            = "invalidPolicyLevel"
@@ -766,6 +767,14 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Title = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `title ` field for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Title = strings.Repeat("a", invalidTitleLength)
 
 				return []*ord.Document{doc}
 			},
@@ -4851,6 +4860,14 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Exceeded length of `title ` field for Product",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Products[0].Title = strings.Repeat("a", invalidTitleLength)
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `shortDescription` field for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -5084,6 +5101,14 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Vendors[0].Title = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `title ` field for Vendor",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Vendors[0].Title = strings.Repeat("a", invalidTitleLength)
 
 				return []*ord.Document{doc}
 			},
