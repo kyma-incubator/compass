@@ -348,7 +348,7 @@ func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 			Name:        "test",
 			Description: &placeholderDesc,
 			JSONPath:    &placeholderJSONPath,
-			Optional:    isOptional,
+			Optional:    &isOptional,
 		},
 	}
 }

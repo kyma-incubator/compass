@@ -74,7 +74,7 @@ type ApplicationTemplatePlaceholder struct {
 	Name        string
 	Description *string
 	JSONPath    *string
-	Optional    bool
+	Optional    *bool
 }
 
 // ApplicationTemplateValueInput missing godoc
