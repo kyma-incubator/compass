@@ -746,9 +746,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		if err != nil {
-			return nil, errors.Wrapf(err, "While unassigning from formation")
-		}
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
