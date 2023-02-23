@@ -350,12 +350,12 @@ func (b FormationAssignmentRequestBody) Validate() error {
 	fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyAssignmentState, model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState, model.ConfigPendingAssignmentState)))
 
 	if b.Error != "" {
-		fieldRules = make([]*validation.FieldRules, 0, 0)
+		fieldRules = make([]*validation.FieldRules, 0)
 		fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState)))
 		fieldRules = append(fieldRules, validation.Field(&b.Configuration, validation.Empty))
 		return validation.ValidateStruct(&b, fieldRules...)
 	} else if len(b.Configuration) > 0 {
-		fieldRules = make([]*validation.FieldRules, 0, 0)
+		fieldRules = make([]*validation.FieldRules, 0)
 		fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyAssignmentState, model.ConfigPendingAssignmentState)))
 		fieldRules = append(fieldRules, validation.Field(&b.Error, validation.Empty))
 		return validation.ValidateStruct(&b, fieldRules...)
