@@ -89,6 +89,10 @@ func (r *repository) ListAll(ctx context.Context) ([]*model.FormationConstraint,
 
 // ListByIDs lists all formation constraints whose id is in formationConstraintIDs
 func (r *repository) ListByIDs(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error) {
+	if len(formationConstraintIDs) == 0 {
+		return nil, nil
+	}
+
 	var entities EntityCollection
 
 	if err := r.lister.ListGlobal(ctx, &entities, repo.NewInConditionForStringValues(idColumn, formationConstraintIDs)); err != nil {
