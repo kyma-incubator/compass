@@ -2393,7 +2393,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 		},
 	}
-	var formationAssignmentPairs []*formationassignment.AssignmentMappingPair
+	var formationAssignmentPairs = make([]*formationassignment.AssignmentMappingPair, 0, len(formationAssignments))
 	for i := range formationAssignments {
 		formationAssignmentPairs = append(formationAssignmentPairs, &formationassignment.AssignmentMappingPair{
 			Assignment: &formationassignment.FormationAssignmentRequestMapping{
