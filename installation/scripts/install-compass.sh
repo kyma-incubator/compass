@@ -71,11 +71,11 @@ if [[ ${SQL_HELM_BACKEND} ]]; then
     DB_PORT=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-servicePort']}"))
 
     kubectl port-forward --namespace compass-system svc/compass-postgresql ${DB_PORT}:${DB_PORT} &
+    sleep 5 #wait port-forwarding to be completed
+
     export HELM_DRIVER=sql
     export HELM_DRIVER_SQL_CONNECTION_STRING=postgres://${DB_USER}:${DB_PWD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable
 fi
-
-sleep 5 #wait port-forwarding to be completed
 
 echo "Wait for helm stable status"
 wait_for_helm_stable_state "compass" "compass-system" 
@@ -85,4 +85,6 @@ echo "Path to compass charts: " ${COMPASS_CHARTS}
 helm upgrade --install --wait --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
 trap "cleanup_trap" RETURN EXIT INT TERM
 
-pkill kubectl
+if [[ ${SQL_HELM_BACKEND} ]]; then
+    pkill kubectl
+fi
