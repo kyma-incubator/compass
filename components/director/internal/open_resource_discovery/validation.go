@@ -605,8 +605,12 @@ func validatePackageLinks(value interface{}) error {
 			is.RequestURI,
 		},
 	}, func(el gjson.Result) error {
-		if el.Get("customType").Exists() && el.Get("type").String() != custom {
-			return errors.New("if customType is provided, type should be set to 'custom'")
+		if el.Get("customType").Exists() {
+			if el.Get("type").String() != custom {
+				return errors.New("if customType is provided, type should be set to 'custom'")
+			} else {
+				return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(CustomImplementationStandardRegex)))
+			}
 		}
 		return nil
 	})
@@ -623,8 +627,12 @@ func validateAPILinks(value interface{}) error {
 			is.RequestURI,
 		},
 	}, func(el gjson.Result) error {
-		if el.Get("customType").Exists() && el.Get("type").String() != custom {
-			return errors.New("if customType is provided, type should be set to 'custom'")
+		if el.Get("customType").Exists() {
+			if el.Get("type").String() != custom {
+				return errors.New("if customType is provided, type should be set to 'custom'")
+			} else {
+				return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(CustomImplementationStandardRegex)))
+			}
 		}
 		return nil
 	})
