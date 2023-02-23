@@ -361,7 +361,7 @@ func NewCustomErrorWithCode(code int, msg string) error {
 func NewCannotUnassignObjectComingFromASAError(objectID string) error {
 	return Error{
 		errorCode: InvalidOperation,
-		Message:   CannotUnassignRuntimeContextFromASA,
+		Message:   CannotUnassignObjectFromASA,
 		arguments: map[string]string{"ID": objectID},
 	}
 }
@@ -443,10 +443,10 @@ func IsCannotUpdateObjectInManyBundlesError(err error) bool {
 	return ErrorCode(err) == CannotUpdateObjectInManyBundles
 }
 
-// IsCannotUnassignRuntimeContextComingFromASAError missing godoc
-func IsCannotUnassignRuntimeContextComingFromASAError(err error) bool {
+// IsCannotUnassignObjectComingFromASAError missing godoc
+func IsCannotUnassignObjectComingFromASAError(err error) bool {
 	if customErr, ok := err.(Error); ok {
-		return customErr.errorCode == InvalidOperation && customErr.Message == CannotUnassignRuntimeContextFromASA
+		return customErr.errorCode == InvalidOperation && customErr.Message == CannotUnassignObjectFromASA
 	}
 	return false
 }

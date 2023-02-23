@@ -149,7 +149,7 @@ type asaEngine interface {
 }
 
 type service struct {
-	applicationRepository       		   applicationRepository
+	applicationRepository                  applicationRepository
 	labelDefRepository                     labelDefRepository
 	labelRepository                        labelRepository
 	formationRepository                    FormationRepository
@@ -196,7 +196,7 @@ func NewService(
 	runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		transact:                               transact,
-		applicationRepository:       			applicationRepository,
+		applicationRepository:                  applicationRepository,
 		labelDefRepository:                     labelDefRepository,
 		labelRepository:                        labelRepository,
 		formationRepository:                    formationRepository,
@@ -736,10 +736,10 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	formationFromDB := ft.formation
 
 	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
-	if err != nil && !apperrors.IsCannotUnassignRuntimeContextComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
+	if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "While unassigning from formation")
 	}
-	if apperrors.IsCannotUnassignRuntimeContextComingFromASAError(err) || apperrors.IsNotFoundError(err) {
+	if apperrors.IsCannotUnassignObjectComingFromASAError(err) || apperrors.IsNotFoundError(err) {
 		// No need to enforce post-constraints as nothing is done
 		return formationFromDB, nil
 	}
@@ -967,7 +967,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 			if len(leftAssignmentsInFormation) == 0 {
 				log.C(ctx).Infof("There are no formation assignments left for sync formation. Unassigning the object with type %q and ID %q to formation %q", objectID, objectID, formationID)
 				err = s.unassign(ctx, tenantID, objectID, objectType, formation)
-				if err != nil && !apperrors.IsCannotUnassignRuntimeContextComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
+				if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
 					return errors.Wrapf(err, "While unassigning the object with type %q and ID %q that is unassigned", objectType, objectID)
 				}
 			}
