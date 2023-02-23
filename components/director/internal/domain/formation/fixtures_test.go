@@ -48,8 +48,6 @@ var (
 
 	CustomerTenantContextAccount = fixCustomerTenantContext(TntCustomerID, TntExternalID)
 
-	gaTenantObject = fixModelBusinessTenantMappingWithType(tnt.Account)
-
 	modelFormation = model.Formation{
 		ID:                  FormationID,
 		FormationTemplateID: FormationTemplateID,
@@ -224,6 +222,90 @@ var (
 		CorrelationID: "",
 	}
 
+	applicationsMapping = map[string]*webhook.ApplicationWithLabels{
+		ApplicationID: {
+			Application: fixApplicationModel(ApplicationID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+		Application2ID: {
+			Application: fixApplicationModelWithoutTemplate(Application2ID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+	}
+	applicationsMapping2 = map[string]*webhook.ApplicationWithLabels{
+		Application2ID: {
+			Application: fixApplicationModelWithoutTemplate(Application2ID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+	}
+
+	applicationsMappingWithApplicationTemplate = map[string]*webhook.ApplicationWithLabels{
+		Application2ID: {
+			Application: fixApplicationModelWithTemplateID(Application2ID, ApplicationTemplate2ID),
+			Labels:      fixApplicationLabelsMap(),
+		},
+	}
+
+	emptyApplicationTemplateMappings = map[string]*webhook.ApplicationTemplateWithLabels{}
+
+	applicationTemplateMappings = map[string]*webhook.ApplicationTemplateWithLabels{
+		ApplicationTemplateID: {
+			ApplicationTemplate: fixApplicationTemplateModel(),
+			Labels:              fixApplicationTemplateLabelsMap(),
+		},
+	}
+
+	applicationTemplateMappings2 = map[string]*webhook.ApplicationTemplateWithLabels{
+		ApplicationTemplateID: {
+			ApplicationTemplate: fixApplicationTemplateModel(),
+			Labels:              fixApplicationTemplateLabelsMap(),
+		},
+		ApplicationTemplate2ID: {
+			ApplicationTemplate: fixApplicationTemplateModelWithID(ApplicationTemplate2ID),
+			Labels:              fixApplicationTemplateLabelsMap(),
+		},
+	}
+
+	runtimeWithLabels             = fixRuntimeWithLabels(RuntimeID)
+	runtimeWithRtmCtxWithLabels   = fixRuntimeWithLabels(RuntimeContextRuntimeID)
+	emptyRuntimeContextWithLabels *webhook.RuntimeContextWithLabels
+	emptyAppTemplateWithLabels    *webhook.ApplicationTemplateWithLabels
+
+	runtimeCtxWithLabels = &webhook.RuntimeContextWithLabels{
+		RuntimeContext: fixRuntimeContextModel(),
+		Labels:         fixRuntimeContextLabelsMap(),
+	}
+	runtimeCtx2WithLabels = &webhook.RuntimeContextWithLabels{
+		RuntimeContext: fixRuntimeContextModelWithRuntimeID(RuntimeID),
+		Labels:         fixRuntimeContextLabelsMap(),
+	}
+
+	runtimesMapping = map[string]*webhook.RuntimeWithLabels{
+		RuntimeID:               runtimeWithLabels,
+		RuntimeContextRuntimeID: runtimeWithRtmCtxWithLabels,
+	}
+
+	runtimeContextsMapping = map[string]*webhook.RuntimeContextWithLabels{
+		RuntimeContextRuntimeID: runtimeCtxWithLabels,
+		RuntimeID:               runtimeCtx2WithLabels,
+	}
+
+	runtimeContextsMapping2 = map[string]*webhook.RuntimeContextWithLabels{
+		RuntimeContextRuntimeID: runtimeCtxWithLabels,
+	}
+
+	appWithLabelsWithoutTemplate = &webhook.ApplicationWithLabels{
+		Application: fixApplicationModelWithoutTemplate(ApplicationID),
+		Labels:      fixApplicationLabelsMap(),
+	}
+
+	appWithLabelsWithoutTemplate2 = &webhook.ApplicationWithLabels{
+		Application: fixApplicationModelWithoutTemplate(Application2ID),
+		Labels:      fixApplicationLabelsMap(),
+	}
+
+	listeningApplications = []*model.Application{{BaseEntity: &model.BaseEntity{ID: Application2ID}}, {ApplicationTemplateID: str.Ptr(ApplicationTemplateID), BaseEntity: &model.BaseEntity{ID: ApplicationID}}}
+
 	applicationNotificationWithAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook: *fixApplicationWebhookGQLModel(WebhookID, ApplicationID),
 		Object: &webhook.FormationConfigurationChangeInput{
@@ -323,7 +405,7 @@ var (
 		CorrelationID: "",
 	}
 
-	appToAppNotificationWithSourceTemplate = &webhookclient.FormationAssignmentNotificationRequest{
+	appToAppNotificationWithoutSourceTemplateWithTargetTemplate = &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp1, ApplicationID),
 		Object: &webhook.ApplicationTenantMappingInput{
 			Operation:                 model.AssignFormation,
@@ -347,7 +429,61 @@ var (
 		CorrelationID: "",
 	}
 
-	appToAppNotificationWithoutSourceTemplate = &webhookclient.FormationAssignmentNotificationRequest{
+	appToAppNotificationWithSourceAndTargetTemplates = &webhookclient.FormationAssignmentNotificationRequest{
+		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
+		Object: &webhook.ApplicationTenantMappingInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModelWithID(ApplicationTemplate2ID),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModelWithoutTemplate(Application2ID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	appToAppNotificationWithSourceAndTargetTemplatesSwaped = &webhookclient.FormationAssignmentNotificationRequest{
+		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
+		Object: &webhook.ApplicationTenantMappingInput{
+			Operation:   model.AssignFormation,
+			FormationID: fixUUID(),
+			TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModel(),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			TargetApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModel(ApplicationID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+				ApplicationTemplate: fixApplicationTemplateModelWithID(ApplicationTemplate2ID),
+				Labels:              fixApplicationTemplateLabelsMap(),
+			},
+			SourceApplication: &webhook.ApplicationWithLabels{
+				Application: fixApplicationModelWithoutTemplate(Application2ID),
+				Labels:      fixApplicationLabelsMap(),
+			},
+			Assignment:        emptyFormationAssignment,
+			ReverseAssignment: emptyFormationAssignment,
+		},
+		CorrelationID: "",
+	}
+
+	appToAppNotificationWithSourceTemplateWithoutTargetTemplate = &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook: *fixApplicationTenantMappingWebhookGQLModel(AppTenantMappingWebhookIDForApp2, Application2ID),
 		Object: &webhook.ApplicationTenantMappingInput{
 			Operation:   model.AssignFormation,
@@ -597,6 +733,21 @@ var (
 		Assignment:        emptyFormationAssignment,
 		ReverseAssignment: emptyFormationAssignment,
 	}
+
+	gaTenantObject = fixModelBusinessTenantMappingWithType(tnt.Account)
+	rgTenantObject = fixModelBusinessTenantMappingWithType(tnt.ResourceGroup)
+
+	customerTenantContext = &webhook.CustomerTenantContext{
+		CustomerID: TntParentID,
+		AccountID:  str.Ptr(gaTenantObject.ExternalTenant),
+		Path:       nil,
+	}
+
+	rgCustomerTenantContext = &webhook.CustomerTenantContext{
+		CustomerID: TntParentID,
+		AccountID:  nil,
+		Path:       str.Ptr(gaTenantObject.ExternalTenant),
+	}
 )
 
 const (
@@ -616,6 +767,7 @@ const (
 	ApplicationID           = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
 	Application2ID          = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
 	ApplicationTemplateID   = "58963c6f-24f6-4128-a05c-51d5356e7e09"
+	ApplicationTemplate2ID  = "88963c6f-24f6-4128-a05c-51d5356e7e09"
 	RuntimeID               = "rt-id"
 	RuntimeContextRuntimeID = "rt-ctx-rt-id"
 	RuntimeContextID        = "rt-ctx-id"
@@ -624,8 +776,11 @@ const (
 	FormationID             = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
 
 	// Webhook IDs
-	WebhookID                        = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
-	Webhook2ID                       = "b9a62a7d-6805-43f9-a3be-370d2d125f0f"
+	WebhookID  = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
+	Webhook2ID = "b9a62a7d-6805-43f9-a3be-370d2d125f0f"
+	Webhook3ID = "aaa62a7d-6805-43f9-a3be-370d2d125f0f"
+
+	TntParentID                      = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
 	WebhookForRuntimeContextID       = "5202f196-46d7-4d1e-be50-434dd9fcd157"
 	AppTenantMappingWebhookIDForApp1 = "b91e7d97-65ed-4b72-a225-4a3b484c27e1"
 	AppTenantMappingWebhookIDForApp2 = "df7e9387-7bdf-46bb-b0c2-de5ec9a40a21"
@@ -655,6 +810,10 @@ const (
 	applicationType = "applicationType"
 	testProvider    = "Compass"
 )
+
+func unusedApplicationRepository() *automock.ApplicationRepository {
+	return &automock.ApplicationRepository{}
+}
 
 func unusedLabelService() *automock.LabelService {
 	return &automock.LabelService{}
@@ -772,6 +931,10 @@ func unusedNotificationsBuilder() *automock.NotificationBuilder {
 	return &automock.NotificationBuilder{}
 }
 
+func unusedNotificationsGenerator() *automock.NotificationsGenerator {
+	return &automock.NotificationsGenerator{}
+}
+
 func unusedTenantService() *automock.TenantService {
 	return &automock.TenantService{}
 }
@@ -864,6 +1027,12 @@ func fixApplicationModel(applicationID string) *model.Application {
 			DeletedAt: &time.Time{},
 		},
 	}
+}
+
+func fixApplicationModelWithTemplateID(applicationID, templateID string) *model.Application {
+	app := fixApplicationModel(applicationID)
+	app.ApplicationTemplateID = str.Ptr(templateID)
+	return app
 }
 
 func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapping {
@@ -993,6 +1162,12 @@ func fixApplicationTemplateModel() *model.ApplicationTemplate {
 		Description:          str.Ptr("some very detailed description"),
 		ApplicationInputJSON: `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`,
 	}
+}
+
+func fixApplicationTemplateModelWithID(id string) *model.ApplicationTemplate {
+	template := fixApplicationTemplateModel()
+	template.ID = id
+	return template
 }
 
 func fixRuntimeModel(runtimeID string) *model.Runtime {

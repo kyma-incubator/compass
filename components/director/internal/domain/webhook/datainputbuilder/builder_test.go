@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 
@@ -520,10 +522,383 @@ func TestWebhookDataInputBuilder_PrepareRuntimeAndRuntimeContextWithLabels(t *te
 	}
 }
 
+func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInFormation(t *testing.T) {
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name                            string
+		RuntimeRepoFN                   func() *automock.RuntimeRepository
+		RuntimeContextRepoFN            func() *automock.RuntimeContextRepository
+		LabelRepoFN                     func() *automock.LabelRepository
+		FormationName                   string
+		ExpectedRuntimesMappings        map[string]*webhook.RuntimeWithLabels
+		ExpectedRuntimeContextsMappings map[string]*webhook.RuntimeContextWithLabels
+		ExpectedErrMessage              string
+	}{
+		{
+			Name: "success",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
+				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				return repo
+			},
+			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool {
+					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
+				})).Return(map[string]map[string]interface{}{
+					RuntimeID:               fixRuntimeLabelsMap(),
+					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(map[string]map[string]interface{}{
+					RuntimeContextID:  fixRuntimeContextLabelsMap(),
+					RuntimeContext2ID: fixRuntimeContextLabelsMap(),
+				}, nil).Once()
+				return repo
+			},
+			FormationName:                   ScenarioName,
+			ExpectedRuntimesMappings:        runtimeMappings,
+			ExpectedRuntimeContextsMappings: runtimeContextMappings,
+			ExpectedErrMessage:              "",
+		},
+		{
+			Name: "error when listing runtime contexts labels",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
+				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				return repo
+			},
+			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool {
+					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
+				})).Return(map[string]map[string]interface{}{
+					RuntimeID:               fixRuntimeLabelsMap(),
+					RuntimeContextRuntimeID: fixRuntimeLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeContextLabelableObject, []string{RuntimeContextID, RuntimeContext2ID}).Return(nil, testErr).Once()
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing labels for runtime contexts",
+		},
+		{
+			Name: "error when listing runtimes labels",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
+				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				return repo
+			},
+			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.RuntimeLabelableObject, mock.MatchedBy(func(ids []string) bool {
+					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
+				})).Return(nil, testErr).Once()
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing runtime labels",
+		},
+		{
+			Name: "error when listing parent runtimes",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByIDs", ctx, Tnt, mock.MatchedBy(func(ids []string) bool {
+					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
+				})).Return(nil, testErr).Once()
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				return repo
+			},
+			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing parent runtimes of runtime contexts in scenario",
+		},
+		{
+			Name: "error when listing runtime contexts",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
+				return repo
+			},
+			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return(nil, testErr)
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing runtime contexts in scenario",
+		},
+		{
+			Name: "error when listing runtimes",
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListByScenarios", ctx, Tnt, []string{ScenarioName}).Return(nil, testErr).Once()
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing runtimes in scenario",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			runtimeRepo := unusedRuntimeRepo()
+			if testCase.RuntimeRepoFN != nil {
+				runtimeRepo = testCase.RuntimeRepoFN()
+			}
+			runtimeContextRepo := unusedRuntimeCtxRepo()
+			if testCase.RuntimeContextRepoFN != nil {
+				runtimeContextRepo = testCase.RuntimeContextRepoFN()
+			}
+			labelRepo := unusedLabelRepo()
+			if testCase.LabelRepoFN != nil {
+				labelRepo = testCase.LabelRepoFN()
+			}
+
+			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(nil, nil, runtimeRepo, runtimeContextRepo, labelRepo)
+
+			// WHEN
+			runtimeMappings, runtimeContextMappings, err := webhookDataInputBuilder.PrepareRuntimesAndRuntimeContextsMappingsInFormation(emptyCtx, Tnt, testCase.FormationName)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedRuntimesMappings, runtimeMappings)
+				assert.Equal(t, testCase.ExpectedRuntimeContextsMappings, runtimeContextMappings)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, runtimeMappings, runtimeContextMappings)
+			}
+
+			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, labelRepo)
+		})
+	}
+}
+
+func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testing.T) {
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name                         string
+		ApplicationRepoFN            func() *automock.ApplicationRepository
+		ApplicationTemplateRepoFN    func() *automock.ApplicationTemplateRepository
+		LabelRepoFN                  func() *automock.LabelRepository
+		FormationName                string
+		ExpectedApplicationsMappings map[string]*webhook.ApplicationWithLabels
+		ExpectedAppTemplateMappings  map[string]*webhook.ApplicationTemplateWithLabels
+		ExpectedErrMessage           string
+	}{
+		{
+			Name: "success",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				return repo
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil).Once()
+				return repo
+			},
+			FormationName:                ScenarioName,
+			ExpectedApplicationsMappings: applicationMappings,
+			ExpectedAppTemplateMappings:  applicationTemplateMappings,
+			ExpectedErrMessage:           "",
+		},
+		{
+			Name: "success when there are no applications in scenario",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{}, nil).Once()
+				return repo
+			},
+			FormationName:                ScenarioName,
+			ExpectedApplicationsMappings: make(map[string]*webhook.ApplicationWithLabels, 0),
+			ExpectedAppTemplateMappings:  make(map[string]*webhook.ApplicationTemplateWithLabels, 0),
+			ExpectedErrMessage:           "",
+		},
+		{
+			Name: "error when listing app template labels",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				return repo
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing labels for application templates",
+		},
+		{
+			Name: "error when listing app templates",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				return repo
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing application templates",
+		},
+		{
+			Name: "error when listing application labels",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(nil, testErr).Once()
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing labels for applications",
+		},
+		{
+			Name: "error when listing application labels",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return(nil, testErr).Once()
+				return repo
+			},
+			FormationName:      ScenarioName,
+			ExpectedErrMessage: "while listing applications in formation",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			applicationRepo := unusedAppRepo()
+			if testCase.ApplicationRepoFN != nil {
+				applicationRepo = testCase.ApplicationRepoFN()
+			}
+			appTemplateRepo := unusedAppTemplateRepo()
+			if testCase.ApplicationTemplateRepoFN != nil {
+				appTemplateRepo = testCase.ApplicationTemplateRepoFN()
+			}
+			labelRepo := unusedLabelRepo()
+			if testCase.LabelRepoFN != nil {
+				labelRepo = testCase.LabelRepoFN()
+			}
+
+			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, nil, nil, labelRepo)
+
+			// WHEN
+			appMappings, appTemplateMappings, err := webhookDataInputBuilder.PrepareApplicationMappingsInFormation(emptyCtx, Tnt, testCase.FormationName)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedApplicationsMappings, appMappings)
+				assert.Equal(t, testCase.ExpectedAppTemplateMappings, appTemplateMappings)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, appMappings, appTemplateMappings)
+			}
+
+			mock.AssertExpectationsForObjects(t, applicationRepo, appTemplateRepo, labelRepo)
+		})
+	}
+}
+
 func convertLabels(labels map[string]*model.Label) map[string]interface{} {
 	convertedLabels := make(map[string]interface{}, len(labels))
 	for _, l := range labels {
 		convertedLabels[l.Key] = l.Value
 	}
 	return convertedLabels
+}
+
+// helper func that checks if the elements of two slices are the same no matter their order
+func checkIfEqual(first, second []string) bool {
+	if len(first) != len(second) {
+		return false
+	}
+	exists := make(map[string]bool)
+	for _, value := range first {
+		exists[value] = true
+	}
+	for _, value := range second {
+		if !exists[value] {
+			return false
+		}
+	}
+	return true
+}
+
+func checkIfIDInSet(wh *model.Webhook, ids []string) bool {
+	for _, id := range ids {
+		if wh.ID == id {
+			return true
+		}
+	}
+	return false
 }

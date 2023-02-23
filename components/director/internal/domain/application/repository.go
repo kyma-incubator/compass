@@ -20,7 +20,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-const applicationTable string = `public.applications`
+const (
+	applicationTable string = `public.applications`
+	// listeningApplicationsView provides a structured view of applications that have a Webhook or their ApplicationTemplate has a Webhook
+	listeningApplicationsView = `listening_applications`
+)
 
 var (
 	applicationColumns    = []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
@@ -44,6 +48,7 @@ type pgRepository struct {
 	globalGetter          repo.SingleGetterGlobal
 	globalDeleter         repo.DeleterGlobal
 	lister                repo.Lister
+	listeningAppsLister   repo.Lister
 	listerGlobal          repo.ListerGlobal
 	deleter               repo.Deleter
 	pageableQuerier       repo.PageableQuerier
@@ -66,6 +71,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		globalDeleter:         repo.NewDeleterGlobal(resource.Application, applicationTable),
 		deleter:               repo.NewDeleter(applicationTable),
 		lister:                repo.NewLister(applicationTable, applicationColumns),
+		listeningAppsLister:   repo.NewLister(listeningApplicationsView, applicationColumns),
 		listerGlobal:          repo.NewListerGlobal(resource.Application, applicationTable, applicationColumns),
 		pageableQuerier:       repo.NewPageableQuerier(applicationTable, applicationColumns),
 		globalPageableQuerier: repo.NewPageableQuerierGlobal(resource.Application, applicationTable, applicationColumns),
@@ -462,6 +468,37 @@ func (r *pgRepository) ListByScenariosAndIDs(ctx context.Context, tenant string,
 	}
 
 	return items, nil
+}
+
+// ListAllByIDs lists all apps with given IDs
+func (r *pgRepository) ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var entities EntityCollection
+	err := r.lister.List(ctx, resource.Application, tenantID, &entities, repo.NewInConditionForStringValues("id", ids))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+// ListListeningApplications lists all application that either have webhook of type whType, or their application template has a webhook of type whType
+func (r *pgRepository) ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error) {
+	var entities EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("webhook_type", whType),
+	}
+
+	if err := r.listeningAppsLister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
 }
 
 // Create missing godoc
