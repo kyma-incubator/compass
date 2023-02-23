@@ -195,9 +195,8 @@ FROM bundles b
 
 --
 
-CREATE OR REPLACE VIEW tenants_destinations(tenant_id, formation_id, id, name, type, url, authentication, bundle_id, revision, sensitive_data) AS
-SELECT DISTINCT dst.tenant_id,
-                dst.formation_id,
+CREATE OR REPLACE VIEW tenants_destinations(tenant_id, id, name, type, url, authentication, bundle_id, revision, sensitive_data) AS
+SELECT DISTINCT dests.tenant_id,
                 dests.id,
                 dests.name,
                 dests.type,
@@ -206,21 +205,7 @@ SELECT DISTINCT dst.tenant_id,
                 dests.bundle_id,
                 dests.revision,
                 '__sensitive_data__' || dests.name || '__sensitive_data__'
-FROM destinations dests
-         JOIN (SELECT d.id,
-                      d.tenant_id AS tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-               FROM destinations d
-               UNION ALL
-               SELECT apps_subaccounts.id,
-                      apps_subaccounts.tenant_id,
-                      apps_subaccounts.formation_id
-               FROM apps_subaccounts
-               UNION ALL
-               SELECT apps_subaccounts.id,
-                      apps_subaccounts.tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-               FROM apps_subaccounts) dst ON dests.id = dst.id;
+FROM destinations dests;
 
 --
 

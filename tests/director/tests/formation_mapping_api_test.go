@@ -80,7 +80,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.NotEmpty(t, app.ID)
 
 		asyncFormationTmplName := "async-formation-template-name"
-		ft := createFormationTemplate(t, ctx, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
@@ -215,7 +215,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 
 		applicationType := "provider-async-app-type-1"
 		providerAsyncFormationTmplName := "provider-async-formation-template-name"
-		ft := createFormationTemplate(t, ctx, providerAsyncFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerAsyncFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerAsyncFormationName := "provider-async-formation-name"
@@ -418,7 +418,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 
 		providerAsyncFormationTmplName := "provider-async-formation-template-name"
 		providerAppTypes := []string{appTemplateName}
-		ft := createFormationTemplate(t, ctx, providerAsyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, providerAppTypes, graphql.ArtifactTypeEnvironmentInstance)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerAsyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, providerAppTypes, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerAsyncFormationName := "provider-async-formation-name"
@@ -474,7 +474,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.NotEmpty(t, app.ID)
 
 		asyncFormationTmplName := "async-formation-template-name"
-		ft := createFormationTemplate(t, ctx, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
