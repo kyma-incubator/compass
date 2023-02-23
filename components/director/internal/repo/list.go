@@ -79,6 +79,15 @@ func NewConditionTreeListerWithEmbeddedTenant(tableName string, tenantColumn str
 	}
 }
 
+// NewConditionTreeLister is a constructor for ConditionTreeLister about entities with externally managed tenant accesses (m2m table or view)
+func NewConditionTreeLister(tableName string, selectedColumns []string) ConditionTreeLister {
+	return &universalLister{
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+		orderByParams:   NoOrderBy,
+	}
+}
+
 // NewConditionTreeListerGlobal is a constructor for ConditionTreeListerGlobal.
 func NewConditionTreeListerGlobal(tableName string, selectedColumns []string) ConditionTreeListerGlobal {
 	return &universalLister{
@@ -134,9 +143,11 @@ func (l *universalLister) List(ctx context.Context, resourceType resource.Type, 
 	return l.listWithTenantScope(ctx, resourceType, tenant, dest, NoLock, additionalConditions)
 }
 
-// ListConditionTree lists tenant scoped entities matching the provided condition tree with tenant isolation which is based on equal condition on tenantColumn.
+// ListConditionTree lists tenant scoped entities matching the provided condition tree with tenant isolation.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (l *universalLister) ListConditionTree(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, conditionTree *ConditionTree) error {
-	return l.listConditionTreeWithEmbeddedTenant(ctx, resourceType, tenant, dest, NoLock, conditionTree)
+	return l.listConditionTreeWithTenantScope(ctx, resourceType, tenant, dest, NoLock, conditionTree)
 }
 
 // ListConditionTreeGlobal lists entities matching the provided condition tree globally.
@@ -170,12 +181,23 @@ func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType 
 	return l.list(ctx, resourceType, dest, lockClause, additionalConditions...)
 }
 
-func (l *universalLister) listConditionTreeWithEmbeddedTenant(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, lockClause string, conditionTree *ConditionTree) error {
+func (l *universalLister) listConditionTreeWithTenantScope(ctx context.Context, resourceType resource.Type, tenant string, dest Collection, lockClause string, conditionTree *ConditionTree) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
 
-	conditions := And(&ConditionTree{Operand: NewEqualCondition(*l.tenantColumn, tenant)}, conditionTree)
+	if l.tenantColumn != nil {
+		conditions := And(&ConditionTree{Operand: NewEqualCondition(*l.tenantColumn, tenant)}, conditionTree)
+		return l.listWithConditionTree(ctx, resourceType, dest, lockClause, conditions)
+	}
+
+	tenantIsolation, err := newTenantIsolationConditionWithPlaceholder(resourceType, tenant, l.ownerCheck, true)
+	if err != nil {
+		return err
+	}
+
+	conditions := And(&ConditionTree{Operand: tenantIsolation}, conditionTree)
+
 	return l.listWithConditionTree(ctx, resourceType, dest, lockClause, conditions)
 }
 
