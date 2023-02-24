@@ -13,13 +13,21 @@ NC='\033[0m' # No Color
 set -e
 
 COMPONENT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+CHARTS_PATH=$(dirname $(dirname $COMPONENT_PATH))/chart/compass
+CHART_FILE=$CHARTS_PATH/"values.yaml"
 
 DATA_DIR="${COMPONENT_PATH}/seeds"
 
 IMG_NAME="compass-schema-migrator"
+CONTAINER_REGISTRY_KEY="containerRegistry"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="12"
+
+CONTAINER_REGISTRY=$(grep $CONTAINER_REGISTRY_KEY $CHART_FILE -A 1 -m 1 | tail -n 1 | rev | cut -d' ' -f 1 | rev)
+IMAGE_VERSION=$(grep $IMG_NAME $CHART_FILE -B 1 | head -n 1 | cut -d'"' -f2)
+IMAGE_PULL_LOCATION=$CONTAINER_REGISTRY/$IMG_NAME:$IMAGE_VERSION
+
 
 PROJECT="sap-cp-cmp"
 ENV="dev"
@@ -67,13 +75,8 @@ trap cleanup EXIT
 echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
 
-ARCH="amd64"
-
-if [[ $(uname -m) == 'arm64' ]]; then
-    ARCH="arm64"
-fi
-
-docker build -t ${IMG_NAME} ./
+echo -e "${GREEN}Pulling schema migrator image from ${IMAGE_PULL_LOCATION}${NC}"
+docker pull "${IMAGE_PULL_LOCATION}"
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
