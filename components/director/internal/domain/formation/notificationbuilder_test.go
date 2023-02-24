@@ -13,20 +13,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
+func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
 
-	testErr := errors.New("test error")
-
 	ApplicationID := "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
-
 	webhook := fixConfigurationChangedWebhookModel(WebhookID, ApplicationID, model.ApplicationWebhookReference)
 	gqlWebhook := &graphql.Webhook{ID: WebhookID, ApplicationID: &ApplicationID, Type: graphql.WebhookTypeConfigurationChanged}
 
@@ -163,6 +159,116 @@ func TestNotificationBuilderBuildNotificationRequest(t *testing.T) {
 			}
 
 			mock.AssertExpectationsForObjects(t, webhookConverter, constraintEngine)
+		})
+	}
+}
+
+func TestBuildFormationNotificationRequests(t *testing.T) {
+	ctx := context.Background()
+	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID)
+	formationInput := fixFormationModelWithoutError()
+
+	testCases := []struct {
+		name                              string
+		constraintEngineFn                func() *automock.ConstraintEngine
+		webhookConverterFn                func() *automock.WebhookConverter
+		formationTemplateWebhooks         []*model.Webhook
+		expectedErrMsg                    string
+		expectedFormationNotificationReqs []*webhookclient.FormationNotificationRequest
+	}{
+		{
+			name: "Successfully build formation notification requests",
+			constraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			webhookConverterFn: func() *automock.WebhookConverter {
+				webhookConv := &automock.WebhookConverter{}
+				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
+				return webhookConv
+			},
+			formationTemplateWebhooks:         formationLifecycleWebhooks,
+			expectedFormationNotificationReqs: formationNotificationRequests,
+		},
+		{
+			name: "Error when enforcing pre generate formation notification constraints",
+			constraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(testErr).Once()
+				return engine
+			},
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			expectedErrMsg:            testErr.Error(),
+		},
+		{
+			name: "Success when there are no formation template webhooks",
+			constraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			formationTemplateWebhooks: emptyFormationLifecycleWebhooks,
+		},
+		{
+			name: "Error when converting formation template webhook to graphql one",
+			constraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			webhookConverterFn: func() *automock.WebhookConverter {
+				webhookConv := &automock.WebhookConverter{}
+				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(nil, testErr).Once()
+				return webhookConv
+			},
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			expectedErrMsg:            testErr.Error(),
+		},
+		{
+			name: "Error when enforcing post generate formation notification constraints",
+			constraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(testErr).Once()
+				return engine
+			},
+			webhookConverterFn: func() *automock.WebhookConverter {
+				webhookConv := &automock.WebhookConverter{}
+				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
+				return webhookConv
+			},
+			formationTemplateWebhooks: formationLifecycleWebhooks,
+			expectedErrMsg:            testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			constraintEngine := unusedConstraintEngine()
+			if testCase.constraintEngineFn != nil {
+				constraintEngine = testCase.constraintEngineFn()
+			}
+
+			webhookConv := unusedWebhookConverter()
+			if testCase.webhookConverterFn != nil {
+				webhookConv = testCase.webhookConverterFn()
+			}
+
+			defer mock.AssertExpectationsForObjects(t, constraintEngine, webhookConv)
+
+			builder := formation.NewNotificationsBuilder(webhookConv, constraintEngine, runtimeType, applicationType)
+			formationNotificationReqs, err := builder.BuildFormationNotificationRequests(ctx, formationNotificationDetails, formationInput, testCase.formationTemplateWebhooks)
+
+			if testCase.expectedErrMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.expectedErrMsg)
+				require.Empty(t, formationNotificationReqs)
+			} else {
+				require.NoError(t, err)
+				require.ElementsMatch(t, formationNotificationReqs, testCase.expectedFormationNotificationReqs)
+			}
 		})
 	}
 }
