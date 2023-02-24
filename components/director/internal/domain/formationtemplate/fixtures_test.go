@@ -1,6 +1,7 @@
 package formationtemplate_test
 
 import (
+	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -79,7 +80,7 @@ var (
 		RuntimeTypes:           runtimeTypesAsString,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
-		LeadingProductIDs:      leadingProductIDsAsString,
+		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(testTenantID),
 	}
 	formationTemplateEntityNullTenant = formationtemplate.Entity{
@@ -89,7 +90,7 @@ var (
 		RuntimeTypes:           runtimeTypesAsString,
 		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    artifactKindAsString,
-		LeadingProductIDs:      leadingProductIDsAsString,
+		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(""),
 	}
 	graphQLFormationTemplate = graphql.FormationTemplate{
