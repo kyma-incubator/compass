@@ -139,11 +139,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2907"
+      version: "PR-2905"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2902"
+      version: "PR-2905"
       name: compass-hydrator
     gateway:
       dir:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2902"
+      version: "PR-2905"
       name: compass-external-services-mock
     console:
       dir:

@@ -9,10 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -634,7 +632,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		}
 
 		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
-		tntEntity.Initialized = ptr.Bool(true)
+		tntEntity.Initialized = boolToPtr(true)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromEntity", tntEntity).Return(resultTntModel[0]).Once()
@@ -644,7 +642,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{
-			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: str.NewNullString(parentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: ptr.Bool(true)},
+			{sqlRow: sqlRow{id: "id1", name: "name1", externalTenant: testExternal, parent: str.NewNullString(parentID), typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
 		})
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE parent = $1 AND type = $2`)).
 			WithArgs(parentID, tenantEntity.Account).
@@ -667,7 +665,7 @@ func TestPgRepository_ListByParentAndType(t *testing.T) {
 		parentID := "test"
 
 		tntEntity := newEntityBusinessTenantMappingWithParentAndAccount("id1", "name1", parentID, tenantEntity.Account)
-		tntEntity.Initialized = ptr.Bool(true)
+		tntEntity.Initialized = boolToPtr(true)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)

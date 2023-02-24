@@ -25,7 +25,7 @@ func FixFormationTemplateInputWithTypes(formationName string, runtimeType string
 	return in
 }
 
-func FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []*string) graphql.FormationTemplateInput {
+func FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplateInput {
 	return graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
