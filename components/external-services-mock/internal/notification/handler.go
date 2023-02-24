@@ -3,7 +3,9 @@ package notification
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
@@ -16,7 +18,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -516,7 +517,7 @@ func (h *Handler) getCertAuthorizedHTTPClient(ctx context.Context) (*http.Client
 	if err != nil {
 		return nil, errors.Wrap(err, "while generating client certificate pair")
 	}
-	certAuthorizedHTTPClient := gql.NewCertAuthorizedHTTPClient(privateKey, certChain, true)
+	certAuthorizedHTTPClient := newCertAuthorizedHTTPClient(privateKey, certChain, true)
 	return certAuthorizedHTTPClient, nil
 }
 
@@ -572,4 +573,25 @@ func (h *Handler) executeStatusUpdateRequest(certSecuredHTTPClient *http.Client,
 	request.Header.Add("Content-Type", "application/json")
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
+}
+
+func newCertAuthorizedHTTPClient(key crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
+	tlsCert := tls.Certificate{
+		Certificate: rawCertChain,
+		PrivateKey:  key,
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates:       []tls.Certificate{tlsCert},
+		InsecureSkipVerify: skipSSLValidation,
+	}
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+		Timeout: time.Second * 30,
+	}
+
+	return httpClient
 }

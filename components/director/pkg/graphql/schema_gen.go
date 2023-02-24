@@ -571,6 +571,7 @@ type ComplexityRoot struct {
 		Description func(childComplexity int) int
 		JSONPath    func(childComplexity int) int
 		Name        func(childComplexity int) int
+		Optional    func(childComplexity int) int
 	}
 
 	Query struct {
@@ -3846,6 +3847,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PlaceholderDefinition.Name(childComplexity), true
 
+	case "PlaceholderDefinition.optional":
+		if e.complexity.PlaceholderDefinition.Optional == nil {
+			break
+		}
+
+		return e.complexity.PlaceholderDefinition.Optional(childComplexity), true
+
 	case "Query.application":
 		if e.complexity.Query.Application == nil {
 			break
@@ -5494,7 +5502,7 @@ input FormationTemplateInput {
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 	webhooks: [WebhookInput!]
-	leadingProductIDs: [String]
+	leadingProductIDs: [String!]
 }
 
 input IntegrationSystemInput {
@@ -5575,6 +5583,7 @@ input PlaceholderDefinitionInput {
 	**Validation:**  max=2000
 	"""
 	jsonPath: String
+	optional: Boolean = false
 }
 
 input RuntimeContextInput {
@@ -6027,7 +6036,7 @@ type FormationTemplate {
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
-	leadingProductIDs: [String]
+	leadingProductIDs: [String!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -6126,6 +6135,7 @@ type PlaceholderDefinition {
 	name: String!
 	description: String
 	jsonPath: String
+	optional: Boolean
 }
 
 type Runtime {
@@ -17203,9 +17213,9 @@ func (ec *executionContext) _FormationTemplate_leadingProductIDs(ctx context.Con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *FormationTemplatePage) (ret graphql.Marshaler) {
@@ -24375,6 +24385,37 @@ func (ec *executionContext) _PlaceholderDefinition_jsonPath(ctx context.Context,
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PlaceholderDefinition_optional(ctx context.Context, field graphql.CollectedField, obj *PlaceholderDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PlaceholderDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Optional, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_applications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31230,7 +31271,7 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			}
 		case "leadingProductIDs":
 			var err error
-			it.LeadingProductIDs, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			it.LeadingProductIDs, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -31477,6 +31518,12 @@ func (ec *executionContext) unmarshalInputPlaceholderDefinitionInput(ctx context
 		case "jsonPath":
 			var err error
 			it.JSONPath, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "optional":
+			var err error
+			it.Optional, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -34734,6 +34781,8 @@ func (ec *executionContext) _PlaceholderDefinition(ctx context.Context, sel ast.
 			out.Values[i] = ec._PlaceholderDefinition_description(ctx, field, obj)
 		case "jsonPath":
 			out.Values[i] = ec._PlaceholderDefinition_jsonPath(ctx, field, obj)
+		case "optional":
+			out.Values[i] = ec._PlaceholderDefinition_optional(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39581,38 +39630,6 @@ func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel
 	ret := make(graphql.Array, len(v))
 	for i := range v {
 		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
 	}
 
 	return ret

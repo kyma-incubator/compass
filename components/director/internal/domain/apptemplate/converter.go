@@ -282,6 +282,7 @@ func (c *converter) placeholdersFromGraphql(in []*graphql.PlaceholderDefinitionI
 			Name:        p.Name,
 			Description: p.Description,
 			JSONPath:    p.JSONPath,
+			Optional:    p.Optional,
 		}
 		placeholders = append(placeholders, np)
 	}
@@ -295,6 +296,7 @@ func (c *converter) placeholdersToGraphql(in []model.ApplicationTemplatePlacehol
 			Name:        p.Name,
 			Description: p.Description,
 			JSONPath:    p.JSONPath,
+			Optional:    p.Optional,
 		}
 		placeholders = append(placeholders, &np)
 	}

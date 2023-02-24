@@ -522,8 +522,7 @@ func Test_UpdateFormationStatus(t *testing.T) {
 
 		appType := "async-app-type-1"
 		asyncFormationTmplName := "async-formation-template-name"
-		leadingProductID := "leading-product-id"
-		leadingProductIDs := []*string{&leadingProductID}
+		leadingProductIDs := []string{"leading-product-id"}
 
 		ft := fixtures.CreateFormationTemplateWithLeadingProductIDs(t, ctx, certSecuredGraphQLClient, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
