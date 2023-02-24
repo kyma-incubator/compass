@@ -572,6 +572,7 @@ type ComplexityRoot struct {
 		Description func(childComplexity int) int
 		JSONPath    func(childComplexity int) int
 		Name        func(childComplexity int) int
+		Optional    func(childComplexity int) int
 	}
 
 	Query struct {
@@ -3860,6 +3861,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PlaceholderDefinition.Name(childComplexity), true
 
+	case "PlaceholderDefinition.optional":
+		if e.complexity.PlaceholderDefinition.Optional == nil {
+			break
+		}
+
+		return e.complexity.PlaceholderDefinition.Optional(childComplexity), true
+
 	case "Query.application":
 		if e.complexity.Query.Application == nil {
 			break
@@ -5589,6 +5597,7 @@ input PlaceholderDefinitionInput {
 	**Validation:**  max=2000
 	"""
 	jsonPath: String
+	optional: Boolean = false
 }
 
 input RuntimeContextInput {
@@ -6140,6 +6149,7 @@ type PlaceholderDefinition {
 	name: String!
 	description: String
 	jsonPath: String
+	optional: Boolean
 }
 
 type Runtime {
@@ -24469,6 +24479,37 @@ func (ec *executionContext) _PlaceholderDefinition_jsonPath(ctx context.Context,
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PlaceholderDefinition_optional(ctx context.Context, field graphql.CollectedField, obj *PlaceholderDefinition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "PlaceholderDefinition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Optional, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_applications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31574,6 +31615,12 @@ func (ec *executionContext) unmarshalInputPlaceholderDefinitionInput(ctx context
 			if err != nil {
 				return it, err
 			}
+		case "optional":
+			var err error
+			it.Optional, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -34833,6 +34880,8 @@ func (ec *executionContext) _PlaceholderDefinition(ctx context.Context, sel ast.
 			out.Values[i] = ec._PlaceholderDefinition_description(ctx, field, obj)
 		case "jsonPath":
 			out.Values[i] = ec._PlaceholderDefinition_jsonPath(ctx, field, obj)
+		case "optional":
+			out.Values[i] = ec._PlaceholderDefinition_optional(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
