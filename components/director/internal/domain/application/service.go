@@ -913,7 +913,7 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 }
 
 // handleMergeLabels merges source labels into destination labels. managedKey label is merged manually.
-// It is updated only if the destination or source label have a value "true"
+// It is updated only if the source or destination label have a value "true"
 func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
 	destScenarios, ok := destAppLabels[model.ScenariosKey]
 	if !ok {
