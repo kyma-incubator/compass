@@ -26,7 +26,7 @@ type FormationTemplate struct {
 	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
 	TenantID               *string             `json:"tenant_id"`
 	Webhooks               []*Webhook          `json:"webhooks"`
-	LeadingProductIDs      []*string           `json:"leadingProductIDs"`
+	LeadingProductIDs      []string            `json:"leadingProductIDs"`
 }
 
 // FormationTemplateInput missing godoc
@@ -37,7 +37,7 @@ type FormationTemplateInput struct {
 	RuntimeTypeDisplayName string              `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput     `json:"webhooks"`
-	LeadingProductIDs      []*string           `json:"leadingProductIDs"`
+	LeadingProductIDs      []string            `json:"leadingProductIDs"`
 }
 
 // FormationTemplatePage missing godoc
