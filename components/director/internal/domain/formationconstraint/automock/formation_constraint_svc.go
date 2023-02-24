@@ -40,13 +40,13 @@ func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, f
 	return r0, r1
 }
 
-type NewFormationConstraintSvcT interface {
+type mockConstructorTestingTNewFormationConstraintSvc interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationConstraintSvc creates a new instance of FormationConstraintSvc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationConstraintSvc(t NewFormationConstraintSvcT) *FormationConstraintSvc {
+func NewFormationConstraintSvc(t mockConstructorTestingTNewFormationConstraintSvc) *FormationConstraintSvc {
 	mock := &FormationConstraintSvc{}
 	mock.Mock.Test(t)
 

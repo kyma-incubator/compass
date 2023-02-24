@@ -38,13 +38,13 @@ func (_m *AutomaticScenarioAssignmentService) ListForTargetTenant(ctx context.Co
 	return r0, r1
 }
 
-type NewAutomaticScenarioAssignmentServiceT interface {
+type mockConstructorTestingTNewAutomaticScenarioAssignmentService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewAutomaticScenarioAssignmentService creates a new instance of AutomaticScenarioAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAutomaticScenarioAssignmentService(t NewAutomaticScenarioAssignmentServiceT) *AutomaticScenarioAssignmentService {
+func NewAutomaticScenarioAssignmentService(t mockConstructorTestingTNewAutomaticScenarioAssignmentService) *AutomaticScenarioAssignmentService {
 	mock := &AutomaticScenarioAssignmentService{}
 	mock.Mock.Test(t)
 

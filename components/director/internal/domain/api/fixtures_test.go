@@ -88,6 +88,8 @@ func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDe
 		OrdID:                                   str.Ptr(ordID),
 		ShortDescription:                        str.Ptr("shortDescription"),
 		SystemInstanceAware:                     &boolVar,
+		PolicyLevel:                             nil,
+		CustomPolicyLevel:                       nil,
 		APIProtocol:                             str.Ptr("apiProtocol"),
 		Tags:                                    json.RawMessage("[]"),
 		Countries:                               json.RawMessage("[]"),
@@ -242,6 +244,8 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 		OrdID:                                   repo.NewValidNullableString(ordID),
 		ShortDescription:                        repo.NewValidNullableString("shortDescription"),
 		SystemInstanceAware:                     repo.NewValidNullableBool(false),
+		PolicyLevel:                             sql.NullString{},
+		CustomPolicyLevel:                       sql.NullString{},
 		APIProtocol:                             repo.NewValidNullableString("apiProtocol"),
 		Tags:                                    repo.NewValidNullableString("[]"),
 		Countries:                               repo.NewValidNullableString("[]"),
@@ -282,7 +286,8 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 
 func fixAPIDefinitionColumns() []string {
 	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
-		"short_description", "system_instance_aware", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
+		"short_description", "system_instance_aware", "policy_level",
+		"custom_policy_level", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready",
 		"created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard",
@@ -292,7 +297,7 @@ func fixAPIDefinitionColumns() []string {
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
 	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder,
-		ordID, "shortDescription", &boolVar, "apiProtocol", repo.NewValidNullableString("[]"),
+		ordID, "shortDescription", &boolVar, nil, nil, "apiProtocol", repo.NewValidNullableString("[]"),
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil,
 		"implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
@@ -301,7 +306,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
 	return []driver.Value{id, appID, packageID, apiDef.Name, apiDef.Description, apiDef.Group,
-		apiDef.OrdID, apiDef.ShortDescription, apiDef.SystemInstanceAware, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
+		apiDef.OrdID, apiDef.ShortDescription, apiDef.SystemInstanceAware, nil, nil, apiDef.APIProtocol, repo.NewNullableStringFromJSONRawMessage(apiDef.Tags), repo.NewNullableStringFromJSONRawMessage(apiDef.Countries),
 		repo.NewNullableStringFromJSONRawMessage(apiDef.Links), repo.NewNullableStringFromJSONRawMessage(apiDef.APIResourceLinks),
 		apiDef.ReleaseStatus, apiDef.SunsetDate, repo.NewNullableStringFromJSONRawMessage(apiDef.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(apiDef.Labels), apiDef.Visibility,
 		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),
