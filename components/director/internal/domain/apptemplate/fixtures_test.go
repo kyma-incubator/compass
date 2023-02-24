@@ -342,11 +342,13 @@ func fixEntityApplicationTemplate(t *testing.T, id, name string) *apptemplate.En
 func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	placeholderDesc := testDescription
 	placeholderJSONPath := testJSONPath
+	isOptional := false
 	return []model.ApplicationTemplatePlaceholder{
 		{
 			Name:        "test",
 			Description: &placeholderDesc,
 			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
 		},
 	}
 }
@@ -399,11 +401,13 @@ func fixModelApplicationTemplateWebhooks(webhookID, applicationTemplateID string
 func fixGQLPlaceholderDefinitionInput() []*graphql.PlaceholderDefinitionInput {
 	placeholderDesc := testDescription
 	placeholderJSONPath := testJSONPath
+	isOptional := false
 	return []*graphql.PlaceholderDefinitionInput{
 		{
 			Name:        "test",
 			Description: &placeholderDesc,
 			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
 		},
 	}
 }
@@ -411,11 +415,13 @@ func fixGQLPlaceholderDefinitionInput() []*graphql.PlaceholderDefinitionInput {
 func fixGQLPlaceholders() []*graphql.PlaceholderDefinition {
 	placeholderDesc := testDescription
 	placeholderJSONPath := testJSONPath
+	isOptional := false
 	return []*graphql.PlaceholderDefinition{
 		{
 			Name:        "test",
 			Description: &placeholderDesc,
 			JSONPath:    &placeholderJSONPath,
+			Optional:    &isOptional,
 		},
 	}
 }

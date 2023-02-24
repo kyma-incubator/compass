@@ -1399,6 +1399,8 @@ func TestService_Delete(t *testing.T) {
 func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 	// GIVEN
 	svc := apptemplate.NewService(nil, nil, nil, nil, nil)
+	placeholderNotOptional := false
+	placeholderIsOptional := true
 
 	testCases := []struct {
 		Name             string
@@ -1422,7 +1424,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName")},
+					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName"), Optional: &placeholderNotOptional},
 				},
 			},
 			InputValues: []*model.ApplicationTemplateValueInput{
@@ -1432,11 +1434,23 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
+			Name: "Success when optional placeholder is not provided",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName"), Optional: &placeholderIsOptional},
+				},
+			},
+			InputValues:    []*model.ApplicationTemplateValueInput{},
+			ExpectedOutput: `{"Name": "", "Description": "Lorem ipsum"}`,
+			ExpectedError:  nil,
+		},
+		{
 			Name: "Returns error when required placeholder value not provided",
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
-					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName")},
+					{Name: "name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName"), Optional: &placeholderNotOptional},
 				},
 			},
 			InputValues:    []*model.ApplicationTemplateValueInput{},
