@@ -814,7 +814,7 @@ global:
     name: ord-aggregator
     job:
       schedulePeriod: 60m
-      isSchedulable: false
+      isSchedulable: true
     lease:
       lockname: aggregatorlease
     authentication:
