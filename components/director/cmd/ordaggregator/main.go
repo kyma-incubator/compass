@@ -3,16 +3,20 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -123,6 +127,11 @@ type securityConfig struct {
 	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord_aggregator:sync"`
 }
 
+// TenantService is responsible for service-layer tenant operations
+type TenantService interface {
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -179,7 +188,7 @@ func main() {
 		},
 	}
 
-	handler := initHandler(ctx, jwtHTTPClient, ordAggregator, cfg)
+	handler := initHandler(ctx, jwtHTTPClient, ordAggregator, cfg, transact)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -374,7 +383,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service, cfg config) http.Handler {
+func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service, cfg config, transact persistence.Transactioner) http.Handler {
 	const (
 		healthzEndpoint   = "/healthz"
 		readyzEndpoint    = "/readyz"
@@ -389,6 +398,7 @@ func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service,
 	handler := ord.NewORDAggregatorHTTPHandler(svc, cfg.MetricsConfig)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
+	configureTenantContextMiddleware(apiRouter, transact)
 	apiRouter.HandleFunc(aggregateEndpoint, handler.AggregateORDData).Methods(http.MethodPost)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
@@ -418,4 +428,50 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 		}
 	})
 	go periodicExecutor.Run(ctx)
+}
+
+func configureTenantContextMiddleware(apiRouter *mux.Router, transact persistence.Transactioner) {
+	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	uidSvc := uid.NewService()
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+
+	apiRouter.Use(tenantContextHandler(transact, tenantSvc))
+}
+
+func tenantContextHandler(transact persistence.Transactioner, tenantSvc TenantService) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			tx, err := transact.Begin()
+			if err != nil {
+				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
+				return
+			}
+			defer transact.RollbackUnlessCommitted(ctx, tx)
+
+			ctx = persistence.SaveToContext(ctx, tx)
+
+			tntFromCtx, err := tenant.LoadFromContext(ctx)
+			if err != nil {
+				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
+				return
+			}
+
+			tnt, err := tenantSvc.GetTenantByExternalID(ctx, tntFromCtx)
+			if err != nil {
+				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
+				return
+			}
+
+			if err := tx.Commit(); err != nil {
+				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
+				return
+			}
+
+			ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
