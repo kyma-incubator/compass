@@ -48,6 +48,11 @@ do
             DUMP_DB=true
             shift # past argument
         ;;
+        --build-image)
+            IMAGE_PULL_LOCATION=$IMG_NAME
+            BUILD_IMAGE=true
+            shift # past argument
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -75,8 +80,18 @@ trap cleanup EXIT
 echo -e "${GREEN}Create network${NC}"
 docker network create --driver bridge ${NETWORK}
 
-echo -e "${GREEN}Pulling schema migrator image from ${IMAGE_PULL_LOCATION}${NC}"
-docker pull "${IMAGE_PULL_LOCATION}"
+if [[ ${BUILD_IMAGE} ]]; then
+  echo -e "${GREEN}Building schema migrator image from Dockerfile${NC}"
+  ARCH="amd64"
+
+  if [[ $(uname -m) == 'arm64' ]]; then
+      ARCH="arm64"
+  fi
+  docker build -t ${IMAGE_PULL_LOCATION} ./
+else
+  echo -e "${GREEN}Pulling schema migrator image from ${IMAGE_PULL_LOCATION}${NC}"
+  docker pull "${IMAGE_PULL_LOCATION}"
+fi
 
 echo -e "${GREEN}Start Postgres in detached mode${NC}"
 docker run -d --name ${POSTGRES_CONTAINER} \
@@ -136,7 +151,7 @@ if [[ ${DUMP_DB} ]]; then
 fi
 
 function migrationUP() {
-    echo -e "${GREEN}Run UP migrations ${NC}"
+    echo -e "${GREEN}Run UP migrations using ${IMAGE_PULL_LOCATION}${NC}"
 
     migration_path=$1
     db_name=$2
@@ -157,7 +172,7 @@ function migrationUP() {
 }
 
 function migrationDOWN() {
-    echo -e "${GREEN}Run DOWN migrations ${NC}"
+    echo -e "${GREEN}Run DOWN migrations using ${IMAGE_PULL_LOCATION}${NC}"
 
     migration_path=$1
     db_name=$2
