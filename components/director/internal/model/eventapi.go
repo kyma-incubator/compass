@@ -25,6 +25,8 @@ type EventDefinition struct {
 	OrdID               *string
 	ShortDescription    *string
 	SystemInstanceAware *bool
+	PolicyLevel         *string
+	CustomPolicyLevel   *string
 	ChangeLogEntries    json.RawMessage
 	Links               json.RawMessage
 	Tags                json.RawMessage
@@ -69,6 +71,8 @@ type EventDefinitionInput struct {
 	OrdID                    *string                       `json:"ordId"`
 	ShortDescription         *string                       `json:"shortDescription"`
 	SystemInstanceAware      *bool                         `json:"systemInstanceAware"`
+	PolicyLevel              *string                       `json:"policyLevel"`
+	CustomPolicyLevel        *string                       `json:"customPolicyLevel"`
 	ChangeLogEntries         json.RawMessage               `json:"changelogEntries"`
 	Links                    json.RawMessage               `json:"links"`
 	Tags                     json.RawMessage               `json:"tags"`
@@ -159,6 +163,8 @@ func (e *EventDefinitionInput) ToEventDefinition(id, appID string, packageID *st
 		OrdID:               e.OrdID,
 		ShortDescription:    e.ShortDescription,
 		SystemInstanceAware: e.SystemInstanceAware,
+		PolicyLevel:         e.PolicyLevel,
+		CustomPolicyLevel:   e.CustomPolicyLevel,
 		Tags:                e.Tags,
 		Countries:           e.Countries,
 		Links:               e.Links,

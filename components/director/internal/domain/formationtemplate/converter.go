@@ -2,6 +2,7 @@ package formationtemplate
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
