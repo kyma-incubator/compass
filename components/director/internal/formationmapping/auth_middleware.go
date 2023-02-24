@@ -294,14 +294,6 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 		return false, http.StatusInternalServerError, err
 	}
 
-	consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
-	if err != nil {
-		return false, http.StatusInternalServerError, errors.Wrap(err, "while loading tenant pair from context")
-	}
-	consumerInternalTenantID := consumerTenantPair.InternalID
-	consumerExternalTenantID := consumerTenantPair.ExternalID
-
-	log.C(ctx).Infof("Tenant with internal ID: %q and external ID: %q for consumer with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerExternalTenantID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
 	if fa.TargetType == model.FormationAssignmentTypeApplication {
 		app, err := a.appRepo.GetByID(ctx, fa.TenantID, fa.Target)
 		if err != nil {
@@ -328,6 +320,15 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 			return true, http.StatusOK, nil
 		}
 
+		consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
+		if err != nil {
+			return false, http.StatusInternalServerError, errors.Wrap(err, "while loading tenant pair from context")
+		}
+		consumerInternalTenantID := consumerTenantPair.InternalID
+		consumerExternalTenantID := consumerTenantPair.ExternalID
+
+		log.C(ctx).Infof("Tenant with internal ID: %q and external ID: %q for consumer with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerExternalTenantID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
+
 		// Verify if the caller has owner access to the target of the formation assignment with type application that is being updated
 		exists, err := a.appRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
 		if err != nil {
@@ -349,6 +350,13 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 		return a.validateSubscriptionProvider(ctx, tx, app.ApplicationTemplateID, consumerExternalTenantID, fa.Target, string(fa.TargetType))
 	}
 
+	consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrap(err, "while loading tenant pair from context")
+	}
+	consumerInternalTenantID := consumerTenantPair.InternalID
+
+	log.C(ctx).Infof("Tenant with internal ID: %q and external ID: %q for consumer with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerTenantPair.ExternalID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
 	if fa.TargetType == model.FormationAssignmentTypeRuntime {
 		exists, err := a.runtimeRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
 		if err != nil {
