@@ -538,7 +538,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Authorization fail: error when consumer info is missing in the context for the target of the FA with type application but the transaction fail",
+			name:       "Authorization fail: error when consumer info is missing in the context for formation assignment with target type application",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
@@ -559,7 +559,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
-			name:       "Authorization success: when the caller has owner access to the target of the FA with type application but the transaction fail",
+			name:       "Authorization success: when the caller has owner access to the target of the FA with type application",
 			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
