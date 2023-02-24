@@ -18,6 +18,7 @@ import (
 
 func BenchmarkApplicationsForRuntime(b *testing.B) {
 	//GIVEN
+	require.True(b, false)
 	ctx := context.Background()
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
 
