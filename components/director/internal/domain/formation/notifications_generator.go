@@ -605,6 +605,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 	return requests, nil
 }
 
+// GenerateFormationLifecycleNotifications generates formation notifications for the provided webhooks
 func (ns *NotificationsGenerator) GenerateFormationLifecycleNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationNotificationRequest, error) {
 	details := &formationconstraint.GenerateFormationNotificationOperationDetails{
 		Operation:             formationOperation,

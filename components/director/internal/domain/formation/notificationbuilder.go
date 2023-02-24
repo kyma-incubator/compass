@@ -66,6 +66,7 @@ func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(
 	return req, nil
 }
 
+// BuildFormationNotificationRequests builds new formation notification request
 func (nb *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Context, joinPointDetails *formationconstraintpkg.GenerateFormationNotificationOperationDetails, formation *model.Formation, formationTemplateWebhooks []*model.Webhook) ([]*webhookclient.FormationNotificationRequest, error) {
 	log.C(ctx).Infof("Building formation notification request...")
 	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PreGenerateFormationNotifications, joinPointDetails, joinPointDetails.FormationTemplateID); err != nil {
