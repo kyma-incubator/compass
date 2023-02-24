@@ -150,7 +150,7 @@ function migrationUP() {
             -e MIGRATION_PATH=${migration_path} \
             -e DIRECTION="up" \
             -e DRY_RUN="true" \
-        ${IMG_NAME}
+        "${IMAGE_PULL_LOCATION}"
 
     echo -e "${GREEN}Show schema_migrations table after UP migrations${NC}"
     docker exec ${POSTGRES_CONTAINER} psql --username usr "${db_name}" --command "select * from schema_migrations"
@@ -171,7 +171,7 @@ function migrationDOWN() {
             -e MIGRATION_PATH=${migration_path} \
             -e DIRECTION="down" \
             -e DRY_RUN="true" \
-        ${IMG_NAME}
+        "${IMAGE_PULL_LOCATION}"
 
     echo -e "${GREEN}Show schema_migrations table after DOWN migrations${NC}"
     docker exec ${POSTGRES_CONTAINER} psql --username usr "${db_name}" --command "select * from schema_migrations"
