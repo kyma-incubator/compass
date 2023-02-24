@@ -2,7 +2,6 @@ package formationtemplate_test
 
 import (
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -34,9 +33,7 @@ var (
 	graphqlWebhookMode          = graphql.WebhookModeSync
 	applicationTypes            = []string{"some-application-type"}
 	runtimeTypes                = []string{"some-runtime-type"}
-	leadingProductID            = "leading-product-id"
-	leadingProductID2           = "leading-product-id-2"
-	leadingProductIDs           = []*string{&leadingProductID, &leadingProductID2}
+	leadingProductIDs           = []string{"leading-product-id", "leading-product-id-2"}
 	formationTemplateModelInput = model.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,

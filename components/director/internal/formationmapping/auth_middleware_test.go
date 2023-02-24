@@ -879,7 +879,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 	consumerID := "2c755564-97ef-4499-8c88-7b8518edc171"
 	leadingProductID := consumerID
 	leadingProductID2 := "leading-product-id-2"
-	leadingProductIDs := []*string{&leadingProductID, &leadingProductID2}
+	leadingProductIDs := []string{leadingProductID, leadingProductID2}
 
 	formation := &model.Formation{
 		ID:                  testFormationID,
@@ -901,7 +901,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 		Name:                   "formationTemplateName",
 		RuntimeTypeDisplayName: "runtimeTypeDisplayName",
 		TenantID:               &internalTntID,
-		LeadingProductIDs:      []*string{&leadingProductID2},
+		LeadingProductIDs:      []string{leadingProductID2},
 	}
 
 	testCases := []struct {

@@ -263,7 +263,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 	}
 
 	for _, id := range ft.LeadingProductIDs {
-		if id != nil && *id == consumerID {
+		if id == consumerID {
 			log.C(ctx).Infof("Consumer with ID: %q is contained in the leading product IDs list from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
 			return true, http.StatusOK, nil
 		}
