@@ -9,25 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFromInputGraphql(t *testing.T) {
-	sut := scenarioassignment.NewConverter()
-	t.Run("happy path", func(t *testing.T) {
-		// WHEN
-		actual := sut.FromInputGraphQL(graphql.AutomaticScenarioAssignmentSetInput{
-			ScenarioName: scenarioName,
-			Selector: &graphql.LabelSelectorInput{
-				Key:   scenarioassignment.SubaccountIDKey,
-				Value: externalTargetTenantID,
-			},
-		}, targetTenantID)
-		// THEN
-		assert.Equal(t, model.AutomaticScenarioAssignment{
-			ScenarioName:   scenarioName,
-			TargetTenantID: targetTenantID,
-		}, actual)
-	})
-}
-
 func TestToGraphQL(t *testing.T) {
 	// GIVEN
 	sut := scenarioassignment.NewConverter()
