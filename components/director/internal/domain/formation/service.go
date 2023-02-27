@@ -962,7 +962,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 			}
 
 			if len(leftAssignmentsInFormation) == 0 {
-				log.C(ctx).Infof("log.C(ctx).Infof(\"There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationID, objectType, objectID, formationID)
+				log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationID, objectType, objectID, formationID)
 				err = s.unassign(ctx, tenantID, objectID, objectType, formation)
 				if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
 					return errors.Wrapf(err, "while unassigning the object with type %q and ID %q", objectType, objectID)
