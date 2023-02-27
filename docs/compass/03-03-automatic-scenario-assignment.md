@@ -1,13 +1,13 @@
 # Automatic Scenario Assignment
 
-Automatic Scenario Assignment (ASA) feature allows you to define an external subaccount tenant ID, in which all Runtimes are assigned to the given scenario, assuming that the scenario is in a parent tenant of type `account`. 
+Automatic Scenario Assignment (ASA) is a feature that allows you to define an external subaccount tenant ID, in which all Runtimes are assigned to the given formation, assuming that the formation is in a parent tenant of type `account`. The following diagram outlines the process and refers to the formation as a Scenario.
 
 ![](./assets/automatic-scenario-assign.svg) 
 
-1. Administrator creates a Formation in a tenant of type `account`.
-2. Administrator assigns subaccount X to the Formation. 
-3. User registers a Runtime in subaccount X.
-4. Runtime is automatically assigned to the matching Scenario. 
+1. An administrator creates a formation in a tenant of type `account`.
+2. The administrator assigns a subaccount X to the newly created formation. 
+3. A user registers a Runtime in subaccount X.
+4. The Runtime is automatically assigned to the matching formation. 
 
 ## API
 
@@ -25,11 +25,11 @@ type Label {
 
 ```
 
-A tenant-matching condition is defined as a label selector in the `selector` field. This behaviour is intended for backwards compatability. Yet, the assignment is based on the tenant, in which the Runtime is created and not on the labels of the Runtime. The label key is validated to be a `global_subaccount_id`. It is also validated that the subaccount tenant is a child of the tenant, in which the scenario and the ASA resides. Then, if a Runtime is created in the `global_subaccount_id` tenant, that Runtime is automatically assigned to the given Scenario.
+A tenant-matching condition is defined as a label selector in the `selector` field. This behavior is intended for backwards compatibility. Yet, the assignment is based on the tenant, in which the Runtime is created and not on the labels of the Runtime. The label key is validated to be a `global_subaccount_id`. It is also validated that the subaccount tenant is a child of the tenant, in which the formation and the ASA resides. Then, if a Runtime is created in the `global_subaccount_id` tenant, that Runtime is automatically assigned to the given formation.
 
 ### Mutations
 
-Automatic Scenario Assignments can not be created or deleted directly using a Director API. Rather Automatic Scenario Assignments are created implicitly when assigning tenant of type `subaccount` to a Formation and is deleted when the tenant is unassigned from the Formation:
+Director API cannot create or delete ASAs directly. Instead, the ASAs are created implicitly when assigning a tenant of type `subaccount` to the formation, and then, the ASAs are deleted when the tenant is unassigned from the formation:
 ```graphql
    assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation!
    unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! 
@@ -37,22 +37,22 @@ Automatic Scenario Assignments can not be created or deleted directly using a Di
 
 ### Queries
 
-Director API contains queries that allow you to fetch all assignments, fetch assignments for the given Scenario, and fetch assignments for the given label selector:
+Director API contains queries that allow you to fetch all assignments, or fetch assignments for the given formation, or fetch assignments for the given label selector:
 ```graphql
    automaticScenarioAssignments(first: Int = 100, after: PageCursor): AutomaticScenarioAssignmentPage 
    automaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment 
    automaticScenarioAssignmentsForSelector(selector: LabelSelectorInput!): [AutomaticScenarioAssignment!]! 
 ```
 
-## Assign Runtime to Scenario
+## Assign Runtime to Formation
 
-You can assign a Runtime to a Scenario by:
-1. Create Formation
+You can assign a Runtime to a formation as follows:
+1. Create a formation.
 2. Assign Runtime to the formation using `assignFromation` mutation with `objectType` - `RUNTIME`
 
 ### Create ASA and Runtime
 
-1. Create Formation with name `WAREHOUSE`: 
+1. Create a formation with name `WAREHOUSE`: 
 
 ```graphql
 mutation {
@@ -64,7 +64,7 @@ mutation {
 }
 ```
 
-2. Assign the WEAREHOUSE Administrators subaccount to the Formation. This will implicitly create Automatic Scenario Assignment with a condition that Runtimes created by a `WAREHOUSE` Administrator are assigned to the `WAREHOUSE` Scenario:
+2. Assign the WEAREHOUSE Administrators subaccount to the formation. This implicitly creates an ASA with a condition that the Runtimes created by a `WAREHOUSE` Administrator are assigned to the `WAREHOUSE` formation:
 ```graphql
 mutation {
    result: assignFormation(
@@ -82,7 +82,7 @@ mutation {
 3. Register a Runtime into the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` subaccount tenant:
    Create a Runtime in the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` tenant:
     - Run the request in the context of the wanted `subaccount` tenant.
-    - Run the request in the context of the parent tenant, and label the Runtime with the wanted `subaccount` tenant. The flow is intended for backwards compatability, and results in Runtime registration within the tenant provided as a label and not the tenant from the request context:
+    - Run the request in the context of the parent tenant, and label the Runtime with the wanted `subaccount` tenant. The flow is intended for backwards compatibility, and results in Runtime registration within the tenant provided as a label and not the tenant from the request context:
       ```graphql
         mutation  {
             registerRuntime(in:{name: "warehouse-runtime-1", labels:{global_subaccount_id:"0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
@@ -92,7 +92,7 @@ mutation {
         }
       ```
 
-Automatic Scenario Assignment assigns the Runtime to the `WAREHOUSE` Scenario: 
+ASA assigns the Runtime to the `WAREHOUSE` formation: 
 ```json
 {
   "data": {
@@ -109,7 +109,7 @@ Automatic Scenario Assignment assigns the Runtime to the `WAREHOUSE` Scenario:
 }
 ```
 
-4. Unassign the subaccount from the Formation. This will result in removing the Automatic Scenario Assignment:
+4. Unassign the subaccount from the formation. This results in removal of the ASA.
 ```graphql
 mutation {
    result: unassignFormation(
@@ -125,7 +125,7 @@ mutation {
 
 ```
 
-5. Fetch information about previously created Runtime, for example by listing all Runtimes
+5. Fetch information about previously created Runtime, for example, by listing all Runtimes.
 ```graphql
 query  {
   runtimes {
@@ -138,7 +138,7 @@ query  {
 }
 ```
 
-Runtime is unassigned from the `WAREHOUSE` Scenario:
+Runtime is unassigned from the `WAREHOUSE` formation.
 ```json
 {
   "data": {
@@ -159,8 +159,8 @@ Runtime is unassigned from the `WAREHOUSE` Scenario:
 
 ### Create ASA when Runtime exists
 
-You can also assign a Runtime to a given Scenario using ASA when the Runtime already exists. If there is a Runtime that matches a new assignment, meaning that it is in the wanted `subaccount` tenant, it is automatically assigned to the Scenario.
-All requests below are done in the context of a tenant of type `account` which is a parent of the given `subaccount` tenant.
+You can also assign a Runtime to a given formation using ASA when the Runtime already exists. If there is a Runtime that matches a new assignment, that is, it is in the wanted `subaccount` tenant, then, it is automatically assigned to the formation.
+All of the following requests are done in the context of a tenant of type `account`, which is a parent of the given `subaccount` tenant.
 
 1. Create a Runtime in the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` tenant:
     - Run the request in the context of the wanted `subaccount` tenant
@@ -174,7 +174,7 @@ All requests below are done in the context of a tenant of type `account` which i
         }
       ```
 
-2. Create Formation with name `MARKETING`:
+2. Create a formation with name `MARKETING`:
 
 ```graphql
 mutation {
@@ -186,7 +186,7 @@ mutation {
 }
 ```
 
-3. Assign subaccount to the Formation, this will implicitly create the Automatic Scenario Assignment:
+3. Assign subaccount to the formation. This action implicitly creates the ASA.
 ```graphql
 mutation {
    result: assignFormation(
@@ -201,7 +201,7 @@ mutation {
 }
 ```
 
-4. Check if the Runtime is assigned to the `MARKETING` Scenario:
+4. Check if the Runtime is assigned to the `MARKETING` formation.
 ```graphql
 query  {
   runtimes {
@@ -214,7 +214,7 @@ query  {
 }
 ```
 
-In the response you can see that your Runtime is assigned to the `MARKETING` Scenario:
+In the response you can see that your Runtime is assigned to the `MARKETING` formation.
 
 ```
 {
