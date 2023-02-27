@@ -23,7 +23,7 @@ func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient 
 	return &formationTemplate
 }
 
-func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []*string) graphql.FormationTemplate {
+func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplate {
 	formationTmplInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, runtimeType, applicationTypes, runtimeArtifactKind, leadingProductIDs)
 
 	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)

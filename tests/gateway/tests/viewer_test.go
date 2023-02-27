@@ -64,6 +64,7 @@ func TestViewerQuery(t *testing.T) {
 		t.Log("Register Application via Certificate Secured Client")
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
+		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, app.ID, testConfig.DefaultTestTenant)
 		require.NoError(t, err)
 		t.Logf("Registered Application with [id=%s]", app.ID)
 

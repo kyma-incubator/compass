@@ -68,6 +68,8 @@ type ApplicationRepository interface {
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error)
+	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
 	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
@@ -656,7 +658,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	if err := s.ensureApplicationNotPartOfScenarioWithRuntime(ctx, appTenant, id); err != nil {
+	if err := s.ensureApplicationNotPartOfAnyScenario(ctx, appTenant, id); err != nil {
 		return err
 	}
 
@@ -1001,6 +1003,26 @@ func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Cont
 		}
 
 		return nil
+	}
+
+	return nil
+}
+
+// ensureApplicationNotPartOfAnyScenario Checks if an application has scenarios associated with it. If the application is
+// associated with any scenario it can not be deleted before unassigning from that scenario
+func (s *service) ensureApplicationNotPartOfAnyScenario(ctx context.Context, tenant, appID string) error {
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	if len(scenarios) > 0 {
+		application, err := s.appRepo.GetByID(ctx, tenant, appID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting application with id %s", appID)
+		}
+		msg := fmt.Sprintf("System %s is part of the following formations : %s", application.Name, strings.Join(scenarios, ", "))
+		return apperrors.NewInvalidOperationError(msg)
 	}
 
 	return nil

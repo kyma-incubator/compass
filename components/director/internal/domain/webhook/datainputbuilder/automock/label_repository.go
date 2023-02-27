@@ -38,13 +38,36 @@ func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, obj
 	return r0, r1
 }
 
-type mockConstructorTestingTNewLabelRepository interface {
+// ListForObjectIDs provides a mock function with given fields: ctx, tenant, objectType, objectIDs
+func (_m *LabelRepository) ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error) {
+	ret := _m.Called(ctx, tenant, objectType, objectIDs)
+
+	var r0 map[string]map[string]interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, []string) map[string]map[string]interface{}); ok {
+		r0 = rf(ctx, tenant, objectType, objectIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]map[string]interface{})
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, []string) error); ok {
+		r1 = rf(ctx, tenant, objectType, objectIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+type NewLabelRepositoryT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewLabelRepository creates a new instance of LabelRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewLabelRepository(t mockConstructorTestingTNewLabelRepository) *LabelRepository {
+func NewLabelRepository(t NewLabelRepositoryT) *LabelRepository {
 	mock := &LabelRepository{}
 	mock.Mock.Test(t)
 

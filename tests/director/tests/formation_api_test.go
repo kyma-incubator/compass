@@ -126,7 +126,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	newFormation := "ADDITIONAL"
-	unusedFormationName := "UNUSED"
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -135,13 +134,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
-
-	t.Logf("Should create formation: %s", unusedFormationName)
-	var unusedFormation graphql.Formation
-	createUnusedReq := fixtures.FixCreateFormationRequest(unusedFormationName)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createUnusedReq, &unusedFormation)
-	require.NoError(t, err)
-	require.Equal(t, unusedFormationName, unusedFormation.Name)
 
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation
@@ -189,6 +181,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	var nilFormation *graphql.Formation
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteRequest, nilFormation)
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "are not valid against empty schema")
 	assert.Nil(t, nilFormation)
 
 	t.Logf("Unassign Application from formation %s", newFormation)
@@ -208,13 +201,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	assert.Equal(t, newFormation, deleteFormation.Name)
 
 	saveExample(t, deleteRequest.Query(), "delete formation")
-
-	t.Log("Should be able to delete formation")
-	deleteUnusedRequest := fixtures.FixDeleteFormationRequest(unusedFormationName)
-	var deleteUnusedFormation graphql.Formation
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteUnusedRequest, &deleteUnusedFormation)
-	assert.NoError(t, err)
-	assert.Equal(t, unusedFormationName, deleteUnusedFormation.Name)
 }
 
 func TestRuntimeFormationFlow(t *testing.T) {
@@ -1165,6 +1151,7 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Assign application 1 to formation %s", providerFormationName)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, app1.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
 		assignReq := fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		var assignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
@@ -1445,6 +1432,7 @@ func TestFormationAssignmentNotifications(stdT *testing.T) {
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Assign application 1 to formation %s", providerFormationName)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, app1.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
 		assignReq := fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		var assignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
@@ -1485,6 +1473,7 @@ func TestFormationAssignmentNotifications(stdT *testing.T) {
 		assertFormationNotificationFromAssignments(t, assignNotificationForApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 
 		t.Logf("Assign application 2 to formation %s", providerFormationName)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, app2.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
 		assignReq = fixtures.FixAssignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 		require.NoError(t, err)
@@ -1783,6 +1772,7 @@ func TestAppToAppFormationAssignmentNotifications(t *testing.T) {
 	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	t.Logf("Assign application 1 to formation %s", formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, graphql.FormationObjectTypeApplication, tnt)
 	assignReq := fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
 	var assignedFormation graphql.Formation
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
@@ -1796,6 +1786,7 @@ func TestAppToAppFormationAssignmentNotifications(t *testing.T) {
 	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 	t.Logf("Assign application 2 to formation %s", formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, graphql.FormationObjectTypeApplication, tnt)
 	assignReq = fixtures.FixAssignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
 	require.NoError(t, err)
@@ -1849,6 +1840,7 @@ func TestAppToAppFormationAssignmentNotifications(t *testing.T) {
 	require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
 
 	t.Logf("Assign application 1 to formation %s again", formationName)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, graphql.FormationObjectTypeApplication, tnt)
 	assignReq = fixtures.FixAssignFormationRequest(app1.ID, string(graphql.FormationObjectTypeApplication), formationName)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
 	require.NoError(t, err)
@@ -1915,6 +1907,205 @@ func TestAppToAppFormationAssignmentNotifications(t *testing.T) {
 
 	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
 	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+}
+
+func TestUseApplicationTemplateWebhookIfAppDoesNotHaveOneForNotifications(t *testing.T) {
+	ctx := context.Background()
+	tnt := tenant.TestTenants.GetDefaultTenantID()
+	tntParentCustomer := tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant) // parent of `tenant.TestTenants.GetDefaultTenantID()` above
+
+	mode := graphql.WebhookModeSync
+
+	urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
+	inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
+	outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
+	formationTmplName := "app-to-app-formation-template-name"
+
+	certSecuredHTTPClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: cc.Get()[conf.ExternalClientCertSecretName].Certificate,
+						PrivateKey:  cc.Get()[conf.ExternalClientCertSecretName].PrivateKey,
+					},
+				},
+				ClientAuth:         tls.RequireAndVerifyClientCert,
+				InsecureSkipVerify: conf.SkipSSLValidation,
+			},
+		},
+	}
+	cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+	// TODO: Remove runtimeType once we support app only formations
+	appTypes := []string{"app-to-app-app-type-1", "app-to-app-app-type-2"}
+	ft := createFormationTemplate(t, ctx, formationTmplName, "dummy-runtime-type", appTypes, graphql.ArtifactTypeSubscription)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+
+	formationName := "app-to-app-formation-name"
+	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
+	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
+
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, "app-template")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	applicationType := "app-to-app-app-type-1"
+	appRegion := "test-app-region"
+	appNamespace := "compass.test"
+	localTenantID := "local-tenant-id"
+	t.Logf("Create application template for type %q", applicationType)
+	appTemplateInput := graphql.ApplicationTemplateInput{
+		Name:        applicationType,
+		Description: &applicationType,
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:          "{{name}}",
+			ProviderName:  str.Ptr("compass"),
+			Description:   ptr.String("test {{display-name}}"),
+			LocalTenantID: &localTenantID,
+			Webhooks: []*graphql.WebhookInput{
+				{
+					Type: graphql.WebhookTypeApplicationTenantMapping,
+					Auth: &graphql.AuthInput{
+						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
+					},
+					Mode:           &mode,
+					URLTemplate:    &urlTemplate,
+					InputTemplate:  &inputTemplate,
+					OutputTemplate: &outputTemplate,
+				},
+			},
+			Labels: graphql.Labels{
+				"applicationType": applicationType,
+				"region":          appRegion,
+			},
+		},
+		Placeholders: []*graphql.PlaceholderDefinitionInput{
+			{
+				Name: "name",
+			},
+			{
+				Name: "display-name",
+			},
+		},
+		ApplicationNamespace: &appNamespace,
+		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
+	require.NoError(t, err)
+
+	applicationType2 := "app-to-app-app-type-2"
+	localTenantID2 := "local-tenant-id2"
+	t.Logf("Create application template for type %q", applicationType2)
+	appTemplateInput = graphql.ApplicationTemplateInput{
+		Name:        applicationType2,
+		Description: &applicationType2,
+		Webhooks: []*graphql.WebhookInput{
+			{
+				Type: graphql.WebhookTypeApplicationTenantMapping,
+				Auth: &graphql.AuthInput{
+					AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
+				},
+				Mode:           &mode,
+				URLTemplate:    &urlTemplate,
+				InputTemplate:  &inputTemplate,
+				OutputTemplate: &outputTemplate,
+			},
+		},
+		ApplicationInput: &graphql.ApplicationRegisterInput{
+			Name:          "{{name}}",
+			ProviderName:  str.Ptr("compass"),
+			Description:   ptr.String("test {{display-name}}"),
+			LocalTenantID: &localTenantID2,
+			Labels: graphql.Labels{
+				"applicationType": applicationType2,
+				"region":          appRegion,
+			},
+		},
+		Placeholders: []*graphql.PlaceholderDefinitionInput{
+			{
+				Name: "name",
+			},
+			{
+				Name: "display-name",
+			},
+		},
+		ApplicationNamespace: &appNamespace,
+		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+	appTmpl, err = fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
+	require.NoError(t, err)
+
+	t.Logf("Create application 1 from template %q", applicationType)
+	app1 := fixtures.RegisterApplicationFromTemplate(t, ctx, certSecuredGraphQLClient, applicationType, "app1-formation-notifications-tests", "App 1", tnt)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &app1)
+	t.Logf("app1 ID: %q", app1.ID)
+
+	t.Logf("Create application 2 from template %q", applicationType2)
+	app2 := fixtures.RegisterApplicationFromTemplate(t, ctx, certSecuredGraphQLClient, applicationType2, "app2-formation-notifications-tests", "App 2", tnt)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &app2)
+	t.Logf("app2 ID: %q", app2.ID)
+
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 0, nil)
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+	t.Logf("Assign application 1 to formation %s", formationName)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
+
+	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+		app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
+	}
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+	t.Logf("Assign application 2 to formation %s", formationName)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
+
+	expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		app1.ID: {
+			app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+			app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+		},
+		app2.ID: {
+			app1.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr("{\"key\":\"value\",\"key2\":{\"key\":\"value2\"}}")},
+			app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+		},
+	}
+	assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
+	assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+
+	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+	assertNotificationsCountForTenant(t, body, app1.ID, 1)
+
+	notificationsForApp1 := gjson.GetBytes(body, app1.ID)
+	assignNotificationAboutApp2 := notificationsForApp1.Array()[0]
+	assertFormationNotificationFromAssignments(t, assignNotificationAboutApp2, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer)
+
+	assertNotificationsCountForTenant(t, body, app2.ID, 1)
+
+	notificationsForApp2 := gjson.GetBytes(body, app2.ID)
+	assignNotificationAboutApp1 := notificationsForApp2.Array()[0]
+	assertFormationNotificationFromAssignments(t, assignNotificationAboutApp1, assignOperation, formation.ID, app1.ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer)
 }
 
 func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testing.T) {
@@ -2141,6 +2332,7 @@ func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testi
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
 		t.Logf("Assign application to formation %s", providerFormationName)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, app.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
 		assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		var assignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
@@ -2201,6 +2393,7 @@ func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testi
 		assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
 		t.Logf("Assign application to formation %s", providerFormationName)
+		defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, app.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
 		assignReq = fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 		var secondAssignedFormation graphql.Formation
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &secondAssignedFormation)
@@ -2723,7 +2916,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			require.Equal(t, providerFormationName, assignedFormation.Name)
 
 			t.Logf("Assign application to formation %s", formation.Name)
-			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerTenantID)
+			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)
 			assignReq = fixtures.FixAssignFormationRequest(actualApp.ID, string(graphql.FormationObjectTypeApplication), providerFormationName)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
 			require.NoError(t, err)
@@ -2807,10 +3000,10 @@ func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, invalidApplicationType, actualApplication.Labels[conf.ApplicationTypeLabelKey])
 
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApplication.ID, graphql.FormationObjectTypeApplication, tenantId)
 	createRequest := fixtures.FixAssignFormationRequest(actualApplication.ID, string(graphql.FormationObjectTypeApplication), formationName)
 	formationResultFormation := graphql.Formation{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRequest, &formationResultFormation)
-	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApplication.ID, graphql.FormationObjectTypeApplication, tenantId)
 	require.Empty(t, formationResultFormation)
 	require.EqualError(t, err, fmt.Sprintf("graphql: The operation is not allowed [reason=unsupported applicationType %q for formation template %q, allowing only %q]", invalidApplicationType, formationTemplate.Name, formationTemplate.ApplicationTypes))
 }
