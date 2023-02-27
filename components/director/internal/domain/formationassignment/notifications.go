@@ -93,6 +93,11 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		return nil, err
 	}
 
+	appTemplateID := ""
+	if appTemplateWithLabels != nil {
+		appTemplateID = appTemplateWithLabels.ID
+	}
+
 	if fa.SourceType == model.FormationAssignmentTypeApplication {
 		reverseAppID := fa.Source
 		log.C(ctx).Infof("The formation assignment reverse object type is %q and has ID: %q", model.FormationAssignmentTypeApplication, reverseAppID)
@@ -126,13 +131,12 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		appToAppWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenantID, appID, model.ApplicationWebhookReference, model.WebhookTypeApplicationTenantMapping)
+		appToAppWebhook, err := GetWebhookForApplication(ctx, fan.webhookRepository, tenantID, appID, appTemplateID, model.WebhookTypeApplicationTenantMapping)
 		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				log.C(ctx).Infof("There is no %q webhook for application with ID: %q. There are no notifications to be generated.", model.WebhookTypeApplicationTenantMapping, appID)
-				return nil, nil
-			}
-			return nil, errors.Wrapf(err, "while getting %q webhook for application with ID: %q", model.WebhookTypeApplicationTenantMapping, appID)
+			return nil, err
+		}
+		if appToAppWebhook == nil {
+			return nil, nil
 		}
 
 		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appToAppWebhook)
@@ -176,13 +180,12 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		appWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenantID, appID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged)
+		appWebhook, err := GetWebhookForApplication(ctx, fan.webhookRepository, tenantID, appID, appTemplateID, model.WebhookTypeConfigurationChanged)
 		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				log.C(ctx).Infof("There is no %q webhook for application with ID: %q. There are no notifications to be generated.", model.WebhookTypeConfigurationChanged, appID)
-				return nil, nil
-			}
-			return nil, errors.Wrapf(err, "while getting %q webhook for application with ID: %q", model.WebhookTypeConfigurationChanged, appID)
+			return nil, err
+		}
+		if appWebhook == nil {
+			return nil, nil
 		}
 
 		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
@@ -233,13 +236,12 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 			return nil, err
 		}
 
-		appWebhook, err := fan.webhookRepository.GetByIDAndWebhookType(ctx, tenantID, appID, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged)
+		appWebhook, err := GetWebhookForApplication(ctx, fan.webhookRepository, tenantID, appID, appTemplateID, model.WebhookTypeConfigurationChanged)
 		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				log.C(ctx).Infof("There is no %q webhook for application with ID: %q. There are no notifications to be generated.", model.WebhookTypeConfigurationChanged, appID)
-				return nil, nil
-			}
-			return nil, errors.Wrapf(err, "while getting %q webhook for application with ID: %q", model.WebhookTypeConfigurationChanged, appID)
+			return nil, err
+		}
+		if appWebhook == nil {
+			return nil, nil
 		}
 
 		notificationReq, err := fan.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, referencedFormation.FormationTemplateID, details, appWebhook)
@@ -435,4 +437,36 @@ func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(
 		AccountID:  accountID,
 		Path:       path,
 	}, nil
+}
+
+// GetWebhookForApplication gets webhook of type webhookType for the application with ID appID
+// If the application has webhook of type webhookType it is returned
+// If the application does not have a webhook of type webhookType, but its application template has one it is returned
+// If both application and application template does not have a webhook of type webhookType, no webhook is returned
+func GetWebhookForApplication(ctx context.Context, webhookRepo webhookRepository, tenant, appID, appTemplateID string, webhookType model.WebhookType) (*model.Webhook, error) {
+	webhook, err := webhookRepo.GetByIDAndWebhookType(ctx, tenant, appID, model.ApplicationWebhookReference, webhookType)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while listing %s webhooks for application %s", webhookType, appID)
+		}
+
+		log.C(ctx).Infof("There is no %s webhook for application %s. Looking for %s webhook for application template.", webhookType, appID, webhookType)
+
+		if appTemplateID == "" {
+			log.C(ctx).Infof("There is no application template for application %s. There are no notifications to be generated.", appID)
+			return nil, nil
+		}
+
+		webhook, err = webhookRepo.GetByIDAndWebhookType(ctx, tenant, appTemplateID, model.ApplicationTemplateWebhookReference, webhookType)
+		if err != nil {
+			if !apperrors.IsNotFoundError(err) {
+				return nil, errors.Wrapf(err, "while listing %s webhooks for application template %s on behalve of application %s", webhookType, appTemplateID, appID)
+			}
+
+			log.C(ctx).Infof("There is no %s webhook for application template %s. There are no notifications to be generated.", webhookType, appTemplateID)
+			return nil, nil
+		}
+	}
+
+	return webhook, nil
 }

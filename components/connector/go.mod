@@ -6,7 +6,6 @@ require (
 	github.com/99designs/gqlgen v0.11.3
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230210133944-35a359acaec6
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -43,6 +42,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230222154756-c31ab6b486f7
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect

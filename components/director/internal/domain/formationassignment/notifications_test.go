@@ -26,6 +26,7 @@ import (
 
 func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 	testRuntimeID := "testRuntimeID"
+	testAppTemplateID := "testAppTemplateID"
 
 	ctx := context.TODO()
 
@@ -65,13 +66,14 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 	testLabels := map[string]interface{}{"testLabelKey": "testLabelValue"}
 	testAppWithLabels := &webhook.ApplicationWithLabels{
 		Application: &model.Application{
-			Name: "testAppName",
+			Name:                  "testAppName",
+			ApplicationTemplateID: str.Ptr(testAppTemplateID),
 		},
 		Labels: testLabels,
 	}
 	testAppTemplateWithLabels := &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: &model.ApplicationTemplate{
-			ID:   "testAppTemplateID",
+			ID:   testAppTemplateID,
 			Name: "testAppTemplateName",
 		},
 		Labels: testLabels,
@@ -274,6 +276,45 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			expectedNotification: testAppNotificationReqWithTenantMappingTypeWithTenantPath,
 		},
 		{
+			name:                "Success when application webhook is not found",
+			formationAssignment: faWithSourceAppAndTargetApp,
+			tenantRepo: func() *automock.TenantRepository {
+				repo := &automock.TenantRepository{}
+				repo.On("Get", emptyCtx, faWithSourceAppAndTargetApp.TenantID).Return(gaTenantObject, nil)
+				repo.On("GetCustomerIDParentRecursively", emptyCtx, faWithSourceAppAndTargetApp.TenantID).Return(TntParentID, nil)
+				return repo
+			},
+			webhookRepo: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeApplicationTenantMapping).Return(nil, testNotFoundErr).Once()
+				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testAppTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeApplicationTenantMapping).Return(nil, testNotFoundErr).Once()
+				return webhookRepo
+			},
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
+				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
+				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
+				return webhookDataInputBuilder
+			},
+			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				faRepo := &automock.FormationAssignmentRepository{}
+				faRepo.On("GetReverseBySourceAndTarget", emptyCtx, TestTenantID, TestFormationID, TestSource, TestTarget).Return(faWithSourceAppAndTargetAppReverse, nil).Once()
+				return faRepo
+			},
+			formationRepo: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, TestFormationID, TestTenantID).Return(formation, nil).Once()
+				return repo
+			},
+			notificationBuilder: func() *automock.NotificationBuilder {
+				notificationsBuilder := &automock.NotificationBuilder{}
+
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppWithLabels, convertFormationAssignmentFromModel(faWithSourceAppAndTargetApp), convertFormationAssignmentFromModel(faWithSourceAppAndTargetAppReverse), testCustomerTenantContext).Return(details, nil).Once()
+
+				return notificationsBuilder
+			},
+		},
+		{
 			name:                "Error when getting formation by ID",
 			formationAssignment: faWithSourceAppAndTargetApp,
 			tenantRepo: func() *automock.TenantRepository {
@@ -309,6 +350,47 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 				return repo
 			},
 			expectedErrMsg: testErr.Error(),
+		},
+		{
+			name:                "Error when getting application template webhook by ID and type",
+			formationAssignment: faWithSourceAppAndTargetApp,
+			tenantRepo: func() *automock.TenantRepository {
+				repo := &automock.TenantRepository{}
+				repo.On("Get", emptyCtx, faWithSourceAppAndTargetApp.TenantID).Return(gaTenantObject, nil)
+				repo.On("GetCustomerIDParentRecursively", emptyCtx, faWithSourceAppAndTargetApp.TenantID).Return(TntParentID, nil)
+				return repo
+			},
+			webhookRepo: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeApplicationTenantMapping).Return(nil, testNotFoundErr).Once()
+				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testAppTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeApplicationTenantMapping).Return(nil, testErr).Once()
+
+				return webhookRepo
+			},
+			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
+				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
+				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
+				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
+				return webhookDataInputBuilder
+			},
+			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				faRepo := &automock.FormationAssignmentRepository{}
+				faRepo.On("GetReverseBySourceAndTarget", emptyCtx, TestTenantID, TestFormationID, TestSource, TestTarget).Return(faWithSourceAppAndTargetAppReverse, nil).Once()
+				return faRepo
+			},
+			formationRepo: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, TestFormationID, TestTenantID).Return(formation, nil).Once()
+				return repo
+			},
+			notificationBuilder: func() *automock.NotificationBuilder {
+				notificationsBuilder := &automock.NotificationBuilder{}
+
+				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppWithLabels, convertFormationAssignmentFromModel(faWithSourceAppAndTargetApp), convertFormationAssignmentFromModel(faWithSourceAppAndTargetAppReverse), testCustomerTenantContext).Return(details, nil).Once()
+
+				return notificationsBuilder
+			},
+			expectedErrMsg: "while listing APPLICATION_TENANT_MAPPING webhooks for application template",
 		},
 		{
 			name:                "Error when preparing app and app template with labels for source type application",
@@ -453,44 +535,6 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 				return notificationsBuilder
 			},
 			expectedErrMsg: testErr.Error(),
-		},
-		{
-			name:                "Success when getting application webhook by ID and type return not found error",
-			formationAssignment: faWithSourceAppAndTargetApp,
-			tenantRepo: func() *automock.TenantRepository {
-				repo := &automock.TenantRepository{}
-				repo.On("Get", emptyCtx, faWithSourceAppAndTargetApp.TenantID).Return(gaTenantObject, nil)
-				repo.On("GetCustomerIDParentRecursively", emptyCtx, faWithSourceAppAndTargetApp.TenantID).Return(TntParentID, nil)
-				return repo
-			},
-			webhookRepo: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeApplicationTenantMapping).Return(nil, testNotFoundErr).Once()
-				return webhookRepo
-			},
-			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
-				webhookDataInputBuilder := &databuilderautomock.DataInputBuilder{}
-				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestTarget).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				webhookDataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", emptyCtx, TestTenantID, TestSource).Return(testAppWithLabels, testAppTemplateWithLabels, nil).Once()
-				return webhookDataInputBuilder
-			},
-			formationAssignmentRepo: func() *automock.FormationAssignmentRepository {
-				faRepo := &automock.FormationAssignmentRepository{}
-				faRepo.On("GetReverseBySourceAndTarget", emptyCtx, TestTenantID, TestFormationID, TestSource, TestTarget).Return(faWithSourceAppAndTargetAppReverse, nil).Once()
-				return faRepo
-			},
-			formationRepo: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, TestFormationID, TestTenantID).Return(formation, nil).Once()
-				return repo
-			},
-			notificationBuilder: func() *automock.NotificationBuilder {
-				notificationsBuilder := &automock.NotificationBuilder{}
-
-				notificationsBuilder.On("PrepareDetailsForApplicationTenantMappingNotificationGeneration", model.AssignFormation, TestFormationID, testAppTemplateWithLabels, testAppWithLabels, testAppTemplateWithLabels, testAppWithLabels, convertFormationAssignmentFromModel(faWithSourceAppAndTargetApp), convertFormationAssignmentFromModel(faWithSourceAppAndTargetAppReverse), testCustomerTenantContext).Return(details, nil).Once()
-
-				return notificationsBuilder
-			},
 		},
 		{
 			name:                "Error when getting application webhook by ID and type",
@@ -698,7 +742,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			expectedErrMsg: testErr.Error(),
 		},
 		{
-			name:                "Success when getting application webhook by ID and type return not found error",
+			name:                "Success when getting application webhook return not found error",
 			formationAssignment: faWithSourceRuntimeAndTargetApp,
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
@@ -709,6 +753,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookRepo: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testNotFoundErr).Once()
+				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testAppTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testNotFoundErr).Once()
 				return webhookRepo
 			},
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {
@@ -1018,6 +1063,8 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 			webhookRepo: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
 				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, TestTarget, model.ApplicationWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testNotFoundErr).Once()
+				webhookRepo.On("GetByIDAndWebhookType", emptyCtx, TestTenantID, testAppTemplateID, model.ApplicationTemplateWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testNotFoundErr).Once()
+
 				return webhookRepo
 			},
 			webhookDataInputBuilder: func() *databuilderautomock.DataInputBuilder {

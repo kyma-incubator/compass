@@ -68,6 +68,8 @@ type ApplicationRepository interface {
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error)
+	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
 	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
@@ -656,7 +658,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	if err := s.ensureApplicationNotPartOfScenarioWithRuntime(ctx, appTenant, id); err != nil {
+	if err := s.ensureApplicationNotPartOfAnyScenario(ctx, appTenant, id); err != nil {
 		return err
 	}
 
@@ -821,14 +823,18 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	destApp, err := s.Get(ctx, destID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting destination application")
-	}
-
 	srcApp, err := s.Get(ctx, srcID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting source application")
+	}
+
+	if err := s.ensureApplicationNotPartOfAnyScenario(ctx, appTenant, srcID); err != nil {
+		return nil, err
+	}
+
+	destApp, err := s.Get(ctx, destID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting destination application")
 	}
 
 	destAppLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, destID)
@@ -906,36 +912,18 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	return s.appRepo.GetByID(ctx, appTenant, destID)
 }
 
-// handleMergeLabels merges source labels into destination labels. model.ScenariosKey is merged manually as well due to limitation
-// of the lib that is used. The last manually merged label is managedKey which is updated only if the destination or
-// source label have a value "true"
+// handleMergeLabels merges source labels into destination labels. managedKey label is merged manually.
+// It is updated only if the source or destination label have a value "true"
 func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
-	srcScenarios, ok := srcAppLabels[model.ScenariosKey]
-	if !ok {
-		log.C(ctx).Infof("No %q label found in source object.", model.ScenariosKey)
-		srcScenarios = &model.Label{Value: make([]interface{}, 0)}
-	}
-
 	destScenarios, ok := destAppLabels[model.ScenariosKey]
 	if !ok {
 		log.C(ctx).Infof("No %q label found in destination object.", model.ScenariosKey)
 		destScenarios = &model.Label{Value: make([]interface{}, 0)}
 	}
 
-	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcScenarios.Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting source application labels to string slice")
-	}
-
 	destScenariosStrSlice, err := label.ValueToStringsSlice(destScenarios.Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting destination application labels to string slice")
-	}
-
-	for _, srcScenario := range srcScenariosStrSlice {
-		if !str.ContainsInSlice(destScenariosStrSlice, srcScenario) {
-			destScenariosStrSlice = append(destScenariosStrSlice, srcScenario)
-		}
 	}
 
 	if err := mergo.Merge(&destAppLabels, srcAppLabels); err != nil {
@@ -1001,6 +989,26 @@ func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Cont
 		}
 
 		return nil
+	}
+
+	return nil
+}
+
+// ensureApplicationNotPartOfAnyScenario Checks if an application has scenarios associated with it. If the application is
+// associated with any scenario it can not be deleted before unassigning from that scenario
+func (s *service) ensureApplicationNotPartOfAnyScenario(ctx context.Context, tenant, appID string) error {
+	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	if len(scenarios) > 0 {
+		application, err := s.appRepo.GetByID(ctx, tenant, appID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting application with id %s", appID)
+		}
+		msg := fmt.Sprintf("System %s is part of the following formations : %s", application.Name, strings.Join(scenarios, ", "))
+		return apperrors.NewInvalidOperationError(msg)
 	}
 
 	return nil

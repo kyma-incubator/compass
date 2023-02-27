@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"

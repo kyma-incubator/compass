@@ -2,6 +2,9 @@
 
 set -o errexit
 
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $SCRIPTS_DIR/utils.sh
@@ -43,6 +46,10 @@ do
             shift # past argument
             shift
         ;;
+        --sql-helm-backend)
+            SQL_HELM_BACKEND=true
+            shift # past argument
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -55,6 +62,21 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+if [[ ${SQL_HELM_BACKEND} ]]; then
+    echo -e "${GREEN}Helm SQL storage backend will be used${NC}"
+
+    DB_USER=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-username']}"))
+    DB_PWD=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-director-password']}"))
+    DB_NAME=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-directorDatabaseName']}"))
+    DB_PORT=$(base64 -d <<< $(kubectl get secret -n compass-system compass-postgresql -o=jsonpath="{.data['postgresql-servicePort']}"))
+
+    kubectl port-forward --namespace compass-system svc/compass-postgresql ${DB_PORT}:${DB_PORT} &
+    sleep 5 #wait port-forwarding to be completed
+
+    export HELM_DRIVER=sql
+    export HELM_DRIVER_SQL_CONNECTION_STRING=postgres://${DB_USER}:${DB_PWD}@localhost:${DB_PORT}/${DB_NAME}?sslmode=disable
+fi
+
 echo "Wait for helm stable status"
 wait_for_helm_stable_state "compass" "compass-system" 
 
@@ -62,3 +84,7 @@ echo "Install Compass"
 echo "Path to compass charts: " ${COMPASS_CHARTS}
 helm upgrade --install --wait --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
 trap "cleanup_trap" RETURN EXIT INT TERM
+
+if [[ ${SQL_HELM_BACKEND} ]]; then
+    pkill kubectl
+fi

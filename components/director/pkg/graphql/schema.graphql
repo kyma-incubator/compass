@@ -678,7 +678,7 @@ input FormationTemplateInput {
 	runtimeTypeDisplayName: String
 	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
-	leadingProductIDs: [String]
+	leadingProductIDs: [String!]
 }
 
 input IntegrationSystemInput {
@@ -759,6 +759,7 @@ input PlaceholderDefinitionInput {
 	**Validation:**  max=2000
 	"""
 	jsonPath: String
+	optional: Boolean = false
 }
 
 input RuntimeContextInput {
@@ -1211,7 +1212,7 @@ type FormationTemplate {
 	runtimeTypeDisplayName: String!
 	runtimeArtifactKind: ArtifactType!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
-	leadingProductIDs: [String]
+	leadingProductIDs: [String!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1310,6 +1311,7 @@ type PlaceholderDefinition {
 	name: String!
 	description: String
 	jsonPath: String
+	optional: Boolean
 }
 
 type Runtime {
