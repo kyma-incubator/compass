@@ -2320,42 +2320,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	testFormation := &model.Formation{ID: FormationID, Name: testFormationName}
 
 	formationAssignments := []*model.FormationAssignment{
-		{
-			ID:          "id1",
-			FormationID: FormationID,
-			Source:      RuntimeID,
-			SourceType:  model.FormationAssignmentTypeRuntime,
-			Target:      ApplicationID,
-			TargetType:  model.FormationAssignmentTypeApplication,
-			State:       string(model.InitialAssignmentState),
-		},
-		{
-			ID:          "id2",
-			FormationID: FormationID,
-			Source:      RuntimeContextID,
-			SourceType:  model.FormationAssignmentTypeRuntimeContext,
-			Target:      ApplicationID,
-			TargetType:  model.FormationAssignmentTypeApplication,
-			State:       string(model.CreateErrorFormationState),
-		},
-		{
-			ID:          "id3",
-			FormationID: FormationID,
-			Source:      RuntimeID,
-			SourceType:  model.FormationAssignmentTypeRuntime,
-			Target:      RuntimeContextID,
-			TargetType:  model.FormationAssignmentTypeRuntimeContext,
-			State:       string(model.DeletingFormationState),
-		},
-		{
-			ID:          "id4",
-			FormationID: FormationID,
-			Source:      RuntimeContextID,
-			SourceType:  model.FormationAssignmentTypeRuntimeContext,
-			Target:      RuntimeContextID,
-			TargetType:  model.FormationAssignmentTypeRuntimeContext,
-			State:       string(model.DeleteErrorFormationState),
-		},
+		fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState),
+		fixFormationAssignmentModelWithParameters("id2", FormationID, RuntimeContextID, ApplicationID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeApplication, model.CreateErrorFormationState),
+		fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.DeletingFormationState),
+		fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.DeleteErrorFormationState),
 	}
 	reverseAssignment := &model.FormationAssignment{
 		ID:          "id1",
@@ -2391,16 +2359,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	}
 	var formationAssignmentPairs = make([]*formationassignment.AssignmentMappingPair, 0, len(formationAssignments))
 	for i := range formationAssignments {
-		formationAssignmentPairs = append(formationAssignmentPairs, &formationassignment.AssignmentMappingPair{
-			Assignment: &formationassignment.FormationAssignmentRequestMapping{
-				Request:             notificationsForAssignments[i],
-				FormationAssignment: formationAssignments[i],
-			},
-			ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
-				Request:             nil,
-				FormationAssignment: nil,
-			},
-		})
+		formationAssignmentPairs = append(formationAssignmentPairs, fixFormationAssignmentPairWithNoReverseAssignment(notificationsForAssignments[i], formationAssignments[i]))
 	}
 
 	testCases := []struct {
@@ -2729,10 +2688,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			}
 			mock.AssertExpectationsForObjects(t, labelService, runtimeContextRepo, asaEngine, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService)
 		})
-		t.Run("returns error when empty tenant", func(t *testing.T) {
-			svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
-			err := svc.ResynchronizeFormationNotifications(context.TODO(), FormationID)
-			require.Contains(t, err.Error(), "cannot read tenant from context")
-		})
 	}
+	t.Run("returns error when empty tenant", func(t *testing.T) {
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		err := svc.ResynchronizeFormationNotifications(context.TODO(), FormationID)
+		require.Contains(t, err.Error(), "cannot read tenant from context")
+	})
 }

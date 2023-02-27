@@ -1315,6 +1315,28 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 	}
 }
 
+func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          id,
+		FormationID: formationID,
+		Source:      source,
+		SourceType:  sourceType,
+		Target:      target,
+		TargetType:  targetType,
+		State:       string(state),
+	}
+}
+
+func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPair {
+	return &formationassignment.AssignmentMappingPair{Assignment: &formationassignment.FormationAssignmentRequestMapping{
+		Request:             request,
+		FormationAssignment: assignment,
+	}, ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+		Request:             nil,
+		FormationAssignment: nil,
+	}}
+}
+
 func fixFormationAssignmentModelWithSuffix(state string, configValue json.RawMessage, suffix string) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          FormationAssignmentID + suffix,

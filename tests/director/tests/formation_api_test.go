@@ -967,26 +967,8 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
-		providerRuntimeInput := graphql.RuntimeRegisterInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels: graphql.Labels{
-				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
-			},
-			Webhooks: []*graphql.WebhookInput{
-				{
-					Type: graphql.WebhookTypeConfigurationChanged,
-					Auth: &graphql.AuthInput{
-						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-					},
-					Mode:           &mode,
-					URLTemplate:    &urlTemplate,
-					InputTemplate:  &inputTemplate,
-					OutputTemplate: &outputTemplate,
-				},
-			},
-		}
 
+		providerRuntimeInput := fixtures.FixProviderRuntimeWithWebhookInput("formation-assignment-tenant-hierarchy-e2e-providerRuntime", graphql.WebhookTypeConfigurationChanged, mode, urlTemplate, inputTemplate, outputTemplate, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
 		require.NotEmpty(t, providerRuntime.ID)
@@ -1095,30 +1077,7 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := graphql.ApplicationTemplateInput{
-			Name:        applicationType,
-			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID,
-				Labels: graphql.Labels{
-					"applicationType": applicationType,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -1228,26 +1187,8 @@ func TestFormationAssignmentNotifications(stdT *testing.T) {
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.RuntimeContext.Value}}{{if eq .Operation \\\"unassign\\\"}}/{{.Application.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.ApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.Application.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.Application.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
-		providerRuntimeInput := graphql.RuntimeRegisterInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels: graphql.Labels{
-				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
-			},
-			Webhooks: []*graphql.WebhookInput{
-				{
-					Type: graphql.WebhookTypeConfigurationChanged,
-					Auth: &graphql.AuthInput{
-						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-					},
-					Mode:           &mode,
-					URLTemplate:    &urlTemplate,
-					InputTemplate:  &inputTemplate,
-					OutputTemplate: &outputTemplate,
-				},
-			},
-		}
 
+		providerRuntimeInput := fixtures.FixProviderRuntimeWithWebhookInput("formation-assignment-notifications-e2e-providerRuntime", graphql.WebhookTypeConfigurationChanged, mode, urlTemplate, inputTemplate, outputTemplate, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
 		require.NotEmpty(t, providerRuntime.ID)
@@ -1352,30 +1293,7 @@ func TestFormationAssignmentNotifications(stdT *testing.T) {
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := graphql.ApplicationTemplateInput{
-			Name:        applicationType,
-			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID,
-				Labels: graphql.Labels{
-					"applicationType": applicationType,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -1649,42 +1567,7 @@ func TestAppToAppFormationAssignmentNotifications(t *testing.T) {
 	appNamespace := "compass.test"
 	localTenantID := "local-tenant-id"
 	t.Logf("Create application template for type %q", applicationType)
-	appTemplateInput := graphql.ApplicationTemplateInput{
-		Name:        applicationType,
-		Description: &applicationType,
-		ApplicationInput: &graphql.ApplicationRegisterInput{
-			Name:          "{{name}}",
-			ProviderName:  str.Ptr("compass"),
-			Description:   ptr.String("test {{display-name}}"),
-			LocalTenantID: &localTenantID,
-			Webhooks: []*graphql.WebhookInput{
-				{
-					Type: graphql.WebhookTypeApplicationTenantMapping,
-					Auth: &graphql.AuthInput{
-						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-					},
-					Mode:           &mode,
-					URLTemplate:    &urlTemplate,
-					InputTemplate:  &inputTemplate,
-					OutputTemplate: &outputTemplate,
-				},
-			},
-			Labels: graphql.Labels{
-				"applicationType": applicationType,
-				"region":          appRegion,
-			},
-		},
-		Placeholders: []*graphql.PlaceholderDefinitionInput{
-			{
-				Name: "name",
-			},
-			{
-				Name: "display-name",
-			},
-		},
-		ApplicationNamespace: &appNamespace,
-		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-	}
+	appTemplateInput := fixtures.FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, appRegion, appNamespace, graphql.WebhookTypeApplicationTenantMapping, mode, urlTemplate, inputTemplate, outputTemplate)
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 	require.NoError(t, err)
@@ -1971,42 +1854,7 @@ func TestUseApplicationTemplateWebhookIfAppDoesNotHaveOneForNotifications(t *tes
 	appNamespace := "compass.test"
 	localTenantID := "local-tenant-id"
 	t.Logf("Create application template for type %q", applicationType)
-	appTemplateInput := graphql.ApplicationTemplateInput{
-		Name:        applicationType,
-		Description: &applicationType,
-		ApplicationInput: &graphql.ApplicationRegisterInput{
-			Name:          "{{name}}",
-			ProviderName:  str.Ptr("compass"),
-			Description:   ptr.String("test {{display-name}}"),
-			LocalTenantID: &localTenantID,
-			Webhooks: []*graphql.WebhookInput{
-				{
-					Type: graphql.WebhookTypeApplicationTenantMapping,
-					Auth: &graphql.AuthInput{
-						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-					},
-					Mode:           &mode,
-					URLTemplate:    &urlTemplate,
-					InputTemplate:  &inputTemplate,
-					OutputTemplate: &outputTemplate,
-				},
-			},
-			Labels: graphql.Labels{
-				"applicationType": applicationType,
-				"region":          appRegion,
-			},
-		},
-		Placeholders: []*graphql.PlaceholderDefinitionInput{
-			{
-				Name: "name",
-			},
-			{
-				Name: "display-name",
-			},
-		},
-		ApplicationNamespace: &appNamespace,
-		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-	}
+	appTemplateInput := fixtures.FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, appRegion, appNamespace, graphql.WebhookTypeApplicationTenantMapping, mode, urlTemplate, inputTemplate, outputTemplate)
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 	require.NoError(t, err)
@@ -2246,42 +2094,7 @@ func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testi
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id-test"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := graphql.ApplicationTemplateInput{
-			Name:        applicationType,
-			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID,
-				Webhooks: []*graphql.WebhookInput{
-					{
-						Type: graphql.WebhookTypeConfigurationChanged,
-						Auth: &graphql.AuthInput{
-							AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-						},
-						Mode:           &mode,
-						URLTemplate:    &urlTemplate,
-						InputTemplate:  &inputTemplate,
-						OutputTemplate: &outputTemplate,
-					},
-				},
-				Labels: graphql.Labels{
-					"applicationType": applicationType,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		appTemplateInput := fixtures.FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, appRegion, appNamespace, graphql.WebhookTypeConfigurationChanged, mode, urlTemplate, inputTemplate, outputTemplate)
 
 		appFromTmplSrc := graphql.ApplicationFromTemplateInput{
 			TemplateName: applicationType, Values: []*graphql.TemplateValueInput{
@@ -2495,26 +2308,8 @@ func TestFormationAssignments(stdT *testing.T) {
 		}()
 
 		runtimeWebhookMode := graphql.WebhookModeAsyncCallback
-		providerRuntimeInput := graphql.RuntimeRegisterInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels: graphql.Labels{
-				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
-			},
-			Webhooks: []*graphql.WebhookInput{
-				{
-					Type: graphql.WebhookTypeConfigurationChanged,
-					Auth: &graphql.AuthInput{
-						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-					},
-					Mode:           &runtimeWebhookMode,
-					URLTemplate:    &urlTemplateRuntime,
-					InputTemplate:  &inputTemplateRuntime,
-					OutputTemplate: &outputTemplateRuntime,
-				},
-			},
-		}
 
+		providerRuntimeInput := fixtures.FixProviderRuntimeWithWebhookInput("formation-assignment-e2e-providerRuntime", graphql.WebhookTypeConfigurationChanged, runtimeWebhookMode, urlTemplateRuntime, inputTemplateRuntime, outputTemplateRuntime, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
 		require.NotEmpty(t, providerRuntime.ID)
@@ -2631,42 +2426,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		localTenantID := "local-tenant-id"
 		appWebhookMode := graphql.WebhookModeSync
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := graphql.ApplicationTemplateInput{
-			Name:        applicationType,
-			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID,
-				Webhooks: []*graphql.WebhookInput{
-					{
-						Type: graphql.WebhookTypeConfigurationChanged,
-						Auth: &graphql.AuthInput{
-							AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-						},
-						Mode:           &appWebhookMode,
-						URLTemplate:    &urlTemplateApplication,
-						InputTemplate:  &inputTemplateApplication,
-						OutputTemplate: &outputTemplateApplication,
-					},
-				},
-				Labels: graphql.Labels{
-					"applicationType": applicationType,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		appTemplateInput := fixtures.FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, appRegion, appNamespace, graphql.WebhookTypeConfigurationChanged, appWebhookMode, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -3045,26 +2805,8 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		mode := graphql.WebhookModeSync
-		providerRuntimeInput := graphql.RuntimeRegisterInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels: graphql.Labels{
-				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
-			},
-			Webhooks: []*graphql.WebhookInput{
-				{
-					Type: graphql.WebhookTypeConfigurationChanged,
-					Auth: &graphql.AuthInput{
-						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-					},
-					Mode:           &mode,
-					URLTemplate:    &urlTemplate,
-					InputTemplate:  &inputTemplate,
-					OutputTemplate: &outputTemplate,
-				},
-			},
-		}
 
+		providerRuntimeInput := fixtures.FixProviderRuntimeWithWebhookInput("fail-processing-while-assigning-e2e-providerRuntime", graphql.WebhookTypeConfigurationChanged, mode, urlTemplate, inputTemplate, outputTemplate, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
 		require.NotEmpty(t, providerRuntime.ID)
@@ -3169,30 +2911,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := graphql.ApplicationTemplateInput{
-			Name:        applicationType,
-			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID,
-				Labels: graphql.Labels{
-					"applicationType": applicationType,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -3385,26 +3104,8 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		mode := graphql.WebhookModeSync
-		providerRuntimeInput := graphql.RuntimeRegisterInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels: graphql.Labels{
-				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
-			},
-			Webhooks: []*graphql.WebhookInput{
-				{
-					Type: graphql.WebhookTypeConfigurationChanged,
-					Auth: &graphql.AuthInput{
-						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-					},
-					Mode:           &mode,
-					URLTemplate:    &urlTemplate,
-					InputTemplate:  &inputTemplate,
-					OutputTemplate: &outputTemplate,
-				},
-			},
-		}
 
+		providerRuntimeInput := fixtures.FixProviderRuntimeWithWebhookInput("fail-processing-while-unassigning-e2e-providerRuntime", graphql.WebhookTypeConfigurationChanged, mode, urlTemplate, inputTemplate, outputTemplate, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
 		require.NotEmpty(t, providerRuntime.ID)
@@ -3509,30 +3210,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := graphql.ApplicationTemplateInput{
-			Name:        applicationType,
-			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID,
-				Labels: graphql.Labels{
-					"applicationType": applicationType,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -3785,26 +3463,8 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		mode := graphql.WebhookModeSync
-		providerRuntimeInput := graphql.RuntimeRegisterInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels: graphql.Labels{
-				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
-			},
-			Webhooks: []*graphql.WebhookInput{
-				{
-					Type: graphql.WebhookTypeConfigurationChanged,
-					Auth: &graphql.AuthInput{
-						AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-					},
-					Mode:           &mode,
-					URLTemplate:    &urlTemplate,
-					InputTemplate:  &inputTemplate,
-					OutputTemplate: &outputTemplate,
-				},
-			},
-		}
 
+		providerRuntimeInput := fixtures.FixProviderRuntimeWithWebhookInput("formation-resynchronization-sync-e2e-providerRuntime", graphql.WebhookTypeConfigurationChanged, mode, urlTemplate, inputTemplate, outputTemplate, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
 		require.NotEmpty(t, providerRuntime.ID)
@@ -3910,30 +3570,7 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := graphql.ApplicationTemplateInput{
-			Name:        applicationType,
-			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID,
-				Labels: graphql.Labels{
-					"applicationType": applicationType,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -4280,42 +3917,7 @@ func TestFormationNotificationResynchronizationAsync(stdT *testing.T) {
 		localTenantID := "local-tenant-id"
 		appWebhookMode := graphql.WebhookModeSync
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := graphql.ApplicationTemplateInput{
-			Name:        applicationType,
-			Description: &applicationType,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID,
-				Webhooks: []*graphql.WebhookInput{
-					{
-						Type: graphql.WebhookTypeConfigurationChanged,
-						Auth: &graphql.AuthInput{
-							AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-						},
-						Mode:           &appWebhookMode,
-						URLTemplate:    &urlTemplateApplication,
-						InputTemplate:  &inputTemplateApplication,
-						OutputTemplate: &outputTemplateApplication,
-					},
-				},
-				Labels: graphql.Labels{
-					"applicationType": applicationType,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		appTemplateInput := fixtures.FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, appRegion, appNamespace, graphql.WebhookTypeConfigurationChanged, appWebhookMode, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
