@@ -14,20 +14,6 @@ type GqlConverter struct {
 	mock.Mock
 }
 
-// FromInputGraphQL provides a mock function with given fields: in, targetTenantInternalID
-func (_m *GqlConverter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment {
-	ret := _m.Called(in, targetTenantInternalID)
-
-	var r0 model.AutomaticScenarioAssignment
-	if rf, ok := ret.Get(0).(func(graphql.AutomaticScenarioAssignmentSetInput, string) model.AutomaticScenarioAssignment); ok {
-		r0 = rf(in, targetTenantInternalID)
-	} else {
-		r0 = ret.Get(0).(model.AutomaticScenarioAssignment)
-	}
-
-	return r0
-}
-
 // ToGraphQL provides a mock function with given fields: in, targetTenantExternalID
 func (_m *GqlConverter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment {
 	ret := _m.Called(in, targetTenantExternalID)
@@ -42,13 +28,13 @@ func (_m *GqlConverter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTe
 	return r0
 }
 
-type mockConstructorTestingTNewGqlConverter interface {
+type NewGqlConverterT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewGqlConverter creates a new instance of GqlConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewGqlConverter(t mockConstructorTestingTNewGqlConverter) *GqlConverter {
+func NewGqlConverter(t NewGqlConverterT) *GqlConverter {
 	mock := &GqlConverter{}
 	mock.Mock.Test(t)
 

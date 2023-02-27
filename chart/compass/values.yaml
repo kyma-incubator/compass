@@ -143,7 +143,7 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2905"
+      version: "PR-2912"
       name: compass-hydrator
     gateway:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2906"
+      version: "PR-2889"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1183,7 +1183,6 @@ global:
         - "label_definition:read"
         - "label_definition:write"
         - "automatic_scenario_assignment:read"
-        - "automatic_scenario_assignment:write"
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
         - "formation:write"
@@ -1209,7 +1208,6 @@ global:
         - "tenant:read"
         - "tenant:write"
         - "automatic_scenario_assignment:read"
-        - "automatic_scenario_assignment:write"
         - "application.auths:read"
         - "application.webhooks:read"
         - "application_template.webhooks:read"

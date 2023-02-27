@@ -90,9 +90,6 @@ graphql:
     addBundle: ["application:write"]
     updateBundle: ["application:write"]
     deleteBundle: ["application:write"]
-    createAutomaticScenarioAssignment: ["automatic_scenario_assignment:write"]
-    deleteAutomaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:write"]
-    deleteAutomaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:write"]
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
     updateTenant: ["tenant:write"]
@@ -171,7 +168,6 @@ clientCredentialsRegistrationScopes:
     - "label_definition:read"
     - "label_definition:write"
     - "automatic_scenario_assignment:read" 
-    - "automatic_scenario_assignment:write"
     - "integration_system.auths:read"
     - "application.webhooks:read"
     - "application_template.webhooks:read"
@@ -196,7 +192,6 @@ clientCredentialsRegistrationScopes:
     - "eventing:manage"
     - "tenant:read"
     - "automatic_scenario_assignment:read"
-    - "automatic_scenario_assignment:write"
     - "application.auths:read"
     - "application.webhooks:read"
     - "application_template.webhooks:read"
