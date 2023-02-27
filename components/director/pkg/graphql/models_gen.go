@@ -204,12 +204,6 @@ type AutomaticScenarioAssignmentPage struct {
 
 func (AutomaticScenarioAssignmentPage) IsPageable() {}
 
-type AutomaticScenarioAssignmentSetInput struct {
-	ScenarioName string `json:"scenarioName"`
-	// Runtimes and Applications which contain labels with equal key and value are matched
-	Selector *LabelSelectorInput `json:"selector"`
-}
-
 type BasicCredentialData struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
