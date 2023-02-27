@@ -3,7 +3,6 @@ package scenarioassignment
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -15,7 +14,6 @@ import (
 
 //go:generate mockery --exported --name=gqlConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type gqlConverter interface {
-	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment
 }
 
@@ -32,28 +30,13 @@ type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-// TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
-//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TenantFetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
-}
-
-//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationService interface {
-	CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
-	DeleteManyASAForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
-	DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error
-}
-
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher TenantFetcher, formationSvc formationService) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
 		converter:     converter,
 		tenantService: tenantService,
-		fetcher:       fetcher,
-		formationSvc:  formationSvc,
 	}
 }
 
@@ -63,47 +46,6 @@ type Resolver struct {
 	converter     gqlConverter
 	svc           asaService
 	tenantService tenantService
-	fetcher       TenantFetcher
-	formationSvc  formationService
-}
-
-// CreateAutomaticScenarioAssignment missing godoc
-func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := r.fetcher.FetchOnDemand(in.Selector.Value, tnt); err != nil {
-		return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", in.Selector.Value)
-	}
-
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "while beginning transaction")
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	targetTenant, err := r.tenantService.GetInternalTenant(ctx, in.Selector.Value)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting tenant")
-	}
-
-	convertedIn := r.converter.FromInputGraphQL(in, targetTenant)
-
-	out, err := r.formationSvc.CreateAutomaticScenarioAssignment(ctx, convertedIn)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating Assignment")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "while committing transaction")
-	}
-
-	assignment := r.converter.ToGraphQL(out, in.Selector.Value)
-
-	return &assignment, nil
 }
 
 // GetAutomaticScenarioAssignmentForScenarioName missing godoc
@@ -219,79 +161,4 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 			HasNextPage: page.PageInfo.HasNextPage,
 		},
 	}, nil
-}
-
-// DeleteAutomaticScenarioAssignmentsForSelector missing godoc
-func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, in graphql.LabelSelectorInput) ([]*graphql.AutomaticScenarioAssignment, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "while beginning transaction")
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	targetTenant, err := r.tenantService.GetInternalTenant(ctx, in.Value)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting tenant")
-	}
-
-	assignments, err := r.svc.ListForTargetTenant(ctx, targetTenant)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting the Assignments for target tenant [%v]", targetTenant)
-	}
-
-	err = r.formationSvc.DeleteManyASAForSameTargetTenant(ctx, assignments)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while deleting the Assignments for target tenant [%v]", targetTenant)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "while committing transaction")
-	}
-
-	gqlAssignments := make([]*graphql.AutomaticScenarioAssignment, 0, len(assignments))
-
-	for _, v := range assignments {
-		assignment := r.converter.ToGraphQL(*v, in.Value)
-		gqlAssignments = append(gqlAssignments, &assignment)
-	}
-
-	return gqlAssignments, nil
-}
-
-// DeleteAutomaticScenarioAssignmentForScenario missing godoc
-func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*graphql.AutomaticScenarioAssignment, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "while beginning transaction")
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	assignment, err := r.svc.GetForScenarioName(ctx, scenarioName)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting the Assignment for scenario [name=%s]", scenarioName)
-	}
-
-	err = r.formationSvc.DeleteAutomaticScenarioAssignment(ctx, assignment)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while deleting the Assignment for scenario [name=%s]", scenarioName)
-	}
-
-	targetTenant, err := r.tenantService.GetExternalTenant(ctx, assignment.TargetTenantID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting tenant")
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "while committing transaction")
-	}
-
-	gql := r.converter.ToGraphQL(assignment, targetTenant)
-
-	return &gql, nil
 }
