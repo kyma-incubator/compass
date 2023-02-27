@@ -25,7 +25,7 @@ const (
 	TestSourceType          = "application"
 	TestTarget              = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
 	TestTargetType          = "runtimeContext"
-	TestState               = "INITIAL"
+	TestStateInitial        = "INITIAL"
 	TestReadyState          = "READY"
 	TestWebhookID           = "eca98d44-aac0-4e44-898b-c394beab2e94"
 	TestReverseWebhookID    = "aecec253-b4d8-416a-be5c-a27677ee5157"
@@ -51,7 +51,7 @@ func fixFormationAssignmentGQLModel(configValue *string) *graphql.FormationAssig
 		SourceType: TestSourceType,
 		Target:     TestTarget,
 		TargetType: TestTargetType,
-		State:      TestState,
+		State:      TestStateInitial,
 		Value:      configValue,
 	}
 }
@@ -65,7 +65,7 @@ func fixFormationAssignmentModel(configValue json.RawMessage) *model.FormationAs
 		SourceType:  TestSourceType,
 		Target:      TestTarget,
 		TargetType:  TestTargetType,
-		State:       TestState,
+		State:       TestStateInitial,
 		Value:       configValue,
 	}
 }
@@ -93,7 +93,7 @@ func fixFormationAssignmentModelWithFormationID(formationID string) *model.Forma
 		SourceType:  TestSourceType,
 		Target:      TestTarget,
 		TargetType:  TestTargetType,
-		State:       TestState,
+		State:       TestStateInitial,
 		Value:       TestConfigValueRawJSON,
 	}
 }
@@ -119,7 +119,7 @@ func fixFormationAssignmentModelInput(configValue json.RawMessage) *model.Format
 		SourceType:  TestSourceType,
 		Target:      TestTarget,
 		TargetType:  TestTargetType,
-		State:       TestState,
+		State:       TestStateInitial,
 		Value:       configValue,
 	}
 }
@@ -133,7 +133,7 @@ func fixFormationAssignmentEntity(configValue string) *formationassignment.Entit
 		SourceType:  TestSourceType,
 		Target:      TestTarget,
 		TargetType:  TestTargetType,
-		State:       TestState,
+		State:       TestStateInitial,
 		Value:       repo.NewValidNullableString(configValue),
 	}
 }
@@ -147,7 +147,7 @@ func fixFormationAssignmentEntityWithFormationID(formationID string) *formationa
 		SourceType:  TestSourceType,
 		Target:      TestTarget,
 		TargetType:  TestTargetType,
-		State:       TestState,
+		State:       TestStateInitial,
 		Value:       repo.NewValidNullableString(TestConfigValueStr),
 	}
 }

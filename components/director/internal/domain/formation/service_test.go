@@ -622,7 +622,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				return engine
 			},
 			TemplateName:       testFormationTemplateName,
-			ExpectedErrMessage: "While enforcing constraints for target operation \"CREATE_FORMATION\" and constraint type \"PRE\": Test error",
+			ExpectedErrMessage: "while enforcing constraints for target operation \"CREATE_FORMATION\" and constraint type \"PRE\": Test error",
 		},
 		{
 			Name: "error when listing formation template's webhooks fails",
@@ -700,7 +700,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				return webhookRepo
 			},
 			TemplateName:       testFormationTemplateName,
-			ExpectedErrMessage: "While enforcing constraints for target operation \"CREATE_FORMATION\" and constraint type \"POST\": Test error",
+			ExpectedErrMessage: "while enforcing constraints for target operation \"CREATE_FORMATION\" and constraint type \"POST\": Test error",
 		},
 		{
 			Name: "Success when there is formation notifications",
@@ -1402,7 +1402,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			InputFormation:     in,
 			ExpectedFormation:  nil,
-			ExpectedErrMessage: "While deleting formation: An error occurred while getting formation by name: \"test-formation\": Test error",
+			ExpectedErrMessage: "while deleting formation: An error occurred while getting formation by name: \"test-formation\": Test error",
 		},
 		{
 			Name: "error when deleting formation by name fails",
@@ -1465,7 +1465,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				return engine
 			},
 			InputFormation:     in,
-			ExpectedErrMessage: "While enforcing constraints for target operation \"DELETE_FORMATION\" and constraint type \"PRE\": Test error",
+			ExpectedErrMessage: "while enforcing constraints for target operation \"DELETE_FORMATION\" and constraint type \"PRE\": Test error",
 		},
 		{
 			Name: "error while enforcing constraint post operation",
@@ -1509,7 +1509,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				return webhookRepo
 			},
 			InputFormation:     in,
-			ExpectedErrMessage: "While enforcing constraints for target operation \"DELETE_FORMATION\" and constraint type \"POST\": Test error",
+			ExpectedErrMessage: "while enforcing constraints for target operation \"DELETE_FORMATION\" and constraint type \"POST\": Test error",
 		},
 		{
 			Name: "Error when listing formation template's webhooks fails",
@@ -2317,44 +2317,42 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		string(model.CreateErrorAssignmentState),
 		string(model.DeleteErrorAssignmentState)}
 
-	testErr := errors.New("test error")
-
-	testFormation := &model.Formation{ID: FormationID, Name: "fid"}
+	testFormation := &model.Formation{ID: FormationID, Name: testFormationName}
 
 	formationAssignments := []*model.FormationAssignment{
 		{
 			ID:          "id1",
 			FormationID: FormationID,
-			Source:      "RT1",
+			Source:      RuntimeID,
 			SourceType:  model.FormationAssignmentTypeRuntime,
-			Target:      "A1",
+			Target:      ApplicationID,
 			TargetType:  model.FormationAssignmentTypeApplication,
 			State:       string(model.InitialAssignmentState),
 		},
 		{
 			ID:          "id2",
 			FormationID: FormationID,
-			Source:      "RTCTX1",
+			Source:      RuntimeContextID,
 			SourceType:  model.FormationAssignmentTypeRuntimeContext,
-			Target:      "A1",
+			Target:      ApplicationID,
 			TargetType:  model.FormationAssignmentTypeApplication,
 			State:       string(model.CreateErrorFormationState),
 		},
 		{
 			ID:          "id3",
 			FormationID: FormationID,
-			Source:      "RT1",
+			Source:      RuntimeID,
 			SourceType:  model.FormationAssignmentTypeRuntime,
-			Target:      "RTCTX1",
+			Target:      RuntimeContextID,
 			TargetType:  model.FormationAssignmentTypeRuntimeContext,
 			State:       string(model.DeletingFormationState),
 		},
 		{
 			ID:          "id4",
 			FormationID: FormationID,
-			Source:      "RTCTX1",
+			Source:      RuntimeContextID,
 			SourceType:  model.FormationAssignmentTypeRuntimeContext,
-			Target:      "RTCTX1",
+			Target:      RuntimeContextID,
 			TargetType:  model.FormationAssignmentTypeRuntimeContext,
 			State:       string(model.DeleteErrorFormationState),
 		},
@@ -2362,9 +2360,9 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	reverseAssignment := &model.FormationAssignment{
 		ID:          "id1",
 		FormationID: FormationID,
-		Source:      "A1",
+		Source:      ApplicationID,
 		SourceType:  model.FormationAssignmentTypeApplication,
-		Target:      "RT1",
+		Target:      RuntimeID,
 		TargetType:  model.FormationAssignmentTypeRuntime,
 		State:       string(model.ReadyAssignmentState),
 	}
@@ -2372,22 +2370,22 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	notificationsForAssignments := []*webhookclient.FormationAssignmentNotificationRequest{
 		{
 			Webhook: graphql.Webhook{
-				ID: "faID1",
+				ID: WebhookID,
 			},
 		},
 		{
 			Webhook: graphql.Webhook{
-				ID: "faID2",
+				ID: Webhook2ID,
 			},
 		},
 		{
 			Webhook: graphql.Webhook{
-				ID: "faID3",
+				ID: Webhook3ID,
 			},
 		},
 		{
 			Webhook: graphql.Webhook{
-				ID: "faID4",
+				ID: Webhook4ID,
 			},
 		},
 	}
@@ -2517,7 +2515,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AsaEngineFN: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, "RTCTX1", testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(false, testErr).Once()
+				engine.On("IsFormationComingFromASA", ctx, RuntimeContextID, testFormation.Name, graphql.FormationObjectTypeRuntimeContext).Return(false, testErr).Once()
 				return engine
 			},
 			ExpectedErrMessage: testErr.Error(),

@@ -2173,7 +2173,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     inputFormation,
 			ExpectedFormation:  expectedFormation,
-			ExpectedErrMessage: "While enforcing constraints for target operation",
+			ExpectedErrMessage: "while enforcing constraints for target operation",
 		},
 		{
 			Name: "error while enforcing constraints post operation",
@@ -2228,7 +2228,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     inputFormation,
 			ExpectedFormation:  expectedFormation,
-			ExpectedErrMessage: "While enforcing constraints for target operation",
+			ExpectedErrMessage: "while enforcing constraints for target operation",
 		},
 		{
 			Name: "error while getting application subtype failed to get label",

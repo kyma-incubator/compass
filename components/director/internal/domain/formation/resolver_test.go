@@ -1332,12 +1332,9 @@ func TestResolver_Status(t *testing.T) {
 }
 
 func TestResynchronizeFormationNotifications(t *testing.T) {
-	tnt := "tenant"
-	externalTnt := "external-tenant"
-	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+	ctx := tenant.SaveToContext(context.TODO(), TntInternalID, TntExternalID)
 
 	testCases := []struct {
 		Name              string
@@ -1354,7 +1351,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
 
 				return svc
@@ -1372,7 +1369,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(nil, testErr).Once()
 
 				return svc
@@ -1385,7 +1382,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(testErr)
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(testErr)
 
 				return svc
 			},
@@ -1397,7 +1394,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			FormationService: func() *automock.Service {
 				svc := &automock.Service{}
 
-				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(tnt), FormationID).Return(nil).Once()
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
 
 				return svc
@@ -1412,11 +1409,11 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			conv := &automock.Converter{}
+			conv := unusedConverter()
 			if testCase.Converter != nil {
 				conv = testCase.Converter()
 			}
-			formationService := &automock.Service{}
+			formationService := unusedService()
 			if testCase.FormationService != nil {
 				formationService = testCase.FormationService()
 			}

@@ -302,7 +302,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreCreate, joinPointDetails, fTmpl.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PreOperation)
 	}
 
 	formationName := formation.Name
@@ -342,7 +342,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, joinPointDetails, fTmpl.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
 	}
 
 	return newFormation, nil
@@ -353,7 +353,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While deleting formation")
+		return nil, errors.Wrapf(err, "while deleting formation")
 	}
 
 	formationID := ft.formation.ID
@@ -369,7 +369,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreDelete, joinPointDetails, formationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
 	}
 
 	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
@@ -401,7 +401,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostDelete, joinPointDetails, formationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PostOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PostOperation)
 	}
 
 	return ft.formation, nil
@@ -441,16 +441,16 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While assigning formation with name %q", formation.Name)
+		return nil, errors.Wrapf(err, "while assigning formation with name %q", formation.Name)
 	}
 
 	joinPointDetails, err := s.prepareDetailsForAssign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While preparing joinpoint details for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while preparing joinpoint details for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
 	}
 
 	formationFromDB := ft.formation
@@ -501,7 +501,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PostOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PostOperation)
 	}
 
 	return formationFromDB, nil
@@ -721,23 +721,23 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	formationName := formation.Name
 	ft, err := s.getFormationWithTemplate(ctx, formationName, tnt)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While unassigning formation with name %q", formationName)
+		return nil, errors.Wrapf(err, "while unassigning formation with name %q", formationName)
 	}
 
 	joinPointDetails, err := s.prepareDetailsForUnassign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While preparing joinpoint details for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while preparing joinpoint details for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
 
 	formationFromDB := ft.formation
 
 	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
 	if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
-		return nil, errors.Wrapf(err, "While unassigning from formation")
+		return nil, errors.Wrapf(err, "while unassigning from formation")
 	}
 	if apperrors.IsCannotUnassignObjectComingFromASAError(err) || apperrors.IsNotFoundError(err) {
 		// No need to enforce post-constraints as nothing is done
@@ -753,7 +753,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
@@ -784,7 +784,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		// It is important to do the list in the inner transaction
 		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		err = tx.Commit()
@@ -796,7 +796,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formationName)
 			err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is important to do the re-assign in the outer transaction.
 			if err != nil {
-				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+				return nil, errors.Wrapf(err, "while re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
 		}
 
@@ -808,7 +808,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
@@ -840,7 +840,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		// It is important to do the list in the inner transaction
 		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		err = tx.Commit()
@@ -852,7 +852,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
 			err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is importnat to do the re-assign in the outer transaction.
 			if err != nil {
-				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+				return nil, errors.Wrapf(err, "while re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
 		}
 
@@ -870,13 +870,13 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PostOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PostOperation)
 	}
 
 	return formationFromDB, nil
 }
 
-// ResynchronizeFormationNotifications sends all notifications that are in error or pending state
+// ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -946,26 +946,26 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	if len(failedDeleteErrorFormationAssignments) > 0 {
 		formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
 		if err != nil {
-			return errors.Wrapf(err, "While getting formation with ID %q for tenant %q", tenantID, formationID)
+			return errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
 		}
 
-		objectIDsSet := make(map[string]graphql.FormationObjectType, len(failedDeleteErrorFormationAssignments)*2)
+		objectIDToTypeMap := make(map[string]graphql.FormationObjectType, len(failedDeleteErrorFormationAssignments)*2)
 		for _, assignment := range failedDeleteErrorFormationAssignments {
-			objectIDsSet[assignment.Source] = formationAssignmentTypeToFormationObjectType(assignment.SourceType)
-			objectIDsSet[assignment.Target] = formationAssignmentTypeToFormationObjectType(assignment.TargetType)
+			objectIDToTypeMap[assignment.Source] = formationAssignmentTypeToFormationObjectType(assignment.SourceType)
+			objectIDToTypeMap[assignment.Target] = formationAssignmentTypeToFormationObjectType(assignment.TargetType)
 		}
 
-		for objectID, objectType := range objectIDsSet {
+		for objectID, objectType := range objectIDToTypeMap {
 			leftAssignmentsInFormation, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
 			if err != nil {
-				return errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+				return errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 			}
 
 			if len(leftAssignmentsInFormation) == 0 {
-				log.C(ctx).Infof("There are no formation assignments left for sync formation. Unassigning the object with type %q and ID %q to formation %q", objectID, objectID, formationID)
+				log.C(ctx).Infof("log.C(ctx).Infof(\"There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationID, objectType, objectID, formationID)
 				err = s.unassign(ctx, tenantID, objectID, objectType, formation)
 				if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
-					return errors.Wrapf(err, "While unassigning the object with type %q and ID %q that is unassigned", objectType, objectID)
+					return errors.Wrapf(err, "while unassigning the object with type %q and ID %q", objectType, objectID)
 				}
 			}
 		}
@@ -1452,7 +1452,7 @@ func (s *service) setFormationToErrorState(ctx context.Context, formation *model
 
 	marshaledErr, err := json.Marshal(formationError)
 	if err != nil {
-		return errors.Wrapf(err, "While preparing error message for formation with ID: %q", formation.ID)
+		return errors.Wrapf(err, "while preparing error message for formation with ID: %q", formation.ID)
 	}
 	formation.Error = marshaledErr
 

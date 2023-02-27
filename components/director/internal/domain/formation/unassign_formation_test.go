@@ -2720,7 +2720,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "While enforcing constraints for target operation",
+			ExpectedErrMessage: "while enforcing constraints for target operation",
 		},
 		{
 			Name: "error while enforcing pre constraints",
@@ -2756,7 +2756,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "While enforcing constraints for target operation",
+			ExpectedErrMessage: "while enforcing constraints for target operation",
 		},
 		{
 			Name: "error while preparing details",
@@ -2787,7 +2787,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "While preparing joinpoint details for target operation",
+			ExpectedErrMessage: "while preparing joinpoint details for target operation",
 		},
 	}
 

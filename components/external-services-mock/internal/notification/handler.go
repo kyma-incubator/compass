@@ -76,6 +76,10 @@ type Response struct {
 	RequestBody   json.RawMessage
 }
 
+type responseFn func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string)
+
+var NoopResponseFn = func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {}
+
 func NewHandler(notificationConfiguration NotificationsConfiguration) *Handler {
 	return &Handler{
 		mappings:          make(map[string][]Response),
@@ -313,14 +317,14 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) AsyncNoResponseAssign(writer http.ResponseWriter, r *http.Request) {
-	h.asyncResponse(writer, r, Assign, "", func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {})
+	h.asyncResponse(writer, r, Assign, "", NoopResponseFn)
 }
 
 func (h *Handler) AsyncNoResponseUnassign(writer http.ResponseWriter, r *http.Request) {
-	h.asyncResponse(writer, r, Unassign, "", func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {})
+	h.asyncResponse(writer, r, Unassign, "", NoopResponseFn)
 }
 
-func (h *Handler) asyncResponse(writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string)) {
+func (h *Handler) asyncResponse(writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc responseFn) {
 	ctx := r.Context()
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
@@ -354,9 +358,7 @@ func (h *Handler) asyncResponse(writer http.ResponseWriter, r *http.Request, ope
 		response.ApplicationID = &applicationId
 	}
 
-	mappings := h.mappings[id]
-	mappings = append(h.mappings[id], response)
-	h.mappings[id] = mappings
+	h.mappings[id] = append(h.mappings[id], response)
 
 	formationID := gjson.Get(string(bodyBytes), "ucl-formation-id").String()
 	if formationID == "" {

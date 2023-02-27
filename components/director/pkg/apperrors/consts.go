@@ -103,5 +103,5 @@ const (
 	// ShouldBeOwnerMsg is the error message for unauthorized due to missing owner access errors.
 	ShouldBeOwnerMsg = "Owner access is needed for resource modification"
 	// CannotUnassignObjectFromASA  is the error message returned when trying to unassign a Runtime Context that comes from an ASA.
-	CannotUnassignObjectFromASA = "Can not unassign object with ID coming from ASA"
+	CannotUnassignObjectFromASA = "Cannot unassign object with ID coming from ASA"
 )

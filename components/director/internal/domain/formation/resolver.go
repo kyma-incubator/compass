@@ -452,7 +452,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	return gqlFormationStatuses, nil
 }
 
-// ResynchronizeFormationNotifications sends all notifications that are in error or pending state
+// ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

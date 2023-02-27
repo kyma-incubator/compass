@@ -770,32 +770,29 @@ func TestService_GetAssignmentsForFormationWithStates(t *testing.T) {
 
 	testCases := []struct {
 		Name                    string
-		Context                 context.Context
 		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
 		ExpectedOutput          []*model.FormationAssignment
 		ExpectedErrorMsg        string
 	}{
 		{
-			Name:    "Success",
-			Context: ctxWithTenant,
+			Name: "Success",
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("GetAssignmentsForFormationWithStates", ctxWithTenant, TestTenantID, TestFormationID, []string{TestState}).Return(faModels, nil).Once()
+				repo.On("GetAssignmentsForFormationWithStates", ctxWithTenant, TestTenantID, TestFormationID, []string{TestStateInitial}).Return(faModels, nil).Once()
 				return repo
 			},
 			ExpectedOutput:   faModels,
 			ExpectedErrorMsg: "",
 		},
 		{
-			Name:    "Error when listing formation assignments by formations IDs",
-			Context: ctxWithTenant,
+			Name: "Error when listing formation assignments by formations IDs",
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("GetAssignmentsForFormationWithStates", ctxWithTenant, TestTenantID, TestFormationID, []string{TestState}).Return(nil, testErr).Once()
+				repo.On("GetAssignmentsForFormationWithStates", ctxWithTenant, TestTenantID, TestFormationID, []string{TestStateInitial}).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedOutput:   nil,
-			ExpectedErrorMsg: "while getting formation assignments with error states for formation with ID",
+			ExpectedErrorMsg: "while getting formation assignments with error or initial states for formation with ID",
 		},
 	}
 
@@ -809,7 +806,7 @@ func TestService_GetAssignmentsForFormationWithStates(t *testing.T) {
 			svc := formationassignment.NewService(faRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
-			r, err := svc.GetAssignmentsForFormationWithStates(testCase.Context, TestTenantID, TestFormationID, []string{TestState})
+			r, err := svc.GetAssignmentsForFormationWithStates(ctxWithTenant, TestTenantID, TestFormationID, []string{TestStateInitial})
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
