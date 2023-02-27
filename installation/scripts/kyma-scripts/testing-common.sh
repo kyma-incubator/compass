@@ -86,7 +86,7 @@ function getContainerFromPod() {
 
 function printLogsFromPod() {
     local namespace=$1 pod=$2
-    local tailLimit=2000 bytesLimit=500000
+    local tailLimit=4000 bytesLimit=500000
     log "Fetching logs from '${pod}' with options tailLimit=${tailLimit} and bytesLimit=${bytesLimit}" nc bold
     testPod=$(getContainerFromPod ${namespace} ${pod})
     result=$(kubectl $(context_arg)  logs --tail=${tailLimit} --limit-bytes=${bytesLimit} -n ${namespace} -c ${testPod} ${pod})
