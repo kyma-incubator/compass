@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2906"
+      version: "PR-2917"
       name: compass-director
     hydrator:
       dir:
