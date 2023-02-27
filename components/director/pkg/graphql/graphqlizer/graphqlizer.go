@@ -736,14 +736,6 @@ func (g *Graphqlizer) LabelSelectorInputToGQL(in graphql.LabelSelectorInput) (st
 	}`)
 }
 
-// AutomaticScenarioAssignmentSetInputToGQL missing godoc
-func (g *Graphqlizer) AutomaticScenarioAssignmentSetInputToGQL(in graphql.AutomaticScenarioAssignmentSetInput) (string, error) {
-	return g.genericToGQL(in, `{
-		scenarioName: "{{ .ScenarioName }}"
-		selector: {{- LabelSelectorInputToGQL .Selector }}
-	}`)
-}
-
 // WriteTenantsInputToGQL creates tenant input for writeTenants mutation from multiple tenants
 func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingInput) (string, error) {
 	return g.genericToGQL(in, `
