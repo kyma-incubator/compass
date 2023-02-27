@@ -823,14 +823,18 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	destApp, err := s.Get(ctx, destID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting destination application")
-	}
-
 	srcApp, err := s.Get(ctx, srcID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting source application")
+	}
+
+	if err := s.ensureApplicationNotPartOfAnyScenario(ctx, appTenant, srcID); err != nil {
+		return nil, err
+	}
+
+	destApp, err := s.Get(ctx, destID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting destination application")
 	}
 
 	destAppLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, destID)
@@ -908,36 +912,18 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	return s.appRepo.GetByID(ctx, appTenant, destID)
 }
 
-// handleMergeLabels merges source labels into destination labels. model.ScenariosKey is merged manually as well due to limitation
-// of the lib that is used. The last manually merged label is managedKey which is updated only if the destination or
-// source label have a value "true"
+// handleMergeLabels merges source labels into destination labels. managedKey label is merged manually.
+// It is updated only if the source or destination label have a value "true"
 func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
-	srcScenarios, ok := srcAppLabels[model.ScenariosKey]
-	if !ok {
-		log.C(ctx).Infof("No %q label found in source object.", model.ScenariosKey)
-		srcScenarios = &model.Label{Value: make([]interface{}, 0)}
-	}
-
 	destScenarios, ok := destAppLabels[model.ScenariosKey]
 	if !ok {
 		log.C(ctx).Infof("No %q label found in destination object.", model.ScenariosKey)
 		destScenarios = &model.Label{Value: make([]interface{}, 0)}
 	}
 
-	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcScenarios.Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting source application labels to string slice")
-	}
-
 	destScenariosStrSlice, err := label.ValueToStringsSlice(destScenarios.Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting destination application labels to string slice")
-	}
-
-	for _, srcScenario := range srcScenariosStrSlice {
-		if !str.ContainsInSlice(destScenariosStrSlice, srcScenario) {
-			destScenariosStrSlice = append(destScenariosStrSlice, srcScenario)
-		}
 	}
 
 	if err := mergo.Merge(&destAppLabels, srcAppLabels); err != nil {

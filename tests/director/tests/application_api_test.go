@@ -1872,18 +1872,18 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
 	t.Logf("Assign application to formation %s", newFormation)
-	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(outputDestApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 	var assignFormation graphql.Formation
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	defer func() {
-		t.Logf("Unassigning src-app from formation %s", newFormation)
-		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
+		t.Logf("Unassigning dest-app from formation %s", newFormation)
+		request := fixtures.FixUnassignFormationRequest(outputDestApp.ID, string(graphql.FormationObjectTypeApplication), newFormation)
 		var response graphql.Formation
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &response)
 		if nil == err {
-			t.Logf("Src-app was unassigned from formation %s", newFormation)
+			t.Logf("Dest-app was unassigned from formation %s", newFormation)
 		} else {
-			t.Logf("Src-app was not removed from formation %s: %v", newFormation, err)
+			t.Logf("Dest-app was not removed from formation %s: %v", newFormation, err)
 		}
 	}()
 	require.NoError(t, err)
