@@ -24,7 +24,7 @@ NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
 POSTGRES_VERSION="12"
 
-CONTAINER_REGISTRY=$(grep $CONTAINER_REGISTRY_KEY $CHART_FILE -A 1 -m 1 | tail -n 1 | rev | cut -d' ' -f 1 | rev)
+CONTAINER_REGISTRY=$(grep $CONTAINER_REGISTRY_KEY $CHART_FILE -A 1 -m 1 | tail -n 1 | tr -d ' ' | cut -d':' -f 2)
 IMAGE_VERSION=$(grep $IMG_NAME $CHART_FILE -B 1 | head -n 1 | cut -d'"' -f2)
 IMAGE_PULL_LOCATION=$CONTAINER_REGISTRY/$IMG_NAME:$IMAGE_VERSION
 
