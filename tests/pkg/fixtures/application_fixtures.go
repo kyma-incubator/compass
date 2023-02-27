@@ -27,8 +27,7 @@ func FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, region
 func fixApplicationTemplateWebhook(applicationType, localTenantID, region, namespace string, webhookInput *graphql.WebhookInput) graphql.ApplicationTemplateInput {
 	var webhooks []*graphql.WebhookInput = nil
 	if webhookInput != nil {
-		webhooks = make([]*graphql.WebhookInput, 0, 1)
-		webhooks[0] = webhookInput
+		webhooks = []*graphql.WebhookInput{webhookInput}
 	}
 	return graphql.ApplicationTemplateInput{
 		Name:        applicationType,

@@ -6529,7 +6529,7 @@ type Mutation {
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
 	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
-	resynchronizeFormationNotifications(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	resynchronizeFormationNotifications(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -20867,7 +20867,7 @@ func (ec *executionContext) _Mutation_resynchronizeFormationNotifications(ctx co
 			return ec.resolvers.Mutation().ResynchronizeFormationNotifications(rctx, args["formationID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createFormation")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.resynchronizeFormationNotifications")
 			if err != nil {
 				return nil, err
 			}

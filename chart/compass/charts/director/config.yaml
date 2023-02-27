@@ -73,6 +73,7 @@ graphql:
     deleteFormation: ["formation:write"]
     assignFormation: [ "formation:write" ]
     unassignFormation: [ "formation:write" ]
+    resynchronizeFormationNotifications: [ "formation:write" ]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
     setApplicationLabel: ["application:write"]

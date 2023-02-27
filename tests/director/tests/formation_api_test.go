@@ -1077,7 +1077,7 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -1293,7 +1293,7 @@ func TestFormationAssignmentNotifications(stdT *testing.T) {
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -2619,7 +2619,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			assert.Len(t, scenarios, 1)
 			assert.Contains(t, scenarios, providerFormationName)
 
-			t.Logf("Check that the application with ID: %s is assigned to formation: %s", actualApp.ID, providerFormationName)
+			t.Logf("Check that the application with ID: %q is assigned to formation: %s", actualApp.ID, providerFormationName)
 			app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 			scenarios, hasScenarios = app.Labels["scenarios"]
 			assert.True(t, hasScenarios)
@@ -2647,7 +2647,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			assert.Len(t, scenarios, 1)
 			assert.Contains(t, scenarios, providerFormationName)
 
-			t.Logf("Check that the application with ID: %s is still assigned to formation: %s", actualApp.ID, providerFormationName)
+			t.Logf("Check that the application with ID: %q is still assigned to formation: %s", actualApp.ID, providerFormationName)
 			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 			scenarios, hasScenarios = app.Labels["scenarios"]
 			assert.True(t, hasScenarios)
@@ -2713,7 +2713,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			assert.Len(t, scenarios, 1)
 			assert.Contains(t, scenarios, providerFormationName)
 
-			t.Logf("Check that application with ID %q is still assigned from formation %s", actualApp.ID, providerFormationName)
+			t.Logf("Check that application with ID %q is still assigned to formation %s", actualApp.ID, providerFormationName)
 			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 			scenarios, hasScenarios = app.Labels["scenarios"]
 			assert.True(t, hasScenarios)
@@ -2731,7 +2731,7 @@ func TestFormationAssignments(stdT *testing.T) {
 			scenarios, hasScenarios = actualRtmCtx.Labels["scenarios"]
 			assert.False(t, hasScenarios)
 
-			t.Logf("Check that application with ID %q is still assigned from formation %s", actualApp.ID, providerFormationName)
+			t.Logf("Check that application with ID %q is still assigned to formation %s", actualApp.ID, providerFormationName)
 			app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 			scenarios, hasScenarios = app.Labels["scenarios"]
 			assert.True(t, hasScenarios)
@@ -2911,7 +2911,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -3210,7 +3210,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -3570,7 +3570,7 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 		appNamespace := "compass.test"
 		localTenantID := "local-tenant-id"
 		t.Logf("Create application template for type %q", applicationType)
-		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(appRegion, localTenantID, appRegion, appNamespace)
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, appRegion, appNamespace)
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
@@ -3697,7 +3697,7 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 		}
 		require.True(t, unassignNotificationFound)
 
-		t.Logf("Check that the application with ID: %s is still assigned to formation: %s", actualApp.ID, providerFormationName)
+		t.Logf("Check that the application with ID: %q is still assigned to formation: %s", actualApp.ID, providerFormationName)
 		app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 		scenarios, hasScenarios := app.Labels["scenarios"]
 		assert.True(t, hasScenarios)
@@ -3718,7 +3718,7 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 4)
 
-		t.Logf("Check that the application with ID: %s is unassigned from formation after resyonchronization: %s", actualApp.ID, providerFormationName)
+		t.Logf("Check that the application with ID: %q is unassigned from formation %s from formation after resyonchronization", actualApp.ID, providerFormationName)
 		assert.Contains(t, scenarios, providerFormationName)
 		app = fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApp.ID)
 		scenarios, hasScenarios = app.Labels["scenarios"]
