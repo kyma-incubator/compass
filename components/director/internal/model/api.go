@@ -28,6 +28,8 @@ type APIDefinition struct {
 	OrdID                                   *string
 	ShortDescription                        *string
 	SystemInstanceAware                     *bool
+	PolicyLevel                             *string
+	CustomPolicyLevel                       *string
 	APIProtocol                             *string
 	Tags                                    json.RawMessage
 	Countries                               json.RawMessage
@@ -69,6 +71,8 @@ type APIDefinitionInput struct {
 	OrdID                                   *string                       `json:"ordId"`
 	ShortDescription                        *string                       `json:"shortDescription"`
 	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
+	PolicyLevel                             *string                       `json:"policyLevel"`
+	CustomPolicyLevel                       *string                       `json:"customPolicyLevel"`
 	APIProtocol                             *string                       `json:"apiProtocol"`
 	Tags                                    json.RawMessage               `json:"tags"`
 	Countries                               json.RawMessage               `json:"countries"`
@@ -187,6 +191,8 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		OrdID:               a.OrdID,
 		ShortDescription:    a.ShortDescription,
 		SystemInstanceAware: a.SystemInstanceAware,
+		PolicyLevel:         a.PolicyLevel,
+		CustomPolicyLevel:   a.CustomPolicyLevel,
 		APIProtocol:         a.APIProtocol,
 		Tags:                a.Tags,
 		Countries:           a.Countries,
