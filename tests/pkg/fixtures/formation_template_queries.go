@@ -94,3 +94,18 @@ func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient
 
 	return &formationTemplate
 }
+
+func UpdateFormationTemplateExpectError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string, in graphql.FormationTemplateInput) {
+	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+	require.NoError(t, err)
+
+	updateFormationTemplateRequest := FixUpdateFormationTemplateRequest(id, updatedFormationTemplateInputGQLString)
+	output := graphql.FormationTemplate{}
+
+	// WHEN
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, updateFormationTemplateRequest, &output)
+
+	//THEN
+	require.Error(t, err)
+	fmt.Println("Error: ", err.Error())
+}

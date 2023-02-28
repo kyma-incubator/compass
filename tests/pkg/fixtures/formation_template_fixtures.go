@@ -52,6 +52,25 @@ func FixInvalidFormationTemplateInputWithRuntimeTypes(formationName string, runt
 	}
 }
 
+func FixInvalidFormationTemplateInputWithoutArtifactKind(formationName string, runtimeType string) graphql.FormationTemplateInput {
+	return graphql.FormationTemplateInput{
+		Name:                   formationName,
+		ApplicationTypes:       []string{"app-type-1", "app-type-2"},
+		RuntimeTypes:           []string{runtimeType},
+		RuntimeTypeDisplayName: str.Ptr("runtime-type-display-name"),
+	}
+}
+
+func FixInvalidFormationTemplateInputWithoutDisplayName(formationName string, runtimeType string) graphql.FormationTemplateInput {
+	subscription := graphql.ArtifactTypeSubscription
+	return graphql.FormationTemplateInput{
+		Name:                formationName,
+		ApplicationTypes:    []string{"app-type-1", "app-type-2"},
+		RuntimeTypes:        []string{runtimeType},
+		RuntimeArtifactKind: &subscription,
+	}
+}
+
 func FixFormationTemplateInputWithTypes(formationName string, runtimeType string, applicationTypes []string) graphql.FormationTemplateInput {
 	in := FixFormationTemplateInput(formationName)
 	in.RuntimeTypes = []string{runtimeType}
