@@ -13,6 +13,7 @@ import (
 )
 
 // VersionConverter converts Version between model.Version, graphql.Version and repo-layer version.Version
+//
 //go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -22,6 +23,7 @@ type VersionConverter interface {
 }
 
 // SpecConverter converts Specifications between the model.Spec service-layer representation and the graphql-layer representation graphql.EventSpec.
+//
 //go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecConverter interface {
 	ToGraphQLEventSpec(in *model.Spec) (*graphql.EventSpec, error)
@@ -143,6 +145,8 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		OrdID:               repo.StringPtrFromNullableString(entity.OrdID),
 		ShortDescription:    repo.StringPtrFromNullableString(entity.ShortDescription),
 		SystemInstanceAware: repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
+		PolicyLevel:         repo.StringPtrFromNullableString(entity.PolicyLevel),
+		CustomPolicyLevel:   repo.StringPtrFromNullableString(entity.CustomPolicyLevel),
 		Tags:                repo.JSONRawMessageFromNullableString(entity.Tags),
 		Countries:           repo.JSONRawMessageFromNullableString(entity.Countries),
 		Links:               repo.JSONRawMessageFromNullableString(entity.Links),
@@ -187,6 +191,8 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		OrdID:               repo.NewNullableString(eventModel.OrdID),
 		ShortDescription:    repo.NewNullableString(eventModel.ShortDescription),
 		SystemInstanceAware: repo.NewNullableBool(eventModel.SystemInstanceAware),
+		PolicyLevel:         repo.NewNullableString(eventModel.PolicyLevel),
+		CustomPolicyLevel:   repo.NewNullableString(eventModel.CustomPolicyLevel),
 		Tags:                repo.NewNullableStringFromJSONRawMessage(eventModel.Tags),
 		Countries:           repo.NewNullableStringFromJSONRawMessage(eventModel.Countries),
 		Links:               repo.NewNullableStringFromJSONRawMessage(eventModel.Links),

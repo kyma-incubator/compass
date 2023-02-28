@@ -433,7 +433,7 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 				notificationsGenerator = testCase.NotificationsGenerator()
 			}
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, nil, notificationsGenerator)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationsGenerator)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateFormationAssignmentNotifications(ctx, TntInternalID, testCase.ObjectID, testCase.InputFormation, testCase.OperationType, testCase.ObjectType)
@@ -455,60 +455,51 @@ func Test_NotificationsService_GenerateNotifications(t *testing.T) {
 
 func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 	ctx := context.Background()
-	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID)
 	formationInput := fixFormationModelWithoutError()
 
 	testCases := []struct {
 		name                              string
-		formationTemplateWebhooks         []*model.Webhook
-		webhookConv                       func() *automock.WebhookConverter
-		tenantRepo                        func() *automock.TenantRepository
+		tenantRepoFn                      func() *automock.TenantRepository
+		notificationsGeneratorFn          func() *automock.NotificationsGenerator
 		expectedErrMsg                    string
 		expectedFormationNotificationReqs []*webhookclient.FormationNotificationRequest
 	}{
 		{
-			name:                      "Successfully generate formation notifications",
-			formationTemplateWebhooks: formationLifecycleWebhooks,
-			webhookConv: func() *automock.WebhookConverter {
-				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
-				return webhookConv
-			},
-			tenantRepo: func() *automock.TenantRepository {
+			name: "Successfully generate formation notifications",
+			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
 				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
 				return tenantRepo
+			},
+			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
+				notificationGenerator := &automock.NotificationsGenerator{}
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(formationNotificationRequests, nil).Once()
+				return notificationGenerator
 			},
 			expectedFormationNotificationReqs: formationNotificationRequests,
 		},
 		{
-			name:                      "Success when there are no formation template webhooks",
-			formationTemplateWebhooks: emptyFormationLifecycleWebhooks,
-		},
-		{
-			name:                      "Error when extracting customer tenant context fails",
-			formationTemplateWebhooks: formationLifecycleWebhooks,
-			tenantRepo: func() *automock.TenantRepository {
-				tenantRepo := &automock.TenantRepository{}
-				tenantRepo.On("Get", ctx, TntInternalID).Return(nil, testErr).Once()
-				return tenantRepo
+			name: "Error when extracting customer tenant context fails",
+			tenantRepoFn: func() *automock.TenantRepository {
+				repo := &automock.TenantRepository{}
+				repo.On("Get", ctx, TntInternalID).Return(nil, testErr)
+				return repo
 			},
 			expectedErrMsg: testErr.Error(),
 		},
 		{
-			name:                      "Error when converting formation template webhook to graphql one",
-			formationTemplateWebhooks: formationLifecycleWebhooks,
-			webhookConv: func() *automock.WebhookConverter {
-				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleWebhook).Return(nil, testErr).Once()
-				return webhookConv
-			},
-			tenantRepo: func() *automock.TenantRepository {
+			name: "Error when generating formation lifecycle notifications fail",
+			tenantRepoFn: func() *automock.TenantRepository {
 				tenantRepo := &automock.TenantRepository{}
 				tenantRepo.On("Get", ctx, TntInternalID).Return(gaTenantObject, nil).Once()
 				tenantRepo.On("GetCustomerIDParentRecursively", ctx, TntInternalID).Return(TntCustomerID, nil).Once()
 				return tenantRepo
+			},
+			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
+				notificationGenerator := &automock.NotificationsGenerator{}
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				return notificationGenerator
 			},
 			expectedErrMsg: testErr.Error(),
 		},
@@ -516,21 +507,21 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			webhookConv := unusedWebhookConverter()
-			if testCase.webhookConv != nil {
-				webhookConv = testCase.webhookConv()
-			}
-
 			tenantRepo := unusedTenantRepo()
-			if testCase.tenantRepo != nil {
-				tenantRepo = testCase.tenantRepo()
+			if testCase.tenantRepoFn != nil {
+				tenantRepo = testCase.tenantRepoFn()
 			}
 
-			defer mock.AssertExpectationsForObjects(t, webhookConv, tenantRepo)
+			notificationGenerator := unusedNotificationsGenerator()
+			if testCase.notificationsGeneratorFn != nil {
+				notificationGenerator = testCase.notificationsGeneratorFn()
+			}
 
-			notificationSvc := formation.NewNotificationService(tenantRepo, nil, webhookConv, nil)
+			defer mock.AssertExpectationsForObjects(t, tenantRepo, notificationGenerator)
 
-			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, testCase.formationTemplateWebhooks, TntInternalID, formationInput, FormationTemplateID, model.CreateFormation)
+			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator)
+
+			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, formationLifecycleWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation)
 
 			if testCase.expectedErrMsg != "" {
 				require.Error(t, err)
@@ -690,7 +681,7 @@ func Test_NotificationsService_SendNotification(t *testing.T) {
 				webhookClient = testCase.WebhookClientFN()
 			}
 
-			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil, nil)
+			notificationSvc := formation.NewNotificationService(nil, webhookClient, nil)
 
 			// WHEN
 			_, err := notificationSvc.SendNotification(ctx, testCase.InputRequest)
