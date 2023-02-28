@@ -571,7 +571,7 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
-		runtimeArtifactKind: {{.RuntimeArtifactKind}}
+		runtimeArtifactKind: "{{.RuntimeArtifactKind}}"
 		{{- if .LeadingProductIDs }} 
 		leadingProductIDs: [
 			{{- range $i, $e := .LeadingProductIDs }}
