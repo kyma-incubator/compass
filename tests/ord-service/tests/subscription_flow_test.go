@@ -165,6 +165,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, app.ID)
 
+		// Register application directly in subscriptionConsumerSubaccountID (that is in the formation) and validate that this system won't be visible for the SaaS app calling as part of the formation. That way we test the ORD filtering based on formations.
+		subaccountApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-test-subaccount-app", subscriptionConsumerSubaccountID)
+		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &subaccountApp)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, subaccountApp.ID)
+
 		// Register consumer application
 		const localTenantID = "localTenantID"
 		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), localTenantID, secondaryTenant)
@@ -181,16 +187,18 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		bundle := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput)
 		require.NotEmpty(stdT, bundle.ID)
 
+		formationTmplName := "e2e-test-formation-template-name"
+		applicationType := util.ApplicationTypeC4C
+
+		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
+		ft := fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType)}, graphql.ArtifactTypeSubscription)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+
 		consumerFormationName := "consumer-test-scenario"
-		stdT.Logf("Creating formation with name %s...", consumerFormationName)
-		createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
-		executeGQLRequest(stdT, ctx, createFormationReq, consumerFormationName, secondaryTenant)
-		defer func() {
-			stdT.Logf("Deleting formation with name: %s...", consumerFormationName)
-			deleteRequest := fixtures.FixDeleteFormationRequest(consumerFormationName)
-			executeGQLRequest(stdT, ctx, deleteRequest, consumerFormationName, secondaryTenant)
-			stdT.Logf("Successfully deleted formation with name: %s...", consumerFormationName)
-		}()
+		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName, &formationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName)
+		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
 		stdT.Logf("Assign application to formation %s", consumerFormationName)
@@ -376,6 +384,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, app.ID)
 
+		// Register application directly in subscriptionConsumerSubaccountID (that is in the formation) and validate that this system won't be visible for the SaaS app calling as part of the formation. That way we test the ORD filtering based on formations.
+		subaccountApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-test-subaccount-app", subscriptionConsumerSubaccountID)
+		defer fixtures.CleanupApplication(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &subaccountApp)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, subaccountApp.ID)
+
 		// Register consumer application
 		const localTenantID = "localTenantID"
 		consumerApp, err := fixtures.RegisterApplicationWithTypeAndLocalTenantID(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), localTenantID, secondaryTenant)
@@ -392,11 +406,18 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		bundle := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput)
 		require.NotEmpty(stdT, bundle.ID)
 
+		formationTmplName := "e2e-test-formation-template-name"
+		applicationType := util.ApplicationTypeC4C
+
+		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
+		ft := fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType)}, graphql.ArtifactTypeSubscription)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+
 		consumerFormationName := "consumer-test-scenario"
-		stdT.Logf("Creating formation with name %s...", consumerFormationName)
-		createFormationReq := fixtures.FixCreateFormationRequest(consumerFormationName)
-		executeGQLRequest(stdT, ctx, createFormationReq, consumerFormationName, secondaryTenant)
-		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName)
+		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName, &formationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName)
+		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
 		stdT.Logf("Assign application to formation %s", consumerFormationName)
