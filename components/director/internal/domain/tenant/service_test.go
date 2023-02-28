@@ -139,6 +139,7 @@ func TestService_GetInternalTenant(t *testing.T) {
 func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testID, testExternal)
+	ctxWithEmptyTenants := tenant.SaveToContext(context.TODO(), "", "")
 
 	testCases := []struct {
 		Name                string
@@ -166,6 +167,14 @@ func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) 
 				return tenantMappingRepo
 			},
 			ExpectedOutput: testParentID,
+		},
+		{
+			Name:    "Success when empty tenant",
+			Context: ctxWithEmptyTenants,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				return &automock.TenantMappingRepository{}
+			},
+			ExpectedOutput: "",
 		},
 		{
 			Name:    "Error when getting the internal tenant",
