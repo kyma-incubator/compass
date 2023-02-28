@@ -792,7 +792,7 @@ func TestService_GetAssignmentsForFormationWithStates(t *testing.T) {
 				return repo
 			},
 			ExpectedOutput:   nil,
-			ExpectedErrorMsg: "while getting formation assignments with error or initial states for formation with ID",
+			ExpectedErrorMsg: "while getting formation assignments with states for formation with ID",
 		},
 	}
 
