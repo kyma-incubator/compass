@@ -447,86 +447,83 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddAPIDefinitionToBundle                      func(childComplexity int, bundleID string, in APIDefinitionInput) int
-		AddBundle                                     func(childComplexity int, applicationID string, in BundleCreateInput) int
-		AddDocumentToBundle                           func(childComplexity int, bundleID string, in DocumentInput) int
-		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
-		AddWebhook                                    func(childComplexity int, applicationID *string, applicationTemplateID *string, runtimeID *string, formationTemplateID *string, in WebhookInput) int
-		AssignFormation                               func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
-		AttachConstraintToFormationTemplate           func(childComplexity int, constraintID string, formationTemplateID string) int
-		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
-		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
-		CreateCertificateSubjectMapping               func(childComplexity int, in CertificateSubjectMappingInput) int
-		CreateFormation                               func(childComplexity int, formation FormationInput) int
-		CreateFormationConstraint                     func(childComplexity int, formationConstraint FormationConstraintInput) int
-		CreateFormationTemplate                       func(childComplexity int, in FormationTemplateInput) int
-		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
-		DeleteAPIDefinition                           func(childComplexity int, id string) int
-		DeleteApplicationLabel                        func(childComplexity int, applicationID string, key string) int
-		DeleteApplicationTemplate                     func(childComplexity int, id string) int
-		DeleteAutomaticScenarioAssignmentForScenario  func(childComplexity int, scenarioName string) int
-		DeleteAutomaticScenarioAssignmentsForSelector func(childComplexity int, selector LabelSelectorInput) int
-		DeleteBundle                                  func(childComplexity int, id string) int
-		DeleteBundleInstanceAuth                      func(childComplexity int, authID string) int
-		DeleteCertificateSubjectMapping               func(childComplexity int, id string) int
-		DeleteDefaultEventingForApplication           func(childComplexity int, appID string) int
-		DeleteDocument                                func(childComplexity int, id string) int
-		DeleteEventDefinition                         func(childComplexity int, id string) int
-		DeleteFormation                               func(childComplexity int, formation FormationInput) int
-		DeleteFormationConstraint                     func(childComplexity int, id string) int
-		DeleteFormationTemplate                       func(childComplexity int, id string) int
-		DeleteRuntimeLabel                            func(childComplexity int, runtimeID string, key string) int
-		DeleteSystemAuthForApplication                func(childComplexity int, authID string) int
-		DeleteSystemAuthForIntegrationSystem          func(childComplexity int, authID string) int
-		DeleteSystemAuthForRuntime                    func(childComplexity int, authID string) int
-		DeleteTenants                                 func(childComplexity int, in []string) int
-		DeleteWebhook                                 func(childComplexity int, webhookID string) int
-		DetachConstraintFromFormationTemplate         func(childComplexity int, constraintID string, formationTemplateID string) int
-		InvalidateSystemAuthOneTimeToken              func(childComplexity int, authID string) int
-		MergeApplications                             func(childComplexity int, destinationID string, sourceID string) int
-		RefetchAPISpec                                func(childComplexity int, apiID string) int
-		RefetchEventDefinitionSpec                    func(childComplexity int, eventID string) int
-		RegisterApplication                           func(childComplexity int, in ApplicationRegisterInput, mode *OperationMode) int
-		RegisterApplicationFromTemplate               func(childComplexity int, in ApplicationFromTemplateInput) int
-		RegisterIntegrationSystem                     func(childComplexity int, in IntegrationSystemInput) int
-		RegisterRuntime                               func(childComplexity int, in RuntimeRegisterInput) int
-		RegisterRuntimeContext                        func(childComplexity int, runtimeID string, in RuntimeContextInput) int
-		RequestBundleInstanceAuthCreation             func(childComplexity int, bundleID string, in BundleInstanceAuthRequestInput) int
-		RequestBundleInstanceAuthDeletion             func(childComplexity int, authID string) int
-		RequestClientCredentialsForApplication        func(childComplexity int, id string) int
-		RequestClientCredentialsForIntegrationSystem  func(childComplexity int, id string) int
-		RequestClientCredentialsForRuntime            func(childComplexity int, id string) int
-		RequestOneTimeTokenForApplication             func(childComplexity int, id string, systemAuthID *string) int
-		RequestOneTimeTokenForRuntime                 func(childComplexity int, id string, systemAuthID *string) int
-		SetApplicationLabel                           func(childComplexity int, applicationID string, key string, value interface{}) int
-		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
-		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
-		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
-		SubscribeTenant                               func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionPayload string) int
-		UnassignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
-		UnpairApplication                             func(childComplexity int, id string, mode *OperationMode) int
-		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
-		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
-		UnregisterRuntime                             func(childComplexity int, id string) int
-		UnregisterRuntimeContext                      func(childComplexity int, id string) int
-		UnsubscribeTenant                             func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) int
-		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
-		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
-		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
-		UpdateBundle                                  func(childComplexity int, id string, in BundleUpdateInput) int
-		UpdateCertificateSubjectMapping               func(childComplexity int, id string, in CertificateSubjectMappingInput) int
-		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
-		UpdateFormationConstraint                     func(childComplexity int, id string, in FormationConstraintUpdateInput) int
-		UpdateFormationTemplate                       func(childComplexity int, id string, in FormationTemplateInput) int
-		UpdateIntegrationSystem                       func(childComplexity int, id string, in IntegrationSystemInput) int
-		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
-		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeUpdateInput) int
-		UpdateRuntimeContext                          func(childComplexity int, id string, in RuntimeContextInput) int
-		UpdateSystemAuth                              func(childComplexity int, authID string, in AuthInput) int
-		UpdateTenant                                  func(childComplexity int, id string, in BusinessTenantMappingInput) int
-		UpdateWebhook                                 func(childComplexity int, webhookID string, in WebhookInput) int
-		WriteTenant                                   func(childComplexity int, in BusinessTenantMappingInput) int
-		WriteTenants                                  func(childComplexity int, in []*BusinessTenantMappingInput) int
+		AddAPIDefinitionToBundle                     func(childComplexity int, bundleID string, in APIDefinitionInput) int
+		AddBundle                                    func(childComplexity int, applicationID string, in BundleCreateInput) int
+		AddDocumentToBundle                          func(childComplexity int, bundleID string, in DocumentInput) int
+		AddEventDefinitionToBundle                   func(childComplexity int, bundleID string, in EventDefinitionInput) int
+		AddWebhook                                   func(childComplexity int, applicationID *string, applicationTemplateID *string, runtimeID *string, formationTemplateID *string, in WebhookInput) int
+		AssignFormation                              func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
+		AttachConstraintToFormationTemplate          func(childComplexity int, constraintID string, formationTemplateID string) int
+		CreateApplicationTemplate                    func(childComplexity int, in ApplicationTemplateInput) int
+		CreateCertificateSubjectMapping              func(childComplexity int, in CertificateSubjectMappingInput) int
+		CreateFormation                              func(childComplexity int, formation FormationInput) int
+		CreateFormationConstraint                    func(childComplexity int, formationConstraint FormationConstraintInput) int
+		CreateFormationTemplate                      func(childComplexity int, in FormationTemplateInput) int
+		CreateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
+		DeleteAPIDefinition                          func(childComplexity int, id string) int
+		DeleteApplicationLabel                       func(childComplexity int, applicationID string, key string) int
+		DeleteApplicationTemplate                    func(childComplexity int, id string) int
+		DeleteBundle                                 func(childComplexity int, id string) int
+		DeleteBundleInstanceAuth                     func(childComplexity int, authID string) int
+		DeleteCertificateSubjectMapping              func(childComplexity int, id string) int
+		DeleteDefaultEventingForApplication          func(childComplexity int, appID string) int
+		DeleteDocument                               func(childComplexity int, id string) int
+		DeleteEventDefinition                        func(childComplexity int, id string) int
+		DeleteFormation                              func(childComplexity int, formation FormationInput) int
+		DeleteFormationConstraint                    func(childComplexity int, id string) int
+		DeleteFormationTemplate                      func(childComplexity int, id string) int
+		DeleteRuntimeLabel                           func(childComplexity int, runtimeID string, key string) int
+		DeleteSystemAuthForApplication               func(childComplexity int, authID string) int
+		DeleteSystemAuthForIntegrationSystem         func(childComplexity int, authID string) int
+		DeleteSystemAuthForRuntime                   func(childComplexity int, authID string) int
+		DeleteTenants                                func(childComplexity int, in []string) int
+		DeleteWebhook                                func(childComplexity int, webhookID string) int
+		DetachConstraintFromFormationTemplate        func(childComplexity int, constraintID string, formationTemplateID string) int
+		InvalidateSystemAuthOneTimeToken             func(childComplexity int, authID string) int
+		MergeApplications                            func(childComplexity int, destinationID string, sourceID string) int
+		RefetchAPISpec                               func(childComplexity int, apiID string) int
+		RefetchEventDefinitionSpec                   func(childComplexity int, eventID string) int
+		RegisterApplication                          func(childComplexity int, in ApplicationRegisterInput, mode *OperationMode) int
+		RegisterApplicationFromTemplate              func(childComplexity int, in ApplicationFromTemplateInput) int
+		RegisterIntegrationSystem                    func(childComplexity int, in IntegrationSystemInput) int
+		RegisterRuntime                              func(childComplexity int, in RuntimeRegisterInput) int
+		RegisterRuntimeContext                       func(childComplexity int, runtimeID string, in RuntimeContextInput) int
+		RequestBundleInstanceAuthCreation            func(childComplexity int, bundleID string, in BundleInstanceAuthRequestInput) int
+		RequestBundleInstanceAuthDeletion            func(childComplexity int, authID string) int
+		RequestClientCredentialsForApplication       func(childComplexity int, id string) int
+		RequestClientCredentialsForIntegrationSystem func(childComplexity int, id string) int
+		RequestClientCredentialsForRuntime           func(childComplexity int, id string) int
+		RequestOneTimeTokenForApplication            func(childComplexity int, id string, systemAuthID *string) int
+		RequestOneTimeTokenForRuntime                func(childComplexity int, id string, systemAuthID *string) int
+		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
+		SetBundleInstanceAuth                        func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
+		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
+		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
+		SubscribeTenant                              func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionPayload string) int
+		UnassignFormation                            func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
+		UnpairApplication                            func(childComplexity int, id string, mode *OperationMode) int
+		UnregisterApplication                        func(childComplexity int, id string, mode *OperationMode) int
+		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
+		UnregisterRuntime                            func(childComplexity int, id string) int
+		UnregisterRuntimeContext                     func(childComplexity int, id string) int
+		UnsubscribeTenant                            func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) int
+		UpdateAPIDefinition                          func(childComplexity int, id string, in APIDefinitionInput) int
+		UpdateApplication                            func(childComplexity int, id string, in ApplicationUpdateInput) int
+		UpdateApplicationTemplate                    func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
+		UpdateBundle                                 func(childComplexity int, id string, in BundleUpdateInput) int
+		UpdateCertificateSubjectMapping              func(childComplexity int, id string, in CertificateSubjectMappingInput) int
+		UpdateEventDefinition                        func(childComplexity int, id string, in EventDefinitionInput) int
+		UpdateFormationConstraint                    func(childComplexity int, id string, in FormationConstraintUpdateInput) int
+		UpdateFormationTemplate                      func(childComplexity int, id string, in FormationTemplateInput) int
+		UpdateIntegrationSystem                      func(childComplexity int, id string, in IntegrationSystemInput) int
+		UpdateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
+		UpdateRuntime                                func(childComplexity int, id string, in RuntimeUpdateInput) int
+		UpdateRuntimeContext                         func(childComplexity int, id string, in RuntimeContextInput) int
+		UpdateSystemAuth                             func(childComplexity int, authID string, in AuthInput) int
+		UpdateTenant                                 func(childComplexity int, id string, in BusinessTenantMappingInput) int
+		UpdateWebhook                                func(childComplexity int, webhookID string, in WebhookInput) int
+		WriteTenant                                  func(childComplexity int, in BusinessTenantMappingInput) int
+		WriteTenants                                 func(childComplexity int, in []*BusinessTenantMappingInput) int
 	}
 
 	OAuthCredentialData struct {
@@ -832,9 +829,6 @@ type MutationResolver interface {
 	AddBundle(ctx context.Context, applicationID string, in BundleCreateInput) (*Bundle, error)
 	UpdateBundle(ctx context.Context, id string, in BundleUpdateInput) (*Bundle, error)
 	DeleteBundle(ctx context.Context, id string) (*Bundle, error)
-	CreateAutomaticScenarioAssignment(ctx context.Context, in AutomaticScenarioAssignmentSetInput) (*AutomaticScenarioAssignment, error)
-	DeleteAutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
-	DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) ([]string, error)
 	WriteTenant(ctx context.Context, in BusinessTenantMappingInput) (string, error)
 	DeleteTenants(ctx context.Context, in []string) (int, error)
@@ -2780,18 +2774,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateApplicationTemplate(childComplexity, args["in"].(ApplicationTemplateInput)), true
 
-	case "Mutation.createAutomaticScenarioAssignment":
-		if e.complexity.Mutation.CreateAutomaticScenarioAssignment == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createAutomaticScenarioAssignment_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateAutomaticScenarioAssignment(childComplexity, args["in"].(AutomaticScenarioAssignmentSetInput)), true
-
 	case "Mutation.createCertificateSubjectMapping":
 		if e.complexity.Mutation.CreateCertificateSubjectMapping == nil {
 			break
@@ -2887,30 +2869,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteApplicationTemplate(childComplexity, args["id"].(string)), true
-
-	case "Mutation.deleteAutomaticScenarioAssignmentForScenario":
-		if e.complexity.Mutation.DeleteAutomaticScenarioAssignmentForScenario == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteAutomaticScenarioAssignmentForScenario_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteAutomaticScenarioAssignmentForScenario(childComplexity, args["scenarioName"].(string)), true
-
-	case "Mutation.deleteAutomaticScenarioAssignmentsForSelector":
-		if e.complexity.Mutation.DeleteAutomaticScenarioAssignmentsForSelector == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteAutomaticScenarioAssignmentsForSelector_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteAutomaticScenarioAssignmentsForSelector(childComplexity, args["selector"].(LabelSelectorInput)), true
 
 	case "Mutation.deleteBundle":
 		if e.complexity.Mutation.DeleteBundle == nil {
@@ -5255,14 +5213,6 @@ input AuthInput {
 	oneTimeToken: OneTimeTokenInput
 }
 
-input AutomaticScenarioAssignmentSetInput {
-	scenarioName: String!
-	"""
-	Runtimes and Applications which contain labels with equal key and value are matched
-	"""
-	selector: LabelSelectorInput!
-}
-
 input BasicCredentialDataInput {
 	username: String!
 	password: String!
@@ -6688,21 +6638,6 @@ type Mutation {
 	- [delete bundle](examples/delete-bundle/delete-bundle.graphql)
 	"""
 	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
-	"""
-	**Examples**
-	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
-	"""
-	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput! @validate): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment") @deprecated(reason: "Use assignFormation with objectType TENANT instead.")
-	"""
-	**Examples**
-	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
-	"""
-	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
-	"""
-	**Examples**
-	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
-	"""
-	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
 	writeTenants(in: [BusinessTenantMappingInput!]): [String!] @hasScopes(path: "graphql.mutation.writeTenants") @synchronizeApplicationTenancy(eventType: NEW_MULTIPLE_TENANTS)
 	writeTenant(in: BusinessTenantMappingInput!): String! @hasScopes(path: "graphql.mutation.writeTenants") @synchronizeApplicationTenancy(eventType: NEW_SINGLE_TENANT)
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
@@ -7372,35 +7307,6 @@ func (ec *executionContext) field_Mutation_createApplicationTemplate_args(ctx co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createAutomaticScenarioAssignment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 AutomaticScenarioAssignmentSetInput
-	if tmp, ok := rawArgs["in"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.Validate == nil {
-				return nil, errors.New("directive validate is not implemented")
-			}
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(AutomaticScenarioAssignmentSetInput); ok {
-			arg0 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignmentSetInput`, tmp)
-		}
-	}
-	args["in"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_createCertificateSubjectMapping_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -7578,49 +7484,6 @@ func (ec *executionContext) field_Mutation_deleteApplicationTemplate_args(ctx co
 		}
 	}
 	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentForScenario_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["scenarioName"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["scenarioName"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteAutomaticScenarioAssignmentsForSelector_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 LabelSelectorInput
-	if tmp, ok := rawArgs["selector"]; ok {
-		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, tmp)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.Validate == nil {
-				return nil, errors.New("directive validate is not implemented")
-			}
-			return ec.directives.Validate(ctx, rawArgs, directive0)
-		}
-
-		tmp, err = directive1(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if data, ok := tmp.(LabelSelectorInput); ok {
-			arg0 = data
-		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.LabelSelectorInput`, tmp)
-		}
-	}
-	args["selector"] = arg0
 	return args, nil
 }
 
@@ -22470,195 +22333,6 @@ func (ec *executionContext) _Mutation_deleteBundle(ctx context.Context, field gr
 	return ec.marshalNBundle2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundle(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createAutomaticScenarioAssignment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createAutomaticScenarioAssignment_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateAutomaticScenarioAssignment(rctx, args["in"].(AutomaticScenarioAssignmentSetInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createAutomaticScenarioAssignment")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.HasScopes == nil {
-				return nil, errors.New("directive hasScopes is not implemented")
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*AutomaticScenarioAssignment); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*AutomaticScenarioAssignment)
-	fc.Result = res
-	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentForScenario(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteAutomaticScenarioAssignmentForScenario_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteAutomaticScenarioAssignmentForScenario(rctx, args["scenarioName"].(string))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.HasScopes == nil {
-				return nil, errors.New("directive hasScopes is not implemented")
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*AutomaticScenarioAssignment); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*AutomaticScenarioAssignment)
-	fc.Result = res
-	return ec.marshalOAutomaticScenarioAssignment2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignment(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentsForSelector(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteAutomaticScenarioAssignmentsForSelector_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteAutomaticScenarioAssignmentsForSelector(rctx, args["selector"].(LabelSelectorInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.HasScopes == nil {
-				return nil, errors.New("directive hasScopes is not implemented")
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.([]*AutomaticScenarioAssignment); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.AutomaticScenarioAssignment`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*AutomaticScenarioAssignment)
-	fc.Result = res
-	return ec.marshalNAutomaticScenarioAssignment2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentᚄ(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_writeTenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -30505,30 +30179,6 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAutomaticScenarioAssignmentSetInput(ctx context.Context, obj interface{}) (AutomaticScenarioAssignmentSetInput, error) {
-	var it AutomaticScenarioAssignmentSetInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "scenarioName":
-			var err error
-			it.ScenarioName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "selector":
-			var err error
-			it.Selector, err = ec.unmarshalNLabelSelectorInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputBasicCredentialDataInput(ctx context.Context, obj interface{}) (BasicCredentialDataInput, error) {
 	var it BasicCredentialDataInput
 	var asMap = obj.(map[string]interface{})
@@ -34481,15 +34131,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createAutomaticScenarioAssignment":
-			out.Values[i] = ec._Mutation_createAutomaticScenarioAssignment(ctx, field)
-		case "deleteAutomaticScenarioAssignmentForScenario":
-			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentForScenario(ctx, field)
-		case "deleteAutomaticScenarioAssignmentsForSelector":
-			out.Values[i] = ec._Mutation_deleteAutomaticScenarioAssignmentsForSelector(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "writeTenants":
 			out.Values[i] = ec._Mutation_writeTenants(ctx, field)
 		case "writeTenant":
@@ -36487,10 +36128,6 @@ func (ec *executionContext) marshalNAutomaticScenarioAssignment2ᚖgithubᚗcom�
 	return ec._AutomaticScenarioAssignment(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAutomaticScenarioAssignmentSetInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAutomaticScenarioAssignmentSetInput(ctx context.Context, v interface{}) (AutomaticScenarioAssignmentSetInput, error) {
-	return ec.unmarshalInputAutomaticScenarioAssignmentSetInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -37518,14 +37155,6 @@ func (ec *executionContext) unmarshalNLabelFilter2ᚖgithubᚗcomᚋkymaᚑincub
 
 func (ec *executionContext) unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx context.Context, v interface{}) (LabelSelectorInput, error) {
 	return ec.unmarshalInputLabelSelectorInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNLabelSelectorInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx context.Context, v interface{}) (*LabelSelectorInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNOneTimeTokenForApplication2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOneTimeTokenForApplication(ctx context.Context, sel ast.SelectionSet, v OneTimeTokenForApplication) graphql.Marshaler {

@@ -4,7 +4,19 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -16,6 +28,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	httputilpkg "github.com/kyma-incubator/compass/components/director/pkg/http"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
@@ -65,11 +78,16 @@ import (
 )
 
 type config struct {
-	Database persistence.DatabaseConfig
+	Address           string `envconfig:"default=127.0.0.1:8080"`
+	AggregatorRootAPI string `envconfig:"APP_ROOT_API,default=/ord-aggregator"`
 
-	Log log.Config
+	ServerTimeout   time.Duration `envconfig:"default=110s"`
+	ShutdownTimeout time.Duration `envconfig:"default=10s"`
 
-	Features features.Config
+	SecurityConfig securityConfig
+	Database       persistence.DatabaseConfig
+	Log            log.Config
+	Features       features.Config
 
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
@@ -77,11 +95,12 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=120s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
-	RetryConfig retry.Config
-
-	CertLoaderConfig certloader.Config
-
-	GlobalRegistryConfig ord.GlobalRegistryConfig
+	RetryConfig                    retry.Config
+	CertLoaderConfig               certloader.Config
+	GlobalRegistryConfig           ord.GlobalRegistryConfig
+	ElectionConfig                 cronjob.ElectionConfig
+	ORDAggregatorJobSchedulePeriod time.Duration `envconfig:"APP_ORD_AGGREGATOR_JOB_SCHEDULE_PERIOD,default=60m"`
+	IsORDAggregatorJobScheduleable bool          `envconfig:"APP_ORD_AGGREGATOR_JOB_IS_SCHEDULABLE,default=true"`
 
 	MaxParallelWebhookProcessors       int `envconfig:"APP_MAX_PARALLEL_WEBHOOK_PROCESSORS,default=1"`
 	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
@@ -101,12 +120,30 @@ type config struct {
 	MetricsConfig ord.MetricsConfig
 }
 
+type securityConfig struct {
+	JwksEndpoint        string        `envconfig:"APP_JWKS_ENDPOINT"`
+	JWKSSyncPeriod      time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	AggregatorSyncScope string        `envconfig:"APP_ORD_AGGREGATOR_SYNC_SCOPE,default=ord_aggregator:sync"`
+}
+
+// TenantService is responsible for service-layer tenant operations
+type TenantService interface {
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
 	exitOnError(err, "Error while loading app config")
 
-	ctx, err := log.Configure(context.Background(), &cfg.Log)
+	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Error while configuring logger")
 
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
@@ -143,10 +180,48 @@ func main() {
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
 	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, accessStrategyExecutorProviderWithTenant, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor, ordWebhookMapping)
-	err = ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig)
-	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
-	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
+	jwtHTTPClient := &http.Client{
+		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	handler := initHandler(ctx, jwtHTTPClient, ordAggregator, cfg, transact)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+
+	go func() {
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMainSrv()
+	}()
+
+	if cfg.IsORDAggregatorJobScheduleable {
+		go func() {
+			if err := startSyncORDDocumentsJob(ctx, ordAggregator, cfg); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to start sync ORD documents cronjob. Stopping app...")
+			}
+			cancel()
+		}()
+	}
+
+	runMainSrv()
+}
+
+func startSyncORDDocumentsJob(ctx context.Context, ordAggregator *ord.Service, cfg config) error {
+	resyncJob := cronjob.CronJob{
+		Name: "SyncORDDocuments",
+		Fn: func(jobCtx context.Context) {
+			log.C(jobCtx).Infof("Starting ORD documents aggregation...")
+			if err := ordAggregator.SyncORDDocuments(ctx, cfg.MetricsConfig); err != nil {
+				log.C(jobCtx).WithError(err).Errorf("error occurred while syncing Open Resource Discovery Documents")
+			}
+			log.C(jobCtx).Infof("ORD documents aggregation finished.")
+		},
+		SchedulePeriod: cfg.ORDAggregatorJobSchedulePeriod,
+	}
+	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
 }
 
 func ctxTenantProvider(ctx context.Context) (string, error) {
@@ -234,7 +309,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	constraintEngine := formationconstraint.NewConstraintEngine(formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, formationRepo, labelRepo)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, webhookConverter, notificationsGenerator)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, formationAssignmentConv, notificationSvc)
 	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationSvc, constraintEngine, webhookRepo, config.Features.RuntimeTypeLabelKey, config.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
@@ -272,5 +347,128 @@ func exitOnError(err error, context string) {
 	if err != nil {
 		wrappedError := errors.Wrap(err, context)
 		log.D().Fatal(wrappedError)
+	}
+}
+
+func createServer(ctx context.Context, cfg config, handler http.Handler, name string) (func(), func()) {
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, cfg.ServerTimeout)
+	exitOnError(err, "Error while configuring ord aggregator handler")
+
+	srv := &http.Server{
+		Addr:              cfg.Address,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}
+
+	runFn := func() {
+		log.C(ctx).Infof("Running %s server on %s...", name, cfg.Address)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.C(ctx).Errorf("%s HTTP server ListenAndServe: %v", name, err)
+		}
+	}
+
+	shutdownFn := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+
+		log.C(ctx).Infof("Shutting down %s server...", name)
+		if err := srv.Shutdown(ctx); err != nil {
+			log.C(ctx).Errorf("%s HTTP server Shutdown: %v", name, err)
+		}
+	}
+
+	return runFn, shutdownFn
+}
+
+func initHandler(ctx context.Context, httpClient *http.Client, svc *ord.Service, cfg config, transact persistence.Transactioner) http.Handler {
+	const (
+		healthzEndpoint   = "/healthz"
+		readyzEndpoint    = "/readyz"
+		aggregateEndpoint = "/aggregate"
+	)
+	logger := log.C(ctx)
+
+	mainRouter := mux.NewRouter()
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
+		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
+
+	handler := ord.NewORDAggregatorHTTPHandler(svc, cfg.MetricsConfig)
+	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
+	configureTenantContextMiddleware(apiRouter, transact)
+	apiRouter.HandleFunc(aggregateEndpoint, handler.AggregateORDData).Methods(http.MethodPost)
+
+	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+	logger.Infof("Registering readiness endpoint...")
+	healthCheckRouter.HandleFunc(readyzEndpoint, newReadinessHandler())
+	logger.Infof("Registering liveness endpoint...")
+	healthCheckRouter.HandleFunc(healthzEndpoint, newReadinessHandler())
+
+	return mainRouter
+}
+
+func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg config, requiredScopes ...string) {
+	scopeValidator := claims.NewScopesValidator(requiredScopes)
+	middleware := authenticator.New(httpClient, cfg.SecurityConfig.JwksEndpoint, cfg.SecurityConfig.AllowJWTSigningNone, "", scopeValidator)
+	router.Use(middleware.Handler())
+
+	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.SecurityConfig.JWKSSyncPeriod)
+	periodicExecutor := executor.NewPeriodic(cfg.SecurityConfig.JWKSSyncPeriod, func(ctx context.Context) {
+		if err := middleware.SynchronizeJWKS(ctx); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
+		}
+	})
+	go periodicExecutor.Run(ctx)
+}
+
+func configureTenantContextMiddleware(apiRouter *mux.Router, transact persistence.Transactioner) {
+	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	uidSvc := uid.NewService()
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+
+	apiRouter.Use(tenantContextHandler(transact, tenantSvc))
+}
+
+func tenantContextHandler(transact persistence.Transactioner, tenantSvc TenantService) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			tx, err := transact.Begin()
+			if err != nil {
+				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
+				return
+			}
+			defer transact.RollbackUnlessCommitted(ctx, tx)
+
+			ctx = persistence.SaveToContext(ctx, tx)
+
+			tntFromCtx, err := tenant.LoadFromContext(ctx)
+			if err != nil {
+				apperrors.WriteAppError(ctx, w, err, http.StatusUnauthorized)
+				return
+			}
+
+			tnt, err := tenantSvc.GetTenantByExternalID(ctx, tntFromCtx)
+			if err != nil {
+				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
+				return
+			}
+
+			if err := tx.Commit(); err != nil {
+				apperrors.WriteAppError(ctx, w, err, http.StatusInternalServerError)
+				return
+			}
+
+			ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
 	}
 }

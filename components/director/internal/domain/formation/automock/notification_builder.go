@@ -11,6 +11,8 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
+	testing "testing"
+
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -37,6 +39,29 @@ func (_m *NotificationBuilder) BuildFormationAssignmentNotificationRequest(ctx c
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, *model.Webhook) error); ok {
 		r1 = rf(ctx, formationTemplateID, joinPointDetails, _a3)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// BuildFormationNotificationRequests provides a mock function with given fields: ctx, joinPointDetails, _a2, formationTemplateWebhooks
+func (_m *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationNotificationOperationDetails, _a2 *model.Formation, formationTemplateWebhooks []*model.Webhook) ([]*webhookclient.FormationNotificationRequest, error) {
+	ret := _m.Called(ctx, joinPointDetails, _a2, formationTemplateWebhooks)
+
+	var r0 []*webhookclient.FormationNotificationRequest
+	if rf, ok := ret.Get(0).(func(context.Context, *formationconstraint.GenerateFormationNotificationOperationDetails, *model.Formation, []*model.Webhook) []*webhookclient.FormationNotificationRequest); ok {
+		r0 = rf(ctx, joinPointDetails, _a2, formationTemplateWebhooks)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*webhookclient.FormationNotificationRequest)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *formationconstraint.GenerateFormationNotificationOperationDetails, *model.Formation, []*model.Webhook) error); ok {
+		r1 = rf(ctx, joinPointDetails, _a2, formationTemplateWebhooks)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -90,13 +115,8 @@ func (_m *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	return r0, r1
 }
 
-type NewNotificationBuilderT interface {
-	mock.TestingT
-	Cleanup(func())
-}
-
-// NewNotificationBuilder creates a new instance of NotificationBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationBuilder(t NewNotificationBuilderT) *NotificationBuilder {
+// NewNotificationBuilder creates a new instance of NotificationBuilder. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
+func NewNotificationBuilder(t testing.TB) *NotificationBuilder {
 	mock := &NotificationBuilder{}
 	mock.Mock.Test(t)
 

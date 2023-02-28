@@ -16,6 +16,7 @@ import (
 )
 
 // VersionConverter converts Version between model.Version, graphql.Version and repo-layer version.Version
+//
 //go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
@@ -25,6 +26,7 @@ type VersionConverter interface {
 }
 
 // SpecConverter converts Specifications between the model.Spec service-layer representation and the graphql-layer representation graphql.APISpec.
+//
 //go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecConverter interface {
 	ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error)
@@ -149,6 +151,8 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		OrdID:                                   repo.StringPtrFromNullableString(entity.OrdID),
 		ShortDescription:                        repo.StringPtrFromNullableString(entity.ShortDescription),
 		SystemInstanceAware:                     repo.BoolPtrFromNullableBool(entity.SystemInstanceAware),
+		PolicyLevel:                             repo.StringPtrFromNullableString(entity.PolicyLevel),
+		CustomPolicyLevel:                       repo.StringPtrFromNullableString(entity.CustomPolicyLevel),
 		APIProtocol:                             repo.StringPtrFromNullableString(entity.APIProtocol),
 		Tags:                                    repo.JSONRawMessageFromNullableString(entity.Tags),
 		Countries:                               repo.JSONRawMessageFromNullableString(entity.Countries),
@@ -199,6 +203,8 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		OrdID:                                   repo.NewNullableString(apiModel.OrdID),
 		ShortDescription:                        repo.NewNullableString(apiModel.ShortDescription),
 		SystemInstanceAware:                     repo.NewNullableBool(apiModel.SystemInstanceAware),
+		PolicyLevel:                             repo.NewNullableString(apiModel.PolicyLevel),
+		CustomPolicyLevel:                       repo.NewNullableString(apiModel.CustomPolicyLevel),
 		APIProtocol:                             repo.NewNullableString(apiModel.APIProtocol),
 		Tags:                                    repo.NewNullableStringFromJSONRawMessage(apiModel.Tags),
 		Countries:                               repo.NewNullableStringFromJSONRawMessage(apiModel.Countries),

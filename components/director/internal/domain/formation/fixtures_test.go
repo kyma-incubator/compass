@@ -33,6 +33,69 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+const (
+	// Tenant IDs
+	TntInternalID = "953ac686-5773-4ad0-8eb1-2349e931f852"
+	TntExternalID = "ada4241d-caa1-4ee4-b8bf-f733e180fbf9"
+	TntCustomerID = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
+
+	// Automatic Scenario Assignment(ASA) constants
+	TargetTenantID  = "targetTenantID-ASA"
+	TargetTenantID2 = "targetTenantID2-ASA"
+	TenantID2       = "18271026-3998-4391-be58-b783a09fcca8" // used as tenant where the ASA "lives"
+	ScenarioName    = "scenario-A"
+	ScenarioName2   = "scenario-B"
+
+	// Entity constants
+	ApplicationID           = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
+	Application2ID          = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
+	ApplicationTemplateID   = "58963c6f-24f6-4128-a05c-51d5356e7e09"
+	ApplicationTemplate2ID  = "88963c6f-24f6-4128-a05c-51d5356e7e09"
+	RuntimeID               = "rt-id"
+	RuntimeContextRuntimeID = "rt-ctx-rt-id"
+	RuntimeContextID        = "rt-ctx-id"
+	RuntimeContext2ID       = "rt-ctx-id-2"
+	FormationID             = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
+
+	// Webhook IDs
+	WebhookID  = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
+	Webhook2ID = "b9a62a7d-6805-43f9-a3be-370d2d125f0f"
+	Webhook3ID = "aaa62a7d-6805-43f9-a3be-370d2d125f0f"
+
+	TntParentID                      = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
+	WebhookForRuntimeContextID       = "5202f196-46d7-4d1e-be50-434dd9fcd157"
+	AppTenantMappingWebhookIDForApp1 = "b91e7d97-65ed-4b72-a225-4a3b484c27e1"
+	AppTenantMappingWebhookIDForApp2 = "df7e9387-7bdf-46bb-b0c2-de5ec9a40a21"
+	FormationLifecycleWebhookID      = "517e0235-0d74-4166-a47c-5a577022d468"
+
+	// Formation constants
+	testFormationName       = "test-formation"
+	testFormationState      = string(model.InitialFormationState)
+	testFormationEmptyError = "{}"
+	secondTestFormationName = "second-formation"
+	TargetTenant            = "targetTenant" // used as "assigning tenant" in formation scenarios/flows
+
+	// Formation template constants
+	FormationTemplateID       = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
+	testFormationTemplateName = "test-formation-template-name"
+
+	// Formation Assignment constants
+	FormationAssignmentID          = "FormationAssignmentID"
+	FormationAssignmentFormationID = "FormationAssignmentFormationID"
+	FormationAssignmentTenantID    = "FormationAssignmentTenantID"
+	FormationAssignmentSource      = "FormationAssignmentSource"
+	FormationAssignmentSourceType  = "FormationAssignmentSourceType"
+	FormationAssignmentTarget      = "FormationAssignmentTarget"
+	FormationAssignmentTargetType  = "FormationAssignmentTargetType"
+	FormationAssignmentState       = "FormationAssignmentState"
+
+	// Other constants
+	ErrMsg          = "some error"
+	runtimeType     = "runtimeType"
+	applicationType = "applicationType"
+	testProvider    = "Compass"
+)
+
 var (
 	tenantID          = uuid.New()
 	externalTenantID  = uuid.New()
@@ -64,7 +127,7 @@ var (
 		ID:                     FormationTemplateID,
 		RuntimeArtifactKind:    "SUBSCRIPTION",
 		RuntimeTypeDisplayName: "display name",
-		Name:                   "formation-template",
+		Name:                   testFormationTemplateName,
 		RuntimeTypes:           []string{runtimeType},
 	}
 	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType))}
@@ -540,6 +603,16 @@ var (
 		ConstraintType: model.PostOperation,
 	}
 
+	preGenerateFormationNotificationLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.GenerateFormationNotificationOperation,
+		ConstraintType: model.PreOperation,
+	}
+
+	postGenerateFormationNotificationLocation = formationconstraint.JoinPointLocation{
+		OperationName:  model.GenerateFormationNotificationOperation,
+		ConstraintType: model.PostOperation,
+	}
+
 	preAssignLocation = formationconstraint.JoinPointLocation{
 		OperationName:  model.AssignFormationOperation,
 		ConstraintType: model.PreOperation,
@@ -589,7 +662,7 @@ var (
 	}
 
 	deleteFormationDetails = &formationconstraint.CRUDFormationOperationDetails{
-		FormationType:       "formation-tmpl-name",
+		FormationType:       testFormationTemplateName,
 		FormationTemplateID: FormationTemplateID,
 		FormationName:       testFormationName,
 		TenantID:            TntInternalID,
@@ -679,7 +752,7 @@ var (
 		ResourceType:        model.TenantResourceType,
 		ResourceSubtype:     "account",
 		ResourceID:          TargetTenant,
-		FormationType:       "formation-template",
+		FormationType:       testFormationTemplateName,
 		FormationTemplateID: FormationTemplateID,
 		FormationID:         FormationID,
 		TenantID:            TntInternalID,
@@ -689,7 +762,7 @@ var (
 		ResourceType:        model.TenantResourceType,
 		ResourceSubtype:     "account",
 		ResourceID:          TargetTenant,
-		FormationType:       "formation-template",
+		FormationType:       testFormationTemplateName,
 		FormationTemplateID: FormationTemplateID,
 		FormationID:         FormationID,
 		TenantID:            TntInternalID,
@@ -736,6 +809,16 @@ var (
 		ReverseAssignment: emptyFormationAssignment,
 	}
 
+	formationNotificationDetails = &formationconstraint.GenerateFormationNotificationOperationDetails{
+		Operation:             model.CreateFormation,
+		FormationID:           FormationID,
+		FormationName:         testFormationName,
+		FormationType:         testFormationTemplateName,
+		FormationTemplateID:   FormationTemplateID,
+		TenantID:              TntInternalID,
+		CustomerTenantContext: CustomerTenantContextAccount,
+	}
+
 	gaTenantObject = fixModelBusinessTenantMappingWithType(tnt.Account)
 	rgTenantObject = fixModelBusinessTenantMappingWithType(tnt.ResourceGroup)
 
@@ -750,67 +833,6 @@ var (
 		AccountID:  nil,
 		Path:       str.Ptr(gaTenantObject.ExternalTenant),
 	}
-)
-
-const (
-	// Tenant IDs
-	TntInternalID = "953ac686-5773-4ad0-8eb1-2349e931f852"
-	TntExternalID = "ada4241d-caa1-4ee4-b8bf-f733e180fbf9"
-	TntCustomerID = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
-
-	// Automatic Scenario Assignment(ASA) constants
-	TargetTenantID  = "targetTenantID-ASA"
-	TargetTenantID2 = "targetTenantID2-ASA"
-	TenantID2       = "18271026-3998-4391-be58-b783a09fcca8" // used as tenant where the ASA "lives"
-	ScenarioName    = "scenario-A"
-	ScenarioName2   = "scenario-B"
-
-	// Entity constants
-	ApplicationID           = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
-	Application2ID          = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
-	ApplicationTemplateID   = "58963c6f-24f6-4128-a05c-51d5356e7e09"
-	ApplicationTemplate2ID  = "88963c6f-24f6-4128-a05c-51d5356e7e09"
-	RuntimeID               = "rt-id"
-	RuntimeContextRuntimeID = "rt-ctx-rt-id"
-	RuntimeContextID        = "rt-ctx-id"
-	RuntimeContext2ID       = "rt-ctx-id-2"
-	FormationTemplateID     = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
-	FormationID             = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
-
-	// Webhook IDs
-	WebhookID  = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
-	Webhook2ID = "b9a62a7d-6805-43f9-a3be-370d2d125f0f"
-	Webhook3ID = "aaa62a7d-6805-43f9-a3be-370d2d125f0f"
-
-	TntParentID                      = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
-	WebhookForRuntimeContextID       = "5202f196-46d7-4d1e-be50-434dd9fcd157"
-	AppTenantMappingWebhookIDForApp1 = "b91e7d97-65ed-4b72-a225-4a3b484c27e1"
-	AppTenantMappingWebhookIDForApp2 = "df7e9387-7bdf-46bb-b0c2-de5ec9a40a21"
-	FormationLifecycleWebhookID      = "517e0235-0d74-4166-a47c-5a577022d468"
-
-	// Formation constants
-	testFormationName         = "test-formation"
-	testFormationState        = string(model.InitialFormationState)
-	testFormationEmptyError   = "{}"
-	secondTestFormationName   = "second-formation"
-	testFormationTemplateName = "test-formation-template"
-	TargetTenant              = "targetTenant" // used as "assigning tenant" in formation scenarios/flows
-
-	// Formation Assignment constants
-	FormationAssignmentID          = "FormationAssignmentID"
-	FormationAssignmentFormationID = "FormationAssignmentFormationID"
-	FormationAssignmentTenantID    = "FormationAssignmentTenantID"
-	FormationAssignmentSource      = "FormationAssignmentSource"
-	FormationAssignmentSourceType  = "FormationAssignmentSourceType"
-	FormationAssignmentTarget      = "FormationAssignmentTarget"
-	FormationAssignmentTargetType  = "FormationAssignmentTargetType"
-	FormationAssignmentState       = "FormationAssignmentState"
-
-	// Other constants
-	ErrMsg          = "some error"
-	runtimeType     = "runtimeType"
-	applicationType = "applicationType"
-	testProvider    = "Compass"
 )
 
 func unusedApplicationRepository() *automock.ApplicationRepository {
@@ -990,7 +1012,7 @@ func fixScenariosLabelDefinition(tenantID string, schema interface{}) model.Labe
 func fixFormationTemplateModel() *model.FormationTemplate {
 	return &model.FormationTemplate{
 		ID:                     FormationTemplateID,
-		Name:                   "formation-tmpl-name",
+		Name:                   testFormationTemplateName,
 		ApplicationTypes:       []string{"appType1", "appType2"},
 		RuntimeTypes:           []string{"runtimeTypes"},
 		RuntimeTypeDisplayName: "runtimeDisplayName",

@@ -41,6 +41,7 @@ type webhookRepository interface {
 //go:generate mockery --exported --name=notificationBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type notificationBuilder interface {
 	BuildFormationAssignmentNotificationRequest(ctx context.Context, formationTemplateID string, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
+	BuildFormationNotificationRequests(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationNotificationOperationDetails, formation *model.Formation, formationTemplateWebhooks []*model.Webhook) ([]*webhookclient.FormationNotificationRequest, error)
 	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationID string, applicationTemplate *webhookdir.ApplicationTemplateWithLabels, application *webhookdir.ApplicationWithLabels, runtime *webhookdir.RuntimeWithLabels, runtimeContext *webhookdir.RuntimeContextWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, targetType model.ResourceType, tenantContext *webhookdir.CustomerTenantContext) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationID string, sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, sourceApplication *webhookdir.ApplicationWithLabels, targetApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, targetApplication *webhookdir.ApplicationWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, tenantContext *webhookdir.CustomerTenantContext) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 }
@@ -132,7 +133,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 		}
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 		if err != nil {
-			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
 		} else {
 			requests = append(requests, req)
 		}
@@ -212,7 +213,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhooksToCall[runtime.ID])
 		if err != nil {
-			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
 		} else {
 			requests = append(requests, req)
 		}
@@ -316,7 +317,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 
 			req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 			if err != nil {
-				log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+				log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
 			} else {
 				requests = append(requests, req)
 			}
@@ -475,7 +476,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, appIDToWebhookMapping[appID])
 		if err != nil {
-			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
 		} else {
 			requests = append(requests, req)
 		}
@@ -538,7 +539,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 		if err != nil {
-			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
 		} else {
 			requests = append(requests, req)
 		}
@@ -595,11 +596,31 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, formation.FormationTemplateID, details, webhook)
 		if err != nil {
-			log.C(ctx).Errorf("Failed to generate notification due to: %v", err)
+			log.C(ctx).Errorf("Failed to build formation assignment notification request due to: %v", err)
 		} else {
 			requests = append(requests, req)
 		}
 	}
 
 	return requests, nil
+}
+
+// GenerateFormationLifecycleNotifications generates formation notifications for the provided webhooks
+func (ns *NotificationsGenerator) GenerateFormationLifecycleNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationNotificationRequest, error) {
+	details := &formationconstraint.GenerateFormationNotificationOperationDetails{
+		Operation:             formationOperation,
+		FormationID:           formation.ID,
+		FormationName:         formation.Name,
+		FormationType:         formationTemplateName,
+		FormationTemplateID:   formationTemplateID,
+		TenantID:              tenantID,
+		CustomerTenantContext: customerTenantContext,
+	}
+
+	reqs, err := ns.notificationBuilder.BuildFormationNotificationRequests(ctx, details, formation, formationTemplateWebhooks)
+	if err != nil {
+		log.C(ctx).Errorf("Failed to build formation notification requests due to: %v", err)
+	}
+
+	return reqs, nil
 }
