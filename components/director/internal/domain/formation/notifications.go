@@ -4,10 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -36,6 +32,7 @@ type notificationsGenerator interface {
 	GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
 	GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
 	GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
+	GenerateFormationLifecycleNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationNotificationRequest, error)
 }
 
 var emptyFormationAssignment = &webhookdir.FormationAssignment{Value: "\"\""}
@@ -43,7 +40,6 @@ var emptyFormationAssignment = &webhookdir.FormationAssignment{Value: "\"\""}
 type notificationsService struct {
 	tenantRepository       tenantRepository
 	webhookClient          webhookClient
-	webhookConverter       webhookConverter
 	notificationsGenerator notificationsGenerator
 }
 
@@ -51,18 +47,16 @@ type notificationsService struct {
 func NewNotificationService(
 	tenantRepository tenantRepository,
 	webhookClient webhookClient,
-	webhookConverter webhookConverter,
 	notificationsGenerator notificationsGenerator,
 ) *notificationsService {
 	return &notificationsService{
 		tenantRepository:       tenantRepository,
 		webhookClient:          webhookClient,
-		webhookConverter:       webhookConverter,
 		notificationsGenerator: notificationsGenerator,
 	}
 }
 
-// GenerateFormationAssignmentNotifications generates notifications for all listening resources about the execution of `operation` for formation `formation` and object `objectID` of type `objectType`
+// GenerateFormationAssignmentNotifications generates formation assignment notifications for all listening resources about the execution of `operation` for formation `formation` and object `objectID` of type `objectType`
 func (ns *notificationsService) GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
 	customerTenantContext, err := ns.extractCustomerTenantContext(ctx, formation.TenantID)
 	if err != nil {
@@ -116,40 +110,14 @@ func (ns *notificationsService) GenerateFormationAssignmentNotifications(ctx con
 	}
 }
 
-func (ns *notificationsService) GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error) {
-	if len(formationTemplateWebhooks) == 0 {
-		log.C(ctx).Infof("Formation template with ID: %q does not have any webhooks", formationTemplateID)
-		return nil, nil
-	}
-
-	log.C(ctx).Infof("There are %d formation template(s) listening for formation lifecycle notifications", len(formationTemplateWebhooks))
-
-	customerTenantContext, err := ns.extractCustomerTenantContext(ctx, tenantID)
+// GenerateFormationNotifications generates formation notifications for the provided webhooks
+func (ns *notificationsService) GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error) {
+	customerTenantContext, err := ns.extractCustomerTenantContext(ctx, formation.TenantID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while extracting customer tenant context for tenant with internal ID %s", tenantID)
+		return nil, errors.Wrapf(err, "while extracting customer tenant context for tenant with internal ID %s", formation.TenantID)
 	}
 
-	formationTemplateInput := buildFormationLifecycleInput(formationOperation, formation, customerTenantContext)
-
-	requests := make([]*webhookclient.FormationNotificationRequest, 0, len(formationTemplateWebhooks))
-	for _, webhook := range formationTemplateWebhooks {
-		gqlWebhook, err := ns.webhookConverter.ToGraphQL(webhook)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while converting formation template webhook with ID: %s to graphql one", webhook.ID)
-		}
-
-		req := &webhookclient.FormationNotificationRequest{
-			Request: webhookclient.NewRequest(
-				*gqlWebhook,
-				formationTemplateInput,
-				correlation.CorrelationIDFromContext(ctx),
-			),
-		}
-
-		requests = append(requests, req)
-	}
-
-	return requests, nil
+	return ns.notificationsGenerator.GenerateFormationLifecycleNotifications(ctx, formationTemplateWebhooks, tenantID, formation, formationTemplateName, formationTemplateID, formationOperation, customerTenantContext)
 }
 
 func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error) {
