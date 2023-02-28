@@ -143,27 +143,6 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  testErr,
 		},
 		{
-			Name:    "Error when tenant object is not of type SA or GA",
-			Context: ctx,
-			Input:   &formationTemplateModelInput,
-			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
-				return &automock.FormationTemplateConverter{}
-			},
-			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				return &automock.FormationTemplateRepository{}
-			},
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Customer), nil)
-				return svc
-			},
-			WebhookRepo: func() *automock.WebhookRepository {
-				return &automock.WebhookRepository{}
-			},
-			ExpectedOutput: "",
-			ExpectedError:  errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
 			Name:    "Error when creating formation template",
 			Context: ctx,
 			Input:   &formationTemplateModelInput,
@@ -476,21 +455,6 @@ func TestService_List(t *testing.T) {
 			ExpectedError:  testErr,
 		},
 		{
-			Name:     "Error when tenant object is not of type SA or GA",
-			Context:  ctx,
-			PageSize: pageSize,
-			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				return &automock.FormationTemplateRepository{}
-			},
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Customer), nil)
-				return svc
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
 			Name:     "Error when listing formation templates",
 			Context:  ctx,
 			PageSize: pageSize,
@@ -707,24 +671,6 @@ func TestService_Update(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:                   "Error when tenant object is not of type SA or GA",
-			Context:                ctx,
-			Input:                  testID,
-			InputFormationTemplate: &formationTemplateModelInput,
-			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
-				repo := &automock.FormationTemplateRepository{}
-				repo.On("Exists", ctx, testID).Return(true, nil).Once()
-				return repo
-			},
-			FormationTemplateConverter: UnusedFormationTemplateConverter,
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Customer), nil)
-				return svc
-			},
-			ExpectedError: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
 			Name:                   "Error when updating formation template fails",
 			Context:                ctx,
 			Input:                  testID,
@@ -888,18 +834,6 @@ func TestService_Delete(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:                        "Error when tenant object is not of type SA or GA",
-			Context:                     ctx,
-			Input:                       testID,
-			FormationTemplateRepository: UnusedFormationTemplateRepository,
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Customer), nil)
-				return svc
-			},
-			ExpectedError: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
-		},
-		{
 			Name:    "Error when deleting formation template",
 			Context: ctx,
 			Input:   testID,
@@ -1044,18 +978,6 @@ func TestService_ListWebhooksForFormationTemplate(t *testing.T) {
 				return svc
 			},
 			ExpectedError: testErr,
-		},
-		{
-			Name:       "Error when tenant object is not of type SA or GA",
-			Context:    ctx,
-			Input:      testID,
-			WebhookSvc: UnusedWebhookService,
-			TenantSvc: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Customer), nil)
-				return svc
-			},
-			ExpectedError: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
 		},
 		{
 			Name:    "Error when listing formation template webhooks",

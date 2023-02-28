@@ -192,9 +192,8 @@ func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 }
 
 // extractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:
-//		1. If it's not SA or GA -> return error
-//		2. If it's GA -> return the GA id
-//		3. If it's a SA -> return its parent GA id
+//		1. If it's a SA -> return its parent GA id
+//		2. If it's any other tenant type -> return its ID
 func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.Context) (string, error) {
 	internalTenantID, err := s.getTenantFromContext(ctx)
 	if err != nil {
@@ -210,13 +209,9 @@ func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.C
 		return "", err
 	}
 
-	if tenantObject.Type != tnt.Account && tenantObject.Type != tnt.Subaccount {
-		return "", errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount")
+	if tenantObject.Type == tnt.Subaccount {
+		return tenantObject.Parent, nil
 	}
 
-	if tenantObject.Type == tnt.Account {
-		return tenantObject.ID, nil
-	}
-
-	return tenantObject.Parent, nil
+	return tenantObject.ID, nil
 }
