@@ -21,7 +21,7 @@ CREATE VIEW apps_subaccounts(id, tenant_id, formation_id)
 AS
 SELECT l.app_id                 AS id,
        asa.target_tenant_id AS tenant_id,
-       (SELECT id FROM formations f WHERE name = asa.scenario AND (f.tenant_id = asa.tenant_id OR f.tenant_id = asa.target_tenant_id)) as formation_id
+       (SELECT id FROM formations f WHERE f.name = asa.scenario AND f.tenant_id = asa.tenant_id) as formation_id
 FROM labels l
          -- 2) Get subaccounts in those scenarios (Putting a subaccount in a
          -- scenario will reflect on creating an ASA for the subaccount.
