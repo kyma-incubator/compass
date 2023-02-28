@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2901"
+      version: "PR-2921"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
