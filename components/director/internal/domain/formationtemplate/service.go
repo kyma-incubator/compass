@@ -3,13 +3,10 @@ package formationtemplate
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +30,7 @@ type UIDService interface {
 // TenantService is responsible for service-layer tenant operations
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantService interface {
-	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	ExtractTenantIDForTenantScopedFormationTemplates(ctx context.Context) (string, error)
 }
 
 // WebhookRepository is responsible for repo-layer Webhook operations
@@ -77,7 +74,7 @@ func (s *service) Create(ctx context.Context, in *model.FormationTemplateInput) 
 		log.C(ctx).Debugf("ID %s generated for Formation Template with name %s", formationTemplateID, in.Name)
 	}
 
-	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
+	tenantID, err := s.tenantSvc.ExtractTenantIDForTenantScopedFormationTemplates(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -116,7 +113,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
+	tenantID, err := s.tenantSvc.ExtractTenantIDForTenantScopedFormationTemplates(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +130,7 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationTemp
 		return apperrors.NewNotFoundError(resource.FormationTemplate, id)
 	}
 
-	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
+	tenantID, err := s.tenantSvc.ExtractTenantIDForTenantScopedFormationTemplates(ctx)
 	if err != nil {
 		return err
 	}
@@ -148,7 +145,7 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationTemp
 
 // Delete deletes a FormationTemplate matching ID `id`
 func (s *service) Delete(ctx context.Context, id string) error {
-	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
+	tenantID, err := s.tenantSvc.ExtractTenantIDForTenantScopedFormationTemplates(ctx)
 	if err != nil {
 		return err
 	}
@@ -162,56 +159,10 @@ func (s *service) Delete(ctx context.Context, id string) error {
 
 // ListWebhooksForFormationTemplate lists webhooks for a FormationTemplate matching ID `formationTemplateID`
 func (s *service) ListWebhooksForFormationTemplate(ctx context.Context, formationTemplateID string) ([]*model.Webhook, error) {
-	tenantID, err := s.extractTenantIDForTenantScopedFormationTemplates(ctx)
+	tenantID, err := s.tenantSvc.ExtractTenantIDForTenantScopedFormationTemplates(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return s.webhookService.ListForFormationTemplate(ctx, tenantID, formationTemplateID)
-}
-
-// getTenantFromContext validates and returns the tenant present in the context:
-//  - if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
-//  - if both internalID and externalID are NOT present -> -> proceed with global formation templates (return empty id)
-//  - otherwise return TenantNotFoundError
-func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
-	tntCtx, err := tenant.LoadTenantPairFromContextNoChecks(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	if tntCtx.InternalID != "" && tntCtx.ExternalID != "" {
-		return tntCtx.InternalID, nil
-	}
-
-	if tntCtx.InternalID == "" && tntCtx.ExternalID == "" {
-		return "", nil
-	}
-
-	return "", apperrors.NewTenantNotFoundError(tntCtx.ExternalID)
-}
-
-// extractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:
-//		1. If it's a SA -> return its parent GA id
-//		2. If it's any other tenant type -> return its ID
-func (s *service) extractTenantIDForTenantScopedFormationTemplates(ctx context.Context) (string, error) {
-	internalTenantID, err := s.getTenantFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	if internalTenantID == "" {
-		return "", nil
-	}
-
-	tenantObject, err := s.tenantSvc.GetTenantByID(ctx, internalTenantID)
-	if err != nil {
-		return "", err
-	}
-
-	if tenantObject.Type == tnt.Subaccount {
-		return tenantObject.Parent, nil
-	}
-
-	return tenantObject.ID, nil
 }
