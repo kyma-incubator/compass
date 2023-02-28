@@ -2,6 +2,7 @@ package formationtemplate
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -31,15 +32,22 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		return nil, err
 	}
 
-	return &model.FormationTemplateInput{
-		Name:                   in.Name,
-		ApplicationTypes:       in.ApplicationTypes,
-		RuntimeTypes:           in.RuntimeTypes,
-		RuntimeTypeDisplayName: *in.RuntimeTypeDisplayName,
-		RuntimeArtifactKind:    model.RuntimeArtifactKind(*in.RuntimeArtifactKind),
-		Webhooks:               webhooks,
-		LeadingProductIDs:      in.LeadingProductIDs,
-	}, nil
+	templateInput := &model.FormationTemplateInput{
+		Name:              in.Name,
+		ApplicationTypes:  in.ApplicationTypes,
+		RuntimeTypes:      in.RuntimeTypes,
+		Webhooks:          webhooks,
+		LeadingProductIDs: in.LeadingProductIDs,
+	}
+
+	if in.RuntimeTypeDisplayName != nil {
+		templateInput.RuntimeTypeDisplayName = *in.RuntimeTypeDisplayName
+	}
+	if in.RuntimeArtifactKind != nil {
+		templateInput.RuntimeArtifactKind = model.RuntimeArtifactKind(*in.RuntimeArtifactKind)
+	}
+
+	return templateInput, nil
 }
 
 // FromModelInputToModel converts from internal model input and id to internal model
