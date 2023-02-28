@@ -3539,7 +3539,7 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 		providerFormationTmplName := "provider-formation-template-name"
 		providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
@@ -3882,7 +3882,7 @@ func TestFormationNotificationResynchronizationAsync(stdT *testing.T) {
 		providerFormationTmplName := "provider-formation-template-name"
 		providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
