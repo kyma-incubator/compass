@@ -199,9 +199,6 @@ func main() {
 
 	if cfg.IsORDAggregatorJobScheduleable {
 		go func() {
-			if !cfg.IsORDAggregatorJobScheduleable {
-				return
-			}
 			if err := startSyncORDDocumentsJob(ctx, ordAggregator, cfg); err != nil {
 				log.C(ctx).WithError(err).Error("Failed to start sync ORD documents cronjob. Stopping app...")
 			}
