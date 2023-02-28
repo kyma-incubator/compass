@@ -571,7 +571,7 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
         {{- if .RuntimeTypeDisplayName }}
-		runtimeTypeDisplayName: {{.RuntimeTypeDisplayName}}
+		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
 		{{- end }}
         {{- if .RuntimeArtifactKind }}
 		runtimeArtifactKind: {{.RuntimeArtifactKind}}
