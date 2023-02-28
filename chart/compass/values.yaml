@@ -155,11 +155,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-88"
+      version: "PR-87"
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2914"
+      version: "PR-2901"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2793"
+      version: "PR-2901"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
