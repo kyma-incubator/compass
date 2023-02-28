@@ -296,7 +296,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.CreateFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -345,7 +345,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.CreateFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -676,7 +676,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.CreateFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -724,7 +724,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
 				notificationSvc.On("SendNotification", ctx, formationNotificationRequest).Return(formationNotificationWebhookSuccessResponse, nil).Once()
 				return notificationSvc
 			},
@@ -774,7 +774,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, FormationTemplateID, model.CreateFormation).Return(nil, testErr).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(nil, testErr).Once()
 				return notificationSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -822,7 +822,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
 				notificationSvc.On("SendNotification", ctx, formationNotificationRequest).Return(nil, testErr).Once()
 				return notificationSvc
 			},
@@ -872,7 +872,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
 				notificationSvc.On("SendNotification", ctx, formationNotificationRequest).Return(nil, testErr).Once()
 				return notificationSvc
 			},
@@ -922,7 +922,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
 				notificationSvc.On("SendNotification", ctx, formationNotificationRequest).Return(formationNotificationWebhookErrorResponse, nil).Once()
 				return notificationSvc
 			},
@@ -972,7 +972,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
 				notificationSvc.On("SendNotification", ctx, formationNotificationRequest).Return(formationNotificationWebhookErrorResponse, nil).Once()
 				return notificationSvc
 			},
@@ -1022,7 +1022,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationWithInitialState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(formationNotificationRequests, nil).Once()
 				notificationSvc.On("SendNotification", ctx, formationNotificationRequest).Return(formationNotificationWebhookSuccessResponse, nil).Once()
 				return notificationSvc
 			},
@@ -1171,7 +1171,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1209,7 +1209,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1244,7 +1244,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1284,7 +1284,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1325,7 +1325,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1367,7 +1367,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1420,7 +1420,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1483,7 +1483,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1541,7 +1541,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			Name: "Error when generating formation notifications fails",
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(nil, testErr).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(nil, testErr).Once()
 				return notificationSvc
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -1572,7 +1572,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			Name: "Error when processing formation notifications fails",
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
-				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, FormationTemplateID, model.DeleteFormation).Return(formationNotificationRequests, nil).Once()
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationRequests, nil).Once()
 				notificationSvc.On("SendNotification", ctx, formationNotificationRequest).Return(nil, testErr).Once()
 				return notificationSvc
 			},

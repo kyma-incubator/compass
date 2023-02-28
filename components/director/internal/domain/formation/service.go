@@ -84,7 +84,7 @@ type FormationTemplateRepository interface {
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
 	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
-	GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
+	GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
 	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
@@ -294,18 +294,21 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
 	}
 
-	joinPointDetails := &formationconstraint.CRUDFormationOperationDetails{
+	formationName := formation.Name
+	formationTemplateID := fTmpl.ID
+	formationTemplateName := fTmpl.Name
+
+	CRUDJoinPointDetails := &formationconstraint.CRUDFormationOperationDetails{
 		FormationType:       templateName,
-		FormationTemplateID: fTmpl.ID,
-		FormationName:       formation.Name,
+		FormationTemplateID: formationTemplateID,
+		FormationName:       formationName,
 		TenantID:            tnt,
 	}
 
-	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreCreate, joinPointDetails, fTmpl.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreCreate, CRUDJoinPointDetails, formationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PreOperation)
 	}
 
-	formationName := formation.Name
 	if err := s.modifyFormations(ctx, tnt, formationName, addFormation); err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, err
@@ -315,20 +318,20 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		}
 	}
 
-	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, fTmpl.ID, model.FormationTemplateWebhookReference)
+	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
 	if err != nil {
-		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", fTmpl.ID)
+		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
 	}
 
-	formationState := determineFormationState(ctx, fTmpl.ID, fTmpl.Name, formationTemplateWebhooks)
+	formationState := determineFormationState(ctx, formationTemplateID, formationTemplateName, formationTemplateWebhooks)
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-	newFormation, err := s.createFormation(ctx, tnt, fTmpl.ID, formationName, formationState)
+	newFormation, err := s.createFormation(ctx, tnt, formationTemplateID, formationName, formationState)
 	if err != nil {
 		return nil, err
 	}
 
-	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, newFormation, fTmpl.ID, model.CreateFormation)
+	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, newFormation, formationTemplateName, formationTemplateID, model.CreateFormation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
 	}
@@ -341,7 +344,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		}
 	}
 
-	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, joinPointDetails, fTmpl.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, CRUDJoinPointDetails, formationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
 	}
 
@@ -377,7 +380,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
 	}
 
-	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, ft.formation, formationTemplateID, model.DeleteFormation)
+	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, ft.formation, formationTemplateName, formationTemplateID, model.DeleteFormation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formationID, formationName)
 	}

@@ -361,7 +361,7 @@ func (b FormationAssignmentRequestBody) Validate() error {
 		return validation.ValidateStruct(&b, fieldRules...)
 	}
 
-	return nil
+	return validation.ValidateStruct(&b, fieldRules...)
 }
 
 // Validate validates the formation's request body input
