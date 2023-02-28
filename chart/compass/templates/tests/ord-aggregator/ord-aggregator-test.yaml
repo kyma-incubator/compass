@@ -36,6 +36,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: ORD_AGGREGATOR_CONTAINER_NAME
               value: "{{ .Values.global.ordAggregator.containerName }}"
+            - name: ORD_AGGREGATOR_URL
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordAggregator.prefix }}"
             - name: DIRECTOR_GRAPHQL_OAUTH_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
@@ -100,8 +102,6 @@ spec:
                   key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
-            - name: AGGREGATOR_SCHEDULE
-              value: "{{ .Values.global.ordAggregator.schedule }}"
             - name: DEFAULT_TEST_TENANT
               value: "{{ (index .Values.global.tenants 9).id }}"
             - name: APP_SUBSCRIPTION_CONFIG_URL
@@ -179,18 +179,6 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 rules:
-  - apiGroups: ["*"]
-    resources: ["jobs"]
-    resourceNames: ["ord-aggregator-test", "ord-aggregator-test2"]
-    verbs: ["get", "delete"]
-  - apiGroups: ["*"]
-    resources: ["jobs"]
-    resourceNames: []
-    verbs: ["create"]
-  - apiGroups: ["*"]
-    resources: ["cronjobs"]
-    resourceNames: ["{{ .Chart.Name }}-{{ .Values.global.ordAggregator.name }}"]
-    verbs: ["get"]
   - apiGroups: ["operations.compass"]
     resources: ["operations"]
     verbs: ["get"]
