@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for ORD Aggregator
+name: ord-aggregator
+version: 0.1.0

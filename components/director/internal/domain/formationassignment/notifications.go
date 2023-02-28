@@ -16,6 +16,7 @@ import (
 )
 
 // formationRepository represents the Formations repository layer
+//
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationRepository interface {
 	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
