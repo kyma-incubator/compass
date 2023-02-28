@@ -35,6 +35,7 @@ type formationAssignmentConverter interface {
 }
 
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
+//
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
@@ -47,12 +48,14 @@ type FormationAssignmentService interface {
 }
 
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
+//
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
 	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
 }
 
 // formationService is responsible for the service-layer Formation operations
+//
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -60,18 +63,21 @@ type formationService interface {
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations
+//
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 // RuntimeContextRepository is responsible for the repo-layer runtime context operations
+//
 //go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 }
 
 // ApplicationRepository is responsible for the repo-layer application operations
+//
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
@@ -79,30 +85,35 @@ type ApplicationRepository interface {
 }
 
 // TenantRepository is responsible for the repo-layer tenant operations
+//
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // ApplicationTemplateRepository is responsible for the repo-layer application template operations
+//
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelRepository is responsible for the repo-layer label operations
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 // FormationRepository is responsible for the repo-layer formation operations
+//
 //go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 }
 
 // FormationTemplateRepository is responsible for the repo-layer formation template operations
+//
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
