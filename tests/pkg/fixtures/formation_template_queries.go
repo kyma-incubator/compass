@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -21,6 +22,22 @@ func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient 
 	require.NotEmpty(t, formationTemplate.ID)
 
 	return &formationTemplate
+}
+
+func CreateFormationTemplateExpectError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateInput) {
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+	require.NoError(t, err)
+	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
+	formationTemplate := graphql.FormationTemplate{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, createRequest, &formationTemplate)
+
+	// In case of successfully created formation template the require statement terminates the test case and the ID is not returned. Should clean up the formation template here.
+	if formationTemplate.ID != "" {
+		defer CleanupFormationTemplate(t, ctx, gqlClient, formationTemplate.ID)
+	}
+
+	require.Error(t, err)
+	fmt.Println("Error: ", err.Error())
 }
 
 func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplate {
