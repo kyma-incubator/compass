@@ -604,7 +604,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 					TenantID:            TntInternalID,
 				}
 				engine.On("EnforceConstraints", ctx, preUnassignLocation, details, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postUnassignLocation, details, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
@@ -2721,7 +2720,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "While enforcing constraints for target operation",
+			ExpectedErrMessage: "while enforcing constraints for target operation",
 		},
 		{
 			Name: "error while enforcing pre constraints",
@@ -2757,7 +2756,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "While enforcing constraints for target operation",
+			ExpectedErrMessage: "while enforcing constraints for target operation",
 		},
 		{
 			Name: "error while preparing details",
@@ -2788,7 +2787,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "While preparing joinpoint details for target operation",
+			ExpectedErrMessage: "while preparing joinpoint details for target operation",
 		},
 	}
 
@@ -2860,7 +2859,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				asaEngine = testCase.ASAEngineFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine)
+			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)

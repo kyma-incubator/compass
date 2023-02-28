@@ -89,6 +89,29 @@ func (_m *FormationAssignmentRepository) Get(ctx context.Context, id string, ten
 	return r0, r1
 }
 
+// GetAssignmentsForFormationWithStates provides a mock function with given fields: ctx, tenantID, formationID, states
+func (_m *FormationAssignmentRepository) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID string, formationID string, states []string) ([]*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, tenantID, formationID, states)
+
+	var r0 []*model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) []*model.FormationAssignment); ok {
+		r0 = rf(ctx, tenantID, formationID, states)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string) error); ok {
+		r1 = rf(ctx, tenantID, formationID, states)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByTargetAndSource provides a mock function with given fields: ctx, target, source, tenantID, formationID
 func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Context, target string, source string, tenantID string, formationID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, target, source, tenantID, formationID)

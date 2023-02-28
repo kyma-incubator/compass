@@ -1331,6 +1331,112 @@ func TestResolver_Status(t *testing.T) {
 	})
 }
 
+func TestResynchronizeFormationNotifications(t *testing.T) {
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	ctx := tenant.SaveToContext(context.TODO(), TntInternalID, TntExternalID)
+
+	testCases := []struct {
+		Name              string
+		Context           context.Context
+		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		FormationService  func() *automock.Service
+		Converter         func() *automock.Converter
+		ExpectedFormation *graphql.Formation
+		ExpectedErrorMsg  string
+	}{
+		{
+			Name: "successfully resynchronized formation notifications",
+			TxFn: txGen.ThatSucceeds,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
+
+				return svc
+			},
+			Converter: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation).Once()
+				return conv
+			},
+			ExpectedFormation: &graphqlFormation,
+		},
+		{
+			Name: "failed to get formation after resynchronizing",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(nil, testErr).Once()
+
+				return svc
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name: "failed during resynchronizing",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(testErr)
+
+				return svc
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name: "failed to commit after resynchronizing",
+			TxFn: txGen.ThatFailsOnCommit,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("ResynchronizeFormationNotifications", contextThatHasTenant(TntInternalID), FormationID).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), FormationID).Return(&modelFormation, nil).Once()
+
+				return svc
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:             "returns error when can not start db transaction",
+			TxFn:             txGen.ThatFailsOnBegin,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			conv := unusedConverter()
+			if testCase.Converter != nil {
+				conv = testCase.Converter()
+			}
+			formationService := unusedService()
+			if testCase.FormationService != nil {
+				formationService = testCase.FormationService()
+			}
+			persist, transact := testCase.TxFn()
+
+			resolver := formation.NewResolver(transact, formationService, conv, nil, nil, nil)
+
+			// WHEN
+			resultFormationModel, err := resolver.ResynchronizeFormationNotifications(ctx, FormationID)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+				require.Nil(t, resultFormationModel)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.ExpectedFormation, resultFormationModel)
+			}
+			mock.AssertExpectationsForObjects(t, conv, formationService, persist, transact)
+		})
+	}
+}
+
 func contextThatHasTenant(expectedTenant string) interface{} {
 	return mock.MatchedBy(func(actual context.Context) bool {
 		actualTenant, err := tenant.LoadFromContext(actual)
