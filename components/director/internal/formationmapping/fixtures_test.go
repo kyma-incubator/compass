@@ -64,6 +64,10 @@ func fixContextWithTenantAndConsumer(c consumer.Consumer, internalTntID, externa
 	return consumerAndTenantCtx
 }
 
+func fixContextWithConsumer(c consumer.Consumer) context.Context {
+	return consumer.SaveToContext(emptyCtx, c)
+}
+
 func fixFormationAssignmentModel(testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          "ID",
@@ -117,6 +121,16 @@ func contextThatHasTenant(expectedTenant string) interface{} {
 			return false
 		}
 		return actualTenant == expectedTenant
+	})
+}
+
+func contextThatHasConsumer(expectedConsumerID string) interface{} {
+	return mock.MatchedBy(func(actual context.Context) bool {
+		consumer, err := consumer.LoadFromContext(actual)
+		if err != nil {
+			return false
+		}
+		return consumer.ConsumerID == expectedConsumerID
 	})
 }
 

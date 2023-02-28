@@ -139,11 +139,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2905"
+      version: "PR-2917"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2905"
+      version: "PR-2912"
       name: compass-hydrator
     gateway:
       dir:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2905"
+      version: "PR-2911"
       name: compass-external-services-mock
     console:
       dir:
@@ -1183,7 +1183,6 @@ global:
         - "label_definition:read"
         - "label_definition:write"
         - "automatic_scenario_assignment:read"
-        - "automatic_scenario_assignment:write"
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
         - "formation:write"
@@ -1209,7 +1208,6 @@ global:
         - "tenant:read"
         - "tenant:write"
         - "automatic_scenario_assignment:read"
-        - "automatic_scenario_assignment:write"
         - "application.auths:read"
         - "application.webhooks:read"
         - "application_template.webhooks:read"

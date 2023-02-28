@@ -81,13 +81,13 @@ func (_m *AsaService) ListForTargetTenant(ctx context.Context, targetTenantInter
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAsaService interface {
+type NewAsaServiceT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewAsaService creates a new instance of AsaService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAsaService(t mockConstructorTestingTNewAsaService) *AsaService {
+func NewAsaService(t NewAsaServiceT) *AsaService {
 	mock := &AsaService{}
 	mock.Mock.Test(t)
 

@@ -15,14 +15,6 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-// FromInputGraphQL converts from GraphQL input to internal model
-func (c *converter) FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
-		ScenarioName:   in.ScenarioName,
-		TargetTenantID: targetTenantInternalID,
-	}
-}
-
 // ToGraphQL converts from internal model to GraphQL output
 func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment {
 	return graphql.AutomaticScenarioAssignment{
