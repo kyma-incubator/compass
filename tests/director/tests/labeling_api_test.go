@@ -118,6 +118,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	labelKey := "scenarios"
 	additionalValue := "ADDITIONAL"
 
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	t.Logf("Update Label Definition scenarios enum with additional value %s", additionalValue)
@@ -143,11 +144,9 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	updateLabelDefinitionRequest := fixtures.FixUpdateLabelDefinitionRequest(ldInputGQL)
 	labelDefinition := graphql.LabelDefinition{}
 
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
-
-	require.NoError(t, err)
-	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, additionalValue)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
+	require.NoError(t, err)
 
 	scenarios := []string{additionalValue}
 
@@ -183,14 +182,14 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	labelKeyBar := "bar"
 
 	firstApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "first", tenantId)
-	require.NotEmpty(t, firstApp.ID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &firstApp)
+	require.NotEmpty(t, firstApp.ID)
 	require.NoError(t, err)
 
 	//Create second application
 	secondApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "second", tenantId)
-	require.NotEmpty(t, secondApp.ID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &secondApp)
+	require.NotEmpty(t, secondApp.ID)
 	require.NoError(t, err)
 
 	//Set label "foo" on both applications
@@ -410,10 +409,10 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	}
 
 	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantID, appInput)
-	require.NoError(t, err)
-	require.NotEmpty(t, application.ID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
 	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, scenarios)
+	require.NoError(t, err)
+	require.NotEmpty(t, application.ID)
 
 	//WHEN
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{scenarios[0]})
