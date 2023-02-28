@@ -1333,10 +1333,5 @@ func determineFormationState(ctx context.Context, formationTemplateID, formation
 		return model.ReadyFormationState
 	}
 
-	if len(formationTemplateWebhooks) == 1 && *formationTemplateWebhooks[0].Mode == model.WebhookModeSync {
-		log.C(ctx).Infof("Formation template with ID: %q and name: %q have one webhook with %s mode. The formation will be created with %s state", formationTemplateID, formationTemplateName, model.WebhookModeSync, model.ReadyFormationState)
-		return model.ReadyFormationState
-	}
-
 	return model.InitialFormationState
 }
