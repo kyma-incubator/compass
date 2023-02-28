@@ -15,6 +15,7 @@
 /chart/compass/charts/ord-service @kyma-incubator/team-raptor
 /chart/compass/charts/pairing-adapter @kyma-incubator/team-falcon
 /chart/compass/charts/tenant-fetcher @kyma-incubator/team-dragon @kyma-incubator/team-falcon
+/chart/compass/charts/ord-aggregator @kyma-incubator/team-falcon
 /chart/compass/templates/filters @kyma-incubator/team-raptor
 /components/connectivity-adapter @kyma-incubator/team-falcon
 /components/connector @kyma-incubator/team-raptor
