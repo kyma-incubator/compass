@@ -1274,6 +1274,15 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 	in.Labels[nameKey] = s.appNameNormalizer.Normalize(app.Name)
 
+	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
+		if err := s.setScenarioLabel(ctx, appTenant, &model.LabelInput{Value: scenarioLabel, ObjectID: id}); err != nil {
+			return err
+		}
+
+		// In order for the scenario label not to be attempted to be created during upsert later
+		delete(in.Labels, model.ScenariosKey)
+	}
+
 	err = s.labelService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
