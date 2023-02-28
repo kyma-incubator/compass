@@ -570,8 +570,8 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 			{{- range $i, $e := .RuntimeTypes}}
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
-		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
-		runtimeArtifactKind: "{{.RuntimeArtifactKind}}"
+		runtimeTypeDisplayName: {{.RuntimeTypeDisplayName}}
+		runtimeArtifactKind: {{.RuntimeArtifactKind}}
 		{{- if .LeadingProductIDs }} 
 		leadingProductIDs: [
 			{{- range $i, $e := .LeadingProductIDs }}
