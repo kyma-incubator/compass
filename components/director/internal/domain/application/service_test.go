@@ -2831,15 +2831,15 @@ func TestService_Merge(t *testing.T) {
 
 	labelKey1 := model.ScenariosKey
 	labelKey2 := "managed"
-	labelValue1 := []interface{}{"Easter", "Egg"}
+	var labelValue1 []interface{}
 	labelValue2 := []interface{}{"Easter", "Bunny"}
 
 	upsertLabelValues := make(map[string]interface{})
-	upsertLabelValues[labelKey1] = []string{"Easter", "Bunny", "Egg"}
+	upsertLabelValues[labelKey1] = []string{"Easter", "Bunny"}
 	upsertLabelValues[labelKey2] = "true"
 
 	upsertLabelValuesWithManagedFalse := make(map[string]interface{})
-	upsertLabelValuesWithManagedFalse[labelKey1] = []string{"Easter", "Bunny", "Egg"}
+	upsertLabelValuesWithManagedFalse[labelKey1] = []string{"Easter", "Bunny"}
 	upsertLabelValuesWithManagedFalse[labelKey2] = "false"
 
 	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "true")
@@ -2903,7 +2903,7 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.On("Update", ctx, tnt, destModel).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
 				return repo
@@ -2934,7 +2934,7 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.On("Update", ctx, tnt, destModel).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
 				return repo
@@ -2988,15 +2988,16 @@ func TestService_Merge(t *testing.T) {
 			Name: "Error when cannot get destination application",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(nil, testErr).Once()
-				repo.AssertNotCalled(t, "Exists")
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -3014,7 +3015,6 @@ func TestService_Merge(t *testing.T) {
 			Name: "Error when cannot get source application",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(nil, testErr).Once()
 				repo.AssertNotCalled(t, "Exists")
 				repo.AssertNotCalled(t, "Update")
@@ -3038,19 +3038,19 @@ func TestService_Merge(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Error when source app and destination app BaseURL do not match",
+			Name: "Error when source app and destination app templates do not match",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelWithDifferentTemplateID, nil).Once()
-				repo.AssertNotCalled(t, "Exists")
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.AssertNotCalled(t, "ListForObject")
@@ -3067,19 +3067,48 @@ func TestService_Merge(t *testing.T) {
 			ExpectedErrMessage: "Application templates are not the same. Destination app template: 12346789. Source app template: qwerty",
 		},
 		{
-			Name: "Error when source app is in CONNECTED status",
+			Name: "Error when source app and destination app base url do not match",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
-				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelConnected, nil).Once()
-				repo.AssertNotCalled(t, "Exists")
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelWithDifferentBaseURL, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.AssertNotCalled(t, "ListForObject")
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: "BaseURL for applications foo and bar are not the same.",
+		},
+		{
+			Name: "Error when source app is in CONNECTED status",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelConnected, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
@@ -3101,7 +3130,7 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.AssertNotCalled(t, "Update")
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(testErr).Once()
 				return repo
@@ -3130,7 +3159,7 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.On("Update", ctx, tnt, mergedDestModel).Return(testErr)
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
 				return repo
@@ -3159,7 +3188,7 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.On("Update", ctx, tnt, mergedDestModel).Return(nil)
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
 				return repo
@@ -3188,14 +3217,14 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.AssertNotCalled(t, "Exists")
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(appTemplateLabelsWithSelfRegDistLabelKey, nil)
@@ -3218,17 +3247,94 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.AssertNotCalled(t, "Exists")
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(nil, testErr)
+
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error while checking if source app exists",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(false, testErr).Once()
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			LabelRepoFn: UnusedLabelRepository,
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error while listing source app labels",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil, testErr)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelService {
+				svc := &automock.LabelService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error while listing destination app labels",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(nil, testErr)
 
 				return repo
 			},
