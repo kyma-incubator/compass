@@ -118,6 +118,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	labelKey := "scenarios"
 	additionalValue := "ADDITIONAL"
 
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	t.Logf("Update Label Definition scenarios enum with additional value %s", additionalValue)
@@ -143,11 +144,9 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	updateLabelDefinitionRequest := fixtures.FixUpdateLabelDefinitionRequest(ldInputGQL)
 	labelDefinition := graphql.LabelDefinition{}
 
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
-
-	require.NoError(t, err)
-	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, additionalValue)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
+	require.NoError(t, err)
 
 	scenarios := []string{additionalValue}
 
