@@ -20,6 +20,8 @@ type Entity struct {
 	OrdID                                   sql.NullString `db:"ord_id"`
 	ShortDescription                        sql.NullString `db:"short_description"`
 	SystemInstanceAware                     sql.NullBool   `db:"system_instance_aware"`
+	PolicyLevel                             sql.NullString `db:"policy_level"`
+	CustomPolicyLevel                       sql.NullString `db:"custom_policy_level"`
 	APIProtocol                             sql.NullString `db:"api_protocol"`
 	Tags                                    sql.NullString `db:"tags"`
 	Countries                               sql.NullString `db:"countries"`
