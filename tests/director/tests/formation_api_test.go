@@ -736,7 +736,7 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 		// Create kyma formation template
 		kymaFormationTmplName := "kyma-formation-template-name"
 		kymaAppTypes := []string{"kyma-app-type-1", "kyma-app-type-2"}
-		kymaFT := createFormationTemplate(t, ctx, kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, kymaAppTypes, graphql.ArtifactTypeEnvironmentInstance)
+		kymaFT := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, kymaAppTypes, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, kymaFT.ID)
 
 		// Create provider formation template
@@ -1076,7 +1076,7 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		providerFormationTmplName := "provider-formation-template-name"
 
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
@@ -1333,7 +1333,7 @@ func TestFormationAssignmentNotifications(stdT *testing.T) {
 		providerFormationTmplName := "provider-formation-template-name"
 
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
@@ -1630,7 +1630,7 @@ func TestAppToAppFormationAssignmentNotifications(t *testing.T) {
 
 	// TODO:: Remove runtimeType once we support app only formations
 	appTypes := []string{"app-to-app-app-type-1", "app-to-app-app-type-2"}
-	ft := createFormationTemplate(t, ctx, formationTmplName, "dummy-runtime-type", appTypes, graphql.ArtifactTypeSubscription)
+	ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, "dummy-runtime-type", appTypes, graphql.ArtifactTypeSubscription)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 	formationName := "app-to-app-formation-name"
@@ -1952,7 +1952,7 @@ func TestUseApplicationTemplateWebhookIfAppDoesNotHaveOneForNotifications(t *tes
 
 	// TODO: Remove runtimeType once we support app only formations
 	appTypes := []string{"app-to-app-app-type-1", "app-to-app-app-type-2"}
-	ft := createFormationTemplate(t, ctx, formationTmplName, "dummy-runtime-type", appTypes, graphql.ArtifactTypeSubscription)
+	ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, "dummy-runtime-type", appTypes, graphql.ArtifactTypeSubscription)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 	formationName := "app-to-app-formation-name"
@@ -2222,7 +2222,7 @@ func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testi
 		appTypes := []string{"provider-app-type-1", "provider-app-type-2"}
 		providerFormationTmplName := "provider-formation-template-name"
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, appTypes, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, appTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
@@ -2607,7 +2607,7 @@ func TestFormationAssignments(stdT *testing.T) {
 		providerFormationTmplName := "provider-formation-template-name"
 		providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
@@ -3149,7 +3149,7 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 		providerFormationTmplName := "provider-formation-template-name"
 		providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
@@ -3489,7 +3489,7 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 		providerFormationTmplName := "provider-formation-template-name"
 		providerAppTypes := []string{"provider-app-type-1", "provider-app-type-2"}
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
-		ft := createFormationTemplate(t, ctx, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerFormationTmplName, conf.SubscriptionProviderAppNameValue, providerAppTypes, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerFormationName := "provider-formation-name"
