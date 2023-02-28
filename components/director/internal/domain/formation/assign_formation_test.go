@@ -426,6 +426,13 @@ func TestServiceAssignFormation(t *testing.T) {
 				}).Return(nil)
 				return labelService
 			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{ApplicationID}).Return([]*model.Application{{BaseEntity: &model.BaseEntity{ID: ApplicationID}, ApplicationTemplateID: str.Ptr(ApplicationTemplateID)}}, nil).Once()
+
+				return repo
+			},
 			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
@@ -444,8 +451,8 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctx, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedSecondFormation).Return(formationAssignments, nil)
-				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments, map[string]string{}, notifications, mock.Anything).Return(nil)
+				formationAssignmentSvc.On("GenerateAssignments", ctx, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedSecondFormation).Return(formationAssignments2, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments2, map[string]string{}, map[string]string{ApplicationID: ApplicationTemplateID}, notifications, mock.Anything).Return(nil)
 				return formationAssignmentSvc
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
@@ -1408,7 +1415,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectType:         graphql.FormationObjectTypeTenant,
 			ObjectID:           TargetTenant,
 			InputFormation:     inputFormation,
-			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template\" does not support resources of type \"TENANT\"",
+			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template-name\" does not support resources of type \"TENANT\"",
 		},
 		{
 			Name: "error when can't get formation by name",
@@ -1551,7 +1558,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectType:         graphql.FormationObjectTypeRuntime,
 			ObjectID:           RuntimeID,
 			InputFormation:     inputFormation,
-			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template\" does not support resources of type \"RUNTIME\"",
+			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template-name\" does not support resources of type \"RUNTIME\"",
 		},
 		{
 			Name: "error when assigning runtime fetching formation template",
@@ -1656,7 +1663,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
 			ObjectID:           RuntimeContextID,
 			InputFormation:     inputFormation,
-			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template\" does not support resources of type \"RUNTIME_CONTEXT\"",
+			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template-name\" does not support resources of type \"RUNTIME_CONTEXT\"",
 		},
 		{
 			Name: "error when assigning runtime context fetching formation template",
