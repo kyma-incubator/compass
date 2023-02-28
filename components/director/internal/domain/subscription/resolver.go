@@ -53,13 +53,13 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 
 	switch flowType {
 	case resource.ApplicationTemplate:
-		log.C(ctx).Infof("Entering Application flow")
+		log.C(ctx).Infof("Entering application subscription flow")
 		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscriptionAppName, subscriptionPayload)
 		if err != nil {
 			return false, err
 		}
 	case resource.Runtime:
-		log.C(ctx).Infof("Entering Runtime flow")
+		log.C(ctx).Infof("Entering runtime subscription flow")
 		success, err = r.subscriptionSvc.SubscribeTenantToRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 		if err != nil {
 			return false, err
@@ -94,19 +94,19 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 
 	switch flowType {
 	case resource.ApplicationTemplate:
-		log.C(ctx).Infof("Entering Application flow")
+		log.C(ctx).Infof("Entering application subscription flow")
 		success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, subaccountTenantID, region)
 		if err != nil {
 			return false, err
 		}
 	case resource.Runtime:
-		log.C(ctx).Infof("Entering Runtime flow")
+		log.C(ctx).Infof("Entering runtime subscription flow")
 		success, err = r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
 		if err != nil {
 			return false, err
 		}
 	default:
-		log.C(ctx).Infof("Nothing to unsubscribe to provider (%q) in region (%q)", providerID, region)
+		log.C(ctx).Infof("Nothing to unsubscribe from provider(%q) with subaccount: %q in region (%q)", providerID, providerSubaccountID, region)
 	}
 
 	if err = tx.Commit(); err != nil {
