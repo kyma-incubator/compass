@@ -99,7 +99,7 @@ func (nb *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Co
 	}
 
 	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PostGenerateFormationNotifications, joinPointDetails, joinPointDetails.FormationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationNotificationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationNotificationOperation, model.PostOperation)
 	}
 
 	return requests, nil
