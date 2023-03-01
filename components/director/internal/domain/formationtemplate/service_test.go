@@ -22,8 +22,6 @@ func TestService_Create(t *testing.T) {
 	ctx := tnt.SaveToContext(context.TODO(), testTenantID, testTenantID)
 	ctxWithEmptyTenants := tnt.SaveToContext(context.TODO(), "", "")
 
-	testErr := errors.New("test error")
-
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
 		uidSvc.On("Generate").Return(testID)
@@ -111,7 +109,7 @@ func TestService_Create(t *testing.T) {
 			},
 			TenantSvc: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil).Once()
+				svc.On("ExtractTenantIDForTenantScopedFormationTemplates", ctx).Return(testTenantID, nil).Once()
 				return svc
 			},
 			WebhookRepo: func() *automock.WebhookRepository {
