@@ -4126,7 +4126,7 @@ func TestFormationNotificationResynchronizationAsync(stdT *testing.T) {
 			require.Equal(t, actualWebhook.ID, webhookID)
 
 			t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-			defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
+			defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, providerFormationName, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 			assignedFormation := fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 			t.Logf("Assign application to formation %s", formation.Name)
