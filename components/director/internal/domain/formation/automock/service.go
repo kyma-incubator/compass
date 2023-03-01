@@ -157,6 +157,20 @@ func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*mode
 	return r0, r1
 }
 
+// ResynchronizeFormationNotifications provides a mock function with given fields: ctx, formationID
+func (_m *Service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) error {
+	ret := _m.Called(ctx, formationID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, formationID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4
 func (_m *Service) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)

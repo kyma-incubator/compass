@@ -81,6 +81,29 @@ func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, t
 	return r0, r1
 }
 
+// GetAssignmentsForFormationWithStates provides a mock function with given fields: ctx, tenantID, formationID, states
+func (_m *FormationAssignmentService) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID string, formationID string, states []string) ([]*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, tenantID, formationID, states)
+
+	var r0 []*model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []string) []*model.FormationAssignment); ok {
+		r0 = rf(ctx, tenantID, formationID, states)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string) error); ok {
+		r1 = rf(ctx, tenantID, formationID, states)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetForFormation provides a mock function with given fields: ctx, id, formationID
 func (_m *FormationAssignmentService) GetForFormation(ctx context.Context, id string, formationID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, id, formationID)
@@ -97,6 +120,29 @@ func (_m *FormationAssignmentService) GetForFormation(ctx context.Context, id st
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, id, formationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetReverseBySourceAndTarget provides a mock function with given fields: ctx, formationID, sourceID, targetID
+func (_m *FormationAssignmentService) GetReverseBySourceAndTarget(ctx context.Context, formationID string, sourceID string, targetID string) (*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, formationID, sourceID, targetID)
+
+	var r0 *model.FormationAssignment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.FormationAssignment); ok {
+		r0 = rf(ctx, formationID, sourceID, targetID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationAssignment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, formationID, sourceID, targetID)
 	} else {
 		r1 = ret.Error(1)
 	}

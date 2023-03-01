@@ -89,6 +89,15 @@ func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Req
 			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
 
+func FixResynchronizeFormationNotificationsRequest(formationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			  result: resynchronizeFormationNotifications(formationID:"%s"){
+				%s
+			  }
+			}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
+}
+
 func FixFormationInput(formationName string, formationTemplateName *string) graphql.FormationInput {
 	return graphql.FormationInput{
 		Name:         formationName,

@@ -19,6 +19,7 @@ import (
 )
 
 // FormationAssignmentRepository represents the Formation Assignment repository layer
+//
 //go:generate mockery --name=FormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentRepository interface {
 	Create(ctx context.Context, item *model.FormationAssignment) error
@@ -27,6 +28,7 @@ type FormationAssignmentRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 	GetGlobalByIDAndFormationID(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, tenantID, id, formationID string) (*model.FormationAssignment, error)
+	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
@@ -76,9 +78,10 @@ type tenantRepository interface {
 	GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error)
 }
 
-//go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
 // Used for testing
 //nolint
+//
+//go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
 type templateInput interface {
 	webhookdir.TemplateInput
 	GetParticipantsIDs() []string
@@ -90,6 +93,7 @@ type templateInput interface {
 }
 
 // UIDService generates UUIDs for new entities
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -167,6 +171,16 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationAssignmen
 	}
 
 	return fa, nil
+}
+
+// GetAssignmentsForFormationWithStates retrieves formation assignments matching formation ID `formationID` and with state among `states` for tenant with ID `tenantID`
+func (s *service) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error) {
+	formationAssignments, err := s.repo.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID, states)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation assignments with states for formation with ID: %q and tenant: %q", formationID, tenantID)
+	}
+
+	return formationAssignments, nil
 }
 
 // GetGlobalByID retrieves the formation assignment matching ID `id` globally without tenant parameter
