@@ -128,8 +128,8 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 
 		// set runtime scenarios label
-		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 
 		t.Log("Request bundle instance auth creation")
 		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
@@ -170,8 +170,8 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 
 		// set runtime scenarios label
-		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 
 		output = graphql.BundleInstanceAuth{}
 		t.Log("Request bundle instance auth creation")
@@ -235,12 +235,12 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	// set application scenarios label
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 
 	// set runtime scenarios label
-	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
 
 	t.Log("Request bundle instance auth creation")
 	err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &bndlInstanceAuth)
@@ -486,12 +486,12 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 
 		// set runtime scenarios label
-		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
@@ -504,12 +504,12 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is NOT in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 
 		// set runtime scenarios label
-		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
