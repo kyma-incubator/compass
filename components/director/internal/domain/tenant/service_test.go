@@ -136,6 +136,108 @@ func TestService_GetInternalTenant(t *testing.T) {
 	}
 }
 
+func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), testID, testExternal)
+	ctxWithEmptyTenants := tenant.SaveToContext(context.TODO(), "", "")
+
+	testCases := []struct {
+		Name                string
+		Context             context.Context
+		TenantMappingRepoFn func() *automock.TenantMappingRepository
+		ExpectedError       string
+		ExpectedOutput      string
+	}{
+		{
+			Name:    "Success when tenant is GA",
+			Context: ctx,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, "", tenantEntity.Account), nil).Once()
+				return tenantMappingRepo
+			},
+			ExpectedOutput: testID,
+		},
+		{
+			Name:    "Success when tenant is SA",
+			Context: ctx,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("Get", ctx, testID).Return(newModelBusinessTenantMappingWithType(testID, testName, testParentID, tenantEntity.Subaccount), nil).Once()
+				return tenantMappingRepo
+			},
+			ExpectedOutput: testParentID,
+		},
+		{
+			Name:    "Success when empty tenant",
+			Context: ctxWithEmptyTenants,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				return &automock.TenantMappingRepository{}
+			},
+			ExpectedOutput: "",
+		},
+		{
+			Name:    "Error when getting the internal tenant",
+			Context: ctx,
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				tenantMappingRepo := &automock.TenantMappingRepository{}
+				tenantMappingRepo.On("Get", ctx, testID).Return(nil, testError).Once()
+				return tenantMappingRepo
+			},
+			ExpectedError:  testError.Error(),
+			ExpectedOutput: "",
+		},
+		{
+			Name:    "Error when tenant is not in context",
+			Context: context.TODO(),
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				return &automock.TenantMappingRepository{}
+			},
+			ExpectedError:  "cannot read tenant from context",
+			ExpectedOutput: "",
+		},
+		{
+			Name:    "Error when there is only internalID in context",
+			Context: tenant.SaveToContext(context.TODO(), testID, ""),
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				return &automock.TenantMappingRepository{}
+			},
+			ExpectedError:  apperrors.NewTenantNotFoundError("").Error(),
+			ExpectedOutput: "",
+		},
+		{
+			Name:    "Error when there is only externalID in context",
+			Context: tenant.SaveToContext(context.TODO(), "", testID),
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				return &automock.TenantMappingRepository{}
+			},
+			ExpectedError:  apperrors.NewTenantNotFoundError(testID).Error(),
+			ExpectedOutput: "",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantMappingRepoFn := testCase.TenantMappingRepoFn()
+			svc := tenant.NewService(tenantMappingRepoFn, nil)
+
+			// WHEN
+			result, err := svc.ExtractTenantIDForTenantScopedFormationTemplates(testCase.Context)
+
+			// THEN
+			if len(testCase.ExpectedError) > 0 {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			tenantMappingRepoFn.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_List(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), "test", "external-test")
