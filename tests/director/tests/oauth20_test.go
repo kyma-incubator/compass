@@ -112,9 +112,9 @@ func TestGenerateClientCredentialsToIntegrationSystem(t *testing.T) {
 	// WHEN
 	t.Log("Generate client credentials for integration system")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, generateIntSysAuthRequest, &intSysAuth)
-	require.NoError(t, err)
 	require.NotEmpty(t, intSysAuth.Auth)
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+	require.NoError(t, err)
 
 	//THEN
 	t.Log("Check if client credentials were generated")

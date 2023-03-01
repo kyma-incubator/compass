@@ -231,8 +231,8 @@ func TestRuntimeFormationFlow(t *testing.T) {
 
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
-	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountID, tenantId)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
@@ -356,8 +356,8 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
-	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountID, tenantId)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
@@ -397,8 +397,8 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 
 	formationInput2 := graphql.FormationInput{Name: asaFormation2}
 	t.Log("Creating second ASA")
-	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2, subaccountID, tenantId)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2.Name, subaccountID, tenantId)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2, subaccountID, tenantId)
 
 	t.Log("RuntimeContext should be assigned to the new formation coming from ASA as well")
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2})
@@ -737,13 +737,13 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 		// Create kyma formation
 		kymaFormationName := "kyma-formation-name"
-		fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName, &kymaFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName)
+		fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName, &kymaFormationTmplName)
 
 		// Create provider formation
 		providerFormationName := "provider-formation-name"
-		fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 
 		t.Run("Create Automatic Scenario Assignment BEFORE runtime creation", func(t *testing.T) {
 			// Create Automatic Scenario Assignment for kyma formation
@@ -1052,8 +1052,8 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
 
 		t.Log("Create integration system")
@@ -1126,9 +1126,9 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
 		assignReq = fixtures.FixAssignFormationRequest(subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), providerFormationName)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, assignReq, &assignedFormation)
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
-		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
@@ -1268,8 +1268,8 @@ func TestFormationAssignmentNotifications(stdT *testing.T) {
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
 
 		t.Log("Create integration system")
@@ -1542,8 +1542,8 @@ func TestAppToAppFormationAssignmentNotifications(t *testing.T) {
 
 	formationName := "app-to-app-formation-name"
 	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
-	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
+	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 
 	t.Log("Create integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, "app-template")
@@ -1829,8 +1829,8 @@ func TestUseApplicationTemplateWebhookIfAppDoesNotHaveOneForNotifications(t *tes
 
 	formationName := "app-to-app-formation-name"
 	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
-	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
+	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 
 	t.Log("Create integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, "app-template")
@@ -2064,8 +2064,8 @@ func TestRuntimeContextToApplicationFormationAssignmentNotifications(stdT *testi
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 
 		mode := graphql.WebhookModeSync
 		urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.Application.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.RuntimeContext.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
@@ -2396,8 +2396,8 @@ func TestFormationAssignments(stdT *testing.T) {
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
 
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
@@ -2885,9 +2885,9 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
-		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-template")
@@ -3184,9 +3184,9 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
-		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-template")
@@ -3409,8 +3409,8 @@ func TestFormationLifecycleNotifications(t *testing.T) {
 
 	formationName := "formation-name-from-template-with-webhook"
 	t.Logf("Creating formation with name: %q from template with name: %q that has %q webhook", formationName, formationTmplName, webhookFormationLifecycleType)
-	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, formationName, &formationTmplName)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, formationName)
+	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, formationName, &formationTmplName)
 	require.NotEmpty(t, formation.ID)
 
 	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -3544,9 +3544,9 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
-		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-template")
@@ -3887,8 +3887,8 @@ func TestFormationNotificationResynchronizationAsync(stdT *testing.T) {
 
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
 
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
@@ -4126,8 +4126,8 @@ func TestFormationNotificationResynchronizationAsync(stdT *testing.T) {
 			require.Equal(t, actualWebhook.ID, webhookID)
 
 			t.Logf("Assign tenant %s to formation %s", subscriptionConsumerSubaccountID, providerFormationName)
-			assignedFormation := fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 			defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
+			assignedFormation := fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 			t.Logf("Assign application to formation %s", formation.Name)
 			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: providerFormationName}, actualApp.ID, graphql.FormationObjectTypeApplication, subscriptionConsumerAccountID)

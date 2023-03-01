@@ -124,8 +124,8 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 
 		// set runtime scenarios label
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
@@ -166,8 +166,8 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is NOT in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 
 		// set runtime scenarios label
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
