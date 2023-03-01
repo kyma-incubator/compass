@@ -1201,8 +1201,8 @@ type FormationTemplate {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeTypes: [String!]!
-	runtimeTypeDisplayName: String!
-	runtimeArtifactKind: ArtifactType!
+	runtimeTypeDisplayName: String
+	runtimeArtifactKind: ArtifactType
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
 }
