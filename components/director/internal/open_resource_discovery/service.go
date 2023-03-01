@@ -711,7 +711,7 @@ func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB
 		return nil, nil, err
 	}
 
-	log.C(ctx).Info("Found %d events in DB. Will reconcile %d events extracted from ORD documents", len(eventsFromDB), len(events))
+	log.C(ctx).Infof("Found %d events in DB. Will reconcile %d events extracted from ORD documents", len(eventsFromDB), len(events))
 	fetchRequests := make([]*ordFetchRequest, 0)
 	for _, event := range events {
 		eventHash := resourceHashes[str.PtrStrToStr(event.OrdID)]
@@ -948,7 +948,7 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 	}
 
 	if !isEventFound {
-		log.C(ctx).Info("Will create event with ord id %q", event.OrdID)
+		log.C(ctx).Infof("Will create event with ord id %q", event.OrdID)
 		eventID, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, nil, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
 		if err != nil {
 			return nil, err
@@ -956,7 +956,7 @@ func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []
 		return s.createSpecs(ctx, model.EventSpecReference, eventID, specs)
 	}
 
-	log.C(ctx).Info("Event with ord id %q already exists in DB", event.OrdID)
+	log.C(ctx).Infof("Event with ord id %q already exists in DB", event.OrdID)
 	allBundleIDsForEvent, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleEventReference, &eventsFromDB[i].ID)
 	if err != nil {
 		return nil, err
