@@ -137,6 +137,7 @@ func (fp *GqlFieldsProvider) ForFormation() string {
 		id
 		name
 		formationTemplateId
+        state
 	`
 }
 

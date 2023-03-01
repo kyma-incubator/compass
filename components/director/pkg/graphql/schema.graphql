@@ -1146,6 +1146,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	state: String!
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
 	status: FormationStatus!

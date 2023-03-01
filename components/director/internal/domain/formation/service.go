@@ -380,6 +380,17 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
 	}
 
+	for _, webhook := range formationTemplateWebhooks {
+		if *webhook.Mode == model.WebhookModeAsyncCallback {
+			log.C(ctx).Infof("The Webhook in the notification is in %s mode. Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
+			ft.formation.State = model.DeletingFormationState
+			if err = s.formationRepository.Update(ctx, ft.formation); err != nil {
+				return nil, errors.Wrapf(err, "while updating formation with id %q", formationID)
+			}
+			return ft.formation, nil
+		}
+	}
+
 	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, ft.formation, formationTemplateName, formationTemplateID, model.DeleteFormation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", formationID, formationName)
@@ -467,6 +478,11 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		assignments, err := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
 		if err != nil {
 			return nil, err
+		}
+
+		if formationFromDB.State != model.ReadyFormationState {
+			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
+			return ft.formation, nil
 		}
 
 		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
@@ -749,6 +765,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
+		if formationFromDB.State != model.ReadyFormationState {
+			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
+			return ft.formation, nil
+		}
+
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
@@ -804,6 +825,10 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		}
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
+		if formationFromDB.State != model.ReadyFormationState {
+			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
+			return ft.formation, nil
+		}
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
@@ -1421,6 +1446,11 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 		notificationErr := errors.Wrapf(err, "while sending notification for formation with ID: %q and name: %q", formation.ID, formation.Name)
 		log.C(ctx).Error(notificationErr)
 		return notificationErr
+	}
+
+	if formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeAsyncCallback {
+		log.C(ctx).Info("The Webhook in the notification is in ASYNC_CALLBACK mode. Waiting for the receiver to report the status on the status API...")
+		return nil
 	}
 
 	if response.Error != nil && *response.Error != "" {
