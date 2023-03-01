@@ -32,22 +32,26 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		return nil, err
 	}
 
-	templateInput := &model.FormationTemplateInput{
-		Name:              in.Name,
-		ApplicationTypes:  in.ApplicationTypes,
-		RuntimeTypes:      in.RuntimeTypes,
-		Webhooks:          webhooks,
-		LeadingProductIDs: in.LeadingProductIDs,
-	}
-
+	var runtimeTypeDisplayName *string
 	if in.RuntimeTypeDisplayName != nil {
-		templateInput.RuntimeTypeDisplayName = *in.RuntimeTypeDisplayName
-	}
-	if in.RuntimeArtifactKind != nil {
-		templateInput.RuntimeArtifactKind = model.RuntimeArtifactKind(*in.RuntimeArtifactKind)
+		runtimeTypeDisplayName = in.RuntimeTypeDisplayName
 	}
 
-	return templateInput, nil
+	var runtimeArtifactKind *model.RuntimeArtifactKind
+	if in.RuntimeArtifactKind != nil {
+		kind := model.RuntimeArtifactKind(*in.RuntimeArtifactKind)
+		runtimeArtifactKind = &kind
+	}
+
+	return &model.FormationTemplateInput{
+		Name:                   in.Name,
+		ApplicationTypes:       in.ApplicationTypes,
+		RuntimeTypes:           in.RuntimeTypes,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		RuntimeArtifactKind:    runtimeArtifactKind,
+		Webhooks:               webhooks,
+		LeadingProductIDs:      in.LeadingProductIDs,
+	}, nil
 }
 
 // FromModelInputToModel converts from internal model input and id to internal model
@@ -92,13 +96,24 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) (*graphql.FormationTe
 		return nil, err
 	}
 
+	var runtimeTypeDisplayName *string
+	if in.RuntimeTypeDisplayName != nil {
+		runtimeTypeDisplayName = in.RuntimeTypeDisplayName
+	}
+
+	var runtimeArtifactKind *graphql.ArtifactType
+	if in.RuntimeArtifactKind != nil {
+		kind := graphql.ArtifactType(*in.RuntimeArtifactKind)
+		runtimeArtifactKind = &kind
+	}
+
 	return &graphql.FormationTemplate{
 		ID:                     in.ID,
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
 		RuntimeTypes:           in.RuntimeTypes,
-		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
-		RuntimeArtifactKind:    graphql.ArtifactType(in.RuntimeArtifactKind),
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		RuntimeArtifactKind:    runtimeArtifactKind,
 		Webhooks:               webhooks,
 		LeadingProductIDs:      in.LeadingProductIDs,
 	}, nil
@@ -144,13 +159,19 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 		return nil, errors.Wrap(err, "while marshalling leading product IDs")
 	}
 
+	runtimeArtifactKind := repo.NewNullableString(nil)
+	if in.RuntimeArtifactKind != nil {
+		kind := string(*in.RuntimeArtifactKind)
+		runtimeArtifactKind = repo.NewNullableString(&kind)
+	}
+
 	return &Entity{
 		ID:                     in.ID,
 		Name:                   in.Name,
 		ApplicationTypes:       string(marshalledApplicationTypes),
 		RuntimeTypes:           string(marshalledRuntimeTypes),
-		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
-		RuntimeArtifactKind:    string(in.RuntimeArtifactKind),
+		RuntimeTypeDisplayName: repo.NewNullableString(in.RuntimeTypeDisplayName),
+		RuntimeArtifactKind:    runtimeArtifactKind,
 		LeadingProductIDs:      repo.NewValidNullableString(string(marshalledLeadingProductIDs)),
 		TenantID:               repo.NewNullableString(in.TenantID),
 	}, nil
@@ -183,13 +204,19 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		}
 	}
 
+	var runtimeArtifactKind *model.RuntimeArtifactKind
+	if kindPtr := repo.StringPtrFromNullableString(in.RuntimeArtifactKind); kindPtr != nil {
+		kind := model.RuntimeArtifactKind(*kindPtr)
+		runtimeArtifactKind = &kind
+	}
+
 	return &model.FormationTemplate{
 		ID:                     in.ID,
 		Name:                   in.Name,
 		ApplicationTypes:       unmarshalledApplicationTypes,
 		RuntimeTypes:           unmarshalledRuntimeTypes,
-		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
-		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
+		RuntimeTypeDisplayName: repo.StringPtrFromNullableString(in.RuntimeTypeDisplayName),
+		RuntimeArtifactKind:    runtimeArtifactKind,
 		LeadingProductIDs:      unmarshalledLeadingProductIDs,
 		TenantID:               repo.StringPtrFromNullableString(in.TenantID),
 	}, nil

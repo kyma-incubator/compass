@@ -1341,7 +1341,7 @@ func determineFormationState(ctx context.Context, formationTemplateID, formation
 }
 
 func supportsObjectType(formationTemplate *model.FormationTemplate, objectType graphql.FormationObjectType) bool {
-	if formationTemplate.RuntimeArtifactKind == "" && formationTemplate.RuntimeTypeDisplayName == "" && len(formationTemplate.RuntimeTypes) == 0 {
+	if formationTemplate.RuntimeArtifactKind == nil && formationTemplate.RuntimeTypeDisplayName == nil && len(formationTemplate.RuntimeTypes) == 0 {
 		switch objectType {
 		case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext, graphql.FormationObjectTypeTenant:
 			return false

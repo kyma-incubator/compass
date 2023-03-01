@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -24,8 +23,6 @@ import (
 func TestServiceAssignFormation(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
-
-	testErr := errors.New("test error")
 
 	inputFormation := model.Formation{
 		Name: testFormationName,
@@ -39,8 +36,8 @@ func TestServiceAssignFormation(t *testing.T) {
 	expectedFormationTemplate := &model.FormationTemplate{
 		ID:                     FormationTemplateID,
 		Name:                   testFormationTemplateName,
-		RuntimeArtifactKind:    "SUBSCRIPTION",
-		RuntimeTypeDisplayName: "display name",
+		RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
+		RuntimeTypeDisplayName: str.Ptr("display name"),
 		RuntimeTypes:           []string{runtimeType},
 		ApplicationTypes:       []string{applicationType},
 	}
@@ -1463,8 +1460,8 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&model.FormationTemplate{
 					ID:                     FormationTemplateID,
 					Name:                   "some-other-template",
-					RuntimeArtifactKind:    "SUBSCRIPTION",
-					RuntimeTypeDisplayName: "display name",
+					RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
+					RuntimeTypeDisplayName: str.Ptr("display name"),
 					RuntimeTypes:           []string{"not-the-expected-type"},
 				}, nil).Once()
 				return repo
@@ -1598,8 +1595,8 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&model.FormationTemplate{
 					ID:                     FormationTemplateID,
-					RuntimeArtifactKind:    "SUBSCRIPTION",
-					RuntimeTypeDisplayName: "display name",
+					RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
+					RuntimeTypeDisplayName: str.Ptr("display name"),
 					Name:                   "some-other-template",
 					RuntimeTypes:           []string{"not-the-expected-type"},
 				}, nil).Once()

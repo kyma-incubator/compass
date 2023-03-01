@@ -123,10 +123,11 @@ var (
 	}
 	testScenario = "test-scenario"
 
-	formationTemplate = model.FormationTemplate{
+	subscriptionRuntimeArtifactKind = model.RuntimeArtifactKindSubscription
+	formationTemplate               = model.FormationTemplate{
 		ID:                     FormationTemplateID,
-		RuntimeArtifactKind:    "SUBSCRIPTION",
-		RuntimeTypeDisplayName: "display name",
+		RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
+		RuntimeTypeDisplayName: str.Ptr("display name"),
 		Name:                   testFormationTemplateName,
 		RuntimeTypes:           []string{runtimeType},
 	}
@@ -1010,13 +1011,14 @@ func fixScenariosLabelDefinition(tenantID string, schema interface{}) model.Labe
 }
 
 func fixFormationTemplateModel() *model.FormationTemplate {
+	kind := model.RuntimeArtifactKindEnvironmentInstance
 	return &model.FormationTemplate{
 		ID:                     FormationTemplateID,
 		Name:                   testFormationTemplateName,
 		ApplicationTypes:       []string{"appType1", "appType2"},
 		RuntimeTypes:           []string{"runtimeTypes"},
-		RuntimeTypeDisplayName: "runtimeDisplayName",
-		RuntimeArtifactKind:    model.RuntimeArtifactKindEnvironmentInstance,
+		RuntimeTypeDisplayName: str.Ptr("runtimeDisplayName"),
+		RuntimeArtifactKind:    &kind,
 	}
 }
 
