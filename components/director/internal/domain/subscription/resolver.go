@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -36,6 +37,10 @@ func NewResolver(transact persistence.Transactioner, subscriptionSvc Subscriptio
 
 // SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
 func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string, subscriptionPayload string) (bool, error) {
+	log.C(ctx).Infof("sleeping for 1 minute")
+	time.Sleep(time.Minute)
+	log.C(ctx).Infof("waking up")
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return false, err
