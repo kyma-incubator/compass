@@ -1150,6 +1150,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	if webhook.Type == model.WebhookTypeOpenResourceDiscovery && webhook.URL != nil {
 		ctx = addFieldToLogger(ctx, "app_id", app.ID)
 		documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook)
+		log.C(ctx).Infof("Fetched %d documents", len(documents))
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
