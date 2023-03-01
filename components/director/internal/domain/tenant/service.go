@@ -204,6 +204,52 @@ func (s *service) ListByParentAndType(ctx context.Context, parentID string, tena
 	return s.tenantMappingRepo.ListByParentAndType(ctx, parentID, tenantType)
 }
 
+// ExtractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:
+//		1. If it's a SA -> return its parent GA id
+//		2. If it's any other tenant type -> return its ID
+func (s *service) ExtractTenantIDForTenantScopedFormationTemplates(ctx context.Context) (string, error) {
+	internalTenantID, err := s.getTenantFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if internalTenantID == "" {
+		return "", nil
+	}
+
+	tenantObject, err := s.GetTenantByID(ctx, internalTenantID)
+	if err != nil {
+		return "", err
+	}
+
+	if tenantObject.Type == tenantpkg.Subaccount {
+		return tenantObject.Parent, nil
+	}
+
+	return tenantObject.ID, nil
+}
+
+// getTenantFromContext validates and returns the tenant present in the context:
+//  - if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
+//  - if both internalID and externalID are NOT present -> -> proceed with global formation templates (return empty id)
+//  - otherwise return TenantNotFoundError
+func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
+	tntCtx, err := LoadTenantPairFromContextNoChecks(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if tntCtx.InternalID != "" && tntCtx.ExternalID != "" {
+		return tntCtx.InternalID, nil
+	}
+
+	if tntCtx.InternalID == "" && tntCtx.ExternalID == "" {
+		return "", nil
+	}
+
+	return "", apperrors.NewTenantNotFoundError(tntCtx.ExternalID)
+}
+
 // CreateManyIfNotExists creates all provided tenants if they do not exist.
 // It creates or updates the subdomain and region labels of the provided tenants, no matter if they are pre-existing or not.
 func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {

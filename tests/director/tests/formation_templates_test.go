@@ -386,6 +386,47 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 	require.Contains(t, err.Error(), "Owner access is needed for resource modification")
 }
 
+func TestResourceGroupScopedFormationTemplates(t *testing.T) {
+	ctx := context.Background()
+	first := 100
+
+	resourceGroup := tenant.TestTenants.GetIDByName(t, tenant.TestAtomResourceGroup)
+
+	scopedFormationTemplateName := "resource-group-scoped-formation-template-test"
+	scopedFormationTemplateInput := fixtures.FixFormationTemplateInput(scopedFormationTemplateName)
+
+	t.Logf("Create resource group scoped formation template with name: %q", scopedFormationTemplateName)
+	scopedFormationTemplate := fixtures.CreateFormationTemplateWithTenant(t, ctx, certSecuredGraphQLClient, resourceGroup, scopedFormationTemplateInput)
+	defer fixtures.CleanupFormationTemplateWithTenant(t, ctx, certSecuredGraphQLClient, resourceGroup, scopedFormationTemplate.ID)
+
+	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, scopedFormationTemplate)
+
+	t.Logf("List all formation templates for the tenant in which formation template with name: %q was created and verify that it is visible there", scopedFormationTemplateName)
+	formationTemplatePage := fixtures.QueryFormationTemplatesWithPageSizeAndTenant(t, ctx, certSecuredGraphQLClient, first, resourceGroup)
+
+	assert.Greater(t, len(formationTemplatePage.Data), 1) // assert that both tenant scoped and global formation templates are visible
+	assert.Subset(t, formationTemplatePage.Data, []*graphql.FormationTemplate{
+		scopedFormationTemplate,
+	})
+
+	t.Logf("List all formation templates for some other tenant in which formation template with name: %q was NOT created and verify that it is NOT visible there", scopedFormationTemplateName)
+	formationTemplatePageForOtherTenant := fixtures.QueryFormationTemplatesWithPageSizeAndTenant(t, ctx, certSecuredGraphQLClient, first, tenant.TestTenants.GetDefaultTenantID())
+
+	assert.NotEmpty(t, formationTemplatePageForOtherTenant.Data)
+	assert.NotContains(t, formationTemplatePageForOtherTenant.Data, []*graphql.FormationTemplate{
+		scopedFormationTemplate,
+	})
+
+	var globalFormationTemplateID string
+	for _, ft := range formationTemplatePage.Data {
+		if ft.Name == globalFormationTemplateName {
+			globalFormationTemplateID = ft.ID
+			break
+		}
+	}
+	require.NotEmpty(t, globalFormationTemplateID)
+}
+
 func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
