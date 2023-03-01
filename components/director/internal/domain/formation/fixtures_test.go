@@ -61,6 +61,7 @@ const (
 	WebhookID  = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
 	Webhook2ID = "b9a62a7d-6805-43f9-a3be-370d2d125f0f"
 	Webhook3ID = "aaa62a7d-6805-43f9-a3be-370d2d125f0f"
+	Webhook4ID = "43fa5d0b-b037-478d-919a-2f0431feedd4"
 
 	TntParentID                      = "ede0241d-caa1-4ee4-b8bf-f733e180fbf9"
 	WebhookForRuntimeContextID       = "5202f196-46d7-4d1e-be50-434dd9fcd157"
@@ -934,6 +935,10 @@ func unusedFormationAssignmentService() *automock.FormationAssignmentService {
 	return &automock.FormationAssignmentService{}
 }
 
+func unusedFormationAssignmentNotificationService() *automock.FormationAssignmentNotificationsService {
+	return &automock.FormationAssignmentNotificationsService{}
+}
+
 func noActionNotificationsService() *automock.NotificationsService {
 	notificationSvc := &automock.NotificationsService{}
 	notificationSvc.On("GenerateFormationAssignmentNotifications", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
@@ -1334,6 +1339,28 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 		State:       state,
 		Value:       configValue,
 	}
+}
+
+func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          id,
+		FormationID: formationID,
+		Source:      source,
+		SourceType:  sourceType,
+		Target:      target,
+		TargetType:  targetType,
+		State:       string(state),
+	}
+}
+
+func fixFormationAssignmentPairWithNoReverseAssignment(request *webhookclient.FormationAssignmentNotificationRequest, assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPair {
+	return &formationassignment.AssignmentMappingPair{Assignment: &formationassignment.FormationAssignmentRequestMapping{
+		Request:             request,
+		FormationAssignment: assignment,
+	}, ReverseAssignment: &formationassignment.FormationAssignmentRequestMapping{
+		Request:             nil,
+		FormationAssignment: nil,
+	}}
 }
 
 func fixFormationAssignmentModelWithSuffix(state string, configValue json.RawMessage, suffix string) *model.FormationAssignment {

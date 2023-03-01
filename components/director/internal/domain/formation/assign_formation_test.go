@@ -2295,7 +2295,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     inputFormation,
 			ExpectedFormation:  expectedFormation,
-			ExpectedErrMessage: "While enforcing constraints for target operation",
+			ExpectedErrMessage: "while enforcing constraints for target operation",
 		},
 		{
 			Name: "error while enforcing constraints post operation",
@@ -2350,7 +2350,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:           ApplicationID,
 			InputFormation:     inputFormation,
 			ExpectedFormation:  expectedFormation,
-			ExpectedErrMessage: "While enforcing constraints for target operation",
+			ExpectedErrMessage: "while enforcing constraints for target operation",
 		},
 		{
 			Name: "error while getting application subtype failed to get label",
@@ -2628,7 +2628,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				asaEngine = testCase.ASAEngineFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(nil, applicationRepository, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, nil, runtimeContextRepo, formationAssignmentSvc, notificationSvc, constraintEngine, runtimeType, applicationType, asaEngine)
+			svc := formation.NewServiceWithAsaEngine(nil, applicationRepository, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, nil, runtimeContextRepo, formationAssignmentSvc, nil, notificationSvc, constraintEngine, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)

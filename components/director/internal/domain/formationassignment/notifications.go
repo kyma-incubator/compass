@@ -110,7 +110,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		}
 
 		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
-		if err != nil {
+		if err != nil && !apperrors.IsNotFoundError(err) {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
@@ -158,7 +158,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		}
 
 		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
-		if err != nil {
+		if err != nil && !apperrors.IsNotFoundError(err) {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
@@ -214,7 +214,7 @@ func (fan *formationAssignmentNotificationService) generateApplicationFANotifica
 		}
 
 		reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
-		if err != nil {
+		if err != nil && !apperrors.IsNotFoundError(err) {
 			log.C(ctx).Error(err)
 			return nil, err
 		}
@@ -290,7 +290,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeFANotification
 	}
 
 	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
-	if err != nil {
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
@@ -364,7 +364,7 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 	}
 
 	reverseFA, err := fan.formationAssignmentRepo.GetReverseBySourceAndTarget(ctx, tenantID, fa.FormationID, fa.Source, fa.Target)
-	if err != nil {
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		log.C(ctx).Error(err)
 		return nil, err
 	}
@@ -397,6 +397,9 @@ func (fan *formationAssignmentNotificationService) generateRuntimeContextFANotif
 }
 
 func convertFormationAssignmentFromModel(formationAssignment *model.FormationAssignment) *webhook.FormationAssignment {
+	if formationAssignment == nil {
+		return &webhook.FormationAssignment{Value: "\"\""}
+	}
 	config := string(formationAssignment.Value)
 	if config == "" {
 		config = "\"\""

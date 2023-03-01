@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
@@ -86,6 +88,12 @@ type NotificationsService interface {
 	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookRequest) (*webhookdir.Response, error)
 }
 
+// FormationAssignmentNotificationsService represents the notification service for generating and sending notifications
+//go:generate mockery --name=FormationAssignmentNotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationAssignmentNotificationsService interface {
+	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
+}
+
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
@@ -141,27 +149,28 @@ type asaEngine interface {
 }
 
 type service struct {
-	applicationRepository       applicationRepository
-	labelDefRepository          labelDefRepository
-	labelRepository             labelRepository
-	formationRepository         FormationRepository
-	formationTemplateRepository FormationTemplateRepository
-	labelService                labelService
-	labelDefService             labelDefService
-	asaService                  automaticFormationAssignmentService
-	uuidService                 uuidService
-	tenantSvc                   tenantService
-	repo                        automaticFormationAssignmentRepository
-	runtimeRepo                 runtimeRepository
-	runtimeContextRepo          runtimeContextRepository
-	formationAssignmentService  formationAssignmentService
-	notificationsService        NotificationsService
-	constraintEngine            constraintEngine
-	webhookRepository           webhookRepository
-	transact                    persistence.Transactioner
-	asaEngine                   asaEngine
-	runtimeTypeLabelKey         string
-	applicationTypeLabelKey     string
+	applicationRepository                  applicationRepository
+	labelDefRepository                     labelDefRepository
+	labelRepository                        labelRepository
+	formationRepository                    FormationRepository
+	formationTemplateRepository            FormationTemplateRepository
+	labelService                           labelService
+	labelDefService                        labelDefService
+	asaService                             automaticFormationAssignmentService
+	uuidService                            uuidService
+	tenantSvc                              tenantService
+	repo                                   automaticFormationAssignmentRepository
+	runtimeRepo                            runtimeRepository
+	runtimeContextRepo                     runtimeContextRepository
+	formationAssignmentService             formationAssignmentService
+	formationAssignmentNotificationService FormationAssignmentNotificationsService
+	notificationsService                   NotificationsService
+	constraintEngine                       constraintEngine
+	webhookRepository                      webhookRepository
+	transact                               persistence.Transactioner
+	asaEngine                              asaEngine
+	runtimeTypeLabelKey                    string
+	applicationTypeLabelKey                string
 }
 
 // NewService creates formation service
@@ -180,38 +189,40 @@ func NewService(
 	tenantSvc tenantService, runtimeRepo runtimeRepository,
 	runtimeContextRepo runtimeContextRepository,
 	formationAssignmentService formationAssignmentService,
+	formationAssignmentNotificationService FormationAssignmentNotificationsService,
 	notificationsService NotificationsService,
 	constraintEngine constraintEngine,
 	webhookRepository webhookRepository,
 	runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
-		transact:                    transact,
-		applicationRepository:       applicationRepository,
-		labelDefRepository:          labelDefRepository,
-		labelRepository:             labelRepository,
-		formationRepository:         formationRepository,
-		formationTemplateRepository: formationTemplateRepository,
-		labelService:                labelService,
-		labelDefService:             labelDefService,
-		asaService:                  asaService,
-		uuidService:                 uuidService,
-		tenantSvc:                   tenantSvc,
-		repo:                        asaRepo,
-		runtimeRepo:                 runtimeRepo,
-		runtimeContextRepo:          runtimeContextRepo,
-		formationAssignmentService:  formationAssignmentService,
-		notificationsService:        notificationsService,
-		constraintEngine:            constraintEngine,
-		runtimeTypeLabelKey:         runtimeTypeLabelKey,
-		applicationTypeLabelKey:     applicationTypeLabelKey,
-		asaEngine:                   NewASAEngine(asaRepo, runtimeRepo, runtimeContextRepo, formationRepository, formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey),
-		webhookRepository:           webhookRepository,
+		transact:                               transact,
+		applicationRepository:                  applicationRepository,
+		labelDefRepository:                     labelDefRepository,
+		labelRepository:                        labelRepository,
+		formationRepository:                    formationRepository,
+		formationTemplateRepository:            formationTemplateRepository,
+		labelService:                           labelService,
+		labelDefService:                        labelDefService,
+		asaService:                             asaService,
+		uuidService:                            uuidService,
+		tenantSvc:                              tenantSvc,
+		repo:                                   asaRepo,
+		runtimeRepo:                            runtimeRepo,
+		runtimeContextRepo:                     runtimeContextRepo,
+		formationAssignmentNotificationService: formationAssignmentNotificationService,
+		formationAssignmentService:             formationAssignmentService,
+		notificationsService:                   notificationsService,
+		constraintEngine:                       constraintEngine,
+		runtimeTypeLabelKey:                    runtimeTypeLabelKey,
+		applicationTypeLabelKey:                applicationTypeLabelKey,
+		asaEngine:                              NewASAEngine(asaRepo, runtimeRepo, runtimeContextRepo, formationRepository, formationTemplateRepository, runtimeTypeLabelKey, applicationTypeLabelKey),
+		webhookRepository:                      webhookRepository,
 	}
 }
 
-//go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 // Used for testing
 //nolint
+//go:generate mockery --exported --name=processFunc --output=automock --outpkg=automock --case=underscore --disable-version-string
 type processFunc interface {
 	ProcessScenarioFunc(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
 }
@@ -295,7 +306,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreCreate, CRUDJoinPointDetails, formationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PreOperation)
 	}
 
 	if err := s.modifyFormations(ctx, tnt, formationName, addFormation); err != nil {
@@ -334,7 +345,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, CRUDJoinPointDetails, formationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
 	}
 
 	return newFormation, nil
@@ -345,7 +356,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While deleting formation")
+		return nil, errors.Wrapf(err, "while deleting formation")
 	}
 
 	formationID := ft.formation.ID
@@ -361,7 +372,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreDelete, joinPointDetails, formationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
 	}
 
 	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
@@ -393,7 +404,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostDelete, joinPointDetails, formationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PostOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PostOperation)
 	}
 
 	return ft.formation, nil
@@ -433,7 +444,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While assigning formation with name %q", formation.Name)
+		return nil, errors.Wrapf(err, "while assigning formation with name %q", formation.Name)
 	}
 
 	if !supportsObjectType(ft.formationTemplate, objectType) {
@@ -442,11 +453,11 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 	joinPointDetails, err := s.prepareDetailsForAssign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While preparing joinpoint details for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while preparing joinpoint details for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
 	}
 
 	formationFromDB := ft.formation
@@ -497,7 +508,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PostOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PostOperation)
 	}
 
 	return formationFromDB, nil
@@ -632,6 +643,29 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 	return nil
 }
 
+func (s *service) unassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
+	switch objectType {
+	case graphql.FormationObjectTypeApplication:
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+			return err
+		}
+	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
+		if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
+			return err
+		} else if isFormationComingFromASA {
+			return apperrors.NewCannotUnassignObjectComingFromASAError(objectID)
+		}
+
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation.Name, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+			return err
+		}
+
+	default:
+		return nil
+	}
+	return nil
+}
+
 func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formationTemplate *model.FormationTemplate) error {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
@@ -694,25 +728,31 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	formationName := formation.Name
 	ft, err := s.getFormationWithTemplate(ctx, formationName, tnt)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While unassigning formation with name %q", formationName)
+		return nil, errors.Wrapf(err, "while unassigning formation with name %q", formationName)
 	}
 
 	joinPointDetails, err := s.prepareDetailsForUnassign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While preparing joinpoint details for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while preparing joinpoint details for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PreOperation)
 	}
 
 	formationFromDB := ft.formation
+
+	err = s.unassign(ctx, tnt, objectID, objectType, formationFromDB)
+	if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "while unassigning from formation")
+	}
+	if apperrors.IsCannotUnassignObjectComingFromASAError(err) || apperrors.IsNotFoundError(err) {
+		// No need to enforce post-constraints as nothing is done
+		return formationFromDB, nil
+	}
+
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formationName, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			return nil, err
-		}
-
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
@@ -720,7 +760,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
@@ -751,7 +791,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		// It is important to do the list in the inner transaction
 		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		err = tx.Commit()
@@ -763,24 +803,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formationName)
 			err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is important to do the re-assign in the outer transaction.
 			if err != nil {
-				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+				return nil, errors.Wrapf(err, "while re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
 		}
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formationName, objectType); err != nil {
-			return nil, err
-		} else if isFormationComingFromASA {
-			break
-		}
-
-		if err = s.modifyAssignedFormations(ctx, tnt, objectID, formationName, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return formationFromDB, nil
-			}
-			return nil, err
-		}
-
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
@@ -788,7 +815,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 		formationAssignmentsForObject, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		rtmContextIDsMapping, err := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, formationAssignmentsForObject)
@@ -820,7 +847,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		// It is important to do the list in the inner transaction
 		pendingAsyncAssignments, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(transactionCtx, formationFromDB.ID, objectID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "While listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			return nil, errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
 		}
 
 		err = tx.Commit()
@@ -832,7 +859,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			log.C(ctx).Infof("There is an async delete notification in progress. Re-assigning the object with type %q and ID %q to formation %q until status is reported by the notification receiver", objectType, objectID, formation.Name)
 			err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate) // It is importnat to do the re-assign in the outer transaction.
 			if err != nil {
-				return nil, errors.Wrapf(err, "While re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
+				return nil, errors.Wrapf(err, "while re-assigning the object with type %q and ID %q that is being unassigned asynchronously", objectType, objectID)
 			}
 		}
 
@@ -850,19 +877,119 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostUnassign, joinPointDetails, ft.formationTemplate.ID); err != nil {
-		return nil, errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PostOperation)
+		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.UnassignFormationOperation, model.PostOperation)
 	}
 
 	return formationFromDB, nil
 }
 
-func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
-	rtmContextIDs := make([]string, 0)
-	for _, assignment := range formationAssignmentsForObject {
-		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
-			rtmContextIDs = append(rtmContextIDs, assignment.Target)
+// ResynchronizeFormationNotifications sends all notifications that are in error or initial state
+func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) error {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	failedFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID,
+		[]string{string(model.InitialAssignmentState),
+			string(model.DeletingAssignmentState),
+			string(model.CreateErrorAssignmentState),
+			string(model.DeleteErrorAssignmentState)})
+	if err != nil {
+		return errors.Wrap(err, "while getting formation assignments with synchronizing and error states")
+	}
+
+	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
+	var errs *multierror.Error
+	for _, fa := range failedFormationAssignments {
+		var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
+		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
+		if err != nil {
+			return err
+		}
+
+		reverseFA, err := s.formationAssignmentService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return err
+		}
+		if reverseFA != nil {
+			notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, reverseFA)
+			if err != nil && !apperrors.IsNotFoundError(err) {
+				return err
+			}
+		}
+
+		faReqMapping := formationassignment.FormationAssignmentRequestMapping{
+			Request:             notificationForFA,
+			FormationAssignment: fa,
+		}
+
+		reverseFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
+			Request:             notificationForReverseFA,
+			FormationAssignment: reverseFA,
+		}
+
+		assignmentPair := formationassignment.AssignmentMappingPair{
+			Assignment:        &faReqMapping,
+			ReverseAssignment: &reverseFAReqMapping,
+		}
+		switch fa.State {
+		case string(model.InitialFormationState), string(model.CreateErrorFormationState):
+			_, err = s.formationAssignmentService.ProcessFormationAssignmentPair(ctx, &assignmentPair)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+			}
+		case string(model.DeletingFormationState), string(model.DeleteErrorFormationState):
+			_, err = s.formationAssignmentService.CleanupFormationAssignment(ctx, &assignmentPair)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+			}
+		}
+		if fa.State == string(model.DeleteErrorFormationState) {
+			failedDeleteErrorFormationAssignments = append(failedDeleteErrorFormationAssignments, fa)
 		}
 	}
+
+	if len(failedDeleteErrorFormationAssignments) > 0 {
+		formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+		}
+
+		objectIDToTypeMap := make(map[string]graphql.FormationObjectType, len(failedDeleteErrorFormationAssignments)*2)
+		for _, assignment := range failedDeleteErrorFormationAssignments {
+			objectIDToTypeMap[assignment.Source] = formationAssignmentTypeToFormationObjectType(assignment.SourceType)
+			objectIDToTypeMap[assignment.Target] = formationAssignmentTypeToFormationObjectType(assignment.TargetType)
+		}
+
+		for objectID, objectType := range objectIDToTypeMap {
+			leftAssignmentsInFormation, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationID, objectID)
+			if err != nil {
+				return errors.Wrapf(err, "while listing formationAssignments for object with type %q and ID %q", objectType, objectID)
+			}
+
+			if len(leftAssignmentsInFormation) == 0 {
+				log.C(ctx).Infof("There are no formation assignments left for formation with ID: %q. Unassigning the object with type %q and ID %q from formation %q", formationID, objectType, objectID, formationID)
+				err = s.unassign(ctx, tenantID, objectID, objectType, formation)
+				if err != nil && !apperrors.IsCannotUnassignObjectComingFromASAError(err) && !apperrors.IsNotFoundError(err) {
+					return errors.Wrapf(err, "while unassigning the object with type %q and ID %q", objectType, objectID)
+				}
+			}
+		}
+	}
+
+	return errs.ErrorOrNil()
+}
+
+func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
+	rtmContextIDsSet := make(map[string]bool, 0)
+	for _, assignment := range formationAssignmentsForObject {
+		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
+			rtmContextIDsSet[assignment.Target] = true
+		}
+	}
+	rtmContextIDs := setToSlice(rtmContextIDsSet)
+
 	rtmContexts, err := s.runtimeContextRepo.ListByIDs(ctx, tnt, rtmContextIDs)
 	if err != nil {
 		return nil, err
@@ -1136,6 +1263,18 @@ func objectTypeToLabelableObject(objectType graphql.FormationObjectType) (labela
 	return labelableObj
 }
 
+func formationAssignmentTypeToFormationObjectType(objectType model.FormationAssignmentType) (formationObjectType graphql.FormationObjectType) {
+	switch objectType {
+	case model.FormationAssignmentTypeApplication:
+		formationObjectType = graphql.FormationObjectTypeApplication
+	case model.FormationAssignmentTypeRuntime:
+		formationObjectType = graphql.FormationObjectTypeRuntime
+	case model.FormationAssignmentTypeRuntimeContext:
+		formationObjectType = graphql.FormationObjectTypeRuntimeContext
+	}
+	return formationObjectType
+}
+
 func (s *service) ensureSameTargetTenant(in []*model.AutomaticScenarioAssignment) (string, error) {
 	if len(in) == 0 || in[0] == nil {
 		return "", apperrors.NewInternalError("expected at least one item in Assignments slice")
@@ -1320,7 +1459,7 @@ func (s *service) setFormationToErrorState(ctx context.Context, formation *model
 
 	marshaledErr, err := json.Marshal(formationError)
 	if err != nil {
-		return errors.Wrapf(err, "While preparing error message for formation with ID: %q", formation.ID)
+		return errors.Wrapf(err, "while preparing error message for formation with ID: %q", formation.ID)
 	}
 	formation.Error = marshaledErr
 

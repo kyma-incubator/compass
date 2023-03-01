@@ -108,6 +108,17 @@ func CleanupFormationWithTenantObjectType(t require.TestingT, ctx context.Contex
 	return &formation
 }
 
+func ResynchronizeFormationNotifications(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID string) *graphql.Formation {
+	resynchronizeRequest := FixResynchronizeFormationNotificationsRequest(formationID)
+
+	formation := graphql.Formation{}
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, resynchronizeRequest, &formation)
+	require.NoError(t, err)
+
+	return &formation
+}
+
 func AssignFormationWithApplicationObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, appID, tenantID string) *graphql.Formation {
 	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID)
 }
@@ -189,12 +200,12 @@ func AssignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 	return &formation
 }
 
-func UnassignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID string, objectType graphql.FormationObjectType) *graphql.Formation {
-	unassignRequest := FixUnassignFormationRequest(tenantID, string(objectType), in.Name)
+func UnassignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, objectID string, objectType graphql.FormationObjectType) *graphql.Formation {
+	unassignRequest := FixUnassignFormationRequest(objectID, string(objectType), in.Name)
 
 	formation := graphql.Formation{}
 
-	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, unassignRequest, &formation))
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, unassignRequest, &formation))
 	require.NotEmpty(t, formation.Name)
 	return &formation
 }

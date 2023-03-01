@@ -19,6 +19,7 @@ import (
 )
 
 // Service missing godoc
+//
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	Get(ctx context.Context, id string) (*model.Formation, error)
@@ -28,9 +29,11 @@ type Service interface {
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	ResynchronizeFormationNotifications(ctx context.Context, formationID string) error
 }
 
 // Converter missing godoc
+//
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	FromGraphQL(i graphql.FormationInput) model.Formation
@@ -49,9 +52,12 @@ type formationAssignmentService interface {
 	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
 	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignment, error)
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPair) (bool, error)
+	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)
+	GetReverseBySourceAndTarget(ctx context.Context, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 }
 
 // FormationAssignmentConverter converts FormationAssignment between the model.FormationAssignment service-layer representation and graphql.FormationAssignment.
+//
 //go:generate mockery --name=FormationAssignmentConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentConverter interface {
 	MultipleToGraphQL(in []*model.FormationAssignment) ([]*graphql.FormationAssignment, error)
@@ -59,6 +65,7 @@ type FormationAssignmentConverter interface {
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
 	FetchOnDemand(tenant, parentTenant string) error
@@ -443,6 +450,33 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 	}
 
 	return gqlFormationStatuses, nil
+}
+
+// ResynchronizeFormationNotifications sends all notifications that are in error or initial state
+func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*graphql.Formation, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	err = r.service.ResynchronizeFormationNotifications(ctx, formationID)
+	if err != nil {
+		return nil, err
+	}
+
+	formationModel, err := r.service.Get(ctx, formationID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(formationModel), nil
 }
 
 func isInErrorState(state string) bool {

@@ -441,8 +441,8 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	name := "test-create-runtime-without-labels"
 	runtimeInput := fixRuntimeInput(name)
@@ -480,8 +480,8 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
+	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	name := "test-create-runtime-without-labels"
 	runtimeInput := fixRuntimeInput(name)
