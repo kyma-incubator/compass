@@ -39,13 +39,13 @@ func TestConverter_FromInputGraphQL(t *testing.T) {
 		},
 		{
 			Name:  "Success for app only templates",
-			Input: &formationTemplateGraphQLInput,
+			Input: &formationTemplateGraphQLInputAppOnly,
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleInputFromGraphQL", GQLWebhooksInputs).Return(modelWebhookInputs, nil)
 				return conv
 			},
-			Expected: &formationTemplateModelInput,
+			Expected: &formationTemplateModelInputAppOnly,
 		},
 		{
 			Name:  "Error when converting webhooks",

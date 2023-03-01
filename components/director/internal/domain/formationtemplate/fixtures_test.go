@@ -56,12 +56,27 @@ var (
 		Webhooks:               fixGQLWebhookInput(),
 	}
 
-	formationTemplateGraphQLInputAppAonly = graphql.FormationTemplateInput{
+	formationTemplateModelInputAppOnly = model.FormationTemplateInput{
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		Webhooks:          fixModelWebhookInput(),
+	}
+	formationTemplateGraphQLInputAppOnly = graphql.FormationTemplateInput{
 		Name:              formationTemplateName,
 		ApplicationTypes:  applicationTypes,
 		LeadingProductIDs: leadingProductIDs,
 		Webhooks:          fixGQLWebhookInput(),
 	}
+	formationTemplateModelAppOnly = model.FormationTemplate{
+		ID:                testID,
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		TenantID:          str.Ptr(testTenantID),
+		Webhooks:          []*model.Webhook{fixFormationTemplateModelWebhook()},
+	}
+
 	formationTemplateModel = model.FormationTemplate{
 		ID:                     testID,
 		Name:                   formationTemplateName,

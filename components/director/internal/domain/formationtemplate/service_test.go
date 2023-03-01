@@ -122,6 +122,33 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
+			Name:    "Success for application only template",
+			Context: ctx,
+			Input:   &formationTemplateModelInputAppOnly,
+			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
+				converter := &automock.FormationTemplateConverter{}
+				converter.On("FromModelInputToModel", &formationTemplateModelInputAppOnly, testID, testTenantID).Return(&formationTemplateModelAppOnly).Once()
+				return converter
+			},
+			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Create", ctx, &formationTemplateModelAppOnly).Return(nil).Once()
+				return repo
+			},
+			TenantSvc: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("GetTenantByID", ctx, testTenantID).Return(newModelBusinessTenantMappingWithType(tenant.Account), nil).Once()
+				return svc
+			},
+			WebhookRepo: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("CreateMany", ctx, testTenantID, formationTemplateModelAppOnly.Webhooks).Return(nil)
+				return repo
+			},
+			ExpectedOutput: testID,
+			ExpectedError:  nil,
+		},
+		{
 			Name:    "Error when getting tenant object",
 			Context: ctx,
 			Input:   &formationTemplateModelInput,
