@@ -204,7 +204,7 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 
 func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
 	for _, doc := range documents {
-		log.C(ctx).Infof("Found %d events in ORD document", len(doc.EventResources))
+		log.C(ctx).Infof("Found %d events in ORD document (INITIAL)", len(doc.EventResources))
 	}
 
 	apiDataFromDB, eventDataFromDB, packageDataFromDB, err := s.fetchResources(ctx, appID)
@@ -212,9 +212,17 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
+	for _, doc := range documents {
+		log.C(ctx).Infof("Found %d events in ORD document (BEFORE HASH)", len(doc.EventResources))
+	}
+
 	resourceHashes, err := hashResources(documents)
 	if err != nil {
 		return err
+	}
+
+	for _, doc := range documents {
+		log.C(ctx).Infof("Found %d events in ORD document (BEFORE VALIDATE)", len(doc.EventResources))
 	}
 
 	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs)
@@ -226,8 +234,16 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		log.C(ctx).Info("No validation errors")
 	}
 
+	for _, doc := range documents {
+		log.C(ctx).Infof("Found %d events in ORD document (BEFORE SANITIZE)", len(doc.EventResources))
+	}
+
 	if err := documents.Sanitize(baseURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
+	}
+
+	for _, doc := range documents {
+		log.C(ctx).Infof("Found %d events in ORD document (BEFORE COLLECTING)", len(doc.EventResources))
 	}
 
 	vendorsInput := make([]*model.VendorInput, 0)
