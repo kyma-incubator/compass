@@ -67,6 +67,7 @@ graphql:
     deleteFormation: ["formation:write"]
     assignFormation: ["formation:write"]
     unassignFormation: ["formation:write"]
+    resynchronizeFormationNotifications: ["formation:write"]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
     setApplicationLabel: ["application:write"]
@@ -90,9 +91,6 @@ graphql:
     addBundle: ["application:write"]
     updateBundle: ["application:write"]
     deleteBundle: ["application:write"]
-    createAutomaticScenarioAssignment: ["automatic_scenario_assignment:write"]
-    deleteAutomaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:write"]
-    deleteAutomaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:write"]
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
     updateTenant: ["tenant:write"]
@@ -171,7 +169,6 @@ clientCredentialsRegistrationScopes:
     - "label_definition:read"
     - "label_definition:write"
     - "automatic_scenario_assignment:read" 
-    - "automatic_scenario_assignment:write"
     - "integration_system.auths:read"
     - "application.webhooks:read"
     - "application_template.webhooks:read"
@@ -196,7 +193,6 @@ clientCredentialsRegistrationScopes:
     - "eventing:manage"
     - "tenant:read"
     - "automatic_scenario_assignment:read"
-    - "automatic_scenario_assignment:write"
     - "application.auths:read"
     - "application.webhooks:read"
     - "application_template.webhooks:read"

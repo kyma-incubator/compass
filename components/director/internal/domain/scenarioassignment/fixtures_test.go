@@ -4,9 +4,6 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
-	"fmt"
-	"regexp"
-
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -42,15 +39,6 @@ func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment
 	}
 }
 
-func fixModelPage() model.AutomaticScenarioAssignmentPage {
-	mod1 := fixModelWithScenarioName("foo")
-	mod2 := fixModelWithScenarioName("bar")
-	modItems := []*model.AutomaticScenarioAssignment{
-		&mod1, &mod2,
-	}
-	return fixModelPageWithItems(modItems)
-}
-
 func fixModelPageWithItems(in []*model.AutomaticScenarioAssignment) model.AutomaticScenarioAssignmentPage {
 	return model.AutomaticScenarioAssignmentPage{
 		Data:       in,
@@ -67,15 +55,6 @@ func fixGQLWithScenarioName(scenario string) graphql.AutomaticScenarioAssignment
 			Value: externalTargetTenantID,
 		},
 	}
-}
-
-func fixGQLPage() graphql.AutomaticScenarioAssignmentPage {
-	gql1 := fixGQLWithScenarioName("foo")
-	gql2 := fixGQLWithScenarioName("bar")
-	gqlItems := []*graphql.AutomaticScenarioAssignment{
-		&gql1, &gql2,
-	}
-	return fixGQLPageWithItems(gqlItems)
 }
 
 func fixGQLPageWithItems(in []*graphql.AutomaticScenarioAssignment) graphql.AutomaticScenarioAssignmentPage {
@@ -130,24 +109,4 @@ func fixAutomaticScenarioAssignmentRow(scenarioName, tenantID, targetTenantID st
 
 func fixAutomaticScenarioAssignmentColumns() []string {
 	return []string{"scenario", "tenant_id", "target_tenant_id"}
-}
-
-func fixUpdateTenantIsolationSubquery() string {
-	return regexp.QuoteMeta(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`)
-}
-
-func fixTenantIsolationSubquery() string {
-	return fixTenantIsolationSubqueryWithArg(1)
-}
-
-func fixUnescapedTenantIsolationSubquery() string {
-	return fixUnescapedTenantIsolationSubqueryWithArg(1)
-}
-
-func fixTenantIsolationSubqueryWithArg(i int) string {
-	return regexp.QuoteMeta(fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i))
-}
-
-func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
-	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }

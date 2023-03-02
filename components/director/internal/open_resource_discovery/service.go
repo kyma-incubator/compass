@@ -112,19 +112,7 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 
 // SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
 func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error {
-	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
-		globalResourcesOrdIDs, err = s.globalRegistrySvc.ListGlobalResources(ctx)
-		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Error while listing existing global resource: %s. Proceeding with empty globalResourceOrdIDs... Validation of Documents relying on global resources might fail.", err)
-		}
-	}
-
-	if globalResourcesOrdIDs == nil {
-		globalResourcesOrdIDs = make(map[string]bool)
-	}
-
+	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
 	ordWebhooks, err := s.getWebhooksWithOrdType(ctx)
 	if err != nil {
 		return err
@@ -179,6 +167,75 @@ func (s *Service) SyncORDDocuments(ctx context.Context, cfg MetricsConfig) error
 	return nil
 }
 
+// ProcessApplications performs resync of ORD information provided via ORD documents for list of applications
+func (s *Service) ProcessApplications(ctx context.Context, cfg MetricsConfig, appIDs []string) error {
+	if len(appIDs) == 0 {
+		return nil
+	}
+
+	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
+	for _, appID := range appIDs {
+		if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
+			return errors.Wrapf(err, "processing of ORD data for application with id %q failed", appID)
+		}
+	}
+	return nil
+}
+
+func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appID string) error {
+	webhooks, err := s.getWebhooksForApplication(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving of webhooks for application with id %q failed", appID)
+	}
+
+	for _, wh := range webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			if err := s.processApplicationWebhook(ctx, cfg, wh, appID, globalResourcesOrdIDs); err != nil {
+				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
+			}
+		}
+	}
+	return nil
+}
+
+// ProcessApplicationTemplates performs resync of ORD information provided via ORD documents for list of application templates
+func (s *Service) ProcessApplicationTemplates(ctx context.Context, cfg MetricsConfig, appTemplateIDs []string) error {
+	if len(appTemplateIDs) == 0 {
+		return nil
+	}
+
+	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
+	for _, appTemplateID := range appTemplateIDs {
+		if err := s.processApplicationTemplate(ctx, cfg, globalResourcesOrdIDs, appTemplateID); err != nil {
+			return errors.Wrapf(err, "processing of ORD data for application template with id %q failed", appTemplateID)
+		}
+	}
+	return nil
+}
+
+func (s *Service) processApplicationTemplate(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appTemplateID string) error {
+	webhooks, err := s.getWebhooksForApplicationTemplate(ctx, appTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving of webhooks for application template with id %q failed", appTemplateID)
+	}
+
+	for _, wh := range webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
+			if err != nil {
+				return errors.Wrapf(err, "retrieving of applications for application template with id %q failed", appTemplateID)
+			}
+
+			for _, app := range apps {
+				if err := s.processApplicationWebhook(ctx, cfg, wh, app.ID, globalResourcesOrdIDs); err != nil {
+					return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", app.ID)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
@@ -200,6 +257,64 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 	}
 
 	return nil
+}
+
+func (s *Service) retrieveGlobalResources(ctx context.Context) map[string]bool {
+	globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
+		globalResourcesOrdIDs, err = s.globalRegistrySvc.ListGlobalResources(ctx)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Error while listing existing global resource: %s. Proceeding with empty globalResourceOrdIDs... Validation of Documents relying on global resources might fail.", err)
+		}
+	}
+
+	if globalResourcesOrdIDs == nil {
+		globalResourcesOrdIDs = make(map[string]bool)
+	}
+	return globalResourcesOrdIDs
+}
+
+func (s *Service) getWebhooksForApplicationTemplate(ctx context.Context, appTemplateID string) ([]*model.Webhook, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	ordWebhooks, err := s.webhookSvc.ListForApplicationTemplate(ctx, appTemplateID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("error while fetching webhooks for application template with id %s", appTemplateID)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return ordWebhooks, nil
+}
+
+func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) ([]*model.Webhook, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	ordWebhooks, err := s.webhookSvc.ListForApplication(ctx, appID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("error while fetching webhooks for application with id %s", appID)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return ordWebhooks, nil
 }
 
 func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {

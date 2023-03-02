@@ -35,6 +35,7 @@ type formationAssignmentConverter interface {
 }
 
 // FormationAssignmentService is responsible for the service-layer FormationAssignment operations
+//
 //go:generate mockery --name=FormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentService interface {
 	GetGlobalByIDAndFormationID(ctx context.Context, formationAssignmentID, formationID string) (*model.FormationAssignment, error)
@@ -47,12 +48,14 @@ type FormationAssignmentService interface {
 }
 
 // FormationAssignmentNotificationService represents the formation assignment notification service for generating notifications
+//
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
 	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment) (*webhookclient.FormationAssignmentNotificationRequest, error)
 }
 
 // formationService is responsible for the service-layer Formation operations
+//
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -60,18 +63,21 @@ type formationService interface {
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations
+//
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 // RuntimeContextRepository is responsible for the repo-layer runtime context operations
+//
 //go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 }
 
 // ApplicationRepository is responsible for the repo-layer application operations
+//
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
@@ -79,30 +85,35 @@ type ApplicationRepository interface {
 }
 
 // TenantRepository is responsible for the repo-layer tenant operations
+//
 //go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // ApplicationTemplateRepository is responsible for the repo-layer application template operations
+//
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelRepository is responsible for the repo-layer label operations
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 // FormationRepository is responsible for the repo-layer formation operations
+//
 //go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 }
 
 // FormationTemplateRepository is responsible for the repo-layer formation template operations
+//
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
@@ -263,7 +274,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 	}
 
 	for _, id := range ft.LeadingProductIDs {
-		if id != nil && *id == consumerID {
+		if id == consumerID {
 			log.C(ctx).Infof("Consumer with ID: %q is contained in the leading product IDs list from formation template with ID: %q and name: %q", consumerID, ft.ID, ft.Name)
 			return true, http.StatusOK, nil
 		}
@@ -294,14 +305,6 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 		return false, http.StatusInternalServerError, err
 	}
 
-	consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
-	if err != nil {
-		return false, http.StatusInternalServerError, errors.Wrap(err, "while loading tenant pair from context")
-	}
-	consumerInternalTenantID := consumerTenantPair.InternalID
-	consumerExternalTenantID := consumerTenantPair.ExternalID
-
-	log.C(ctx).Infof("Tenant with internal ID: %q and external ID: %q for consumer with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerExternalTenantID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
 	if fa.TargetType == model.FormationAssignmentTypeApplication {
 		app, err := a.appRepo.GetByID(ctx, fa.TenantID, fa.Target)
 		if err != nil {
@@ -328,6 +331,15 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 			return true, http.StatusOK, nil
 		}
 
+		consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
+		if err != nil {
+			return false, http.StatusInternalServerError, errors.Wrap(err, "while loading tenant pair from context")
+		}
+		consumerInternalTenantID := consumerTenantPair.InternalID
+		consumerExternalTenantID := consumerTenantPair.ExternalID
+
+		log.C(ctx).Infof("Tenant with internal ID: %q and external ID: %q for consumer with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerExternalTenantID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
+
 		// Verify if the caller has owner access to the target of the formation assignment with type application that is being updated
 		exists, err := a.appRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
 		if err != nil {
@@ -349,6 +361,13 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 		return a.validateSubscriptionProvider(ctx, tx, app.ApplicationTemplateID, consumerExternalTenantID, fa.Target, string(fa.TargetType))
 	}
 
+	consumerTenantPair, err := tenant.LoadTenantPairFromContext(ctx)
+	if err != nil {
+		return false, http.StatusInternalServerError, errors.Wrap(err, "while loading tenant pair from context")
+	}
+	consumerInternalTenantID := consumerTenantPair.InternalID
+
+	log.C(ctx).Infof("Tenant with internal ID: %q and external ID: %q for consumer with type: %q is trying to update formation assignment with ID: %q for formation with ID: %q about source: %q and source type: %q, and target: %q and target type: %q", consumerInternalTenantID, consumerTenantPair.ExternalID, consumerType, fa.ID, fa.FormationID, fa.Source, fa.SourceType, fa.Target, fa.TargetType)
 	if fa.TargetType == model.FormationAssignmentTypeRuntime {
 		exists, err := a.runtimeRepo.OwnerExists(ctx, consumerInternalTenantID, fa.Target)
 		if err != nil {

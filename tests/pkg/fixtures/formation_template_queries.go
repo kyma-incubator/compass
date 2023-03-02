@@ -23,7 +23,39 @@ func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient 
 	return &formationTemplate
 }
 
-func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []*string) graphql.FormationTemplate {
+func CreateFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.FormationTemplateInput) *graphql.FormationTemplate {
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+	require.NoError(t, err)
+	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
+
+	formationTemplate := graphql.FormationTemplate{}
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &formationTemplate))
+	require.NotEmpty(t, formationTemplate.ID)
+
+	return &formationTemplate
+}
+
+func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
+	formationTmplInput := graphql.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           []string{runtimeType},
+		RuntimeTypeDisplayName: formationTemplateName,
+		RuntimeArtifactKind:    runtimeArtifactKind,
+	}
+
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	require.NoError(t, err)
+	formationTmplRequest := FixCreateFormationTemplateRequest(formationTmplGQLInput)
+
+	ft := graphql.FormationTemplate{}
+	t.Logf("Creating formation template with name: %q", formationTemplateName)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, formationTmplRequest, &ft)
+	require.NoError(t, err)
+	return ft
+}
+
+func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplate {
 	formationTmplInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, runtimeType, applicationTypes, runtimeArtifactKind, leadingProductIDs)
 
 	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
@@ -72,6 +104,17 @@ func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient
 
 	formationTemplate := graphql.FormationTemplate{}
 	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, deleteRequest, &formationTemplate)
+
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+
+	return &formationTemplate
+}
+
+func CleanupFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) *graphql.FormationTemplate {
+	deleteRequest := FixDeleteFormationTemplateRequest(id)
+
+	formationTemplate := graphql.FormationTemplate{}
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &formationTemplate)
 
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 

@@ -204,12 +204,6 @@ type AutomaticScenarioAssignmentPage struct {
 
 func (AutomaticScenarioAssignmentPage) IsPageable() {}
 
-type AutomaticScenarioAssignmentSetInput struct {
-	ScenarioName string `json:"scenarioName"`
-	// Runtimes and Applications which contain labels with equal key and value are matched
-	Selector *LabelSelectorInput `json:"selector"`
-}
-
 type BasicCredentialData struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -555,7 +549,7 @@ type FormationTemplateInput struct {
 	RuntimeTypeDisplayName string          `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    ArtifactType    `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput `json:"webhooks"`
-	LeadingProductIDs      []*string       `json:"leadingProductIDs"`
+	LeadingProductIDs      []string        `json:"leadingProductIDs"`
 }
 
 type FormationTemplatePage struct {
@@ -680,6 +674,7 @@ type PlaceholderDefinition struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	JSONPath    *string `json:"jsonPath"`
+	Optional    *bool   `json:"optional"`
 }
 
 type PlaceholderDefinitionInput struct {
@@ -689,6 +684,7 @@ type PlaceholderDefinitionInput struct {
 	Description *string `json:"description"`
 	// **Validation:**  max=2000
 	JSONPath *string `json:"jsonPath"`
+	Optional *bool   `json:"optional"`
 }
 
 type RuntimeContextInput struct {

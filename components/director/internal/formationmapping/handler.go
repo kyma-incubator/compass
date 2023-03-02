@@ -350,28 +350,26 @@ func (b FormationAssignmentRequestBody) Validate() error {
 	fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyAssignmentState, model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState, model.ConfigPendingAssignmentState)))
 
 	if b.Error != "" {
+		fieldRules = make([]*validation.FieldRules, 0)
 		fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState)))
 		fieldRules = append(fieldRules, validation.Field(&b.Configuration, validation.Empty))
 		return validation.ValidateStruct(&b, fieldRules...)
 	} else if len(b.Configuration) > 0 {
+		fieldRules = make([]*validation.FieldRules, 0)
 		fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyAssignmentState, model.ConfigPendingAssignmentState)))
 		fieldRules = append(fieldRules, validation.Field(&b.Error, validation.Empty))
 		return validation.ValidateStruct(&b, fieldRules...)
 	}
 
-	return nil
+	return validation.ValidateStruct(&b, fieldRules...)
 }
 
 // Validate validates the formation's request body input
 func (b FormationRequestBody) Validate() error {
-	var fieldRules []*validation.FieldRules
-	fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.ReadyFormationState, model.CreateErrorFormationState, model.DeleteErrorFormationState)))
-
-	if b.Error != "" {
-		fieldRules = append(fieldRules, validation.Field(&b.State, validation.In(model.CreateErrorFormationState, model.DeleteErrorFormationState)))
-	}
-
-	return validation.ValidateStruct(&b, fieldRules...)
+	return validation.ValidateStruct(&b,
+		validation.Field(&b.State,
+			validation.When(len(b.Error) == 0, validation.In(model.ReadyFormationState, model.CreateErrorFormationState, model.DeleteErrorFormationState)).
+				Else(validation.In(model.CreateErrorFormationState, model.DeleteErrorFormationState))))
 }
 
 // processFormationAssignmentAsynchronousUnassign handles the async unassign formation assignment status update

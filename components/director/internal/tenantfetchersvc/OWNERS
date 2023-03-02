@@ -1,8 +1,11 @@
 reviewers:
   - team-dragon
+  - team-falcon
 approvers:
   - team-dragon
+  - team-falcon
 labels:
   - ":dragon: team-dragon"
+  - ":eagle: team-falcon"
 options:
   no_parent_owners: true

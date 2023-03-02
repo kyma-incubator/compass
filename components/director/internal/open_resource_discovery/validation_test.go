@@ -85,6 +85,22 @@ var (
         }
       ]`
 
+	invalidPackageLinkDueToWrongFormatOfCustomType = `[
+		{
+		  "type": "custom",
+		  "url": "https://example2.com/en/legal/terms-of-use.html",
+		  "customType": "%^&wrong:{}"
+		}
+	  ]`
+
+	validPackageLinkCorrectFormatOfCustomType = `[
+		{
+		  "type": "custom",
+		  "url": "https://example2.com/en/legal/terms-of-use.html",
+		  "customType": "name.sap.com:spec.id:v1"
+		}
+	  ]`
+
 	invalidPackageLinkTypeWhenProvidedCustomType = `[
         {
           "type": "payment",
@@ -254,6 +270,20 @@ var (
           "url": "https://example.com/shell/discover"
         }
       ]`
+	invalidAPIResourceLinksCustomFieldDueWrongFormat = `[
+		{
+		  "type": "custom",
+		  "customType": "%^&wrong:{}",
+		  "url": "https://example.com/shell/discover"
+		}
+	  ]`
+	validAPIResourceLinksCustomField = `[
+		{
+		  "type": "custom",
+		  "customType": "name.sap.com:spec.id:v1",
+		  "url": "https://example.com/shell/discover"
+		}
+	  ]`
 	invalidAPIResourceLinksDueToMissingURL = `[
         {
           "type": "console"
@@ -947,6 +977,23 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid `customType` key in `PackageLinks` for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PackageLinks = json.RawMessage(invalidPackageLinkDueToWrongFormatOfCustomType)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `customType` key in `PackageLinks` for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PackageLinks = json.RawMessage(validPackageLinkCorrectFormatOfCustomType)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Field `type` in `PackageLinks` is not set to `custom` when `customType` field is provided",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -978,8 +1025,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
-		},
-		{
+		}, {
 			Name: "Valid `PackageLinks` field when it is an empty JSON array for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -2700,6 +2746,23 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid field `customType` with format is wrong for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(invalidAPIResourceLinksCustomFieldDueWrongFormat)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid field `customType` for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].APIResourceLinks = json.RawMessage(validAPIResourceLinksCustomField)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Missing `url` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {

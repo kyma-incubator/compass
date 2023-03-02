@@ -80,12 +80,12 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.NotEmpty(t, app.ID)
 
 		asyncFormationTmplName := "async-formation-template-name"
-		ft := createFormationTemplate(t, ctx, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		formationID := formation.ID
 		require.NotEmpty(t, formationID)
 
@@ -215,12 +215,12 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 
 		applicationType := "provider-async-app-type-1"
 		providerAsyncFormationTmplName := "provider-async-formation-template-name"
-		ft := createFormationTemplate(t, ctx, providerAsyncFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerAsyncFormationTmplName, conf.SubscriptionProviderAppNameValue, []string{applicationType}, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerAsyncFormationName := "provider-async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		require.NotEmpty(t, formation.ID)
 
 		t.Log("Create integration system")
@@ -418,12 +418,12 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 
 		providerAsyncFormationTmplName := "provider-async-formation-template-name"
 		providerAppTypes := []string{appTemplateName}
-		ft := createFormationTemplate(t, ctx, providerAsyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, providerAppTypes, graphql.ArtifactTypeEnvironmentInstance)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, providerAsyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, providerAppTypes, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerAsyncFormationName := "provider-async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		require.NotEmpty(t, formation.ID)
 
 		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
@@ -474,12 +474,12 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.NotEmpty(t, app.ID)
 
 		asyncFormationTmplName := "async-formation-template-name"
-		ft := createFormationTemplate(t, ctx, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
+		ft := fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		formationID := formation.ID
 		require.NotEmpty(t, formationID)
 
@@ -522,15 +522,14 @@ func Test_UpdateFormationStatus(t *testing.T) {
 
 		appType := "async-app-type-1"
 		asyncFormationTmplName := "async-formation-template-name"
-		leadingProductID := "leading-product-id"
-		leadingProductIDs := []*string{&leadingProductID}
+		leadingProductIDs := []string{"leading-product-id"}
 
 		ft := fixtures.CreateFormationTemplateWithLeadingProductIDs(t, ctx, certSecuredGraphQLClient, asyncFormationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		formationID := formation.ID
 		require.NotEmpty(t, formationID)
 

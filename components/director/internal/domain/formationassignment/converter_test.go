@@ -191,7 +191,7 @@ func TestConverter_FromInput(t *testing.T) {
 				SourceType:  TestSourceType,
 				Target:      TestTarget,
 				TargetType:  TestTargetType,
-				State:       TestState,
+				State:       TestStateInitial,
 				Value:       TestConfigValueRawJSON,
 			},
 			Input: fixFormationAssignmentModelInput(TestConfigValueRawJSON),

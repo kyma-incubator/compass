@@ -139,11 +139,11 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2904"
+      version: "PR-2918"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2902"
+      version: "PR-2912"
       name: compass-hydrator
     gateway:
       dir:
@@ -155,7 +155,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-86"
+      version: "PR-87"
       name: compass-ord-service
     schema_migrator:
       dir:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2902"
+      version: "PR-2888"
       name: compass-external-services-mock
     console:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2904"
+      version: "PR-2922"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -560,7 +560,7 @@ global:
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync certificate_subject_mapping:read certificate_subject_mapping:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -809,10 +809,16 @@ global:
     authTokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
     skipSSLValidation: false
   ordAggregator:
+    port: 3000
+    prefix: /ord-aggregator
     name: ord-aggregator
-    enabled: true
-    suspend: true
-    schedule: "*/1 * * * *"
+    job:
+      schedulePeriod: 60m
+      isSchedulable: true
+    lease:
+      lockname: aggregatorlease
+    authentication:
+      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
     http:
       client:
         skipSSLValidation: false
@@ -1183,7 +1189,6 @@ global:
         - "label_definition:read"
         - "label_definition:write"
         - "automatic_scenario_assignment:read"
-        - "automatic_scenario_assignment:write"
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
         - "formation:write"
@@ -1209,7 +1214,6 @@ global:
         - "tenant:read"
         - "tenant:write"
         - "automatic_scenario_assignment:read"
-        - "automatic_scenario_assignment:write"
         - "application.auths:read"
         - "application.webhooks:read"
         - "application_template.webhooks:read"
