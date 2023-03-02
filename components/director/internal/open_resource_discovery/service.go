@@ -222,6 +222,8 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
 		log.C(ctx).Infof("Validation errors: %s", validationResult.Error())
+	} else {
+		log.C(ctx).Info("No validation errors")
 	}
 
 	if err := documents.Sanitize(baseURL); err != nil {
@@ -241,7 +243,9 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		packagesInput = append(packagesInput, doc.Packages...)
 		bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
 		apisInput = append(apisInput, doc.APIResources...)
+		log.C(ctx).Infof("Appending %d events to eventsInput", len(doc.EventResources))
 		eventsInput = append(eventsInput, doc.EventResources...)
+		log.C(ctx).Infof("Total %d events in eventsInput", len(eventsInput))
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
 	}
 
