@@ -203,6 +203,10 @@ func (s *Service) processWebhook(ctx context.Context, cfg MetricsConfig, webhook
 }
 
 func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+	for _, doc := range documents {
+		log.C(ctx).Infof("Found %d events in ORD document", len(doc.EventResources))
+	}
+
 	apiDataFromDB, eventDataFromDB, packageDataFromDB, err := s.fetchResources(ctx, appID)
 	if err != nil {
 		return err

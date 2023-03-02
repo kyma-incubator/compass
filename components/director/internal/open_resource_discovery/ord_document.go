@@ -1,7 +1,6 @@
 package ord
 
 import (
-	"context"
 	"encoding/json"
 	"net/url"
 	"regexp"
@@ -9,7 +8,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
@@ -202,7 +200,6 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 			}
 		}
 
-		log.C(context.TODO()).Infof("Found %d events in ORD document", len(doc.EventResources))
 		for i, event := range doc.EventResources {
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
