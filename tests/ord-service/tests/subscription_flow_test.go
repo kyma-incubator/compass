@@ -80,8 +80,10 @@ func TestSelfRegisterFlow(t *testing.T) {
 		Description: ptr.String("selfRegisterRuntime-description"),
 		Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue},
 	}
-	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
+
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
+	runtime = fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 	require.NotEmpty(t, runtime.ID)
 	strLbl, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
@@ -147,8 +149,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue},
 		}
 
-		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(stdT, ctx, directorCertSecuredClient, &runtimeInput)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntimeWithoutTenant(stdT, ctx, directorCertSecuredClient, &runtime)
+		runtime = fixtures.RegisterRuntimeFromInputWithoutTenant(stdT, ctx, directorCertSecuredClient, &runtimeInput)
 		require.NotEmpty(stdT, runtime.ID)
 
 		regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
@@ -366,8 +369,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(stdT, ctx, directorCertSecuredClient, &runtimeInput)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntimeWithoutTenant(stdT, ctx, directorCertSecuredClient, &runtime)
+		runtime = fixtures.RegisterRuntimeFromInputWithoutTenant(stdT, ctx, directorCertSecuredClient, &runtimeInput)
 		require.NotEmpty(stdT, runtime.ID)
 
 		regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
