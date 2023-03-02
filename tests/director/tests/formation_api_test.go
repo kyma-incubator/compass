@@ -486,12 +486,9 @@ func TestTenantFormationFlow(t *testing.T) {
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 	ctx := context.Background()
-	assignment := graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: firstFormation,
-		Selector: &graphql.LabelSelectorInput{
-			Key:   "global_subaccount_id",
-			Value: subaccountID,
-		},
+	scenarioSelector := &graphql.Label{
+		Key:   "global_subaccount_id",
+		Value: subaccountID,
 	}
 
 	t.Logf("Should create formation: %s", firstFormation)
@@ -520,7 +517,7 @@ func TestTenantFormationFlow(t *testing.T) {
 	t.Log("Should match expected ASA")
 	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
 	require.Equal(t, 1, len(asaPage.Data))
-	assertions.AssertAutomaticScenarioAssignment(t, assignment, *asaPage.Data[0])
+	assertions.AssertAutomaticScenarioAssignment(t, firstFormation, scenarioSelector, *asaPage.Data[0])
 
 	t.Logf("Unassign tenant %s from formation %s", subaccountID, firstFormation)
 	unassignReq := fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
@@ -635,14 +632,11 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
 	require.Equal(t, 1, len(asaPage.Data))
 
-	assignment := graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: firstFormation,
-		Selector: &graphql.LabelSelectorInput{
-			Key:   "global_subaccount_id",
-			Value: subaccountID,
-		},
+	scenarioSelector := &graphql.Label{
+		Key:   "global_subaccount_id",
+		Value: subaccountID,
 	}
-	assertions.AssertAutomaticScenarioAssignment(t, assignment, *asaPage.Data[0])
+	assertions.AssertAutomaticScenarioAssignment(t, firstFormation, scenarioSelector, *asaPage.Data[0])
 
 	t.Logf("Should fail to assign tenant %s to second formation of type %s", subaccountID, formationTemplateName)
 	assignReq = fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
@@ -670,23 +664,7 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
 	require.Equal(t, 2, len(asaPage.Data))
 
-	assignments := []graphql.AutomaticScenarioAssignmentSetInput{
-		{
-			ScenarioName: firstFormation,
-			Selector: &graphql.LabelSelectorInput{
-				Key:   "global_subaccount_id",
-				Value: subaccountID,
-			},
-		},
-		{
-			ScenarioName: secondFormation,
-			Selector: &graphql.LabelSelectorInput{
-				Key:   "global_subaccount_id",
-				Value: subaccountID,
-			},
-		},
-	}
-	assertions.AssertAutomaticScenarioAssignments(t, assignments, asaPage.Data)
+	assertions.AssertAutomaticScenarioAssignments(t, map[string]*graphql.Label{firstFormation: scenarioSelector, secondFormation: scenarioSelector}, asaPage.Data)
 
 	t.Logf("Unassign tenant %s from formation %s", subaccountID, firstFormation)
 	var unassignFormation graphql.Formation
