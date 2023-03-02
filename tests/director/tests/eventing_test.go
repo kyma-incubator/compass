@@ -42,15 +42,15 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 
 	input1 := fixRuntimeInput("runtime-1-eventing")
 	runtime1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
 
-	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
@@ -58,8 +58,8 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	runtime2 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input2, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime2)
 
-	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
 
 	// WHEN
@@ -114,15 +114,15 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 
 	input1 := fixRuntimeInput("runtime-1-eventing")
 	runtime1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
 
-	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
@@ -134,8 +134,8 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime2.ID)
 
-	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
 
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime2.ID, IsNormalizedLabel, "true")
@@ -204,15 +204,15 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 
 	input1 := fixRuntimeInput("runtime-1-eventing")
 	runtime1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input1, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
 
-	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime1.ID, tenantId)
 
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
@@ -221,8 +221,8 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	runtime2 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input2, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime2)
 
-	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime2.ID, tenantId)
 
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime2.ID, runtimeEventingURLLabelKey, runtime2EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime2.ID, IsNormalizedLabel, "false")
