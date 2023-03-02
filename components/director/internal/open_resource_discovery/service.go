@@ -221,6 +221,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
+		log.C(ctx).Infof("Validation errors: %s", validationResult.Error())
 	}
 
 	if err := documents.Sanitize(baseURL); err != nil {
