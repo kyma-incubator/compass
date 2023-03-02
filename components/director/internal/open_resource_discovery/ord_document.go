@@ -1,6 +1,7 @@
 package ord
 
 import (
+	"context"
 	"encoding/json"
 	"net/url"
 	"regexp"
@@ -12,6 +13,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
@@ -202,6 +204,8 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 
 		for i, event := range doc.EventResources {
 			if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil {
+				log.C(context.Background()).Infof("Event ORD error: %s", err.Error())
+
 				errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
 				invalidEventsIndices = append(invalidEventsIndices, i)
 				continue
