@@ -65,8 +65,8 @@ func TestSelfRegisterFlow(t *testing.T) {
 	formationName := "sr-test-scenario"
 	t.Logf("Creating formation with name %s...", formationName)
 	createFormationReq := fixtures.FixCreateFormationRequest(formationName)
-	executeGQLRequest(t, ctx, createFormationReq, formationName, accountTenantID)
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, accountTenantID, formationName)
+	executeGQLRequest(t, ctx, createFormationReq, formationName, accountTenantID)
 	t.Logf("Successfully created formation: %s", formationName)
 
 	t.Logf("Assign application to formation %s", formationName)
@@ -199,8 +199,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName, &formationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName, &formationTmplName)
 		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
@@ -419,8 +419,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName, &formationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, consumerFormationName, &formationTmplName)
 		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
