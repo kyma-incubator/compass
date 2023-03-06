@@ -13,7 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	pkgtenant "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -142,7 +141,7 @@ func TestService_CreateWithFormationTemplateWebhookType(t *testing.T) {
 		Context      context.Context
 	}{
 		{
-			Name: "Success when tenant is GA",
+			Name: "Success",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
 				repo.On("Create", ctx, givenTenant(), webhookModel).Return(nil).Once()
@@ -150,28 +149,7 @@ func TestService_CreateWithFormationTemplateWebhookType(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Account), nil).Once()
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return("foo").Once()
-				return svc
-			},
-			ExpectedErr: nil,
-			Context:     ctx,
-		},
-		{
-			Name: "Success when tenant is subaccount",
-			RepositoryFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("Create", ctx, givenTenant(), webhookModel).Return(nil).Once()
-				return repo
-			},
-			TenantSvcFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Subaccount), nil).Once()
-				svc.On("GetTenantByID", ctx, givenParentTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Account), nil).Once()
+				svc.On("ExtractTenantIDForTenantScopedFormationTemplates", ctx).Return(givenTenant(), nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -190,7 +168,9 @@ func TestService_CreateWithFormationTemplateWebhookType(t *testing.T) {
 				return repo
 			},
 			TenantSvcFn: func() *automock.TenantService {
-				return &automock.TenantService{}
+				svc := &automock.TenantService{}
+				svc.On("ExtractTenantIDForTenantScopedFormationTemplates", ctxNoTenant).Return("", nil).Once()
+				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
@@ -209,7 +189,7 @@ func TestService_CreateWithFormationTemplateWebhookType(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Account), nil).Once()
+				svc.On("ExtractTenantIDForTenantScopedFormationTemplates", ctx).Return(givenTenant(), nil).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
@@ -221,52 +201,19 @@ func TestService_CreateWithFormationTemplateWebhookType(t *testing.T) {
 			Context:     ctx,
 		},
 		{
-			Name: "Error when getting parent fails",
-			RepositoryFn: func() *automock.WebhookRepository {
-				return &automock.WebhookRepository{}
-			},
-			TenantSvcFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Subaccount), nil).Once()
-				svc.On("GetTenantByID", ctx, givenParentTenant()).Return(nil, testErr).Once()
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
-			},
-			ExpectedErr: testErr,
-			Context:     ctx,
-		},
-		{
 			Name: "Error when getting tenant fails",
 			RepositoryFn: func() *automock.WebhookRepository {
 				return &automock.WebhookRepository{}
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, givenTenant()).Return(nil, testErr).Once()
+				svc.On("ExtractTenantIDForTenantScopedFormationTemplates", ctx).Return("", testErr).Once()
 				return svc
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				return &automock.UIDService{}
 			},
 			ExpectedErr: testErr,
-			Context:     ctx,
-		},
-		{
-			Name: "Error when getting tenant is neither SA or GA",
-			RepositoryFn: func() *automock.WebhookRepository {
-				return &automock.WebhookRepository{}
-			},
-			TenantSvcFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("GetTenantByID", ctx, givenTenant()).Return(newModelBusinessTenantMappingWithType(pkgtenant.Customer), nil).Once()
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
-			},
-			ExpectedErr: errors.New("tenant used for tenant scoped Formation Templates must be of type account or subaccount"),
 			Context:     ctx,
 		},
 	}
