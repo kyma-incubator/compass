@@ -81,6 +81,7 @@ type ApplicationFromTemplateInput struct {
 	Values []*TemplateValueInput `json:"values"`
 	// **Validation:** if provided, values not required
 	PlaceholdersPayload *string `json:"placeholdersPayload"`
+	Labels              Labels  `json:"labels"`
 }
 
 type ApplicationPage struct {

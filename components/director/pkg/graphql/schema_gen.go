@@ -5116,6 +5116,8 @@ input ApplicationFromTemplateInput {
 	**Validation:** if provided, values not required
 	"""
 	placeholdersPayload: String
+
+	labels: Labels
 }
 
 input ApplicationRegisterInput {
@@ -29908,6 +29910,12 @@ func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx conte
 		case "placeholdersPayload":
 			var err error
 			it.PlaceholdersPayload, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "labels":
+			var err error
+			it.Labels, err = ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
 			if err != nil {
 				return it, err
 			}
