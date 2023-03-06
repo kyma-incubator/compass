@@ -12,6 +12,7 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/model"
@@ -61,8 +62,9 @@ func TestConnector(t *testing.T) {
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, appID, testConfig.Tenant)
 	require.NoError(t, err)
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, runtimeInput, testConfig.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, runtimeInput, testConfig.GatewayOauth)
 
 	err = directorClient.SetDefaultEventing(runtime.ID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)
