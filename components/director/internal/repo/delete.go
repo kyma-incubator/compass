@@ -28,6 +28,7 @@ type DeleterGlobal interface {
 	DeleteManyGlobal(ctx context.Context, conditions Conditions) error
 }
 
+// DeleteConditionTree deletes tenant scoped entities matching the provided condition tree with tenant isolation.
 type DeleteConditionTree interface {
 	DeleteConditionTree(ctx context.Context, resourceType resource.Type, tenant string, conditionTree *ConditionTree) error
 }
@@ -145,10 +146,7 @@ func (g *universalDeleter) deleteWithConditionTree(ctx context.Context, resource
 		return err
 	}
 
-	query, args, err := buildDeleteQueryFromTree(g.tableName, conditionTree, lockClause, true)
-	if err != nil {
-		return errors.Wrap(err, "while building list query")
-	}
+	query, args := buildDeleteQueryFromTree(g.tableName, conditionTree, lockClause, true)
 
 	log.C(ctx).Debugf("Executing DB query: %s", query)
 	_, err = persist.ExecContext(ctx, query, args...)
@@ -156,7 +154,7 @@ func (g *universalDeleter) deleteWithConditionTree(ctx context.Context, resource
 	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", g.tableName)
 }
 
-func buildDeleteQueryFromTree(tableName string, conditions *ConditionTree, lockClause string, isRebindingNeeded bool) (string, []interface{}, error) {
+func buildDeleteQueryFromTree(tableName string, conditions *ConditionTree, lockClause string, isRebindingNeeded bool) (string, []interface{}) {
 	var stmtBuilder strings.Builder
 
 	stmtBuilder.WriteString(fmt.Sprintf("DELETE FROM %s", tableName))
@@ -171,9 +169,9 @@ func buildDeleteQueryFromTree(tableName string, conditions *ConditionTree, lockC
 	writeLockClause(&stmtBuilder, lockClause)
 
 	if isRebindingNeeded {
-		return getQueryFromBuilder(stmtBuilder), allArgs, nil
+		return getQueryFromBuilder(stmtBuilder), allArgs
 	}
-	return stmtBuilder.String(), allArgs, nil
+	return stmtBuilder.String(), allArgs
 }
 
 func (g *universalDeleter) delete(ctx context.Context, resourceType resource.Type, conditions Conditions, requireSingleRemoval bool) error {
