@@ -1143,17 +1143,18 @@ func TestServiceDeleteFormation(t *testing.T) {
 	nilSchemaLblDef.Schema = nil
 
 	testCases := []struct {
-		Name                    string
-		LabelDefRepositoryFn    func() *automock.LabelDefRepository
-		LabelDefServiceFn       func() *automock.LabelDefService
-		NotificationsSvcFn      func() *automock.NotificationsService
-		FormationRepoFn         func() *automock.FormationRepository
-		FormationTemplateRepoFn func() *automock.FormationTemplateRepository
-		ConstraintEngineFn      func() *automock.ConstraintEngine
-		webhookRepoFn           func() *automock.WebhookRepository
-		InputFormation          model.Formation
-		ExpectedFormation       *model.Formation
-		ExpectedErrMessage      string
+		Name                     string
+		LabelDefRepositoryFn     func() *automock.LabelDefRepository
+		LabelDefServiceFn        func() *automock.LabelDefService
+		NotificationsSvcFn       func() *automock.NotificationsService
+		FormationRepoFn          func() *automock.FormationRepository
+		FormationAssignmentSvcFn func() *automock.FormationAssignmentService
+		FormationTemplateRepoFn  func() *automock.FormationTemplateRepository
+		ConstraintEngineFn       func() *automock.ConstraintEngine
+		webhookRepoFn            func() *automock.WebhookRepository
+		InputFormation           model.Formation
+		ExpectedFormation        *model.Formation
+		ExpectedErrMessage       string
 	}{
 		{
 			Name: "success",
@@ -1625,6 +1626,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 			if testCase.FormationRepoFn != nil {
 				formationRepo = testCase.FormationRepoFn()
 			}
+			formationAssignmentSvc := &automock.FormationAssignmentService{}
+			formationAssignmentSvc.On("ListByFormationIDsNoPaging", ctx, []string{FormationID}).Return([][]*model.FormationAssignment{{}}, nil)
+			if testCase.FormationAssignmentSvcFn != nil {
+				formationAssignmentSvc = testCase.FormationAssignmentSvcFn()
+			}
 
 			formationTemplateRepo := unusedFormationTemplateRepo()
 			if testCase.FormationTemplateRepoFn != nil {
@@ -1640,7 +1646,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				webhookRepo = testCase.webhookRepoFn()
 			}
 
-			svc := formation.NewService(nil, nil, labelDefRepo, nil, formationRepo, formationTemplateRepo, nil, nil, labelDefService, nil, nil, nil, nil, nil, nil, nil, notificationsService, constraintEngine, webhookRepo, runtimeType, applicationType)
+			svc := formation.NewService(nil, nil, labelDefRepo, nil, formationRepo, formationTemplateRepo, nil, nil, labelDefService, nil, nil, nil, nil, nil, formationAssignmentSvc, nil, notificationsService, constraintEngine, webhookRepo, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.DeleteFormation(ctx, TntInternalID, testCase.InputFormation)

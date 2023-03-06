@@ -67,12 +67,14 @@ func TestServiceUnassignFormation(t *testing.T) {
 		Name:                testFormationName,
 		FormationTemplateID: FormationTemplateID,
 		TenantID:            TntInternalID,
+		State:               model.ReadyFormationState,
 	}
 	secondFormation := model.Formation{
 		ID:                  fixUUID(),
 		Name:                secondTestFormationName,
 		FormationTemplateID: FormationTemplateID,
 		TenantID:            TntInternalID,
+		State:               model.ReadyFormationState,
 	}
 
 	applicationLblSingleFormation := &model.Label{

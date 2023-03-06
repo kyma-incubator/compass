@@ -419,27 +419,27 @@ func AssertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inAct
 	assert.Equal(t, expected, actual)
 }
 
-func AssertAutomaticScenarioAssignment(t *testing.T, expected graphql.AutomaticScenarioAssignmentSetInput, actual graphql.AutomaticScenarioAssignment) {
-	assert.Equal(t, expected.ScenarioName, actual.ScenarioName)
+func AssertAutomaticScenarioAssignment(t *testing.T, expectedScenario string, expectedSelector *graphql.Label, actual graphql.AutomaticScenarioAssignment) {
+	assert.Equal(t, expectedScenario, actual.ScenarioName)
 	require.NotNil(t, actual.Selector)
-	require.NotNil(t, expected.Selector)
-	assert.Equal(t, expected.Selector.Value, actual.Selector.Value)
-	assert.Equal(t, expected.Selector.Key, actual.Selector.Key)
+	require.NotNil(t, expectedSelector)
+	assert.Equal(t, expectedSelector.Value, actual.Selector.Value)
+	assert.Equal(t, expectedSelector.Key, actual.Selector.Key)
 }
 
-func AssertAutomaticScenarioAssignments(t *testing.T, expected []graphql.AutomaticScenarioAssignmentSetInput, actual []*graphql.AutomaticScenarioAssignment) {
+func AssertAutomaticScenarioAssignments(t *testing.T, expected map[string]*graphql.Label, actual []*graphql.AutomaticScenarioAssignment) {
 	assert.Equal(t, len(expected), len(actual))
-	for _, expectedAssignment := range expected {
+	for scenario := range expected {
 		found := false
 		for _, actualAssignment := range actual {
 			require.NotNil(t, actualAssignment)
-			if expectedAssignment.ScenarioName == actualAssignment.ScenarioName {
+			if scenario == actualAssignment.ScenarioName {
 				found = true
-				AssertAutomaticScenarioAssignment(t, expectedAssignment, *actualAssignment)
+				AssertAutomaticScenarioAssignment(t, scenario, expected[scenario], *actualAssignment)
 				break
 			}
 		}
-		assert.True(t, found, "Assignment for scenario: '%s' not found", expectedAssignment.ScenarioName)
+		assert.True(t, found, "Assignment for scenario: '%s' not found", scenario)
 	}
 }
 

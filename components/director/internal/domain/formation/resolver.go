@@ -44,6 +44,7 @@ type Converter interface {
 //go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentService interface {
 	Delete(ctx context.Context, id string) error
+	DeleteAssignmentsForObjectID(ctx context.Context, formationID, objectID string) error
 	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)

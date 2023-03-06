@@ -41,6 +41,7 @@ type repository struct {
 	conditionLister       repo.ConditionTreeLister
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
+	deleteConditionTree   repo.DeleteConditionTree
 	existQuerier          repo.ExistQuerier
 	conv                  EntityConverter
 }
@@ -57,6 +58,7 @@ func NewRepository(conv EntityConverter) *repository {
 		conditionLister:       repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
+		deleteConditionTree:   repo.NewDeleteConditionTreeWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
 		conv:                  conv,
 	}
@@ -315,6 +317,17 @@ func (r *repository) Update(ctx context.Context, model *model.FormationAssignmen
 // Delete deletes a Formation Assignment with given ID
 func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 	return r.deleter.DeleteOne(ctx, resource.FormationAssignment, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *repository) DeleteAssignmentsForObjectID(ctx context.Context, tenant, formationID, objectID string) error {
+	conditions := repo.And(
+		&repo.ConditionTree{Operand: repo.NewEqualCondition("formation_id", formationID)},
+		repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewEqualCondition("source", objectID),
+			repo.NewEqualCondition("target", objectID),
+		})...))
+
+	return r.deleteConditionTree.DeleteConditionTree(ctx, resource.FormationAssignment, tenant, conditions)
 }
 
 // Exists check if a Formation Assignment with given ID exists

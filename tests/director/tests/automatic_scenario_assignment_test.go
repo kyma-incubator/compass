@@ -21,8 +21,12 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 
 	testScenarioA := "ASA1"
 	testScenarioB := "ASA2"
-	testSelectorA := graphql.LabelSelectorInput{
+	testSelectorA := graphql.Label{
 		Key:   "global_subaccount_id",
+		Value: subaccount,
+	}
+	testSelectorAInput := graphql.LabelSelectorInput{
+		Key:   testSelectorA.Key,
 		Value: subaccount,
 	}
 
@@ -34,7 +38,7 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 		Name: testScenarioB,
 	}
 
-	testSelectorAGQL, err := testctx.Tc.Graphqlizer.LabelSelectorInputToGQL(testSelectorA)
+	testSelectorAGQL, err := testctx.Tc.Graphqlizer.LabelSelectorInputToGQL(testSelectorAInput)
 	require.NoError(t, err)
 
 	// setup available scenarios
@@ -70,15 +74,13 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	saveExample(t, listAssignmentsRequest.Query(), "query automatic scenario assignments")
 	saveExample(t, getAssignmentForScenarioRequest.Query(), "query automatic scenario assignment for scenario")
 	saveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignments for selector")
-	inputAssignment1 := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: testScenarioA, Selector: &testSelectorA}
-	inputAssignment2 := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: testScenarioB, Selector: &testSelectorA}
 
 	assertions.AssertAutomaticScenarioAssignments(t,
-		[]graphql.AutomaticScenarioAssignmentSetInput{inputAssignment1, inputAssignment2},
+		map[string]*graphql.Label{testScenarioA: &testSelectorA, testScenarioB: &testSelectorA},
 		actualAssignmentsPage.Data)
-	assertions.AssertAutomaticScenarioAssignment(t, inputAssignment1, actualAssignmentForScenario)
+	assertions.AssertAutomaticScenarioAssignment(t, testScenarioA, &testSelectorA, actualAssignmentForScenario)
 	assertions.AssertAutomaticScenarioAssignments(t,
-		[]graphql.AutomaticScenarioAssignmentSetInput{inputAssignment1, inputAssignment2},
+		map[string]*graphql.Label{testScenarioA: &testSelectorA, testScenarioB: &testSelectorA},
 		actualAssignmentsForSelector)
 }
 

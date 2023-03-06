@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -371,6 +370,17 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		TenantID:            tnt,
 	}
 
+	// If there are formation assignments in the formation, that means that there are still objects assigned to it,
+	// therefore before deleting the formation or setting it to deleting state, we should make sure that it is empty.
+	// If we set it to DELETING with assigned objects, the status API will not be able to delete the formation later.
+	//formationAssignmentsForFormation, err := s.formationAssignmentService.ListByFormationIDsNoPaging(ctx, []string{formationID})
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(formationAssignmentsForFormation[0]) > 0 {
+	//	return nil, errors.New("Formation not empty") //apperrors.NewFormationNotEmptyError()
+	//}
+
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreDelete, joinPointDetails, formationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
 	}
@@ -378,17 +388,6 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
 	if err != nil {
 		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
-	}
-
-	for _, webhook := range formationTemplateWebhooks {
-		if *webhook.Mode == model.WebhookModeAsyncCallback {
-			log.C(ctx).Infof("The Webhook in the notification is in %s mode. Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
-			ft.formation.State = model.DeletingFormationState
-			if err = s.formationRepository.Update(ctx, ft.formation); err != nil {
-				return nil, errors.Wrapf(err, "while updating formation with id %q", formationID)
-			}
-			return ft.formation, nil
-		}
 	}
 
 	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, ft.formation, formationTemplateName, formationTemplateID, model.DeleteFormation)
@@ -401,6 +400,17 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 			processErr := errors.Wrapf(err, "while processing notifications for formation with ID: %q and name: %q", formationID, formationName)
 			log.C(ctx).Error(processErr)
 			return nil, processErr
+		}
+	}
+
+	for _, webhook := range formationTemplateWebhooks {
+		if *webhook.Mode == model.WebhookModeAsyncCallback {
+			log.C(ctx).Infof("The Webhook in the notification is in %s mode. Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
+			ft.formation.State = model.DeletingFormationState
+			if err = s.formationRepository.Update(ctx, ft.formation); err != nil {
+				return nil, errors.Wrapf(err, "while updating formation with id %q", formationID)
+			}
+			return ft.formation, nil
 		}
 	}
 
@@ -470,6 +480,11 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	formationFromDB := ft.formation
 	switch objectType {
 	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
+		// If we assign it to the label definitions when it is in deleting state we risk leaving incorrect data
+		// in the LabelDefinition and formation assignments and failing to delete the formation later on
+		if formationFromDB.State == model.DeletingFormationState {
+			return nil, fmt.Errorf("cannot assign to formation with ID %q as it is in %q state", formationFromDB.ID, formationFromDB.State)
+		}
 		err := s.assign(ctx, tnt, objectID, objectType, formationFromDB, ft.formationTemplate)
 		if err != nil {
 			return nil, err
@@ -480,7 +495,8 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		if formationFromDB.State != model.ReadyFormationState {
+		// When it is in initial state, the notification generation will be handled by the async API via resynchronizing the formation later
+		if formationFromDB.State == model.InitialFormationState {
 			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
 			return ft.formation, nil
 		}
@@ -765,8 +781,17 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
+		// We can reach this only if we are in INITIAL state and there are assigned objects to the formation
+		// there are no notifications sent for them, and we have created formation assignments for them.
+		// We should clean those up because on an earlier step we have removed it from the LabelDefinition,
+		// and it would result in leftover formation assignments that could cause problems on future assigns
+		// If we by any chance reach it from ERROR state, the formation should be empty and the deletion shouldn't do anything.
 		if formationFromDB.State != model.ReadyFormationState {
 			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
+			err = s.formationAssignmentService.DeleteAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
+			}
 			return ft.formation, nil
 		}
 
@@ -825,8 +850,17 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		}
 
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
+		// We can reach this only if we are in INITIAL state and there are assigned objects to the formation
+		// there are no notifications sent for them, and we have created formation assignments for them.
+		// We should clean those up because on an earlier step we have removed it from the LabelDefinition,
+		// and it would result in leftover formation assignments that could cause problems on future assigns
+		// If we by any chance reach it from ERROR state, the formation should be empty and the deletion shouldn't do anything.
 		if formationFromDB.State != model.ReadyFormationState {
 			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
+			err = s.formationAssignmentService.DeleteAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
+			}
 			return ft.formation, nil
 		}
 		requests, err := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)

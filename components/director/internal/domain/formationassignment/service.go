@@ -38,6 +38,7 @@ type FormationAssignmentRepository interface {
 	ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error)
 	Update(ctx context.Context, model *model.FormationAssignment) error
 	Delete(ctx context.Context, id, tenantID string) error
+	DeleteAssignmentsForObjectID(ctx context.Context, tnt, formationID, objectID string) error
 	Exists(ctx context.Context, id, tenantID string) (bool, error)
 }
 
@@ -293,6 +294,16 @@ func (s *service) ListFormationAssignmentsForObjectID(ctx context.Context, forma
 	}
 
 	return s.repo.ListAllForObject(ctx, tnt, formationID, objectID)
+}
+
+// DeleteAssignmentsForObjectID
+func (s *service) DeleteAssignmentsForObjectID(ctx context.Context, formationID, objectID string) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.repo.DeleteAssignmentsForObjectID(ctx, tnt, formationID, objectID)
 }
 
 // ListFormationAssignmentsForObjectIDs retrieves all Formation Assignment objects for formation with ID `formationID` that have any of the `objectIDs` as source or target

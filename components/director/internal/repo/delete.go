@@ -28,6 +28,10 @@ type DeleterGlobal interface {
 	DeleteManyGlobal(ctx context.Context, conditions Conditions) error
 }
 
+type DeleteConditionTree interface {
+	DeleteConditionTree(ctx context.Context, resourceType resource.Type, tenant string, conditionTree *ConditionTree) error
+}
+
 type universalDeleter struct {
 	tableName    string
 	resourceType resource.Type
@@ -37,6 +41,11 @@ type universalDeleter struct {
 // NewDeleter is a constructor for Deleter about entities with externally managed tenant accesses (m2m table or view)
 func NewDeleter(tableName string) Deleter {
 	return &universalDeleter{tableName: tableName}
+}
+
+// NewDeleteConditionTreeWithEmbeddedTenant is a constructor for Deleter about entities with externally managed tenant accesses (m2m table or view)
+func NewDeleteConditionTreeWithEmbeddedTenant(tableName string, tenantColumn string) DeleteConditionTree {
+	return &universalDeleter{tableName: tableName, tenantColumn: &tenantColumn}
 }
 
 // NewDeleterWithEmbeddedTenant is a constructor for Deleter about entities with tenant embedded in them.
@@ -101,6 +110,70 @@ func (g *universalDeleter) DeleteOneGlobal(ctx context.Context, conditions Condi
 // DeleteManyGlobal deletes all the entities that match the provided conditions from the database.
 func (g *universalDeleter) DeleteManyGlobal(ctx context.Context, conditions Conditions) error {
 	return g.delete(ctx, g.resourceType, conditions, false)
+}
+
+// DeleteConditionTree lists tenant scoped entities matching the provided condition tree with tenant isolation.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
+func (g *universalDeleter) DeleteConditionTree(ctx context.Context, resourceType resource.Type, tenant string, conditionTree *ConditionTree) error {
+	return g.deleteConditionListerWithTenantScope(ctx, resourceType, tenant, NoLock, conditionTree)
+}
+
+func (g *universalDeleter) deleteConditionListerWithTenantScope(ctx context.Context, resourceType resource.Type, tenant string, lockClause string, conditionTree *ConditionTree) error {
+	if tenant == "" {
+		return apperrors.NewTenantRequiredError()
+	}
+
+	if g.tenantColumn != nil {
+		conditions := And(&ConditionTree{Operand: NewEqualCondition(*g.tenantColumn, tenant)}, conditionTree)
+		return g.deleteWithConditionTree(ctx, resourceType, lockClause, conditions)
+	}
+
+	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, true)
+	if err != nil {
+		return err
+	}
+
+	conditions := And(&ConditionTree{Operand: tenantIsolation}, conditionTree)
+
+	return g.deleteWithConditionTree(ctx, resourceType, lockClause, conditions)
+}
+
+func (g *universalDeleter) deleteWithConditionTree(ctx context.Context, resourceType resource.Type, lockClause string, conditionTree *ConditionTree) error {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return err
+	}
+
+	query, args, err := buildDeleteQueryFromTree(g.tableName, conditionTree, lockClause, true)
+	if err != nil {
+		return errors.Wrap(err, "while building list query")
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", query)
+	_, err = persist.ExecContext(ctx, query, args...)
+
+	return persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list of objects from '%s' table", g.tableName)
+}
+
+func buildDeleteQueryFromTree(tableName string, conditions *ConditionTree, lockClause string, isRebindingNeeded bool) (string, []interface{}, error) {
+	var stmtBuilder strings.Builder
+
+	stmtBuilder.WriteString(fmt.Sprintf("DELETE FROM %s", tableName))
+	var allArgs []interface{}
+	if conditions != nil {
+		stmtBuilder.WriteString(" WHERE ")
+		var subquery string
+		subquery, allArgs = conditions.BuildSubquery()
+		stmtBuilder.WriteString(subquery)
+	}
+
+	writeLockClause(&stmtBuilder, lockClause)
+
+	if isRebindingNeeded {
+		return getQueryFromBuilder(stmtBuilder), allArgs, nil
+	}
+	return stmtBuilder.String(), allArgs, nil
 }
 
 func (g *universalDeleter) delete(ctx context.Context, resourceType resource.Type, conditions Conditions, requireSingleRemoval bool) error {
