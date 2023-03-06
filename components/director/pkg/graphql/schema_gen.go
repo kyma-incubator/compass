@@ -5116,7 +5116,6 @@ input ApplicationFromTemplateInput {
 	**Validation:** if provided, values not required
 	"""
 	placeholdersPayload: String
-
 	labels: Labels
 }
 
