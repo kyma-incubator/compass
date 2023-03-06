@@ -150,8 +150,9 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 
 		t.Log("Register Runtime via Certificate Secured Client")
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, runtimeInput, testConfig.GatewayOauth)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
+		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, runtimeInput, testConfig.GatewayOauth)
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
 
 		t.Log("Request Client Credentials for Runtime")
