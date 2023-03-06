@@ -402,8 +402,9 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		tenantID := tenant.TestTenants.GetDefaultTenantID()
 		runtimeInput := fixRuntimeInput("test-runtime")
 		runtimeInput.Labels[ScenariosLabel] = []string{testScenario}
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
+		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 
 		t.Run("Get ApplicationForRuntime with Package should succeed", func(t *testing.T) {
 			applicationPage := struct {
@@ -765,8 +766,10 @@ func TestDeleteApplication(t *testing.T) {
 
 		runtimeInput := fixRuntimeInput("one-runtime")
 		runtimeInput.Labels[ScenariosLabel] = []string{testScenario}
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
+
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
+		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 
 		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
@@ -860,8 +863,10 @@ func TestUnpairApplication(t *testing.T) {
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
 
 		runtimeInput.Labels[ScenariosLabel] = []string{testScenario}
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
+
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
+		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 
 		applicationInput := fixtures.FixSampleApplicationRegisterInputWithAppTypeAndScenarios("first", "first", conf.ApplicationTypeLabelKey, createAppTemplateName("Cloud for Customer"), ScenariosLabel, []string{testScenario})
 		appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(applicationInput)
@@ -1126,8 +1131,9 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 	input := fixRuntimeInput("runtime-test")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -1276,8 +1282,9 @@ func TestApplicationsForRuntime(t *testing.T) {
 	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
 	runtimeInputWithoutNormalization.Labels[ScenariosLabel] = scenarios
 	runtimeInputWithoutNormalization.Labels[IsNormalizedLabel] = "false"
-	runtimeWithoutNormalization := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInputWithoutNormalization, conf.GatewayOauth)
+	var runtimeWithoutNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtimeWithoutNormalization)
+	runtimeWithoutNormalization = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInputWithoutNormalization, conf.GatewayOauth)
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithoutNormalization.ID)
@@ -1298,15 +1305,16 @@ func TestApplicationsForRuntime(t *testing.T) {
 		unlabeledRuntimeInput := fixRuntimeInput("unlabeled-runtime")
 		unlabeledRuntimeInput.Labels[ScenariosLabel] = scenarios
 		unlabeledRuntimeInput.Labels[IsNormalizedLabel] = "false"
-		unlabledRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, unlabeledRuntimeInput, conf.GatewayOauth)
-		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &unlabledRuntime)
+		var unlabeledRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
+		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &unlabeledRuntime)
+		unlabeledRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, unlabeledRuntimeInput, conf.GatewayOauth)
 
 		deleteLabelRuntimeResp := graphql.Runtime{}
-		deleteLabelRequest := fixtures.FixDeleteRuntimeLabelRequest(unlabledRuntime.ID, IsNormalizedLabel)
+		deleteLabelRequest := fixtures.FixDeleteRuntimeLabelRequest(unlabeledRuntime.ID, IsNormalizedLabel)
 		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, deleteLabelRequest, &deleteLabelRuntimeResp)
 		require.NoError(t, err)
 
-		request := fixtures.FixApplicationForRuntimeRequest(unlabledRuntime.ID)
+		request := fixtures.FixApplicationForRuntimeRequest(unlabeledRuntime.ID)
 		applicationPage := graphql.ApplicationPage{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, request, &applicationPage)
@@ -1324,8 +1332,9 @@ func TestApplicationsForRuntime(t *testing.T) {
 		runtimeInputWithNormalization.Labels[ScenariosLabel] = scenarios
 		runtimeInputWithNormalization.Labels[IsNormalizedLabel] = "true"
 
-		runtimeWithNormalization := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInputWithNormalization, conf.GatewayOauth)
+		var runtimeWithNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtimeWithNormalization)
+		runtimeWithNormalization = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInputWithNormalization, conf.GatewayOauth)
 
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
 		applicationPage := graphql.ApplicationPage{}
@@ -1425,8 +1434,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	runtimeWithoutNormalizationInput := fixRuntimeInput("unnormalized-runtime")
 	runtimeWithoutNormalizationInput.Labels[ScenariosLabel] = scenarios
 	runtimeWithoutNormalizationInput.Labels[IsNormalizedLabel] = "false"
-	runtimeWithoutNormalization := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeWithoutNormalizationInput, conf.GatewayOauth)
+	var runtimeWithoutNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtimeWithoutNormalization)
+	runtimeWithoutNormalization = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeWithoutNormalizationInput, conf.GatewayOauth)
 
 	t.Run("Applications For Runtime Query without normalization", func(t *testing.T) {
 		//WHEN
@@ -1446,8 +1456,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 		runtimeWithNormalizationInput := fixRuntimeInput("normalized-runtime")
 		runtimeWithNormalizationInput.Labels[ScenariosLabel] = scenarios
 		runtimeWithNormalizationInput.Labels[IsNormalizedLabel] = "true"
-		runtimeWithNormalization := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeWithNormalizationInput, conf.GatewayOauth)
+		var runtimeWithNormalization graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtimeWithNormalization)
+		runtimeWithNormalization = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeWithNormalizationInput, conf.GatewayOauth)
 
 		//WHEN
 		request := fixtures.FixApplicationForRuntimeRequest(runtimeWithNormalization.ID)
@@ -1549,8 +1560,10 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	inRuntime := fixRuntimeInput("test-runtime")
 	inRuntime.Labels[ScenariosLabel] = scenarios
 	inRuntime.Description = nil
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inRuntime, conf.GatewayOauth)
+
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inRuntime, conf.GatewayOauth)
 	require.NoError(t, err)
 
 	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
