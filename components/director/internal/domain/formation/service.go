@@ -67,6 +67,7 @@ type runtimeContextRepository interface {
 type FormationRepository interface {
 	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
 	GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
@@ -267,6 +268,25 @@ func (s *service) GetFormationByName(ctx context.Context, formationName, tnt str
 	}
 
 	return f, nil
+}
+
+// GetGlobalByID retrieves formation by `id` globally
+func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.Formation, error) {
+	f, err := s.formationRepository.GetGlobalByID(ctx, id)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation by ID: %q globally", id)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation by ID: %q globally", id)
+	}
+
+	return f, nil
+}
+
+func (s *service) Update(ctx context.Context, model *model.Formation) error {
+	if err := s.formationRepository.Update(ctx, model); err != nil {
+		log.C(ctx).Errorf("An error occurred while updating formation with ID: %q", model.ID)
+		return errors.Wrapf(err, "An error occurred while updating formation with ID: %q", model.ID)
+	}
+	return nil
 }
 
 // GetFormationsForObject returns slice of formations for entity with ID objID and type objType
@@ -1136,6 +1156,27 @@ func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Contex
 	return scenarios, nil
 }
 
+func (s *service) SetFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error {
+	log.C(ctx).Infof("Setting formation with ID: %q to state: %q", formation.ID, formation.State)
+	formation.State = state
+
+	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
+		Message:   errorMessage,
+		ErrorCode: errorCode,
+	}}
+
+	marshaledErr, err := json.Marshal(formationError)
+	if err != nil {
+		return errors.Wrapf(err, "While preparing error message for formation with ID: %q", formation.ID)
+	}
+	formation.Error = marshaledErr
+
+	if err := s.formationRepository.Update(ctx, formation); err != nil {
+		return err
+	}
+	return nil
+}
+
 // MatchingFunc provides signature for functions used for matching asa against runtimeID
 type MatchingFunc func(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error)
 
@@ -1414,7 +1455,7 @@ func setToSlice(set map[string]bool) []string {
 func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, errorState model.FormationState) error {
 	response, err := s.notificationsService.SendNotification(ctx, formationReq)
 	if err != nil {
-		updateError := s.setFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, errorState)
+		updateError := s.SetFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, errorState)
 		if updateError != nil {
 			return errors.Wrapf(updateError, "while updating error state: %s", errors.Wrapf(err, "while sending notification for formation with ID: %q", formation.ID).Error())
 		}
@@ -1424,7 +1465,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		err = s.setFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, errorState)
+		err = s.SetFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, errorState)
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID: %q and name: %q", formation.ID, formation.Name)
 		}
@@ -1436,33 +1477,12 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
 		formation.State = model.ReadyFormationState
-		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to state: %s", formation.ID, formation.Name, model.ReadyFormationState)
+		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state", formation.ID, formation.Name, model.ReadyFormationState)
 		if err := s.formationRepository.Update(ctx, formation); err != nil {
 			return errors.Wrapf(err, "while updating formation with ID: %q and name: %q to state: %s", formation.ID, formation.Name, model.ReadyFormationState)
 		}
 	}
 
-	return nil
-}
-
-func (s *service) setFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error {
-	formation.State = state
-
-	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
-		Message:   errorMessage,
-		ErrorCode: errorCode,
-	}}
-
-	marshaledErr, err := json.Marshal(formationError)
-	if err != nil {
-		return errors.Wrapf(err, "while preparing error message for formation with ID: %q", formation.ID)
-	}
-	formation.Error = marshaledErr
-
-	if err := s.formationRepository.Update(ctx, formation); err != nil {
-		return err
-	}
-	log.C(ctx).Infof("Formation with ID: %s set to state: %s", formation.ID, formation.State)
 	return nil
 }
 

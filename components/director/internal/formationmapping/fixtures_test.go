@@ -68,6 +68,16 @@ func fixContextWithConsumer(c consumer.Consumer) context.Context {
 	return consumer.SaveToContext(emptyCtx, c)
 }
 
+func fixFormationWithState(state model.FormationState) *model.Formation {
+	return &model.Formation{
+		ID:                  testFormationID,
+		TenantID:            internalTntID,
+		FormationTemplateID: testFormationTemplateID,
+		Name:                testFormationName,
+		State:               state,
+	}
+}
+
 func fixFormationAssignmentModel(testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          "ID",
