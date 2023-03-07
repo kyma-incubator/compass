@@ -341,8 +341,8 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 	assert.Equal(t, in.Name, actual.Name)
 	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
 	assert.ElementsMatch(t, in.RuntimeTypes, actual.RuntimeTypes)
-	assert.Equal(t, *in.RuntimeTypeDisplayName, actual.RuntimeTypeDisplayName)
-	assert.Equal(t, *in.RuntimeArtifactKind, actual.RuntimeArtifactKind)
+	assert.Equal(t, in.RuntimeTypeDisplayName, actual.RuntimeTypeDisplayName)
+	assert.Equal(t, in.RuntimeArtifactKind, actual.RuntimeArtifactKind)
 	var webhooks []graphql.Webhook
 	for _, webhook := range actual.Webhooks {
 		webhooks = append(webhooks, *webhook)
