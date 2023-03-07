@@ -7,7 +7,7 @@ type Entity struct {
 	ID                     string         `db:"id"`
 	Name                   string         `db:"name"`
 	ApplicationTypes       string         `db:"application_types"`
-	RuntimeTypes           string         `db:"runtime_types"`
+	RuntimeTypes           sql.NullString `db:"runtime_types"`
 	RuntimeTypeDisplayName sql.NullString `db:"runtime_type_display_name"`
 	RuntimeArtifactKind    sql.NullString `db:"runtime_artifact_kind"`
 	LeadingProductIDs      sql.NullString `db:"leading_product_ids"`

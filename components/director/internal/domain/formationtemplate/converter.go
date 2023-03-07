@@ -169,7 +169,7 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 		ID:                     in.ID,
 		Name:                   in.Name,
 		ApplicationTypes:       string(marshalledApplicationTypes),
-		RuntimeTypes:           string(marshalledRuntimeTypes),
+		RuntimeTypes:           repo.NewValidNullableString(string(marshalledRuntimeTypes)),
 		RuntimeTypeDisplayName: repo.NewNullableString(in.RuntimeTypeDisplayName),
 		RuntimeArtifactKind:    runtimeArtifactKind,
 		LeadingProductIDs:      repo.NewValidNullableString(string(marshalledLeadingProductIDs)),
@@ -190,7 +190,8 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 	}
 
 	var unmarshalledRuntimeTypes []string
-	err = json.Unmarshal([]byte(in.RuntimeTypes), &unmarshalledRuntimeTypes)
+	runtimeTypes := repo.JSONRawMessageFromNullableString(in.RuntimeTypes)
+	err = json.Unmarshal(runtimeTypes, &unmarshalledRuntimeTypes)
 	if err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling runtime types")
 	}
