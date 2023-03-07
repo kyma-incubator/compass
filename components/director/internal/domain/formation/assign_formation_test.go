@@ -35,6 +35,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		Name:                testFormationName,
 		FormationTemplateID: FormationTemplateID,
 		TenantID:            TntInternalID,
+		State:               model.ReadyFormationState,
 	}
 	expectedFormationTemplate := &model.FormationTemplate{
 		ID:               FormationTemplateID,
@@ -67,6 +68,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		Name:                secondTestFormationName,
 		FormationTemplateID: FormationTemplateID,
 		TenantID:            TntInternalID,
+		State:               model.ReadyFormationState,
 	}
 	formationInInitialState := &model.Formation{
 		ID:                  fixUUID(),

@@ -370,17 +370,6 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		TenantID:            tnt,
 	}
 
-	// If there are formation assignments in the formation, that means that there are still objects assigned to it,
-	// therefore before deleting the formation or setting it to deleting state, we should make sure that it is empty.
-	// If we set it to DELETING with assigned objects, the status API will not be able to delete the formation later.
-	// formationAssignmentsForFormation, err := s.formationAssignmentService.ListByFormationIDsNoPaging(ctx, []string{formationID})
-	// if err != nil {
-	//	return nil, err
-	// }
-	// if len(formationAssignmentsForFormation[0]) > 0 {
-	//	return nil, errors.New("Formation not empty") //apperrors.NewFormationNotEmptyError()
-	// }
-
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreDelete, joinPointDetails, formationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
 	}
@@ -496,7 +485,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 
 		// When it is in initial state, the notification generation will be handled by the async API via resynchronizing the formation later
-		if formationFromDB.State == model.InitialFormationState {
+		if formationFromDB.State != model.ReadyFormationState {
 			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
 			return ft.formation, nil
 		}
@@ -951,7 +940,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	if err != nil {
 		return errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
 	}
-	if formation.State == model.InitialFormationState {
+	if formation.State != model.ReadyFormationState {
 		return fmt.Errorf("formation with ID %q is in state %q and cannot be resynchronized", formationID, formation.State)
 	}
 
