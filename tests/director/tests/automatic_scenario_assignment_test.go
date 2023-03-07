@@ -21,10 +21,7 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 
 	testScenarioA := "ASA1"
 	testScenarioB := "ASA2"
-	testSelectorA := graphql.Label{
-		Key:   "global_subaccount_id",
-		Value: subaccount,
-	}
+	testSelectorA := fixtures.FixLabelSelector("global_subaccount_id", subaccount)
 	testSelectorAInput := graphql.LabelSelectorInput{
 		Key:   testSelectorA.Key,
 		Value: subaccount,

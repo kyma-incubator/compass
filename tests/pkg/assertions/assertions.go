@@ -429,17 +429,10 @@ func AssertAutomaticScenarioAssignment(t *testing.T, expectedScenario string, ex
 
 func AssertAutomaticScenarioAssignments(t *testing.T, expected map[string]*graphql.Label, actual []*graphql.AutomaticScenarioAssignment) {
 	assert.Equal(t, len(expected), len(actual))
-	for scenario := range expected {
-		found := false
-		for _, actualAssignment := range actual {
-			require.NotNil(t, actualAssignment)
-			if scenario == actualAssignment.ScenarioName {
-				found = true
-				AssertAutomaticScenarioAssignment(t, scenario, expected[scenario], *actualAssignment)
-				break
-			}
-		}
-		assert.True(t, found, "Assignment for scenario: '%s' not found", scenario)
+	for _, actualAssignment := range actual {
+		expectedAssignment, ok := expected[actualAssignment.ScenarioName]
+		require.True(t, ok, "Assignment for scenario: '%s' not found", actualAssignment.ScenarioName)
+		AssertAutomaticScenarioAssignment(t, actualAssignment.ScenarioName, expectedAssignment, *actualAssignment)
 	}
 }
 
