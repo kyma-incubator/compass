@@ -296,7 +296,7 @@ func (s *service) ListFormationAssignmentsForObjectID(ctx context.Context, forma
 	return s.repo.ListAllForObject(ctx, tnt, formationID, objectID)
 }
 
-// DeleteAssignmentsForObjectID
+// DeleteAssignmentsForObjectID deletes formation assignments for formation for given objectID
 func (s *service) DeleteAssignmentsForObjectID(ctx context.Context, formationID, objectID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {

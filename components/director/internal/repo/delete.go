@@ -117,10 +117,10 @@ func (g *universalDeleter) DeleteManyGlobal(ctx context.Context, conditions Cond
 // If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
 // If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (g *universalDeleter) DeleteConditionTree(ctx context.Context, resourceType resource.Type, tenant string, conditionTree *ConditionTree) error {
-	return g.deleteConditionListerWithTenantScope(ctx, resourceType, tenant, NoLock, conditionTree)
+	return g.treeConditionDeleterWithTenantScope(ctx, resourceType, tenant, NoLock, conditionTree)
 }
 
-func (g *universalDeleter) deleteConditionListerWithTenantScope(ctx context.Context, resourceType resource.Type, tenant string, lockClause string, conditionTree *ConditionTree) error {
+func (g *universalDeleter) treeConditionDeleterWithTenantScope(ctx context.Context, resourceType resource.Type, tenant string, lockClause string, conditionTree *ConditionTree) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
