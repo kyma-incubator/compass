@@ -154,7 +154,7 @@ func NewValidNullableString(text string) sql.NullString {
 // NewNullableStringFromJSONRawMessage returns a new sql.NullString based on the given json.RawMessage
 func NewNullableStringFromJSONRawMessage(json json.RawMessage) sql.NullString {
 	nullString := sql.NullString{}
-	if json != nil {
+	if json != nil && string(json) != "null" {
 		nullString.String = string(json)
 		nullString.Valid = true
 	}
