@@ -117,7 +117,9 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	formation, err := h.formationService.Get(ctx, fa.FormationID)
+	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+
+	formation, err := h.formationService.Get(ctx, formationID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting formation from formation assignment with ID: %q", fa.FormationID)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -133,8 +135,6 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
 		return
 	}
-
-	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
 
 	if fa.State == string(model.DeletingAssignmentState) {
 		log.C(ctx).Infof("Processing formation assignment asynchronous status update for %q operation...", model.UnassignFormation)
