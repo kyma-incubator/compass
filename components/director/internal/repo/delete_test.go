@@ -377,6 +377,68 @@ func TestDeleteWithEmbeddedTenant(t *testing.T) {
 	}
 }
 
+func TestDeleteConditionTreeWithEmbeddedTenant(t *testing.T) {
+	sut := repo.NewDeleteConditionTreeWithEmbeddedTenant(userTableName, "tenant_id")
+
+	t.Run("deletes all items successfully", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM users WHERE (tenant_id = $1 AND first_name IN ($2, $3))`)).
+			WithArgs(tenantID, "Joe", "Smith").WillReturnResult(sqlmock.NewResult(0, 2))
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		err := sut.DeleteConditionTree(ctx, UserType, tenantID, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Joe", "Smith"})})
+		require.NoError(t, err)
+	})
+
+	t.Run("deletes all items successfully with additional parameters", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		mock.ExpectExec(regexp.QuoteMeta("DELETE FROM users WHERE (tenant_id = $1 AND (first_name = $2 OR age != $3))")).
+			WithArgs(tenantID, "Joe", 18).WillReturnResult(sqlmock.NewResult(0, 1))
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conditions := repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewEqualCondition("first_name", "Joe"),
+			repo.NewNotEqualCondition("age", 18),
+		})...)
+
+		err := sut.DeleteConditionTree(ctx, UserType, tenantID, conditions)
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error if missing persistence context", func(t *testing.T) {
+		ctx := context.TODO()
+		err := sut.DeleteConditionTree(ctx, UserType, tenantID, nil)
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
+	})
+
+	t.Run("returns error on db operation", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		mock.ExpectExec(`DELETE .*`).WillReturnError(someError())
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		err := sut.DeleteConditionTree(ctx, UserType, tenantID, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Peter", "Homer"})})
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
+		ctx = persistence.SaveToContext(ctx, db)
+		err := sut.DeleteConditionTree(ctx, UserType, tenantID, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Peter", "Homer"})})
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
+	})
+}
+
 func TestDeleteGlobalReactsOnNumberOfRemovedObjects(t *testing.T) {
 	givenID := "id"
 	sut := repo.NewDeleterGlobal(UserType, userTableName)

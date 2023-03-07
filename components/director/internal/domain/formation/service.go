@@ -945,6 +945,16 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	// When the formation is in INITIAL state, we should not allow notifications to be sent
+	// If it is in DELETING, it should be empty, so this shouldn't do anything
+	formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+	}
+	if formation.State == model.InitialFormationState {
+		return fmt.Errorf("formation with ID %q is in state %q and cannot be resynchronized", formationID, formation.State)
+	}
+
 	failedFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID,
 		[]string{string(model.InitialAssignmentState),
 			string(model.DeletingAssignmentState),
@@ -1006,11 +1016,6 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	}
 
 	if len(failedDeleteErrorFormationAssignments) > 0 {
-		formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
-		}
-
 		objectIDToTypeMap := make(map[string]graphql.FormationObjectType, len(failedDeleteErrorFormationAssignments)*2)
 		for _, assignment := range failedDeleteErrorFormationAssignments {
 			objectIDToTypeMap[assignment.Source] = formationAssignmentTypeToFormationObjectType(assignment.SourceType)
