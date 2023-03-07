@@ -147,7 +147,7 @@ global:
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2902"
+      version: "PR-2936"
       name: compass-gateway
     operations_controller:
       dir:
