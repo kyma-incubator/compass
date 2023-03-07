@@ -91,8 +91,9 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	// Register runtime in customer's tenant
 	input := fixRuntimeInput("customerRuntime")
 
-	customerRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, input, conf.GatewayOauth)
+	var customerRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, &customerRuntime)
+	customerRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, input, conf.GatewayOauth)
 
 	// Assert customer's runtime is visible in the customer's tenant
 	customerRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, customerTenant)
@@ -105,8 +106,9 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 
 	// Register runtime in account's tenant
 	accountRuntimeInput := fixRuntimeInput("accountRuntime")
-	accountRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, accountRuntimeInput, conf.GatewayOauth)
+	var accountRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, &accountRuntime)
+	accountRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, accountRuntimeInput, conf.GatewayOauth)
 
 	// Assert account's runtime is visible in the account's tenant
 	accountRuntimes = fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, accountTenant)
