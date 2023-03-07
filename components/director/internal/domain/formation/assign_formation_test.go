@@ -37,7 +37,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		ID:                     FormationTemplateID,
 		Name:                   testFormationTemplateName,
 		RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
-		RuntimeTypeDisplayName: str.Ptr("display name"),
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeTypes:           []string{runtimeType},
 		ApplicationTypes:       []string{applicationType},
 	}
@@ -1412,7 +1412,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectType:         graphql.FormationObjectTypeTenant,
 			ObjectID:           TargetTenant,
 			InputFormation:     inputFormation,
-			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template-name\" does not support resources of type \"TENANT\"",
+			ExpectedErrMessage: fmt.Sprintf("Formation %q of type %q does not support resources of type %q", testFormationName, testFormationTemplateName, graphql.FormationObjectTypeTenant),
 		},
 		{
 			Name: "error when can't get formation by name",
@@ -1461,7 +1461,7 @@ func TestServiceAssignFormation(t *testing.T) {
 					ID:                     FormationTemplateID,
 					Name:                   "some-other-template",
 					RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
-					RuntimeTypeDisplayName: str.Ptr("display name"),
+					RuntimeTypeDisplayName: runtimeTypeDisplayName,
 					RuntimeTypes:           []string{"not-the-expected-type"},
 				}, nil).Once()
 				return repo
@@ -1555,7 +1555,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectType:         graphql.FormationObjectTypeRuntime,
 			ObjectID:           RuntimeID,
 			InputFormation:     inputFormation,
-			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template-name\" does not support resources of type \"RUNTIME\"",
+			ExpectedErrMessage: fmt.Sprintf("Formation %q of type %q does not support resources of type %q", testFormationName, testFormationTemplateName, graphql.FormationObjectTypeRuntime),
 		},
 		{
 			Name: "error when assigning runtime fetching formation template",
@@ -1596,7 +1596,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&model.FormationTemplate{
 					ID:                     FormationTemplateID,
 					RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
-					RuntimeTypeDisplayName: str.Ptr("display name"),
+					RuntimeTypeDisplayName: runtimeTypeDisplayName,
 					Name:                   "some-other-template",
 					RuntimeTypes:           []string{"not-the-expected-type"},
 				}, nil).Once()
@@ -1660,7 +1660,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
 			ObjectID:           RuntimeContextID,
 			InputFormation:     inputFormation,
-			ExpectedErrMessage: "Formation \"test-formation\" of type \"test-formation-template-name\" does not support resources of type \"RUNTIME_CONTEXT\"",
+			ExpectedErrMessage: fmt.Sprintf("Formation %q of type %q does not support resources of type %q", testFormationName, testFormationTemplateName, graphql.FormationObjectTypeRuntimeContext),
 		},
 		{
 			Name: "error when assigning runtime context fetching formation template",

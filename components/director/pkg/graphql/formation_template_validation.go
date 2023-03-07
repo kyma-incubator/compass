@@ -34,13 +34,14 @@ func (i FormationTemplateInput) Validate() error {
 
 func validateRuntimeArtifactKind(i FormationTemplateInput) bool {
 	if i.RuntimeArtifactKind != nil {
-		artifactTypeIsValid := false
+		isArtifactTypeValid := false
 		for _, artifactType := range AllArtifactType {
 			if *i.RuntimeArtifactKind == artifactType {
-				artifactTypeIsValid = true
+				isArtifactTypeValid = true
+				break
 			}
 		}
-		return artifactTypeIsValid
+		return isArtifactTypeValid
 	}
 
 	return true

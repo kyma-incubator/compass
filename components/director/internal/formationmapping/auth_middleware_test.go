@@ -2,7 +2,6 @@ package formationmapping_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -965,19 +964,17 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 	}
 
 	formationTemplate := &model.FormationTemplate{
-		ID:                     testFormationTemplateID,
-		Name:                   "formationTemplateName",
-		RuntimeTypeDisplayName: str.Ptr("runtimeTypeDisplayName"),
-		TenantID:               &internalTntID,
-		LeadingProductIDs:      leadingProductIDs,
+		ID:                testFormationTemplateID,
+		Name:              "formationTemplateName",
+		TenantID:          &internalTntID,
+		LeadingProductIDs: leadingProductIDs,
 	}
 
 	formationTemplateWithNonMatchingProductIDs := &model.FormationTemplate{
-		ID:                     testFormationTemplateID,
-		Name:                   "formationTemplateName",
-		RuntimeTypeDisplayName: str.Ptr("runtimeTypeDisplayName"),
-		TenantID:               &internalTntID,
-		LeadingProductIDs:      []string{leadingProductID2},
+		ID:                testFormationTemplateID,
+		Name:              "formationTemplateName",
+		TenantID:          &internalTntID,
+		LeadingProductIDs: []string{leadingProductID2},
 	}
 
 	testCases := []struct {

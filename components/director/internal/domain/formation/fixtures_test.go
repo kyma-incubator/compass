@@ -98,9 +98,10 @@ const (
 )
 
 var (
-	tenantID          = uuid.New()
-	externalTenantID  = uuid.New()
-	nilFormationModel *model.Formation
+	tenantID               = uuid.New()
+	externalTenantID       = uuid.New()
+	nilFormationModel      *model.Formation
+	runtimeTypeDisplayName = str.Ptr("display name")
 
 	testErr = errors.New("Test error")
 
@@ -128,7 +129,7 @@ var (
 	formationTemplate               = model.FormationTemplate{
 		ID:                     FormationTemplateID,
 		RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
-		RuntimeTypeDisplayName: str.Ptr("display name"),
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		Name:                   testFormationTemplateName,
 		RuntimeTypes:           []string{runtimeType},
 	}

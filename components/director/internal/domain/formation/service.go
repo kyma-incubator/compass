@@ -447,7 +447,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		return nil, errors.Wrapf(err, "while assigning formation with name %q", formation.Name)
 	}
 
-	if !supportsObjectType(ft.formationTemplate, objectType) {
+	if !isObjectTypeSupported(ft.formationTemplate, objectType) {
 		return nil, errors.Errorf("Formation %q of type %q does not support resources of type %q", ft.formation.Name, ft.formationTemplate.Name, objectType)
 	}
 
@@ -1479,7 +1479,7 @@ func determineFormationState(ctx context.Context, formationTemplateID, formation
 	return model.InitialFormationState
 }
 
-func supportsObjectType(formationTemplate *model.FormationTemplate, objectType graphql.FormationObjectType) bool {
+func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectType graphql.FormationObjectType) bool {
 	if formationTemplate.RuntimeArtifactKind == nil && formationTemplate.RuntimeTypeDisplayName == nil && len(formationTemplate.RuntimeTypes) == 0 {
 		switch objectType {
 		case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext, graphql.FormationObjectTypeTenant:

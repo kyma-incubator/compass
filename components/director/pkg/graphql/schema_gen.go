@@ -5996,7 +5996,7 @@ type FormationTemplate {
 	id: ID!
 	name: String!
 	applicationTypes: [String!]!
-	runtimeTypes: [String!]!
+	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String
 	runtimeArtifactKind: ArtifactType
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
@@ -16946,14 +16946,11 @@ func (ec *executionContext) _FormationTemplate_runtimeTypes(ctx context.Context,
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplate_runtimeTypeDisplayName(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
@@ -33549,9 +33546,6 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			}
 		case "runtimeTypes":
 			out.Values[i] = ec._FormationTemplate_runtimeTypes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "runtimeTypeDisplayName":
 			out.Values[i] = ec._FormationTemplate_runtimeTypeDisplayName(ctx, field, obj)
 		case "runtimeArtifactKind":
