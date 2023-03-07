@@ -44,10 +44,10 @@ func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenarioB)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenarioB)
 
-	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation1, subaccount, tenantID)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation1.Name, subaccount, tenantID)
-	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation2, subaccount, tenantID)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation1, subaccount, tenantID)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation2.Name, subaccount, tenantID)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation2, subaccount, tenantID)
 
 	// prepare queries
 	getAssignmentForScenarioRequest := fixtures.FixAutomaticScenarioAssignmentForScenarioRequest(testScenarioA)
@@ -99,14 +99,17 @@ func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
 	}
 
-	rtm0 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime0"), conf.GatewayOauth)
+	var rtm0 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &rtm0)
+	rtm0 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime0"), conf.GatewayOauth)
 
-	rtm1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime1"), conf.GatewayOauth)
+	var rtm1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &rtm1)
+	rtm1 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime1"), conf.GatewayOauth)
 
-	rtm2 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, fixRuntimeInput("runtime2"), conf.GatewayOauth)
+	var rtm2 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &rtm2)
+	rtm2 = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, fixRuntimeInput("runtime2"), conf.GatewayOauth)
 
 	t.Run("Check automatic scenario assigment", func(t *testing.T) {
 		//GIVEN
@@ -118,8 +121,8 @@ func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 
 		//WHEN
 		formationInput := graphql.FormationInput{Name: prodScenario}
-		fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccount, tenantID)
 		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccount, tenantID)
+		fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccount, tenantID)
 
 		//THEN
 		runtimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, tenantID)
@@ -173,11 +176,12 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 	formation := graphql.FormationInput{Name: scenario}
 
-	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation, subaccountID, tenantID)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation.Name, subaccountID, tenantID)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation, subaccountID, tenantID)
 
-	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, fixRuntimeInput("test-name"), conf.GatewayOauth)
+	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
+	rtm = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, fixRuntimeInput("test-name"), conf.GatewayOauth)
 
 	t.Run("Scenario is set when label matches selector", func(t *testing.T) {
 		rtmWithScenarios := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantID, rtm.ID)

@@ -742,8 +742,9 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	subaccount1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
 	assert.NoError(t, err)
 
-	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
+	var runtime1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, defaultTenantID, &runtime1)
+	runtime1 = registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
 
 	// Add the subaccount to formation
 	scenarioName := "testMoveSubaccountScenario"
@@ -752,8 +753,8 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, scenarioName)
 
 	formationInput := graphql.FormationInput{Name: scenarioName}
-	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountExternalTenants[0], defaultTenantID)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
 
 	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountExternalTenants[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
 	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1}, ","), 1), subaccountMoveSubPath)

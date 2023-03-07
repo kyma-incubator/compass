@@ -80,8 +80,9 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	input := fixRuntimeInput("runtime-test")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 
 	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
@@ -124,12 +125,12 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 
 		// set runtime scenarios label
-		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 
 		t.Log("Request bundle instance auth creation")
 		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
@@ -166,12 +167,12 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is NOT in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 
 		// set runtime scenarios label
-		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 
 		output = graphql.BundleInstanceAuth{}
 		t.Log("Request bundle instance auth creation")
@@ -191,8 +192,9 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 
 	input := fixRuntimeInput("runtime-test")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 
 	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
@@ -235,12 +237,12 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 
 	// set application scenarios label
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, application.ID, tenantId)
 
 	// set runtime scenarios label
-	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
 	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantId)
 
 	t.Log("Request bundle instance auth creation")
 	err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &bndlInstanceAuth)
@@ -446,8 +448,9 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	input := fixRuntimeInput("runtime-test")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 
 	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
@@ -486,12 +489,12 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation1, application.ID, tenantId)
 
 		// set runtime scenarios label
-		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
@@ -504,12 +507,12 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is NOT in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formation2, application.ID, tenantId)
 
 		// set runtime scenarios label
-		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, formation1, runtime.ID, tenantId)
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")

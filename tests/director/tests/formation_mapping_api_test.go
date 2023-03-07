@@ -68,8 +68,9 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		}
 
 		t.Log("Register runtime via certificate secured client")
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, runtimeInput, conf.GatewayOauth)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &runtime)
+		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, runtimeInput, conf.GatewayOauth)
 
 		appName := "testAsyncApp"
 		appType := "async-app-type-1"
@@ -84,8 +85,8 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		formationID := formation.ID
 		require.NotEmpty(t, formationID)
 
@@ -140,8 +141,9 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 			Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue},
 		}
 
-		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredGQLClient, &providerRuntimeInput)
+		var providerRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredGQLClient, &providerRuntime)
+		providerRuntime = fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredGQLClient, &providerRuntimeInput)
 		require.NotEmpty(t, providerRuntime.ID)
 
 		selfRegLabelValue, ok := providerRuntime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
@@ -219,8 +221,8 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerAsyncFormationName := "provider-async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		require.NotEmpty(t, formation.ID)
 
 		t.Log("Create integration system")
@@ -413,8 +415,9 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		}
 
 		t.Log("Register runtime via certificate secured client")
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, runtimeInput, conf.GatewayOauth)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &runtime)
+		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, runtimeInput, conf.GatewayOauth)
 
 		providerAsyncFormationTmplName := "provider-async-formation-template-name"
 		providerAppTypes := []string{appTemplateName}
@@ -422,8 +425,8 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		providerAsyncFormationName := "provider-async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerAsyncFormationName, &providerAsyncFormationTmplName)
 		require.NotEmpty(t, formation.ID)
 
 		assertFormationAssignmentsCount(t, ctx, formation.ID, subscriptionConsumerAccountID, 0)
@@ -462,8 +465,9 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		}
 
 		t.Log("Register runtime via certificate secured client")
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, runtimeInput, conf.GatewayOauth)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, parentTenantID, &runtime)
+		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, runtimeInput, conf.GatewayOauth)
 
 		appName := "testAsyncApp"
 		appType := "async-app-type-1"
@@ -478,8 +482,8 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		formationID := formation.ID
 		require.NotEmpty(t, formationID)
 
@@ -528,8 +532,8 @@ func Test_UpdateFormationStatus(t *testing.T) {
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 
 		asyncFormationName := "async-formation-name"
-		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName)
+		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, parentTenantID, asyncFormationName, &asyncFormationTmplName)
 		formationID := formation.ID
 		require.NotEmpty(t, formationID)
 

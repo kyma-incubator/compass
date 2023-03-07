@@ -151,8 +151,8 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	scenarios := []string{additionalValue}
 
 	t.Logf("Set scenario label value %s on application", additionalValue)
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: additionalValue}, app.ID, tenantId)
 	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: additionalValue}, app.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: additionalValue}, app.ID, tenantId)
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixtures.FixGetApplicationRequest(app.ID)
@@ -266,13 +266,15 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelKeyBar := "bar"
 
 	inputFirst := fixRuntimeInput("first")
-	firstRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputFirst, conf.GatewayOauth)
+	var firstRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &firstRuntime)
+	firstRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputFirst, conf.GatewayOauth)
 
 	//Create second runtime
 	inputSecond := fixRuntimeInput("second")
-	secondRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputSecond, conf.GatewayOauth)
+	var secondRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &secondRuntime)
+	secondRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputSecond, conf.GatewayOauth)
 
 	//Set label "foo" on both runtimes
 	labelValueFoo := "val"
