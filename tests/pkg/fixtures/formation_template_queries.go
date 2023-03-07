@@ -99,8 +99,8 @@ func QueryFormationTemplatesWithPageSizeAndTenant(t require.TestingT, ctx contex
 	return &formationTemplates
 }
 
-func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationTemplate {
-	deleteRequest := FixDeleteFormationTemplateRequest(id)
+func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, template *graphql.FormationTemplate) *graphql.FormationTemplate {
+	deleteRequest := FixDeleteFormationTemplateRequest(template.ID)
 
 	formationTemplate := graphql.FormationTemplate{}
 	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, deleteRequest, &formationTemplate)
@@ -110,8 +110,8 @@ func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient
 	return &formationTemplate
 }
 
-func CleanupFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) *graphql.FormationTemplate {
-	deleteRequest := FixDeleteFormationTemplateRequest(id)
+func CleanupFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, template *graphql.FormationTemplate) *graphql.FormationTemplate {
+	deleteRequest := FixDeleteFormationTemplateRequest(template.ID)
 
 	formationTemplate := graphql.FormationTemplate{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &formationTemplate)
