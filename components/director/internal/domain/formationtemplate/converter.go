@@ -191,9 +191,11 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 
 	var unmarshalledRuntimeTypes []string
 	runtimeTypes := repo.JSONRawMessageFromNullableString(in.RuntimeTypes)
-	err = json.Unmarshal(runtimeTypes, &unmarshalledRuntimeTypes)
-	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling runtime types")
+	if runtimeTypes != nil {
+		err = json.Unmarshal(runtimeTypes, &unmarshalledRuntimeTypes)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling runtime types")
+		}
 	}
 
 	var unmarshalledLeadingProductIDs []string
