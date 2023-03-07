@@ -127,7 +127,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2902"
+      version: "PR-2937"
       name: compass-connector
     connectivity_adapter:
       dir:
