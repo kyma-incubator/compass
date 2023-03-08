@@ -350,12 +350,26 @@ func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string)
 }
 
 func validatePlaceholderValue(placeholder model.ApplicationTemplatePlaceholder, value string) error {
-	if placeholder.Name == "provider" && value == providerSAP {
-		return errors.New("provider cannot be SAP")
+	if placeholder.Name == "provider" {
+		valueRemovedWhitespaces := strings.Fields(value)
+
+		for _, i := range valueRemovedWhitespaces {
+			if i == providerSAP {
+				return errors.New("provider cannot contain \"SAP\"")
+			}
+		}
 	}
 
-	if placeholder.Name == "application-type" && (strings.HasPrefix(value, providerSAP+" ") || value == providerSAP) {
-		return errors.New("your application type cannot start with 'SAP'")
+	if placeholder.Name == "application-type" {
+		currentValue := value
+		if len(value) >= 4 {
+			firstFour := value[:4]
+			currentValue = strings.Trim(firstFour, " \t\n")
+		}
+
+		if currentValue == providerSAP {
+			return errors.New("your application type cannot start with \"SAP\"")
+		}
 	}
 
 	return nil

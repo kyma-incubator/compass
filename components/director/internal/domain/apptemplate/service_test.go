@@ -1458,7 +1458,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			ExpectedError:  errors.New("required placeholder not provided: value for placeholder name 'name' not found"),
 		},
 		{
-			Name: "Returns error when provider placeholder value is SAP",
+			Name: "Returns error when provider placeholder value contains \"SAP\"",
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Provider": "{{provider}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
@@ -1466,13 +1466,13 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 				},
 			},
 			InputValues: []*model.ApplicationTemplateValueInput{
-				{Placeholder: "provider", Value: "SAP"},
+				{Placeholder: "provider", Value: "invalid SAP provider"},
 			},
 			ExpectedOutput: "",
-			ExpectedError:  errors.New("value of placeholder is invalid: provider cannot be SAP"),
+			ExpectedError:  errors.New("value of placeholder is invalid: provider cannot contain \"SAP\""),
 		},
 		{
-			Name: "Returns error when application type placeholder value starts with 'SAP'",
+			Name: "Returns error when application type placeholder value starts with \"SAP\"",
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Application type": "{{application-type}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
@@ -1483,7 +1483,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 				{Placeholder: "application-type", Value: "SAP type"},
 			},
 			ExpectedOutput: "",
-			ExpectedError:  errors.New("value of placeholder is invalid: your application type cannot start with 'SAP'"),
+			ExpectedError:  errors.New("value of placeholder is invalid: your application type cannot start with \"SAP\""),
 		},
 	}
 
