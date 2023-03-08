@@ -439,3 +439,28 @@ func fixModelApplicationTemplate(id, name string) *model.ApplicationTemplate {
 		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
 	}
 }
+
+func fixGQLApplicationTemplate(id, name string) *graphql.ApplicationTemplate {
+	desc := "Description for template"
+	return &graphql.ApplicationTemplate{
+		ID:          id,
+		Name:        name,
+		Description: &desc,
+		AccessLevel: graphql.ApplicationTemplateAccessLevel(model.GlobalApplicationTemplateAccessLevel),
+	}
+}
+
+func fixGQLApplicationWithAppTemplate(id, name, description, appTemplateID string) *graphql.Application {
+	return &graphql.Application{
+		BaseEntity: &graphql.BaseEntity{
+			ID: id,
+		},
+		Status: &graphql.ApplicationStatus{
+			Condition: graphql.ApplicationStatusConditionInitial,
+		},
+		Name:                  name,
+		Description:           &description,
+		ApplicationNamespace:  &appNamespace,
+		ApplicationTemplateID: str.Ptr(appTemplateID),
+	}
+}
