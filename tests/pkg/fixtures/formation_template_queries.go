@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -24,7 +23,7 @@ func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient 
 	return formationTemplate
 }
 
-func CreateFormationTemplateExpectError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateInput) {
+func CreateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateInput) {
 	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -33,11 +32,11 @@ func CreateFormationTemplateExpectError(t require.TestingT, ctx context.Context,
 
 	// In case of successfully created formation template the require statement terminates the test case and the ID is not returned. Should clean up the formation template here.
 	if formationTemplate.ID != "" {
-		defer CleanupFormationTemplate(t, ctx, gqlClient, formationTemplate.ID)
+		defer CleanupFormationTemplate(t, ctx, gqlClient, &formationTemplate)
 	}
 
 	require.Error(t, err)
-	fmt.Println("Error: ", err.Error())
+	t.Log("Error: ", err.Error())
 }
 
 func CreateFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.FormationTemplateInput) graphql.FormationTemplate {
@@ -131,7 +130,7 @@ func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient
 	return &formationTemplate
 }
 
-func UpdateFormationTemplateExpectError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string, in graphql.FormationTemplateInput) {
+func UpdateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, in graphql.FormationTemplateInput) {
 	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
 	require.NoError(t, err)
 
@@ -143,7 +142,7 @@ func UpdateFormationTemplateExpectError(t require.TestingT, ctx context.Context,
 
 	//THEN
 	require.Error(t, err)
-	fmt.Println("Error: ", err.Error())
+	t.Log("Error: ", err.Error())
 }
 
 func CleanupFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, template *graphql.FormationTemplate) *graphql.FormationTemplate {
