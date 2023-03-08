@@ -16,8 +16,6 @@ import (
 const (
 	testID                    = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	formationTemplateName     = "formation-template-name"
-	runtimeTypeDisplayName    = "display-name-for-runtime"
-	artifactKindAsString      = "SUBSCRIPTION"
 	applicationTypesAsString  = "[\"some-application-type\"]"
 	runtimeTypesAsString      = "[\"some-runtime-type\"]"
 	testTenantID              = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
@@ -27,6 +25,10 @@ const (
 )
 
 var (
+	runtimeTypeDisplayName      = "display-name-for-runtime"
+	artifactKindAsString        = "SUBSCRIPTION"
+	runtimeArtifactKind         = model.RuntimeArtifactKindSubscription
+	artifactKind                = graphql.ArtifactTypeSubscription
 	nilModelEntity              *model.FormationTemplate
 	emptyTemplate               = `{}`
 	url                         = "http://foo.com"
@@ -39,8 +41,8 @@ var (
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixModelWebhookInput(),
 	}
@@ -48,18 +50,40 @@ var (
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: str.Ptr(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    &artifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               fixGQLWebhookInput(),
 	}
+
+	formationTemplateModelInputAppOnly = model.FormationTemplateInput{
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		Webhooks:          fixModelWebhookInput(),
+	}
+	formationTemplateGraphQLInputAppOnly = graphql.FormationTemplateInput{
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		Webhooks:          fixGQLWebhookInput(),
+	}
+	formationTemplateModelAppOnly = model.FormationTemplate{
+		ID:                testID,
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
+		TenantID:          str.Ptr(testTenantID),
+		Webhooks:          []*model.Webhook{fixFormationTemplateModelWebhook()},
+	}
+
 	formationTemplateModel = model.FormationTemplate{
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		TenantID:               str.Ptr(testTenantID),
 		Webhooks:               []*model.Webhook{fixFormationTemplateModelWebhook()},
@@ -69,8 +93,8 @@ var (
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		TenantID:               nil,
 	}
@@ -78,9 +102,9 @@ var (
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypesAsString,
-		RuntimeTypes:           runtimeTypesAsString,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypes:           repo.NewValidNullableString(runtimeTypesAsString),
+		RuntimeTypeDisplayName: repo.NewValidNullableString(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    repo.NewValidNullableString(artifactKindAsString),
 		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(testTenantID),
 	}
@@ -88,9 +112,9 @@ var (
 		ID:                     testID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypesAsString,
-		RuntimeTypes:           runtimeTypesAsString,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    artifactKindAsString,
+		RuntimeTypes:           repo.NewValidNullableString(runtimeTypesAsString),
+		RuntimeTypeDisplayName: repo.NewValidNullableString(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    repo.NewValidNullableString(artifactKindAsString),
 		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(""),
 	}
@@ -99,8 +123,8 @@ var (
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: runtimeTypeDisplayName,
-		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &artifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		Webhooks:               []*graphql.Webhook{fixFormationTemplateGQLWebhook()},
 	}

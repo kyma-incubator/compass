@@ -11,6 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	runtimeArtifactKindField    = "RuntimeArtifactKind"
+	runtimeTypeDisplayNameField = "RuntimeTypeDisplayName"
+	runtimeTypesField           = "RuntimeTypes"
+)
+
 func TestFormationTemplateInput_ValidateName(t *testing.T) {
 	testCases := []struct {
 		Name          string
@@ -78,7 +84,7 @@ func TestFormationTemplateInput_ValidateRuntimeDisplayName(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.RuntimeTypeDisplayName = testCase.Value
+			formationTemplateInput.RuntimeTypeDisplayName = &testCase.Value
 			// WHEN
 			err := formationTemplateInput.Validate()
 			// THEN
@@ -128,7 +134,7 @@ func TestFormationTemplateInput_ValidateRuntimeArtifactKind(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.RuntimeArtifactKind = testCase.Value
+			formationTemplateInput.RuntimeArtifactKind = &testCase.Value
 			// WHEN
 			err := formationTemplateInput.Validate()
 			// THEN
@@ -294,12 +300,89 @@ func TestFormationTemplateInput_Validate_Webhooks(t *testing.T) {
 	}
 }
 
+func TestFormationTemplateInput_ValidateRuntimeRelatedFields(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		EmptyFields   []string
+		ExpectedValid bool
+	}{
+		{
+			Name:          "Success all fields present",
+			EmptyFields:   []string{},
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Success all fields missing",
+			EmptyFields:   []string{runtimeTypesField, runtimeTypeDisplayNameField, runtimeArtifactKindField},
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Missing artifact kind",
+			EmptyFields:   []string{runtimeArtifactKindField},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Missing display name",
+			EmptyFields:   []string{runtimeTypeDisplayNameField},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Missing runtime types",
+			EmptyFields:   []string{runtimeTypesField},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Missing artifact kind and display name",
+			EmptyFields:   []string{runtimeArtifactKindField, runtimeTypeDisplayNameField},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Missing artifact kind and runtime types",
+			EmptyFields:   []string{runtimeArtifactKindField, runtimeTypesField},
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Missing display name and runtime types",
+			EmptyFields:   []string{runtimeTypeDisplayNameField, runtimeTypesField},
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			formationTemplateInput := fixValidFormationTemplateInput()
+
+			for _, field := range testCase.EmptyFields {
+				switch field {
+				case runtimeTypesField:
+					formationTemplateInput.RuntimeTypes = []string{}
+				case runtimeArtifactKindField:
+					formationTemplateInput.RuntimeArtifactKind = nil
+				case runtimeTypeDisplayNameField:
+					formationTemplateInput.RuntimeTypeDisplayName = nil
+				}
+			}
+
+			// WHEN
+			err := formationTemplateInput.Validate()
+			// THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func fixValidFormationTemplateInput() graphql.FormationTemplateInput {
+	kind := graphql.ArtifactTypeSubscription
 	return graphql.FormationTemplateInput{
 		Name:                   "formation-template-name",
 		ApplicationTypes:       []string{"some-application-type"},
 		RuntimeTypes:           []string{"some-runtime-type"},
-		RuntimeTypeDisplayName: "display-name-for-runtime",
-		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
+		RuntimeTypeDisplayName: stringPtr("display-name-for-runtime"),
+		RuntimeArtifactKind:    &kind,
 	}
 }

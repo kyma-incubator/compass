@@ -3,8 +3,9 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 // AggregationResources holds ids of resources for ord data aggregation

@@ -18,26 +18,26 @@ const (
 
 // FormationTemplate missing godoc
 type FormationTemplate struct {
-	ID                     string              `json:"id"`
-	Name                   string              `json:"name"`
-	ApplicationTypes       []string            `json:"applicationTypes"`
-	RuntimeTypes           []string            `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string              `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
-	TenantID               *string             `json:"tenant_id"`
-	Webhooks               []*Webhook          `json:"webhooks"`
-	LeadingProductIDs      []string            `json:"leadingProductIDs"`
+	ID                     string               `json:"id"`
+	Name                   string               `json:"name"`
+	ApplicationTypes       []string             `json:"applicationTypes"`
+	RuntimeTypes           []string             `json:"runtimeTypes"`
+	RuntimeTypeDisplayName *string              `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    *RuntimeArtifactKind `json:"runtimeArtifactKind"`
+	TenantID               *string              `json:"tenant_id"`
+	Webhooks               []*Webhook           `json:"webhooks"`
+	LeadingProductIDs      []string             `json:"leadingProductIDs"`
 }
 
 // FormationTemplateInput missing godoc
 type FormationTemplateInput struct {
-	Name                   string              `json:"name"`
-	ApplicationTypes       []string            `json:"applicationTypes"`
-	RuntimeTypes           []string            `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string              `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    RuntimeArtifactKind `json:"runtimeArtifactKind"`
-	Webhooks               []*WebhookInput     `json:"webhooks"`
-	LeadingProductIDs      []string            `json:"leadingProductIDs"`
+	Name                   string               `json:"name"`
+	ApplicationTypes       []string             `json:"applicationTypes"`
+	RuntimeTypes           []string             `json:"runtimeTypes"`
+	RuntimeTypeDisplayName *string              `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    *RuntimeArtifactKind `json:"runtimeArtifactKind"`
+	Webhooks               []*WebhookInput      `json:"webhooks"`
+	LeadingProductIDs      []string             `json:"leadingProductIDs"`
 }
 
 // FormationTemplatePage missing godoc

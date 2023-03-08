@@ -122,8 +122,7 @@ func (e *BaseEntity) SetError(err sql.NullString) {
 func NewNullableString(text *string) sql.NullString {
 	nullString := sql.NullString{}
 	if text != nil {
-		nullString.String = *text
-		nullString.Valid = true
+		nullString = NewValidNullableString(*text)
 	}
 
 	return nullString
@@ -142,7 +141,7 @@ func NewNullableInt(i *int) sql.NullInt32 {
 
 // NewValidNullableString returns a new sql.NullString based on the given string
 func NewValidNullableString(text string) sql.NullString {
-	if text == "" {
+	if text == "" || text == "null" {
 		return sql.NullString{}
 	}
 
@@ -155,7 +154,7 @@ func NewValidNullableString(text string) sql.NullString {
 // NewNullableStringFromJSONRawMessage returns a new sql.NullString based on the given json.RawMessage
 func NewNullableStringFromJSONRawMessage(json json.RawMessage) sql.NullString {
 	nullString := sql.NullString{}
-	if json != nil {
+	if json != nil && string(json) != "null" {
 		nullString.String = string(json)
 		nullString.Valid = true
 	}
