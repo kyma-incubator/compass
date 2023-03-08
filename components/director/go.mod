@@ -48,9 +48,9 @@ require (
 
 require (
 	github.com/imdario/mergo v0.3.12
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230222154756-c31ab6b486f7
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230222154756-c31ab6b486f7
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230222154756-c31ab6b486f7
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230308114318-211271ddb185
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230308114318-211271ddb185
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230308114318-211271ddb185
 	golang.org/x/net v0.7.0
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/text v0.7.0
