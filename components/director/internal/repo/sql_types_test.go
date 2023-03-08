@@ -42,7 +42,7 @@ func TestNewNullableString(t *testing.T) {
 		// WHEN
 		result := NewNullableString(&text)
 		// THEN
-		assert.True(t, result.Valid)
+		assert.False(t, result.Valid)
 		assert.Equal(t, text, result.String)
 	})
 

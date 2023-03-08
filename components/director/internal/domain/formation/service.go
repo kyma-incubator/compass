@@ -447,6 +447,10 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		return nil, errors.Wrapf(err, "while assigning formation with name %q", formation.Name)
 	}
 
+	if !isObjectTypeSupported(ft.formationTemplate, objectType) {
+		return nil, errors.Errorf("Formation %q of type %q does not support resources of type %q", ft.formation.Name, ft.formationTemplate.Name, objectType)
+	}
+
 	joinPointDetails, err := s.prepareDetailsForAssign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while preparing joinpoint details for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
@@ -1473,4 +1477,17 @@ func determineFormationState(ctx context.Context, formationTemplateID, formation
 	}
 
 	return model.InitialFormationState
+}
+
+func isObjectTypeSupported(formationTemplate *model.FormationTemplate, objectType graphql.FormationObjectType) bool {
+	if formationTemplate.RuntimeArtifactKind == nil && formationTemplate.RuntimeTypeDisplayName == nil && len(formationTemplate.RuntimeTypes) == 0 {
+		switch objectType {
+		case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext, graphql.FormationObjectTypeTenant:
+			return false
+		default:
+			return true
+		}
+	}
+
+	return true
 }
