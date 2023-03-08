@@ -256,8 +256,8 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	formationTemplateName := "formation-template-name"
 	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
 
-	var formationTemplate *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
+	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
 	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	t.Logf("Assert there are no formation constraints for the formation template")
@@ -267,8 +267,8 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	secondFormationTemplateName := "second-formation-template-name"
 	secondFormationTemplateInput := fixtures.FixFormationTemplateInput(secondFormationTemplateName)
 
-	var secondFormationTemplate *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationTemplate)
+	var secondFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &secondFormationTemplate)
 	secondFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationTemplateInput)
 
 	firstConstraint := graphql.FormationConstraintInput{

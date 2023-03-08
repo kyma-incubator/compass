@@ -114,8 +114,8 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	formationTemplateName := "delete-formation-template-name"
 	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
 
-	var formationTemplateReq *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateReq)
+	var formationTemplateReq graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplateReq)
 	formationTemplateReq = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	deleteFormationTemplateRequest := fixtures.FixDeleteFormationTemplateRequest(formationTemplateReq.ID)
@@ -153,8 +153,8 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(updatedFormationTemplateInput)
 	require.NoError(t, err)
 
-	var formationTemplateReq *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateReq)
+	var formationTemplateReq graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplateReq)
 	formationTemplateReq = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationTemplateInput)
 
 	updateFormationTemplateRequest := fixtures.FixUpdateFormationTemplateRequest(formationTemplateReq.ID, updatedFormationTemplateInputGQLString)
@@ -257,8 +257,8 @@ func TestQueryFormationTemplate(t *testing.T) {
 	formationTemplateName := "query-formation-template-name"
 	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
 
-	var createdFormationRequest *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationRequest)
+	var createdFormationRequest graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &createdFormationRequest)
 	createdFormationRequest = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	queryFormationTemplateRequest := fixtures.FixQueryFormationTemplateRequest(createdFormationRequest.ID)
@@ -299,11 +299,11 @@ func TestQueryFormationTemplates(t *testing.T) {
 	first := 100
 	currentFormationTemplatePage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, certSecuredGraphQLClient, first)
 
-	var createdFormationTemplate *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationTemplate)
+	var createdFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &createdFormationTemplate)
 	createdFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
-	var secondCreatedFormationTemplate *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, secondCreatedFormationTemplate)
+	var secondCreatedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &secondCreatedFormationTemplate)
 	secondCreatedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationInput)
 
 	var output graphql.FormationTemplatePage
@@ -323,8 +323,8 @@ func TestQueryFormationTemplates(t *testing.T) {
 	t.Log("Check if formation templates are in received slice")
 
 	assert.Subset(t, output.Data, []*graphql.FormationTemplate{
-		createdFormationTemplate,
-		secondCreatedFormationTemplate,
+		&createdFormationTemplate,
+		&secondCreatedFormationTemplate,
 	})
 }
 
@@ -340,18 +340,18 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 	scopedFormationTemplateInput := fixtures.FixFormationTemplateInput(scopedFormationTemplateName)
 
 	t.Logf("Create tenant scoped formation template with name: %q", scopedFormationTemplateName)
-	var scopedFormationTemplate *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplate)
+	var scopedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, directorCertSecuredClient, &scopedFormationTemplate)
 	scopedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplateInput) // tenant_id is extracted from the subject of the cert
 
-	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, scopedFormationTemplate)
+	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, &scopedFormationTemplate)
 
 	t.Logf("List all formation templates for the tenant in which formation template with name: %q was created and verify that it is visible there", scopedFormationTemplateName)
 	formationTemplatePage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, directorCertSecuredClient, first)
 
 	assert.Greater(t, len(formationTemplatePage.Data), 1) // assert that both tenant scoped and global formation templates are visible
 	assert.Subset(t, formationTemplatePage.Data, []*graphql.FormationTemplate{
-		scopedFormationTemplate,
+		&scopedFormationTemplate,
 	})
 
 	t.Logf("List all formation templates for some other tenant in which formation template with name: %q was NOT created and verify that it is NOT visible there", scopedFormationTemplateName)
@@ -359,7 +359,7 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 
 	assert.NotEmpty(t, formationTemplatePageForOtherTenant.Data)
 	assert.NotContains(t, formationTemplatePageForOtherTenant.Data, []*graphql.FormationTemplate{
-		scopedFormationTemplate,
+		&scopedFormationTemplate,
 	})
 
 	var globalFormationTemplateID string
@@ -402,18 +402,18 @@ func TestResourceGroupScopedFormationTemplates(t *testing.T) {
 	scopedFormationTemplateInput := fixtures.FixFormationTemplateInput(scopedFormationTemplateName)
 
 	t.Logf("Create resource group scoped formation template with name: %q", scopedFormationTemplateName)
-	var scopedFormationTemplate *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplateWithTenant(t, ctx, certSecuredGraphQLClient, resourceGroup, scopedFormationTemplate)
+	var scopedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplateWithTenant(t, ctx, certSecuredGraphQLClient, resourceGroup, &scopedFormationTemplate)
 	scopedFormationTemplate = fixtures.CreateFormationTemplateWithTenant(t, ctx, certSecuredGraphQLClient, resourceGroup, scopedFormationTemplateInput)
 
-	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, scopedFormationTemplate)
+	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, &scopedFormationTemplate)
 
 	t.Logf("List all formation templates for the tenant in which formation template with name: %q was created and verify that it is visible there", scopedFormationTemplateName)
 	formationTemplatePage := fixtures.QueryFormationTemplatesWithPageSizeAndTenant(t, ctx, certSecuredGraphQLClient, first, resourceGroup)
 
 	assert.Greater(t, len(formationTemplatePage.Data), 1) // assert that both tenant scoped and global formation templates are visible
 	assert.Subset(t, formationTemplatePage.Data, []*graphql.FormationTemplate{
-		scopedFormationTemplate,
+		&scopedFormationTemplate,
 	})
 
 	t.Logf("List all formation templates for some other tenant in which formation template with name: %q was NOT created and verify that it is NOT visible there", scopedFormationTemplateName)
@@ -421,7 +421,7 @@ func TestResourceGroupScopedFormationTemplates(t *testing.T) {
 
 	assert.NotEmpty(t, formationTemplatePageForOtherTenant.Data)
 	assert.NotContains(t, formationTemplatePageForOtherTenant.Data, []*graphql.FormationTemplate{
-		scopedFormationTemplate,
+		&scopedFormationTemplate,
 	})
 
 	var globalFormationTemplateID string
@@ -444,11 +444,11 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 	webhookSyncMode := graphql.WebhookModeSync
 
 	t.Logf("Create tenant scoped formation template with name: %q", scopedFormationTemplateName)
-	var scopedFormationTemplate *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplate)
+	var scopedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, directorCertSecuredClient, &scopedFormationTemplate)
 	scopedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplateInput) // tenant_id is extracted from the subject of the cert
 
-	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, scopedFormationTemplate)
+	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, &scopedFormationTemplate)
 	urlUpdated := "http://updated.url"
 	webhookInput := &graphql.WebhookInput{
 		Type: graphql.WebhookTypeFormationLifecycle,
@@ -498,6 +498,6 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 		err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, deleteReq, &deletedWebhook)
 		require.NoError(t, err)
 
-		assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, scopedFormationTemplate)
+		assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, &scopedFormationTemplate)
 	})
 }

@@ -4485,8 +4485,8 @@ func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	formationTemplateInput := fixtures.FixFormationTemplateInputWithType(formationTemplateName, runtimeType)
-	var actualFormationTemplate *graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, actualFormationTemplate)
+	var actualFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &actualFormationTemplate)
 	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	formation := fixtures.FixFormationInput(formationName, str.Ptr(formationTemplateName))
