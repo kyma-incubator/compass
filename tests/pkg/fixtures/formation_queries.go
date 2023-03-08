@@ -79,24 +79,24 @@ func DeleteFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *g
 	return &deleteFormation
 }
 
+func DeleteFormationWithinTenantExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string) {
+	t.Logf("Expect error while deleting formation with name: %q", formationName)
+	deleteRequest := FixDeleteFormationRequest(formationName)
+	var deleteFormation graphql.Formation
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, &deleteFormation)
+	require.Error(t, err)
+}
+
 func AssignFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, parent string) *graphql.Formation {
-	createRequest := FixAssignFormationRequest(tenantID, string(graphql.FormationObjectTypeTenant), in.Name)
+	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, tenantID, string(graphql.FormationObjectTypeTenant), parent)
+}
 
-	formation := graphql.Formation{}
-
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, parent, createRequest, &formation))
-	require.NotEmpty(t, formation.Name)
-	return &formation
+func AssignFormationWithTenantObjectTypeExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, parent string) *graphql.Formation {
+	return assignFormationWithCustomObjectTypeExpectError(t, ctx, gqlClient, in, tenantID, string(graphql.FormationObjectTypeTenant), parent)
 }
 
 func UnassignFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, parent string) *graphql.Formation {
-	unassignRequest := FixUnassignFormationRequest(tenantID, string(graphql.FormationObjectTypeTenant), in.Name)
-
-	formation := graphql.Formation{}
-
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, parent, unassignRequest, &formation))
-	require.NotEmpty(t, formation.Name)
-	return &formation
+	return unassignFormationWithCustomObjectType(t, ctx, gqlClient, in, tenantID, string(graphql.FormationObjectTypeTenant), parent)
 }
 
 func CleanupFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name string, tenantID, parent string) *graphql.Formation {
@@ -123,6 +123,10 @@ func AssignFormationWithApplicationObjectType(t require.TestingT, ctx context.Co
 	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID)
 }
 
+func AssignFormationWithApplicationObjectTypeExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, appID, tenantID string) *graphql.Formation {
+	return assignFormationWithCustomObjectTypeExpectError(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID)
+}
+
 func UnassignFormationWithApplicationObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, appID, tenantID string) *graphql.Formation {
 	return unassignFormationWithCustomObjectType(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID)
 }
@@ -131,8 +135,20 @@ func AssignFormationWithRuntimeObjectType(t require.TestingT, ctx context.Contex
 	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, runtimeID, string(graphql.FormationObjectTypeRuntime), tenantID)
 }
 
+func AssignFormationWithRuntimeObjectTypeExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, runtimeID, tenantID string) *graphql.Formation {
+	return assignFormationWithCustomObjectTypeExpectError(t, ctx, gqlClient, in, runtimeID, string(graphql.FormationObjectTypeRuntime), tenantID)
+}
+
 func UnassignFormationWithRuntimeObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, runtimeID, tenantID string) *graphql.Formation {
 	return unassignFormationWithCustomObjectType(t, ctx, gqlClient, in, runtimeID, string(graphql.FormationObjectTypeRuntime), tenantID)
+}
+
+func AssignFormationWithRuntimeContextObjectTypeExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, runtimeContextID, tenantID string) *graphql.Formation {
+	return assignFormationWithCustomObjectTypeExpectError(t, ctx, gqlClient, in, runtimeContextID, string(graphql.FormationObjectTypeRuntimeContext), tenantID)
+}
+
+func UnassignFormationWithRuntimeContextObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, runtimeContextID, tenantID string) *graphql.Formation {
+	return unassignFormationWithCustomObjectType(t, ctx, gqlClient, in, runtimeContextID, string(graphql.FormationObjectTypeRuntimeContext), tenantID)
 }
 
 func assignFormationWithCustomObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, objectID, objectType, tenantID string) *graphql.Formation {
@@ -145,13 +161,23 @@ func assignFormationWithCustomObjectType(t require.TestingT, ctx context.Context
 	return &formation
 }
 
+func assignFormationWithCustomObjectTypeExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, objectID, objectType, tenantID string) *graphql.Formation {
+	createRequest := FixAssignFormationRequest(objectID, objectType, in.Name)
+
+	formation := graphql.Formation{}
+
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createRequest, &formation)
+	require.Error(t, err)
+	t.Logf("Error: %s", err.Error())
+	return &formation
+}
+
 func unassignFormationWithCustomObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, objectID, objectType, tenantID string) *graphql.Formation {
 	unassignRequest := FixUnassignFormationRequest(objectID, objectType, in.Name)
 
 	formation := graphql.Formation{}
 
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, unassignRequest, &formation))
-	require.NotEmpty(t, formation.Name)
+	assertions.AssertNoErrorForOtherThanNotFound(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, unassignRequest, &formation))
 	return &formation
 }
 

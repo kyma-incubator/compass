@@ -350,6 +350,19 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 	AssertWebhooks(t, in.Webhooks, webhooks)
 }
 
+func AssertAppOnlyFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, actual *graphql.FormationTemplate) {
+	assert.Equal(t, in.Name, actual.Name)
+	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
+	assert.Empty(t, actual.RuntimeTypes)
+	assert.Empty(t, actual.RuntimeTypeDisplayName)
+	assert.Empty(t, actual.RuntimeArtifactKind)
+	var webhooks []graphql.Webhook
+	for _, webhook := range actual.Webhooks {
+		webhooks = append(webhooks, *webhook)
+	}
+	AssertWebhooks(t, in.Webhooks, webhooks)
+}
+
 func AssertCertificateSubjectMapping(t *testing.T, in *graphql.CertificateSubjectMappingInput, actual *graphql.CertificateSubjectMapping) {
 	require.Equal(t, in.Subject, actual.Subject)
 	require.Equal(t, in.ConsumerType, actual.ConsumerType)
