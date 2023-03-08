@@ -75,8 +75,9 @@ func TestCreateAppOnlyFormationTemplate(t *testing.T) {
 	t.Logf("Create formation template with name: %q", appOnlyFormationTemplateName)
 
 	appOnlyFormationTemplateInput := fixtures.FixAppOnlyFormationTemplateInput(appOnlyFormationTemplateName)
-	output := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, appOnlyFormationTemplateInput)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
+	var output graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &output)
+	output = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, appOnlyFormationTemplateInput)
 
 	t.Logf("Check if formation template with name %q was created", appOnlyFormationTemplateName)
 
@@ -237,9 +238,10 @@ func TestUpdateAppOnlyFormationTemplate(t *testing.T) {
 	t.Logf("Create formation template with name: %q", appOnlyFormationTemplateName)
 
 	appOnlyFormationTemplateInput := fixtures.FixAppOnlyFormationTemplateInput(appOnlyFormationTemplateName)
-	output := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, appOnlyFormationTemplateInput)
+	var output graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &output)
+	output = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, appOnlyFormationTemplateInput)
 	formationTemplateID := output.ID
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateID)
 
 	t.Logf("Check if formation template with name %q was created", appOnlyFormationTemplateName)
 
