@@ -829,7 +829,6 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, obj *graphql.Applica
 	if err != nil {
 		log.C(ctx).Infof("No app template found with id %s", *obj.ApplicationTemplateID)
 		return nil, errors.Wrapf(err, "no app template found with id %s", *obj.ApplicationTemplateID)
-
 	}
 
 	err = tx.Commit()
