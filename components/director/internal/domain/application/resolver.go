@@ -809,6 +809,7 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 	return gqlBundle, nil
 }
 
+// ApplicationTemplate missing godoc
 func (r *Resolver) ApplicationTemplate(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationTemplate, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
