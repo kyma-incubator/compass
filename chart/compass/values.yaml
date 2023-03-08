@@ -127,7 +127,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2902"
+      version: "PR-2937"
       name: compass-connector
     connectivity_adapter:
       dir:
@@ -163,7 +163,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2902"
+      version: "PR-2933"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2927"
+      version: "PR-2932"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
