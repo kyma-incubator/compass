@@ -4278,7 +4278,8 @@ func TestFormationNotificationResynchronizationAsync(stdT *testing.T) {
 	})
 }
 
-func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
+func TestFormationLifecycleNotificationsWithAsyncCallback(stdT *testing.T) {
+	t := testingx.NewT(stdT)
 	t.Run("Formation Lifecycle Notifications", func(t *testing.T) {
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
 		subscriptionConsumerAccountID := conf.TestConsumerAccountID
