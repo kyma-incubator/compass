@@ -42,7 +42,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230308114318-211271ddb185
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230309104348-5a1c0141fb41
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
