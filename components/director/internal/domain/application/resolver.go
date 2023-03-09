@@ -152,7 +152,7 @@ type ApplicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 }
 
-// ApplicationTemplateConverter missing godoc
+// ApplicationTemplateConverter converts between the graphql and model
 //
 //go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateConverter interface {
@@ -809,13 +809,13 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 	return gqlBundle, nil
 }
 
-// ApplicationTemplate missing godoc
+// ApplicationTemplate retrieves application template by given application
 func (r *Resolver) ApplicationTemplate(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationTemplate, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application cannot be empty")
 	}
 	if obj.ApplicationTemplateID == nil {
-		return nil, apperrors.NewInternalError("Application does not contain app template id")
+		return nil, nil
 	}
 
 	tx, err := r.transact.Begin()
@@ -832,8 +832,7 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, obj *graphql.Applica
 		return nil, errors.Wrapf(err, "no app template found with id %s", *obj.ApplicationTemplateID)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 

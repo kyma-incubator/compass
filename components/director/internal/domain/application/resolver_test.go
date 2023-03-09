@@ -2776,6 +2776,24 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			ExpectedErr:    nil,
 		},
 		{
+			Name:            "Success when application does not contain app template",
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.NoopTransactioner,
+			ServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.AssertNotCalled(t, "Get", contextParam, appTemplateID)
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationTemplateConverter {
+				conv := &automock.ApplicationTemplateConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL", modelAppTemplate)
+				return conv
+			},
+			Application:    gqlApp,
+			ExpectedResult: nil,
+			ExpectedErr:    nil,
+		},
+		{
 			Name:            "Returns error when application is empty",
 			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
 			TransactionerFn: txtest.NoopTransactioner,
@@ -2792,24 +2810,6 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			Application:    nil,
 			ExpectedResult: nil,
 			ExpectedErr:    apperrors.NewInternalError("Application cannot be empty"),
-		},
-		{
-			Name:            "Returns error when application does not contain app template",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.NoopTransactioner,
-			ServiceFn: func() *automock.ApplicationTemplateService {
-				svc := &automock.ApplicationTemplateService{}
-				svc.AssertNotCalled(t, "Get", contextParam, appTemplateID)
-				return svc
-			},
-			ConverterFn: func() *automock.ApplicationTemplateConverter {
-				conv := &automock.ApplicationTemplateConverter{}
-				conv.AssertNotCalled(t, "ToGraphQL", modelAppTemplate)
-				return conv
-			},
-			Application:    gqlApp,
-			ExpectedResult: nil,
-			ExpectedErr:    apperrors.NewInternalError("Application does not contain app template id"),
 		},
 		{
 			Name:          "Returns error when transaction begin fails",
