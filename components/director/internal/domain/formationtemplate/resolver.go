@@ -150,12 +150,12 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 		return nil, err
 	}
 
-	log.C(ctx).Debugf("Creating an Formation Template with name %q", in.Name)
+	log.C(ctx).Debugf("Creating a Formation Template with name %q", in.Name)
 	id, err := r.formationTemplateSvc.Create(ctx, convertedIn)
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Infof("Successfully created an Formation Template with name %s and id %s", in.Name, id)
+	log.C(ctx).Infof("Successfully created a Formation Template with name %s and id %s", in.Name, id)
 
 	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
 	if err != nil {
@@ -189,12 +189,12 @@ func (r *Resolver) DeleteFormationTemplate(ctx context.Context, id string) (*gra
 		return nil, err
 	}
 
-	log.C(ctx).Debugf("Deleting an Formation Template with id %q", id)
+	log.C(ctx).Debugf("Deleting a Formation Template with id %q", id)
 	err = r.formationTemplateSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Debugf("Successfully deleted an Formation Template with id %q", id)
+	log.C(ctx).Debugf("Successfully deleted a Formation Template with id %q", id)
 
 	gqlFormationTemplate, err := r.converter.ToGraphQL(formationTemplate)
 	if err != nil {
@@ -228,12 +228,12 @@ func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in gr
 		return nil, err
 	}
 
-	log.C(ctx).Debugf("Updating an Formation Template with id %q", id)
+	log.C(ctx).Debugf("Updating a Formation Template with id %q", id)
 	err = r.formationTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Debugf("Successfully updated an Formation Template with id %q", id)
+	log.C(ctx).Debugf("Successfully updated a Formation Template with id %q", id)
 
 	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
 	if err != nil {
