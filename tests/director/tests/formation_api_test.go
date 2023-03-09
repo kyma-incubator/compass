@@ -4473,7 +4473,7 @@ func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
 		ft := graphql.FormationTemplate{}
 		t.Logf("Creating formation template with name: %q with %q webhook of type %q", formationTmplName, webhookAsyncCallbackMode, webhookFormationLifecycleType)
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, formationTmplRequest, &ft)
-		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
 		require.NoError(t, err)
 		require.Len(t, ft.Webhooks, 1)
 		ftWebhookID := ft.Webhooks[0].ID

@@ -13,7 +13,6 @@ require (
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230222154756-c31ab6b486f7
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
-	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.0
 	github.com/tidwall/gjson v1.14.0
