@@ -33,7 +33,7 @@ type malformedRequest struct {
 
 // FormationAssignmentRequestBody contains the request input of the formation assignment async status request
 type FormationAssignmentRequestBody struct {
-	State         model.FormationAssignmentState `json:"state"`
+	State         model.FormationAssignmentState `json:"state,omitempty"`
 	Configuration json.RawMessage                `json:"configuration,omitempty"`
 	Error         string                         `json:"error,omitempty"`
 }
@@ -152,7 +152,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	if reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState {
+	if len(reqBody.State) > 0 && reqBody.State != model.CreateErrorAssignmentState && reqBody.State != model.ReadyAssignmentState && reqBody.State != model.ConfigPendingAssignmentState {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %s operation", reqBody.State, model.AssignFormation)
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", reqBody.State, model.AssignFormation, correlationID))
 		return
@@ -167,15 +167,20 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		}
 	}
 
-	fa.State = string(reqBody.State)
+	if len(reqBody.State) > 0 {
+		fa.State = string(reqBody.State)
+	} else {
+		log.C(ctx).Infof("State is not provided, proceeding with the current state of the FA %q", fa.State)
+	}
+
 	if len(reqBody.Configuration) > 0 {
 		fa.Value = reqBody.Configuration
 	}
 
-	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, reqBody.State)
+	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
 	err = h.faService.Update(ctx, formationAssignmentID, h.faConverter.ToInput(fa))
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q to state: %q", formationAssignmentID, formationID, reqBody.State)
+		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", formationAssignmentID, formationID, fa.State)
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
@@ -186,7 +191,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		}
 
-		log.C(ctx).Infof("The formation assignment with ID: %q and formation ID: %q was successfully updated with state: %q", formationAssignmentID, formationID, reqBody.State)
+		log.C(ctx).Infof("The formation assignment with ID: %q and formation ID: %q was successfully updated with state: %q", formationAssignmentID, formationID, fa.State)
 		httputils.Respond(w, http.StatusOK)
 		return
 	}
