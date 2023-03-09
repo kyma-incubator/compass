@@ -155,7 +155,6 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Infof("Successfully created a Formation Template with name %s and id %s", in.Name, id)
 
 	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
 	if err != nil {
@@ -194,7 +193,6 @@ func (r *Resolver) DeleteFormationTemplate(ctx context.Context, id string) (*gra
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Debugf("Successfully deleted a Formation Template with id %q", id)
 
 	gqlFormationTemplate, err := r.converter.ToGraphQL(formationTemplate)
 	if err != nil {
@@ -233,7 +231,6 @@ func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in gr
 	if err != nil {
 		return nil, err
 	}
-	log.C(ctx).Debugf("Successfully updated a Formation Template with id %q", id)
 
 	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
 	if err != nil {

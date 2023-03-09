@@ -363,8 +363,6 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		return nil, err
 	}
 
-	log.C(ctx).Debugf("Successfully created a Runtime with name %q and id %q", in.Name, id)
-
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -394,8 +392,6 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 	if err != nil {
 		return nil, err
 	}
-
-	log.C(ctx).Debugf("Successfully updated a Runtime with id %q", id)
 
 	if err = tx.Commit(); err != nil {
 		return nil, err
@@ -484,11 +480,10 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 
 	deletedRuntime := r.converter.ToGraphQL(runtime)
 
-	log.C(ctx).Debugf("Creating a Runtime with id %q", id)
+	log.C(ctx).Debugf("Deleting a Runtime with id %q", id)
 	if err = r.runtimeService.Delete(ctx, id); err != nil {
 		return nil, err
 	}
-	log.C(ctx).Debugf("Successfully deleted a Runtime with id %q", id)
 
 	if err = r.oAuth20Svc.DeleteMultipleClientCredentials(ctx, auths); err != nil {
 		return nil, err
