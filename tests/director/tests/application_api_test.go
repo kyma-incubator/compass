@@ -1698,9 +1698,9 @@ func TestMergeApplications(t *testing.T) {
 
 	t.Logf("Should create formation template: %s", formationTemplateName)
 	formationTemplateInput := fixtures.FixFormationTemplateInputWithTypes(formationTemplateName, conf.KymaRuntimeTypeLabelValue, []string{expectedProductType})
-	actualFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, actualFormationTemplate.ID)
-
+	actualFormationTemplate := graphql.FormationTemplate{} // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &actualFormationTemplate)
+	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation
 	formationInput := fixtures.FixFormationInput(newFormation, str.Ptr(formationTemplateName))
@@ -1862,8 +1862,9 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
 
 	formationTemplateInput := fixtures.FixFormationTemplateInputWithTypes(formationTemplateName, conf.KymaRuntimeTypeLabelValue, []string{expectedProductType})
-	actualFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, actualFormationTemplate.ID)
+	actualFormationTemplate := graphql.FormationTemplate{} // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &actualFormationTemplate)
+	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation
