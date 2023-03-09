@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"net/http"
 	"strings"
 	"testing"
@@ -114,7 +115,7 @@ func TestDeltaReport(stdT *testing.T) {
 		app := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
-		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
+		validateApplication(t, app, "nonSAPsys", "http", nil, expectedLabel, "reachable")
 	})
 
 	t.Run("Delta report - create systems for two sccs connected to one subaccount", func(t *testing.T) {
@@ -176,8 +177,8 @@ func TestDeltaReport(stdT *testing.T) {
 		appTwo := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
-		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
-		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
+		validateApplication(t, appOne, "nonSAPsys", "http", str.Ptr("system_one"), expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", str.Ptr("system_two"), expectedLabelWithLocId, "reachable")
 	})
 
 	t.Run("Delta report - delete system when there are two sccs connected to one subaccount", func(t *testing.T) {
@@ -239,8 +240,8 @@ func TestDeltaReport(stdT *testing.T) {
 		appTwo := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
-		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
-		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
+		validateApplication(t, appOne, "nonSAPsys", "http", str.Ptr("system_one"), expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", str.Ptr("system_two"), expectedLabelWithLocId, "reachable")
 
 		report = Report{
 			ReportType: "notification service",
@@ -280,8 +281,8 @@ func TestDeltaReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 		appTwo = apps[0]
 
-		validateApplication(t, appOne, "nonSAPsys", "http", "system_updated", expectedLabel, "reachable")
-		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "unreachable")
+		validateApplication(t, appOne, "nonSAPsys", "http", str.Ptr("system_updated"), expectedLabel, "reachable")
+		validateApplication(t, appTwo, "nonSAPsys", "http", str.Ptr("system_two"), expectedLabelWithLocId, "unreachable")
 	})
 
 	t.Run("Delta report - update system", func(t *testing.T) {
@@ -330,7 +331,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 		app := apps[0]
 
-		validateApplication(t, app, "nonSAPsys", "mail", "edited", expectedLabel, "reachable")
+		validateApplication(t, app, "nonSAPsys", "mail", str.Ptr("edited"), expectedLabel, "reachable")
 	})
 
 	t.Run("Delta report - delete system", func(t *testing.T) {
@@ -369,7 +370,7 @@ func TestDeltaReport(stdT *testing.T) {
 		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
-		validateApplication(t, apps[0], "nonSAPsys", "mail", "description of the system", expectedLabel, "unreachable")
+		validateApplication(t, apps[0], "nonSAPsys", "mail", str.Ptr("description of the system"), expectedLabel, "unreachable")
 	})
 
 	t.Run("Delta report - create system with systemNumber", func(t *testing.T) {
@@ -408,7 +409,7 @@ func TestDeltaReport(stdT *testing.T) {
 		app := apps[0]
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
-		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
+		validateApplication(t, app, "nonSAPsys", "http", nil, expectedLabel, "reachable")
 	})
 
 	t.Run("Delta report - update system with systemNumber", func(t *testing.T) {
@@ -470,7 +471,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app = apps[0]
-		validateApplication(t, app, "nonSAPsys", "mail", "edited", expectedLabel, "reachable")
+		validateApplication(t, app, "nonSAPsys", "mail", str.Ptr("edited"), expectedLabel, "reachable")
 	})
 
 	t.Run("Delta report - no systems", func(t *testing.T) {
@@ -572,10 +573,10 @@ func createApplicationFromTemplateInput(name, templateName, description, subacco
 	}}
 }
 
-func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, systemProtocol, description string, label map[string]interface{}, systemStatus string) {
+func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, systemProtocol string, description *string, label map[string]interface{}, systemStatus string) {
 	require.Equal(t, appType, app.Labels["systemType"])
 	require.Equal(t, systemProtocol, app.Labels["systemProtocol"])
-	require.Equal(t, description, *app.Description)
+	require.Equal(t, description, app.Description)
 	require.Equal(t, label, app.Labels["scc"])
 	require.Equal(t, systemStatus, *app.SystemStatus)
 }

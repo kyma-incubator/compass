@@ -25,6 +25,7 @@ import (
 
 const applicationTypeLabelKey = "applicationType"
 const otherSystemType = "Other System Type"
+const providerSAP = "SAP"
 
 // ApplicationTemplateRepository missing godoc
 //
@@ -321,16 +322,20 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 	appCreateInputJSON := appTemplate.ApplicationInputJSON
 	for _, placeholder := range appTemplate.Placeholders {
 		newValue, err := values.FindPlaceholderValue(placeholder.Name)
-		var optional bool
-		if placeholder.Optional == nil {
-			optional = false
-		} else {
-			optional = *placeholder.Optional
+		isOptional := false
+		if placeholder.Optional != nil {
+			isOptional = *placeholder.Optional
 		}
 
-		if err != nil && !optional {
+		if err != nil && !isOptional {
 			return "", errors.Wrap(err, "required placeholder not provided")
 		}
+
+		err = validatePlaceholderValue(placeholder, newValue)
+		if err != nil {
+			return "", errors.Wrap(err, "value of placeholder is invalid")
+		}
+
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
 	}
 	return appCreateInputJSON, nil
@@ -342,6 +347,32 @@ func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string)
 		return nil, err
 	}
 	return label.Value, nil
+}
+
+func validatePlaceholderValue(placeholder model.ApplicationTemplatePlaceholder, value string) error {
+	if placeholder.Name == "provider" {
+		valueRemovedWhitespaces := strings.Fields(value)
+
+		for _, i := range valueRemovedWhitespaces {
+			if i == providerSAP {
+				return errors.New("provider cannot contain \"SAP\"")
+			}
+		}
+	}
+
+	if placeholder.Name == "application-type" {
+		currentValue := value
+		if len(value) >= 4 {
+			firstFour := value[:4]
+			currentValue = strings.Trim(firstFour, " \t\n")
+		}
+
+		if currentValue == providerSAP {
+			return errors.New("your application type cannot start with \"SAP\"")
+		}
+	}
+
+	return nil
 }
 
 func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string) (string, error) {

@@ -98,9 +98,10 @@ const (
 )
 
 var (
-	tenantID          = uuid.New()
-	externalTenantID  = uuid.New()
-	nilFormationModel *model.Formation
+	tenantID               = uuid.New()
+	externalTenantID       = uuid.New()
+	nilFormationModel      *model.Formation
+	runtimeTypeDisplayName = str.Ptr("display name")
 
 	testErr = errors.New("Test error")
 
@@ -124,10 +125,13 @@ var (
 	}
 	testScenario = "test-scenario"
 
-	formationTemplate = model.FormationTemplate{
-		ID:           FormationTemplateID,
-		Name:         testFormationTemplateName,
-		RuntimeTypes: []string{runtimeType},
+	subscriptionRuntimeArtifactKind = model.RuntimeArtifactKindSubscription
+	formationTemplate               = model.FormationTemplate{
+		ID:                     FormationTemplateID,
+		RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		Name:                   testFormationTemplateName,
+		RuntimeTypes:           []string{runtimeType},
 	}
 	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf(`$[*] ? (@ == "%s")`, runtimeType))}
 
@@ -1024,13 +1028,14 @@ func fixScenariosLabelDefinition(tenantID string, schema interface{}) model.Labe
 }
 
 func fixFormationTemplateModel() *model.FormationTemplate {
+	kind := model.RuntimeArtifactKindEnvironmentInstance
 	return &model.FormationTemplate{
 		ID:                     FormationTemplateID,
 		Name:                   testFormationTemplateName,
 		ApplicationTypes:       []string{"appType1", "appType2"},
 		RuntimeTypes:           []string{"runtimeTypes"},
-		RuntimeTypeDisplayName: "runtimeDisplayName",
-		RuntimeArtifactKind:    model.RuntimeArtifactKindEnvironmentInstance,
+		RuntimeTypeDisplayName: str.Ptr("runtimeDisplayName"),
+		RuntimeArtifactKind:    &kind,
 	}
 }
 

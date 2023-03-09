@@ -15,7 +15,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -24,8 +23,6 @@ import (
 func TestServiceAssignFormation(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
-
-	testErr := errors.New("test error")
 
 	inputFormation := model.Formation{
 		Name: testFormationName,
@@ -38,9 +35,17 @@ func TestServiceAssignFormation(t *testing.T) {
 		State:               model.ReadyFormationState,
 	}
 	expectedFormationTemplate := &model.FormationTemplate{
+		ID:                     FormationTemplateID,
+		Name:                   testFormationTemplateName,
+		RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		RuntimeTypes:           []string{runtimeType},
+		ApplicationTypes:       []string{applicationType},
+	}
+	expectedFormationTemplateNotSupportingRuntime := &model.FormationTemplate{
 		ID:               FormationTemplateID,
 		Name:             testFormationTemplateName,
-		RuntimeTypes:     []string{runtimeType},
+		RuntimeTypes:     []string{},
 		ApplicationTypes: []string{applicationType},
 	}
 	notifications := []*webhookclient.FormationAssignmentNotificationRequest{{
@@ -376,6 +381,68 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			NotificationServiceFN: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateFormationAssignmentNotifications", ctx, TntInternalID, ApplicationID, expectedSecondFormation, model.AssignFormation, graphql.FormationObjectTypeApplication).Return(notifications, nil).Once()
+				return notificationSvc
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedSecondFormation).Return(formationAssignments2, nil)
+				formationAssignmentSvc.On("ProcessFormationAssignments", ctx, formationAssignments2, map[string]string{}, map[string]string{ApplicationID: ApplicationTemplateID}, notifications, mock.Anything).Return(nil)
+				return formationAssignmentSvc
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     inputSecondFormation,
+			ExpectedFormation:  expectedSecondFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success for application when formation does not support runtime, runtime context and tenant",
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{secondTestFormationName},
+					ObjectID:   ApplicationID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, TntInternalID, applicationLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormationName, secondTestFormationName},
+					ObjectID:   ApplicationID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("ListAllByIDs", ctx, TntInternalID, []string{ApplicationID}).Return([]*model.Application{{BaseEntity: &model.BaseEntity{ID: ApplicationID}, ApplicationTemplateID: str.Ptr(ApplicationTemplateID)}}, nil).Once()
+
+				return repo
+			},
+			RuntimeContextRepoFn: expectEmptySliceRuntimeContextRepo,
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, secondTestFormationName, TntInternalID).Return(expectedSecondFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplateNotSupportingRuntime, nil).Once()
 				return repo
 			},
 			NotificationServiceFN: func() *automock.NotificationsService {
@@ -1335,6 +1402,23 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
+			Name: "error when assigning tenant when formation does not support runtime",
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplateNotSupportingRuntime, nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeTenant,
+			ObjectID:           TargetTenant,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: fmt.Sprintf("Formation %q of type %q does not support resources of type %q", testFormationName, testFormationTemplateName, graphql.FormationObjectTypeTenant),
+		},
+		{
 			Name: "error when can't get formation by name",
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
@@ -1378,9 +1462,11 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&model.FormationTemplate{
-					ID:           FormationTemplateID,
-					Name:         "some-other-template",
-					RuntimeTypes: []string{"not-the-expected-type"},
+					ID:                     FormationTemplateID,
+					Name:                   "some-other-template",
+					RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
+					RuntimeTypeDisplayName: runtimeTypeDisplayName,
+					RuntimeTypes:           []string{"not-the-expected-type"},
 				}, nil).Once()
 				return repo
 			},
@@ -1459,6 +1545,23 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
+			Name: "error when assigning runtime formation does not support runtime",
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplateNotSupportingRuntime, nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			ObjectID:           RuntimeID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: fmt.Sprintf("Formation %q of type %q does not support resources of type %q", testFormationName, testFormationTemplateName, graphql.FormationObjectTypeRuntime),
+		},
+		{
 			Name: "error when assigning runtime fetching formation template",
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
@@ -1495,9 +1598,11 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&model.FormationTemplate{
-					ID:           FormationTemplateID,
-					Name:         "some-other-template",
-					RuntimeTypes: []string{"not-the-expected-type"},
+					ID:                     FormationTemplateID,
+					RuntimeArtifactKind:    &subscriptionRuntimeArtifactKind,
+					RuntimeTypeDisplayName: runtimeTypeDisplayName,
+					Name:                   "some-other-template",
+					RuntimeTypes:           []string{"not-the-expected-type"},
 				}, nil).Once()
 				return repo
 			},
@@ -1543,6 +1648,23 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:           RuntimeContextID,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when assigning runtime context when formation does not support runtime context",
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplateNotSupportingRuntime, nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
+			ObjectID:           RuntimeContextID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: fmt.Sprintf("Formation %q of type %q does not support resources of type %q", testFormationName, testFormationTemplateName, graphql.FormationObjectTypeRuntimeContext),
 		},
 		{
 			Name: "error when assigning runtime context fetching formation template",

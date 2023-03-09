@@ -22,8 +22,6 @@ func TestService_Create(t *testing.T) {
 	ctx := tnt.SaveToContext(context.TODO(), testTenantID, testTenantID)
 	ctxWithEmptyTenants := tnt.SaveToContext(context.TODO(), "", "")
 
-	testErr := errors.New("test error")
-
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
 		uidSvc.On("Generate").Return(testID)
@@ -91,6 +89,33 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.TenantService{}
 				svc.On("ExtractTenantIDForTenantScopedFormationTemplates", ctxWithEmptyTenants).Return("", nil).Once()
 				return svc
+			},
+			ExpectedOutput: testID,
+			ExpectedError:  nil,
+		},
+		{
+			Name:    "Success for application only template",
+			Context: ctx,
+			Input:   &formationTemplateModelInputAppOnly,
+			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
+				converter := &automock.FormationTemplateConverter{}
+				converter.On("FromModelInputToModel", &formationTemplateModelInputAppOnly, testID, testTenantID).Return(&formationTemplateModelAppOnly).Once()
+				return converter
+			},
+			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Create", ctx, &formationTemplateModelAppOnly).Return(nil).Once()
+				return repo
+			},
+			TenantSvc: func() *automock.TenantService {
+				svc := &automock.TenantService{}
+				svc.On("ExtractTenantIDForTenantScopedFormationTemplates", ctx).Return(testTenantID, nil).Once()
+				return svc
+			},
+			WebhookRepo: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("CreateMany", ctx, testTenantID, formationTemplateModelAppOnly.Webhooks).Return(nil)
+				return repo
 			},
 			ExpectedOutput: testID,
 			ExpectedError:  nil,
