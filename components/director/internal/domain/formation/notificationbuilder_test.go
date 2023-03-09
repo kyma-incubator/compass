@@ -186,10 +186,10 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleWebhookSync).Return(&formationLifecycleGQLWebhook, nil).Once()
+				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
 				return webhookConv
 			},
-			formationTemplateWebhooks:         formationLifecycleWebhooksSync,
+			formationTemplateWebhooks:         formationLifecycleSyncWebhooks,
 			expectedFormationNotificationReqs: formationNotificationRequests,
 		},
 		{
@@ -199,7 +199,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
-			formationTemplateWebhooks: formationLifecycleWebhooksSync,
+			formationTemplateWebhooks: formationLifecycleSyncWebhooks,
 			expectedErrMsg:            testErr.Error(),
 		},
 		{
@@ -220,10 +220,10 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleWebhookSync).Return(nil, testErr).Once()
+				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(nil, testErr).Once()
 				return webhookConv
 			},
-			formationTemplateWebhooks: formationLifecycleWebhooksSync,
+			formationTemplateWebhooks: formationLifecycleSyncWebhooks,
 			expectedErrMsg:            testErr.Error(),
 		},
 		{
@@ -236,10 +236,10 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleWebhookSync).Return(&formationLifecycleGQLWebhook, nil).Once()
+				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(&formationLifecycleGQLWebhook, nil).Once()
 				return webhookConv
 			},
-			formationTemplateWebhooks: formationLifecycleWebhooksSync,
+			formationTemplateWebhooks: formationLifecycleSyncWebhooks,
 			expectedErrMsg:            testErr.Error(),
 		},
 	}

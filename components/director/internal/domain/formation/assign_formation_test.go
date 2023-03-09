@@ -76,7 +76,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		State:               model.ReadyFormationState,
 	}
 	formationInInitialState := fixFormationModelWithState(model.InitialFormationState)
-	formationInErrorState := fixFormationModelWithState(model.DeletingFormationState)
+	formationInDeletingState := fixFormationModelWithState(model.DeletingFormationState)
 
 	applicationLblNoFormations := &model.Label{
 		ID:         "123",
@@ -1756,7 +1756,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedFormation: formationInInitialState,
 		},
 		{
-			Name: "error for application when formation is in error state",
+			Name: "error for application when formation is in deleting state",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
@@ -1764,7 +1764,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInErrorState, nil).Once()
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInDeletingState, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {

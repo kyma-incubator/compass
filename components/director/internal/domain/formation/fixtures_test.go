@@ -599,11 +599,11 @@ var (
 	formationNotificationWebhookSuccessResponse = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, nil)
 	formationNotificationWebhookErrorResponse   = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, str.Ptr(testErr.Error()))
 
-	formationLifecycleWebhookSync  = fixFormationLifecycleSyncWebhookModel(FormationLifecycleWebhookID, FormationTemplateID, model.FormationTemplateWebhookReference)
-	formationLifecycleWebhooksSync = []*model.Webhook{formationLifecycleWebhookSync}
+	formationLifecycleSyncWebhook  = fixFormationLifecycleSyncWebhookModel(FormationLifecycleWebhookID, FormationTemplateID, model.FormationTemplateWebhookReference)
+	formationLifecycleSyncWebhooks = []*model.Webhook{formationLifecycleSyncWebhook}
 
-	formationLifecycleWebhookAsync  = fixFormationLifecycleAsyncCallbackWebhookModel(FormationLifecycleWebhookID, FormationTemplateID, model.FormationTemplateWebhookReference)
-	formationLifecycleWebhooksAsync = []*model.Webhook{formationLifecycleWebhookAsync}
+	formationLifecycleAsyncWebhook  = fixFormationLifecycleAsyncCallbackWebhookModel(FormationLifecycleWebhookID, FormationTemplateID, model.FormationTemplateWebhookReference)
+	formationLifecycleAsyncWebhooks = []*model.Webhook{formationLifecycleAsyncWebhook}
 	emptyFormationLifecycleWebhooks []*model.Webhook
 
 	// Formation constraints join point location variables
