@@ -4437,7 +4437,7 @@ func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
 		require.NotEmpty(t, actualApp.ID)
 		t.Logf("actualApp ID: %q", actualApp.ID)
 
-		formationTmplName := "formation-template-with-webhook-name"
+		formationTmplName := "formation-tmpl-with-async-webhook-name"
 		webhookAsyncCallbackMode := graphql.WebhookModeAsyncCallback
 		webhookFormationLifecycleType := graphql.WebhookTypeFormationLifecycle
 		formationTmplInput := prepareFormationTemplateInputWithWebhook(formationTmplName, []string{applicationType}, []string{conf.SubscriptionProviderAppNameValue}, graphql.ArtifactTypeEnvironmentInstance, webhookFormationLifecycleType, webhookAsyncCallbackMode, urlTemplateFormation, inputTemplateFormation, outputTemplateFormation)
@@ -4478,7 +4478,7 @@ func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
 			runtimeContextID: {runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
-		// Should be InProgress when status API is changed to reflect formation state
+		// Should be InProgress when status subresolver is changed to reflect formation state
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		assertNoNotificationsAreSent(t, certSecuredHTTPClient)
@@ -4499,7 +4499,9 @@ func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+		// TODO::expectedAssignments[runtimeContextID][actuallApp.ID]=READY with config and 2 formation assignment notifications are sent, formation status is still IN_PROGRESS
 		assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
+		// TODO::expectedAssignments[actualApp.ID][runtimeContextID]=READY with config and 2 formation assignment notifications are sent, formation status is still IN_PROGRESS
 
 		assertNoNotificationsAreSent(t, certSecuredHTTPClient)
 
@@ -4510,15 +4512,17 @@ func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formation.Name, unassignFormation.Name)
 
+		// TODO::expectedAssignments should contain 2 formation assignments, this one and the app->runtimeContext in state DELETING
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			runtimeContextID: {
 				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil},
 			},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
-		// Should be InProgress when status API is changed to reflect formation state
+		// Should be InProgress when status subresolver is changed to reflect formation state
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 		assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
+		// TODO::expectedAssignments should contain 1 formation assignment, the runtimeContext->runtimeContext one as above
 
 		assertNoNotificationsAreSent(t, certSecuredHTTPClient)
 
@@ -4529,7 +4533,7 @@ func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
 		require.Equal(t, formationName, unassignFormation.Name)
 
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		// Should be InProgress when status API is changed to reflect formation state
+		// Should be InProgress when status subresolver is changed to reflect formation state
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		assertNoNotificationsAreSentAsynchronously(t, certSecuredHTTPClient)
@@ -4537,11 +4541,13 @@ func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
 		delFormation := fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formationName)
 		require.NotEmpty(t, delFormation.ID)
 		require.Equal(t, "DELETING", delFormation.State)
+		// TODO::assert that formation is deleted after status API reports READY
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
 		assertFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, deleteFormationOperation, subscriptionConsumerAccountID, "")
 
+		// TODO::remove workaround after status API is implemented
 		var actualWebhook graphql.Webhook
 		deleteReq := fixtures.FixDeleteWebhookRequest(ftWebhookID)
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)

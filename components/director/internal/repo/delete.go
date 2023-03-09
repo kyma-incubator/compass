@@ -28,8 +28,8 @@ type DeleterGlobal interface {
 	DeleteManyGlobal(ctx context.Context, conditions Conditions) error
 }
 
-// DeleteConditionTree deletes tenant scoped entities matching the provided condition tree with tenant isolation.
-type DeleteConditionTree interface {
+// DeleterConditionTree deletes tenant scoped entities matching the provided condition tree with tenant isolation.
+type DeleterConditionTree interface {
 	DeleteConditionTree(ctx context.Context, resourceType resource.Type, tenant string, conditionTree *ConditionTree) error
 }
 
@@ -44,8 +44,13 @@ func NewDeleter(tableName string) Deleter {
 	return &universalDeleter{tableName: tableName}
 }
 
-// NewDeleteConditionTreeWithEmbeddedTenant is a constructor for Deleter about entities with externally managed tenant accesses (m2m table or view)
-func NewDeleteConditionTreeWithEmbeddedTenant(tableName string, tenantColumn string) DeleteConditionTree {
+// NewDeleterConditionTree is a constructor for Deleter about entities with externally managed tenant accesses (m2m table or view)
+func NewDeleterConditionTree(tableName string) DeleterConditionTree {
+	return &universalDeleter{tableName: tableName}
+}
+
+// NewDeleterConditionTreeWithEmbeddedTenant is a constructor for Deleter about entities with externally managed tenant accesses (m2m table or view)
+func NewDeleterConditionTreeWithEmbeddedTenant(tableName string, tenantColumn string) DeleterConditionTree {
 	return &universalDeleter{tableName: tableName, tenantColumn: &tenantColumn}
 }
 

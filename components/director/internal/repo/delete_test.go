@@ -377,8 +377,8 @@ func TestDeleteWithEmbeddedTenant(t *testing.T) {
 	}
 }
 
-func TestDeleteConditionTreeWithEmbeddedTenant(t *testing.T) {
-	sut := repo.NewDeleteConditionTreeWithEmbeddedTenant(userTableName, "tenant_id")
+func TestDeleterConditionTreeWithEmbeddedTenant(t *testing.T) {
+	sut := repo.NewDeleterConditionTreeWithEmbeddedTenant(userTableName, "tenant_id")
 
 	t.Run("deletes all items successfully", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
@@ -435,6 +435,80 @@ func TestDeleteConditionTreeWithEmbeddedTenant(t *testing.T) {
 
 		ctx = persistence.SaveToContext(ctx, db)
 		err := sut.DeleteConditionTree(ctx, UserType, tenantID, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Peter", "Homer"})})
+		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
+	})
+}
+
+func TestDeleterConditionTree(t *testing.T) {
+	sut := repo.NewDeleterConditionTree(biaTableName)
+	resourceType := resource.BundleInstanceAuth
+	m2mTable, ok := resourceType.TenantAccessTable()
+	require.True(t, ok)
+
+	t.Run("deletes all items successfully", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE (%s AND name IN ($3, $4))", biaTableName, fmt.Sprintf(tenantIsolationConditionForBIA, m2mTable, "$1", "$2")))).
+			WithArgs(tenantID, tenantID, "bundle1", "bundle2").WillReturnResult(sqlmock.NewResult(-1, 1))
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		err := sut.DeleteConditionTree(ctx, resource.BundleInstanceAuth, tenantID, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("name", []string{"bundle1", "bundle2"})})
+		require.NoError(t, err)
+	})
+
+	t.Run("deletes all items successfully with additional parameters", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DELETE FROM %s WHERE (%s AND (name = $3 OR id != $4))", biaTableName, fmt.Sprintf(tenantIsolationConditionForBIA, m2mTable, "$1", "$2")))).
+			WithArgs(tenantID, tenantID, "bundle1", bundleID).WillReturnResult(sqlmock.NewResult(-1, 1))
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		conditions := repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+			repo.NewEqualCondition("name", "bundle1"),
+			repo.NewNotEqualCondition("id", bundleID),
+		})...)
+
+		err := sut.DeleteConditionTree(ctx, resource.BundleInstanceAuth, tenantID, conditions)
+		require.NoError(t, err)
+	})
+
+	t.Run("returns error if missing persistence context", func(t *testing.T) {
+		ctx := context.TODO()
+		err := sut.DeleteConditionTree(ctx, resource.BundleInstanceAuth, tenantID, nil)
+		require.EqualError(t, err, apperrors.NewInternalError("unable to fetch database from context").Error())
+	})
+	t.Run("returns error if resource type does not have access table", func(t *testing.T) {
+		ctx := context.TODO()
+		err := sut.DeleteConditionTree(ctx, userTableName, tenantID, nil)
+		require.EqualError(t, err, fmt.Sprintf("entity %s does not have access table", userTableName))
+	})
+	t.Run("returns error if tenant is not provided", func(t *testing.T) {
+		ctx := context.TODO()
+		err := sut.DeleteConditionTree(ctx, userTableName, "", nil)
+		require.EqualError(t, err, apperrors.NewTenantRequiredError().Error())
+	})
+	t.Run("returns error on db operation", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		mock.ExpectExec(`DELETE .*`).WillReturnError(someError())
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		err := sut.DeleteConditionTree(ctx, resource.BundleInstanceAuth, tenantID, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Peter", "Homer"})})
+		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("context properly canceled", func(t *testing.T) {
+		db, mock := testdb.MockDatabase(t)
+		defer mock.AssertExpectations(t)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+
+		ctx = persistence.SaveToContext(ctx, db)
+		err := sut.DeleteConditionTree(ctx, resource.BundleInstanceAuth, tenantID, &repo.ConditionTree{Operand: repo.NewInConditionForStringValues("first_name", []string{"Peter", "Homer"})})
 		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
 }

@@ -76,13 +76,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		TenantID:            TntInternalID,
 		State:               model.ReadyFormationState,
 	}
-	formationInInitialState := &model.Formation{
-		ID:                  fixUUID(),
-		Name:                testFormationName,
-		FormationTemplateID: FormationTemplateID,
-		TenantID:            TntInternalID,
-		State:               model.InitialFormationState,
-	}
+	formationInInitialState := fixFormationModelWithState(model.InitialFormationState)
 
 	applicationLblSingleFormation := &model.Label{
 		ID:         "123",
@@ -261,7 +255,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "success for application if formation is initial state should delete FA without sending notifications",
+			Name: "success for application when formation has state different that ready should delete FA without sending notifications",
 			TxFn: txGen.ThatDoesntStartTransaction,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -549,7 +543,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "success for runtime if formation is initial state should delete FA without sending notifications",
+			Name: "success for runtime when formation has state different that ready should delete FA without sending notifications",
 			TxFn: txGen.ThatDoesntStartTransaction,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -919,7 +913,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "error for application if formation is initial state when it fails to delete formation assignments",
+			Name: "error for application when formation has state different than ready and fails to delete the formation assignments",
 			TxFn: txGen.ThatDoesntStartTransaction,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
@@ -1148,7 +1142,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error for runtime if formation is initial state when it fails to delete formation assignments",
+			Name: "error for runtime when formation has state different than ready and fails to delete the formation assignments",
 			TxFn: txGen.ThatDoesntStartTransaction,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}

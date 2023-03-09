@@ -165,7 +165,7 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 
 func TestBuildFormationNotificationRequests(t *testing.T) {
 	ctx := context.Background()
-	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID)
+	formationLifecycleGQLWebhook := fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync)
 	formationInput := fixFormationModelWithoutError()
 
 	testCases := []struct {

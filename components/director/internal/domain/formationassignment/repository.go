@@ -41,7 +41,7 @@ type repository struct {
 	conditionLister       repo.ConditionTreeLister
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
-	deleteConditionTree   repo.DeleteConditionTree
+	deleteConditionTree   repo.DeleterConditionTree
 	existQuerier          repo.ExistQuerier
 	conv                  EntityConverter
 }
@@ -58,7 +58,7 @@ func NewRepository(conv EntityConverter) *repository {
 		conditionLister:       repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
-		deleteConditionTree:   repo.NewDeleteConditionTreeWithEmbeddedTenant(tableName, tenantColumn),
+		deleteConditionTree:   repo.NewDeleterConditionTreeWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
 		conv:                  conv,
 	}

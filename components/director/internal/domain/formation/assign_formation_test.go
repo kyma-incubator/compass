@@ -70,20 +70,8 @@ func TestServiceAssignFormation(t *testing.T) {
 		TenantID:            TntInternalID,
 		State:               model.ReadyFormationState,
 	}
-	formationInInitialState := &model.Formation{
-		ID:                  fixUUID(),
-		Name:                testFormationName,
-		FormationTemplateID: FormationTemplateID,
-		TenantID:            TntInternalID,
-		State:               model.InitialFormationState,
-	}
-	formationInErrorState := &model.Formation{
-		ID:                  fixUUID(),
-		Name:                testFormationName,
-		FormationTemplateID: FormationTemplateID,
-		TenantID:            TntInternalID,
-		State:               model.DeletingFormationState,
-	}
+	formationInInitialState := fixFormationModelWithState(model.InitialFormationState)
+	formationInErrorState := fixFormationModelWithState(model.DeletingFormationState)
 
 	applicationLblNoFormations := &model.Label{
 		ID:         "123",
