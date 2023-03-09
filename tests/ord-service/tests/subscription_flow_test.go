@@ -194,8 +194,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		applicationType := util.ApplicationTypeC4C
 
 		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
-		ft := fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType)}, graphql.ArtifactTypeSubscription)
-		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
+		ft = fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType)}, graphql.ArtifactTypeSubscription)
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
@@ -414,8 +415,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		applicationType := util.ApplicationTypeC4C
 
 		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
-		ft := fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType)}, graphql.ArtifactTypeSubscription)
-		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
+		ft = fixtures.CreateFormationTemplateWithoutInput(stdT, ctx, certSecuredGraphQLClient, formationTmplName, conf.SubscriptionProviderAppNameValue, []string{string(applicationType)}, graphql.ArtifactTypeSubscription)
 
 		consumerFormationName := "consumer-test-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", consumerFormationName, formationTmplName)
