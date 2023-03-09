@@ -353,6 +353,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		return nil, err
 	}
 
+	log.C(ctx).Debugf("Creating a Runtime with name %q and id %q", in.Name, id)
 	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, selfRegLabels); err != nil {
 		return nil, err
 	}
@@ -381,6 +382,7 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	log.C(ctx).Debugf("Updating a Runtime with id %q", id)
 	err = r.runtimeService.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -478,6 +480,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 
 	deletedRuntime := r.converter.ToGraphQL(runtime)
 
+	log.C(ctx).Debugf("Deleting a Runtime with id %q", id)
 	if err = r.runtimeService.Delete(ctx, id); err != nil {
 		return nil, err
 	}

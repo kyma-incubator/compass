@@ -473,6 +473,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		}
 	}
 
+	log.C(ctx).Debugf("Updating an Application Template with id %q", id)
 	err = r.appTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -544,6 +545,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 		ctx = persistence.SaveToContext(ctx, tx)
 	}
 
+	log.C(ctx).Debugf("Deleting an Application Template with id %q", id)
 	err = r.appTemplateSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
