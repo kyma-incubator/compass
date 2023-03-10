@@ -81,13 +81,13 @@ func (_m *Repository) ListForTargetTenant(ctx context.Context, tenantID string, 
 	return r0, r1
 }
 
-type NewRepositoryT interface {
+type mockConstructorTestingTNewRepository interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRepository(t NewRepositoryT) *Repository {
+func NewRepository(t mockConstructorTestingTNewRepository) *Repository {
 	mock := &Repository{}
 	mock.Mock.Test(t)
 

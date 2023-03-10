@@ -36,13 +36,13 @@ func (_m *ScenariosDefService) GetAvailableScenarios(ctx context.Context, tenant
 	return r0, r1
 }
 
-type NewScenariosDefServiceT interface {
+type mockConstructorTestingTNewScenariosDefService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewScenariosDefService creates a new instance of ScenariosDefService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewScenariosDefService(t NewScenariosDefServiceT) *ScenariosDefService {
+func NewScenariosDefService(t mockConstructorTestingTNewScenariosDefService) *ScenariosDefService {
 	mock := &ScenariosDefService{}
 	mock.Mock.Test(t)
 
