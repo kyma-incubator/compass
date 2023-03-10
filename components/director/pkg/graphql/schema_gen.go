@@ -337,6 +337,7 @@ type ComplexityRoot struct {
 		FormationTemplateID  func(childComplexity int) int
 		ID                   func(childComplexity int) int
 		Name                 func(childComplexity int) int
+		State                func(childComplexity int) int
 		Status               func(childComplexity int) int
 	}
 
@@ -2247,6 +2248,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Formation.Name(childComplexity), true
+
+	case "Formation.state":
+		if e.complexity.Formation.State == nil {
+			break
+		}
+
+		return e.complexity.Formation.State(childComplexity), true
 
 	case "Formation.status":
 		if e.complexity.Formation.Status == nil {
@@ -5953,6 +5961,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	state: String!
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
 	status: FormationStatus!
@@ -15862,6 +15871,40 @@ func (ec *executionContext) _Formation_formationTemplateId(ctx context.Context, 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Formation_state(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.State, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Formation_formationAssignment(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
@@ -33290,6 +33333,11 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 			}
 		case "formationTemplateId":
 			out.Values[i] = ec._Formation_formationTemplateId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "state":
+			out.Values[i] = ec._Formation_state(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

@@ -3,6 +3,7 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -135,6 +136,7 @@ type Authenticator struct {
 	labelRepo                  LabelRepository
 	formationRepo              FormationRepository
 	formationTemplateRepo      FormationTemplateRepository
+	tenantRepo                 TenantRepository
 	consumerSubaccountLabelKey string
 }
 
@@ -149,6 +151,7 @@ func NewFormationMappingAuthenticator(
 	labelRepo LabelRepository,
 	formationRepo FormationRepository,
 	formationTemplateRepo FormationTemplateRepository,
+	tenantRepo TenantRepository,
 	consumerSubaccountLabelKey string,
 ) *Authenticator {
 	return &Authenticator{
@@ -161,6 +164,7 @@ func NewFormationMappingAuthenticator(
 		labelRepo:                  labelRepo,
 		formationRepo:              formationRepo,
 		formationTemplateRepo:      formationTemplateRepo,
+		tenantRepo:                 tenantRepo,
 		consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 	}
 }
@@ -306,6 +310,20 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 	}
 
 	if fa.TargetType == model.FormationAssignmentTypeApplication {
+		tnt, err := a.tenantRepo.Get(ctx, fa.TenantID)
+		if err != nil {
+			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting tenant with ID: %q", fa.TenantID)
+		}
+
+		if consumerType == consumer.BusinessIntegration && tnt.Type == tenantpkg.ResourceGroup {
+			if err := tx.Commit(); err != nil {
+				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+			}
+
+			log.C(ctx).Infof("The caller with ID: %s and type: %s is allowed to update formation assignments in tenants of type %s", consumerID, consumerType, tnt.Type)
+			return true, http.StatusOK, nil
+		}
+
 		app, err := a.appRepo.GetByID(ctx, fa.TenantID, fa.Target)
 		if err != nil {
 			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting application with ID: %q", fa.Target)

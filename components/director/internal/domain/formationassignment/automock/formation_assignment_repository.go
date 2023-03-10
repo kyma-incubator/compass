@@ -43,6 +43,20 @@ func (_m *FormationAssignmentRepository) Delete(ctx context.Context, id string, 
 	return r0
 }
 
+// DeleteAssignmentsForObjectID provides a mock function with given fields: ctx, tnt, formationID, objectID
+func (_m *FormationAssignmentRepository) DeleteAssignmentsForObjectID(ctx context.Context, tnt string, formationID string, objectID string) error {
+	ret := _m.Called(ctx, tnt, formationID, objectID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+		r0 = rf(ctx, tnt, formationID, objectID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Exists provides a mock function with given fields: ctx, id, tenantID
 func (_m *FormationAssignmentRepository) Exists(ctx context.Context, id string, tenantID string) (bool, error) {
 	ret := _m.Called(ctx, id, tenantID)

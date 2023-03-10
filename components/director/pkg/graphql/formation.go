@@ -5,6 +5,7 @@ type Formation struct {
 	ID                  string `json:"id"`
 	Name                string `json:"name"`
 	FormationTemplateID string `json:"formationTemplateId"`
+	State               string `json:"state"`
 }
 
 // FormationWithStatus is an extended Formation with FormationStatus in it

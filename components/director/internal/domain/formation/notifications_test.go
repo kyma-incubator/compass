@@ -474,7 +474,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
 				notificationGenerator := &automock.NotificationsGenerator{}
-				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(formationNotificationRequests, nil).Once()
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(formationNotificationRequests, nil).Once()
 				return notificationGenerator
 			},
 			expectedFormationNotificationReqs: formationNotificationRequests,
@@ -498,7 +498,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
 				notificationGenerator := &automock.NotificationsGenerator{}
-				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(nil, testErr).Once()
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(nil, testErr).Once()
 				return notificationGenerator
 			},
 			expectedErrMsg: testErr.Error(),
@@ -521,7 +521,7 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 
 			notificationSvc := formation.NewNotificationService(tenantRepo, nil, notificationGenerator)
 
-			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, formationLifecycleWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation)
+			formationNotificationReqs, err := notificationSvc.GenerateFormationNotifications(ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation)
 
 			if testCase.expectedErrMsg != "" {
 				require.Error(t, err)
