@@ -285,7 +285,6 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			expectedStatusCode: http.StatusUnauthorized,
 			expectedErrOutput:  "",
 		},
-
 		{
 			name:       "Authorization fail: error when application template existence check fails",
 			transactFn: txGen.ThatDoesntExpectCommit,
@@ -574,7 +573,7 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
-			name:       "Authorization fail: when the int system caller manages the target FA with type application but the transaction fail",
+			name:       "Authorization fail: when caller is business integration and the formation is in a tenant of type resource group but the transaction fail",
 			transactFn: txGen.ThatFailsOnCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
