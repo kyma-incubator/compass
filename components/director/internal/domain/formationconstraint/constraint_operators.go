@@ -90,7 +90,7 @@ func (e *ConstraintEngine) isAllowedToParticipateInFormationsOfType(ctx context.
 		return true, nil
 	}
 
-	if exceptSystemTypes != nil && len(exceptSystemTypes) > 0 {
+	if len(exceptSystemTypes) > 0 {
 		for _, exceptType := range exceptSystemTypes {
 			if resourceSubtype == exceptType {
 				return true, nil
