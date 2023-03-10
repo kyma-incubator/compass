@@ -25,6 +25,7 @@ func (c *converter) ToGraphQL(i *model.Formation) *graphql.Formation {
 		ID:                  i.ID,
 		Name:                i.Name,
 		FormationTemplateID: i.FormationTemplateID,
+		State:               string(i.State),
 	}
 }
 

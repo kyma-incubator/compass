@@ -9,8 +9,6 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	testing "testing"
-
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -205,8 +203,13 @@ func (_m *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 	return r0, r1
 }
 
-// NewNotificationsGenerator creates a new instance of NotificationsGenerator. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationsGenerator(t testing.TB) *NotificationsGenerator {
+type mockConstructorTestingTNewNotificationsGenerator interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewNotificationsGenerator creates a new instance of NotificationsGenerator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewNotificationsGenerator(t mockConstructorTestingTNewNotificationsGenerator) *NotificationsGenerator {
 	mock := &NotificationsGenerator{}
 	mock.Mock.Test(t)
 

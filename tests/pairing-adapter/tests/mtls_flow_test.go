@@ -43,8 +43,8 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	if conf.IsLocalEnv {
 		updateAdaptersConfigmapWithDefaultValues(t, ctx, conf) // pre-clean-up
 
-		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
 		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
+		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
 
 		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
 

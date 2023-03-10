@@ -17,6 +17,7 @@
     - "automatic_scenario_assignment:read"
     - "application.auths:read"
     - "application.webhooks:read"
+    - "application.application_template:read"
     - "application_template.webhooks:read"
     - "bundle.instance_auths:read"
     - "document.fetch_request:read"

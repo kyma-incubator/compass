@@ -13,8 +13,6 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	testing "testing"
-
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 )
 
@@ -51,6 +49,20 @@ func (_m *FormationAssignmentService) Delete(ctx context.Context, id string) err
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteAssignmentsForObjectID provides a mock function with given fields: ctx, formationID, objectID
+func (_m *FormationAssignmentService) DeleteAssignmentsForObjectID(ctx context.Context, formationID string, objectID string) error {
+	ret := _m.Called(ctx, formationID, objectID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, formationID, objectID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -254,8 +266,13 @@ func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Co
 	return r0
 }
 
-// NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentService(t testing.TB) *FormationAssignmentService {
+type mockConstructorTestingTNewFormationAssignmentService interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewFormationAssignmentService creates a new instance of FormationAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewFormationAssignmentService(t mockConstructorTestingTNewFormationAssignmentService) *FormationAssignmentService {
 	mock := &FormationAssignmentService{}
 	mock.Mock.Test(t)
 

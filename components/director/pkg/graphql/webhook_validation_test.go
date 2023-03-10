@@ -233,10 +233,10 @@ func TestWebhookInput_Validate_Mode(t *testing.T) {
 			ExpectedValid: false,
 		},
 		{
-			Name:          "ExpectedInvalidAsyncCallbackModeAndFormationLifecycleType",
+			Name:          "ExpectedValidAsyncCallbackModeAndFormationLifecycleType",
 			Value:         webhookModePtr(graphql.WebhookModeAsyncCallback),
 			Type:          webhookTypePtr(graphql.WebhookTypeFormationLifecycle),
-			ExpectedValid: false,
+			ExpectedValid: true,
 		},
 		{
 			Name:          "Empty",

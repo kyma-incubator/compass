@@ -54,6 +54,7 @@ type ApplicationFromTemplateInput struct {
 	TemplateName        string
 	Values              ApplicationFromTemplateInputValues
 	PlaceholdersPayload *string
+	Labels              map[string]interface{}
 }
 
 // ApplicationFromTemplateInputValues missing godoc
