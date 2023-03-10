@@ -247,6 +247,14 @@ func TestServiceCreateFormation(t *testing.T) {
 		State:               model.ReadyFormationState,
 	}
 
+	expectedFormationInInitialState := &model.Formation{
+		ID:                  FormationID,
+		TenantID:            TntInternalID,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+		State:               model.InitialFormationState,
+	}
+
 	formationWithReadyState := fixFormationModelWithState(model.ReadyFormationState)
 	formationWithInitialState := fixFormationModelWithState(model.InitialFormationState)
 	formationWithCreateErrorStateAndClientAssignmentError := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.ClientError)
@@ -265,6 +273,7 @@ func TestServiceCreateFormation(t *testing.T) {
 
 	testCases := []struct {
 		Name                    string
+		FormationInput          *model.Formation
 		UUIDServiceFn           func() *automock.UuidService
 		LabelDefRepositoryFn    func() *automock.LabelDefRepository
 		LabelDefServiceFn       func() *automock.LabelDefService
@@ -371,6 +380,59 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			TemplateName:       testFormationTemplateName,
 			ExpectedFormation:  expectedFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success when state is provided externally",
+			UUIDServiceFn: func() *automock.UuidService {
+				uuidService := &automock.UuidService{}
+				uuidService.On("Generate").Return(fixUUID())
+				return uuidService
+			},
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				return labelDefService
+			},
+			NotificationsSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithInitialState, testFormationTemplateName, FormationTemplateID, model.CreateFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				return notificationSvc
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, testFormationTemplateName, TntInternalID).Return(fixFormationTemplateModel(), nil).Once()
+				return formationTemplateRepoMock
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("Create", ctx, formationWithInitialState).Return(nil).Once()
+				return formationRepoMock
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			webhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(emptyFormationLifecycleWebhooks, nil).Once()
+				return webhookRepo
+			},
+			FormationInput: &model.Formation{
+				Name:  testFormationName,
+				State: model.InitialFormationState,
+			},
+			TemplateName:       testFormationTemplateName,
+			ExpectedFormation:  expectedFormationInInitialState,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -1105,6 +1167,11 @@ func TestServiceCreateFormation(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
+			input := testCase.FormationInput
+			if input == nil {
+				input = &in
+			}
+
 			uidService := unusedUUIDService()
 			if testCase.UUIDServiceFn != nil {
 				uidService = testCase.UUIDServiceFn()
@@ -1143,7 +1210,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			svc := formation.NewService(nil, nil, labelDefRepo, nil, formationRepo, formationTemplateRepo, nil, uidService, labelDefService, nil, nil, nil, nil, nil, nil, nil, notificationsService, constraintEngine, webhookRepo, runtimeType, applicationType)
 
 			// WHEN
-			actual, err := svc.CreateFormation(ctx, TntInternalID, in, testCase.TemplateName)
+			actual, err := svc.CreateFormation(ctx, TntInternalID, *input, testCase.TemplateName)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
