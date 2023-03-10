@@ -2045,7 +2045,7 @@ func TestFormationNotifications(stdT *testing.T) {
 
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 		})
-		/*t.Run("Runtime Context to Application formation assignment notifications", func(t *testing.T) {
+		t.Run("Runtime Context to Application formation assignment notifications", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -2070,9 +2070,9 @@ func TestFormationNotifications(stdT *testing.T) {
 				OutputTemplate: &outputTemplate,
 			}
 
-			t.Logf("Add webhook with application template with ID %q", appTmpl.ID)
-			actualWebhook := fixtures.AddWebhookToApplicationTemplate(t, ctx, oauthGraphQLClient, applicationTemplateWebhook, "", appTmpl.ID)
-			defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualWebhook.ID)
+			t.Logf("Add webhook with application with ID %q", app1.ID)
+			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationTemplateWebhook, subscriptionConsumerAccountID, app1.ID)
+			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApplicationWebhook.ID)
 
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 
@@ -2188,7 +2188,7 @@ func TestFormationNotifications(stdT *testing.T) {
 			require.Equal(t, providerFormationName, unassignFormation.Name)
 
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
-		})*/
+		})
 		t.Run("Formation Assignments", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			defer cleanupNotificationsFromExternalSvcMockAsynchronously(t, certSecuredHTTPClient)
@@ -2230,8 +2230,8 @@ func TestFormationNotifications(stdT *testing.T) {
 			}
 
 			t.Logf("Add webhook with application with ID %q", app1.ID)
-			actualApplicationTemplateWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationTemplateWebhook, subscriptionConsumerAccountID, app1.ID)
-			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApplicationTemplateWebhook.ID)
+			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationTemplateWebhook, subscriptionConsumerAccountID, app1.ID)
+			defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApplicationWebhook.ID)
 			providerFormationName := "provider-formation-name"
 			t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
 			defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
