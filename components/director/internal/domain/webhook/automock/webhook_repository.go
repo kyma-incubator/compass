@@ -194,13 +194,13 @@ func (_m *WebhookRepository) Update(ctx context.Context, tenant string, item *mo
 	return r0
 }
 
-type NewWebhookRepositoryT interface {
+type mockConstructorTestingTNewWebhookRepository interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewWebhookRepository creates a new instance of WebhookRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewWebhookRepository(t NewWebhookRepositoryT) *WebhookRepository {
+func NewWebhookRepository(t mockConstructorTestingTNewWebhookRepository) *WebhookRepository {
 	mock := &WebhookRepository{}
 	mock.Mock.Test(t)
 

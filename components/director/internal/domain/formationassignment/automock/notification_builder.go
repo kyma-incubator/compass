@@ -11,8 +11,6 @@ import (
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	testing "testing"
-
 	webhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -92,8 +90,13 @@ func (_m *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	return r0, r1
 }
 
-// NewNotificationBuilder creates a new instance of NotificationBuilder. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewNotificationBuilder(t testing.TB) *NotificationBuilder {
+type mockConstructorTestingTNewNotificationBuilder interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewNotificationBuilder creates a new instance of NotificationBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewNotificationBuilder(t mockConstructorTestingTNewNotificationBuilder) *NotificationBuilder {
 	mock := &NotificationBuilder{}
 	mock.Mock.Test(t)
 

@@ -179,9 +179,15 @@ func (c *converter) ApplicationFromTemplateInputFromGraphQL(appTemplate *model.A
 		}
 	}
 
+	var labels map[string]interface{}
+	if in.Labels != nil {
+		labels = in.Labels
+	}
+
 	return model.ApplicationFromTemplateInput{
 		TemplateName: in.TemplateName,
 		Values:       values,
+		Labels:       labels,
 	}, nil
 }
 
