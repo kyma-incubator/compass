@@ -157,7 +157,7 @@ func (_m *DataInputBuilder) PrepareRuntimeWithLabels(ctx context.Context, tenant
 	return r0, r1
 }
 
-// PrepareRuntimesAndRuntimeContextsMappings provides a mock function with given fields: ctx, tenant, scenario
+// PrepareRuntimesAndRuntimeContextsMappingsInFormation provides a mock function with given fields: ctx, tenant, scenario
 func (_m *DataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFormation(ctx context.Context, tenant string, scenario string) (map[string]*webhook.RuntimeWithLabels, map[string]*webhook.RuntimeContextWithLabels, error) {
 	ret := _m.Called(ctx, tenant, scenario)
 
@@ -189,13 +189,13 @@ func (_m *DataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFormation
 	return r0, r1, r2
 }
 
-type NewDataInputBuilderT interface {
+type mockConstructorTestingTNewDataInputBuilder interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewDataInputBuilder creates a new instance of DataInputBuilder. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewDataInputBuilder(t NewDataInputBuilderT) *DataInputBuilder {
+func NewDataInputBuilder(t mockConstructorTestingTNewDataInputBuilder) *DataInputBuilder {
 	mock := &DataInputBuilder{}
 	mock.Mock.Test(t)
 

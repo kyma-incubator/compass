@@ -101,6 +101,7 @@ type ComplexityRoot struct {
 
 	Application struct {
 		ApplicationNamespace  func(childComplexity int) int
+		ApplicationTemplate   func(childComplexity int) int
 		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
 		BaseURL               func(childComplexity int) int
@@ -722,6 +723,7 @@ type APISpecResolver interface {
 	FetchRequest(ctx context.Context, obj *APISpec) (*FetchRequest, error)
 }
 type ApplicationResolver interface {
+	ApplicationTemplate(ctx context.Context, obj *Application) (*ApplicationTemplate, error)
 	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
 
 	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
@@ -1096,6 +1098,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.ApplicationNamespace(childComplexity), true
+
+	case "Application.applicationTemplate":
+		if e.complexity.Application.ApplicationTemplate == nil {
+			break
+		}
+
+		return e.complexity.Application.ApplicationTemplate(childComplexity), true
 
 	case "Application.applicationTemplateID":
 		if e.complexity.Application.ApplicationTemplateID == nil {
@@ -5124,6 +5133,7 @@ input ApplicationFromTemplateInput {
 	**Validation:** if provided, values not required
 	"""
 	placeholdersPayload: String
+	labels: Labels
 }
 
 input ApplicationRegisterInput {
@@ -5695,6 +5705,7 @@ type Application {
 	description: String
 	integrationSystemID: ID
 	applicationTemplateID: ID
+	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
@@ -10862,6 +10873,61 @@ func (ec *executionContext) _Application_applicationTemplateID(ctx context.Conte
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_applicationTemplate(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Application().ApplicationTemplate(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.application.application_template")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ApplicationTemplate); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplate`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ApplicationTemplate)
+	fc.Result = res
+	return ec.marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_labels(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -29945,6 +30011,12 @@ func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx conte
 			if err != nil {
 				return it, err
 			}
+		case "labels":
+			var err error
+			it.Labels, err = ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -31999,6 +32071,17 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_integrationSystemID(ctx, field, obj)
 		case "applicationTemplateID":
 			out.Values[i] = ec._Application_applicationTemplateID(ctx, field, obj)
+		case "applicationTemplate":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_applicationTemplate(ctx, field, obj)
+				return res
+			})
 		case "labels":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

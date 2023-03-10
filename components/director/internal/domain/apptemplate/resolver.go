@@ -399,6 +399,12 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 	appCreateInputModel.Labels["managed"] = "false"
 
+	if convertedIn.Labels != nil {
+		for k, v := range in.Labels {
+			appCreateInputModel.Labels[k] = v
+		}
+	}
+
 	applicationName, err := extractApplicationNameFromTemplateInput(appCreateInputJSON)
 	if err != nil {
 		return nil, err

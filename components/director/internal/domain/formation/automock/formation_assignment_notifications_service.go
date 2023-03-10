@@ -40,13 +40,13 @@ func (_m *FormationAssignmentNotificationsService) GenerateFormationAssignmentNo
 	return r0, r1
 }
 
-type NewFormationAssignmentNotificationsServiceT interface {
+type mockConstructorTestingTNewFormationAssignmentNotificationsService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFormationAssignmentNotificationsService creates a new instance of FormationAssignmentNotificationsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationAssignmentNotificationsService(t NewFormationAssignmentNotificationsServiceT) *FormationAssignmentNotificationsService {
+func NewFormationAssignmentNotificationsService(t mockConstructorTestingTNewFormationAssignmentNotificationsService) *FormationAssignmentNotificationsService {
 	mock := &FormationAssignmentNotificationsService{}
 	mock.Mock.Test(t)
 

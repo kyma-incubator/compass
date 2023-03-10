@@ -320,6 +320,7 @@ input ApplicationFromTemplateInput {
 	**Validation:** if provided, values not required
 	"""
 	placeholdersPayload: String
+	labels: Labels
 }
 
 input ApplicationRegisterInput {
@@ -891,6 +892,7 @@ type Application {
 	description: String
 	integrationSystemID: ID
 	applicationTemplateID: ID
+	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")

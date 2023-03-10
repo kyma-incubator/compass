@@ -127,15 +127,15 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2937"
+      version: "PR-2929"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2902"
+      version: "PR-2929"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2902"
+      version: "PR-2929"
       name: compass-pairing-adapter
     director:
       dir:
@@ -143,15 +143,15 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2912"
+      version: "PR-2929"
       name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2936"
+      version: "PR-2929"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2902"
+      version: "PR-2929"
       name: compass-operations-controller
     ord_service:
       dir:
@@ -163,7 +163,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2933"
+      version: "PR-2929"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2888"
+      version: "PR-2929"
       name: compass-external-services-mock
     console:
       dir:
@@ -560,7 +560,7 @@ global:
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync certificate_subject_mapping:read certificate_subject_mapping:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -1171,6 +1171,7 @@ global:
         - "application:write"
         - "application.auths:read"
         - "application.webhooks:read"
+        - "application.application_template:read"
         - "bundle.instance_auths:read"
         - "document.fetch_request:read"
         - "event_spec.fetch_request:read"
@@ -1216,6 +1217,7 @@ global:
         - "automatic_scenario_assignment:read"
         - "application.auths:read"
         - "application.webhooks:read"
+        - "application.application_template:read"
         - "application_template.webhooks:read"
         - "bundle.instance_auths:read"
         - "document.fetch_request:read"
