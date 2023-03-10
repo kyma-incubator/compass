@@ -3,6 +3,7 @@ package formationmapping_test
 import (
 	"context"
 	"encoding/json"
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/http"
 	"testing"
 
@@ -106,6 +107,24 @@ func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sou
 	}
 }
 
+func fixBusinessTenantMapping() *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             internalTntID,
+		Name:           "tnt",
+		ExternalTenant: externalTntID,
+		Type:           tenantpkg.Account,
+	}
+}
+
+func fixResourceGroupBusinessTenantMapping() *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             internalTntID,
+		Name:           "tnt",
+		ExternalTenant: externalTntID,
+		Type:           tenantpkg.ResourceGroup,
+	}
+}
+
 func fixEmptyNotificationRequest() *webhookclient.FormationAssignmentNotificationRequest {
 	return &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook:       graphql.Webhook{},
@@ -179,6 +198,10 @@ func fixUnusedAppTemplateRepo() *automock.ApplicationTemplateRepository {
 
 func fixUnusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
+}
+
+func fixUnusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
 }
 
 func fixUnusedFormationRepo() *automock.FormationRepository {
