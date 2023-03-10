@@ -580,19 +580,30 @@ var (
 
 	formationNotificationRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
-			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID),
+			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
+			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
+			CorrelationID: "",
+		},
+	}
+	formationNotificationAsyncRequest = &webhookclient.FormationNotificationRequest{
+		Request: &webhookclient.Request{
+			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
 	}
 
-	formationNotificationRequests = []*webhookclient.FormationNotificationRequest{formationNotificationRequest}
+	formationNotificationRequests      = []*webhookclient.FormationNotificationRequest{formationNotificationRequest}
+	formationNotificationAsyncRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncRequest}
 
 	formationNotificationWebhookSuccessResponse = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, nil)
 	formationNotificationWebhookErrorResponse   = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, str.Ptr(testErr.Error()))
 
-	formationLifecycleWebhook       = fixFormationLifecycleWebhookModel(FormationLifecycleWebhookID, FormationTemplateID, model.FormationTemplateWebhookReference)
-	formationLifecycleWebhooks      = []*model.Webhook{formationLifecycleWebhook}
+	formationLifecycleSyncWebhook  = fixFormationLifecycleSyncWebhookModel(FormationLifecycleWebhookID, FormationTemplateID, model.FormationTemplateWebhookReference)
+	formationLifecycleSyncWebhooks = []*model.Webhook{formationLifecycleSyncWebhook}
+
+	formationLifecycleAsyncWebhook  = fixFormationLifecycleAsyncCallbackWebhookModel(FormationLifecycleWebhookID, FormationTemplateID, model.FormationTemplateWebhookReference)
+	formationLifecycleAsyncWebhooks = []*model.Webhook{formationLifecycleAsyncWebhook}
 	emptyFormationLifecycleWebhooks []*model.Webhook
 
 	// Formation constraints join point location variables
@@ -1121,15 +1132,22 @@ func fixApplicationTenantMappingWebhookModel(webhookID, appID string) *model.Web
 	}
 }
 
-func fixFormationLifecycleWebhookModel(webhookID, objectID string, objectType model.WebhookReferenceObjectType) *model.Webhook {
-	webhookModeSync := model.WebhookModeSync
+func fixFormationLifecycleWebhookModel(webhookID, objectID string, objectType model.WebhookReferenceObjectType, mode model.WebhookMode) *model.Webhook {
 	return &model.Webhook{
 		ID:         webhookID,
 		ObjectID:   objectID,
 		ObjectType: objectType,
 		Type:       model.WebhookTypeFormationLifecycle,
-		Mode:       &webhookModeSync,
+		Mode:       &mode,
 	}
+}
+
+func fixFormationLifecycleSyncWebhookModel(webhookID, objectID string, objectType model.WebhookReferenceObjectType) *model.Webhook {
+	return fixFormationLifecycleWebhookModel(webhookID, objectID, objectType, model.WebhookModeSync)
+}
+
+func fixFormationLifecycleAsyncCallbackWebhookModel(webhookID, objectID string, objectType model.WebhookReferenceObjectType) *model.Webhook {
+	return fixFormationLifecycleWebhookModel(webhookID, objectID, objectType, model.WebhookModeAsyncCallback)
 }
 
 func fixRuntimeWebhookGQLModel(webhookID, runtimeID string) *graphql.Webhook {
@@ -1156,12 +1174,17 @@ func fixApplicationTenantMappingWebhookGQLModel(webhookID, appID string) *graphq
 	}
 }
 
-func fixFormationLifecycleWebhookGQLModel(webhookID, formationTemplateID string) graphql.Webhook {
+func fixFormationLifecycleWebhookGQLModel(webhookID, formationTemplateID string, mode graphql.WebhookMode) graphql.Webhook {
 	return graphql.Webhook{
 		ID:                  webhookID,
 		Type:                graphql.WebhookTypeFormationLifecycle,
 		FormationTemplateID: &formationTemplateID,
+		Mode:                &mode,
 	}
+}
+
+func fixFormationLifecycleWebhookGQLModelAsync(webhookID, formationTemplateID string) graphql.Webhook {
+	return fixFormationLifecycleWebhookGQLModel(webhookID, formationTemplateID, graphql.WebhookModeAsyncCallback)
 }
 
 func fixFormationLifecycleInput(formationOperation model.FormationOperation, customerTntID, accountTntExternalID string) *webhook.FormationLifecycleInput {
@@ -1301,6 +1324,7 @@ func fixGqlFormation() *graphql.Formation {
 		ID:                  FormationID,
 		Name:                testFormationName,
 		FormationTemplateID: FormationTemplateID,
+		State:               string(model.ReadyFormationState),
 	}
 }
 

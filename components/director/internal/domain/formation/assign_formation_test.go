@@ -32,6 +32,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		Name:                testFormationName,
 		FormationTemplateID: FormationTemplateID,
 		TenantID:            TntInternalID,
+		State:               model.ReadyFormationState,
 	}
 	expectedFormationTemplate := &model.FormationTemplate{
 		ID:                     FormationTemplateID,
@@ -72,7 +73,10 @@ func TestServiceAssignFormation(t *testing.T) {
 		Name:                secondTestFormationName,
 		FormationTemplateID: FormationTemplateID,
 		TenantID:            TntInternalID,
+		State:               model.ReadyFormationState,
 	}
+	formationInInitialState := fixFormationModelWithState(model.InitialFormationState)
+	formationInDeletingState := fixFormationModelWithState(model.DeletingFormationState)
 
 	applicationLblNoFormations := &model.Label{
 		ID:         "123",
@@ -1711,6 +1715,72 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:           RuntimeContextID,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "success for application when formation is in initial state",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, TntInternalID, fixUUID(), &applicationLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInInitialState, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, formationInInitialState).Return(nil, nil)
+				return formationAssignmentSvc
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ObjectType:        graphql.FormationObjectTypeApplication,
+			ObjectID:          ApplicationID,
+			InputFormation:    inputFormation,
+			ExpectedFormation: formationInInitialState,
+		},
+		{
+			Name: "error for application when formation is in deleting state",
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInDeletingState, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preAssignLocation, assignAppDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "cannot assign to formation with ID",
 		},
 		{
 			Name: "error for application if generating notifications fails",
