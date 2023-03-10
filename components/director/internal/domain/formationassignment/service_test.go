@@ -1109,6 +1109,64 @@ func TestService_Delete(t *testing.T) {
 	}
 }
 
+func TestService_DeleteAssignmentsForObjectID(t *testing.T) {
+	testCases := []struct {
+		Name                    string
+		Context                 context.Context
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:    "Success",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("DeleteAssignmentsForObjectID", ctxWithTenant, TestTenantID, TestID, TestSource).Return(nil).Once()
+				return repo
+			},
+			ExpectedErrorMsg: "",
+		},
+		{
+			Name:             "Error when loading tenant from context",
+			Context:          emptyCtx,
+			ExpectedErrorMsg: "while loading tenant from context: cannot read tenant from context",
+		},
+		{
+			Name:    "Error when deleting formation assignment",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("DeleteAssignmentsForObjectID", ctxWithTenant, TestTenantID, TestID, TestSource).Return(testErr).Once()
+				return repo
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			faRepo := &automock.FormationAssignmentRepository{}
+			if testCase.FormationAssignmentRepo != nil {
+				faRepo = testCase.FormationAssignmentRepo()
+			}
+
+			svc := formationassignment.NewService(faRepo, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			err := svc.DeleteAssignmentsForObjectID(testCase.Context, TestID, TestSource)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, faRepo)
+		})
+	}
+}
+
 func TestService_Exists(t *testing.T) {
 	testCases := []struct {
 		Name                    string

@@ -457,6 +457,9 @@ func fixGQLApplicationFromTemplateInput(name string) graphql.ApplicationFromTemp
 			{Placeholder: "a", Value: "b"},
 			{Placeholder: "c", Value: "d"},
 		},
+		Labels: map[string]interface{}{
+			"key": "value",
+		},
 	}
 }
 
@@ -466,6 +469,9 @@ func fixModelApplicationFromTemplateInput(name string) model.ApplicationFromTemp
 		Values: []*model.ApplicationTemplateValueInput{
 			{Placeholder: "a", Value: "b"},
 			{Placeholder: "c", Value: "d"},
+		},
+		Labels: map[string]interface{}{
+			"key": "value",
 		},
 	}
 }
@@ -517,7 +523,7 @@ func fixModelApplicationWithLabelCreateInput(name string) model.ApplicationRegis
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
-		Labels:         map[string]interface{}{"managed": "false"},
+		Labels:         map[string]interface{}{"managed": "false", "key": "value"},
 	}
 }
 

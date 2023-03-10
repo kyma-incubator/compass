@@ -302,13 +302,11 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
 
 	description := "description"
-	baseUrl := ""
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
 				Description:           &description,
-				BaseURL:               &baseUrl,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
@@ -319,7 +317,6 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 			Application: directorSchema.Application{
 				Name:         "name2",
 				Description:  &description,
-				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
 			Labels: applicationLabels("name2", "", "", false),

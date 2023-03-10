@@ -101,6 +101,7 @@ type ComplexityRoot struct {
 
 	Application struct {
 		ApplicationNamespace  func(childComplexity int) int
+		ApplicationTemplate   func(childComplexity int) int
 		ApplicationTemplateID func(childComplexity int) int
 		Auths                 func(childComplexity int) int
 		BaseURL               func(childComplexity int) int
@@ -336,6 +337,7 @@ type ComplexityRoot struct {
 		FormationTemplateID  func(childComplexity int) int
 		ID                   func(childComplexity int) int
 		Name                 func(childComplexity int) int
+		State                func(childComplexity int) int
 		Status               func(childComplexity int) int
 	}
 
@@ -721,6 +723,7 @@ type APISpecResolver interface {
 	FetchRequest(ctx context.Context, obj *APISpec) (*FetchRequest, error)
 }
 type ApplicationResolver interface {
+	ApplicationTemplate(ctx context.Context, obj *Application) (*ApplicationTemplate, error)
 	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
 
 	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
@@ -1095,6 +1098,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.ApplicationNamespace(childComplexity), true
+
+	case "Application.applicationTemplate":
+		if e.complexity.Application.ApplicationTemplate == nil {
+			break
+		}
+
+		return e.complexity.Application.ApplicationTemplate(childComplexity), true
 
 	case "Application.applicationTemplateID":
 		if e.complexity.Application.ApplicationTemplateID == nil {
@@ -2238,6 +2248,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Formation.Name(childComplexity), true
+
+	case "Formation.state":
+		if e.complexity.Formation.State == nil {
+			break
+		}
+
+		return e.complexity.Formation.State(childComplexity), true
 
 	case "Formation.status":
 		if e.complexity.Formation.Status == nil {
@@ -5116,6 +5133,7 @@ input ApplicationFromTemplateInput {
 	**Validation:** if provided, values not required
 	"""
 	placeholdersPayload: String
+	labels: Labels
 }
 
 input ApplicationRegisterInput {
@@ -5463,8 +5481,8 @@ input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeTypes: [String!]
-	runtimeTypeDisplayName: String!
-	runtimeArtifactKind: ArtifactType!
+	runtimeTypeDisplayName: String
+	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
 }
@@ -5687,6 +5705,7 @@ type Application {
 	description: String
 	integrationSystemID: ID
 	applicationTemplateID: ID
+	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
@@ -5942,6 +5961,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	state: String!
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
 	status: FormationStatus!
@@ -5996,9 +6016,9 @@ type FormationTemplate {
 	id: ID!
 	name: String!
 	applicationTypes: [String!]!
-	runtimeTypes: [String!]!
-	runtimeTypeDisplayName: String!
-	runtimeArtifactKind: ArtifactType!
+	runtimeTypes: [String!]
+	runtimeTypeDisplayName: String
+	runtimeArtifactKind: ArtifactType
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
 }
@@ -10853,6 +10873,61 @@ func (ec *executionContext) _Application_applicationTemplateID(ctx context.Conte
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_applicationTemplate(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Application().ApplicationTemplate(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.application.application_template")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ApplicationTemplate); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplate`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ApplicationTemplate)
+	fc.Result = res
+	return ec.marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_labels(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -15798,6 +15873,40 @@ func (ec *executionContext) _Formation_formationTemplateId(ctx context.Context, 
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Formation_state(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.State, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Formation_formationAssignment(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16946,14 +17055,11 @@ func (ec *executionContext) _FormationTemplate_runtimeTypes(ctx context.Context,
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplate_runtimeTypeDisplayName(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
@@ -16980,14 +17086,11 @@ func (ec *executionContext) _FormationTemplate_runtimeTypeDisplayName(ctx contex
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplate_runtimeArtifactKind(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
@@ -17014,14 +17117,11 @@ func (ec *executionContext) _FormationTemplate_runtimeArtifactKind(ctx context.C
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(ArtifactType)
+	res := resTmp.(*ArtifactType)
 	fc.Result = res
-	return ec.marshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, field.Selections, res)
+	return ec.marshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplate_webhooks(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
@@ -29911,6 +30011,12 @@ func (ec *executionContext) unmarshalInputApplicationFromTemplateInput(ctx conte
 			if err != nil {
 				return it, err
 			}
+		case "labels":
+			var err error
+			it.Labels, err = ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -30997,13 +31103,13 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			}
 		case "runtimeTypeDisplayName":
 			var err error
-			it.RuntimeTypeDisplayName, err = ec.unmarshalNString2string(ctx, v)
+			it.RuntimeTypeDisplayName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "runtimeArtifactKind":
 			var err error
-			it.RuntimeArtifactKind, err = ec.unmarshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
+			it.RuntimeArtifactKind, err = ec.unmarshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -31965,6 +32071,17 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_integrationSystemID(ctx, field, obj)
 		case "applicationTemplateID":
 			out.Values[i] = ec._Application_applicationTemplateID(ctx, field, obj)
+		case "applicationTemplate":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_applicationTemplate(ctx, field, obj)
+				return res
+			})
 		case "labels":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -33219,6 +33336,11 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "state":
+			out.Values[i] = ec._Formation_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "formationAssignment":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -33555,19 +33677,10 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			}
 		case "runtimeTypes":
 			out.Values[i] = ec._FormationTemplate_runtimeTypes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "runtimeTypeDisplayName":
 			out.Values[i] = ec._FormationTemplate_runtimeTypeDisplayName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "runtimeArtifactKind":
 			out.Values[i] = ec._FormationTemplate_runtimeArtifactKind(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "webhooks":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -36163,15 +36276,6 @@ func (ec *executionContext) unmarshalNApplicationUpdateInput2githubᚗcomᚋkyma
 	return ec.unmarshalInputApplicationUpdateInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, v interface{}) (ArtifactType, error) {
-	var res ArtifactType
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, sel ast.SelectionSet, v ArtifactType) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {
 	return ec.unmarshalInputAuthInput(ctx, v)
 }
@@ -38174,6 +38278,30 @@ func (ec *executionContext) marshalOApplicationTemplate2ᚖgithubᚗcomᚋkyma�
 		return graphql.Null
 	}
 	return ec._ApplicationTemplate(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, v interface{}) (ArtifactType, error) {
+	var res ArtifactType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, sel ast.SelectionSet, v ArtifactType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, v interface{}) (*ArtifactType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, sel ast.SelectionSet, v *ArtifactType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOAuth2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v Auth) graphql.Marshaler {

@@ -320,6 +320,7 @@ input ApplicationFromTemplateInput {
 	**Validation:** if provided, values not required
 	"""
 	placeholdersPayload: String
+	labels: Labels
 }
 
 input ApplicationRegisterInput {
@@ -667,8 +668,8 @@ input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeTypes: [String!]
-	runtimeTypeDisplayName: String!
-	runtimeArtifactKind: ArtifactType!
+	runtimeTypeDisplayName: String
+	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
 }
@@ -891,6 +892,7 @@ type Application {
 	description: String
 	integrationSystemID: ID
 	applicationTemplateID: ID
+	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
@@ -1146,6 +1148,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	state: String!
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
 	status: FormationStatus!
@@ -1200,9 +1203,9 @@ type FormationTemplate {
 	id: ID!
 	name: String!
 	applicationTypes: [String!]!
-	runtimeTypes: [String!]!
-	runtimeTypeDisplayName: String!
-	runtimeArtifactKind: ArtifactType!
+	runtimeTypes: [String!]
+	runtimeTypeDisplayName: String
+	runtimeArtifactKind: ArtifactType
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
 }

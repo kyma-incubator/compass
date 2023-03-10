@@ -4,7 +4,6 @@ package automock
 
 import (
 	context "context"
-	testing "testing"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -35,8 +34,13 @@ func (_m *FormationTemplateService) Exist(ctx context.Context, id string) (bool,
 	return r0, r1
 }
 
-// NewFormationTemplateService creates a new instance of FormationTemplateService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationTemplateService(t testing.TB) *FormationTemplateService {
+type mockConstructorTestingTNewFormationTemplateService interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewFormationTemplateService creates a new instance of FormationTemplateService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewFormationTemplateService(t mockConstructorTestingTNewFormationTemplateService) *FormationTemplateService {
 	mock := &FormationTemplateService{}
 	mock.Mock.Test(t)
 

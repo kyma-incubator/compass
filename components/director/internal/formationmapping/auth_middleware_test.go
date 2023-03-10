@@ -964,19 +964,17 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 	}
 
 	formationTemplate := &model.FormationTemplate{
-		ID:                     testFormationTemplateID,
-		Name:                   "formationTemplateName",
-		RuntimeTypeDisplayName: "runtimeTypeDisplayName",
-		TenantID:               &internalTntID,
-		LeadingProductIDs:      leadingProductIDs,
+		ID:                testFormationTemplateID,
+		Name:              "formationTemplateName",
+		TenantID:          &internalTntID,
+		LeadingProductIDs: leadingProductIDs,
 	}
 
 	formationTemplateWithNonMatchingProductIDs := &model.FormationTemplate{
-		ID:                     testFormationTemplateID,
-		Name:                   "formationTemplateName",
-		RuntimeTypeDisplayName: "runtimeTypeDisplayName",
-		TenantID:               &internalTntID,
-		LeadingProductIDs:      []string{leadingProductID2},
+		ID:                testFormationTemplateID,
+		Name:              "formationTemplateName",
+		TenantID:          &internalTntID,
+		LeadingProductIDs: []string{leadingProductID2},
 	}
 
 	testCases := []struct {

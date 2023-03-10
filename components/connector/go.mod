@@ -42,7 +42,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230222154756-c31ab6b486f7
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230309104348-5a1c0141fb41
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
@@ -54,11 +54,11 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
-	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/term v0.3.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect

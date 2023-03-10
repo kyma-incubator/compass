@@ -116,13 +116,25 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
+
+	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+
+	formation, err := h.formationService.Get(ctx, formationID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting formation from formation assignment with ID: %q", fa.FormationID)
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+	if formation.State != model.ReadyFormationState {
+		log.C(ctx).WithError(err).Errorf("Cannot update formation assignment for formation with ID %q as formation is not in %q state. X-Request-Id: %s", fa.FormationID, model.ReadyFormationState, correlationID)
+		respondWithError(ctx, w, http.StatusBadRequest, errResp)
+		return
+	}
 	if fa.Source == fa.Target && fa.SourceType == fa.TargetType {
 		errResp := errors.Errorf("Cannot update formation assignment with source %q and target %q. X-Request-Id: %s", fa.Source, fa.Target, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
 		return
 	}
-
-	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
 
 	if fa.State == string(model.DeletingAssignmentState) {
 		log.C(ctx).Infof("Processing formation assignment asynchronous status update for %q operation...", model.UnassignFormation)
@@ -140,7 +152,7 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		}
 
 		if isFADeleted {
-			if err = h.processFormationAsynchronousUnassign(ctx, fa); err != nil {
+			if err = h.processAsynchronousFormationUnassign(ctx, formation, fa); err != nil {
 				log.C(ctx).WithError(err).Error("An error occurred while unassigning from formation")
 				respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 				return
@@ -337,7 +349,7 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 	httputils.Respond(w, http.StatusOK)
 }
 
-func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *model.FormationAssignment) error {
+func (h *Handler) processAsynchronousFormationUnassign(ctx context.Context, formation *model.Formation, fa *model.FormationAssignment) error {
 	unassignTx, err := h.transact.Begin()
 	if err != nil {
 		return errors.Wrapf(err, "while betinning transaction")
@@ -346,11 +358,11 @@ func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *
 
 	unassignCtx := persistence.SaveToContext(ctx, unassignTx)
 
-	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, fa.Source, fa.SourceType); err != nil {
+	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, formation, fa.Source, fa.SourceType); err != nil {
 		return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.SourceType, fa.Source)
 	}
 
-	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, fa.Target, fa.TargetType); err != nil {
+	if err = h.unassignObjectFromFormationWhenThereAreNoFormationAssignments(unassignCtx, fa, formation, fa.Target, fa.TargetType); err != nil {
 		return errors.Wrapf(err, "while unassigning object with type: %q and ID: %q", fa.TargetType, fa.Target)
 	}
 
@@ -361,7 +373,7 @@ func (h *Handler) processFormationAsynchronousUnassign(ctx context.Context, fa *
 	return nil
 }
 
-func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(ctx context.Context, fa *model.FormationAssignment, objectID string, objectType model.FormationAssignmentType) error {
+func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(ctx context.Context, fa *model.FormationAssignment, formation *model.Formation, objectID string, objectType model.FormationAssignmentType) error {
 	formationAssignmentsForObject, err := h.faService.ListFormationAssignmentsForObjectID(ctx, fa.FormationID, objectID)
 	if err != nil {
 		return errors.Wrapf(err, "while listing formation assignments for object with type: %q and ID: %q", objectType, objectID)
@@ -369,11 +381,6 @@ func (h *Handler) unassignObjectFromFormationWhenThereAreNoFormationAssignments(
 
 	// if there are no formation assignments left after the deletion, execute unassign formation for the object
 	if len(formationAssignmentsForObject) == 0 {
-		formation, err := h.formationService.Get(ctx, fa.FormationID)
-		if err != nil {
-			return errors.Wrapf(err, "while getting formation from formation assignment with ID: %q", fa.FormationID)
-		}
-
 		log.C(ctx).Infof("Unassining formation with name: %q for object with ID: %q and type: %q", formation.Name, objectID, objectType)
 		f, err := h.formationService.UnassignFormation(ctx, fa.TenantID, objectID, graphql.FormationObjectType(objectType), *formation)
 		if err != nil {

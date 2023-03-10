@@ -81,6 +81,7 @@ type ApplicationFromTemplateInput struct {
 	Values []*TemplateValueInput `json:"values"`
 	// **Validation:** if provided, values not required
 	PlaceholdersPayload *string `json:"placeholdersPayload"`
+	Labels              Labels  `json:"labels"`
 }
 
 type ApplicationPage struct {
@@ -546,8 +547,8 @@ type FormationTemplateInput struct {
 	Name                   string          `json:"name"`
 	ApplicationTypes       []string        `json:"applicationTypes"`
 	RuntimeTypes           []string        `json:"runtimeTypes"`
-	RuntimeTypeDisplayName string          `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    ArtifactType    `json:"runtimeArtifactKind"`
+	RuntimeTypeDisplayName *string         `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    *ArtifactType   `json:"runtimeArtifactKind"`
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
 }

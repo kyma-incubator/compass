@@ -413,6 +413,29 @@ func TestRepository_ListAllForObject(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_DeleteAssignmentsForObjectID(t *testing.T) {
+	suite := testdb.RepoDeleteTestSuite{
+		Name:       "DeleteAssignmentsForObjectID Formations Assignments",
+		MethodName: "DeleteAssignmentsForObjectID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.formation_assignments WHERE (tenant_id = $1 AND (formation_id = $2 AND (source = $3 OR target = $4)))`),
+				Args:          []driver.Value{TestTenantID, TestFormationID, TestSource, TestSource},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 0),
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		IsDeleteMany:        true,
+		RepoConstructorFunc: formationassignment.NewRepository,
+		MethodArgs:          []interface{}{TestTenantID, TestFormationID, TestSource},
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_ListAllForObjectIDs(t *testing.T) {
 	suite := testdb.RepoListTestSuite{
 		Name:       "ListAllForObjectIDs Formations Assignments",

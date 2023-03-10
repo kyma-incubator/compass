@@ -124,6 +124,7 @@ graphql:
     application:
       auths: ["application.auths:read"]
       webhooks: ["application.webhooks:read"]
+      application_template: [ "application.application_template:read" ]
     application_template:
       webhooks: ["application_template.webhooks:read"]
     bundle:
