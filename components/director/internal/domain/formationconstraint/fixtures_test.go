@@ -15,6 +15,8 @@ const (
 	formationConstraintName  = "test constraint"
 	operatorName             = formationconstraint.IsNotAssignedToAnyFormationOfTypeOperator
 	resourceSubtype          = "test subtype"
+	exceptResourceType       = "except subtype"
+	resourceSubtypeANY       = "ANY"
 	inputTemplate            = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
 	inputTemplateUpdated     = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}", "newField": "value"}`
 	testTenantID             = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
@@ -178,6 +180,16 @@ var (
 		ResourceSubtype:     "app",
 		ResourceID:          testID,
 		Tenant:              testTenantID,
+		ExceptSystemTypes:   []string{exceptResourceType},
+	}
+
+	inputApplicationResourceTypeWithSubtypeThatIsException = &formationconstraintpkg.IsNotAssignedToAnyFormationOfTypeInput{
+		FormationTemplateID: otherFormationTemplateID,
+		ResourceType:        model.ApplicationResourceType,
+		ResourceSubtype:     exceptResourceType,
+		ResourceID:          testID,
+		Tenant:              testTenantID,
+		ExceptSystemTypes:   []string{exceptResourceType},
 	}
 
 	inputRuntimeResourceType = &formationconstraintpkg.IsNotAssignedToAnyFormationOfTypeInput{

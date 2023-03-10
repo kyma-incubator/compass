@@ -77,32 +77,37 @@ func (e *ConstraintEngine) IsNotAssignedToAnyFormationOfType(ctx context.Context
 		return false, errors.Errorf("Unsupported resource type %q", i.ResourceType)
 	}
 
-	participatesInFormationsOfType, err := e.participatesInFormationsOfType(ctx, assignedFormations, i.Tenant, i.FormationTemplateID)
+	isAllowedToParticipateInFormationsOfType, err := e.isAllowedToParticipateInFormationsOfType(ctx, assignedFormations, i.Tenant, i.FormationTemplateID, i.ResourceSubtype, i.ExceptSystemTypes)
 	if err != nil {
 		return false, err
 	}
 
-	if participatesInFormationsOfType {
-		return false, nil
-	}
-
-	return true, nil
+	return isAllowedToParticipateInFormationsOfType, nil
 }
 
-func (e *ConstraintEngine) participatesInFormationsOfType(ctx context.Context, assignedFormationNames []string, tenant, formationTemplateID string) (bool, error) {
+func (e *ConstraintEngine) isAllowedToParticipateInFormationsOfType(ctx context.Context, assignedFormationNames []string, tenant, formationTemplateID, resourceSubtype string, exceptSystemTypes []string) (bool, error) {
 	if len(assignedFormationNames) == 0 {
-		return false, nil
+		return true, nil
+	}
+
+	if exceptSystemTypes != nil && len(exceptSystemTypes) > 0 {
+		for _, exceptType := range exceptSystemTypes {
+			if resourceSubtype == exceptType {
+				return true, nil
+			}
+		}
 	}
 
 	assignedFormations, err := e.formationRepo.ListByFormationNames(ctx, assignedFormationNames, tenant)
 	if err != nil {
 		return false, err
 	}
+
 	for _, formation := range assignedFormations {
 		if formation.FormationTemplateID == formationTemplateID {
-			return true, nil
+			return false, nil
 		}
 	}
 
-	return false, nil
+	return true, nil
 }
