@@ -45,13 +45,13 @@ func AddWebhookToApplicationTemplate(t require.TestingT, ctx context.Context, gq
 	return &actualWebhook
 }
 
-func AddWebhookToFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in *graphql.WebhookInput, formationTemplateID string) *graphql.Webhook {
+func AddWebhookToFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in *graphql.WebhookInput, tenant, formationTemplateID string) *graphql.Webhook {
 	applicationTemplateWebhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(in)
 	require.NoError(t, err)
 
 	addWebhookRequest := FixAddWebhookToFormationTemplateRequest(formationTemplateID, applicationTemplateWebhookInStr)
 	actualWebhook := graphql.Webhook{}
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, addWebhookRequest, &actualWebhook)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, addWebhookRequest, &actualWebhook)
 	require.NoError(t, err)
 	require.NotNil(t, actualWebhook.ID)
 	return &actualWebhook
