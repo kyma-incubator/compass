@@ -19,6 +19,7 @@ type update struct {
 }
 
 // StatusUpdateRepository missing godoc
+//
 //go:generate mockery --name=StatusUpdateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type StatusUpdateRepository interface {
 	UpdateStatus(ctx context.Context, id string, object WithStatusObject) error
@@ -57,8 +58,10 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
+			consumerID := consumerInfo.ConsumerID
+
 			if consumerInfo.Flow == oathkeeper.OneTimeTokenFlow {
-				logger.Infof("AuthFlow is %s. Will not update status of %s with ID: %s", consumerInfo.Flow, consumerInfo.ConsumerType, consumerInfo.ConsumerID)
+				logger.Infof("AuthFlow is %s. Will not update status of %s with ID: %s", consumerInfo.Flow, consumerInfo.ConsumerType, consumerID)
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -74,6 +77,8 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
+			logger.Infof("Consumer type is: %s. Will check if %s with ID %s is connected.", object, object, consumerID)
+
 			tx, err := u.transact.Begin()
 			if err != nil {
 				logger.WithError(err).Errorf("An error has occurred while opening transaction: %v", err)
@@ -84,17 +89,18 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 
 			ctxWithDB := persistence.SaveToContext(ctx, tx)
 
-			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerInfo.ConsumerID, object)
+			isConnected, err := u.repo.IsConnected(ctxWithDB, consumerID, object)
 			if err != nil {
-				logger.WithError(err).Errorf("An error has occurred while checking repository status: %v", err)
+				logger.WithError(err).Errorf("An error has occurred while checking repository status for %s with ID %s: %v", object, consumerID, err)
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			if !isConnected {
-				err = u.repo.UpdateStatus(ctxWithDB, consumerInfo.ConsumerID, object)
-				if err != nil {
-					logger.WithError(err).Errorf("An error has occurred while updating repository status: %v", err)
+				logger.Infof("Consumer %s with ID %s is not connected. Will atempt the update it.", object, consumerID)
+
+				if err = u.repo.UpdateStatus(ctxWithDB, consumerID, object); err != nil {
+					logger.WithError(err).Errorf("An error has occurred while updating repository status for %s with ID %s: %v", object, consumerID, err)
 					next.ServeHTTP(w, r)
 					return
 				}
