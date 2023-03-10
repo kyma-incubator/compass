@@ -29,7 +29,6 @@ import (
 )
 
 func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
-	testFormationAssignmentID := "testFormationAssignmentID"
 	url := fmt.Sprintf("/v1/businessIntegrations/{%s}/assignments/{%s}/status", fm.FormationIDParam, fm.FormationAssignmentIDParam)
 	testValidConfig := `{"testK":"testV"}`
 	urlVars := map[string]string{
@@ -37,10 +36,6 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 		fm.FormationAssignmentIDParam: testFormationAssignmentID,
 	}
 	configurationErr := errors.New("formation assignment configuration error")
-
-	faSourceID := "testSourceID"
-	faTargetID := "testTargetID"
-	internalTntID := "testInternalID"
 
 	// formation assignment fixtures with ASSIGN operation
 	faWithSourceAppAndTargetRuntime := fixFormationAssignmentModelWithStateAndConfig(testFormationAssignmentID, testFormationID, internalTntID, faSourceID, faTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeRuntime, model.ReadyAssignmentState, testValidConfig)
@@ -81,15 +76,17 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 	}
 
 	emptyFormationAssignmentsForObject := []*model.FormationAssignment{}
+
 	testFormation := &model.Formation{
-		ID:                  "testFormationID",
+		ID:                  testFormationID,
 		TenantID:            internalTntID,
 		FormationTemplateID: "testFormationTemplateID",
 		Name:                "testFormationName",
 		State:               model.ReadyFormationState,
 	}
+
 	testFormationInitialState := &model.Formation{
-		ID:                  "testFormationID",
+		ID:                  testFormationID,
 		TenantID:            internalTntID,
 		FormationTemplateID: "testFormationTemplateID",
 		Name:                "testFormationName",

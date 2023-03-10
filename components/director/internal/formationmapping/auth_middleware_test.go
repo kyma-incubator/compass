@@ -18,9 +18,6 @@ import (
 )
 
 func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
-	faSourceID := "testSourceID"
-	faTargetID := "testTargetID"
-	testFormationAssignmentID := "testFormationAssignmentID"
 	consumerUUID := uuid.New().String()
 	appTemplateID := "testAppTemplateID"
 	intSystemID := "intSystemID"

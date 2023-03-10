@@ -27,9 +27,16 @@ var (
 	testErr  = errors.New("test error")
 	txGen    = txtest.NewTransactionContextGenerator(testErr)
 
+	// Tenant IDs variables
 	internalTntID = "testInternalID"
 	externalTntID = "testExternalID"
 
+	// Formation Assignment variables
+	faSourceID                = "testSourceID"
+	faTargetID                = "testTargetID"
+	testFormationAssignmentID = "testFormationAssignmentID"
+
+	// Formation variables
 	testFormationID         = "testFormationID"
 	testFormationName       = "testFormationName"
 	testFormationTemplateID = "testFormationTemplateID"

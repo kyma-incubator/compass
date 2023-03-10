@@ -4873,26 +4873,6 @@ func unassignTenantFromFormation(t *testing.T, ctx context.Context, objectID, te
 	t.Logf("Successfully unassigned tenant: %q from formation with name: %q", objectID, formationName)
 }
 
-func createFormationTemplate(t *testing.T, ctx context.Context, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
-	formationTmplInput := graphql.FormationTemplateInput{
-		Name:                   formationTemplateName,
-		ApplicationTypes:       applicationTypes,
-		RuntimeTypes:           []string{runtimeType},
-		RuntimeTypeDisplayName: &formationTemplateName,
-		RuntimeArtifactKind:    &runtimeArtifactKind,
-	}
-
-	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
-	require.NoError(t, err)
-	formationTmplRequest := fixtures.FixCreateFormationTemplateRequest(formationTmplGQLInput)
-
-	ft := graphql.FormationTemplate{}
-	t.Logf("Creating formation template with name: %q", formationTemplateName)
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, formationTmplRequest, &ft)
-	require.NoError(t, err)
-	return ft
-}
-
 func createFormationTemplateWithMultipleRuntimeTypes(t *testing.T, ctx context.Context, formationTemplateName string, runtimeTypes []string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
 	formationTmplInput := graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
