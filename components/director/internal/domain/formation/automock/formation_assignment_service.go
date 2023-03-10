@@ -56,6 +56,20 @@ func (_m *FormationAssignmentService) Delete(ctx context.Context, id string) err
 	return r0
 }
 
+// DeleteAssignmentsForObjectID provides a mock function with given fields: ctx, formationID, objectID
+func (_m *FormationAssignmentService) DeleteAssignmentsForObjectID(ctx context.Context, formationID string, objectID string) error {
+	ret := _m.Called(ctx, formationID, objectID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, formationID, objectID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GenerateAssignments provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4
 func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 *model.Formation) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)
