@@ -473,6 +473,24 @@ global:
       port: 3003
       enableClientInstrumentation: true
       censoredFlows: "JWT"
+  iasAdapter:
+    apiRootPath: "/v1"
+    readTimeout: 30s
+    readHeaderTimeout: 30s
+    writeTimeout: 30s
+    idleTimeout: 30s
+    ias:
+      requestTimeout: 30s
+      secret:
+        name: "ias-adapter-cockpit"
+        path: "/tmp"
+        fileName: "ias-adapter-cockpit.yaml"
+        clientCert: cert
+        clientKey: key
+        ca: ca
+    postgres:
+      connectTimeout: 30s
+      requestTimeout: 30s
   operations_controller:
     enabled: true
   connectivity_adapter:

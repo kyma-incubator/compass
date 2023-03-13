@@ -25,16 +25,20 @@ func NewServer(cfg config.Config, services Services) *http.Server {
 	log := logger.Default()
 
 	router := gin.New()
-	router.Use(gin.Recovery())
-	router.Use(middlewares.Logging)
-	healthHandler := handlers.HealthsHandler{
-		Service: services.HealthService,
-	}
-	router.GET(paths.HealthPath, healthHandler.Health)
+	routerGroup := router.Group(cfg.APIRootPath)
+	routerGroup.Use(gin.Recovery())
+	routerGroup.Use(middlewares.Logging)
+
+	healthHandler := handlers.HealthHandler{Service: services.HealthService}
+	routerGroup.GET(paths.HealthPath, healthHandler.Health)
+
+	readyHandler := handlers.ReadyHandler{}
+	routerGroup.GET(paths.ReadyPath, readyHandler.Ready)
+
 	tenantMappingsHandler := handlers.TenantMappingsHandler{
 		Service: services.TenantMappingsService,
 	}
-	router.PATCH(paths.TenantMappingsPath, tenantMappingsHandler.Patch)
+	routerGroup.PATCH(paths.TenantMappingsPath, tenantMappingsHandler.Patch)
 
 	routes := router.Routes()
 	for _, route := range routes {

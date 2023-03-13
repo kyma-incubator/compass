@@ -18,7 +18,7 @@ var _ = Describe("Health Handler", func() {
 			service := &automock.HealthService{}
 			service.On("CheckHealth", mock.Anything).
 				Return(types.HealthStatus{Storage: types.StatusDown}, errors.New("ping failed"))
-			handler := HealthsHandler{
+			handler := HealthHandler{
 				Service: service,
 			}
 
@@ -36,7 +36,7 @@ var _ = Describe("Health Handler", func() {
 			service := &automock.HealthService{}
 			service.On("CheckHealth", mock.Anything).
 				Return(types.HealthStatus{Storage: types.StatusUp}, nil)
-			handler := HealthsHandler{
+			handler := HealthHandler{
 				Service: service,
 			}
 

@@ -9,6 +9,7 @@ import (
 const envPrefix = "APP"
 
 type Config struct {
+	APIRootPath       string        `envconfig:"APP_API_ROOT_PATH,default=/v1"`
 	Address           string        `envconfig:"APP_ADDRESS,default=localhost:8080"`
 	ReadTimeout       time.Duration `envconfig:"APP_READ_TIMEOUT,default=30s"`
 	ReadHeaderTimeout time.Duration `envconfig:"APP_READ_HEADER_TIMEOUT,default=30s"`

@@ -15,11 +15,11 @@ type HealthService interface {
 	CheckHealth(ctx context.Context) (types.HealthStatus, error)
 }
 
-type HealthsHandler struct {
+type HealthHandler struct {
 	Service HealthService
 }
 
-func (h HealthsHandler) Health(ctx *gin.Context) {
+func (h HealthHandler) Health(ctx *gin.Context) {
 	log := logger.FromContext(ctx)
 
 	status, err := h.Service.CheckHealth(ctx)
