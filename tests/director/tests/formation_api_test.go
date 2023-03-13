@@ -573,11 +573,11 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
-	formationTemplateName := "create-formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
-
 	firstFormationInputGql := graphql.FormationInput{Name: firstFormationName}
 	secondFormationInputGql := graphql.FormationInput{Name: secondFormationName}
+
+	formationTemplateName := "create-formation-template-name"
+	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
 
 	t.Logf("Create formation template with name: %q", formationTemplateName)
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
@@ -606,7 +606,7 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	firstFormation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, firstFormationName, &formationTemplate.Name)
 
 	t.Logf("Should create formation: %s", secondFormationName)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, secondFormationName)
 	secondFormation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, secondFormationName, &formationTemplate.Name)
 
 	t.Logf("Assign tenant %s to formation %s", subaccountID, firstFormation.Name)
