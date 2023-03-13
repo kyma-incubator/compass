@@ -66,7 +66,7 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 			ExpectedResult: true,
 		},
 		{
-			Name:  "Success for tenant when participating in other formations",
+			Name:  "Success for tenant when already participating in formations of given type",
 			Input: inputTenantResourceType,
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
@@ -154,6 +154,31 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError("", testID)).Once()
+				return repo
+			},
+			ExpectedResult: true,
+		},
+		{
+			Name:  "Success for Application when already participating in formation of the given type",
+			Input: inputApplicationResourceType,
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(scenariosLabel, nil).Once()
+				return repo
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("ListByFormationNames", ctx, []string{scenario}, testTenantID).Return(formations2, nil).Once()
+				return repo
+			},
+			ExpectedResult: false,
+		},
+		{
+			Name:  "Success for Application when already participating in formation of the given type but the subtype is part of the exception",
+			Input: inputApplicationResourceTypeWithSubtypeThatIsException,
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(scenariosLabel, nil).Once()
 				return repo
 			},
 			ExpectedResult: true,
