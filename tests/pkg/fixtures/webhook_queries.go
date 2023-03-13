@@ -57,10 +57,23 @@ func AddWebhookToFormationTemplate(t require.TestingT, ctx context.Context, gqlC
 	return &actualWebhook
 }
 
-func DeleteWebhook(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, webhookID string) *graphql.Webhook {
+func UpdateWebhook(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, webhookID string, in *graphql.WebhookInput) *graphql.Webhook {
+	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(in)
+	require.NoError(t, err)
+
+	updateWebhookRequest := FixUpdateWebhookRequest(webhookID, webhookInStr)
+	actualWebhook := graphql.Webhook{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, updateWebhookRequest, &actualWebhook)
+	require.NoError(t, err)
+	require.NotNil(t, actualWebhook.ID)
+
+	return &actualWebhook
+}
+
+func DeleteWebhook(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, webhookID string) *graphql.Webhook {
 	deleteWebhookRequest := FixDeleteWebhookRequest(webhookID)
 	actualWebhook := graphql.Webhook{}
-	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, deleteWebhookRequest, &actualWebhook)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteWebhookRequest, &actualWebhook)
 	require.NoError(t, err)
 	require.NotNil(t, actualWebhook.ID)
 	return &actualWebhook
