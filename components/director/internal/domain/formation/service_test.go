@@ -239,21 +239,8 @@ func TestServiceCreateFormation(t *testing.T) {
 		Name: testFormationName,
 	}
 
-	expectedFormation := &model.Formation{
-		ID:                  FormationID,
-		TenantID:            TntInternalID,
-		FormationTemplateID: FormationTemplateID,
-		Name:                testFormationName,
-		State:               model.ReadyFormationState,
-	}
-
-	expectedFormationInInitialState := &model.Formation{
-		ID:                  FormationID,
-		TenantID:            TntInternalID,
-		FormationTemplateID: FormationTemplateID,
-		Name:                testFormationName,
-		State:               model.InitialFormationState,
-	}
+	expectedFormation := fixFormationModelWithState(model.ReadyFormationState)
+	expectedFormationInInitialState := fixFormationModelWithState(model.InitialFormationState)
 
 	formationWithReadyState := fixFormationModelWithState(model.ReadyFormationState)
 	formationWithInitialState := fixFormationModelWithState(model.InitialFormationState)
