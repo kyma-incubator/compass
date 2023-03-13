@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2946"
+      version: "PR-2947"
       name: compass-director
     hydrator:
       dir:
@@ -1129,6 +1129,7 @@ global:
         - "application_template:write"
         - "formation:read"
         - "formation:write"
+        - "formation.state:write"
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"
@@ -1239,6 +1240,7 @@ global:
         - "formation_constraint:write"
         - "certificate_subject_mapping:read"
         - "certificate_subject_mapping:write"
+        - "formation.state:write"
       default:
         - "runtime:read"
         - "runtime:write"
