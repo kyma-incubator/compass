@@ -3220,9 +3220,9 @@ func TestOnlyFormationLifecycleNotifications(t *testing.T) {
 	assertFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, deleteFormationOperation, tenantID, parentTenantID)
 }
 
-func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
+func TestFormationAssignmentNotificationResynchronizationSync(stdT *testing.T) {
 	t := testingx.NewT(stdT)
-	t.Run("Formation Notification Synchronous Resynchronization", func(t *testing.T) {
+	t.Run("Formation Assignment Notification Synchronous Resynchronization", func(t *testing.T) {
 		ctx := context.Background()
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
 		subscriptionConsumerAccountID := conf.TestConsumerAccountID
@@ -3518,9 +3518,9 @@ func TestFormationNotificationResynchronizationSync(stdT *testing.T) {
 	})
 }
 
-func TestFormationNotificationResynchronizationAsync(stdT *testing.T) {
+func TestFormationAssignmentNotificationResynchronizationAsync(stdT *testing.T) {
 	t := testingx.NewT(stdT)
-	t.Run("Formation Notification Asynchronous Resynchronization", func(t *testing.T) {
+	t.Run("Formation Assignment Notification Asynchronous Resynchronization", func(t *testing.T) {
 		ctx := context.Background()
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
 		subscriptionConsumerAccountID := conf.TestConsumerAccountID
