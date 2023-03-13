@@ -1024,7 +1024,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithDeletingState, nil).Once()
-				formationSvc.On("DeleteFormation", contextThatHasTenant(internalTntID), internalTntID, *formationWithDeletingState).Return(nil, nil).Once()
+				formationSvc.On("DeleteFormationEntityAndScenarios", contextThatHasTenant(internalTntID), internalTntID, testFormationName).Return(nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationRequestBody{
@@ -1071,7 +1071,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithDeletingState, nil).Once()
-				formationSvc.On("DeleteFormation", contextThatHasTenant(internalTntID), internalTntID, *formationWithDeletingState).Return(nil, testErr).Once()
+				formationSvc.On("DeleteFormationEntityAndScenarios", contextThatHasTenant(internalTntID), internalTntID, testFormationName).Return(testErr).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationRequestBody{
@@ -1087,7 +1087,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithDeletingState, nil).Once()
-				formationSvc.On("DeleteFormation", contextThatHasTenant(internalTntID), internalTntID, *formationWithDeletingState).Return(nil, nil).Once()
+				formationSvc.On("DeleteFormationEntityAndScenarios", contextThatHasTenant(internalTntID), internalTntID, testFormationName).Return(nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationRequestBody{

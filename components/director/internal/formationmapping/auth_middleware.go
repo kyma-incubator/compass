@@ -62,7 +62,7 @@ type formationService interface {
 	Get(ctx context.Context, id string) (*model.Formation, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 	SetFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error
-	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
+	DeleteFormationEntityAndScenarios(ctx context.Context, tnt, formationName string) error
 	Update(ctx context.Context, model *model.Formation) error
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string) error
 }
@@ -216,7 +216,7 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 			ctx := r.Context()
 			correlationID := correlation.CorrelationIDFromContext(ctx)
 
-			if r.Method != http.MethodPatch {
+			if r.Method != http.MethodPost && r.Method != http.MethodDelete {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}

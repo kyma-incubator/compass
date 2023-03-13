@@ -455,7 +455,7 @@ func (h *Handler) processAsynchronousFormationDelete(ctx context.Context, format
 	}
 
 	log.C(ctx).Infof("Deleting formation with ID: %q and name: %q", formation.ID, formation.Name)
-	_, err := h.formationService.DeleteFormation(ctx, formation.TenantID, *formation)
+	err := h.formationService.DeleteFormationEntityAndScenarios(ctx, formation.TenantID, formation.Name)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting formation with ID: %q and name: %q", formation.ID, formation.Name)
 	}

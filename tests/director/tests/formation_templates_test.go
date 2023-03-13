@@ -41,7 +41,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 	appType := "async-app-type-1"
 	formationTemplateName := "create-formation-template-name"
 	leadingProductIDs := []string{"leading-product-id"}
-	formationTemplateInput := fixtures.FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, "runtimeTypeTest", []string{appType}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
+	formationTemplateInput := fixtures.FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, []string{"runtimeTypeTest"}, []string{appType}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
 
 	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
 	require.NoError(t, err)

@@ -19,27 +19,18 @@ type FormationService struct {
 	mock.Mock
 }
 
-// DeleteFormation provides a mock function with given fields: ctx, tnt, formation
-func (_m *FormationService) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
-	ret := _m.Called(ctx, tnt, formation)
+// DeleteFormationEntityAndScenarios provides a mock function with given fields: ctx, tnt, formationName
+func (_m *FormationService) DeleteFormationEntityAndScenarios(ctx context.Context, tnt string, formationName string) error {
+	ret := _m.Called(ctx, tnt, formationName)
 
-	var r0 *model.Formation
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation) *model.Formation); ok {
-		r0 = rf(ctx, tnt, formation)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tnt, formationName)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Formation)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation) error); ok {
-		r1 = rf(ctx, tnt, formation)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Get provides a mock function with given fields: ctx, id

@@ -304,9 +304,11 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 	return label.ValueToStringsSlice(existingLabel.Value)
 }
 
-// CreateFormation adds the provided formation to the scenario label definitions of the given tenant.
-// If the scenario label definition does not exist it will be created
-// Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
+// CreateFormation is responsible for a couple of things:
+//  - Enforce any "pre" and "post" operation formation constraints
+//  - Adds the provided formation to the scenario label definitions of the given tenant, if the scenario label definition does not exist it will be created
+//  - Creates a new Formation entity based on the provided template name or the default one is used if it's not provided
+//  - Generate and send notification(s) if the template from which the formation is created has a webhook attached. And maintain a state based on the executed formation notification(s) - either synchronous or asynchronous
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error) {
 	fTmpl, err := s.formationTemplateRepository.GetByNameAndTenant(ctx, templateName, tnt)
 	if err != nil {
@@ -371,8 +373,10 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	return newFormation, nil
 }
 
-// DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
-// Also, removes the Formation entity from the DB
+// DeleteFormation is responsible for a couple of things:
+//  - Enforce any "pre" and "post" operation formation constraints
+//  - Generate and send notification(s) if the template from which the formation is created has a webhook attached. And maintain a state based on the executed formation notification(s) - either synchronous or asynchronous
+//  - Removes the provided formation from the scenario label definitions of the given tenant and deletes the formation entity from the DB
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
 	if err != nil {
@@ -424,14 +428,8 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		}
 	}
 
-	if err := s.modifyFormations(ctx, tnt, formationName, deleteFormation); err != nil {
-		return nil, err
-	}
-
-	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-	if err = s.formationRepository.DeleteByName(ctx, tnt, formationName); err != nil {
-		log.C(ctx).Errorf("An error occurred while deleting formation with name: %q", formationName)
-		return nil, errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
+	if err := s.DeleteFormationEntityAndScenarios(ctx, tnt, formationName); err != nil {
+		return nil, errors.Wrapf(err, "An error occurred while deleting formation entity with name: %q and its scenarios label", formationName)
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostDelete, joinPointDetails, formationTemplateID); err != nil {
@@ -439,6 +437,21 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	return ft.formation, nil
+}
+
+// DeleteFormationEntityAndScenarios removes the formation name from scenarios label definitions and deletes the formation entity from the DB
+func (s *service) DeleteFormationEntityAndScenarios(ctx context.Context, tnt, formationName string) error {
+	if err := s.modifyFormations(ctx, tnt, formationName, deleteFormation); err != nil {
+		return err
+	}
+
+	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
+	if err := s.formationRepository.DeleteByName(ctx, tnt, formationName); err != nil {
+		log.C(ctx).Errorf("An error occurred while deleting formation with name: %q", formationName)
+		return errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
+	}
+
+	return nil
 }
 
 // AssignFormation assigns object based on graphql.FormationObjectType.
