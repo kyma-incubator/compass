@@ -9,4 +9,5 @@ type IsNotAssignedToAnyFormationOfTypeInput struct {
 	ResourceSubtype     string             `json:"resource_subtype"`
 	ResourceID          string             `json:"resource_id"`
 	Tenant              string             `json:"tenant"`
+	ExceptSystemTypes   []string           `json:"exceptSystemTypes"`
 }

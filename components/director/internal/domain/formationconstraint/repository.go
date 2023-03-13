@@ -12,8 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-const tableName string = `public.formation_constraints`
-const idColumn string = "id"
+const (
+	tableName          string = `public.formation_constraints`
+	idColumn           string = "id"
+	resourceSubtypeANY string = "ANY"
+)
 
 var (
 	tableColumns     = []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope"}
@@ -120,6 +123,11 @@ func (r *repository) ListMatchingFormationConstraints(ctx context.Context, forma
 		formationTypeRelevanceConditions = append(formationTypeRelevanceConditions, repo.NewInConditionForStringValues("id", formationConstraintIDs))
 	}
 
+	resourceSubtypeConditions := []repo.Condition{
+		repo.NewEqualCondition("resource_subtype", details.ResourceSubtype),
+		repo.NewEqualCondition("resource_subtype", resourceSubtypeANY),
+	}
+
 	conditions := repo.And(
 		append(
 			repo.ConditionTreesFromConditions(
@@ -127,9 +135,11 @@ func (r *repository) ListMatchingFormationConstraints(ctx context.Context, forma
 					repo.NewEqualCondition("target_operation", location.OperationName),
 					repo.NewEqualCondition("constraint_type", location.ConstraintType),
 					repo.NewEqualCondition("resource_type", details.ResourceType),
-					repo.NewEqualCondition("resource_subtype", details.ResourceSubtype),
 				},
 			),
+			repo.Or(repo.ConditionTreesFromConditions(
+				resourceSubtypeConditions,
+			)...),
 			repo.Or(repo.ConditionTreesFromConditions(
 				formationTypeRelevanceConditions,
 			)...),

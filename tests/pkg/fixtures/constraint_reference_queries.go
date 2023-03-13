@@ -19,9 +19,9 @@ func AttachConstraintToFormationTemplate(t require.TestingT, ctx context.Context
 }
 
 func DetachConstraintFromFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, constraintID, formationTemplateID string) *graphql.ConstraintReference {
-	deleteRequest := FixDetachConstraintFromFormationTemplateRequest(constraintID, formationTemplateID)
+	detachRequest := FixDetachConstraintFromFormationTemplateRequest(constraintID, formationTemplateID)
 	constraintReference := graphql.ConstraintReference{}
-	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, deleteRequest, &constraintReference)
+	err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, detachRequest, &constraintReference)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 
 	return &constraintReference
