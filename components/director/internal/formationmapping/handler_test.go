@@ -179,6 +179,40 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			expectedErrOutput:  "",
 		},
 		{
+			name:       "Success when state is not changed - only configuration is provided",
+			transactFn: txGen.ThatSucceeds,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime, nil).Once()
+				faSvc.On("Update", contextThatHasTenant(internalTntID), testFormationAssignmentID, faModelInput).Return(nil).Once()
+				faSvc.On("GetReverseBySourceAndTarget", contextThatHasTenant(internalTntID), testFormationID, faSourceID, faTargetID).Return(reverseFAWithSourceRuntimeAndTargetApp, nil).Once()
+				faSvc.On("ProcessFormationAssignmentPair", contextThatHasTenant(internalTntID), testAssignmentPair).Return(false, nil).Once()
+				return faSvc
+			},
+			faConverterFn: func() *automock.FormationAssignmentConverter {
+				faConv := &automock.FormationAssignmentConverter{}
+				faConv.On("ToInput", faWithSourceAppAndTargetRuntime).Return(faModelInput).Once()
+				return faConv
+			},
+			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
+				faNotificationSvc := &automock.FormationAssignmentNotificationService{}
+				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), faWithSourceAppAndTargetRuntime).Return(fixEmptyNotificationRequest(), nil).Once()
+				faNotificationSvc.On("GenerateFormationAssignmentNotification", contextThatHasTenant(internalTntID), reverseFAWithSourceRuntimeAndTargetApp).Return(fixEmptyNotificationRequest(), nil).Once()
+				return faNotificationSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+		},
+		{
 			name:       "Error when transaction fails to begin",
 			transactFn: txGen.ThatFailsOnBegin,
 			reqBody: fm.FormationAssignmentRequestBody{

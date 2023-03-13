@@ -5475,6 +5475,11 @@ input FormationConstraintUpdateInput {
 input FormationInput {
 	name: String!
 	templateName: String
+	"""
+	The initial state of the newly created formation.
+	It is used in specific use-cases by internal components that need to manipulate the formation notification engine's logic and hold the tenant mapping notifications until a certain external event happens.
+	"""
+	state: String @hasScopes(path: "graphql.input.formation.state")
 }
 
 input FormationTemplateInput {
@@ -31070,6 +31075,31 @@ func (ec *executionContext) unmarshalInputFormationInput(ctx context.Context, ob
 			it.TemplateName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
+			}
+		case "state":
+			var err error
+			directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalOString2ᚖstring(ctx, v) }
+			directive1 := func(ctx context.Context) (interface{}, error) {
+				path, err := ec.unmarshalNString2string(ctx, "graphql.input.formation.state")
+				if err != nil {
+					return nil, err
+				}
+				if ec.directives.HasScopes == nil {
+					return nil, errors.New("directive hasScopes is not implemented")
+				}
+				return ec.directives.HasScopes(ctx, obj, directive0, path)
+			}
+
+			tmp, err := directive1(ctx)
+			if err != nil {
+				return it, err
+			}
+			if data, ok := tmp.(*string); ok {
+				it.State = data
+			} else if tmp == nil {
+				it.State = nil
+			} else {
+				return it, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 package formation_test
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,6 +20,14 @@ func TestFromGraphQL(t *testing.T) {
 
 		// THEN
 		require.Equal(t, testFormationName, actual.Name)
+	})
+	t.Run("Success when state is provided externally", func(t *testing.T) {
+		// WHEN
+		actual := converter.FromGraphQL(graphql.FormationInput{Name: testFormationName, State: str.Ptr(string(model.InitialFormationState))})
+
+		// THEN
+		require.Equal(t, testFormationName, actual.Name)
+		require.Equal(t, model.InitialFormationState, actual.State)
 	})
 }
 

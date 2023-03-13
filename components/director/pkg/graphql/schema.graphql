@@ -662,6 +662,11 @@ input FormationConstraintUpdateInput {
 input FormationInput {
 	name: String!
 	templateName: String
+	"""
+	The initial state of the newly created formation.
+	It is used in specific use-cases by internal components that need to manipulate the formation notification engine's logic and hold the tenant mapping notifications until a certain external event happens.
+	"""
+	state: String @hasScopes(path: "graphql.input.formation.state")
 }
 
 input FormationTemplateInput {

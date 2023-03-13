@@ -345,7 +345,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
 	}
 
-	formationState := determineFormationState(ctx, formationTemplateID, formationTemplateName, formationTemplateWebhooks)
+	formationState := determineFormationState(ctx, formationTemplateID, formationTemplateName, formationTemplateWebhooks, formation.State)
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
 	newFormation, err := s.createFormation(ctx, tnt, formationTemplateID, formationName, formationState)
@@ -1563,8 +1563,12 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 	return nil
 }
 
-func determineFormationState(ctx context.Context, formationTemplateID, formationTemplateName string, formationTemplateWebhooks []*model.Webhook) model.FormationState {
+func determineFormationState(ctx context.Context, formationTemplateID, formationTemplateName string, formationTemplateWebhooks []*model.Webhook, externallyProvidedFormationState model.FormationState) model.FormationState {
 	if len(formationTemplateWebhooks) == 0 {
+		if len(externallyProvidedFormationState) > 0 {
+			log.C(ctx).Infof("Formation template with ID: %q and name: %q does not have any webhooks. The formation will be created with %s state as it was provided externally", formationTemplateID, formationTemplateName, externallyProvidedFormationState)
+			return externallyProvidedFormationState
+		}
 		log.C(ctx).Infof("Formation template with ID: %q and name: %q does not have any webhooks. The formation will be created with %s state", formationTemplateID, formationTemplateName, model.ReadyFormationState)
 		return model.ReadyFormationState
 	}
