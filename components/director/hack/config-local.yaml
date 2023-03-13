@@ -140,6 +140,8 @@ graphql:
   input:
     application:
       localTenantID: [ "application.local_tenant_id:write" ]
+    formation:
+      state: [ "formation.state:write" ]
 
 # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
 clientCredentialsRegistrationScopes:
@@ -219,6 +221,7 @@ clientCredentialsRegistrationScopes:
     - "formation_constraint:write"
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
+    - "formation.state:write"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

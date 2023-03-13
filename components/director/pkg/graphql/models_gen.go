@@ -522,6 +522,9 @@ type FormationConstraintUpdateInput struct {
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`
+	// The initial state of the newly created formation.
+	// It is used in specific use-cases by internal components that need to manipulate the formation notification engine's logic and hold the tenant mapping notifications until a certain external event happens.
+	State *string `json:"state"`
 }
 
 type FormationPage struct {
