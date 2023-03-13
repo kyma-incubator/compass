@@ -566,8 +566,8 @@ func TestTenantFormationFlow(t *testing.T) {
 func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	ctx := context.Background()
 	const (
-		firstFormation  = "FIRST"
-		secondFormation = "SECOND"
+		firstFormationName  = "FIRST"
+		secondFormationName = "SECOND"
 	)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
@@ -576,24 +576,19 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	formationTemplateName := "create-formation-template-name"
 	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
 
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
-	require.NoError(t, err)
-
-	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
-	formationTemplate := graphql.FormationTemplate{}
+	firstFormationInputGql := graphql.FormationInput{Name: firstFormationName}
+	secondFormationInputGql := graphql.FormationInput{Name: secondFormationName}
 
 	t.Logf("Create formation template with name: %q", formationTemplateName)
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &formationTemplate)
+	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
-	require.NoError(t, err)
-	require.NotEmpty(t, formationTemplate.ID)
-	require.NotEmpty(t, formationTemplate.Name)
+	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	in := graphql.FormationConstraintInput{
 		Name:            "TestSubaccountInAtMostOneFormationOfType",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    graphql.ResourceTypeTenant,
 		ResourceSubtype: "subaccount",
 		InputTemplate:   "{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\"}",
@@ -604,94 +599,49 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	require.NotEmpty(t, constraint.ID)
 
 	t.Logf("Attaching constraint to formation template")
-	createRequest := fixtures.FixAttachConstraintToFormationTemplateRequest(constraint.ID, formationTemplate.ID)
-	saveExample(t, createRequest.Query(), "attach constraint to formation template")
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
 
-	constraintReference := graphql.ConstraintReference{}
-	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createRequest, &constraintReference))
+	t.Logf("Should create formation: %s", firstFormationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
+	firstFormation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, firstFormationName, &formationTemplate.Name)
 
-	t.Logf("Should create formation: %s", firstFormation)
+	t.Logf("Should create formation: %s", secondFormationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
+	secondFormation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, secondFormationName, &formationTemplate.Name)
 
-	formationInput := fixtures.FixFormationInput(firstFormation, str.Ptr(formationTemplateName))
-	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
-	require.NoError(t, err)
-
-	var formation graphql.Formation
-	createReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormation)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
-	require.NoError(t, err)
-	require.Equal(t, firstFormation, formation.Name)
-
-	t.Logf("Should create formation: %s", secondFormation)
-
-	secondFormationInput := fixtures.FixFormationInput(secondFormation, str.Ptr(formationTemplateName))
-	secondFormationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(secondFormationInput)
-	require.NoError(t, err)
-
-	var unusedFormation graphql.Formation
-	createUnusedReq := fixtures.FixCreateFormationWithTemplateRequest(secondFormationInputGQL)
-	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, secondFormation)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createUnusedReq, &unusedFormation)
-	require.NoError(t, err)
-	require.Equal(t, secondFormation, unusedFormation.Name)
-
-	t.Logf("Assign tenant %s to formation %s", subaccountID, firstFormation)
-	assignReq := fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
-	var assignFormation graphql.Formation
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, firstFormation, subaccountID, tenantId)
-	require.NoError(t, err)
-	require.Equal(t, firstFormation, assignFormation.Name)
+	t.Logf("Assign tenant %s to formation %s", subaccountID, firstFormation.Name)
+	defer fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, firstFormationInputGql, subaccountID, tenantId)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, firstFormationInputGql, subaccountID, tenantId)
 
 	t.Log("Should match expected ASA")
 	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
 	require.Equal(t, 1, len(asaPage.Data))
 
 	scenarioSelector := fixtures.FixLabelSelector("global_subaccount_id", subaccountID)
-	assertions.AssertAutomaticScenarioAssignment(t, firstFormation, &scenarioSelector, *asaPage.Data[0])
+	assertions.AssertAutomaticScenarioAssignment(t, firstFormationName, &scenarioSelector, *asaPage.Data[0])
 
 	t.Logf("Should fail to assign tenant %s to second formation of type %s", subaccountID, formationTemplateName)
-	assignReq = fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, secondFormation, subaccountID, tenantId)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Operator \"IsNotAssignedToAnyFormationOfType\" is not satisfied")
+	defer fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, subaccountID, tenantId)
+	fixtures.AssignFormationWithTenantObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, subaccountID, tenantId)
 
 	t.Logf("Detaching constraint from formation template")
-	deleteRequest := fixtures.FixDetachConstraintFromFormationTemplateRequest(constraint.ID, formationTemplate.ID)
-	saveExample(t, deleteRequest.Query(), "detach constraint from formation template")
-
-	constraintReference = graphql.ConstraintReference{}
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteRequest, &constraintReference)
-	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+	fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
 
 	t.Logf("Should succeed assigning tenant %s to second formation of type %s after constraint is detached", subaccountID, formationTemplateName)
-	assignReq = fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, secondFormation, subaccountID, tenantId)
-	require.NoError(t, err)
-	require.Equal(t, secondFormation, assignFormation.Name)
+	defer fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, subaccountID, tenantId)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, subaccountID, tenantId)
 
 	t.Log("Should match expected ASAs")
 	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
 	require.Equal(t, 2, len(asaPage.Data))
 
-	assertions.AssertAutomaticScenarioAssignments(t, map[string]*graphql.Label{firstFormation: &scenarioSelector, secondFormation: &scenarioSelector}, asaPage.Data)
+	assertions.AssertAutomaticScenarioAssignments(t, map[string]*graphql.Label{firstFormationName: &scenarioSelector, secondFormationName: &scenarioSelector}, asaPage.Data)
 
-	t.Logf("Unassign tenant %s from formation %s", subaccountID, firstFormation)
-	var unassignFormation graphql.Formation
+	t.Logf("Unassign tenant %s from formation %s", subaccountID, firstFormation.Name)
+	fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, firstFormationInputGql, subaccountID, tenantId)
 
-	unassignReq := fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), firstFormation)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
-	require.NoError(t, err)
-	require.Equal(t, firstFormation, unassignFormation.Name)
-
-	t.Logf("Unassign tenant %s from formation %s", subaccountID, secondFormation)
-	unassignReq = fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), secondFormation)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
-	require.NoError(t, err)
-	require.Equal(t, secondFormation, unassignFormation.Name)
+	t.Logf("Unassign tenant %s from formation %s", subaccountID, secondFormation.Name)
+	fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, subaccountID, tenantId)
 
 	t.Log("Should match expected ASA")
 	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
@@ -705,30 +655,25 @@ func TestSystemInAtMostOneFormationOfType(t *testing.T) {
 		secondFormationName = "SECOND"
 	)
 
+	firstFormationInputGql := graphql.FormationInput{Name: firstFormationName}
+	secondFormationInputGql := graphql.FormationInput{Name: secondFormationName}
+
 	applicationTypes := []string{string(util.ApplicationTypeC4C), exceptionSystemType}
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	formationTemplateName := "e2e-tests-formation-template-name"
 	formationTemplateInput := fixtures.FixFormationTemplateInputWithApplicationTypes(formationTemplateName, applicationTypes)
 
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
-	require.NoError(t, err)
-
-	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
-	formationTemplate := graphql.FormationTemplate{}
-
 	t.Logf("Create formation template with name: %q", formationTemplateName)
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &formationTemplate)
+	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
-	require.NoError(t, err)
-	require.NotEmpty(t, formationTemplate.ID)
-	require.NotEmpty(t, formationTemplate.Name)
+	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 
 	in := graphql.FormationConstraintInput{
 		Name:            "TestSystemInAtMostOneFormationOfType",
 		ConstraintType:  graphql.ConstraintTypePre,
 		TargetOperation: graphql.TargetOperationAssignFormation,
-		Operator:        "IsNotAssignedToAnyFormationOfType",
+		Operator:        IsNotAssignedToAnyFormationOfTypeOperator,
 		ResourceType:    graphql.ResourceTypeApplication,
 		ResourceSubtype: resourceSubtypeANY,
 		InputTemplate:   fmt.Sprintf("{\\\"formation_template_id\\\": \\\"{{.FormationTemplateID}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"exceptSystemTypes\\\": [\\\"%s\\\"]}", exceptionSystemType),
@@ -739,39 +684,20 @@ func TestSystemInAtMostOneFormationOfType(t *testing.T) {
 	require.NotEmpty(t, constraint.ID)
 
 	t.Logf("Attaching constraint to formation template")
-	createRequest := fixtures.FixAttachConstraintToFormationTemplateRequest(constraint.ID, formationTemplate.ID)
-
-	constraintReference := graphql.ConstraintReference{}
-	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createRequest, &constraintReference))
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
 
 	t.Logf("Should create first formation: %s", firstFormationName)
-	formationInput := fixtures.FixFormationInput(firstFormationName, str.Ptr(formationTemplateName))
-	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
-	require.NoError(t, err)
-
-	var firstFormation graphql.Formation
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
-	createReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &firstFormation)
-	require.NoError(t, err)
-	require.Equal(t, firstFormationName, firstFormation.Name)
+	firstFormation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, firstFormationName, &formationTemplate.Name)
 
 	t.Logf("Should create second formation: %s", secondFormationName)
-	secondFormationInput := fixtures.FixFormationInput(secondFormationName, str.Ptr(formationTemplateName))
-	secondFormationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(secondFormationInput)
-	require.NoError(t, err)
-
-	var secondFormation graphql.Formation
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, secondFormationName)
-	createSecondReq := fixtures.FixCreateFormationWithTemplateRequest(secondFormationInputGQL)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createSecondReq, &secondFormation)
-	require.NoError(t, err)
-	require.Equal(t, secondFormationName, secondFormation.Name)
+	secondFormation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, secondFormationName, &formationTemplate.Name)
 
 	t.Log("Create first application")
 	app := graphql.ApplicationExt{} // needed so the 'defer' can be above the application creation
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-	app, err = fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "e2e-tests-app", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "e2e-tests-app", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantId)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -783,47 +709,27 @@ func TestSystemInAtMostOneFormationOfType(t *testing.T) {
 	require.NotEmpty(t, exceptionTypeApp.ID)
 
 	t.Logf("Assign first application to first formation with name: %s", firstFormation.Name)
-	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: firstFormation.Name}, app.ID, tenantId)
-	assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), firstFormation.Name)
-	var assignFormation graphql.Formation
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, firstFormation.Name, assignFormation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, firstFormationInputGql, app.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, firstFormationInputGql, app.ID, tenantId)
 
 	t.Logf("Should fail to assign first application to another formation with name: %s of the same kind", secondFormation.Name)
-	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: secondFormation.Name}, app.ID, tenantId)
-	assignReq = fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), secondFormation.Name)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Operator \"IsNotAssignedToAnyFormationOfType\" is not satisfied")
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, app.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, app.ID, tenantId)
 
 	t.Logf("Assign second application to first formation with name: %s", firstFormation.Name)
-	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: firstFormation.Name}, exceptionTypeApp.ID, tenantId)
-	assignReq = fixtures.FixAssignFormationRequest(exceptionTypeApp.ID, string(graphql.FormationObjectTypeApplication), firstFormation.Name)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, firstFormation.Name, assignFormation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, firstFormationInputGql, exceptionTypeApp.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, firstFormationInputGql, exceptionTypeApp.ID, tenantId)
 
 	t.Logf("Should succeed assigning second application with exception type to another formation with name: %s of the same kind", secondFormation.Name)
-	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: secondFormation.Name}, exceptionTypeApp.ID, tenantId)
-	assignReq = fixtures.FixAssignFormationRequest(exceptionTypeApp.ID, string(graphql.FormationObjectTypeApplication), secondFormation.Name)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, secondFormation.Name, assignFormation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, exceptionTypeApp.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, exceptionTypeApp.ID, tenantId)
 
 	t.Logf("Detaching constraint from formation template")
-	deleteRequest := fixtures.FixDetachConstraintFromFormationTemplateRequest(constraint.ID, formationTemplate.ID)
-
-	constraintReference = graphql.ConstraintReference{}
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteRequest, &constraintReference)
-	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+	fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
 
 	t.Logf("Should succeed assigning first application to another formation with name: %s of the same kind", secondFormation.Name)
-	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: secondFormation.Name}, app.ID, tenantId)
-	assignReq = fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), secondFormation.Name)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, secondFormation.Name, assignFormation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, app.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, secondFormationInputGql, app.ID, tenantId)
 }
 
 func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
