@@ -3,8 +3,9 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
-	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/http"
+
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 

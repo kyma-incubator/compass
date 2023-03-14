@@ -2,6 +2,7 @@ package notification_test
 
 import (
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 )
 
@@ -12,7 +13,8 @@ var (
 	// Formation Assignments variables
 	formationAssignmentReqBody       = `{"ucl-formation-id":"96bbd806-0d56-4f39-bcf1-e15aee9e50cc","items":[{"region":"testRegion","application-namespace":"appNamespce","tenant-id":"localTenantID","ucl-system-tenant-id":"9d8bb1a5-4799-453c-a406-84439f151d45"}]}`
 	formationAssignmentReqConfigBody = `{"ucl-formation-id":"96bbd806-0d56-4f39-bcf1-e15aee9e50cc","config": "{\"key\":\"value\"}","items":[{"region":"testRegion","application-namespace":"appNamespce","tenant-id":"localTenantID","ucl-system-tenant-id":"9d8bb1a5-4799-453c-a406-84439f151d45"}]}`
-	appID = "testAppID"
+	tenantIDParam                    = "tenantId"
+	appID                            = "testAppID"
 
 	// Formation variables
 	formationIDParam = "uclFormationId"

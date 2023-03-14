@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
@@ -55,7 +56,7 @@ func TestHandler_Patch(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{testTenantID: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
 			}
 
 			h := notification.NewHandler(notification.NotificationsConfiguration{})
@@ -119,7 +120,7 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPatch, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{testTenantID: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
 			}
 
 			h := notification.NewHandler(notification.NotificationsConfiguration{})
@@ -186,7 +187,7 @@ func TestHandler_Delete(t *testing.T) {
 			require.NoError(t, err)
 			vars := map[string]string{}
 			if testCase.TenantID != "" {
-				vars[testTenantID] = testCase.TenantID
+				vars[tenantIDParam] = testCase.TenantID
 			}
 			if testCase.AppID != "" {
 				vars["applicationId"] = testCase.AppID
@@ -331,9 +332,9 @@ func TestHandler_FailOnceResponse(t *testing.T) {
 			req, err := http.NewRequest(testCase.Method, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
 			require.NoError(t, err)
 			if testCase.AppID != nil {
-				req = mux.SetURLVars(req, map[string]string{testTenantID: testCase.TenantID, "applicationId": *testCase.AppID})
+				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID, "applicationId": *testCase.AppID})
 			} else if testCase.TenantID != "" {
-				req = mux.SetURLVars(req, map[string]string{testTenantID: testCase.TenantID})
+				req = mux.SetURLVars(req, map[string]string{tenantIDParam: testCase.TenantID})
 			}
 
 			h := notification.NewHandler(notification.NotificationsConfiguration{})

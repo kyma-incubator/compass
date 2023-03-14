@@ -72,15 +72,19 @@ type FormationState string
 
 // ReadyAssignmentState indicates that the formation assignment is in a ready state
 const ReadyAssignmentState FormationAssignmentState = "READY"
+
 // CreateErrorAssignmentState indicates that an error occurred during the creation of the formation assignment
 const CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
+
 // DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 const DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 
 // ReadyFormationState indicates that the formation is in a ready state
 const ReadyFormationState FormationState = "READY"
+
 // CreateErrorFormationState indicates that an error occurred during the creation of the formation
 const CreateErrorFormationState FormationState = "CREATE_ERROR"
+
 // DeleteErrorFormationState indicates that an error occurred during the deletion of the formation
 const DeleteErrorFormationState FormationState = "DELETE_ERROR"
 
@@ -532,7 +536,8 @@ func (h *Handler) DeleteFormation(writer http.ResponseWriter, r *http.Request) {
 	h.synchronousFormationResponse(writer, r, DeleteFormation)
 }
 
-func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *http.Request, formationOperation Operation)  {
+// synchronousFormationResponse extracts the logic that handles formation notification requests
+func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *http.Request, formationOperation Operation) {
 	formationID, ok := mux.Vars(r)["uclFormationId"]
 	if !ok {
 		httphelpers.WriteError(writer, errors.New("missing uclFormationId in url"), http.StatusBadRequest)
