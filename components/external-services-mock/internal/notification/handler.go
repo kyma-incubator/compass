@@ -64,17 +64,27 @@ type FormationRequestBody struct {
 	Error string         `json:"error,omitempty"`
 }
 
+// FormationAssignmentState is a type that represents formation assignments state
 type FormationAssignmentState string
+
+// FormationState is a type that represents formation state
 type FormationState string
 
+// ReadyAssignmentState indicates that the formation assignment is in a ready state
 const ReadyAssignmentState FormationAssignmentState = "READY"
+// CreateErrorAssignmentState indicates that an error occurred during the creation of the formation assignment
 const CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
+// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 const DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 
+// ReadyFormationState indicates that the formation is in a ready state
 const ReadyFormationState FormationState = "READY"
+// CreateErrorFormationState indicates that an error occurred during the creation of the formation
 const CreateErrorFormationState FormationState = "CREATE_ERROR"
+// DeleteErrorFormationState indicates that an error occurred during the deletion of the formation
 const DeleteErrorFormationState FormationState = "DELETE_ERROR"
 
+// Handler is responsible to mock and handle any formation and formation assignment notification requests
 type Handler struct {
 	// mappings is a map of string to Response, where the string value currently can be `formationID` or `tenantID`
 	// mapped to a particular Response that later will be validated in the E2E tests
@@ -83,12 +93,15 @@ type Handler struct {
 	config            NotificationsConfiguration
 }
 
+// Response is used to model the response for a given formation or formation assignment notification request.
+// It has a metadata fields like Operation and also the request body of the notification request later used for validation in the E2E tests.
 type Response struct {
 	Operation     Operation
 	ApplicationID *string
 	RequestBody   json.RawMessage
 }
 
+// NewHandler creates a new Handler
 func NewHandler(notificationConfiguration NotificationsConfiguration) *Handler {
 	return &Handler{
 		mappings:          make(map[string][]Response),
@@ -99,6 +112,7 @@ func NewHandler(notificationConfiguration NotificationsConfiguration) *Handler {
 
 // Formation Assignment notifications synchronous handlers
 
+// Patch handles synchronous formation assignment notification requests for Assign operation
 func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
@@ -150,6 +164,9 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 }
 
+// RespondWithIncomplete handles synchronous formation assignment notification requests for Assign operation
+// that based on the provided config in the request body we return either so called "incomplete" status coe(204) without config in case the config is not provided
+// or if the config is provided we just return it with "success" status code(200)
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
@@ -206,6 +223,7 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 }
 
+// Delete handles synchronous formation assignment notification requests for Unassign operation
 func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
@@ -242,6 +260,7 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
+// GetResponses returns the notification data saved in the mappings
 func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 	if bodyBytes, err := json.Marshal(&h.mappings); err != nil {
 		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
@@ -326,6 +345,7 @@ func (h *Handler) ResetShouldFail(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusOK)
 }
 
+// Cleanup deletes/cleanup the notification data saved in the mappings
 func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 	h.mappings = make(map[string][]Response)
 	writer.WriteHeader(http.StatusOK)
@@ -333,10 +353,13 @@ func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
 
 // Formation Assignment notifications asynchronous handlers and helper functions
 
+// FAResponseFn is a function type that represents the formation assignment response function signature
 type FAResponseFn func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string)
 
+// NoopFAResponseFn is an empty implementation of the FAResponseFn function
 var NoopFAResponseFn = func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {}
 
+// Async handles asynchronous formation assignment notification requests for Assign operation
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
@@ -350,6 +373,7 @@ func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusAccepted)
 }
 
+// AsyncDelete handles asynchronous formation assignment notification requests for Unassign operation
 func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func(ctx context.Context, client *http.Client, formationID, formationAssignmentID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
@@ -361,14 +385,17 @@ func (h *Handler) AsyncDelete(writer http.ResponseWriter, r *http.Request) {
 	h.asyncFAResponse(writer, r, Unassign, "", responseFunc)
 }
 
+// AsyncNoResponseAssign handles asynchronous formation assignment notification requests for Assign operation that do not send any request to the formation assignment status API
 func (h *Handler) AsyncNoResponseAssign(writer http.ResponseWriter, r *http.Request) {
 	h.asyncFAResponse(writer, r, Assign, "", NoopFAResponseFn)
 }
 
+// AsyncNoResponseUnassign handles asynchronous formation assignment notification requests for Unassign operation that do not send any request to the formation assignment status API
 func (h *Handler) AsyncNoResponseUnassign(writer http.ResponseWriter, r *http.Request) {
 	h.asyncFAResponse(writer, r, Unassign, "", NoopFAResponseFn)
 }
 
+// AsyncFailOnce handles asynchronous formation assignment notification requests for both Assign and Unassign operations by first failing and setting error states. Afterwards the
 func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 	operation := Assign
 	if r.Method == http.MethodPatch {
@@ -402,6 +429,7 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 	writer.WriteHeader(http.StatusAccepted)
 }
 
+// executeFormationAssignmentStatusUpdateRequest prepares a request with the given inputs and sends it to the formation assignment status API
 func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPClient *http.Client, state FormationAssignmentState, testConfig, formationID, formationAssignmentID string) error {
 	FAReqBody := FormationAssignmentRequestBody{
 		State: state,
@@ -432,6 +460,7 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 	return err
 }
 
+// asyncFAResponse handles the incoming formation assignment notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `responseFunc` which sends a request to the formation assignment status API
 func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc FAResponseFn) {
 	ctx := r.Context()
 	id, ok := mux.Vars(r)["tenantId"]
@@ -493,6 +522,7 @@ func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, o
 
 // Formation notifications synchronous handlers
 
+// PostFormation handles synchronous formation notification requests for CreateFormation operation
 func (h *Handler) PostFormation(writer http.ResponseWriter, r *http.Request) {
 	formationID, ok := mux.Vars(r)["uclFormationId"]
 	if !ok {
@@ -522,6 +552,7 @@ func (h *Handler) PostFormation(writer http.ResponseWriter, r *http.Request) {
 	httputils.Respond(writer, http.StatusOK)
 }
 
+// DeleteFormation handles synchronous formation notification requests for DeleteFormation operation
 func (h *Handler) DeleteFormation(writer http.ResponseWriter, r *http.Request) {
 	formationID, ok := mux.Vars(r)["uclFormationId"]
 	if !ok {
@@ -554,9 +585,10 @@ func (h *Handler) DeleteFormation(writer http.ResponseWriter, r *http.Request) {
 
 // Formation notifications asynchronous handlers and helper functions
 
+// FormationResponseFn is a function type that represents the formation response function signature
 type FormationResponseFn func(ctx context.Context, client *http.Client, formationError, formationID string, formationOperation Operation)
 
-// todo::: add comment on the handlers
+// AsyncPostFormation handles asynchronous formation notification requests for CreateFormation operation.
 func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request) {
 	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string, formationOperation Operation) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
@@ -568,6 +600,7 @@ func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request
 	h.asyncFormationResponse(writer, r, CreateFormation, "", formationResponseFunc)
 }
 
+// AsyncDeleteFormation handles asynchronous formation notification requests for DeleteFormation operation
 func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Request) {
 	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string, formationOperation Operation) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
@@ -579,6 +612,7 @@ func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Reque
 	h.asyncFormationResponse(writer, r, DeleteFormation, "", formationResponseFunc)
 }
 
+// executeFormationStatusUpdateRequest prepares a request with the given inputs and sends it to the formation status API
 func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *http.Client, formationState FormationState, formationError, formationID string, formationOperation Operation) error {
 	formationReqBody := FormationRequestBody{
 		State: formationState,
@@ -605,6 +639,7 @@ func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *htt
 	return err
 }
 
+// asyncFormationResponse handles the incoming formation notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `formationResponseFunc` which sends a request to the formation status API
 func (h *Handler) asyncFormationResponse(writer http.ResponseWriter, r *http.Request, operation Operation, formationErr string, formationResponseFunc FormationResponseFn) {
 	ctx := r.Context()
 	formationID, ok := mux.Vars(r)["uclFormationId"]
