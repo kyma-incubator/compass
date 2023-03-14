@@ -490,7 +490,7 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 
 	err = h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID)
 	if err != nil {
-		return errors.Wrap(err, "while resynchronize formation notifications")
+		return errors.Wrapf(err, "while resynchronize formation notifications for formation with ID: %q", formation.ID)
 	}
 
 	return nil
