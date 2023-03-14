@@ -565,6 +565,10 @@ global:
         name: ""
         user: ""
         password: ""
+      iasAdapter:
+        name: ""
+        user: ""
+        password: ""
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
