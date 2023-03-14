@@ -114,9 +114,9 @@ func NewHandler(notificationConfiguration NotificationsConfiguration) *Handler {
 
 // Patch handles synchronous formation assignment notification requests for Assign operation
 func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["testTenantID"]
+	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing testTenantID in url"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
 		return
 	}
 
@@ -168,9 +168,9 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 // that based on the provided config in the request body we return either so called "incomplete" status coe(204) without config in case the config is not provided
 // or if the config is provided we just return it with "success" status code(200)
 func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["testTenantID"]
+	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing testTenantID in url"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
 		return
 	}
 
@@ -225,9 +225,9 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 
 // Delete handles synchronous formation assignment notification requests for Unassign operation
 func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["testTenantID"]
+	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing testTenantID in url"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
 		return
 	}
 	applicationId, ok := mux.Vars(r)["applicationId"]
@@ -277,9 +277,9 @@ func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) {
 	if h.ShouldReturnError {
-		id, ok := mux.Vars(r)["testTenantID"]
+		id, ok := mux.Vars(r)["tenantId"]
 		if !ok {
-			httphelpers.WriteError(writer, errors.New("missing testTenantID in url"), http.StatusBadRequest)
+			httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
 			return
 		}
 
@@ -463,9 +463,9 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 // asyncFAResponse handles the incoming formation assignment notification requests and prepare "asynchronous" response through go routine with fixed(configurable) delay that executes the provided `responseFunc` which sends a request to the formation assignment status API
 func (h *Handler) asyncFAResponse(writer http.ResponseWriter, r *http.Request, operation Operation, config string, responseFunc FAResponseFn) {
 	ctx := r.Context()
-	id, ok := mux.Vars(r)["testTenantID"]
+	id, ok := mux.Vars(r)["tenantId"]
 	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing testTenantID in url"), http.StatusBadRequest)
+		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
 		return
 	}
 	if _, ok := h.Mappings[id]; !ok {
