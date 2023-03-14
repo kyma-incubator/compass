@@ -89,11 +89,33 @@ spec:
               value: {{ .Values.global.iasAdapter.ias.secret.clientKey }}
             - name: APP_IAS_COCKPIT_CA
               value: {{ .Values.global.iasAdapter.ias.secret.ca }}
-            - name: APP_POSTGRES_URI
+            - name: APP_POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: ias-adapter-postgres
-                  key: postgres-ias-adapter-uri
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: APP_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: APP_POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_POSTGRES_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_POSTGRES_DB_NAME
+              value: {{ .Values.global.iasAdapter.postgres.databaseName}}
+            - name: APP_POSTGRES_SSL_MODE
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
             - name: APP_POSTGRES_CONNECT_TIMEOUT
               value: {{ .Values.global.iasAdapter.postgres.connectTimeout }}
             - name: APP_POSTGRES_REQUEST_TIMEOUT

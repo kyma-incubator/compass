@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/vrischmann/envconfig"
@@ -27,9 +28,19 @@ type IAS struct {
 }
 
 type Postgres struct {
-	URI            string        `envconfig:"APP_POSTGRES_URI,default=30s"`
+	User           string        `envconfig:"APP_POSTGRES_USER,default=user"`
+	Password       string        `envconfig:"APP_POSTGRES_PASSWORD,default=password"`
+	Host           string        `envconfig:"APP_POSTGRES_HOST,default=password"`
+	Port           uint16        `envconfig:"APP_POSTGRES_PORT,default=password"`
+	DatabaseName   string        `envconfig:"APP_POSTGRES_DB_NAME,default=password"`
+	SSLMode        string        `envconfig:"APP_POSTGRES_SSL_MODE,default=password"`
 	ConnectTimeout time.Duration `envconfig:"APP_POSTGRES_CONNECT_TIMEOUT,default=30s"`
 	RequestTimeout time.Duration `envconfig:"APP_POSTGRES_REQUEST_TIMEOUT,default=30s"`
+}
+
+func (p Postgres) ConnectionString() string {
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=%s",
+		p.User, p.Password, p.Host, p.Port, p.DatabaseName, p.SSLMode)
 }
 
 func New() (Config, error) {

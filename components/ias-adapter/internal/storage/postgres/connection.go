@@ -27,7 +27,11 @@ func NewConnection(ctx context.Context, cfg config.Postgres) (Connection, error)
 	connectCtx, connectCtxCancel := context.WithTimeout(ctx, cfg.ConnectTimeout)
 	defer connectCtxCancel()
 
-	pool, err := pgxpool.New(connectCtx, cfg.URI)
+	poolConfig, err := pgxpool.ParseConfig(cfg.ConnectionString())
+	if err != nil {
+		return Connection{}, errors.Newf("failed to parse postgres connection string: %w", err)
+	}
+	pool, err := pgxpool.NewWithConfig(connectCtx, poolConfig)
 	if err != nil {
 		return Connection{}, errors.Newf("failed to init postgres connection pool: %w", err)
 	}
