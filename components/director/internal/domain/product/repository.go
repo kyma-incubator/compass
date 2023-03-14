@@ -14,11 +14,12 @@ import (
 const productTable string = `public.products`
 
 var (
-	productColumns   = []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "documentation_labels"}
-	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids", "documentation_labels"}
+	productColumns   = []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "tags", "documentation_labels"}
+	updatableColumns = []string{"title", "short_description", "vendor", "parent", "labels", "correlation_ids", "tags", "documentation_labels"}
 )
 
 // EntityConverter missing godoc
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Product) *Entity

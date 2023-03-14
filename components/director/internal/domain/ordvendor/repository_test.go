@@ -78,7 +78,7 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Vendor",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.vendors SET title = ?, labels = ?, partners = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = ? AND owner = true))`),
+				Query:         regexp.QuoteMeta(`UPDATE public.vendors SET title = ?, labels = ?, partners = ?, tags = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = ? AND owner = true))`),
 				Args:          append(fixVendorUpdateArgs(), entity.ID, tenantID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -105,7 +105,7 @@ func TestPgRepository_UpdateGlobal(t *testing.T) {
 		Name: "Update Global Vendor",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.vendors SET title = ?, labels = ?, partners = ?, documentation_labels = ? WHERE id = ?`),
+				Query:         regexp.QuoteMeta(`UPDATE public.vendors SET title = ?, labels = ?, partners = ?, tags = ?, documentation_labels = ? WHERE id = ?`),
 				Args:          append(fixVendorUpdateArgs(), entity.ID),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -204,7 +204,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Vendor",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{vendorID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -232,7 +232,7 @@ func TestPgRepository_GetByIDGlobal(t *testing.T) {
 		Name: "Get Global Vendor",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE id = $1`),
 				Args:     []driver.Value{vendorID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -261,7 +261,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		Name: "List Vendors",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE app_id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE app_id = $1 AND (id IN (SELECT id FROM vendors_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -290,7 +290,7 @@ func TestPgRepository_ListGlobal(t *testing.T) {
 		Name: "List Global Vendors",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, documentation_labels FROM public.vendors WHERE app_id IS NULL FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT ord_id, app_id, title, labels, partners, id, tags, documentation_labels FROM public.vendors WHERE app_id IS NULL FOR UPDATE`),
 				Args:     []driver.Value{},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

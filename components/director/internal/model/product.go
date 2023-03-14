@@ -14,6 +14,7 @@ type Product struct {
 	Vendor              string
 	Parent              *string
 	CorrelationIDs      json.RawMessage
+	Tags                json.RawMessage
 	Labels              json.RawMessage
 	DocumentationLabels json.RawMessage
 }
@@ -26,6 +27,7 @@ type ProductInput struct {
 	Vendor              string          `json:"vendor"`
 	Parent              *string         `json:"parent"`
 	CorrelationIDs      json.RawMessage `json:"correlationIds"`
+	Tags                json.RawMessage `json:"tags"`
 	Labels              json.RawMessage `json:"labels"`
 	DocumentationLabels json.RawMessage `json:"documentationLabels"`
 }
@@ -45,6 +47,7 @@ func (i *ProductInput) ToProduct(id string, appID *string) *Product {
 		Vendor:              i.Vendor,
 		Parent:              i.Parent,
 		CorrelationIDs:      i.CorrelationIDs,
+		Tags:                i.Tags,
 		Labels:              i.Labels,
 		DocumentationLabels: i.DocumentationLabels,
 	}
@@ -57,6 +60,7 @@ func (p *Product) SetFromUpdateInput(update ProductInput) {
 	p.Vendor = update.Vendor
 	p.Parent = update.Parent
 	p.CorrelationIDs = update.CorrelationIDs
+	p.Tags = update.Tags
 	p.Labels = update.Labels
 	p.DocumentationLabels = update.DocumentationLabels
 }

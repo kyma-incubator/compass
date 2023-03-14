@@ -122,6 +122,10 @@ var (
         ]
       }`)
 
+	tags = removeWhitespace(`[
+        "testTag"
+      ]`)
+
 	documentLabels = removeWhitespace(`{
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
       }`)
@@ -257,6 +261,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		DescribedSystemInstance: &model.Application{
 			BaseURL:             str.Ptr(baseURL),
 			OrdLabels:           json.RawMessage(labels),
+			Tags:                json.RawMessage(tags),
 			DocumentationLabels: json.RawMessage(documentLabels),
 		},
 		Packages: []*model.PackageInput{
@@ -271,7 +276,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				LicenseType:         str.Ptr("licence"),
 				SupportInfo:         str.Ptr("support-info"),
-				Tags:                json.RawMessage(`["testTag"]`),
+				Tags:                json.RawMessage(tags),
 				Countries:           json.RawMessage(`["BG","EN"]`),
 				Labels:              json.RawMessage(packageLabels),
 				DocumentationLabels: json.RawMessage(documentLabels),
@@ -288,6 +293,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				OrdID:                        str.Ptr(bundleORDID),
 				ShortDescription:             str.Ptr("lorem ipsum"),
 				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
+				Tags:                         json.RawMessage(tags),
 				Labels:                       json.RawMessage(labels),
 				DocumentationLabels:          json.RawMessage(documentLabels),
 				CredentialExchangeStrategies: json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesFormat, providedBaseURL)),
@@ -302,6 +308,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Vendor:              vendorORDID,
 				Parent:              str.Ptr(product2ORDID),
 				CorrelationIDs:      json.RawMessage(correlationIDs),
+				Tags:                json.RawMessage(tags),
 				Labels:              json.RawMessage(labels),
 				DocumentationLabels: json.RawMessage(documentLabels),
 			},
@@ -536,6 +543,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				OrdID:               vendorORDID,
 				Title:               "SAP",
 				Partners:            json.RawMessage(partners),
+				Tags:                json.RawMessage(tags),
 				Labels:              json.RawMessage(labels),
 				DocumentationLabels: json.RawMessage(documentLabels),
 			},
@@ -543,6 +551,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				OrdID:               vendor2ORDID,
 				Title:               "SAP",
 				Partners:            json.RawMessage(partners),
+				Tags:                json.RawMessage(tags),
 				Labels:              json.RawMessage(labels),
 				DocumentationLabels: json.RawMessage(documentLabels),
 			},
