@@ -30,10 +30,10 @@ type IAS struct {
 type Postgres struct {
 	User           string        `envconfig:"APP_POSTGRES_USER,default=user"`
 	Password       string        `envconfig:"APP_POSTGRES_PASSWORD,default=password"`
-	Host           string        `envconfig:"APP_POSTGRES_HOST,default=password"`
-	Port           uint16        `envconfig:"APP_POSTGRES_PORT,default=password"`
-	DatabaseName   string        `envconfig:"APP_POSTGRES_DB_NAME,default=password"`
-	SSLMode        string        `envconfig:"APP_POSTGRES_SSL_MODE,default=password"`
+	Host           string        `envconfig:"APP_POSTGRES_HOST,default=localhost"`
+	Port           uint16        `envconfig:"APP_POSTGRES_PORT,default=5432"`
+	DatabaseName   string        `envconfig:"APP_POSTGRES_DB_NAME,default=db_name"`
+	SSLMode        string        `envconfig:"APP_POSTGRES_SSL_MODE,default=disable"`
 	ConnectTimeout time.Duration `envconfig:"APP_POSTGRES_CONNECT_TIMEOUT,default=30s"`
 	RequestTimeout time.Duration `envconfig:"APP_POSTGRES_REQUEST_TIMEOUT,default=30s"`
 }
