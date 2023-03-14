@@ -45,13 +45,13 @@ spec:
       {{ end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
+          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.ias_adapter.dir }}compass-ias-adapter:{{ $.Values.global.images.ias_adapter.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           command:
             - "/bin/sh"
           args:
               - "-c"
-              - "./destinationfetcher; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              - "./main; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
           ports:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort }}
@@ -89,6 +89,11 @@ spec:
               value: {{ .Values.global.iasAdapter.ias.secret.clientKey }}
             - name: APP_IAS_COCKPIT_CA
               value: {{ .Values.global.iasAdapter.ias.secret.ca }}
+            - name: APP_POSTGRES_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-ias-adapter-db-name
             - name: APP_POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -103,22 +108,17 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: ias-adapter-postgresql
-                  key: postgresql-ias-adapter-serviceName
+                  key: postgresql-serviceName
             - name: APP_POSTGRES_PORT
               valueFrom:
                 secretKeyRef:
                   name: ias-adapter-postgresql
-                  key: postgresql-ias-adapter-servicePort
-            - name: APP_POSTGRES_DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: ias-adapter-postgresql
-                  key: postgresql-ias-adapter-db-name
+                  key: postgresql-servicePort
             - name: APP_POSTGRES_SSL_MODE
               valueFrom:
                 secretKeyRef:
                   name: ias-adapter-postgresql
-                  key: postgresql-ias-adapter-sslMode
+                  key: postgresql-sslMode
             - name: APP_POSTGRES_CONNECT_TIMEOUT
               value: {{ .Values.global.iasAdapter.postgres.connectTimeout }}
             - name: APP_POSTGRES_REQUEST_TIMEOUT
