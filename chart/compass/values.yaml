@@ -489,7 +489,6 @@ global:
         clientKey: key
         ca: ca
     postgres:
-      databaseName: ias_adapter
       connectTimeout: 30s
       requestTimeout: 30s
   operations_controller:
