@@ -149,6 +149,10 @@ var (
 
 	invalidTagsValueIntegerElement = `["storage", 992]`
 
+	invalidSupportedUseCasesValue = `["some-value"]`
+
+	validSupportedUseCasesValue = `["mass-extraction"]`
+
 	invalidLabelsWhenValueIsNotArray = `{
   		"label-key-1": "label-value-1"
 		}`
@@ -365,6 +369,8 @@ var (
 		  "version": "1.0.0"
         }
       ]`
+	validNamespace   = `foo.bar.baz`
+	invalidNamespace = `.foo.bar.baz`
 
 	invalidCorrelationIDsElement          = `["foo.bar.baz:123456", "wrongID"]`
 	invalidCorrelationIDsNonStringElement = `["foo.bar.baz:123456", 992]`
@@ -662,6 +668,64 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid `tags` field element for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidTagsValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it is invalid JSON for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it isn't a JSON array for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `tags` field when the JSON array is empty",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `tags` field when it contains non string value",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`ApplicationNamespace` values are not valid",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(invalidNamespace)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`ApplicationNamespace` values are valid",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(validNamespace)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		},
 	}
 
@@ -2285,6 +2349,48 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid value for `supportedUseCases` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(invalidSupportedUseCasesValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `supportedUseCases` field when it is invalid JSON for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `supportedUseCases` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `supportedUseCases` field when the JSON array is empty for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `supportedUseCases` field when the JSON array is one of enumerated values for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(validSupportedUseCasesValue)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid value for `countries` field for API",
 			DocumentProvider: func() []*ord.Document {
@@ -4323,6 +4429,48 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid value for `supportedUseCases` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].SupportedUseCases = json.RawMessage(invalidSupportedUseCasesValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `supportedUseCases` field when it is invalid JSON for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].SupportedUseCases = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `supportedUseCases` field when it isn't a JSON array for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].SupportedUseCases = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `supportedUseCases` field when the JSON array is empty for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].SupportedUseCases = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `supportedUseCases` field when the JSON array is one of enumerated values for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].SupportedUseCases = json.RawMessage(validSupportedUseCasesValue)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid JSON `Labels` field for Event",
 			DocumentProvider: func() []*ord.Document {

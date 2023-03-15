@@ -130,6 +130,14 @@ var (
         "Some Aspect": ["Markdown Documentation [with links](#)", "With multiple values"]
       }`)
 
+	hierarchy = removeWhitespace(`[
+        "testHierarchy"
+      ]`)
+
+	supportedUseCases = removeWhitespace(`[
+        "mass-extraction"
+      ]`)
+
 	credentialExchangeStrategiesFormat = removeWhitespace(`[
         {
 		  "callbackUrl": "%s/credentials/relative",
@@ -332,6 +340,8 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Successors:                              nil,
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
+				Hierarchy:                               json.RawMessage(hierarchy),
+				SupportedUseCases:                       json.RawMessage(supportedUseCases),
 				DocumentationLabels:                     json.RawMessage(documentLabels),
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                &boolPtr,
@@ -403,6 +413,8 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Successors:                              json.RawMessage(fmt.Sprintf(`["%s"]`, api1ORDID)),
 				ChangeLogEntries:                        json.RawMessage(changeLogEntries),
 				Labels:                                  json.RawMessage(labels),
+				Hierarchy:                               json.RawMessage(hierarchy),
+				SupportedUseCases:                       json.RawMessage(supportedUseCases),
 				DocumentationLabels:                     json.RawMessage(documentLabels),
 				Visibility:                              str.Ptr("public"),
 				Disabled:                                nil,
@@ -460,6 +472,8 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SunsetDate:          nil,
 				Successors:          nil,
 				Labels:              json.RawMessage(labels),
+				Hierarchy:           json.RawMessage(hierarchy),
+				SupportedUseCases:   json.RawMessage(supportedUseCases),
 				DocumentationLabels: json.RawMessage(documentLabels),
 				Visibility:          str.Ptr("public"),
 				Disabled:            &boolPtr,
@@ -503,6 +517,8 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				SunsetDate:          str.Ptr("2020-12-08T15:47:04+0000"),
 				Successors:          json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID)),
 				Labels:              json.RawMessage(labels),
+				Hierarchy:           json.RawMessage(hierarchy),
+				SupportedUseCases:   json.RawMessage(supportedUseCases),
 				DocumentationLabels: json.RawMessage(documentLabels),
 				Visibility:          str.Ptr("public"),
 				Disabled:            nil,

@@ -26,7 +26,7 @@ func TestPgRepository_GetByID(t *testing.T) {
 		Name: "Get Document",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, supportedUseCases, documentation_labels FROM "public"."event_api_definitions" WHERE id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2))`),
 				Args:     []driver.Value{eventID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -67,7 +67,7 @@ func TestPgRepository_ListByApplicationID(t *testing.T) {
 		Name: "List APIs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, documentation_labels FROM "public"."event_api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)) FOR UPDATE`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, supportedUseCases, documentation_labels FROM "public"."event_api_definitions" WHERE app_id = $1 AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $2)) FOR UPDATE`),
 				Args:     []driver.Value{appID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -121,7 +121,7 @@ func TestPgRepository_ListAllForBundle(t *testing.T) {
 		Name: "List Events for multiple bundles with paging",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, documentation_labels FROM "public"."event_api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, package_id, name, description, group_name, ord_id, short_description, system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, countries, release_status, sunset_date, labels, visibility, disabled, part_of_products, line_of_business, industry, version_value, version_deprecated, version_deprecated_since, version_for_removal, ready, created_at, updated_at, deleted_at, error, extensible, successors, resource_hash, hierarchy, supportedUseCases, documentation_labels FROM "public"."event_api_definitions" WHERE id IN ($1, $2) AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = $3))`),
 				Args:     []driver.Value{firstEventDefID, secondEventDefID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -256,7 +256,7 @@ func TestPgRepository_Update(t *testing.T) {
 	updateQuery := regexp.QuoteMeta(`UPDATE "public"."event_api_definitions" SET package_id = ?, name = ?, description = ?, group_name = ?, ord_id = ?,
 		short_description = ?, system_instance_aware = ?, policy_level = ?, custom_policy_level = ?, changelog_entries = ?, links = ?, tags = ?, countries = ?, release_status = ?,
 		sunset_date = ?, labels = ?, visibility = ?, disabled = ?, part_of_products = ?, line_of_business = ?, industry = ?, version_value = ?, version_deprecated = ?, version_deprecated_since = ?,
-		version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, extensible = ?, successors = ?, resource_hash = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = ? AND owner = true))`)
+		version_for_removal = ?, ready = ?, created_at = ?, updated_at = ?, deleted_at = ?, error = ?, extensible = ?, successors = ?, resource_hash = ?, hierarchy = ?, supportedUseCases = ?, documentation_labels = ? WHERE id = ? AND (id IN (SELECT id FROM event_api_definitions_tenants WHERE tenant_id = ? AND owner = true))`)
 
 	var nilEventDefModel *model.EventDefinition
 	eventModel, _, _ := fixFullEventDefinitionModel("update")
@@ -272,7 +272,7 @@ func TestPgRepository_Update(t *testing.T) {
 				Args: []driver.Value{entity.PackageID, entity.Name, entity.Description, entity.GroupName, entity.OrdID, entity.ShortDescription, entity.SystemInstanceAware, entity.PolicyLevel, entity.CustomPolicyLevel,
 					entity.ChangeLogEntries, entity.Links, entity.Tags, entity.Countries, entity.ReleaseStatus, entity.SunsetDate, entity.Labels, entity.Visibility,
 					entity.Disabled, entity.PartOfProducts, entity.LineOfBusiness, entity.Industry, entity.Version.Value, entity.Version.Deprecated, entity.Version.DeprecatedSince, entity.Version.ForRemoval,
-					entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.Extensible, entity.Successors, entity.ResourceHash, entity.DocumentationLabels, entity.ID, tenantID},
+					entity.Ready, entity.CreatedAt, entity.UpdatedAt, entity.DeletedAt, entity.Error, entity.Extensible, entity.Successors, entity.ResourceHash, entity.Hierarchy, entity.SupportedUseCases, entity.DocumentationLabels, entity.ID, tenantID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

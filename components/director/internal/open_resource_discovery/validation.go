@@ -64,6 +64,8 @@ const (
 	CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
 	SAPProductOrdIDNamespaceRegex = "^(sap)((\\.)([a-z0-9-]+(?:[.][a-z0-9-]+)*))*$"
+	// OrdNamespaceRegex represents the valid structure of a Ord Namespace
+	OrdNamespaceRegex = "^[a-z0-9]+(?:[.][a-z0-9]+)*$"
 
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
@@ -174,6 +176,11 @@ var (
 		"Utilities":                           true,
 		"Wholesale Distribution":              true,
 	}
+	// SupportedUseCases contain all valid values for this field from the spec
+	SupportedUseCases = map[string]bool{
+		"mass-extraction": true,
+		"mass-import":     true,
+	}
 )
 
 var shortDescriptionRules = []validation.Rule{
@@ -199,8 +206,12 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 		validation.Field(&app.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
+		validation.Field(&app.ApplicationNamespace, validation.Match(regexp.MustCompile(OrdNamespaceRegex))),
 		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
 		validation.Field(&app.OrdLabels, validation.By(validateORDLabels)),
+		validation.Field(&app.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
 		validation.Field(&app.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -282,6 +293,9 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 		validation.Field(&bndl.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
+		validation.Field(&bndl.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
 		validation.Field(&bndl.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -302,6 +316,14 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
+		})),
+		validation.Field(&api.SupportedUseCases,
+			validation.By(func(value interface{}) error {
+				return validateJSONArrayOfStringsContainsInMap(value, SupportedUseCases)
+			}),
+		),
+		validation.Field(&api.Hierarchy, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 		validation.Field(&api.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -374,6 +396,14 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
 		})),
+		validation.Field(&event.Hierarchy, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
+		validation.Field(&event.SupportedUseCases,
+			validation.By(func(value interface{}) error {
+				return validateJSONArrayOfStringsContainsInMap(value, SupportedUseCases)
+			}),
+		),
 		validation.Field(&event.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
@@ -440,6 +470,9 @@ func validateProductInput(product *model.ProductInput) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&product.Labels, validation.By(validateORDLabels)),
+		validation.Field(&product.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
 		validation.Field(&product.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -451,6 +484,9 @@ func validateVendorInput(vendor *model.VendorInput) error {
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
 		validation.Field(&vendor.Partners, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(VendorPartnersRegex))
+		})),
+		validation.Field(&vendor.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 		validation.Field(&vendor.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
