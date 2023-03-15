@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2943"
+      version: "PR-2930"
       name: compass-director
     hydrator:
       dir:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2929"
+      version: "PR-2930"
       name: compass-external-services-mock
     console:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2943"
+      version: "PR-2930"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1043,7 +1043,7 @@ global:
     externalServicesMock:
       skipPattern: ""
       formationAsyncApi:
-        responseDelayInSeconds: 2
+        responseDelayInSeconds: 3
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"

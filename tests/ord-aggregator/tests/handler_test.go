@@ -5,15 +5,16 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 

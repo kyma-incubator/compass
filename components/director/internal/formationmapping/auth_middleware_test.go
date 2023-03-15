@@ -18,9 +18,6 @@ import (
 )
 
 func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
-	faSourceID := "testSourceID"
-	faTargetID := "testTargetID"
-	testFormationAssignmentID := "testFormationAssignmentID"
 	consumerUUID := uuid.New().String()
 	appTemplateID := "testAppTemplateID"
 	intSystemID := "intSystemID"
@@ -1129,7 +1126,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 	}{
 		// Common authorization checks
 		{
-			name:       "Error when the http request method is not PATCH",
+			name:       "Error when the http request method is not POST or DELETE",
 			transactFn: fixUnusedTransactioner,
 			contextFn: func() context.Context {
 				return emptyCtx
@@ -1291,7 +1288,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			formationAuthMiddleware := fmAuthenticator.FormationHandler()
 			rw := httptest.NewRecorder()
 
-			httpMethod := http.MethodPatch
+			httpMethod := http.MethodPost
 			if tCase.httpMethod != "" {
 				httpMethod = tCase.httpMethod
 			}

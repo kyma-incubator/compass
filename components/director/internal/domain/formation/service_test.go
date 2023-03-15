@@ -231,6 +231,111 @@ func TestService_GetFormationByName(t *testing.T) {
 	}
 }
 
+func TestService_GetGlobalByID(t *testing.T) {
+	ctx := context.TODO()
+	ctxWithTenant := tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
+
+	testCases := []struct {
+		Name               string
+		FormationRepoFn    func() *automock.FormationRepository
+		ExpectedFormation  *model.Formation
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("GetGlobalByID", ctxWithTenant, FormationID).Return(&modelFormation, nil).Once()
+				return repo
+			},
+			ExpectedFormation: &modelFormation,
+		},
+		{
+			Name: "Error when getting formation globally fails",
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("GetGlobalByID", ctxWithTenant, FormationID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedFormation:  nil,
+			ExpectedErrMessage: fmt.Sprintf("An error occurred while getting formation by ID: %q globally", FormationID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			formationRepo := testCase.FormationRepoFn()
+			defer formationRepo.AssertExpectations(t)
+
+			svc := formation.NewService(nil, nil, nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+
+			// WHEN
+			actual, err := svc.GetGlobalByID(ctxWithTenant, FormationID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormation, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
+			}
+		})
+	}
+}
+
+func TestService_Update(t *testing.T) {
+	ctx := context.TODO()
+	ctxWithTenant := tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
+
+	testCases := []struct {
+		Name               string
+		FormationRepoFn    func() *automock.FormationRepository
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Update", ctxWithTenant, &modelFormation).Return(nil).Once()
+				return repo
+			},
+		},
+		{
+			Name: "Error when updating formation fails",
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Update", ctxWithTenant, &modelFormation).Return(testErr).Once()
+				return repo
+			},
+			ExpectedErrMessage: fmt.Sprintf("An error occurred while updating formation with ID: %q", FormationID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			formationRepo := testCase.FormationRepoFn()
+			defer formationRepo.AssertExpectations(t)
+
+			svc := formation.NewService(nil, nil, nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+
+			// WHEN
+			err := svc.Update(ctxWithTenant, &modelFormation)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
+	}
+}
+
 func TestServiceCreateFormation(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
