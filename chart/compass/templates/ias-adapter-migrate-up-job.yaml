@@ -14,7 +14,7 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     spec:
-        serviceAccountName: {{ $.Chart.Name }}-migrator-job
+        serviceAccountName: {{ $.Chart.Name }}-ias-adapter-migration-up-job
         {{- if eq .Values.global.migratorJob.nodeSelectorEnabled true }}
         nodeSelector:
           migrationJobs: "true"
@@ -73,19 +73,19 @@ spec:
               - "/bin/bash"
             args:
               - "-c"
-              - "sleep 20; ./run.sh --up --component ias-adapter --pv-path {{ .Values.global.migratorJob.pvc.migrationsPath }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+              - "sleep 20; ./run.sh --up --component ias-adapter --pv-path {{ .Values.global.migratorJob.ias_adapter.pvc.migrationsPath }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
             volumeMounts:
               - name: migrations-storage
-                mountPath: {{ .Values.global.migratorJob.pvc.migrationsPath }}
+                mountPath: {{ .Values.global.migratorJob.ias_adapter.pvc.migrationsPath }}
         volumes:
           - name: migrations-storage
             persistentVolumeClaim:
-              claimName: {{ .Values.global.migratorJob.pvc.name }}
+              claimName: {{ .Values.global.migratorJob.ias_adapter.pvc.name }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ $.Chart.Name }}-migrator-job
+  name: {{ $.Chart.Name }}-ias-adapter-migration-up-job
   namespace: {{ $.Release.Namespace }}
   {{- if eq .Values.global.database.embedded.enabled false }}
   annotations:

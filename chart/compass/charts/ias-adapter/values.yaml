@@ -12,7 +12,7 @@ deployment:
     requests: {}
     limits: {}
   args:
-    containerPort: 3000
+    containerPort: 8080
   securityContext: # Set on container level
     runAsUser: 2000
     allowPrivilegeEscalation: false

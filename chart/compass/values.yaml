@@ -478,6 +478,7 @@ global:
       enableClientInstrumentation: true
       censoredFlows: "JWT"
   iasAdapter:
+    port: 8080
     apiRootPath: "/v1"
     readTimeout: 30s
     readHeaderTimeout: 30s
@@ -1128,6 +1129,12 @@ global:
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
       storageClass: local-path
+    ias_adapter:
+      pvc:
+        name: "compass-ias-adapter-migrations"
+        namespace: "compass-system"
+        migrationsPath: "/compass-ias-adapter-migrations"
+        storageClass: local-path
   http:
     client:
       skipSSLValidation: false
