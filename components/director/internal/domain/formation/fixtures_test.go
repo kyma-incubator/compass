@@ -76,7 +76,7 @@ const (
 	secondTestFormationName = "second-formation"
 	TargetTenant            = "targetTenant" // used as "assigning tenant" in formation scenarios/flows
 
-	// Formation template constants
+	// Formation Template constants
 	FormationTemplateID       = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
 	testFormationTemplateName = "test-formation-template-name"
 

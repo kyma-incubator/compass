@@ -83,6 +83,7 @@ func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.Forma
 
 // GetGlobalByID retrieves formation matching ID `id` globally without tenant parameter
 func (r *repository) GetGlobalByID(ctx context.Context, id string) (*model.Formation, error) {
+	log.C(ctx).Debugf("Getting formation with ID: %q globally", id)
 	var entity Entity
 	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
@@ -146,6 +147,7 @@ func (r *repository) Update(ctx context.Context, model *model.Formation) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
+	log.C(ctx).Debugf("Updating formation with ID: %q and name: %q...", model.ID, model.Name)
 	return r.updater.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
 }
 

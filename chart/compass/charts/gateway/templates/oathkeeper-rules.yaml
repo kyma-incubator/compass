@@ -438,7 +438,7 @@ spec:
   upstream:
     url: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
   match:
-    methods: ["PATCH"]
+    methods: ["PATCH", "POST", "DELETE"]
     url: <http|https>://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}/<.*>
   authenticators:
     - handler: noop

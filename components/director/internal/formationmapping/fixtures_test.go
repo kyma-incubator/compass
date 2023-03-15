@@ -29,9 +29,16 @@ var (
 	testErr  = errors.New("test error")
 	txGen    = txtest.NewTransactionContextGenerator(testErr)
 
+	// Tenant IDs variables
 	internalTntID = "testInternalID"
 	externalTntID = "testExternalID"
 
+	// Formation Assignment variables
+	faSourceID                = "testSourceID"
+	faTargetID                = "testTargetID"
+	testFormationAssignmentID = "testFormationAssignmentID"
+
+	// Formation variables
 	testFormationID         = "testFormationID"
 	testFormationName       = "testFormationName"
 	testFormationTemplateID = "testFormationTemplateID"
@@ -68,6 +75,16 @@ func fixContextWithTenantAndConsumer(c consumer.Consumer, internalTntID, externa
 
 func fixContextWithConsumer(c consumer.Consumer) context.Context {
 	return consumer.SaveToContext(emptyCtx, c)
+}
+
+func fixFormationWithState(state model.FormationState) *model.Formation {
+	return &model.Formation{
+		ID:                  testFormationID,
+		TenantID:            internalTntID,
+		FormationTemplateID: testFormationTemplateID,
+		Name:                testFormationName,
+		State:               state,
+	}
 }
 
 func fixFormationAssignmentModel(testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType) *model.FormationAssignment {

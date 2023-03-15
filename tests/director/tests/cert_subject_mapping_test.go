@@ -21,7 +21,7 @@ var (
 	subject            = "C=DE, L=E2E-test, O=E2E-Org, OU=TestRegion, OU=E2E-Org-Unit, OU=2c0fe288-bb13-4814-ac49-ac88c4a76b10, CN=E2E-test-compass"
 	consumerType       = "Integration System"                   // should be a valid consumer type
 	internalConsumerID = "e01a1918-5ee9-40c4-8ec7-e407264d43d2" // randomly chosen
-	tenantAccessLevels = []string{"account"}                    // should be a valid tenant access level
+	tenantAccessLevels = []string{"account", "global"}          // should be a valid tenant access level
 
 	updatedSubject            = "C=DE, L=E2E-test-updated, O=E2E-Org, OU=TestRegion-updated, OU=E2E-Org-Unit-updated, OU=8e255922-6a2e-4677-a1a4-246ffcb391df, CN=E2E-test-cmp-updated"
 	updatedConsumerType       = "Runtime"                              // should be a valid consumer type
