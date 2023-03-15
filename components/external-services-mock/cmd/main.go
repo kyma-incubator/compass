@@ -15,6 +15,7 @@ import (
 	"github.com/form3tech-oss/jwt-go"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/ias"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
 
@@ -220,6 +221,10 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(tenantDestinationEndpoint, destinationHandler.PostDestination).Methods(http.MethodPost)
 	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
+
+	iasHandler := ias.NewHandler()
+	router.HandleFunc("/Applications/v1", iasHandler.GetAll).Methods(http.MethodGet)
+	router.HandleFunc("/Applications/v1/{appID}", iasHandler.Patch).Methods(http.MethodPatch)
 
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
