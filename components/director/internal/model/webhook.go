@@ -28,6 +28,7 @@ type Webhook struct {
 
 // WebhookInput represents a webhook input for creating/updating webhooks.
 type WebhookInput struct {
+	ID               string
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
