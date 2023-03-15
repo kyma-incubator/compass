@@ -55,7 +55,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 
 	if len(oldConsumedAPIs) != len(newConsumedAPIs) {
 		iasHost := data.TenantMapping.ReceiverTenant.ApplicationURL
-		if err := s.updateApplication(ctx, iasHost, data.ConsumerApplication); err != nil {
+		if err := s.updateApplication(ctx, iasHost, data.ConsumerApplication.ID, newConsumedAPIs); err != nil {
 			return errors.Newf("failed to update application: %w", err)
 		}
 	}
@@ -121,19 +121,28 @@ func removeConsumedAPI(consumedAPIs []types.ApplicationConsumedAPI, apiName stri
 	return consumedAPIs[:len(consumedAPIs)-1]
 }
 
-func (s Service) updateApplication(ctx context.Context, iasHost string, application types.Application) error {
+func (s Service) updateApplication(ctx context.Context, iasHost, applicationID string,
+	consumedAPIs []types.ApplicationConsumedAPI) error {
+
 	log := logger.FromContext(ctx)
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, s.cfg.RequestTimeout)
-	defer cancel()
-
-	applicationBytes, err := json.Marshal(application)
+	appUpdate := types.ApplicationUpdate{
+		Operations: []types.ApplicationUpdateOperation{
+			{
+				Operation: types.ReplaceOp,
+				Path:      types.ConsumedAPIsPath,
+				Value:     consumedAPIs,
+			},
+		},
+	}
+	appUpdateBytes, err := json.Marshal(appUpdate)
 	if err != nil {
 		return errors.Newf("failed to marshal body: %w", err)
 	}
-
-	url := buildPatchApplicationURL(iasHost, application.ID)
-	req, err := http.NewRequestWithContext(timeoutCtx, http.MethodPatch, url, bytes.NewBuffer(applicationBytes))
+	url := buildPatchApplicationURL(iasHost, applicationID)
+	timeoutCtx, cancel := context.WithTimeout(ctx, s.cfg.RequestTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(timeoutCtx, http.MethodPatch, url, bytes.NewBuffer(appUpdateBytes))
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
 	}
@@ -146,10 +155,10 @@ func (s Service) updateApplication(ctx context.Context, iasHost string, applicat
 	if resp.StatusCode != http.StatusOK {
 		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Warn().Msgf("failed to read response body for application with ID '%s': %s", application.ID, err)
+			log.Warn().Msgf("failed to read response body for application with ID '%s': %s", applicationID, err)
 		}
 		return errors.Newf("failed to update ACL of application with ID '%s', status '%d', body '%s'",
-			application.ID, resp.StatusCode, respBytes)
+			applicationID, resp.StatusCode, respBytes)
 	}
 
 	return nil

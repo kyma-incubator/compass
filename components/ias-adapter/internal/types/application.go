@@ -1,5 +1,7 @@
 package types
 
+const ConsumedAPIsPath = "/urn:sap:identity:application:schemas:extension:sci:1.0:Authentication/consumedApis"
+
 type Applications struct {
 	Applications []Application `json:"applications"`
 }
@@ -24,13 +26,14 @@ type ApplicationUpdate struct {
 	Operations []ApplicationUpdateOperation `json:"operations"`
 }
 
-type ApplicationUpdateOperation struct {
-	Operation string `json:"op"`
-	Path      string `json:"path"`
-}
+type UpdateOperation string
 
-type ApplicationUpdateValue struct {
-	Name    string `json:"name"`
-	APIName string `json:"apiName"`
-	AppID   string `json:"appId"`
+const (
+	ReplaceOp UpdateOperation = "replace"
+)
+
+type ApplicationUpdateOperation struct {
+	Operation UpdateOperation          `json:"op"`
+	Path      string                   `json:"path"`
+	Value     []ApplicationConsumedAPI `json:"value"`
 }
