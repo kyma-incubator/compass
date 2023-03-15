@@ -23,6 +23,10 @@ const tempFileName = "tmp.json"
 
 func TestLoadData(t *testing.T) {
 	testErr := errors.New("testErr")
+	whID1 := "123456789"
+	whID2 := "123456789-new"
+	whType := model.WebhookModeAsyncCallback
+
 	applicationTemplateName := "app-tmpl-name"
 	applicationTemplatesJSON := "[{" +
 		"\"name\":\"" + applicationTemplateName + "\"," +
@@ -40,6 +44,16 @@ func TestLoadData(t *testing.T) {
 		"\"applicationInputJSON\":\"{\\\"name\\\": \\\"name\\\", \\\"labels\\\": {\\\"legacy\\\":\\\"true\\\"}}\"," +
 		"\"placeholders\":[{\"name\":\"name\",\"description\": \"description\",\"jsonPath\": \"jsonPath\"}]," +
 		"\"labels\":{\"managed_app_provisioning\":false}," +
+		"\"intSystem\":{" +
+		"\"name\":\"int-sys-name\"," +
+		"\"description\":\"int-sys-desc\"}," +
+		"\"description\":\"app-tmpl-desc\"}]"
+
+	applicationTemplatesWithIntSysJSONAndWebhooks := "[{" +
+		"\"name\":\"" + applicationTemplateName + "\"," +
+		"\"webhooks\":[{\"id\":\"" + whID1 + "\", \"objectID\":\"" + whID1 + "\", \"objectType\": \"ApplicationWebhook\", \"type\": \"CONFIGURATION_CHANGED\", \"mode\": \"ASYNC_CALLBACK\" },{\"id\":\"" + whID2 + "\", \"objectID\":\"" + whID2 + "\", \"objectType\": \"ApplicationWebhook\", \"type\": \"CONFIGURATION_CHANGED\", \"mode\": \"ASYNC_CALLBACK\" }]," +
+		"\"applicationInputJSON\":\"{\\\"name\\\": \\\"name\\\", \\\"labels\\\": {\\\"legacy\\\":\\\"true\\\"}}\"," +
+		"\"placeholders\":[{\"name\":\"name\",\"description\": \"description\",\"jsonPath\": \"jsonPath\"}]," +
 		"\"intSystem\":{" +
 		"\"name\":\"int-sys-name\"," +
 		"\"description\":\"int-sys-desc\"}," +
@@ -515,6 +529,109 @@ func TestLoadData(t *testing.T) {
 					"\"description\":\"int-sys-desc\"}," +
 					"\"description\":\"app-tmpl-desc\"}]"
 				return []byte(applicationTemplatesWithIntSysAndMissingLabelsJSON), nil
+			},
+		},
+		{
+			name: "Success - application template already exists, update triggered when only webhooks length is different",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				return txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+			},
+			appTmplSvc: func() *automock.AppTmplService {
+				template := model.ApplicationTemplate{
+					ID:                   "id",
+					Name:                 "app-tmpl-name",
+					Description:          str.Ptr("app-tmpl-desc"),
+					ApplicationInputJSON: "{\"integrationSystemID\":\"id\",\"labels\":{\"legacy\":\"true\"},\"name\":\"name\"}",
+					Placeholders: []model.ApplicationTemplatePlaceholder{
+						{
+							Name:        "name",
+							Description: str.Ptr("description"),
+							JSONPath:    str.Ptr("jsonPath"),
+						},
+					},
+					Labels: map[string]interface{}{
+						"managed_app_provisioning": false,
+					},
+					Webhooks: []model.Webhook{
+						fixWebhookModel(whID1, whType),
+					},
+				}
+				appTmplSvc := &automock.AppTmplService{}
+				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(&template, nil).Once()
+				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateUpdateInput")).Return(nil).Once()
+				return appTmplSvc
+			},
+			intSysSvc: func() *automock.IntSysSvc {
+				intSysPage := model.IntegrationSystemPage{
+					Data: []*model.IntegrationSystem{
+						{
+							ID:          "id",
+							Name:        "int-sys-name",
+							Description: str.Ptr("int-sys-desc"),
+						},
+					},
+					PageInfo:   pageInfo,
+					TotalCount: 0,
+				}
+				intSysSvc := &automock.IntSysSvc{}
+				intSysSvc.On("List", txtest.CtxWithDBMatcher(), 200, "").Return(intSysPage, nil).Once()
+				return intSysSvc
+			},
+			readDirFunc: mockReadDir,
+			readFileFunc: func(path string) ([]byte, error) {
+				return []byte(applicationTemplatesWithIntSysJSONAndWebhooks), nil
+			},
+		},
+		{
+			name: "Success - application template already exists, update triggered when only webhooks internals are different",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				return txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+			},
+			appTmplSvc: func() *automock.AppTmplService {
+				template := model.ApplicationTemplate{
+					ID:                   "id",
+					Name:                 "app-tmpl-name",
+					Description:          str.Ptr("app-tmpl-desc"),
+					ApplicationInputJSON: "{\"integrationSystemID\":\"id\",\"labels\":{\"legacy\":\"true\"},\"name\":\"name\"}",
+					Placeholders: []model.ApplicationTemplatePlaceholder{
+						{
+							Name:        "name",
+							Description: str.Ptr("description"),
+							JSONPath:    str.Ptr("jsonPath"),
+						},
+					},
+					Labels: map[string]interface{}{
+						"managed_app_provisioning": false,
+					},
+					Webhooks: []model.Webhook{
+						fixWebhookModel(whID1, whType),
+						fixWebhookModel(whID2, model.WebhookModeSync),
+					},
+				}
+				appTmplSvc := &automock.AppTmplService{}
+				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(&template, nil).Once()
+				appTmplSvc.On("Update", txtest.CtxWithDBMatcher(), "id", mock.AnythingOfType("model.ApplicationTemplateUpdateInput")).Return(nil).Once()
+				return appTmplSvc
+			},
+			intSysSvc: func() *automock.IntSysSvc {
+				intSysPage := model.IntegrationSystemPage{
+					Data: []*model.IntegrationSystem{
+						{
+							ID:          "id",
+							Name:        "int-sys-name",
+							Description: str.Ptr("int-sys-desc"),
+						},
+					},
+					PageInfo:   pageInfo,
+					TotalCount: 0,
+				}
+				intSysSvc := &automock.IntSysSvc{}
+				intSysSvc.On("List", txtest.CtxWithDBMatcher(), 200, "").Return(intSysPage, nil).Once()
+				return intSysSvc
+			},
+			readDirFunc: mockReadDir,
+			readFileFunc: func(path string) ([]byte, error) {
+				return []byte(applicationTemplatesWithIntSysJSONAndWebhooks), nil
 			},
 		},
 	}
