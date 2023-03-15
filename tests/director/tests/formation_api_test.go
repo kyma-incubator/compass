@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -1536,7 +1536,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
 		assertFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, deleteFormationOperation, tnt, tntParentCustomer)
 	})
-	t.Run("TestFormationLifecycleNotificationsWithAsyncCallback", func(t *testing.T) {
+	t.Run("Formation Lifecycle Notifications With Async Callback", func(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -1565,6 +1565,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		formationName := "formation-name-from-template-with-webhook"
 		t.Logf("Creating formation with name: %q from template with name: %q that has %q webhook", formationName, providerFormationTmplName, webhookFormationLifecycleType)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
+		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualFormationTemplateWebhook.ID) // Otherwise, FT wouldn't be able to be deleted because formation is stuck in DELETING state
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &providerFormationTmplName)
 		require.Equal(t, "INITIAL", formation.State)
 
@@ -1888,50 +1889,14 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
 
-		appFromTmplSrc := graphql.ApplicationFromTemplateInput{
-			TemplateName: applicationType1,
-			Values: []*graphql.TemplateValueInput{
-				{
-					Placeholder: "name",
-					Value:       "app1-formation-notifications-tests",
-				},
-				{
-					Placeholder: "display-name",
-					Value:       "App 1",
-				},
-			},
-		}
-
 		localTenantID2 := "local-tenant-id2"
-		t.Logf("Create application template for type %q", applicationType1)
-		appTemplateInput = graphql.ApplicationTemplateInput{
-			Name:        applicationType2,
-			Description: &applicationType2,
-			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:          "{{name}}",
-				ProviderName:  str.Ptr("compass"),
-				Description:   ptr.String("test {{display-name}}"),
-				LocalTenantID: &localTenantID2,
-				Labels: graphql.Labels{
-					"applicationType": applicationType2,
-					"region":          appRegion,
-				},
-			},
-			Placeholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name: "name",
-				},
-				{
-					Name: "display-name",
-				},
-			},
-			ApplicationNamespace: &appNamespace,
-			AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
-		}
+		t.Logf("Create application template for type %q", applicationType2)
+		appTemplateInput = fixtures.FixApplicationTemplateWithoutWebhook(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
 		appTmpl, err = fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl)
 		require.NoError(t, err)
 
+		appFromTmplSrc := fixtures.FixApplicationFromTemplateInput(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name")
 		t.Logf("Create application 1 from template %q", applicationType1)
 		appFromTmplSrcGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc)
 		require.NoError(t, err)
@@ -1942,21 +1907,9 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 		require.NoError(t, err)
 		require.NotEmpty(t, app1.ID)
 		t.Logf("app1 ID: %q", app1.ID)
-		appFromTmplSrc2 := graphql.ApplicationFromTemplateInput{
+		appFromTmplSrc2 := fixtures.FixApplicationFromTemplateInput(applicationType2, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name")
 
-			TemplateName: applicationType1, Values: []*graphql.TemplateValueInput{
-				{
-					Placeholder: "name",
-					Value:       "app2-formation-notifications-tests",
-				},
-				{
-					Placeholder: "display-name",
-					Value:       "App 2",
-				},
-			},
-		}
-
-		t.Logf("Create application 2 from template %q", applicationType1)
+		t.Logf("Create application 2 from template %q", applicationType2)
 		appFromTmplSrc2GQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc2)
 		require.NoError(t, err)
 		createAppFromTmplSecondRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrc2GQL)
@@ -2068,7 +2021,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				t.Logf("Found notification for app %q", appIDFromNotification)
 				if appIDFromNotification == app2.ID {
 					notificationForApp2Found = true
-					assertFormationAssignmentsNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+					assertFormationAssignmentsNotification(t, notification, assignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 				}
 			}
 			require.True(t, notificationForApp2Found, "notification for assign app2 not found")
@@ -2130,7 +2083,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				t.Logf("Found %q notification for app %q", op, appIDFromNotification)
 				if appIDFromNotification == app2.ID && op == unassignOperation {
 					unassignNotificationForApp2Found = true
-					assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
+					assertFormationAssignmentsNotification(t, notification, unassignOperation, formation.ID, app2.ID, localTenantID2, appNamespace, appRegion, subscriptionConsumerAccountID, emptyParentCustomerID)
 				}
 			}
 			require.True(t, unassignNotificationForApp2Found, "notification for unassign app2 not found")
