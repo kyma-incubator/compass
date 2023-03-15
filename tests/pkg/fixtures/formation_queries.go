@@ -11,12 +11,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ListFormations(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, listFormationsReq *gcli.Request, expectedCount int) *graphql.FormationPage {
+func ListFormations(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, listFormationsReq *gcli.Request) *graphql.FormationPage {
 	var formationPage graphql.FormationPage
 	err := testctx.Tc.RunOperation(ctx, gqlClient, listFormationsReq, &formationPage)
 	require.NoError(t, err)
 	require.NotEmpty(t, formationPage)
-	require.Equal(t, expectedCount, formationPage.TotalCount)
+
+	return &formationPage
+}
+
+func ListFormationsWithinTenant(t require.TestingT, ctx context.Context, tenantID string, gqlClient *gcli.Client) *graphql.FormationPage {
+	first := 100
+	listFormationsReq := FixListFormationsRequestWithPageSize(first)
+
+	var formationPage graphql.FormationPage
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, listFormationsReq, &formationPage)
+	require.NoError(t, err)
+	require.NotEmpty(t, formationPage)
 
 	return &formationPage
 }
@@ -117,17 +128,6 @@ func DeleteFormationWithTenantObjectType(t require.TestingT, ctx context.Context
 	return &formation
 }
 
-func ResynchronizeFormationNotifications(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID string) *graphql.Formation {
-	resynchronizeRequest := FixResynchronizeFormationNotificationsRequest(formationID)
-
-	formation := graphql.Formation{}
-
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, resynchronizeRequest, &formation)
-	require.NoError(t, err)
-
-	return &formation
-}
-
 func AssignFormationWithApplicationObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, appID, tenantID string) *graphql.Formation {
 	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID)
 }
@@ -196,16 +196,6 @@ func CleanupFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.C
 	formation := graphql.Formation{}
 
 	assertions.AssertNoErrorForOtherThanNotFound(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, parent, unassignRequest, &formation))
-	return &formation
-}
-
-func AssignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID string, objectType graphql.FormationObjectType) *graphql.Formation {
-	createRequest := FixAssignFormationRequest(tenantID, string(objectType), in.Name)
-
-	formation := graphql.Formation{}
-
-	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, createRequest, &formation))
-	require.NotEmpty(t, formation.Name)
 	return &formation
 }
 

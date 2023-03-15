@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -60,6 +62,11 @@ type FormationAssignmentNotificationService interface {
 type formationService interface {
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	Get(ctx context.Context, id string) (*model.Formation, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
+	SetFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error
+	DeleteFormationEntityAndScenarios(ctx context.Context, tnt, formationName string) error
+	Update(ctx context.Context, model *model.Formation) error
+	ResynchronizeFormationNotifications(ctx context.Context, formationID string) error
 }
 
 // RuntimeRepository is responsible for the repo-layer runtime operations
@@ -135,6 +142,7 @@ type Authenticator struct {
 	labelRepo                  LabelRepository
 	formationRepo              FormationRepository
 	formationTemplateRepo      FormationTemplateRepository
+	tenantRepo                 TenantRepository
 	consumerSubaccountLabelKey string
 }
 
@@ -149,6 +157,7 @@ func NewFormationMappingAuthenticator(
 	labelRepo LabelRepository,
 	formationRepo FormationRepository,
 	formationTemplateRepo FormationTemplateRepository,
+	tenantRepo TenantRepository,
 	consumerSubaccountLabelKey string,
 ) *Authenticator {
 	return &Authenticator{
@@ -161,6 +170,7 @@ func NewFormationMappingAuthenticator(
 		labelRepo:                  labelRepo,
 		formationRepo:              formationRepo,
 		formationTemplateRepo:      formationTemplateRepo,
+		tenantRepo:                 tenantRepo,
 		consumerSubaccountLabelKey: consumerSubaccountLabelKey,
 	}
 }
@@ -211,7 +221,7 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 			ctx := r.Context()
 			correlationID := correlation.CorrelationIDFromContext(ctx)
 
-			if r.Method != http.MethodPatch {
+			if r.Method != http.MethodPost && r.Method != http.MethodDelete {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
@@ -306,6 +316,20 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 	}
 
 	if fa.TargetType == model.FormationAssignmentTypeApplication {
+		tnt, err := a.tenantRepo.Get(ctx, fa.TenantID)
+		if err != nil {
+			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting tenant with ID: %q", fa.TenantID)
+		}
+
+		if consumerType == consumer.BusinessIntegration && tnt.Type == tenantpkg.ResourceGroup {
+			if err := tx.Commit(); err != nil {
+				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+			}
+
+			log.C(ctx).Infof("The caller with ID: %s and type: %s is allowed to update formation assignments in tenants of type %s", consumerID, consumerType, tnt.Type)
+			return true, http.StatusOK, nil
+		}
+
 		app, err := a.appRepo.GetByID(ctx, fa.TenantID, fa.Target)
 		if err != nil {
 			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting application with ID: %q", fa.Target)

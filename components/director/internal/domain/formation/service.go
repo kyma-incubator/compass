@@ -67,6 +67,7 @@ type runtimeContextRepository interface {
 type FormationRepository interface {
 	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
 	GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
+	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
@@ -269,6 +270,25 @@ func (s *service) GetFormationByName(ctx context.Context, formationName, tnt str
 	return f, nil
 }
 
+// GetGlobalByID retrieves formation by `id` globally
+func (s *service) GetGlobalByID(ctx context.Context, id string) (*model.Formation, error) {
+	f, err := s.formationRepository.GetGlobalByID(ctx, id)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation by ID: %q globally", id)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation by ID: %q globally", id)
+	}
+
+	return f, nil
+}
+
+func (s *service) Update(ctx context.Context, model *model.Formation) error {
+	if err := s.formationRepository.Update(ctx, model); err != nil {
+		log.C(ctx).Errorf("An error occurred while updating formation with ID: %q", model.ID)
+		return errors.Wrapf(err, "An error occurred while updating formation with ID: %q", model.ID)
+	}
+	return nil
+}
+
 // GetFormationsForObject returns slice of formations for entity with ID objID and type objType
 func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error) {
 	labelInput := &model.LabelInput{
@@ -284,9 +304,11 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 	return label.ValueToStringsSlice(existingLabel.Value)
 }
 
-// CreateFormation adds the provided formation to the scenario label definitions of the given tenant.
-// If the scenario label definition does not exist it will be created
-// Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
+// CreateFormation is responsible for a couple of things:
+//  - Enforce any "pre" and "post" operation formation constraints
+//  - Adds the provided formation to the scenario label definitions of the given tenant, if the scenario label definition does not exist it will be created
+//  - Creates a new Formation entity based on the provided template name or the default one is used if it's not provided
+//  - Generate and send notification(s) if the template from which the formation is created has a webhook attached. And maintain a state based on the executed formation notification(s) - either synchronous or asynchronous
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error) {
 	fTmpl, err := s.formationTemplateRepository.GetByNameAndTenant(ctx, templateName, tnt)
 	if err != nil {
@@ -323,7 +345,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
 	}
 
-	formationState := determineFormationState(ctx, formationTemplateID, formationTemplateName, formationTemplateWebhooks)
+	formationState := determineFormationState(ctx, formationTemplateID, formationTemplateName, formationTemplateWebhooks, formation.State)
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
 	newFormation, err := s.createFormation(ctx, tnt, formationTemplateID, formationName, formationState)
@@ -351,8 +373,10 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	return newFormation, nil
 }
 
-// DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
-// Also, removes the Formation entity from the DB
+// DeleteFormation is responsible for a couple of things:
+//  - Enforce any "pre" and "post" operation formation constraints
+//  - Generate and send notification(s) if the template from which the formation is created has a webhook attached. And maintain a state based on the executed formation notification(s) - either synchronous or asynchronous
+//  - Removes the provided formation from the scenario label definitions of the given tenant and deletes the formation entity from the DB
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
 	if err != nil {
@@ -404,14 +428,8 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		}
 	}
 
-	if err := s.modifyFormations(ctx, tnt, formationName, deleteFormation); err != nil {
-		return nil, err
-	}
-
-	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-	if err = s.formationRepository.DeleteByName(ctx, tnt, formationName); err != nil {
-		log.C(ctx).Errorf("An error occurred while deleting formation with name: %q", formationName)
-		return nil, errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
+	if err := s.DeleteFormationEntityAndScenarios(ctx, tnt, formationName); err != nil {
+		return nil, errors.Wrapf(err, "An error occurred while deleting formation entity with name: %q and its scenarios label", formationName)
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostDelete, joinPointDetails, formationTemplateID); err != nil {
@@ -419,6 +437,21 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	return ft.formation, nil
+}
+
+// DeleteFormationEntityAndScenarios removes the formation name from scenarios label definitions and deletes the formation entity from the DB
+func (s *service) DeleteFormationEntityAndScenarios(ctx context.Context, tnt, formationName string) error {
+	if err := s.modifyFormations(ctx, tnt, formationName, deleteFormation); err != nil {
+		return err
+	}
+
+	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
+	if err := s.formationRepository.DeleteByName(ctx, tnt, formationName); err != nil {
+		log.C(ctx).Errorf("An error occurred while deleting formation with name: %q", formationName)
+		return errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
+	}
+
+	return nil
 }
 
 // AssignFormation assigns object based on graphql.FormationObjectType.
@@ -1195,6 +1228,27 @@ func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Contex
 	return scenarios, nil
 }
 
+func (s *service) SetFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error {
+	log.C(ctx).Infof("Setting formation with ID: %q to state: %q", formation.ID, formation.State)
+	formation.State = state
+
+	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
+		Message:   errorMessage,
+		ErrorCode: errorCode,
+	}}
+
+	marshaledErr, err := json.Marshal(formationError)
+	if err != nil {
+		return errors.Wrapf(err, "While preparing error message for formation with ID: %q", formation.ID)
+	}
+	formation.Error = marshaledErr
+
+	if err := s.formationRepository.Update(ctx, formation); err != nil {
+		return err
+	}
+	return nil
+}
+
 // MatchingFunc provides signature for functions used for matching asa against runtimeID
 type MatchingFunc func(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error)
 
@@ -1473,7 +1527,7 @@ func setToSlice(set map[string]bool) []string {
 func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, errorState model.FormationState) error {
 	response, err := s.notificationsService.SendNotification(ctx, formationReq)
 	if err != nil {
-		updateError := s.setFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, errorState)
+		updateError := s.SetFormationToErrorState(ctx, formation, err.Error(), formationassignment.TechnicalError, errorState)
 		if updateError != nil {
 			return errors.Wrapf(updateError, "while updating error state: %s", errors.Wrapf(err, "while sending notification for formation with ID: %q", formation.ID).Error())
 		}
@@ -1483,7 +1537,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 	}
 
 	if response.Error != nil && *response.Error != "" {
-		err = s.setFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, errorState)
+		err = s.SetFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, errorState)
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state for formation with ID: %q and name: %q", formation.ID, formation.Name)
 		}
@@ -1500,7 +1554,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
 		formation.State = model.ReadyFormationState
-		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to state: %s", formation.ID, formation.Name, model.ReadyFormationState)
+		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state", formation.ID, formation.Name, model.ReadyFormationState)
 		if err := s.formationRepository.Update(ctx, formation); err != nil {
 			return errors.Wrapf(err, "while updating formation with ID: %q and name: %q to state: %s", formation.ID, formation.Name, model.ReadyFormationState)
 		}
@@ -1509,29 +1563,12 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 	return nil
 }
 
-func (s *service) setFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error {
-	formation.State = state
-
-	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
-		Message:   errorMessage,
-		ErrorCode: errorCode,
-	}}
-
-	marshaledErr, err := json.Marshal(formationError)
-	if err != nil {
-		return errors.Wrapf(err, "while preparing error message for formation with ID: %q", formation.ID)
-	}
-	formation.Error = marshaledErr
-
-	if err := s.formationRepository.Update(ctx, formation); err != nil {
-		return err
-	}
-	log.C(ctx).Infof("Formation with ID: %s set to state: %s", formation.ID, formation.State)
-	return nil
-}
-
-func determineFormationState(ctx context.Context, formationTemplateID, formationTemplateName string, formationTemplateWebhooks []*model.Webhook) model.FormationState {
+func determineFormationState(ctx context.Context, formationTemplateID, formationTemplateName string, formationTemplateWebhooks []*model.Webhook, externallyProvidedFormationState model.FormationState) model.FormationState {
 	if len(formationTemplateWebhooks) == 0 {
+		if len(externallyProvidedFormationState) > 0 {
+			log.C(ctx).Infof("Formation template with ID: %q and name: %q does not have any webhooks. The formation will be created with %s state as it was provided externally", formationTemplateID, formationTemplateName, externallyProvidedFormationState)
+			return externallyProvidedFormationState
+		}
 		log.C(ctx).Infof("Formation template with ID: %q and name: %q does not have any webhooks. The formation will be created with %s state", formationTemplateID, formationTemplateName, model.ReadyFormationState)
 		return model.ReadyFormationState
 	}

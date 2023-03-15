@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/pkg/errors"
 
@@ -27,9 +29,16 @@ var (
 	testErr  = errors.New("test error")
 	txGen    = txtest.NewTransactionContextGenerator(testErr)
 
+	// Tenant IDs variables
 	internalTntID = "testInternalID"
 	externalTntID = "testExternalID"
 
+	// Formation Assignment variables
+	faSourceID                = "testSourceID"
+	faTargetID                = "testTargetID"
+	testFormationAssignmentID = "testFormationAssignmentID"
+
+	// Formation variables
 	testFormationID         = "testFormationID"
 	testFormationName       = "testFormationName"
 	testFormationTemplateID = "testFormationTemplateID"
@@ -68,6 +77,16 @@ func fixContextWithConsumer(c consumer.Consumer) context.Context {
 	return consumer.SaveToContext(emptyCtx, c)
 }
 
+func fixFormationWithState(state model.FormationState) *model.Formation {
+	return &model.Formation{
+		ID:                  testFormationID,
+		TenantID:            internalTntID,
+		FormationTemplateID: testFormationTemplateID,
+		Name:                testFormationName,
+		State:               state,
+	}
+}
+
 func fixFormationAssignmentModel(testFormationID, testTenantID, sourceID, targetID string, sourceFAType, targetFAType model.FormationAssignmentType) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          "ID",
@@ -103,6 +122,24 @@ func fixFormationAssignmentInput(testFormationID, sourceID, targetID string, sou
 		TargetType:  targetFAType,
 		State:       string(state),
 		Value:       json.RawMessage(config),
+	}
+}
+
+func fixBusinessTenantMapping() *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             internalTntID,
+		Name:           "tnt",
+		ExternalTenant: externalTntID,
+		Type:           tenantpkg.Account,
+	}
+}
+
+func fixResourceGroupBusinessTenantMapping() *model.BusinessTenantMapping {
+	return &model.BusinessTenantMapping{
+		ID:             internalTntID,
+		Name:           "tnt",
+		ExternalTenant: externalTntID,
+		Type:           tenantpkg.ResourceGroup,
 	}
 }
 
@@ -179,6 +216,10 @@ func fixUnusedAppTemplateRepo() *automock.ApplicationTemplateRepository {
 
 func fixUnusedLabelRepo() *automock.LabelRepository {
 	return &automock.LabelRepository{}
+}
+
+func fixUnusedTenantRepo() *automock.TenantRepository {
+	return &automock.TenantRepository{}
 }
 
 func fixUnusedFormationRepo() *automock.FormationRepository {
