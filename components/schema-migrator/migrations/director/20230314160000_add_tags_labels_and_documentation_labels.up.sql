@@ -19,13 +19,13 @@ ALTER TABLE api_definitions
     ADD COLUMN hierarchy JSONB;
 
 ALTER TABLE api_definitions
-    ADD COLUMN supportedUseCases JSONB;
+    ADD COLUMN supported_use_cases JSONB;
 
 ALTER TABLE event_api_definitions
     ADD COLUMN hierarchy JSONB;
 
 ALTER TABLE event_api_definitions
-    ADD COLUMN supportedUseCases JSONB;
+    ADD COLUMN supported_use_cases JSONB;
 
 CREATE VIEW ord_tags_products AS
 SELECT id                  AS product_id,
@@ -67,13 +67,13 @@ CREATE VIEW ord_supported_use_cases_event_definitions AS
 SELECT id                  AS event_definition_id,
        elements.value      AS value
 FROM event_api_definitions,
-     jsonb_array_elements_text(event_api_definitions.supportedUseCases) AS elements;
+     jsonb_array_elements_text(event_api_definitions.supported_use_cases) AS elements;
 
 CREATE VIEW ord_supported_use_cases_api_definitions AS
 SELECT id                  AS api_definition_id,
        elements.value      AS value
 FROM api_definitions,
-     jsonb_array_elements_text(api_definitions.supportedUseCases) AS elements;
+     jsonb_array_elements_text(api_definitions.supported_use_cases) AS elements;
 
 CREATE OR REPLACE VIEW tenants_apps
             (tenant_id, formation_id, id, name, description, status_condition, status_timestamp, healthcheck_url,

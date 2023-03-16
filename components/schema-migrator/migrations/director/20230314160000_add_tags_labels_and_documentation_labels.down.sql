@@ -27,13 +27,13 @@ ALTER TABLE api_definitions
     DROP COLUMN hierarchy;
 
 ALTER TABLE api_definitions
-    DROP COLUMN supportedUseCases;
+    DROP COLUMN supported_use_cases;
 
 ALTER TABLE event_api_definitions
     DROP COLUMN hierarchy;
 
 ALTER TABLE event_api_definitions
-    DROP COLUMN supportedUseCases;
+    DROP COLUMN supported_use_cases;
 
 CREATE OR REPLACE VIEW tenants_apps
             (tenant_id, formation_id, id, name, description, status_condition, status_timestamp, healthcheck_url,

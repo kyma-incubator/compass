@@ -93,7 +93,7 @@ type EventDefinitionInput struct {
 	PartOfConsumptionBundles []*ConsumptionBundleReference `json:"partOfConsumptionBundles"`
 	DefaultConsumptionBundle *string                       `json:"defaultConsumptionBundle"`
 	Hierarchy                json.RawMessage               `json:"hierarchy"`
-	SupportedUseCases        json.RawMessage               `json:"supportedUseCases"`
+	SupportedUseCases        json.RawMessage               `json:"supported_use_cases"`
 	DocumentationLabels      json.RawMessage               `json:"documentationLabels"`
 
 	*VersionInput `hash:"ignore"`

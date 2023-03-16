@@ -3771,6 +3771,82 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Missing `implementationStandard`  when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = nil
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeCustom
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Wrong `type` when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPI
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeOpenAPI
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Correct `type` when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeCustom
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Wrong `type` in one of the ResourceDefinitions when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeOpenAPI
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Correct `type` when APIResources has apiProtocol `sap-sql-api-v1`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSAPSQLAPIV1
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeSQLAPIDefinitionV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationJSON
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Wrong `type` when APIResources has apiProtocol `sap-sql-api-v1`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSAPSQLAPIV1
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCsdl
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeSQLAPIDefinitionV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationJSON
+				return []*ord.Document{doc}
+			},
 		},
 		// Test invalid entity relations
 
