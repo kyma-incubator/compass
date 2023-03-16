@@ -49,6 +49,7 @@ func CreateFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *g
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantId, createFormationReq, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
+	t.Logf("Formation with name: %q is successfully created", formationName)
 
 	return formation
 }
