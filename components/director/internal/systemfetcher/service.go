@@ -238,10 +238,6 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				}
 			}
 
-			if app != nil && app.Status != nil {
-				system.StatusCondition = app.Status.Condition
-			}
-
 			if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
 				if !app.Ready && !app.GetDeletedAt().IsZero() {
 					log.C(ctx).Infof("System with id %s is currently being deleted", app.ID)
@@ -257,6 +253,10 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				}
 				log.C(ctx).Infof("Started asynchronously delete for system with id %s", app.ID)
 				return nil
+			}
+
+			if app != nil && app.Status != nil {
+				system.StatusCondition = app.Status.Condition
 			}
 
 			appInput, err := s.convertSystemToAppRegisterInput(ctx, system)
