@@ -820,7 +820,7 @@ input TemplateValueInput {
 }
 
 input TenantAccessInput {
-	tenantId: ID!
+	tenantID: ID!
 	resourceType: TenantAccessObjectType!
 	resourceID: ID!
 	owner: Boolean!
@@ -1396,7 +1396,7 @@ type Tenant {
 }
 
 type TenantAccess {
-	tenantId: ID!
+	tenantID: ID!
 	resourceType: TenantAccessObjectType!
 	resourceID: ID!
 	owner: Boolean!
@@ -1922,7 +1922,15 @@ type Mutation {
 	- [delete certificate subject mapping](examples/delete-certificate-subject-mapping/delete-certificate-subject-mapping.graphql)
 	"""
 	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [add tenant access](examples/add-tenant-access/add-tenant-access.graphql)
+	"""
 	addTenantAccess(in: TenantAccessInput!): TenantAccess @hasScopes(path: "graphql.mutation.addTenantAccess")
+	"""
+	**Examples**
+	- [remove tenant access](examples/remove-tenant-access/remove-tenant-access.graphql)
+	"""
 	removeTenantAccess(tenantID: ID!, resourceID: ID!, resourceType: TenantAccessObjectType!): TenantAccess @hasScopes(path: "graphql.mutation.removeTenantAccess")
 }
 

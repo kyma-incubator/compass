@@ -2,9 +2,10 @@ package tenant_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

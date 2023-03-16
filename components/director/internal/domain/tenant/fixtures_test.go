@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"testing"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 

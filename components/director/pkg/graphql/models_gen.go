@@ -768,14 +768,14 @@ type TemplateValueInput struct {
 }
 
 type TenantAccess struct {
-	TenantID     string                 `json:"tenantId"`
+	TenantID     string                 `json:"tenantID"`
 	ResourceType TenantAccessObjectType `json:"resourceType"`
 	ResourceID   string                 `json:"resourceID"`
 	Owner        bool                   `json:"owner"`
 }
 
 type TenantAccessInput struct {
-	TenantID     string                 `json:"tenantId"`
+	TenantID     string                 `json:"tenantID"`
 	ResourceType TenantAccessObjectType `json:"resourceType"`
 	ResourceID   string                 `json:"resourceID"`
 	Owner        bool                   `json:"owner"`

@@ -4607,7 +4607,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TenantAccess.ResourceType(childComplexity), true
 
-	case "TenantAccess.tenantId":
+	case "TenantAccess.tenantID":
 		if e.complexity.TenantAccess.TenantID == nil {
 			break
 		}
@@ -5696,7 +5696,7 @@ input TemplateValueInput {
 }
 
 input TenantAccessInput {
-	tenantId: ID!
+	tenantID: ID!
 	resourceType: TenantAccessObjectType!
 	resourceID: ID!
 	owner: Boolean!
@@ -6272,7 +6272,7 @@ type Tenant {
 }
 
 type TenantAccess {
-	tenantId: ID!
+	tenantID: ID!
 	resourceType: TenantAccessObjectType!
 	resourceID: ID!
 	owner: Boolean!
@@ -6798,7 +6798,15 @@ type Mutation {
 	- [delete certificate subject mapping](examples/delete-certificate-subject-mapping/delete-certificate-subject-mapping.graphql)
 	"""
 	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [add tenant access](examples/add-tenant-access/add-tenant-access.graphql)
+	"""
 	addTenantAccess(in: TenantAccessInput!): TenantAccess @hasScopes(path: "graphql.mutation.addTenantAccess")
+	"""
+	**Examples**
+	- [remove tenant access](examples/remove-tenant-access/remove-tenant-access.graphql)
+	"""
 	removeTenantAccess(tenantID: ID!, resourceID: ID!, resourceType: TenantAccessObjectType!): TenantAccess @hasScopes(path: "graphql.mutation.removeTenantAccess")
 }
 
@@ -28190,7 +28198,7 @@ func (ec *executionContext) _Tenant_provider(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _TenantAccess_tenantId(ctx context.Context, field graphql.CollectedField, obj *TenantAccess) (ret graphql.Marshaler) {
+func (ec *executionContext) _TenantAccess_tenantID(ctx context.Context, field graphql.CollectedField, obj *TenantAccess) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -31952,7 +31960,7 @@ func (ec *executionContext) unmarshalInputTenantAccessInput(ctx context.Context,
 
 	for k, v := range asMap {
 		switch k {
-		case "tenantId":
+		case "tenantID":
 			var err error
 			it.TenantID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
@@ -36006,8 +36014,8 @@ func (ec *executionContext) _TenantAccess(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("TenantAccess")
-		case "tenantId":
-			out.Values[i] = ec._TenantAccess_tenantId(ctx, field, obj)
+		case "tenantID":
+			out.Values[i] = ec._TenantAccess_tenantID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

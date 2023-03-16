@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -160,4 +161,47 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	accountRuntime = fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, accountRuntime.ID)
 	require.Equal(t, 2, len(accountRuntime.RuntimeContexts.Data))
 	require.ElementsMatch(t, []*graphql.RuntimeContextExt{&customerRuntimeContextForAccountRuntime, &accountRuntimeContextForAccountRuntime}, accountRuntime.RuntimeContexts.Data)
+}
+
+func TestTenantAccess(t *testing.T) {
+	ctx := context.Background()
+
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "tenantseparation", tenant.TestTenants.GetDefaultTenantID())
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+
+	customTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
+	anotherTenantsApps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
+	assert.Empty(t, anotherTenantsApps.Data)
+
+	in := graphql.TenantAccessInput{
+		TenantID:     customTenant,
+		ResourceType: graphql.TenantAccessObjectTypeApplication,
+		ResourceID:   actualApp.ID,
+		Owner:        true,
+	}
+
+	tenantAccessInputString, err := testctx.Tc.Graphqlizer.TenantAccessInputToGQL(in)
+	require.NoError(t, err)
+
+	addTenantAccessRequest := fixtures.FixAddTenantAccessRequest(tenantAccessInputString)
+	saveExample(t, addTenantAccessRequest.Query(), "add tenant access")
+
+	tenantAccess := &graphql.TenantAccess{}
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addTenantAccessRequest, tenantAccess)
+	require.NoError(t, err)
+
+	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
+	require.Len(t, anotherTenantsApps.Data, 1)
+	require.Equal(t, anotherTenantsApps.Data[0].ID, actualApp.ID)
+
+	removeTenantAccessRequest := fixtures.FixRemoveTenantAccessRequest(customTenant, actualApp.ID, graphql.TenantAccessObjectTypeApplication)
+	saveExample(t, removeTenantAccessRequest.Query(), "remove tenant access")
+
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, removeTenantAccessRequest, tenantAccess)
+	require.NoError(t, err)
+
+	anotherTenantsApps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, customTenant)
+	assert.Empty(t, anotherTenantsApps.Data)
 }
