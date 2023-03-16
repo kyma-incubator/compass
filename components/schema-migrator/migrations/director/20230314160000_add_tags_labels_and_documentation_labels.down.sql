@@ -26,6 +26,12 @@ ALTER TABLE bundles
 ALTER TABLE api_definitions
     DROP COLUMN hierarchy;
 
+ALTER TABLE api_definitions 
+    DROP CONSTRAINT api_protocol_check;
+
+ALTER TABLE api_definitions
+    ADD CONSTRAINT api_protocol_check CHECK (api_protocol IN ('odata-v2', 'odata-v4', 'soap-inbound', 'soap-outbound', 'rest'));
+
 ALTER TABLE api_definitions
     DROP COLUMN supported_use_cases;
 

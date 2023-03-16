@@ -21,6 +21,14 @@ ALTER TABLE api_definitions
 ALTER TABLE api_definitions
     ADD COLUMN supported_use_cases JSONB;
 
+ALTER TABLE api_definitions 
+    DROP CONSTRAINT api_protocol_check;
+
+ALTER TABLE api_definitions
+    ADD CONSTRAINT api_protocol_check CHECK (api_protocol IN ('odata-v2', 'odata-v4', 'soap-inbound', 'soap-outbound', 'rest', 'websocket', 'sap-rfc', 'sap-sql-api-v1'));
+
+ALTER TYPE api_spec_type ADD VALUE 'sap-sql-api-definition-v1' BEFORE 'custom';
+
 ALTER TABLE event_api_definitions
     ADD COLUMN hierarchy JSONB;
 
