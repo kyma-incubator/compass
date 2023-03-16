@@ -77,21 +77,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 
 	emptyFormationAssignmentsForObject := []*model.FormationAssignment{}
 
-	testFormation := &model.Formation{
-		ID:                  testFormationID,
-		TenantID:            internalTntID,
-		FormationTemplateID: "testFormationTemplateID",
-		Name:                "testFormationName",
-		State:               model.ReadyFormationState,
-	}
-
-	testFormationInitialState := &model.Formation{
-		ID:                  testFormationID,
-		TenantID:            internalTntID,
-		FormationTemplateID: "testFormationTemplateID",
-		Name:                "testFormationName",
-		State:               model.InitialFormationState,
-	}
+	testFormationWithReadyState := fixFormationWithState(model.ReadyFormationState)
+	testFormationWithInitialState := fixFormationWithState(model.InitialFormationState)
 
 	testCases := []struct {
 		name                string
@@ -167,7 +154,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -202,7 +189,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithInitialState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -274,7 +261,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationInitialState, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithInitialState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -295,7 +282,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -317,7 +304,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -340,7 +327,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			faConverterFn: func() *automock.FormationAssignmentConverter {
@@ -373,7 +360,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -401,7 +388,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -428,7 +415,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
@@ -461,7 +448,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
@@ -494,7 +481,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
@@ -529,7 +516,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
@@ -564,7 +551,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			faNotificationSvcFn: func() *automock.FormationAssignmentNotificationService {
@@ -595,7 +582,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -620,7 +607,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			hasURLVars:         true,
@@ -642,7 +629,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			hasURLVars:         true,
@@ -660,7 +647,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -686,7 +673,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			hasURLVars:         true,
@@ -707,7 +694,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -731,9 +718,9 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
-				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faSourceID, graphql.FormationObjectType(faWithSourceAppAndTargetRuntimeForUnassingOp.SourceType), *testFormation).Return(testFormation, nil).Once()
-				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faTargetID, graphql.FormationObjectType(faWithSourceAppAndTargetRuntimeForUnassingOp.TargetType), *testFormation).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faSourceID, graphql.FormationObjectType(faWithSourceAppAndTargetRuntimeForUnassingOp.SourceType), *testFormationWithReadyState).Return(testFormationWithReadyState, nil).Once()
+				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faTargetID, graphql.FormationObjectType(faWithSourceAppAndTargetRuntimeForUnassingOp.TargetType), *testFormationWithReadyState).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -758,8 +745,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
-				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faSourceID, graphql.FormationObjectType(graphql.FormationAssignmentTypeApplication), *testFormation).Return(nil, testErr).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faSourceID, graphql.FormationObjectType(graphql.FormationAssignmentTypeApplication), *testFormationWithReadyState).Return(nil, testErr).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -780,7 +767,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -806,9 +793,9 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
-				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faSourceID, graphql.FormationObjectType(graphql.FormationAssignmentTypeApplication), *testFormation).Return(testFormation, nil).Once()
-				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faTargetID, graphql.FormationObjectType(graphql.FormationAssignmentTypeRuntime), *testFormation).Return(nil, testErr).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faSourceID, graphql.FormationObjectType(graphql.FormationAssignmentTypeApplication), *testFormationWithReadyState).Return(testFormationWithReadyState, nil).Once()
+				formationSvc.On("UnassignFormation", contextThatHasTenant(internalTntID), internalTntID, faTargetID, graphql.FormationObjectType(graphql.FormationAssignmentTypeRuntime), *testFormationWithReadyState).Return(nil, testErr).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -830,7 +817,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -862,7 +849,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
@@ -896,7 +883,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormation, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{

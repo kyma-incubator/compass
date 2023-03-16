@@ -125,11 +125,13 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 		return
 	}
-	if formation.State != model.ReadyFormationState {
+
+	if len(reqBody.State) > 0 && formation.State != model.ReadyFormationState {
 		log.C(ctx).WithError(err).Errorf("Cannot update formation assignment for formation with ID %q as formation is not in %q state. X-Request-Id: %s", fa.FormationID, model.ReadyFormationState, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
 		return
 	}
+
 	if fa.Source == fa.Target && fa.SourceType == fa.TargetType {
 		errResp := errors.Errorf("Cannot update formation assignment with source %q and target %q. X-Request-Id: %s", fa.Source, fa.Target, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
