@@ -2,16 +2,11 @@ package graphql
 
 // Formation missing godoc
 type Formation struct {
-	ID                  string `json:"id"`
-	Name                string `json:"name"`
-	FormationTemplateID string `json:"formationTemplateId"`
-	State               string `json:"state"`
-}
-
-// FormationWithStatus is an extended Formation with FormationStatus in it
-type FormationWithStatus struct {
-	Formation
-	Status FormationStatus `json:"status"`
+	ID                  string         `json:"id"`
+	Name                string         `json:"name"`
+	FormationTemplateID string         `json:"formationTemplateId"`
+	State               string         `json:"state"`
+	Error               FormationError `json:"error"`
 }
 
 // FormationPageExt is an extended types used by external API

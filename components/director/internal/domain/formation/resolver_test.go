@@ -49,7 +49,7 @@ func TestCreateFormation(t *testing.T) {
 		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, modelFormation, testTemplateName).Return(&modelFormation, nil)
 
 		mockConverter.On("FromGraphQL", formationInputWithTemplateName).Return(modelFormation)
-		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation)
+		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
@@ -72,7 +72,7 @@ func TestCreateFormation(t *testing.T) {
 		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, modelFormation, model.DefaultTemplateName).Return(&modelFormation, nil)
 
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
-		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation)
+		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
@@ -181,7 +181,7 @@ func TestDeleteFormation(t *testing.T) {
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
-		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
+		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation}, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
@@ -286,7 +286,7 @@ func TestAssignFormation(t *testing.T) {
 		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation).Return(&modelFormation, nil)
 
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
-		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation)
+		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
 		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
 
@@ -423,7 +423,7 @@ func TestUnassignFormation(t *testing.T) {
 		mockService.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation).Return(&modelFormation, nil)
 
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
-		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation)
+		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
@@ -536,7 +536,7 @@ func TestFormation(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation).Once()
+				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil).Once()
 				return conv
 			},
 			InputID:           FormationID,
@@ -637,7 +637,7 @@ func TestFormationByName(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation).Once()
+				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil).Once()
 				return conv
 			},
 			InputName:         testFormationName,
@@ -774,7 +774,7 @@ func TestFormations(t *testing.T) {
 			},
 			ConverterFn: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("MultipleToGraphQL", modelFormations).Return(graphqlFormations).Once()
+				conv.On("MultipleToGraphQL", modelFormations).Return(graphqlFormations, nil).Once()
 				return conv
 			},
 			InputID:            FormationID,
@@ -790,6 +790,23 @@ func TestFormations(t *testing.T) {
 				return service
 			},
 			ConverterFn:        unusedConverter,
+			InputID:            FormationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+		{
+			Name: "Returns error when converting formations to graphql fails",
+			TxFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("List", txtest.CtxWithDBMatcher(), first, afterStr).Return(modelPage, nil).Once()
+				return service
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("MultipleToGraphQL", modelFormations).Return(nil, testErr).Once()
+				return conv
+			},
 			InputID:            FormationID,
 			ExpectedFormations: nil,
 			ExpectedError:      testErr,
@@ -1203,7 +1220,7 @@ func TestResolver_Status(t *testing.T) {
 	gqlStatusThird := graphql.FormationStatus{
 		Condition: graphql.FormationStatusConditionError,
 		Errors: []*graphql.FormationStatusError{{
-			AssignmentID: FormationAssignmentID + "-3",
+			AssignmentID: addSuffix(FormationAssignmentID, "-3"),
 			Message:      "failure",
 			ErrorCode:    1,
 		}},
@@ -1211,18 +1228,19 @@ func TestResolver_Status(t *testing.T) {
 	gqlStatusFourth := graphql.FormationStatus{
 		Condition: graphql.FormationStatusConditionError,
 		Errors: []*graphql.FormationStatusError{{
-			AssignmentID: FormationAssignmentID + "-4",
+			AssignmentID: addSuffix(FormationAssignmentID, "-4"),
 		}},
 	}
 
 	gqlStatuses := []*graphql.FormationStatus{&gqlStatusFirst, &gqlStatusSecond, &gqlStatusThird, &gqlStatusFourth}
 
-	emptyFaPage := [][]*model.FormationAssignment{nil}
+	emptyFaPage := [][]*model.FormationAssignment{nil, nil, nil, nil}
 
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn       func() *automock.FormationAssignmentService
+		Params          []dataloader.ParamFormationStatus
 		ExpectedResult  []*graphql.FormationStatus
 		ExpectedErr     error
 	}{
@@ -1234,23 +1252,44 @@ func TestResolver_Status(t *testing.T) {
 				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(fasPerFormation, nil).Once()
 				return faSvc
 			},
+			Params:         []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams, fourthPageFormations},
 			ExpectedResult: gqlStatuses,
 			ExpectedErr:    nil,
 		},
 		{
-			Name:            "Success with status READY when there are no formation assignments",
+			Name:            "Success when there are no formation assignments",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.FormationAssignmentService {
 				faSvc := &automock.FormationAssignmentService{}
-				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(emptyFaPage, nil).Once()
+				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), []string{FormationID}).Return(emptyFaPage, nil).Once()
 				return faSvc
 			},
+			Params:         []dataloader.ParamFormationStatus{firstFormationStatusParams},
 			ExpectedResult: []*graphql.FormationStatus{&gqlStatusFirst},
 			ExpectedErr:    nil,
 		},
 		{
+			Name:            "Success when there are no FAs and the formation is in error state",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), []string{FormationID}).Return(emptyFaPage, nil).Once()
+				return faSvc
+			},
+			Params: []dataloader.ParamFormationStatus{{ID: FormationID, State: string(model.CreateErrorFormationState), Message: "failure", ErrorCode: 1}},
+			ExpectedResult: []*graphql.FormationStatus{{
+				Condition: graphql.FormationStatusConditionError,
+				Errors: []*graphql.FormationStatusError{{
+					Message:   "failure",
+					ErrorCode: 1,
+				}},
+			}},
+			ExpectedErr: nil,
+		},
+		{
 			Name:            "Returns error when transaction begin failed",
 			TransactionerFn: txGen.ThatFailsOnBegin,
+			Params:          []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams, fourthPageFormations},
 			ExpectedResult:  nil,
 			ExpectedErr:     testErr,
 		},
@@ -1262,6 +1301,7 @@ func TestResolver_Status(t *testing.T) {
 				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(nil, testErr).Once()
 				return faSvc
 			},
+			Params:         []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams, fourthPageFormations},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -1273,6 +1313,7 @@ func TestResolver_Status(t *testing.T) {
 				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(faPagesWithUnmarshallableError, nil).Once()
 				return faSvc
 			},
+			Params:         []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams, fourthPageFormations},
 			ExpectedResult: nil,
 			ExpectedErr:    errors.New("while unmarshalling formation assignment error with assignment ID \"FormationAssignmentID-4\""),
 		},
@@ -1284,6 +1325,7 @@ func TestResolver_Status(t *testing.T) {
 				faSvc.On("ListByFormationIDsNoPaging", txtest.CtxWithDBMatcher(), formationIDs).Return(fasPerFormation, nil).Once()
 				return faSvc
 			},
+			Params:         []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams, fourthPageFormations},
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -1300,14 +1342,15 @@ func TestResolver_Status(t *testing.T) {
 			}
 
 			resolver := formation.NewResolver(transact, nil, nil, faSvc, nil, nil)
-			firstFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID, Ctx: ctx}
-			secondFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID + "2", Ctx: ctx}
-			thirdFormationStatusParams := dataloader.ParamFormationStatus{ID: FormationID + "3", Ctx: ctx}
-			fourthPageFormations := dataloader.ParamFormationStatus{ID: FormationID + "4", Ctx: ctx}
-			keys := []dataloader.ParamFormationStatus{firstFormationStatusParams, secondFormationStatusParams, thirdFormationStatusParams, fourthPageFormations}
+
+			params := make([]dataloader.ParamFormationStatus, 0, len(testCase.Params))
+			for _, param := range testCase.Params {
+				param.Ctx = ctx
+				params = append(params, param)
+			}
 
 			// WHEN
-			result, errs := resolver.StatusDataLoader(keys)
+			result, errs := resolver.StatusDataLoader(params)
 
 			// THEN
 			require.EqualValues(t, testCase.ExpectedResult, result)
@@ -1358,7 +1401,7 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			},
 			Converter: func() *automock.Converter {
 				conv := &automock.Converter{}
-				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation).Once()
+				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil).Once()
 				return conv
 			},
 			ExpectedFormation: &graphqlFormation,
@@ -1445,4 +1488,9 @@ func contextThatHasTenant(expectedTenant string) interface{} {
 		}
 		return actualTenant == expectedTenant
 	})
+}
+
+func addSuffix(str, suffix string) *string {
+	res := str + suffix
+	return &res
 }

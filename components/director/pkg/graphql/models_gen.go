@@ -519,6 +519,11 @@ type FormationConstraintUpdateInput struct {
 	InputTemplate string `json:"inputTemplate"`
 }
 
+type FormationError struct {
+	Message   string `json:"message"`
+	ErrorCode int    `json:"errorCode"`
+}
+
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`
@@ -538,9 +543,9 @@ type FormationStatus struct {
 }
 
 type FormationStatusError struct {
-	AssignmentID string `json:"assignmentID"`
-	Message      string `json:"message"`
-	ErrorCode    int    `json:"errorCode"`
+	AssignmentID *string `json:"assignmentID"`
+	Message      string  `json:"message"`
+	ErrorCode    int     `json:"errorCode"`
 }
 
 type FormationTemplateInput struct {

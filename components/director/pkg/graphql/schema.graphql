@@ -1148,9 +1148,19 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	"""
+	Formation lifecycle notifications state
+	"""
 	state: String!
+	"""
+	Formation lifecycle notifications error
+	"""
+	error: FormationError
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
+	"""
+	Aggregated formation status
+	"""
 	status: FormationStatus!
 }
 
@@ -1182,6 +1192,11 @@ type FormationConstraint {
 	constraintScope: String!
 }
 
+type FormationError {
+	message: String!
+	errorCode: Int!
+}
+
 type FormationPage implements Pageable {
 	data: [Formation!]!
 	pageInfo: PageInfo!
@@ -1194,7 +1209,7 @@ type FormationStatus {
 }
 
 type FormationStatusError {
-	assignmentID: ID!
+	assignmentID: ID
 	message: String!
 	errorCode: Int!
 }

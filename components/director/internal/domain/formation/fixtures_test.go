@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/stretchr/testify/require"
 
@@ -847,6 +849,10 @@ var (
 		AccountID:  nil,
 		Path:       str.Ptr(gaTenantObject.ExternalTenant),
 	}
+	firstFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID, State: string(model.ReadyFormationState)}
+	secondFormationStatusParams = dataloader.ParamFormationStatus{ID: FormationID + "2", State: string(model.InitialFormationState)}
+	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
+	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
 )
 
 func unusedApplicationRepository() *automock.ApplicationRepository {

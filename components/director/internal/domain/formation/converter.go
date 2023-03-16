@@ -1,9 +1,12 @@
 package formation
 
 import (
+	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 type converter struct {
@@ -20,19 +23,31 @@ func (c *converter) FromGraphQL(i graphql.FormationInput) model.Formation {
 }
 
 // ToGraphQL converts model.Formation to graphql.Formation
-func (c *converter) ToGraphQL(i *model.Formation) *graphql.Formation {
+func (c *converter) ToGraphQL(i *model.Formation) (*graphql.Formation, error) {
+	if i == nil {
+		return nil, nil
+	}
+
+	var formationErr graphql.FormationError
+	if i.Error != nil {
+		if err := json.Unmarshal(i.Error, &formationErr); err != nil {
+			return nil, errors.Wrapf(err, "while unmarshalling formation error with ID %q", i.ID)
+		}
+	}
+
 	return &graphql.Formation{
 		ID:                  i.ID,
 		Name:                i.Name,
 		FormationTemplateID: i.FormationTemplateID,
 		State:               string(i.State),
-	}
+		Error:               formationErr,
+	}, nil
 }
 
 // MultipleToGraphQL converts multiple internal models to GraphQL models
-func (c *converter) MultipleToGraphQL(in []*model.Formation) []*graphql.Formation {
+func (c *converter) MultipleToGraphQL(in []*model.Formation) ([]*graphql.Formation, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 	formations := make([]*graphql.Formation, 0, len(in))
 	for _, f := range in {
@@ -40,10 +55,14 @@ func (c *converter) MultipleToGraphQL(in []*model.Formation) []*graphql.Formatio
 			continue
 		}
 
-		formations = append(formations, c.ToGraphQL(f))
+		formation, err := c.ToGraphQL(f)
+		if err != nil {
+			return nil, err
+		}
+		formations = append(formations, formation)
 	}
 
-	return formations
+	return formations, nil
 }
 
 func (c *converter) ToEntity(in *model.Formation) *Entity {

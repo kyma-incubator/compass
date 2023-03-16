@@ -1,7 +1,10 @@
 package formation_test
 
 import (
+	"encoding/json"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/require"
 
@@ -25,10 +28,33 @@ func TestFromGraphQL(t *testing.T) {
 func TestToGraphQL(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// WHEN
-		actual := converter.ToGraphQL(&model.Formation{Name: testFormationName})
+		actual, err := converter.ToGraphQL(&model.Formation{Name: testFormationName})
 
 		// THEN
+		require.NoError(t, err)
 		require.Equal(t, testFormationName, actual.Name)
+	})
+
+	t.Run("Success when input is empty", func(t *testing.T) {
+		// WHEN
+		actual, err := converter.ToGraphQL(nil)
+
+		// THEN
+		require.NoError(t, err)
+		require.Nil(t, actual)
+	})
+
+	t.Run("Returns error when can't unmarshal the error", func(t *testing.T) {
+		// WHEN
+		actual, err := converter.ToGraphQL(&model.Formation{
+			Name:  testFormationName,
+			Error: json.RawMessage(`{invalid}`),
+		})
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "while unmarshalling formation error")
+		require.Nil(t, actual)
 	})
 }
 
@@ -89,6 +115,7 @@ func Test_converter_MultipleToGraphQL(t *testing.T) {
 		Name               string
 		InputFormations    []*model.Formation
 		ExpectedFormations []*graphql.Formation
+		ExpectedErrorMsg   error
 	}{
 		{
 			Name:               "Success",
@@ -105,13 +132,26 @@ func Test_converter_MultipleToGraphQL(t *testing.T) {
 			InputFormations:    []*model.Formation{nil, &modelFormation},
 			ExpectedFormations: []*graphql.Formation{&graphqlFormation},
 		},
+		{
+			Name:               "Returns error when can't convert one of input formations",
+			InputFormations:    []*model.Formation{&modelFormation, {Error: json.RawMessage(`{invalid}`)}},
+			ExpectedFormations: nil,
+			ExpectedErrorMsg:   errors.New("while unmarshalling formation error"),
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			result := converter.MultipleToGraphQL(testCase.InputFormations)
+			result, err := converter.MultipleToGraphQL(testCase.InputFormations)
 
-			require.ElementsMatch(t, testCase.ExpectedFormations, result)
+			if testCase.ExpectedErrorMsg == nil {
+				require.NoError(t, err)
+				require.ElementsMatch(t, testCase.ExpectedFormations, result)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg.Error())
+				require.Nil(t, result)
+			}
 		})
 	}
 }
