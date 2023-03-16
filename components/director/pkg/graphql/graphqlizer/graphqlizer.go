@@ -833,7 +833,7 @@ func (g *Graphqlizer) TenantAccessInputToGQL(in graphql.TenantAccessInput) (stri
 	return g.genericToGQL(in, `{
 		tenantID: "{{.TenantID}}"
 		resourceID: "{{.ResourceID}}"
-        resourceType: "{{.ResourceType}}"
+        resourceType: {{.ResourceType}}
 		owner: "{{.Owner}}"
 	}`)
 }
