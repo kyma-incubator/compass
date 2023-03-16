@@ -1,12 +1,15 @@
 package fixtures
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 
@@ -190,4 +193,23 @@ func FixDeleteTenantsRequest(t require.TestingT, tenants []graphql.BusinessTenan
 
 	tenantsQuery := fmt.Sprintf("mutation { deleteTenants(in:[%s])}", in)
 	return gcli.NewRequest(tenantsQuery)
+}
+
+func FixCertSecuredHTTPClient(cc certloader.Cache, externalClientCertSecretName string, skipSSLValidation bool) *http.Client {
+	certSecuredHTTPClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: cc.Get()[externalClientCertSecretName].Certificate,
+						PrivateKey:  cc.Get()[externalClientCertSecretName].PrivateKey,
+					},
+				},
+				ClientAuth:         tls.RequireAndVerifyClientCert,
+				InsecureSkipVerify: skipSSLValidation,
+			},
+		},
+	}
+	return certSecuredHTTPClient
 }

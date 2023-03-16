@@ -322,8 +322,10 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}/{applicationId}", notificationHandler.AsyncFailOnce).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async/{tenantId}", notificationHandler.Async).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async/{tenantId}/{applicationId}", notificationHandler.AsyncDelete).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/{uclFormationId}", notificationHandler.PostFormation).Methods(http.MethodPost)
-	router.HandleFunc("/formation-callback/{uclFormationId}", notificationHandler.DeleteFormation).Methods(http.MethodDelete)
+	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.PostFormation).Methods(http.MethodPost)
+	router.HandleFunc("/v1/businessIntegration/{uclFormationId}", notificationHandler.DeleteFormation).Methods(http.MethodDelete)
+	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncPostFormation).Methods(http.MethodPost)
+	router.HandleFunc("/v1/businessIntegration/async/{uclFormationId}", notificationHandler.AsyncDeleteFormation).Methods(http.MethodDelete)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),
