@@ -839,6 +839,111 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+func TestSystemFetcherUpdate(t *testing.T) {
+	ctx := context.TODO()
+	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+	defer cleanupMockSystems(t)
+
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	appTemplateName1 := createAppTemplateName("temp1")
+	appTemplateInput1 := fixApplicationTemplate(appTemplateName1, intSys.ID, "val1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput1)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	appTemplateName2 := createAppTemplateName("temp2")
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID, "")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.DeleteJob(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, systemFetcherJobName, systemFetcherJobNamespace)
+
+	description := "description"
+	baseUrl := "http://mainurl.com"
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:                  "name1",
+				Description:           &description,
+				BaseURL:               &baseUrl,
+				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
+				IntegrationSystemID:   &intSys.ID,
+			},
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+		},
+		{
+			Application: directorSchema.Application{
+				Name:         "name2",
+				Description:  &description,
+				BaseURL:      &baseUrl,
+				SystemNumber: str.Ptr("2"),
+			},
+			Labels: applicationLabels("name2", "", "", false),
+		},
+	}
+
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+	}
+
+	require.Equal(t, len(expectedApps), len(actualApps))
+	require.ElementsMatch(t, expectedApps, actualApps)
+
+	// Update one of the Applications with a CONNECTED status condition
+	connectedStatus := directorSchema.ApplicationStatusConditionConnected
+	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+	updateInput.StatusCondition = &connectedStatus
+
+	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+	require.NotNil(t, resp.Data[0].ID)
+
+	updatedAppID := resp.Data[0].ID
+	request := fixtures.FixUpdateApplicationRequest(updatedAppID, updateInputGQL)
+
+	updatedApp := directorSchema.ApplicationExt{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
+	require.NoError(t, err)
+	require.Equal(t, updateInput.StatusCondition.String(), updatedApp.Status.Condition.String())
+
+	jobName := "system-fetcher-test2"
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, systemFetcherCronJobName, jobName, systemFetcherJobNamespace)
+	defer k8s.DeleteJob(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
+	defer k8s.PrintJobLogs(t, ctx, k8sClient, jobName, systemFetcherJobNamespace, cfg.SystemFetcherContainerName, false)
+
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, systemFetcherJobNamespace)
+
+	// Assert the previously updated Application still contains it's updated StatusCondition
+	updatedSystems := 0
+	resp, actualApps = retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	for _, app := range resp.Data {
+		if app.ID == updatedAppID {
+			updatedSystems += 1
+			require.Equal(t, app.Status.Condition.String(), connectedStatus.String())
+		}
+	}
+
+	require.Equal(t, 1, updatedSystems)
+}
+
 func waitForDeleteOperation(ctx context.Context, t *testing.T, appID string) {
 	cfg, err := rest.InClusterConfig()
 	require.NoError(t, err)
