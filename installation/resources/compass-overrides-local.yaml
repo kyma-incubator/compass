@@ -46,6 +46,8 @@ global:
       manage: true
     regionInstancesCredentials:
       manage: true
+    ias:
+      applyMockConfiguration: true
   http:
     client:
       skipSSLValidation: true

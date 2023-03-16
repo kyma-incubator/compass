@@ -83,12 +83,6 @@ spec:
               value: {{ .Values.global.iasAdapter.ias.requestTimeout }}
             - name: APP_IAS_COCKPIT_PATH
               value: {{ .Values.global.iasAdapter.ias.secret.path }}/{{ .Values.global.iasAdapter.ias.secret.fileName }}
-            - name: APP_IAS_COCKPIT_CLIENT_CERT
-              value: {{ .Values.global.iasAdapter.ias.secret.clientCert }}
-            - name: APP_IAS_COCKPIT_CLIENT_KEY
-              value: {{ .Values.global.iasAdapter.ias.secret.clientKey }}
-            - name: APP_IAS_COCKPIT_CA
-              value: {{ .Values.global.iasAdapter.ias.secret.ca }}
             - name: APP_POSTGRES_DB_NAME
               valueFrom:
                 secretKeyRef:
@@ -126,14 +120,14 @@ spec:
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
-              path: "{{ .Values.global.iasAdapter.rootAPI }}/healthz"
+              path: "{{ .Values.global.iasAdapter.apiRootPath }}/healthz"
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
           readinessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
-              path: "{{ .Values.global.iasAdapter.rootAPI }}/readyz"
+              path: "{{ .Values.global.iasAdapter.apiRootPath }}/readyz"
             initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
