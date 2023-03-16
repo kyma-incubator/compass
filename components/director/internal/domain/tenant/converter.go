@@ -133,7 +133,7 @@ func (c *converter) MultipleInputToGraphQLInput(in []model.BusinessTenantMapping
 
 // TenantAccessInputFromGraphQL converts the provided graphql.TenantAccessInput GraphQL-layer representation of a tenant accessto the service-layer representation model.TenantAccess.
 func (c *converter) TenantAccessInputFromGraphQL(in graphql.TenantAccessInput) (*model.TenantAccess, error) {
-	resourceType, err := FromTenantAccessObjectTypeToResourceType(in.ResourceType)
+	resourceType, err := fromTenantAccessObjectTypeToResourceType(in.ResourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (c *converter) TenantAccessToGraphQL(in *model.TenantAccess) (*graphql.Tena
 		return nil, nil
 	}
 
-	resourceType, err := FromResourceTypeToTenantAccessObjectType(in.ResourceType)
+	resourceType, err := fromResourceTypeToTenantAccessObjectType(in.ResourceType)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (c *converter) TenantAccessFromEntity(in *repo.TenantAccess) *model.TenantA
 	}
 }
 
-func FromTenantAccessObjectTypeToResourceType(objectType graphql.TenantAccessObjectType) (resource.Type, error) {
+func fromTenantAccessObjectTypeToResourceType(objectType graphql.TenantAccessObjectType) (resource.Type, error) {
 	switch objectType {
 	case graphql.TenantAccessObjectTypeApplication:
 		return resource.Application, nil
@@ -204,7 +204,7 @@ func FromTenantAccessObjectTypeToResourceType(objectType graphql.TenantAccessObj
 	}
 }
 
-func FromResourceTypeToTenantAccessObjectType(objectType resource.Type) (graphql.TenantAccessObjectType, error) {
+func fromResourceTypeToTenantAccessObjectType(objectType resource.Type) (graphql.TenantAccessObjectType, error) {
 	switch objectType {
 	case resource.Application:
 		return graphql.TenantAccessObjectTypeApplication, nil

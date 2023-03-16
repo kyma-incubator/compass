@@ -156,12 +156,6 @@ type sqlRow struct {
 	status         tenant.Status
 }
 
-type tenantAccessSqlRow struct {
-	tenantId string
-	id       string
-	owner    bool
-}
-
 type sqlRowWithComputedValues struct {
 	sqlRow
 	initialized *bool

@@ -333,7 +333,6 @@ func TestConverter_MultipleInputToGraphQLInputL(t *testing.T) {
 }
 
 func TestConverter_TenantAccessInputFromGraphQL(t *testing.T) {
-
 	testCases := []struct {
 		Name             string
 		Input            graphql.TenantAccessInput
@@ -415,7 +414,6 @@ func TestConverter_TenantAccessInputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_TenantAccessToGraphQL(t *testing.T) {
-
 	testCases := []struct {
 		Name             string
 		Input            *model.TenantAccess

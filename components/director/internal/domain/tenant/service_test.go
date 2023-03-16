@@ -1298,8 +1298,8 @@ func TestService_CreateTenantAccessForResource(t *testing.T) {
 			db, dbMock := unusedDBMock(t)
 			if testCase.PersistenceFn != nil {
 				db, dbMock = testCase.PersistenceFn()
-				ctx = persistence.SaveToContext(ctx, db)
 			}
+			ctx = persistence.SaveToContext(ctx, db)
 
 			svc := tenant.NewService(nil, nil, converter)
 
@@ -1371,8 +1371,8 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			db, dbMock := unusedDBMock(t)
 			if testCase.PersistenceFn != nil {
 				db, dbMock = testCase.PersistenceFn()
-				ctx = persistence.SaveToContext(ctx, db)
 			}
+			ctx = persistence.SaveToContext(ctx, db)
 
 			svc := tenant.NewService(nil, nil, converter)
 
@@ -1433,7 +1433,7 @@ func TestService_GetTenantAccessForResource(t *testing.T) {
 				return db, dbMock
 			},
 			Input:            tenantAccessModel,
-			ExpectedErrorMsg: fmt.Sprintf("Unexpected error while executing SQL query"),
+			ExpectedErrorMsg: "Unexpected error while executing SQL query",
 		},
 	}
 
@@ -1447,8 +1447,8 @@ func TestService_GetTenantAccessForResource(t *testing.T) {
 			db, dbMock := unusedDBMock(t)
 			if testCase.PersistenceFn != nil {
 				db, dbMock = testCase.PersistenceFn()
-				ctx = persistence.SaveToContext(ctx, db)
 			}
+			ctx = persistence.SaveToContext(ctx, db)
 
 			svc := tenant.NewService(nil, nil, converter)
 

@@ -336,6 +336,7 @@ func (r *Resolver) fetchTenant(tx persistence.PersistenceTx, externalID string) 
 	return tr, nil
 }
 
+// AddTenantAccess adds a tenant access record for tenantID about resourceID
 func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessInput) (*graphql.TenantAccess, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -378,6 +379,7 @@ func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessI
 	return output, nil
 }
 
+// RemoveTenantAccess removes the tenant access record for tenantID about resourceID
 func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID string, resourceType graphql.TenantAccessObjectType) (*graphql.TenantAccess, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -392,7 +394,7 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 		return nil, errors.Wrapf(err, "while getting internal tenant for external tenant ID: %q", tenantID)
 	}
 
-	resourceTypeModel, err := FromTenantAccessObjectTypeToResourceType(resourceType)
+	resourceTypeModel, err := fromTenantAccessObjectTypeToResourceType(resourceType)
 	if err != nil {
 		return nil, err
 	}
