@@ -342,10 +342,33 @@ func areAppTemplatesEqual(appTemplate *model.ApplicationTemplate, appTemplateInp
 	isAppInputJSONEqual := appTemplate.ApplicationInputJSON == appTemplateInput.ApplicationInputJSON
 	isLabelEqual := reflect.DeepEqual(appTemplate.Labels, appTemplateInput.Labels)
 	isPlaceholderEqual := reflect.DeepEqual(appTemplate.Placeholders, appTemplateInput.Placeholders)
+	areWebhooksEq := areWebhooksEqual(appTemplate.Webhooks, appTemplateInput.Webhooks)
 
-	if isAppInputJSONEqual && isLabelEqual && isPlaceholderEqual {
+	if isAppInputJSONEqual && isLabelEqual && isPlaceholderEqual && areWebhooksEq {
 		return true
 	}
 
 	return false
+}
+
+func areWebhooksEqual(webhooksModel []model.Webhook, webhooksInput []*model.WebhookInput) bool {
+	if len(webhooksModel) != len(webhooksInput) {
+		return false
+	}
+
+	for _, whModel := range webhooksModel {
+		isEqual := false
+
+		for _, whInput := range webhooksInput {
+			if whModel.ID == whInput.ID {
+				isEqual = reflect.DeepEqual(whModel, *whInput.ToWebhook(whModel.ID, whModel.ObjectID, whModel.ObjectType))
+			}
+		}
+
+		if !isEqual {
+			return false
+		}
+	}
+
+	return true
 }
