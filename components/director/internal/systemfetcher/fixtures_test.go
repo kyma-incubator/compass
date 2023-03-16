@@ -47,3 +47,13 @@ func fixAppInputBySystem(system systemfetcher.System) model.ApplicationRegisterI
 		},
 	}
 }
+
+func fixWebhookModel(id string, whMode model.WebhookMode) model.Webhook {
+	return model.Webhook{
+		ID:         id,
+		ObjectID:   id,
+		ObjectType: model.ApplicationWebhookReference,
+		Type:       model.WebhookTypeConfigurationChanged,
+		Mode:       &whMode,
+	}
+}
