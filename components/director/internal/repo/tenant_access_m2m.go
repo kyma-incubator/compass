@@ -68,6 +68,19 @@ func (tc TenantAccessCollection) Len() int {
 	return len(tc)
 }
 
+// GetSingleTenantAccess gets a tenant access record for tenant with ID tenantID and resource with ID resourceID
+func GetSingleTenantAccess(ctx context.Context, m2mTable string, tenantID, resourceID string) (*TenantAccess, error) {
+	getter := NewSingleGetterGlobal(resource.TenantAccess, m2mTable, M2MColumns)
+
+	tenantAccess := &TenantAccess{}
+	err := getter.GetGlobal(ctx, Conditions{NewEqualCondition(M2MTenantIDColumn, tenantID), NewEqualCondition(M2MResourceIDColumn, resourceID)}, NoOrderBy, tenantAccess)
+	if err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Get, "while fetching tenant access record from '%s' table", m2mTable)
+	}
+
+	return tenantAccess, nil
+}
+
 // CreateSingleTenantAccess create a tenant access for a single entity
 func CreateSingleTenantAccess(ctx context.Context, m2mTable string, tenantAccess *TenantAccess) error {
 	values := make([]string, 0, len(M2MColumns))

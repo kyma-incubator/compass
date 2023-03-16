@@ -722,3 +722,13 @@ func (fp *GqlFieldsProvider) ForCertificateSubjectMapping() string {
 		tenantAccessLevels	
 	`
 }
+
+// ForTenantAccess returns tenant access fields
+func (fp *GqlFieldsProvider) ForTenantAccess() string {
+	return `
+		tenantID
+		resourceID
+        resourceType
+		owner
+	`
+}

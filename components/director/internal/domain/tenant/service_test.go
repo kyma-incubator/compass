@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -63,7 +62,7 @@ func TestService_GetExternalTenant(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantMappingRepoFn := testCase.TenantMappingRepoFn()
-			svc := tenant.NewService(tenantMappingRepoFn, nil)
+			svc := tenant.NewService(tenantMappingRepoFn, nil, nil)
 
 			// WHEN
 			result, err := svc.GetExternalTenant(ctx, testID)
@@ -117,7 +116,7 @@ func TestService_GetInternalTenant(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantMappingRepoFn := testCase.TenantMappingRepoFn()
-			svc := tenant.NewService(tenantMappingRepoFn, nil)
+			svc := tenant.NewService(tenantMappingRepoFn, nil, nil)
 
 			// WHEN
 			result, err := svc.GetInternalTenant(ctx, testExternal)
@@ -219,7 +218,7 @@ func TestService_ExtractTenantIDForTenantScopedFormationTemplates(t *testing.T) 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantMappingRepoFn := testCase.TenantMappingRepoFn()
-			svc := tenant.NewService(tenantMappingRepoFn, nil)
+			svc := tenant.NewService(tenantMappingRepoFn, nil, nil)
 
 			// WHEN
 			result, err := svc.ExtractTenantIDForTenantScopedFormationTemplates(testCase.Context)
@@ -276,7 +275,7 @@ func TestService_List(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantMappingRepo := testCase.TenantMappingRepoFn()
-			svc := tenant.NewService(tenantMappingRepo, nil)
+			svc := tenant.NewService(tenantMappingRepo, nil, nil)
 
 			// WHEN
 			result, err := svc.List(ctx)
@@ -344,7 +343,7 @@ func TestService_ListPageBySearchTerm(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantMappingRepo := testCase.TenantMappingRepoFn()
-			svc := tenant.NewService(tenantMappingRepo, nil)
+			svc := tenant.NewService(tenantMappingRepo, nil, nil)
 
 			// WHEN
 			result, err := svc.ListPageBySearchTerm(ctx, searchTerm, first, endCursor)
@@ -396,7 +395,7 @@ func TestService_DeleteMany(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantMappingRepo := testCase.TenantMappingRepoFn()
-			svc := tenant.NewService(tenantMappingRepo, nil)
+			svc := tenant.NewService(tenantMappingRepo, nil, nil)
 
 			// WHEN
 			err := svc.DeleteMany(ctx, []string{tenantInput.ExternalTenant})
@@ -656,7 +655,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				labelUpsertSvc := testCase.LabelUpsertSvcFn()
 				defer mock.AssertExpectationsForObjects(t, tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-				svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
+				svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 				// WHEN
 				res, err := svc.CreateManyIfNotExists(ctx, testCase.tenantInputs...)
@@ -682,7 +681,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				labelUpsertSvc := testCase.LabelUpsertSvcFn()
 				defer mock.AssertExpectationsForObjects(t, tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-				svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
+				svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 				// WHEN
 				res, err := svc.UpsertMany(ctx, testCase.tenantInputs...)
@@ -877,7 +876,7 @@ func Test_UpsertSingle(t *testing.T) {
 			labelUpsertSvc := testCase.LabelUpsertSvcFn()
 			defer mock.AssertExpectationsForObjects(t, tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-			svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc)
+			svc := tenant.NewServiceWithLabels(tenantMappingRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 			// WHEN
 			result, err := svc.UpsertSingle(ctx, testCase.tenantInput)
@@ -970,7 +969,7 @@ func Test_MultipleToTenantMapping(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			svc := tenant.NewService(nil, &serialUUIDService{})
+			svc := tenant.NewService(nil, &serialUUIDService{}, nil)
 			require.Equal(t, testCase.ExpectedSlice, svc.MultipleToTenantMapping(testCase.InputSlice))
 		})
 	}
@@ -1033,7 +1032,7 @@ func Test_Update(t *testing.T) {
 			ctx := context.TODO()
 			tenantMappingRepo := testCase.TenantMappingRepositoryFn()
 			serialUUIDService := &serialUUIDService{}
-			svc := tenant.NewService(tenantMappingRepo, serialUUIDService)
+			svc := tenant.NewService(tenantMappingRepo, serialUUIDService, nil)
 			err := svc.Update(ctx, testCase.InputID, testCase.InputTenant)
 
 			if testCase.ExpectedErr != nil {
@@ -1130,7 +1129,7 @@ func Test_ListLabels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 		actualLabels, err := svc.ListLabels(ctx, tenantID)
 		assert.NoError(t, err)
@@ -1147,7 +1146,7 @@ func Test_ListLabels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 		_, err := svc.ListLabels(ctx, tenantID)
 		assert.Error(t, err)
@@ -1164,7 +1163,7 @@ func Test_ListLabels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 		_, err := svc.ListLabels(ctx, tenantID)
 		assert.Error(t, err)
@@ -1183,7 +1182,7 @@ func Test_ListLabels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 		_, err := svc.ListLabels(ctx, tenantID)
 		assert.Error(t, err)
@@ -1212,7 +1211,7 @@ func Test_GetTenantByExternalID(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 		// WHEN
 		actual, err := svc.GetTenantByExternalID(ctx, testID)
@@ -1234,7 +1233,7 @@ func Test_GetTenantByExternalID(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
 
-		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc)
+		svc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelUpsertSvc, nil)
 
 		// WHEN
 		actual, err := svc.GetTenantByExternalID(ctx, testID)
@@ -1247,48 +1246,226 @@ func Test_GetTenantByExternalID(t *testing.T) {
 }
 
 func TestService_CreateTenantAccessForResource(t *testing.T) {
-	tenantID := "test"
-	resourceID := "app-ID"
-	isOwner := false
+	testCases := []struct {
+		Name             string
+		ConverterFn      func() *automock.BusinessTenantMappingConverter
+		PersistenceFn    func() (*sqlx.DB, testdb.DBMock)
+		Input            *model.TenantAccess
+		ExpectedErrorMsg string
+	}{
+		{
+			Name: "Success",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
 
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		resourceType := resource.Application
-		uidSvc := &automock.UIDService{}
-		tenantRepo := &automock.TenantMappingRepository{}
-		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc)
+				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`)).
+					WithArgs(testInternal, testID, true).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				return db, dbMock
+			},
+			Input: tenantAccessModel,
+		},
+		{
+			Name:             "Error when resource does not have access table",
+			Input:            invalidTenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("entity %q does not have access table", invalidResourceType),
+		},
+		{
+			Name: "Error while creating tenant access",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			Input:            tenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("while creating tenant acccess for resource type %q with ID %q for tenant %q", tenantAccessModel.ResourceType, tenantAccessModel.ResourceID, tenantAccessModel.InternalTenantID),
+		},
+	}
 
-		db, dbMock := testdb.MockDatabase(t)
-		ctx := persistence.SaveToContext(context.TODO(), db)
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			ctx := context.TODO()
+			converter := unusedConverter()
+			if testCase.ConverterFn != nil {
+				converter = testCase.ConverterFn()
+			}
+			db, dbMock := unusedDBMock(t)
+			if testCase.PersistenceFn != nil {
+				db, dbMock = testCase.PersistenceFn()
+				ctx = persistence.SaveToContext(ctx, db)
+			}
 
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`)).
-			WithArgs(tenantID, resourceID, isOwner).
-			WillReturnResult(sqlmock.NewResult(1, 1))
+			svc := tenant.NewService(nil, nil, converter)
 
-		svc := tenant.NewService(tenantRepo, uidSvc)
+			// WHEN
+			err := svc.CreateTenantAccessForResource(ctx, testCase.Input)
 
-		// WHEN
-		err := svc.CreateTenantAccessForResource(ctx, tenantID, resourceID, isOwner, resourceType)
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
 
-		// THEN
-		require.Nil(t, err)
-	})
+			mock.AssertExpectationsForObjects(t, converter)
+			dbMock.AssertExpectations(t)
+		})
+	}
+}
 
-	t.Run("Error when resource has no access table", func(t *testing.T) {
-		// GIVEN
-		resourceType := resource.Document
-		uidSvc := &automock.UIDService{}
-		tenantRepo := &automock.TenantMappingRepository{}
-		defer mock.AssertExpectationsForObjects(t, tenantRepo, uidSvc)
+func TestService_DeleteTenantAccessForResource(t *testing.T) {
+	testCases := []struct {
+		Name             string
+		ConverterFn      func() *automock.BusinessTenantMappingConverter
+		PersistenceFn    func() (*sqlx.DB, testdb.DBMock)
+		Input            *model.TenantAccess
+		ExpectedErrorMsg string
+	}{
+		{
+			Name: "Success",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
 
-		svc := tenant.NewService(tenantRepo, uidSvc)
+				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
+					WithArgs(testInternal, testID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				return db, dbMock
+			},
+			Input: tenantAccessModel,
+		},
+		{
+			Name:             "Error when resource does not have access table",
+			Input:            invalidTenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("entity %q does not have access table", invalidResourceType),
+		},
+		{
+			Name: "Error while deleting tenant access",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			Input:            tenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("while deleting tenant acccess for resource type %q with ID %q for tenant %q", tenantAccessModel.ResourceType, tenantAccessModel.ResourceID, tenantAccessModel.InternalTenantID),
+		},
+	}
 
-		// WHEN
-		err := svc.CreateTenantAccessForResource(context.TODO(), tenantID, resourceID, isOwner, resourceType)
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			ctx := context.TODO()
+			converter := unusedConverter()
+			if testCase.ConverterFn != nil {
+				converter = testCase.ConverterFn()
+			}
+			db, dbMock := unusedDBMock(t)
+			if testCase.PersistenceFn != nil {
+				db, dbMock = testCase.PersistenceFn()
+				ctx = persistence.SaveToContext(ctx, db)
+			}
 
-		// THEN
-		require.Error(t, err, "entity \"document\" does not have access table")
-	})
+			svc := tenant.NewService(nil, nil, converter)
+
+			// WHEN
+			err := svc.DeleteTenantAccessForResource(ctx, testCase.Input)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, converter)
+			dbMock.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetTenantAccessForResource(t *testing.T) {
+	testCases := []struct {
+		Name             string
+		ConverterFn      func() *automock.BusinessTenantMappingConverter
+		PersistenceFn    func() (*sqlx.DB, testdb.DBMock)
+		Input            *model.TenantAccess
+		ExpectedErrorMsg string
+		ExpectedOutput   *model.TenantAccess
+	}{
+		{
+			Name: "Success",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessFromEntity", tenantAccessEntity).Return(tenantAccessModelWithoutExternalTenant).Once()
+				return conv
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				rows := sqlmock.NewRows(tenantAccessTestTableColumns)
+				rows.AddRow(testInternal, testID, true)
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND id = $2`)).
+					WithArgs(testInternal, testID).WillReturnRows(rows)
+				return db, dbMock
+			},
+			Input:          tenantAccessModel,
+			ExpectedOutput: tenantAccessModelWithoutExternalTenant,
+		},
+		{
+			Name:             "Error when resource does not have access table",
+			Input:            invalidTenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("entity %q does not have access table", invalidResourceType),
+		},
+		{
+			Name: "Error while getting tenant access",
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, id, owner FROM tenant_applications WHERE tenant_id = $1 AND id = $2`)).
+					WithArgs(testInternal, testID).WillReturnError(testError)
+				return db, dbMock
+			},
+			Input:            tenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("Unexpected error while executing SQL query"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			ctx := context.TODO()
+			converter := unusedConverter()
+			if testCase.ConverterFn != nil {
+				converter = testCase.ConverterFn()
+			}
+			db, dbMock := unusedDBMock(t)
+			if testCase.PersistenceFn != nil {
+				db, dbMock = testCase.PersistenceFn()
+				ctx = persistence.SaveToContext(ctx, db)
+			}
+
+			svc := tenant.NewService(nil, nil, converter)
+
+			// WHEN
+			result, err := svc.GetTenantAccessForResource(ctx, testCase.Input.InternalTenantID, testCase.Input.ResourceID, testCase.Input.ResourceType)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.ExpectedOutput, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, converter)
+			dbMock.AssertExpectations(t)
+		})
+	}
 }
 
 type serialUUIDService struct {

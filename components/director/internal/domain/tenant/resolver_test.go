@@ -1212,14 +1212,315 @@ func TestResolver_Update(t *testing.T) {
 	}
 }
 
-func unusedTenantConverter() *automock.BusinessTenantMappingConverter {
-	return &automock.BusinessTenantMappingConverter{}
+func TestResolver_AddTenantAccess(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	testCases := []struct {
+		Name             string
+		TxFn             func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn      func() *automock.BusinessTenantMappingService
+		TenantConvFn     func() *automock.BusinessTenantMappingConverter
+		Input            graphql.TenantAccessInput
+		ExpectedErrorMsg string
+		ExpectedResult   *graphql.TenantAccess
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessInputFromGraphQL", tenantAccessInput).Return(tenantAccessWithoutInternalTenantModel, nil).Once()
+				conv.On("TenantAccessToGraphQL", tenantAccessModel).Return(tenantAccessGQL, nil).Once()
+				return conv
+			},
+			Input:          tenantAccessInput,
+			ExpectedResult: tenantAccessGQL,
+		},
+		{
+			Name: "Error when committing transaction",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessInputFromGraphQL", tenantAccessInput).Return(tenantAccessWithoutInternalTenantModel, nil).Once()
+				conv.On("TenantAccessToGraphQL", tenantAccessModel).Return(tenantAccessGQL, nil).Once()
+				return conv
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: testError.Error(),
+		},
+		{
+			Name: "Error when converting to graphql",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessInputFromGraphQL", tenantAccessInput).Return(tenantAccessWithoutInternalTenantModel, nil).Once()
+				conv.On("TenantAccessToGraphQL", tenantAccessModel).Return(nil, testError).Once()
+				return conv
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while converting to graphql tenant access",
+		},
+		{
+			Name: "Error when getting tenant access",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(nil, testError).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessInputFromGraphQL", tenantAccessInput).Return(tenantAccessWithoutInternalTenantModel, nil).Once()
+				return conv
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while fetching stored tenant access for tenant",
+		},
+		{
+			Name: "Error when creating tenant access record",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(testError).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessInputFromGraphQL", tenantAccessInput).Return(tenantAccessWithoutInternalTenantModel, nil).Once()
+				return conv
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while creating tenant access record",
+		},
+		{
+			Name: "Error when getting internal tenant",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return("", testError).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessInputFromGraphQL", tenantAccessInput).Return(tenantAccessWithoutInternalTenantModel, nil).Once()
+				return conv
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while getting internal tenant",
+		},
+		{
+			Name: "Error when converting input",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessInputFromGraphQL", tenantAccessInput).Return(nil, testError).Once()
+				return conv
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while converting tenant access inpu",
+		},
+		{
+			Name:             "Error when converting input",
+			TxFn:             txGen.ThatFailsOnBegin,
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: testError.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := unusedTenantService()
+			if testCase.TenantSvcFn != nil {
+				tenantSvc = testCase.TenantSvcFn()
+			}
+			tenantConv := unusedTenantConverter()
+			if testCase.TenantConvFn != nil {
+				tenantConv = testCase.TenantConvFn()
+			}
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+
+			// WHEN
+			result, err := resolver.AddTenantAccess(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+		})
+	}
 }
 
-func unusedTenantService() *automock.BusinessTenantMappingService {
-	return &automock.BusinessTenantMappingService{}
-}
+func TestResolver_RemoveTenantAccess(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
 
-func unusedFetcherService() *automock.Fetcher {
-	return &automock.Fetcher{}
+	testCases := []struct {
+		Name             string
+		TxFn             func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn      func() *automock.BusinessTenantMappingService
+		TenantConvFn     func() *automock.BusinessTenantMappingConverter
+		Input            graphql.TenantAccessInput
+		ExpectedErrorMsg string
+		ExpectedResult   *graphql.TenantAccess
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
+				TenantSvc.On("DeleteTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToGraphQL", tenantAccessModel).Return(tenantAccessGQL, nil).Once()
+				return conv
+			},
+			Input:          tenantAccessInput,
+			ExpectedResult: tenantAccessGQL,
+		},
+		{
+			Name: "Error when committing transaction",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
+				TenantSvc.On("DeleteTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToGraphQL", tenantAccessModel).Return(tenantAccessGQL, nil).Once()
+				return conv
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: testError.Error(),
+		},
+		{
+			Name: "Error when converting to graphql",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
+				TenantSvc.On("DeleteTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToGraphQL", tenantAccessModel).Return(nil, testError).Once()
+				return conv
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while converting to graphql tenant access",
+		},
+		{
+			Name: "Error when deleting tenant access record",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
+				TenantSvc.On("DeleteTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(testError).Once()
+				return TenantSvc
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while deleting tenant access record",
+		},
+		{
+			Name: "Error when getting tenant access record",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(nil, testError).Once()
+				return TenantSvc
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while fetching stored tenant access for tenant",
+		},
+		{
+			Name: "Error when getting internal tenant",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return("", testError).Once()
+				return TenantSvc
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "while getting internal tenant",
+		},
+		{
+			Name:             "Error when converting input",
+			TxFn:             txGen.ThatFailsOnBegin,
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: testError.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := unusedTenantService()
+			if testCase.TenantSvcFn != nil {
+				tenantSvc = testCase.TenantSvcFn()
+			}
+			tenantConv := unusedTenantConverter()
+			if testCase.TenantConvFn != nil {
+				tenantConv = testCase.TenantConvFn()
+			}
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+
+			// WHEN
+			result, err := resolver.RemoveTenantAccess(ctx, testCase.Input.TenantID, testCase.Input.ResourceID, testCase.Input.ResourceType)
+
+			// THEN
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+		})
+	}
 }

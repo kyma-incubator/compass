@@ -296,13 +296,13 @@ func (_m *TenantMappingRepository) Upsert(ctx context.Context, item model.Busine
 	return r0
 }
 
-type mockConstructorTestingTNewTenantMappingRepository interface {
+type NewTenantMappingRepositoryT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewTenantMappingRepository creates a new instance of TenantMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantMappingRepository(t mockConstructorTestingTNewTenantMappingRepository) *TenantMappingRepository {
+func NewTenantMappingRepository(t NewTenantMappingRepositoryT) *TenantMappingRepository {
 	mock := &TenantMappingRepository{}
 	mock.Mock.Test(t)
 

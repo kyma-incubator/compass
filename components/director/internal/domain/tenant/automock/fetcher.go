@@ -23,13 +23,13 @@ func (_m *Fetcher) FetchOnDemand(_a0 string, parentTenant string) error {
 	return r0
 }
 
-type mockConstructorTestingTNewFetcher interface {
+type NewFetcherT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewFetcher creates a new instance of Fetcher. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFetcher(t mockConstructorTestingTNewFetcher) *Fetcher {
+func NewFetcher(t NewFetcherT) *Fetcher {
 	mock := &Fetcher{}
 	mock.Mock.Test(t)
 
