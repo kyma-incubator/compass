@@ -187,7 +187,7 @@ var (
 	// SupportedUseCases contain all valid values for this field from the spec
 	SupportedUseCases = map[string]bool{
 		"mass-extraction": true,
-		//"mass-import":     true, // will be added later in spec
+		// "mass-import":     true, // will be added later in spec
 	}
 )
 

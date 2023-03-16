@@ -91,7 +91,7 @@ const (
 	APISpecTypeWsdlV2 APISpecType = "wsdl-v2"
 	// APISpecTypeRfcMetadata is the RFC Metadata Specification.
 	APISpecTypeRfcMetadata APISpecType = "sap-rfc-metadata-v1"
-	// APISpecTypeRfcMetadata is the RFC Metadata Specification.
+	// APISpecTypeSQLAPIDefinitionV1 is the SQL API Definition Specification.
 	APISpecTypeSQLAPIDefinitionV1 APISpecType = "sap-sql-api-definition-v1"
 	// APISpecTypeCustom is the Custom Specification.
 	APISpecTypeCustom APISpecType = "custom"
