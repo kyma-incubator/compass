@@ -77,23 +77,8 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 
 	emptyFormationAssignmentsForObject := []*model.FormationAssignment{}
 
-	testFormationWithReadyState := &model.Formation{
-		ID:                  testFormationID,
-		TenantID:            internalTntID,
-		FormationTemplateID: "testFormationTemplateID",
-		Name:                "testFormationName",
-		State:               model.ReadyFormationState,
-	}
-
+	testFormationWithReadyState := fixFormationWithState(model.ReadyFormationState)
 	testFormationWithInitialState := fixFormationWithState(model.InitialFormationState)
-
-	testFormationInitialState := &model.Formation{
-		ID:                  testFormationID,
-		TenantID:            internalTntID,
-		FormationTemplateID: "testFormationTemplateID",
-		Name:                "testFormationName",
-		State:               model.InitialFormationState,
-	}
 
 	testCases := []struct {
 		name                string
@@ -276,7 +261,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			},
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationInitialState, nil).Once()
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithInitialState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationAssignmentRequestBody{
