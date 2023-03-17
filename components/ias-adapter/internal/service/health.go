@@ -16,7 +16,7 @@ type HealthService struct {
 }
 
 func (s HealthService) CheckHealth(ctx context.Context) (types.HealthStatus, error) {
-	healthStatus := types.HealthStatus{}
+	healthStatus := types.HealthStatus{Storage: types.StatusUp}
 	var statusErrs error
 
 	if err := s.Storage.Ping(ctx); err != nil {

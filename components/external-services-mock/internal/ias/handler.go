@@ -36,30 +36,38 @@ type ApplicationConsumedAPI struct {
 	ClientID string `json:"clientId"`
 }
 
+type Config struct {
+	ConsumerAppID       string `envconfig:"APP_IAS_ADAPTER_CONSUMER_APP_ID"`
+	ConsumerAppClientID string `envconfig:"APP_IAS_ADAPTER_CONSUMER_APP_CLIENT_ID"`
+	ProviderAppID       string `envconfig:"APP_IAS_ADAPTER_PROVIDER_APP_ID"`
+	ProviderAppClientID string `envconfig:"APP_IAS_ADAPTER_PROVIDER_APP_CLIENT_ID"`
+	ProvidedAPIName     string `envconfig:"APP_IAS_ADAPTER_PROVIDED_API_NAME"`
+}
+
 type Handler struct {
 	applications Applications
 }
 
-func NewHandler() *Handler {
+func NewHandler(cfg Config) *Handler {
 	return &Handler{
 		applications: Applications{
 			Applications: []Application{
 				{
-					ID: "app-id-1",
+					ID: cfg.ProviderAppID,
 					Authentication: ApplicationAuthentication{
-						ClientID: "client-id-1",
+						ClientID: cfg.ProviderAppClientID,
 						ProvidedAPIs: []ApplicationProvidedAPI{
 							{
-								Name:        "provided-api-name-1",
-								Description: "provided-api-description-1",
+								Name:        cfg.ProvidedAPIName,
+								Description: cfg.ProvidedAPIName,
 							},
 						},
 					},
 				},
 				{
-					ID: "app-id-1",
+					ID: cfg.ConsumerAppID,
 					Authentication: ApplicationAuthentication{
-						ClientID: "client-id-2",
+						ClientID: cfg.ConsumerAppClientID,
 					},
 				},
 			},

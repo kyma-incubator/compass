@@ -25,8 +25,8 @@ func (c Connection) UpsertTenantMapping(ctx context.Context, tenantMapping types
 	if err != nil {
 		return errors.Newf("failed to transform tenant mapping fields: %w", err)
 	}
-	if _, err := c.pool.Exec(timeoutCtx, upsertTenantMappingQuery, fields); err != nil {
-		return dbError(errors.Newf("failed to insert tenant mapping: %w", err))
+	if _, err := c.pool.Exec(timeoutCtx, upsertTenantMappingQuery, fields...); err != nil {
+		return errors.Newf("failed to insert tenant mapping: %w", err)
 	}
 
 	return nil
@@ -66,7 +66,7 @@ func (c Connection) DeleteTenantMapping(ctx context.Context, applicationID, form
 	defer cancel()
 
 	if _, err := c.pool.Exec(timeoutCtx, deleteTenantMappingQuery, formationID, applicationID); err != nil {
-		return dbError(errors.Newf("failed to delete tenant mapping with formation_id '%s': %w", err))
+		return errors.Newf("failed to delete tenant mapping with formation_id '%s': %w", err)
 	}
 
 	return nil

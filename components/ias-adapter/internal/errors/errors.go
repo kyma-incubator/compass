@@ -16,4 +16,5 @@ var (
 var (
 	EntityNotFound      = New("entity not found")
 	EntityAlreadyExists = New("entity already exists")
+	Internal            = New("internal error")
 )

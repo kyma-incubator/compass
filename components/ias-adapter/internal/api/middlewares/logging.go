@@ -9,9 +9,13 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 )
 
+const CorrelationIDKey = "correlationID"
+
 func Logging(ctx *gin.Context) {
-	ctxLogger := logger.Default().With().Str("correlationID", uuid.NewString()).Logger()
+	correlationID := uuid.NewString()
+	ctxLogger := logger.Default().With().Str(CorrelationIDKey, correlationID).Logger()
 	ctx.Set("logger", &ctxLogger)
+	ctx.Set(CorrelationIDKey, correlationID)
 
 	start := time.Now()
 	status := ctx.Writer.Status()

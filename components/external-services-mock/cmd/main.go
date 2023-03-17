@@ -222,7 +222,10 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc(tenantDestinationEndpoint+"/{name}", destinationHandler.DeleteDestination).Methods(http.MethodDelete)
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
-	iasHandler := ias.NewHandler()
+	var iasConfig ias.Config
+	err := envconfig.Init(&iasConfig)
+	exitOnError(err, "while loading IAS adapter config")
+	iasHandler := ias.NewHandler(iasConfig)
 	router.HandleFunc("/Applications/v1", iasHandler.GetAll).Methods(http.MethodGet)
 	router.HandleFunc("/Applications/v1/{appID}", iasHandler.Patch).Methods(http.MethodPatch)
 

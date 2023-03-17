@@ -6,6 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ias"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/storage/postgres"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
@@ -26,10 +27,13 @@ type TenantMappingsService struct {
 }
 
 func (s TenantMappingsService) UpdateApplicationsConsumedAPIs(ctx context.Context, tenantMapping1 types.TenantMapping) error {
+	log := logger.FromContext(ctx)
+
 	formationID := tenantMapping1.FormationID
 	tenantMappings, err := s.Storage.ListTenantMappings(ctx, formationID)
 	if err != nil {
-		return errors.Newf("failed to get tenant mappings for formation '%s' from storage: %w", formationID, err)
+		log.Err(err).Send()
+		return errors.Newf("failed to get tenant mappings for formation '%s': %w", formationID, err)
 	}
 
 	applicationID1 := tenantMapping1.AssignedTenants[0].UCLApplicationID
@@ -44,8 +48,9 @@ func (s TenantMappingsService) UpdateApplicationsConsumedAPIs(ctx context.Contex
 			}
 		}
 		if err := s.Storage.UpsertTenantMapping(ctx, tenantMapping1); err != nil {
-			return errors.Newf("failed to upsert tenant mapping for assignment '%s' in formation '%s' in storage: %w",
-				tenantMapping1.AssignedTenants[0].AssignmentID, formationID, err)
+			log.Err(err).Send()
+			return errors.Newf("failed to upsert tenant mapping for assignment '%s' in formation '%s': %w",
+				tenantMapping1.AssignedTenants[0].AssignmentID, formationID, postgres.Error(err))
 		}
 	case types.OperationUnassign:
 		if len(tenantMappings) > 1 && tenantMapping1Found {
@@ -54,8 +59,9 @@ func (s TenantMappingsService) UpdateApplicationsConsumedAPIs(ctx context.Contex
 			}
 		}
 		if err := s.Storage.DeleteTenantMapping(ctx, formationID, applicationID1); err != nil {
-			return errors.Newf("failed to clean up tenant mapping for assignment '%s' in formation '%s' from storage: %w",
-				tenantMapping1.AssignedTenants[0].AssignmentID, formationID, err)
+			log.Err(err).Send()
+			return errors.Newf("failed to clean up tenant mapping for assignment '%s' in formation '%s': %w",
+				tenantMapping1.AssignedTenants[0].AssignmentID, formationID, postgres.Error(err))
 		}
 	}
 	return nil

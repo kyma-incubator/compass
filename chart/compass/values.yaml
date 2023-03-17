@@ -1049,12 +1049,7 @@ global:
         clientSecretKey: client-secret
         clientCertKey: client-cert
         clientKeyKey: client-key
-    ias:
-      consumerAppID: "consumer-app-id"
-      consumerAppClientID: "consumer-client-id"
-      providerAppID: "provider-app-id"
-      providerAppClientID: "provider-client-id"
-      apiName: "Test API Name"
+    iasAdapter:
       applyMockConfiguration: false
   tests:
     http:
@@ -1112,7 +1107,7 @@ global:
       subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
-    ias:
+    iasAdapter:
       consumerAppID: "consumer-app-id"
       consumerAppClientID: "consumer-client-id"
       providerAppID: "provider-app-id"

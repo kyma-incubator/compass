@@ -163,6 +163,16 @@ spec:
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
               - name: APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY
                 value: {{ .Values.global.tests.externalServicesMock.formationAsyncApi.responseDelayInSeconds  | quote}}
+              - name : APP_IAS_ADAPTER_CONSUMER_APP_ID
+                value: {{ .Values.global.tests.iasAdapter.consumerAppID }}
+              - name : APP_IAS_ADAPTER_CONSUMER_APP_CLIENT_ID
+                value: {{ .Values.global.tests.iasAdapter.consumerAppClientID }}
+              - name : APP_IAS_ADAPTER_PROVIDER_APP_ID
+                value: {{ .Values.global.tests.iasAdapter.providerAppID }}
+              - name : APP_IAS_ADAPTER_PROVIDER_APP_CLIENT_ID
+                value: {{ .Values.global.tests.iasAdapter.providerAppClientID }}
+              - name : APP_IAS_ADAPTER_PROVIDED_API_NAME
+                value: {{ .Values.global.tests.iasAdapter.apiName }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
