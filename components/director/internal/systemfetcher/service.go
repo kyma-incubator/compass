@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -225,13 +227,18 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			ctx = persistence.SaveToContext(ctx, tx)
 			defer s.transaction.RollbackUnlessCommitted(ctx, tx)
 
-			if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
-				log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
-				app, err := s.systemsService.GetBySystemNumber(ctx, system.SystemNumber)
-				if err != nil {
+			log.C(ctx).Infof("Getting system by name %s and system number %s", system.DisplayName, system.SystemNumber)
+
+			system.StatusCondition = model.ApplicationStatusConditionInitial
+			app, err := s.systemsService.GetBySystemNumber(ctx, system.SystemNumber)
+			if err != nil {
+				if !apperrors.IsNotFoundError(err) {
 					log.C(ctx).WithError(err).Errorf("Could not get system with name %s and system number %s", system.DisplayName, system.SystemNumber)
 					return nil
 				}
+			}
+
+			if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
 				if !app.Ready && !app.GetDeletedAt().IsZero() {
 					log.C(ctx).Infof("System with id %s is currently being deleted", app.ID)
 					return nil
@@ -246,6 +253,10 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				}
 				log.C(ctx).Infof("Started asynchronously delete for system with id %s", app.ID)
 				return nil
+			}
+
+			if app != nil && app.Status != nil {
+				system.StatusCondition = app.Status.Condition
 			}
 
 			appInput, err := s.convertSystemToAppRegisterInput(ctx, system)
@@ -296,12 +307,11 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		return s.templateRenderer.ApplicationRegisterInputFromTemplate(ctx, sc)
 	}
 
-	initStatusCond := model.ApplicationStatusConditionInitial
 	baseURL := sc.AdditionalURLs[mainURLKey]
 	return &model.ApplicationRegisterInput{
 		Name:            sc.DisplayName,
 		Description:     &sc.ProductDescription,
-		StatusCondition: &initStatusCond,
+		StatusCondition: &sc.StatusCondition,
 		ProviderName:    &sc.InfrastructureProvider,
 		BaseURL:         &baseURL,
 		SystemNumber:    &sc.SystemNumber,

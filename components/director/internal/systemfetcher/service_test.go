@@ -70,6 +70,76 @@ func TestSyncSystems(t *testing.T) {
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
+				return systemSvc
+			},
+			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
+				sysAPIClient := &automock.SystemsAPIClient{}
+				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, "external").Return(testSystems, nil).Once()
+				return sysAPIClient
+			},
+			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+				return &automock.DirectorClient{}
+			},
+		},
+		{
+			name: "Success with one tenant and one system that has already been in the database and will not have it's status condition changed",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(2)
+				return mockedTx, transactioner
+			},
+			fixTestSystems: func() []systemfetcher.System {
+				systems := fixSystems()
+				systems[0].TemplateID = appTemplateID
+				systems[0].ProductID = "TEST"
+				return systems
+			},
+			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
+				return fixAppsInputsWithTemplatesBySystems(systems)
+			},
+			setupTenantSvc: func() *automock.TenantService {
+				tenants := []*model.BusinessTenantMapping{
+					newModelBusinessTenantMapping("t1", "tenant1"),
+				}
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				return tenantSvc
+			},
+			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+				svc := &automock.TemplateRenderer{}
+				connectedStatus := model.ApplicationStatusConditionConnected
+
+				for i := range appsInputs {
+					input := systems[i]
+					input.StatusCondition = connectedStatus
+
+					result := appsInputs[i]
+					result.StatusCondition = &connectedStatus
+
+					svc.On("ApplicationRegisterInputFromTemplate", txtest.CtxWithDBMatcher(), input).Return(&result, nil).Once()
+				}
+				return svc
+			},
+			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+				systemSvc := &automock.SystemsService{}
+
+				connectedStatus := model.ApplicationStatusConditionConnected
+				appInput := appsInputs[0].ApplicationRegisterInput
+				appInput.StatusCondition = &connectedStatus
+
+				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), appInput, mock.Anything).Return(nil).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+					Status: &model.ApplicationStatus{
+						Condition: model.ApplicationStatusConditionConnected,
+					},
+				}, nil)
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -95,6 +165,7 @@ func TestSyncSystems(t *testing.T) {
 							ProductDescription:     "System1 description",
 							InfrastructureProvider: "test",
 						},
+						StatusCondition: model.ApplicationStatusConditionInitial,
 					},
 				}
 				systems[0].TemplateID = "type1"
@@ -116,6 +187,11 @@ func TestSyncSystems(t *testing.T) {
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationRegisterInput"), mock.Anything).Return(nil).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -151,6 +227,11 @@ func TestSyncSystems(t *testing.T) {
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("TrustedUpsert", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -178,7 +259,8 @@ func TestSyncSystems(t *testing.T) {
 						BaseURL:                "http://example2.com",
 						InfrastructureProvider: "test",
 					},
-					TemplateID: "appTmp2",
+					TemplateID:      "appTmp2",
+					StatusCondition: model.ApplicationStatusConditionInitial,
 				})
 				return systems
 			},
@@ -198,6 +280,16 @@ func TestSyncSystems(t *testing.T) {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[1].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[1].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -225,7 +317,8 @@ func TestSyncSystems(t *testing.T) {
 						BaseURL:                "http://example2.com",
 						InfrastructureProvider: "test",
 					},
-					TemplateID: "appTmp2",
+					TemplateID:      "appTmp2",
+					StatusCondition: model.ApplicationStatusConditionInitial,
 				})
 				return systems
 			},
@@ -247,6 +340,16 @@ func TestSyncSystems(t *testing.T) {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[1].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[1].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -421,6 +524,11 @@ func TestSyncSystems(t *testing.T) {
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(errors.New("expected")).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -467,7 +575,14 @@ func TestSyncSystems(t *testing.T) {
 				return svc
 			},
 			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				return &automock.SystemsService{}
+				systemSvc := &automock.SystemsService{}
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
+
+				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
@@ -495,7 +610,8 @@ func TestSyncSystems(t *testing.T) {
 						BaseURL:                "http://example2.com",
 						InfrastructureProvider: "test",
 					},
-					TemplateID: "type2",
+					TemplateID:      "type2",
+					StatusCondition: model.ApplicationStatusConditionInitial,
 				})
 				return systems
 			},
@@ -517,6 +633,16 @@ func TestSyncSystems(t *testing.T) {
 				systemSvc := &automock.SystemsService{}
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationRegisterInput"), mock.Anything).Return(nil).Once()
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationRegisterInput"), mock.Anything).Return(nil).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[1].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
 				return systemSvc
 			},
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
@@ -556,7 +682,8 @@ func TestSyncSystems(t *testing.T) {
 						},
 						SystemNumber: "sysNumber1",
 					},
-					TemplateID: "type2",
+					TemplateID:      "type2",
+					StatusCondition: model.ApplicationStatusConditionInitial,
 				})
 				return systems
 			},
@@ -583,6 +710,11 @@ func TestSyncSystems(t *testing.T) {
 				systemSvc := &automock.SystemsService{}
 
 				systemSvc.On("TrustedUpsertFromTemplate", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationRegisterInput"), mock.Anything).Return(nil).Once()
+				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
+					BaseEntity: &model.BaseEntity{
+						ID: "id",
+					},
+				}, nil)
 				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[1].SystemNumber).Return(&model.Application{
 					BaseEntity: &model.BaseEntity{
 						ID: "id",
