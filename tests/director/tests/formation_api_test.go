@@ -1685,6 +1685,9 @@ func TestFormationAssignmentNotificationsForRuntimeWithAsyncCallbackWebhookAndAp
 			require.Equal(t, providerFormationName, assignedFormation.Name)
 
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
+
 			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -1761,6 +1764,9 @@ func TestFormationAssignmentNotificationsForRuntimeWithAsyncCallbackWebhookAndAp
 			assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
+
 			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 				rtCtx.ID: {
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil},
@@ -2827,6 +2833,8 @@ func TestFailProcessingFormationAssignmentsWhileAssigningToFormation(stdT *testi
 				ErrorCode: 2,
 			}},
 		})
+		// The aggregated formation status is ERROR because of the FAs, but the Formation state should be READY
+		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
@@ -3131,6 +3139,8 @@ func TestFailProcessingFormationAssignmentsWhileUnassigningFromFormation(stdT *t
 				ErrorCode: 2,
 			}},
 		})
+		// The aggregated formation status is ERROR because of the FAs, but the Formation state should be READY
+		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
@@ -3217,6 +3227,8 @@ func TestOnlyFormationLifecycleNotifications(t *testing.T) {
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, formationName)
 	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, formationName, &formationTmplName)
 	require.NotEmpty(t, formation.ID)
+	require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)   // Asserting only the formation state
+	require.Equal(t, graphql.FormationStatusConditionReady, formation.Status.Condition) // Asserting the aggregated formation status
 
 	body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	assertFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, createFormationOperation, tenantID, parentTenantID)
@@ -3225,6 +3237,8 @@ func TestOnlyFormationLifecycleNotifications(t *testing.T) {
 
 	delFormation := fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, formationName)
 	require.NotEmpty(t, delFormation.ID)
+	require.Equal(t, graphql.FormationStatusConditionReady.String(), delFormation.State)   // Asserting only the formation state
+	require.Equal(t, graphql.FormationStatusConditionReady, delFormation.Status.Condition) // Asserting the aggregated formation status
 
 	body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	assertNotificationsCountForFormationID(t, body, formation.ID, 1)
@@ -3341,6 +3355,8 @@ func TestFormationAssignmentNotificationResynchronizationSync(stdT *testing.T) {
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
+		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)   // Asserting only the formation state
+		require.Equal(t, graphql.FormationStatusConditionReady, formation.Status.Condition) // Asserting the aggregated formation status
 
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-template")
@@ -3412,6 +3428,8 @@ func TestFormationAssignmentNotificationResynchronizationSync(stdT *testing.T) {
 				ErrorCode: 2,
 			}},
 		})
+		// The aggregated formation status is ERROR because of the FAs, but the Formation state should be READY
+		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
@@ -3473,6 +3491,8 @@ func TestFormationAssignmentNotificationResynchronizationSync(stdT *testing.T) {
 				ErrorCode: 2,
 			}},
 		})
+		// The aggregated formation status is ERROR because of the FAs, but the Formation state should be READY
+		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 3)
@@ -3674,6 +3694,8 @@ func TestFormationAssignmentNotificationResynchronizationAsync(stdT *testing.T) 
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
+		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)   // Asserting only the formation state
+		require.Equal(t, graphql.FormationStatusConditionReady, formation.Status.Condition) // Asserting the aggregated formation status
 
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -3743,6 +3765,8 @@ func TestFormationAssignmentNotificationResynchronizationAsync(stdT *testing.T) 
 					ErrorCode: 2,
 				}},
 			})
+			// The aggregated formation status is ERROR because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -3829,6 +3853,9 @@ func TestFormationAssignmentNotificationResynchronizationAsync(stdT *testing.T) 
 			assertSeveralFormationAssignmentsNotifications(t, notificationsForConsumerTenant, rtCtx, formation.ID, regionLbl, unassignOperation, subscriptionConsumerAccountID, emptyParentCustomerID, 1)
 
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
+
 			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 				rtCtx.ID: {
 					rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil},
@@ -3844,6 +3871,8 @@ func TestFormationAssignmentNotificationResynchronizationAsync(stdT *testing.T) 
 					ErrorCode: 2,
 				}},
 			})
+			// The aggregated formation status is ERROR because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 
 			t.Logf("Resynchronize formation %s should retry and succeed", formation.Name)
 			resynchronizeReq = fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
@@ -3932,8 +3961,13 @@ func TestFormationAssignmentNotificationResynchronizationAsync(stdT *testing.T) 
 			}
 
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
+
 			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignmentsBySourceID)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 
 			body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -4023,8 +4057,13 @@ func TestFormationAssignmentNotificationResynchronizationAsync(stdT *testing.T) 
 			}
 
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
+
 			assertFormationAssignmentsAsynchronously(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignmentsBySourceID)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+			// The aggregated formation status is IN_PROGRESS because of the FAs, but the Formation state should be READY
+			require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)
 
 			t.Logf("Update webhook with ID %q to have URLTemlate that responds with success", webhookID)
 			updateWebhookRequest = fixtures.FixUpdateWebhookRequest(webhookID, webhookThatSucceedsInStr)
@@ -4233,6 +4272,7 @@ func TestFormationLifecycleNotificationsWithAsyncCallback(t *testing.T) {
 
 	assertFormationAssignments(t, ctx, tenantID, formation.ID, 4, expectedAssignments)
 	assertFormationStatus(t, ctx, tenantID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+	require.Equal(t, "INITIAL", formation.State)
 
 	assertNoNotificationsAreSentForTenant(t, certSecuredHTTPClient, firstApp.ID)
 	assertNoNotificationsAreSentForTenant(t, certSecuredHTTPClient, secondApp.ID)
@@ -4806,13 +4846,14 @@ func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context,
 
 func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
 	// Get the formation with its status
-	var gotFormation graphql.FormationWithStatus
+	t.Logf("Getting formation with ID: %q", formationID)
+	var gotFormation graphql.Formation
 	getFormationReq := fixtures.FixGetFormationRequest(formationID)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant, getFormationReq, &gotFormation)
 	require.NoError(t, err)
 
 	// Assert the status
-	require.Equal(t, expectedFormationStatus.Condition, gotFormation.Status.Condition)
+	require.Equal(t, expectedFormationStatus.Condition, gotFormation.Status.Condition, "Formation with ID %q is with status %q, but %q was expected", formationID, gotFormation.Status.Condition, expectedFormationStatus.Condition)
 
 	if expectedFormationStatus.Errors == nil {
 		require.Nil(t, gotFormation.Status.Errors)
