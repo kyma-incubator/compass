@@ -570,13 +570,13 @@ func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *ht
 // Formation notifications asynchronous handlers and helper functions
 
 // FormationResponseFn is a function type that represents the formation response function signature
-type FormationResponseFn func(ctx context.Context, client *http.Client, formationError, formationID string, formationOperation Operation)
+type FormationResponseFn func(ctx context.Context, client *http.Client, formationError, formationID string)
 
 // AsyncPostFormation handles asynchronous formation notification requests for CreateFormation operation.
 func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request) {
-	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string, formationOperation Operation) {
+	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err := h.executeFormationStatusUpdateRequest(client, ReadyFormationState, formationError, formationID, formationOperation)
+		err := h.executeFormationStatusUpdateRequest(client, ReadyFormationState, formationError, formationID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation status update request: %s", err.Error())
 		}
@@ -586,9 +586,9 @@ func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request
 
 // AsyncDeleteFormation handles asynchronous formation notification requests for DeleteFormation operation
 func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Request) {
-	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string, formationOperation Operation) {
+	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string) {
 		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
-		err := h.executeFormationStatusUpdateRequest(client, ReadyFormationState, formationError, formationID, formationOperation)
+		err := h.executeFormationStatusUpdateRequest(client, ReadyFormationState, formationError, formationID)
 		if err != nil {
 			log.C(ctx).Errorf("while executing formation status update request: %s", err.Error())
 		}
@@ -597,7 +597,7 @@ func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Reque
 }
 
 // executeFormationStatusUpdateRequest prepares a request with the given inputs and sends it to the formation status API
-func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *http.Client, formationState FormationState, formationError, formationID string, formationOperation Operation) error {
+func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *http.Client, formationState FormationState, formationError, formationID string) error {
 	formationReqBody := FormationRequestBody{
 		State: formationState,
 		Error: formationError,
@@ -608,12 +608,8 @@ func (h *Handler) executeFormationStatusUpdateRequest(certSecuredHTTPClient *htt
 		return err
 	}
 
-	httpMethod := http.MethodPost
-	if formationOperation == DeleteFormation {
-		httpMethod = http.MethodDelete
-	}
 	formationStatusAPIEndpoint := strings.Replace(h.config.DirectorExternalCertFormationAsyncStatusURL, fmt.Sprintf("{%s}", "ucl-formation-id"), formationID, 1)
-	request, err := http.NewRequest(httpMethod, formationStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
+	request, err := http.NewRequest(http.MethodPatch, formationStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
 	if err != nil {
 		return err
 	}
@@ -669,7 +665,7 @@ func (h *Handler) asyncFormationResponse(writer http.ResponseWriter, r *http.Req
 		return
 	}
 
-	go formationResponseFunc(ctx, certAuthorizedHTTPClient, formationErr, formationID, operation)
+	go formationResponseFunc(ctx, certAuthorizedHTTPClient, formationErr, formationID)
 
 	writer.WriteHeader(http.StatusAccepted)
 }

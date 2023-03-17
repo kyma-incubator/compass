@@ -1288,7 +1288,7 @@ func TestAuthenticator_FormationHandler(t *testing.T) {
 			formationAuthMiddleware := fmAuthenticator.FormationHandler()
 			rw := httptest.NewRecorder()
 
-			httpMethod := http.MethodPost
+			httpMethod := http.MethodPatch
 			if tCase.httpMethod != "" {
 				httpMethod = tCase.httpMethod
 			}

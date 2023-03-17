@@ -575,7 +575,7 @@ func executeFormationStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSec
 	require.NoError(t, err)
 
 	formationAsyncStatusAPIEndpoint := strings.Replace(conf.DirectorExternalCertFormationAsyncStatusURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
-	request, err := http.NewRequest(http.MethodPost, formationAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
+	request, err := http.NewRequest(http.MethodPatch, formationAsyncStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
 	response, err := certSecuredHTTPClient.Do(request)
