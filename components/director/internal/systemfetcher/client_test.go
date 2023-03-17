@@ -293,6 +293,7 @@ func fixSystems() []systemfetcher.System {
 				InfrastructureProvider: "test",
 				AdditionalURLs:         map[string]string{"mainUrl": "http://mainurl.com"},
 			},
+			StatusCondition: model.ApplicationStatusConditionInitial,
 		},
 	}
 }
