@@ -1,6 +1,10 @@
 package types
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/google/uuid"
+)
 
 type TenantMapping struct {
 	FormationID     string           `json:"formationId"`
@@ -36,11 +40,14 @@ type AssignedTenantConfiguration struct {
 }
 
 func (tm TenantMapping) Validate() error {
-	if tm.FormationID == "" {
-		return errors.New("$.formationId is required")
+	if _, err := uuid.Parse(tm.FormationID); err != nil {
+		return errors.New("$.formationId is not a valid uuid")
 	}
 	if tm.ReceiverTenant.ApplicationURL == "" {
 		return errors.New("$.receiverTenant.applicationUrl is required")
+	}
+	if _, err := uuid.Parse(tm.AssignedTenants[0].UCLApplicationID); err != nil {
+		return errors.New("$.assignedTenants[0].uclApplicationId is not a valid uuid")
 	}
 	if tm.AssignedTenants[0].Operation == "" {
 		return errors.New("$.assignedTenants[0].operation is required")

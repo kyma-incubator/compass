@@ -88,12 +88,19 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID string) (
 		return types.Application{}, errors.Newf("failed to get application, status '%d', body '%s'", resp.StatusCode, respBytes)
 	}
 
-	application := types.Application{}
-	if err := json.NewDecoder(resp.Body).Decode(&application); err != nil {
+	applications := types.Applications{}
+	if err := json.NewDecoder(resp.Body).Decode(&applications); err != nil {
 		return types.Application{}, err
 	}
 
-	return application, nil
+	if len(applications.Applications) == 0 {
+		return types.Application{}, errors.Newf("application with clientID '%s' not found", clientID)
+	}
+	if len(applications.Applications) > 1 {
+		return types.Application{}, errors.Newf("found more than one application with clientID '%s'", clientID)
+	}
+
+	return applications.Applications[0], nil
 }
 
 func addConsumedAPI(consumedAPIs []types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) []types.ApplicationConsumedAPI {
@@ -165,9 +172,10 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 }
 
 func buildGetApplicationURL(host, clientID string) string {
-	return url.QueryEscape(fmt.Sprintf("%s%s/?filter=clientId eq %s", host, applicationsPath, clientID))
+	escapedFilter := url.QueryEscape(fmt.Sprintf("clientId eq %s", clientID))
+	return fmt.Sprintf("%s%s?filter=%s", host, applicationsPath, escapedFilter)
 }
 
 func buildPatchApplicationURL(host, applicationID string) string {
-	return url.QueryEscape(fmt.Sprintf("%s%s/%s", host, applicationsPath, applicationID))
+	return fmt.Sprintf("%s%s/%s", host, applicationsPath, applicationID)
 }
