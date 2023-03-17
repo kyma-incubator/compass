@@ -24,7 +24,7 @@ require (
 require (
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230309104348-5a1c0141fb41
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20230309104348-5a1c0141fb41
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230309104348-5a1c0141fb41
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230317114006-577218d09d23
 	github.com/prometheus/client_golang v1.13.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 )
