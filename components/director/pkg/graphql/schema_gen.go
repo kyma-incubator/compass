@@ -765,7 +765,6 @@ type EventSpecResolver interface {
 type FormationResolver interface {
 	FormationAssignment(ctx context.Context, obj *Formation, id string) (*FormationAssignment, error)
 	FormationAssignments(ctx context.Context, obj *Formation, first *int, after *PageCursor) (*FormationAssignmentPage, error)
-	Status(ctx context.Context, obj *Formation) (*FormationStatus, error)
 }
 type FormationTemplateResolver interface {
 	Webhooks(ctx context.Context, obj *FormationTemplate) ([]*Webhook, error)
@@ -16072,13 +16071,13 @@ func (ec *executionContext) _Formation_status(ctx context.Context, field graphql
 		Object:   "Formation",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Formation().Status(rctx, obj)
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16090,9 +16089,9 @@ func (ec *executionContext) _Formation_status(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*FormationStatus)
+	res := resTmp.(FormationStatus)
 	fc.Result = res
-	return ec.marshalNFormationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatus(ctx, field.Selections, res)
+	return ec.marshalNFormationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignment_id(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
@@ -33534,19 +33533,10 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 				return res
 			})
 		case "status":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Formation_status(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Formation_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -37176,16 +37166,6 @@ func (ec *executionContext) marshalNFormationPage2ᚖgithubᚗcomᚋkymaᚑincub
 
 func (ec *executionContext) marshalNFormationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatus(ctx context.Context, sel ast.SelectionSet, v FormationStatus) graphql.Marshaler {
 	return ec._FormationStatus(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNFormationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatus(ctx context.Context, sel ast.SelectionSet, v *FormationStatus) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._FormationStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFormationStatusCondition2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatusCondition(ctx context.Context, v interface{}) (FormationStatusCondition, error) {
