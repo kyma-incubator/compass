@@ -47,7 +47,7 @@ const (
                     SELECT t2.id, t2.parent
                     FROM business_tenant_mappings t2
                              INNER JOIN parents t on t2.id = t.parent)
-			DELETE FROM %s WHERE %s AND owner = true AND tenant_id IN (SELECT id FROM parents)`
+			DELETE FROM %s WHERE %s AND tenant_id IN (SELECT id FROM parents)`
 )
 
 // M2MColumns are the column names of the tenant access tables / views.

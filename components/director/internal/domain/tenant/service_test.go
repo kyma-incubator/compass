@@ -1264,7 +1264,7 @@ func TestService_CreateTenantAccessForResource(t *testing.T) {
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
 
-				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`)).
+				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
 					WithArgs(testInternal, testID, true).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				return db, dbMock
@@ -1337,7 +1337,7 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
 
-				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND owner = true AND tenant_id IN (SELECT id FROM parents)`)).
+				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $1 UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) DELETE FROM tenant_applications WHERE id IN ($2) AND tenant_id IN (SELECT id FROM parents)`)).
 					WithArgs(testInternal, testID).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				return db, dbMock

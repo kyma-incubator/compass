@@ -192,7 +192,7 @@ func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantAcces
 
 	ta := s.converter.TenantAccessToEntity(tenantAccess)
 
-	if err := repo.CreateSingleTenantAccess(ctx, m2mTable, ta); err != nil {
+	if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, ta); err != nil {
 		return errors.Wrapf(err, "while creating tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
 	}
 
