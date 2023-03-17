@@ -31,8 +31,8 @@ type BusinessTenantMappingService interface {
 	DeleteMany(ctx context.Context, tenantInputs []string) error
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	CreateTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error
-	DeleteTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error
+	CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
+	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
 }
 
@@ -357,7 +357,7 @@ func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessI
 	}
 	tenantAccess.InternalTenantID = internalTenant
 
-	if err := r.srv.CreateTenantAccessForResource(ctx, tenantAccess); err != nil {
+	if err := r.srv.CreateTenantAccessForResourceRecursively(ctx, tenantAccess); err != nil {
 		return nil, errors.Wrapf(err, "while creating tenant access record for tenant %q about resource %q of type %q", tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)
 	}
 
@@ -405,7 +405,7 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 	}
 	tenantAccess.ExternalTenantID = tenantID
 
-	if err := r.srv.DeleteTenantAccessForResource(ctx, tenantAccess); err != nil {
+	if err := r.srv.DeleteTenantAccessForResourceRecursively(ctx, tenantAccess); err != nil {
 		return nil, errors.Wrapf(err, "while deleting tenant access record for tenant %q about resource %q of type %q", tenantAccess.InternalTenantID, tenantAccess.ResourceID, tenantAccess.ResourceType)
 	}
 

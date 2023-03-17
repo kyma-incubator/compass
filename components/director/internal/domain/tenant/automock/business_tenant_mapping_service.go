@@ -16,8 +16,8 @@ type BusinessTenantMappingService struct {
 	mock.Mock
 }
 
-// CreateTenantAccessForResource provides a mock function with given fields: ctx, tenantAccess
-func (_m *BusinessTenantMappingService) CreateTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error {
+// CreateTenantAccessForResourceRecursively provides a mock function with given fields: ctx, tenantAccess
+func (_m *BusinessTenantMappingService) CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
 	ret := _m.Called(ctx, tenantAccess)
 
 	var r0 error
@@ -44,8 +44,8 @@ func (_m *BusinessTenantMappingService) DeleteMany(ctx context.Context, tenantIn
 	return r0
 }
 
-// DeleteTenantAccessForResource provides a mock function with given fields: ctx, tenantAccess
-func (_m *BusinessTenantMappingService) DeleteTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error {
+// DeleteTenantAccessForResourceRecursively provides a mock function with given fields: ctx, tenantAccess
+func (_m *BusinessTenantMappingService) DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
 	ret := _m.Called(ctx, tenantAccess)
 
 	var r0 error

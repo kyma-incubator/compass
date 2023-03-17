@@ -1232,7 +1232,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
 				return TenantSvc
 			},
@@ -1251,7 +1251,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
 				return TenantSvc
 			},
@@ -1270,7 +1270,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
 				return TenantSvc
 			},
@@ -1289,7 +1289,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(nil, testError).Once()
 				return TenantSvc
 			},
@@ -1307,7 +1307,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
-				TenantSvc.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(testError).Once()
+				TenantSvc.On("CreateTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(testError).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -1404,7 +1404,7 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
-				TenantSvc.On("DeleteTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("DeleteTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -1422,7 +1422,7 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
-				TenantSvc.On("DeleteTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("DeleteTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -1440,7 +1440,7 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
-				TenantSvc.On("DeleteTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
+				TenantSvc.On("DeleteTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -1458,7 +1458,7 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
 				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(tenantAccessModelWithoutExternalTenant, nil).Once()
-				TenantSvc.On("DeleteTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(testError).Once()
+				TenantSvc.On("DeleteTenantAccessForResourceRecursively", txtest.CtxWithDBMatcher(), tenantAccessModel).Return(testError).Once()
 				return TenantSvc
 			},
 			Input:            tenantAccessInput,

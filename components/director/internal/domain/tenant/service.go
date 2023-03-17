@@ -192,6 +192,23 @@ func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantAcces
 
 	ta := s.converter.TenantAccessToEntity(tenantAccess)
 
+	if err := repo.CreateSingleTenantAccess(ctx, m2mTable, ta); err != nil {
+		return errors.Wrapf(err, "while creating tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
+	}
+
+	return nil
+}
+
+// CreateTenantAccessForResourceRecursively creates a tenant access for a single resource.Type recursively
+func (s *service) CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	resourceType := tenantAccess.ResourceType
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return errors.Errorf("entity %q does not have access table", resourceType)
+	}
+
+	ta := s.converter.TenantAccessToEntity(tenantAccess)
+
 	if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, ta); err != nil {
 		return errors.Wrapf(err, "while creating tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
 	}
@@ -199,8 +216,8 @@ func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantAcces
 	return nil
 }
 
-// DeleteTenantAccessForResource deletes a tenant access for a single resource.Type
-func (s *service) DeleteTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error {
+// DeleteTenantAccessForResourceRecursively deletes a tenant access for a single resource.Type recursively
+func (s *service) DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
 	resourceType := tenantAccess.ResourceType
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {

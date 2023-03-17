@@ -1264,7 +1264,7 @@ func TestService_CreateTenantAccessForResource(t *testing.T) {
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
 
-				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
+				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_applications ( tenant_id, id, owner ) VALUES ( ?, ?, ? ) ON CONFLICT ON CONSTRAINT tenant_applications_pkey DO NOTHING`)).
 					WithArgs(testInternal, testID, true).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				return db, dbMock
@@ -1305,6 +1305,79 @@ func TestService_CreateTenantAccessForResource(t *testing.T) {
 
 			// WHEN
 			err := svc.CreateTenantAccessForResource(ctx, testCase.Input)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, converter)
+			dbMock.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_CreateTenantAccessForResourceRecursively(t *testing.T) {
+	testCases := []struct {
+		Name             string
+		ConverterFn      func() *automock.BusinessTenantMappingConverter
+		PersistenceFn    func() (*sqlx.DB, testdb.DBMock)
+		Input            *model.TenantAccess
+		ExpectedErrorMsg string
+	}{
+		{
+			Name: "Success",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+
+				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_applications ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`)).
+					WithArgs(testInternal, testID, true).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				return db, dbMock
+			},
+			Input: tenantAccessModel,
+		},
+		{
+			Name:             "Error when resource does not have access table",
+			Input:            invalidTenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("entity %q does not have access table", invalidResourceType),
+		},
+		{
+			Name: "Error while creating tenant access",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			Input:            tenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("while creating tenant acccess for resource type %q with ID %q for tenant %q", tenantAccessModel.ResourceType, tenantAccessModel.ResourceID, tenantAccessModel.InternalTenantID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			ctx := context.TODO()
+			converter := unusedConverter()
+			if testCase.ConverterFn != nil {
+				converter = testCase.ConverterFn()
+			}
+			db, dbMock := unusedDBMock(t)
+			if testCase.PersistenceFn != nil {
+				db, dbMock = testCase.PersistenceFn()
+			}
+			ctx = persistence.SaveToContext(ctx, db)
+
+			svc := tenant.NewService(nil, nil, converter)
+
+			// WHEN
+			err := svc.CreateTenantAccessForResourceRecursively(ctx, testCase.Input)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -1377,7 +1450,7 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			svc := tenant.NewService(nil, nil, converter)
 
 			// WHEN
-			err := svc.DeleteTenantAccessForResource(ctx, testCase.Input)
+			err := svc.DeleteTenantAccessForResourceRecursively(ctx, testCase.Input)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
