@@ -387,9 +387,6 @@ var (
 	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty     = `{"supported":"manual"}`
 	invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength = `{"supported":"%s", "description": "%s"}`
 
-	invalidSuccessorsDueToInvalidAPIRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
-	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
-
 	invalidDescriptionFieldWithExceedingMaxLength = strings.Repeat("a", maxDescriptionLength+1)
 )
 
