@@ -25,7 +25,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
-              image: bitnami/kubectl:1.22.4
+              image: bitnami/kubectl:1.24.11
               imagePullPolicy: IfNotPresent
               command:
                 - bash
