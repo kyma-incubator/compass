@@ -47,7 +47,8 @@ type SystemBase struct {
 // System missing godoc
 type System struct {
 	SystemBase
-	TemplateID string `json:"-"`
+	TemplateID      string                           `json:"-"`
+	StatusCondition model.ApplicationStatusCondition `json:"-"`
 }
 
 // UnmarshalJSON missing godoc
