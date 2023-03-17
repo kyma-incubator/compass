@@ -566,6 +566,45 @@ func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 	require.Equal(t, http.StatusAccepted, *resp.ActualStatusCode)
 }
 
+func TestClient_Do_WhenSuccessfulOpenStrategyWebhook_ShouldBeSuccessful(t *testing.T) {
+	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
+	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"incomplete_status_code\": 204,\"error\": \"{{.Body.error}}\"}"
+	openCalled := false
+	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
+	webhookReq := &webhookclient.Request{
+		Webhook: graphql.Webhook{
+			URLTemplate:    &URLTemplate,
+			OutputTemplate: &outputTemplate,
+			Mode:           &webhookAsyncMode,
+			Auth: &graphql.Auth{
+				AccessStrategy: str.Ptr(string(accessstrategy2.OpenAccessStrategy)),
+			},
+		},
+		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
+	}
+
+	openClient := &http.Client{
+		Transport: mockedTransport{
+			resp: &http.Response{
+				Body:       io.NopCloser(bytes.NewReader([]byte("{}"))),
+				Header:     http.Header{"Location": []string{mockedLocationURL}},
+				StatusCode: http.StatusAccepted,
+			},
+			roundTripExpectations: func(r *http.Request) {
+				openCalled = true
+			},
+		},
+	}
+
+	client := webhookclient.NewClient(openClient, nil, nil)
+
+	resp, err := client.Do(context.Background(), webhookReq)
+
+	require.NoError(t, err)
+	require.True(t, openCalled)
+	require.Equal(t, http.StatusAccepted, *resp.ActualStatusCode)
+}
+
 func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applications/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
