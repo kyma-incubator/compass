@@ -148,6 +148,8 @@ graphql:
   input:
     application:
       localTenantID: [ "application.local_tenant_id:write" ]
+    formation:
+      state: [ "formation.state:write" ]
 
 clientCredentialsRegistrationGrantTypes:
   - "client_credentials"

@@ -6,6 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -22,6 +24,14 @@ func TestFromGraphQL(t *testing.T) {
 
 		// THEN
 		require.Equal(t, testFormationName, actual.Name)
+	})
+	t.Run("Success when state is provided externally", func(t *testing.T) {
+		// WHEN
+		actual := converter.FromGraphQL(graphql.FormationInput{Name: testFormationName, State: str.Ptr(string(model.InitialFormationState))})
+
+		// THEN
+		require.Equal(t, testFormationName, actual.Name)
+		require.Equal(t, model.InitialFormationState, actual.State)
 	})
 }
 

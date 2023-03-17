@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2946"
+      version: "PR-2951"
       name: compass-director
     hydrator:
       dir:
@@ -159,7 +159,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2920"
+      version: "PR-2943"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -172,7 +172,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2929"
+      version: "PR-2951"
       name: compass-external-services-mock
     console:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2928"
+      version: "PR-2951"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1043,7 +1043,7 @@ global:
     externalServicesMock:
       skipPattern: ""
       formationAsyncApi:
-        responseDelayInSeconds: 2
+        responseDelayInSeconds: 3
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
@@ -1129,6 +1129,7 @@ global:
         - "application_template:write"
         - "formation:read"
         - "formation:write"
+        - "formation.state:write"
         - "formation_template:read"
         - "formation_template:write"
         - "formation_template.webhooks:read"
@@ -1239,6 +1240,7 @@ global:
         - "formation_constraint:write"
         - "certificate_subject_mapping:read"
         - "certificate_subject_mapping:write"
+        - "formation.state:write"
       default:
         - "runtime:read"
         - "runtime:write"

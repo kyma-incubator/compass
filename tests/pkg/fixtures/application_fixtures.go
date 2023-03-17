@@ -1,12 +1,14 @@
 package fixtures
 
 import (
+	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 )
 
-func FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, region, namespace string, webhookType graphql.WebhookType, mode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate string) graphql.ApplicationTemplateInput {
+func FixApplicationTemplateWithWebhookNotifications(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string, webhookType graphql.WebhookType, mode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate string) graphql.ApplicationTemplateInput {
 	webhookInput := &graphql.WebhookInput{
 		Type: webhookType,
 		Auth: &graphql.AuthInput{
@@ -17,14 +19,14 @@ func FixApplicationTemplateWithWebhookNotifications(applicationType, localTenant
 		InputTemplate:  &inputTemplate,
 		OutputTemplate: &outputTemplate,
 	}
-	return fixApplicationTemplateWebhook(applicationType, localTenantID, region, namespace, webhookInput)
+	return FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, webhookInput)
 }
 
-func FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, region, namespace string) graphql.ApplicationTemplateInput {
-	return fixApplicationTemplateWebhook(applicationType, localTenantID, region, namespace, nil)
+func FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string) graphql.ApplicationTemplateInput {
+	return FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, nil)
 }
 
-func fixApplicationTemplateWebhook(applicationType, localTenantID, region, namespace string, webhookInput *graphql.WebhookInput) graphql.ApplicationTemplateInput {
+func FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string, webhookInput *graphql.WebhookInput) graphql.ApplicationTemplateInput {
 	var webhooks []*graphql.WebhookInput = nil
 	if webhookInput != nil {
 		webhooks = []*graphql.WebhookInput{webhookInput}
@@ -33,9 +35,9 @@ func fixApplicationTemplateWebhook(applicationType, localTenantID, region, names
 		Name:        applicationType,
 		Description: &applicationType,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
-			Name:          "{{name}}",
+			Name:          fmt.Sprintf("{{%s}}", namePlaceholder),
 			ProviderName:  str.Ptr("compass"),
-			Description:   ptr.String("test {{display-name}}"),
+			Description:   ptr.String(fmt.Sprintf("test {{%s}}", displayNamePlaceholder)),
 			LocalTenantID: &localTenantID,
 			Labels: graphql.Labels{
 				"applicationType": applicationType,
@@ -45,13 +47,29 @@ func fixApplicationTemplateWebhook(applicationType, localTenantID, region, names
 		},
 		Placeholders: []*graphql.PlaceholderDefinitionInput{
 			{
-				Name: "name",
+				Name: namePlaceholder,
 			},
 			{
-				Name: "display-name",
+				Name: displayNamePlaceholder,
 			},
 		},
 		ApplicationNamespace: &namespace,
 		AccessLevel:          graphql.ApplicationTemplateAccessLevelGlobal,
+	}
+}
+
+func FixApplicationFromTemplateInput(applicationType, namePlaceholder, namePlaceholderValue, displayNamePlaceholder, displayNamePlaceholderValue string) graphql.ApplicationFromTemplateInput {
+	return graphql.ApplicationFromTemplateInput{
+		TemplateName: applicationType,
+		Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: namePlaceholder,
+				Value:       namePlaceholderValue,
+			},
+			{
+				Placeholder: displayNamePlaceholder,
+				Value:       displayNamePlaceholderValue,
+			},
+		},
 	}
 }

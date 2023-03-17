@@ -19,7 +19,13 @@ func NewConverter() *converter {
 
 // FromGraphQL converts graphql.FormationInput to model.Formation
 func (c *converter) FromGraphQL(i graphql.FormationInput) model.Formation {
-	return model.Formation{Name: i.Name}
+	f := model.Formation{
+		Name: i.Name,
+	}
+	if i.State != nil {
+		f.State = model.FormationState(*i.State)
+	}
+	return f
 }
 
 // ToGraphQL converts model.Formation to graphql.Formation
