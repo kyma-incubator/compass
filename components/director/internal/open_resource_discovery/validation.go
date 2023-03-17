@@ -366,9 +366,6 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
-		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
-		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
@@ -444,9 +441,6 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate))),
-		validation.Field(&event.Successors, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EventOrdIDRegex))
-		})),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {

@@ -3010,31 +3010,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
-				doc.APIResources[0].SunsetDate = str.Ptr("2020-04-29")
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` field for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].Successors = json.RawMessage(invalidJSON)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` when values do not match the regex for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidAPIRegex)
-
-				return []*ord.Document{doc}
-			},
-		}, {
 			Name: "Missing field `version` of field `changeLogEntries` for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -4854,22 +4829,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid json field `successors` field for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].Successors = json.RawMessage(invalidJSON)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` when values do not match the regex for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidEventRegex)
 
 				return []*ord.Document{doc}
 			},
