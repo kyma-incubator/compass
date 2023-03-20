@@ -26,7 +26,7 @@ type TenantMappingsService struct {
 	IASService IASService
 }
 
-func (s TenantMappingsService) UpdateApplicationsConsumedAPIs(ctx context.Context, tenantMapping1 types.TenantMapping) error {
+func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantMapping1 types.TenantMapping) error {
 	log := logger.FromContext(ctx)
 
 	formationID := tenantMapping1.FormationID
@@ -84,13 +84,13 @@ func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Contex
 	tenantMapping1UCLApplicationID := tenantMapping1.AssignedTenants[0].UCLApplicationID
 	iasApplication1, err := s.IASService.GetApplication(ctx, iasHost, tenantMapping1.AssignedTenants[0].Parameters.ClientID)
 	if err != nil {
-		return errors.Newf("failed to get application with UCL ID '%s' from IAS: %w", tenantMapping1UCLApplicationID, err)
+		return errors.Newf("failed to get IAS application with UCL ID '%s': %w", tenantMapping1UCLApplicationID, err)
 	}
 
 	tenantMapping2UCLApplicationID := tenantMapping2.AssignedTenants[0].UCLApplicationID
 	iasApplication2, err := s.IASService.GetApplication(ctx, iasHost, tenantMapping2.AssignedTenants[0].Parameters.ClientID)
 	if err != nil {
-		return errors.Newf("failed to get application with UCL ID '%s' from IAS: %w", tenantMapping2UCLApplicationID, err)
+		return errors.Newf("failed to get IAS application with UCL ID '%s': %w", tenantMapping2UCLApplicationID, err)
 	}
 
 	if len(tenantMapping1ConsumedAPIs) != 0 {
@@ -101,7 +101,7 @@ func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Contex
 			ProviderApplicationID: iasApplication2.ID,
 		}
 		if err := s.IASService.UpdateApplicationConsumedAPIs(ctx, updateData); err != nil {
-			return errors.Newf("failed to update application consumed apis: %w", err)
+			return err
 		}
 	}
 	if len(tenantMapping2ConsumedAPIs) != 0 {
@@ -112,7 +112,7 @@ func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Contex
 			ProviderApplicationID: iasApplication1.ID,
 		}
 		if err := s.IASService.UpdateApplicationConsumedAPIs(ctx, updateData); err != nil {
-			return errors.Newf("failed to update application consumed apis: %w", err)
+			return err
 		}
 	}
 	return nil

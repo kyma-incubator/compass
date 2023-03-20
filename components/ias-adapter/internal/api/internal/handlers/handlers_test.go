@@ -9,9 +9,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
+	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
 
 func TestHandlers(t *testing.T) {
@@ -28,7 +30,7 @@ func createTestRequest(body io.Reader) (*httptest.ResponseRecorder, *gin.Context
 		Body: io.NopCloser(body),
 	}
 	ctx.Request = req
-	ctxLogger := logger.Default().With().Str("correlationID", uuid.NewString()).Logger()
-	ctx.Set("logger", &ctxLogger)
+	ctxLogger := logger.Default().With().Str(logCtx.RequestIDCtxKey, uuid.NewString()).Logger()
+	ctx.Set(logCtx.LoggerCtxKey, &ctxLogger)
 	return w, ctx
 }

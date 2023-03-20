@@ -15,8 +15,8 @@ type TenantMappingsService struct {
 	mock.Mock
 }
 
-// UpdateApplicationsConsumedAPIs provides a mock function with given fields: ctx, tenantMapping
-func (_m *TenantMappingsService) UpdateApplicationsConsumedAPIs(ctx context.Context, tenantMapping types.TenantMapping) error {
+// ProcessTenantMapping provides a mock function with given fields: ctx, tenantMapping
+func (_m *TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
 	ret := _m.Called(ctx, tenantMapping)
 
 	var r0 error

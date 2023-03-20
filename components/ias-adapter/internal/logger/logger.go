@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/rs/zerolog"
+
+	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
 
 const componentName = "UCL IAS Adapter"
@@ -28,6 +30,6 @@ func Default() *zerolog.Logger {
 }
 
 func FromContext(ctx context.Context) *zerolog.Logger {
-	log := ctx.Value("logger")
+	log := ctx.Value(logCtx.LoggerCtxKey)
 	return log.(*zerolog.Logger)
 }

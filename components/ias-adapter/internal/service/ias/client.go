@@ -8,9 +8,9 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
+	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
 
 type iasCockpit struct {
@@ -56,9 +56,9 @@ type headerTransport struct {
 }
 
 func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	correlationID := req.Context().Value(middlewares.CorrelationIDKey).(string)
-	if correlationID != "" {
-		req.Header.Add(middlewares.CorrelationIDHeader, correlationID)
+	requestID := req.Context().Value(logCtx.RequestIDCtxKey).(string)
+	if requestID != "" {
+		req.Header.Add(logCtx.RequestIDHeader, requestID)
 	}
 	return t.clientTransport.RoundTrip(req)
 }

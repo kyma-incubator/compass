@@ -56,7 +56,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	if len(oldConsumedAPIs) != len(newConsumedAPIs) {
 		iasHost := data.TenantMapping.ReceiverTenant.ApplicationURL
 		if err := s.updateApplication(ctx, iasHost, data.ConsumerApplication.ID, newConsumedAPIs); err != nil {
-			return errors.Newf("failed to update application: %w", err)
+			errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, data.TenantMapping.AssignedTenants[0].UCLApplicationID, err)
 		}
 	}
 
@@ -163,10 +163,9 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if resp.StatusCode != http.StatusOK {
 		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Warn().Msgf("failed to read response body for application with ID '%s': %s", applicationID, err)
+			log.Warn().Msgf("Failed to read response body for application with ID '%s': %s", applicationID, err)
 		}
-		return errors.Newf("failed to update ACL of application with ID '%s', status '%d', body '%s'",
-			applicationID, resp.StatusCode, respBytes)
+		return errors.Newf("request failed: status '%d', body '%s'", resp.StatusCode, respBytes)
 	}
 
 	return nil

@@ -6,14 +6,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
 //go:generate mockery --name=TenantMappingsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMappingsService interface {
-	UpdateApplicationsConsumedAPIs(ctx context.Context, tenantMapping types.TenantMapping) error
+	ProcessTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error
 }
 
 type TenantMappingsHandler struct {
@@ -34,8 +34,8 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Service.UpdateApplicationsConsumedAPIs(ctx, tenantMapping); err != nil {
-		err = errors.Newf("failed to update applications consumed APIs: %w", err)
+	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
+		err = errors.Newf("failed to process tenant mapping notification: %w", err)
 		respondWithError(ctx, http.StatusInternalServerError, err)
 		return
 	}

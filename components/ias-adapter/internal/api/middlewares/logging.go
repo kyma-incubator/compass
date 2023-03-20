@@ -7,18 +7,14 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
-)
-
-const (
-	CorrelationIDHeader = "X-Correlation-ID"
-	CorrelationIDKey    = "correlationID"
+	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
 
 func Logging(ctx *gin.Context) {
-	correlationID := getCorrelationID(ctx)
-	ctxLogger := logger.Default().With().Str(CorrelationIDKey, correlationID).Logger()
-	ctx.Set("logger", &ctxLogger)
-	ctx.Set(CorrelationIDKey, correlationID)
+	requestID := getRequestID(ctx)
+	ctxLogger := logger.Default().With().Str(logCtx.RequestIDCtxKey, requestID).Logger()
+	ctx.Set(logCtx.LoggerCtxKey, &ctxLogger)
+	ctx.Set(logCtx.RequestIDCtxKey, requestID)
 
 	start := time.Now()
 	status := ctx.Writer.Status()
@@ -31,10 +27,10 @@ func Logging(ctx *gin.Context) {
 	ctxLogger.Info().Msgf("%d %s %s %s %s %d", status, method, path, ctx.ClientIP(), time.Since(start), bodySize)
 }
 
-func getCorrelationID(ctx *gin.Context) string {
-	correlationID := ctx.GetHeader(CorrelationIDHeader)
-	if correlationID != "" {
-		return correlationID
+func getRequestID(ctx *gin.Context) string {
+	requestID := ctx.GetHeader(logCtx.RequestIDHeader)
+	if requestID != "" {
+		return requestID
 	}
 	return uuid.NewString()
 }
