@@ -464,7 +464,7 @@ func GetWebhookForApplication(ctx context.Context, webhookRepo webhookRepository
 		webhook, err = webhookRepo.GetByIDAndWebhookType(ctx, tenant, appTemplateID, model.ApplicationTemplateWebhookReference, webhookType)
 		if err != nil {
 			if !apperrors.IsNotFoundError(err) {
-				return nil, errors.Wrapf(err, "while listing %q webhooks for application template with ID: %q on behalve of application with ID: %q", webhookType, appTemplateID, appID)
+				return nil, errors.Wrapf(err, "while listing %q webhooks for application template with ID: %q on behalf of application with ID: %q", webhookType, appTemplateID, appID)
 			}
 
 			log.C(ctx).Infof("There is no %q webhook attached to application template with ID: %q. No notifications will be generated.", webhookType, appTemplateID)

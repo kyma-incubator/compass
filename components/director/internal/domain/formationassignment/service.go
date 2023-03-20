@@ -562,11 +562,12 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	assignment := assignmentClone.FormationAssignment
 
 	if assignment.State == string(model.ReadyAssignmentState) {
+		log.C(ctx).Infof("The formation assignment with ID: %q is in %q state. No notifications will be sent for it.", assignment.ID, assignment.State)
 		return nil
 	}
 
 	if assignmentClone.Request == nil {
-		log.C(ctx).Infof("There is no notification to be sent. Updating formation assignment with ID: %q to %q state", assignment.ID, assignment.State)
+		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		assignment.State = string(model.ReadyAssignmentState)
 		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
@@ -599,7 +600,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	requestWebhookMode := assignmentClone.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Info("The Webhook in the notification is in ASYNC_CALLBACK mode. Waiting for the receiver to report the status on the status API...")
+		log.C(ctx).Infof("The webhook in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback)
 		return nil
 	}
 
@@ -627,7 +628,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		if err = s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
 			return errors.Wrapf(err, "while creating formation assignment for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
-		log.C(ctx).Infof("Assignment with ID %s was updated with %s state", assignment.ID, assignment.State)
+		log.C(ctx).Infof("Assignment with ID: %q was updated with %q state", assignment.ID, assignment.State)
 	}
 
 	if shouldSendReverseNotification {
