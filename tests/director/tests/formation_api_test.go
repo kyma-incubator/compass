@@ -1952,13 +1952,12 @@ func TestSynchronousAppToAppFormationAssignmentNotifications(t *testing.T) {
 	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 	formationTmplName := "app-to-app-formation-template-name"
-	// TODO:: Remove runtimeType once we support app only formations
 	applicationType := "app-to-app-app-type-1"
 	applicationType2 := "app-to-app-app-type-2"
 	appTypes := []string{applicationType, applicationType2}
 	var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-	ft = fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, "dummy-runtime-type", appTypes, graphql.ArtifactTypeSubscription)
+	ft = fixtures.CreateAppOnlyFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, appTypes)
 
 	formationName := "app-to-app-formation-name"
 	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
@@ -2189,11 +2188,10 @@ func TestUseApplicationTemplateWebhookIfAppDoesNotHaveOneForNotifications(t *tes
 	cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 	defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-	// TODO: Remove runtimeType once we support app only formations
 	appTypes := []string{"app-to-app-app-type-1", "app-to-app-app-type-2"}
 	var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-	ft = fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, "dummy-runtime-type", appTypes, graphql.ArtifactTypeSubscription)
+	ft = fixtures.CreateAppOnlyFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, appTypes)
 
 	formationName := "app-to-app-formation-name"
 	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
