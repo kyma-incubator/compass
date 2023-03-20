@@ -108,6 +108,8 @@ graphql:
     createCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
     updateCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
     deleteCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
+    addTenantAccess: [ "tenant_access:write" ]
+    removeTenantAccess: [ "tenant_access:write" ]
 
   field:
     fetch_request:
