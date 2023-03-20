@@ -26,7 +26,6 @@ const (
 type AssignedTenant struct {
 	UCLApplicationID string                      `json:"uclApplicationId"`
 	Operation        Operation                   `json:"operation"`
-	AssignmentID     string                      `json:"assignmentId"`
 	Parameters       AssignedTenantParameters    `json:"parameters"`
 	Configuration    AssignedTenantConfiguration `json:"configuration"`
 }
@@ -51,9 +50,6 @@ func (tm TenantMapping) Validate() error {
 	}
 	if tm.AssignedTenants[0].Operation == "" {
 		return errors.New("$.assignedTenants[0].operation is required")
-	}
-	if tm.AssignedTenants[0].AssignmentID == "" {
-		return errors.New("$.assignedTenants[0].assignmentId is required")
 	}
 	if tm.AssignedTenants[0].Parameters.ClientID == "" {
 		return errors.New("$.assignedTenants[0].parameters.clientId is required")

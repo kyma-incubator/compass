@@ -23,8 +23,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 		},
 		AssignedTenants: []types.AssignedTenant{
 			{
-				Operation:    types.OperationAssign,
-				AssignmentID: "assignmentID",
+				Operation: types.OperationAssign,
 				Parameters: types.AssignedTenantParameters{
 					ClientID: "clientID",
 				},

@@ -49,8 +49,7 @@ func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantM
 		}
 		if err := s.Storage.UpsertTenantMapping(ctx, tenantMapping1); err != nil {
 			log.Err(err).Send()
-			return errors.Newf("failed to upsert tenant mapping for assignment '%s' in formation '%s': %w",
-				tenantMapping1.AssignedTenants[0].AssignmentID, formationID, postgres.Error(err))
+			return errors.Newf("failed to upsert tenant mapping for formation '%s': %w", formationID, postgres.Error(err))
 		}
 	case types.OperationUnassign:
 		if len(tenantMappings) > 1 && tenantMapping1Found {
@@ -60,8 +59,7 @@ func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantM
 		}
 		if err := s.Storage.DeleteTenantMapping(ctx, formationID, applicationID1); err != nil {
 			log.Err(err).Send()
-			return errors.Newf("failed to clean up tenant mapping for assignment '%s' in formation '%s': %w",
-				tenantMapping1.AssignedTenants[0].AssignmentID, formationID, postgres.Error(err))
+			return errors.Newf("failed to clean up tenant mapping for formation '%s': %w", formationID, postgres.Error(err))
 		}
 	}
 	return nil
