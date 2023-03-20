@@ -504,64 +504,73 @@ func TestConverter_TenantAccessToGraphQL(t *testing.T) {
 }
 
 func TestConverter_TenantAccessToEntity(t *testing.T) {
-	t.Run("when input is nil", func(t *testing.T) {
-		c := tenant.NewConverter()
+	testCases := []struct {
+		Name           string
+		Input          *model.TenantAccess
+		ExpectedOutput *repo.TenantAccess
+	}{
+		{
+			Name:           "when input is nil",
+			Input:          nil,
+			ExpectedOutput: nil,
+		},
+		{
+			Name: "all fields",
+			Input: &model.TenantAccess{
+				ExternalTenantID: testExternal,
+				InternalTenantID: testInternal,
+				ResourceType:     resource.Application,
+				ResourceID:       testID,
+				Owner:            true,
+			},
+			ExpectedOutput: &repo.TenantAccess{
+				TenantID:   testInternal,
+				ResourceID: testID,
+				Owner:      true,
+			},
+		},
+	}
 
-		// WHEN
-		res := c.TenantAccessToEntity(nil)
-
-		// THEN
-		require.Nil(t, res)
-	})
-	t.Run("all fields", func(t *testing.T) {
-		c := tenant.NewConverter()
-
-		// WHEN
-		in := &model.TenantAccess{
-			ExternalTenantID: testExternal,
-			InternalTenantID: testInternal,
-			ResourceType:     resource.Application,
-			ResourceID:       testID,
-		}
-		res := c.TenantAccessToEntity(in)
-		expected := &repo.TenantAccess{
-			TenantID:   testInternal,
-			ResourceID: in.ResourceID,
-			Owner:      in.Owner,
-		}
-
-		// THEN
-		require.Equal(t, expected, res)
-	})
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			converter := tenant.NewConverter()
+			output := converter.TenantAccessToEntity(testCase.Input)
+			require.Equal(t, testCase.ExpectedOutput, output)
+		})
+	}
 }
 
 func TestConverter_TenantAccessFromEntity(t *testing.T) {
-	t.Run("when input is nil", func(t *testing.T) {
-		c := tenant.NewConverter()
+	testCases := []struct {
+		Name           string
+		Input          *repo.TenantAccess
+		ExpectedOutput *model.TenantAccess
+	}{
+		{
+			Name:           "when input is nil",
+			Input:          nil,
+			ExpectedOutput: nil,
+		},
+		{
+			Name: "all fields",
+			Input: &repo.TenantAccess{
+				TenantID:   testInternal,
+				ResourceID: testID,
+				Owner:      false,
+			},
+			ExpectedOutput: &model.TenantAccess{
+				InternalTenantID: testInternal,
+				ResourceID:       testID,
+				Owner:            false,
+			},
+		},
+	}
 
-		// WHEN
-		res := c.TenantAccessToEntity(nil)
-
-		// THEN
-		require.Nil(t, res)
-	})
-	t.Run("all fields", func(t *testing.T) {
-		c := tenant.NewConverter()
-
-		// WHEN
-		in := &repo.TenantAccess{
-			TenantID:   testInternal,
-			ResourceID: testID,
-			Owner:      false,
-		}
-		res := c.TenantAccessFromEntity(in)
-		expected := &model.TenantAccess{
-			InternalTenantID: testInternal,
-			ResourceID:       testID,
-			Owner:            false,
-		}
-
-		// THEN
-		require.Equal(t, expected, res)
-	})
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			converter := tenant.NewConverter()
+			output := converter.TenantAccessFromEntity(testCase.Input)
+			require.Equal(t, testCase.ExpectedOutput, output)
+		})
+	}
 }

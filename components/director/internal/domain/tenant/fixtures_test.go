@@ -47,6 +47,12 @@ var (
 		ResourceID:   testID,
 		Owner:        true,
 	}
+	tenantAccessInputWithInvalidResourceType = graphql.TenantAccessInput{
+		TenantID:     testExternal,
+		ResourceType: graphql.TenantAccessObjectType(invalidResourceType),
+		ResourceID:   testID,
+		Owner:        true,
+	}
 	tenantAccessGQL = &graphql.TenantAccess{
 		TenantID:     testExternal,
 		ResourceType: graphql.TenantAccessObjectTypeApplication,

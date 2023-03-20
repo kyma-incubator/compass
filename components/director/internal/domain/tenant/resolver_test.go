@@ -2,6 +2,7 @@ package tenant_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -1475,6 +1476,17 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 			},
 			Input:            tenantAccessInput,
 			ExpectedErrorMsg: "while fetching stored tenant access for tenant",
+		},
+		{
+			Name: "Error when resource type is invalid",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				return TenantSvc
+			},
+			Input:            tenantAccessInputWithInvalidResourceType,
+			ExpectedErrorMsg: fmt.Sprintf("Unknown tenant access resource type %q", invalidResourceType),
 		},
 		{
 			Name: "Error when getting internal tenant",

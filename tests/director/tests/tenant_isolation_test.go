@@ -166,7 +166,7 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 func TestTenantAccess(t *testing.T) {
 	ctx := context.Background()
 
-	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "tenantseparation", tenant.TestTenants.GetDefaultTenantID())
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "e2e-tenant-access", tenant.TestTenants.GetDefaultTenantID())
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp.ID)

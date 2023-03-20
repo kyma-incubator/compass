@@ -156,13 +156,13 @@ func (_m *BusinessTenantMappingConverter) ToGraphQL(in *model.BusinessTenantMapp
 	return r0
 }
 
-type NewBusinessTenantMappingConverterT interface {
+type mockConstructorTestingTNewBusinessTenantMappingConverter interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewBusinessTenantMappingConverter creates a new instance of BusinessTenantMappingConverter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBusinessTenantMappingConverter(t NewBusinessTenantMappingConverterT) *BusinessTenantMappingConverter {
+func NewBusinessTenantMappingConverter(t mockConstructorTestingTNewBusinessTenantMappingConverter) *BusinessTenantMappingConverter {
 	mock := &BusinessTenantMappingConverter{}
 	mock.Mock.Test(t)
 
