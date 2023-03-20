@@ -4846,7 +4846,7 @@ func assertFormationAssignmentsAsynchronously(t *testing.T, ctx context.Context,
 func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
 	// Get the formation with its status
 	t.Logf("Getting formation with ID: %q", formationID)
-	var gotFormation graphql.Formation
+	var gotFormation graphql.FormationExt
 	getFormationReq := fixtures.FixGetFormationRequest(formationID)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant, getFormationReq, &gotFormation)
 	require.NoError(t, err)
