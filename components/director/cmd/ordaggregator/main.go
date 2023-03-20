@@ -260,6 +260,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	formationConstraintConverter := formationconstraint.NewConverter()
 	formationTemplateConstraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
 	assignmentConv := scenarioassignment.NewConverter()
+	tenantConverter := tenant.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -285,7 +286,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
 	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	tenantRepo := tenant.NewRepository(tenantConverter)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -295,12 +296,12 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
-	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
@@ -429,9 +430,10 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 }
 
 func configureTenantContextMiddleware(apiRouter *mux.Router, transact persistence.Transactioner) {
-	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
 	uidSvc := uid.NewService()
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 
 	apiRouter.Use(tenantContextHandler(transact, tenantSvc))
 }

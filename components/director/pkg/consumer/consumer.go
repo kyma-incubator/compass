@@ -31,6 +31,8 @@ const (
 	// ManagedApplicationConsumer is a consumer type that is used by Managed Application Provider operator
 	// when creating Certificate Subject Mappings
 	ManagedApplicationConsumer ConsumerType = "Managed Application Consumer"
+	// LandscapeResourceOperator is a consumer type that is used by Landscape Resource operator
+	LandscapeResourceOperator ConsumerType = "Landscape Resource Operator"
 )
 
 // Consumer missing godoc
@@ -62,6 +64,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return ManagedApplicationProviderOperator, nil
 	case model.ManagedApplicationConsumerReference:
 		return ManagedApplicationConsumer, nil
+	case model.LandscapeResourceOperatorConsumerReference:
+		return LandscapeResourceOperator, nil
 	case model.SuperAdminReference:
 		return SuperAdmin, nil
 	}

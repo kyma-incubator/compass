@@ -37,6 +37,8 @@ var (
 	newAccountTenantModel           = fixBusinessTenantMappingModel(newTenantID, tenantpkg.Account, true)
 	accountTenantWithoutParentModel = fixBusinessTenantMappingModel(tenantID, tenantpkg.Account, false)
 	customerTenantModel             = fixBusinessTenantMappingModel(parentTenantID, tenantpkg.Customer, false)
+	tenantAccessWithOwnerTrue       = fixTenantAccessModel(tenantID, applicationID, resource.Application, true)
+	tenantAccessWithOwnerFalse      = fixTenantAccessModel(newTenantID, applicationID, resource.Application, false)
 	orgTenantsModel                 = []*model.BusinessTenantMapping{fixBusinessTenantMappingModel(tenantID, tenantpkg.Organization, true)}
 	applicationsModel               = []*model.Application{fixApplicationModel(applicationID)}
 )
@@ -62,7 +64,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return(parentTenantID, nil)
 				tenantService.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), parentTenantID).Return(customerTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Account).Return([]*model.BusinessTenantMapping{accountTenantModel}, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantID, applicationID, true, resource.Application).Return(nil)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerTrue).Return(nil)
 
 				return tenantService
 			},
@@ -203,7 +205,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService.On("GetCustomerIDParentRecursively", txtest.CtxWithDBMatcher(), tenantID).Return(parentTenantID, nil)
 				tenantService.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), parentTenantID).Return(customerTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Account).Return([]*model.BusinessTenantMapping{accountTenantModel}, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantID, applicationID, true, resource.Application).Return(testErr)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerTrue).Return(testErr)
 				return tenantService
 			},
 			GetCtx:           fixContextWithTenant,
@@ -219,7 +221,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), newTenantID, applicationID, false, resource.Application).Return(nil)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(nil)
 				return tenantService
 			},
 			GetCtx: fixContextWithTenant,
@@ -325,7 +327,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), newTenantID, applicationID, false, resource.Application).Return(testErr)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(testErr)
 				return tenantService
 			},
 			GetCtx: fixContextWithTenant,
@@ -345,7 +347,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), newTenantID, applicationID, false, resource.Application).Return(nil)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(nil)
 				return tenantService
 			},
 			GetCtx: fixContextWithTenant,
@@ -451,7 +453,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), newTenantID, applicationID, false, resource.Application).Return(testErr)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(testErr)
 				return tenantService
 			},
 			GetCtx: fixContextWithTenant,
@@ -471,7 +473,7 @@ func TestDirective_TestSynchronizeApplicationTenancy(t *testing.T) {
 				tenantService := &automock.BusinessTenantMappingService{}
 				tenantService.On("GetTenantByID", txtest.CtxWithDBMatcher(), newTenantID).Return(newAccountTenantModel, nil)
 				tenantService.On("ListByParentAndType", txtest.CtxWithDBMatcher(), parentTenantID, tenantpkg.Organization).Return(orgTenantsModel, nil)
-				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), newTenantID, applicationID, false, resource.Application).Return(nil)
+				tenantService.On("CreateTenantAccessForResource", txtest.CtxWithDBMatcher(), tenantAccessWithOwnerFalse).Return(nil)
 				return tenantService
 			},
 			GetCtx: fixContextWithTenant,
@@ -605,4 +607,13 @@ func fixEmptyTenantService() *automock.BusinessTenantMappingService {
 
 func fixContextWithTenant() context.Context {
 	return context.WithValue(context.TODO(), tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
+}
+
+func fixTenantAccessModel(tenantID, resourceID string, resourceType resource.Type, owner bool) *model.TenantAccess {
+	return &model.TenantAccess{
+		InternalTenantID: tenantID,
+		ResourceType:     resourceType,
+		ResourceID:       resourceID,
+		Owner:            owner,
+	}
 }
