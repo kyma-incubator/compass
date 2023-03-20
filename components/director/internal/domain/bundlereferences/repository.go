@@ -20,6 +20,8 @@ const (
 	APIDefTable string = `api_definitions`
 	// EventDefTable represents the db name of the Event Definitions table
 	EventDefTable string = `event_api_definitions`
+	// DataProductsTable represents the db name of the Data Products table
+	DataProductsTable string = `data_products`
 
 	// APIDefIDColumn represents the db column of the APIDefinition ID
 	APIDefIDColumn string = "api_def_id"
@@ -27,6 +29,8 @@ const (
 	APIDefURLColumn string = "api_def_url"
 	// EventDefIDColumn represents the db column of the EventDefinition ID
 	EventDefIDColumn string = "event_def_id"
+	// DataProductIDColumn represents the db column of the DataProduct ID
+	DataProductIDColumn string = "data_product_id"
 
 	bundleIDColumn          string = "bundle_id"
 	visibilityColumn        string = "visibility"
@@ -260,6 +264,8 @@ func (r *repository) referenceObjectFieldName(objectType model.BundleReferenceOb
 		return APIDefIDColumn, nil
 	case model.BundleEventReference:
 		return EventDefIDColumn, nil
+	case model.BundleDataProductReference:
+		return DataProductIDColumn, nil
 	}
 	return "", apperrors.NewInternalError("Invalid type of the BundleReference object")
 }
@@ -270,6 +276,8 @@ func getDetailsByObjectType(objectType model.BundleReferenceObjectType) (string,
 		return APIDefTable, APIDefIDColumn, []string{APIDefIDColumn, bundleIDColumn, APIDefURLColumn}, nil
 	case model.BundleEventReference:
 		return EventDefTable, EventDefIDColumn, []string{EventDefIDColumn, bundleIDColumn}, nil
+	case model.BundleDataProductReference:
+		return DataProductsTable, DataProductIDColumn, []string{DataProductIDColumn, bundleIDColumn}, nil
 	}
 	return "", "", []string{""}, apperrors.NewInternalError("Invalid type of the BundleReference object")
 }
@@ -280,6 +288,8 @@ func getOrderByColumnsByObjectType(objectType model.BundleReferenceObjectType) (
 		return repo.OrderByParams{repo.NewAscOrderBy(APIDefIDColumn), repo.NewAscOrderBy(bundleIDColumn), repo.NewAscOrderBy(APIDefURLColumn)}, nil
 	case model.BundleEventReference:
 		return repo.OrderByParams{repo.NewAscOrderBy(EventDefIDColumn), repo.NewAscOrderBy(bundleIDColumn)}, nil
+	case model.BundleDataProductReference:
+		return repo.OrderByParams{repo.NewAscOrderBy(DataProductIDColumn), repo.NewAscOrderBy(bundleIDColumn)}, nil
 	}
 	return nil, apperrors.NewInternalError("Invalid type of the BundleReference object")
 }

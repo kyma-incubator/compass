@@ -131,6 +131,7 @@ func (s *service) FetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 	}
 
+	log.C(ctx).Errorf("IIIIIIIIIIIIIIIIIIIIIIII %s", fr.URL)
 	var resp *http.Response
 	if s.retryHTTPFuncExecutor != nil {
 		resp, err = s.retryHTTPFuncExecutor.Execute(doRequest)

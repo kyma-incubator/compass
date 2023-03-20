@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/data_product"
 	"net/http"
 	"os"
 	"time"
@@ -286,6 +287,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	dataProductRepo := data_product.NewRepository(data_product.NewConverter())
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -318,6 +320,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
+	dataProductSvc := data_product.NewService(dataProductRepo, uidSvc, bundleReferenceSvc)
 
 	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
 
@@ -327,7 +330,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor)
 
 	ordConfig := ord.NewServiceConfig(config.MaxParallelWebhookProcessors, config.MaxParallelSpecificationProcessors, config.OrdWebhookPartialProcessMaxDays, config.OrdWebhookPartialProcessURL, config.OrdWebhookPartialProcessing)
-	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor)
+	return ord.NewAggregatorService(ordConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, fetchRequestSvc, packageSvc, productSvc, vendorSvc, dataProductSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {

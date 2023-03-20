@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -71,6 +72,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	if err != nil {
 		return nil, "", err
 	}
+	log.C(ctx).Errorf("Config base url %s", config.BaseURL)
 
 	baseURL, err := calculateBaseURL(*webhook.URL, *config)
 	if err != nil {
@@ -252,6 +254,7 @@ func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error)
 	if err != nil {
 		return "", errors.New("error while parsing input webhook url")
 	}
+	fmt.Printf("parsedWebhookURL: %s", parsedWebhookURL)
 
 	if strings.HasSuffix(parsedWebhookURL.Path, WellKnownEndpoint) {
 		strippedPath := strings.ReplaceAll(parsedWebhookURL.Path, WellKnownEndpoint, "")

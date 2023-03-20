@@ -195,7 +195,7 @@ func (c *universalCreator) checkParentAccess(ctx context.Context, tenant string,
 	if c.ownerCheckRequired && ok {
 		conditions = append(conditions, NewEqualCondition(M2MOwnerColumn, true))
 	}
-
+	log.C(ctx).Errorf("parent ID: %s parentType %v", parentID, parentResourceType)
 	exister := NewExistQuerierWithEmbeddedTenant(parentAccessTable, M2MTenantIDColumn)
 	exists, err := exister.Exists(ctx, tenantAccessResourceType, tenant, conditions)
 	if err != nil {

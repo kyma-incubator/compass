@@ -112,6 +112,14 @@ type VendorService interface {
 	ListByApplicationID(ctx context.Context, appID string) ([]*model.Vendor, error)
 }
 
+// DataProductService is responsible for the service-layer DataProduct operations.
+//go:generate mockery --name=DataProductService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type DataProductService interface {
+	Create(ctx context.Context, applicationID string, packageID *string, in model.DataProductInput, bundleIDsFromBundleReference []string, defaultBundleID string, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition) (string, error)
+	ListByApplicationID(ctx context.Context, appID string) ([]*model.DataProduct, error)
+	UpdateInManyBundles(ctx context.Context, id string, in model.DataProductInput, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion []string, defaultBundleID string) error
+}
+
 // GlobalVendorService is responsible for the service-layer operations for Global Vendors (with NULL app_id) without tenant isolation.
 //go:generate mockery --name=GlobalVendorService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GlobalVendorService interface {

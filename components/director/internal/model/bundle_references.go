@@ -20,6 +20,8 @@ const (
 	BundleAPIReference BundleReferenceObjectType = "API"
 	// BundleEventReference missing godoc
 	BundleEventReference BundleReferenceObjectType = "Event"
+	// BundleDataProductReference missing godoc
+	BundleDataProductReference BundleReferenceObjectType = "DataProduct"
 )
 
 // BundleReferenceInput missing godoc

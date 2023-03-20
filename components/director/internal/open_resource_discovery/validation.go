@@ -103,6 +103,8 @@ const (
 	APIProtocolRest string = "rest"
 	// APIProtocolSapRfc is one of the available api protocol options
 	APIProtocolSapRfc string = "sap-rfc"
+	// APIProtocolSapSql is one of the available api protocol options
+	APIProtocolSapSql string = "sap-sql-api-v1"
 
 	// APIVisibilityPublic is one of the available api visibility options
 	APIVisibilityPublic string = "public"
@@ -298,7 +300,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
 		})),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc)),
+		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolSapSql)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
@@ -688,6 +690,10 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	rfcMetadataTypeExists := resourceDefinitionTypes[model.APISpecTypeRfcMetadata]
 	if isPolicyCoreOrPartner && apiProtocol == APIProtocolSapRfc && !rfcMetadataTypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='sap-rfc' it is mandatory to provide SAP RFC definitions")
+	}
+
+	if apiProtocol == APIProtocolSapSql && !(resourceDefinitionTypes[model.APISpecTypeCustom] || resourceDefinitionTypes[model.APISpecTypeApiDef]) {
+		return errors.New("for APIResources with apiProtocol='sap-sql-api-v1' it is mandatory type to be set either to sap-sql-api-definition-v1 or custom")
 	}
 
 	return nil

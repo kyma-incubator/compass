@@ -80,6 +80,7 @@ type Service struct {
 	packageSvc         PackageService
 	productSvc         ProductService
 	vendorSvc          VendorService
+	dataProductSvc     DataProductService
 	tombstoneSvc       TombstoneService
 	tenantSvc          TenantService
 
@@ -88,7 +89,7 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, dataProductSvc DataProductService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
 	return &Service{
 		config:             config,
 		transact:           transact,
@@ -103,6 +104,7 @@ func NewAggregatorService(config ServiceConfig, transact persistence.Transaction
 		packageSvc:         packageSvc,
 		productSvc:         productSvc,
 		vendorSvc:          vendorSvc,
+		dataProductSvc:     dataProductSvc,
 		tombstoneSvc:       tombstoneSvc,
 		tenantSvc:          tenantSvc,
 		globalRegistrySvc:  globalRegistrySvc,
@@ -173,13 +175,111 @@ func (s *Service) ProcessApplications(ctx context.Context, cfg MetricsConfig, ap
 		return nil
 	}
 
-	globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
-	for _, appID := range appIDs {
-		if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
-			return errors.Wrapf(err, "processing of ORD data for application with id %q failed", appID)
+	if appIDs[0] != "test" {
+		globalResourcesOrdIDs := s.retrieveGlobalResources(ctx)
+		for _, appID := range appIDs {
+			if err := s.processApplication(ctx, cfg, globalResourcesOrdIDs, appID); err != nil {
+				return errors.Wrapf(err, "processing of ORD data for application with id %q failed", appID)
+			}
 		}
+		return nil
 	}
-	return nil
+
+	//TODO uncomment - for test purpose
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	packageID := "e829ea7e-6171-49d5-86d2-337d2efb3020"
+	appID := "4d9f1d55-5d81-4198-9a06-9f93c935386d"
+	internalTenant := "2bd45d69-9702-4879-9338-5894105db0b2"
+	externalTenant := "61d32661-27e6-45bd-82be-4f468f946d9b"
+	ctx = tenant.SaveToContext(ctx, internalTenant, externalTenant)
+
+	dataProduct := model.DataProductInput{
+		OrdID:            "sap.cic:dataProduct:CustomerOrder:v1",
+		Tenant:           "",
+		LocalID:          str.Ptr("CustomerOrder"),
+		Title:            str.Ptr("Customer Order"),
+		ShortDescription: str.Ptr("The data product Customer Order offers access to all online and offline orders submitted by customers."),
+		Description:      str.Ptr("desc"),
+		Version:          str.Ptr("1.0.0"),
+		ReleaseStatus:    str.Ptr("beta"),
+		Visibility:       str.Ptr("public"),
+		OrdPackageID:     str.Ptr("sap.cic:package:xyz:v1"),
+		Tags:             nil,
+		Industry:         nil,
+		LineOfBusiness:   nil,
+		Type:             str.Ptr("type-1"),
+		DataProductOwner: str.Ptr("az"),
+		InputPorts: []*model.PortInput{
+			{
+				Name:                str.Ptr("input1"),
+				Description:         str.Ptr("desc1"),
+				ProducerCardinality: str.Ptr("asd"),
+				Disabled:            false,
+				ApiResources: []*model.Resource{
+					{
+						OrdID: "sap.foo.bar:apiResource:astronomy:v1",
+					},
+				},
+				EventResources: []*model.Resource{
+					{
+						OrdID: "sap.test:event-1",
+					},
+					{
+						OrdID:      "sap.test:event-2",
+						MinVersion: str.Ptr("1.0.0"),
+					},
+				},
+			},
+		},
+		OutputPorts: []*model.PortInput{
+			{
+				Name:                str.Ptr("output1"),
+				Description:         str.Ptr("desc1"),
+				ProducerCardinality: str.Ptr("asd"),
+				Disabled:            false,
+				ApiResources:        []*model.Resource{},
+				EventResources:      []*model.Resource{},
+			},
+		},
+		PartOfConsumptionBundles: nil,
+		DefaultConsumptionBundle: nil,
+	}
+
+	apisFromDB := []*model.APIDefinition{
+		{
+			OrdID: str.Ptr("sap.foo.bar:apiResource:astronomy:v1"),
+			BaseEntity: &model.BaseEntity{
+				ID: "b236f0b6-7d4a-4a0b-bf24-a98f7ffdad9d",
+			},
+		},
+	}
+
+	eventsFromDB := []*model.EventDefinition{
+		{
+			OrdID: str.Ptr("sap.test:event-1"),
+			BaseEntity: &model.BaseEntity{
+				ID: "120f37a4-d215-427e-ab73-d4bbc0ae0c1b",
+			},
+		},
+		{
+			OrdID: str.Ptr("sap.test:event-2"),
+			BaseEntity: &model.BaseEntity{
+				ID: "220f37a4-d215-427e-ab73-d4bbc0ae0cac",
+			},
+		},
+	}
+	_, err = s.dataProductSvc.Create(ctx, appID, &packageID, dataProduct, []string{}, "", apisFromDB, eventsFromDB)
+	if err != nil {
+		log.C(ctx).Errorf("ERRRRR %v", err)
+	}
+
+	return tx.Commit()
 }
 
 func (s *Service) processApplication(ctx context.Context, cfg MetricsConfig, globalResourcesOrdIDs map[string]bool, appID string) error {
@@ -328,12 +428,31 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
+	for _, doc := range documents {
+		log.C(ctx).Errorf("Number of products in doc: %d", len(doc.Products))
+		log.C(ctx).Errorf("Number of packages in doc: %d", len(doc.Packages))
+		log.C(ctx).Errorf("Number of consumpiton bundles in doc: %d", len(doc.ConsumptionBundles))
+		log.C(ctx).Errorf("Number of apis in doc: %d", len(doc.APIResources))
+		log.C(ctx).Errorf("Number of events in doc: %d", len(doc.EventResources))
+	}
+
 	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs)
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
+		log.C(ctx).Errorf("VALIDATION ERRORS: %v", validationResult)
 	}
 
+	log.C(ctx).Errorf("After VALIDATION")
+	for _, doc := range documents {
+		log.C(ctx).Errorf("Number of products in doc: %d", len(doc.Products))
+		log.C(ctx).Errorf("Number of packages in doc: %d", len(doc.Packages))
+		log.C(ctx).Errorf("Number of consumpiton bundles in doc: %d", len(doc.ConsumptionBundles))
+		log.C(ctx).Errorf("Number of apis in doc: %d", len(doc.APIResources))
+		log.C(ctx).Errorf("Number of events in doc: %d", len(doc.EventResources))
+	}
+
+	// TODO
 	if err := documents.Sanitize(baseURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
@@ -344,6 +463,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	bundlesInput := make([]*model.BundleCreateInput, 0)
 	apisInput := make([]*model.APIDefinitionInput, 0)
 	eventsInput := make([]*model.EventDefinitionInput, 0)
+	dataProductsInput := make([]*model.DataProductInput, 0)
 	tombstonesInput := make([]*model.TombstoneInput, 0)
 	for _, doc := range documents {
 		vendorsInput = append(vendorsInput, doc.Vendors...)
@@ -352,6 +472,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
 		apisInput = append(apisInput, doc.APIResources...)
 		eventsInput = append(eventsInput, doc.EventResources...)
+		dataProductsInput = append(dataProductsInput, doc.DataProducts...)
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
 	}
 
@@ -385,6 +506,11 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
+	_, err = s.processDataProducts(ctx, appID, bundlesFromDB, packagesFromDB, apisFromDB, eventsFromDB, dataProductsInput)
+	if err != nil {
+		return err
+	}
+
 	tombstonesFromDB, err := s.processTombstones(ctx, appID, tombstonesInput)
 	if err != nil {
 		return err
@@ -397,6 +523,111 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 	}
 
 	return s.processSpecs(ctx, fetchRequests)
+}
+
+func (s *Service) processDataProducts(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, dataProducts []*model.DataProductInput) ([]*model.DataProduct, error) {
+	dataProductsFromDB, err := s.listDataProductsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dataProduct := range dataProducts {
+		if err := s.resyncDataProductInTx(ctx, appID, dataProductsFromDB, bundlesFromDB, packagesFromDB, apisFromDB, eventsFromDB, dataProduct); err != nil {
+			return nil, err
+		}
+	}
+
+	dataProductsFromDB, err = s.listDataProductsInTx(ctx, appID)
+	if err != nil {
+		return nil, err
+	}
+	return dataProductsFromDB, nil
+}
+
+func (s *Service) listDataProductsInTx(ctx context.Context, appID string) ([]*model.DataProduct, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	dataProductsFromDB, err := s.dataProductSvc.ListByApplicationID(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while listing data products for app with id %q", appID)
+	}
+
+	return dataProductsFromDB, tx.Commit()
+}
+
+func (s *Service) resyncDataProductInTx(ctx context.Context, appID string, dataProductsFromDB []*model.DataProduct, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, dataProduct *model.DataProductInput) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := s.resyncDataProduct(ctx, appID, dataProductsFromDB, bundlesFromDB, packagesFromDB, apisFromDB, eventsFromDB, *dataProduct); err != nil {
+		return errors.Wrapf(err, "error while resyncing data product with ORD ID %q", dataProduct.OrdID)
+	}
+	return tx.Commit()
+}
+
+func (s *Service) resyncDataProduct(ctx context.Context, appID string, dataProductsFromDB []*model.DataProduct, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apisFromDB []*model.APIDefinition, eventsFromDB []*model.EventDefinition, dataProduct model.DataProductInput) error {
+	ctx = addFieldToLogger(ctx, "data_product_ord_id", dataProduct.OrdID)
+	i, isDataProductFound := searchInSlice(len(dataProductsFromDB), func(i int) bool {
+		return equalStrings(dataProductsFromDB[i].OrdID, &dataProduct.OrdID)
+	})
+
+	defaultConsumptionBundleID := extractDefaultConsumptionBundle(bundlesFromDB, dataProduct.DefaultConsumptionBundle)
+	bundleIDsFromBundleReference := make([]string, 0)
+	for _, br := range dataProduct.PartOfConsumptionBundles {
+		for _, bndl := range bundlesFromDB {
+			if equalStrings(bndl.OrdID, &br.BundleOrdID) {
+				bundleIDsFromBundleReference = append(bundleIDsFromBundleReference, bndl.ID)
+			}
+		}
+	}
+
+	var packageID *string
+	if i, found := searchInSlice(len(packagesFromDB), func(i int) bool {
+		return equalStrings(&packagesFromDB[i].OrdID, dataProduct.OrdPackageID)
+	}); found {
+		packageID = &packagesFromDB[i].ID
+	}
+	// can be missing
+	if !isDataProductFound {
+		_, err := s.dataProductSvc.Create(ctx, appID, packageID, dataProduct, bundleIDsFromBundleReference, defaultConsumptionBundleID, apisFromDB, eventsFromDB)
+		return err
+	}
+
+	allBundleIDsForDataProduct, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleDataProductReference, &dataProductsFromDB[i].ID)
+	if err != nil {
+		return err
+	}
+
+	// in case of DataProduct update, we need to filter which ConsumptionBundleReferences(bundle IDs) should be deleted - those that are stored in db but not present in the input anymore
+	bundleIDsForDeletion := make([]string, 0)
+	for _, id := range allBundleIDsForDataProduct {
+		if _, found := searchInSlice(len(bundleIDsFromBundleReference), func(i int) bool {
+			return equalStrings(&bundleIDsFromBundleReference[i], &id)
+		}); !found {
+			bundleIDsForDeletion = append(bundleIDsForDeletion, id)
+		}
+	}
+
+	// in case of DataProduct update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
+	bundleIDsForCreation := make([]string, 0)
+	for _, id := range bundleIDsFromBundleReference {
+		if _, found := searchInSlice(len(allBundleIDsForDataProduct), func(i int) bool {
+			return equalStrings(&allBundleIDsForDataProduct[i], &id)
+		}); !found {
+			bundleIDsForCreation = append(bundleIDsForCreation, id)
+		}
+	}
+
+	return s.dataProductSvc.UpdateInManyBundles(ctx, dataProductsFromDB[i].ID, dataProduct, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, defaultConsumptionBundleID)
 }
 
 func (s *Service) processSpecs(ctx context.Context, ordFetchRequests []*ordFetchRequest) error {

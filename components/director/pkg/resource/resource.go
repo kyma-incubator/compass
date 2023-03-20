@@ -64,6 +64,14 @@ const (
 	API Type = "api"
 	// EventDefinition type represents event resource.
 	EventDefinition Type = "eventDefinition"
+	// DataProduct type represents data product resource.
+	DataProduct Type = "dataProduct"
+	// Port type represents port resource.
+	Port Type = "port"
+	// PortApiRef type represents port api ref resource.
+	PortApiRef Type = "portApiRef"
+	// PortEventRef type represents port event ref resource.
+	PortEventRef Type = "portEventRef"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
 	// CertSubjectMapping type represents certificate subject mapping resource
@@ -121,6 +129,7 @@ var tenantAccessTable = map[Type]string{
 	BundleInstanceAuth:       "bundle_instance_auths_tenants",
 	API:                      "api_definitions_tenants",
 	EventDefinition:          "event_api_definitions_tenants",
+	DataProduct:              "data_product_tenants",
 	Webhook:                  "webhooks_tenants",
 	AppWebhook:               "application_webhooks_tenants",
 	RuntimeWebhook:           "runtime_webhooks_tenants",

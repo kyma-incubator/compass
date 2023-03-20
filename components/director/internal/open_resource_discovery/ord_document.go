@@ -60,6 +60,7 @@ type Document struct {
 	EventResources     []*model.EventDefinitionInput `json:"eventResources"`
 	Tombstones         []*model.TombstoneInput       `json:"tombstones"`
 	Vendors            []*model.VendorInput          `json:"vendors"`
+	DataProducts       []*model.DataProductInput     `json:"dataProducts"`
 }
 
 // Validate validates if the Config object complies with the spec requirements
@@ -100,6 +101,7 @@ func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*
 		baseURL             = calculatedBaseURL
 		isBaseURLConfigured = len(calculatedBaseURL) > 0
 	)
+	//TODO validate???
 	for _, doc := range docs {
 		if !isBaseURLConfigured && (doc.DescribedSystemInstance == nil || doc.DescribedSystemInstance.BaseURL == nil) {
 			errs = multierror.Append(errs, errors.New("no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance"))
@@ -403,6 +405,8 @@ func (docs Documents) Sanitize(baseURL string) error {
 			if api.Countries, err = mergeJSONArraysOfStrings(referredPkg.Countries, api.Countries); err != nil {
 				return errors.Wrapf(err, "error while merging countries for api with ord id %q", *api.OrdID)
 			}
+
+			// Changed here because the pkg may not have Industry
 			if api.Industry, err = mergeJSONArraysOfStrings(referredPkg.Industry, api.Industry); err != nil {
 				return errors.Wrapf(err, "error while merging industry for api with ord id %q", *api.OrdID)
 			}
@@ -484,6 +488,9 @@ func mergeORDLabels(labels1, labels2 json.RawMessage) (json.RawMessage, error) {
 func mergeJSONArraysOfStrings(arr1, arr2 json.RawMessage) (json.RawMessage, error) {
 	if len(arr2) == 0 {
 		return arr1, nil
+	}
+	if len(arr1) == 0 {
+		return arr2, nil
 	}
 	parsedArr1 := gjson.ParseBytes(arr1)
 	parsedArr2 := gjson.ParseBytes(arr2)
