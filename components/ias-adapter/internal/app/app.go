@@ -25,7 +25,7 @@ func Start(cfg config.Config) {
 	if err != nil {
 		log.Fatal().Msgf("Failed to create postgres connection: %s", err)
 	}
-	log.Info().Msgf("Opened postgres connection: %+v", cfg)
+	log.Info().Msg("Opened postgres connection")
 
 	healthService := service.HealthService{
 		Storage: postgresConnection,

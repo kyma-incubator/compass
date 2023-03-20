@@ -153,6 +153,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
 	}
+
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return errors.Newf("failed to send request: %w", err)

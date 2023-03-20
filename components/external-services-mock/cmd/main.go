@@ -226,8 +226,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	err := envconfig.Init(&iasConfig)
 	exitOnError(err, "while loading IAS adapter config")
 	iasHandler := ias.NewHandler(iasConfig)
-	router.HandleFunc("/Applications/v1", iasHandler.GetAll).Methods(http.MethodGet)
-	router.HandleFunc("/Applications/v1/{appID}", iasHandler.Patch).Methods(http.MethodPatch)
+	router.HandleFunc("/ias/Applications/v1", iasHandler.GetAll).Methods(http.MethodGet)
+	router.HandleFunc("/ias/Applications/v1/{appID}", iasHandler.Patch).Methods(http.MethodPatch)
 
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)

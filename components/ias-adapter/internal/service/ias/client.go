@@ -8,6 +8,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 )
@@ -38,13 +39,26 @@ func NewClient(cfg config.IAS) (*http.Client, error) {
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM([]byte(iasCockpit.CA))
 
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Certificates: []tls.Certificate{clientCert},
-				RootCAs:      caCertPool,
-			},
+	transport := &headerTransport{clientTransport: &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Certificates: []tls.Certificate{clientCert},
+			RootCAs:      caCertPool,
 		},
-		Timeout: cfg.RequestTimeout,
+	}}
+	return &http.Client{
+		Transport: transport,
+		Timeout:   cfg.RequestTimeout,
 	}, nil
+}
+
+type headerTransport struct {
+	clientTransport http.RoundTripper
+}
+
+func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	correlationID := req.Context().Value(middlewares.CorrelationIDKey).(string)
+	if correlationID != "" {
+		req.Header.Add(middlewares.CorrelationIDHeader, correlationID)
+	}
+	return t.clientTransport.RoundTrip(req)
 }
