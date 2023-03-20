@@ -66,22 +66,25 @@ type labeledService struct {
 type service struct {
 	uidService        UIDService
 	tenantMappingRepo TenantMappingRepository
+	converter         BusinessTenantMappingConverter
 }
 
 // NewService returns a new object responsible for service-layer tenant operations.
-func NewService(tenantMapping TenantMappingRepository, uidService UIDService) *service {
+func NewService(tenantMapping TenantMappingRepository, uidService UIDService, converter BusinessTenantMappingConverter) *service {
 	return &service{
 		uidService:        uidService,
 		tenantMappingRepo: tenantMapping,
+		converter:         converter,
 	}
 }
 
 // NewServiceWithLabels returns a new entity responsible for service-layer tenant operations, including operations with labels like listing all labels related to the given tenant.
-func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDService, labelRepo LabelRepository, labelUpsertSvc LabelUpsertService) *labeledService {
+func NewServiceWithLabels(tenantMapping TenantMappingRepository, uidService UIDService, labelRepo LabelRepository, labelUpsertSvc LabelUpsertService, converter BusinessTenantMappingConverter) *labeledService {
 	return &labeledService{
 		service: service{
 			uidService:        uidService,
 			tenantMappingRepo: tenantMapping,
+			converter:         converter,
 		},
 		labelRepo:      labelRepo,
 		labelUpsertSvc: labelUpsertSvc,
@@ -180,23 +183,72 @@ func (s *service) GetCustomerIDParentRecursively(ctx context.Context, tenantID s
 }
 
 // CreateTenantAccessForResource creates a tenant access for a single resource.Type
-func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantID, resourceID string, isOwner bool, resourceType resource.Type) error {
+func (s *service) CreateTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	resourceType := tenantAccess.ResourceType
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return errors.Errorf("entity %q does not have access table", resourceType)
 	}
 
-	ta := &repo.TenantAccess{
-		TenantID:   tenantID,
-		ResourceID: resourceID,
-		Owner:      isOwner,
-	}
+	ta := s.converter.TenantAccessToEntity(tenantAccess)
 
 	if err := repo.CreateSingleTenantAccess(ctx, m2mTable, ta); err != nil {
 		return errors.Wrapf(err, "while creating tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
 	}
 
 	return nil
+}
+
+// CreateTenantAccessForResourceRecursively creates a tenant access for a single resource.Type recursively
+func (s *service) CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	resourceType := tenantAccess.ResourceType
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return errors.Errorf("entity %q does not have access table", resourceType)
+	}
+
+	ta := s.converter.TenantAccessToEntity(tenantAccess)
+
+	if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, ta); err != nil {
+		return errors.Wrapf(err, "while creating tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
+	}
+
+	return nil
+}
+
+// DeleteTenantAccessForResourceRecursively deletes a tenant access for a single resource.Type recursively
+func (s *service) DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	resourceType := tenantAccess.ResourceType
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return errors.Errorf("entity %q does not have access table", resourceType)
+	}
+
+	ta := s.converter.TenantAccessToEntity(tenantAccess)
+
+	if err := repo.DeleteTenantAccessRecursively(ctx, m2mTable, tenantAccess.InternalTenantID, []string{tenantAccess.ResourceID}); err != nil {
+		return errors.Wrapf(err, "while deleting tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
+	}
+
+	return nil
+}
+
+// GetTenantAccessForResource gets a tenant access record for the specified resource
+func (s *service) GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error) {
+	m2mTable, ok := resourceType.TenantAccessTable()
+	if !ok {
+		return nil, errors.Errorf("entity %q does not have access table", resourceType)
+	}
+
+	ta, err := repo.GetSingleTenantAccess(ctx, m2mTable, tenantID, resourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	tenantAccessModel := s.converter.TenantAccessFromEntity(ta)
+	tenantAccessModel.ResourceType = resourceType
+
+	return tenantAccessModel, nil
 }
 
 // ListByParentAndType list tenants by parent ID and tenant.Type

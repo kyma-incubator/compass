@@ -216,6 +216,12 @@ enum TargetOperation {
 	GENERATE_FORMATION_NOTIFICATION
 }
 
+enum TenantAccessObjectType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+}
+
 enum ViewerType {
 	RUNTIME
 	APPLICATION
@@ -813,6 +819,13 @@ input TemplateValueInput {
 	value: String!
 }
 
+input TenantAccessInput {
+	tenantID: ID!
+	resourceType: TenantAccessObjectType!
+	resourceID: ID!
+	owner: Boolean!
+}
+
 input VersionInput {
 	"""
 	**Validation:** max=256
@@ -1382,6 +1395,13 @@ type Tenant {
 	provider: String!
 }
 
+type TenantAccess {
+	tenantID: ID!
+	resourceType: TenantAccessObjectType!
+	resourceID: ID!
+	owner: Boolean!
+}
+
 type TenantPage implements Pageable {
 	data: [Tenant!]!
 	pageInfo: PageInfo!
@@ -1902,5 +1922,15 @@ type Mutation {
 	- [delete certificate subject mapping](examples/delete-certificate-subject-mapping/delete-certificate-subject-mapping.graphql)
 	"""
 	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [add tenant access](examples/add-tenant-access/add-tenant-access.graphql)
+	"""
+	addTenantAccess(in: TenantAccessInput!): TenantAccess @hasScopes(path: "graphql.mutation.addTenantAccess")
+	"""
+	**Examples**
+	- [remove tenant access](examples/remove-tenant-access/remove-tenant-access.graphql)
+	"""
+	removeTenantAccess(tenantID: ID!, resourceID: ID!, resourceType: TenantAccessObjectType!): TenantAccess @hasScopes(path: "graphql.mutation.removeTenantAccess")
 }
 

@@ -16,6 +16,20 @@ type BusinessTenantMappingService struct {
 	mock.Mock
 }
 
+// CreateTenantAccessForResourceRecursively provides a mock function with given fields: ctx, tenantAccess
+func (_m *BusinessTenantMappingService) CreateTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	ret := _m.Called(ctx, tenantAccess)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.TenantAccess) error); ok {
+		r0 = rf(ctx, tenantAccess)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteMany provides a mock function with given fields: ctx, tenantInputs
 func (_m *BusinessTenantMappingService) DeleteMany(ctx context.Context, tenantInputs []string) error {
 	ret := _m.Called(ctx, tenantInputs)
@@ -28,6 +42,41 @@ func (_m *BusinessTenantMappingService) DeleteMany(ctx context.Context, tenantIn
 	}
 
 	return r0
+}
+
+// DeleteTenantAccessForResourceRecursively provides a mock function with given fields: ctx, tenantAccess
+func (_m *BusinessTenantMappingService) DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	ret := _m.Called(ctx, tenantAccess)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.TenantAccess) error); ok {
+		r0 = rf(ctx, tenantAccess)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// GetInternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *BusinessTenantMappingService) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
+	ret := _m.Called(ctx, externalTenant)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, externalTenant)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, externalTenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetLowestOwnerForResource provides a mock function with given fields: ctx, resourceType, objectID
@@ -44,6 +93,29 @@ func (_m *BusinessTenantMappingService) GetLowestOwnerForResource(ctx context.Co
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, string) error); ok {
 		r1 = rf(ctx, resourceType, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTenantAccessForResource provides a mock function with given fields: ctx, tenantID, resourceID, resourceType
+func (_m *BusinessTenantMappingService) GetTenantAccessForResource(ctx context.Context, tenantID string, resourceID string, resourceType resource.Type) (*model.TenantAccess, error) {
+	ret := _m.Called(ctx, tenantID, resourceID, resourceType)
+
+	var r0 *model.TenantAccess
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, resource.Type) *model.TenantAccess); ok {
+		r0 = rf(ctx, tenantID, resourceID, resourceType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.TenantAccess)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, resource.Type) error); ok {
+		r1 = rf(ctx, tenantID, resourceID, resourceType)
 	} else {
 		r1 = ret.Error(1)
 	}
