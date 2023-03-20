@@ -490,6 +490,7 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 		return errors.Wrapf(err, "while updating formation with ID: %q to: %q state", formation.ID, model.ReadyFormationState)
 	}
 
+	log.C(ctx).Infof("Resynchronizing formation with ID: %q and name: %q", formation.ID, formation.Name)
 	err = h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID)
 	if err != nil {
 		return errors.Wrapf(err, "while resynchronize formation notifications for formation with ID: %q", formation.ID)
