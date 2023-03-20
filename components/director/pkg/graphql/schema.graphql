@@ -216,6 +216,12 @@ enum TargetOperation {
 	GENERATE_FORMATION_NOTIFICATION
 }
 
+enum TenantAccessObjectType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
+}
+
 enum ViewerType {
 	RUNTIME
 	APPLICATION
@@ -662,6 +668,11 @@ input FormationConstraintUpdateInput {
 input FormationInput {
 	name: String!
 	templateName: String
+	"""
+	The initial state of the newly created formation.
+	It is used in specific use-cases by internal components that need to manipulate the formation notification engine's logic and hold the tenant mapping notifications until a certain external event happens.
+	"""
+	state: String @hasScopes(path: "graphql.input.formation.state")
 }
 
 input FormationTemplateInput {
@@ -806,6 +817,13 @@ input TemplateValueInput {
 	"""
 	placeholder: String!
 	value: String!
+}
+
+input TenantAccessInput {
+	tenantID: ID!
+	resourceType: TenantAccessObjectType!
+	resourceID: ID!
+	owner: Boolean!
 }
 
 input VersionInput {
@@ -1377,6 +1395,13 @@ type Tenant {
 	provider: String!
 }
 
+type TenantAccess {
+	tenantID: ID!
+	resourceType: TenantAccessObjectType!
+	resourceID: ID!
+	owner: Boolean!
+}
+
 type TenantPage implements Pageable {
 	data: [Tenant!]!
 	pageInfo: PageInfo!
@@ -1897,5 +1922,15 @@ type Mutation {
 	- [delete certificate subject mapping](examples/delete-certificate-subject-mapping/delete-certificate-subject-mapping.graphql)
 	"""
 	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [add tenant access](examples/add-tenant-access/add-tenant-access.graphql)
+	"""
+	addTenantAccess(in: TenantAccessInput!): TenantAccess @hasScopes(path: "graphql.mutation.addTenantAccess")
+	"""
+	**Examples**
+	- [remove tenant access](examples/remove-tenant-access/remove-tenant-access.graphql)
+	"""
+	removeTenantAccess(tenantID: ID!, resourceID: ID!, resourceType: TenantAccessObjectType!): TenantAccess @hasScopes(path: "graphql.mutation.removeTenantAccess")
 }
 

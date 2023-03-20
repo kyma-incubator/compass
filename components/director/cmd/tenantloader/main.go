@@ -49,7 +49,7 @@ func main() {
 
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, UIDSvc, labelRepo, labelSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, UIDSvc, labelRepo, labelSvc, tenantConverter)
 
 	tenants, err := externaltenant.MapTenants(tenantsDirectoryPath, cfg.DefaultTenantRegion)
 	exitOnError(err, "error while mapping tenants from file")
