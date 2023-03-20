@@ -454,20 +454,20 @@ func GetWebhookForApplication(ctx context.Context, webhookRepo webhookRepository
 			return nil, errors.Wrapf(err, "while listing %s webhooks for application %s", webhookType, appID)
 		}
 
-		log.C(ctx).Infof("There is no %s webhook for application %s. Looking for %s webhook for application template.", webhookType, appID, webhookType)
+		log.C(ctx).Infof("There is no %q webhook attached to application with ID: %q. Looking for %q webhook attached to application template.", webhookType, appID, webhookType)
 
 		if appTemplateID == "" {
-			log.C(ctx).Infof("There is no application template for application %s. There are no notifications to be generated.", appID)
+			log.C(ctx).Infof("There is no application template for application with ID: %q. No notifications will be generated.", appID)
 			return nil, nil
 		}
 
 		webhook, err = webhookRepo.GetByIDAndWebhookType(ctx, tenant, appTemplateID, model.ApplicationTemplateWebhookReference, webhookType)
 		if err != nil {
 			if !apperrors.IsNotFoundError(err) {
-				return nil, errors.Wrapf(err, "while listing %s webhooks for application template %s on behalve of application %s", webhookType, appTemplateID, appID)
+				return nil, errors.Wrapf(err, "while listing %q webhooks for application template with ID: %q on behalve of application with ID: %q", webhookType, appTemplateID, appID)
 			}
 
-			log.C(ctx).Infof("There is no %s webhook for application template %s. There are no notifications to be generated.", webhookType, appTemplateID)
+			log.C(ctx).Infof("There is no %q webhook attached to application template with ID: %q. No notifications will be generated.", webhookType, appTemplateID)
 			return nil, nil
 		}
 	}

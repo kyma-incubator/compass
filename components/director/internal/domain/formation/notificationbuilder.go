@@ -68,16 +68,16 @@ func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(
 
 // BuildFormationNotificationRequests builds new formation notification request
 func (nb *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Context, joinPointDetails *formationconstraintpkg.GenerateFormationNotificationOperationDetails, formation *model.Formation, formationTemplateWebhooks []*model.Webhook) ([]*webhookclient.FormationNotificationRequest, error) {
-	log.C(ctx).Infof("Building formation notification request...")
+	log.C(ctx).Infof("Building formation notification request for formation with name: %q...", formation.Name)
 	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PreGenerateFormationNotifications, joinPointDetails, joinPointDetails.FormationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationNotificationOperation, model.PreOperation)
 	}
 
 	if len(formationTemplateWebhooks) == 0 {
-		log.C(ctx).Infof("Formation template with ID: %q does not have any webhooks", joinPointDetails.FormationTemplateID)
+		log.C(ctx).Infof("Formation template with ID: %q does not have any webhooks. No notifications will be generated.", joinPointDetails.FormationTemplateID)
 		return nil, nil
 	}
-	log.C(ctx).Infof("There are %d formation template(s) listening for formation lifecycle notifications", len(formationTemplateWebhooks))
+	log.C(ctx).Infof("Formation template with ID: %q has/have %d webhook(s) of type: %q", joinPointDetails.FormationTemplateID, len(formationTemplateWebhooks), model.WebhookTypeFormationLifecycle)
 
 	formationTemplateInput := buildFormationLifecycleInput(joinPointDetails, formation)
 
