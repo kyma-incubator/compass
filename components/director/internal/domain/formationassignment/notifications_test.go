@@ -390,7 +390,7 @@ func Test_GenerateFormationAssignmentNotification(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			expectedErrMsg: "while listing APPLICATION_TENANT_MAPPING webhooks for application template",
+			expectedErrMsg: fmt.Sprintf("while listing %q webhooks for application template with ID: %q on behalf of application with ID: %q", model.WebhookTypeApplicationTenantMapping, testAppTemplateID, TestTarget),
 		},
 		{
 			name:                "Error when preparing app and app template with labels for source type application",

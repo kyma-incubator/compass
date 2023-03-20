@@ -2,6 +2,7 @@ package formation_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -269,7 +270,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
 			InputFormation:        expectedFormation,
-			ExpectedErrMessage:    "while listing CONFIGURATION_CHANGED webhooks for application template 58963c6f-24f6-4128-a05c-51d5356e7e09 on behalve of application",
+			ExpectedErrMessage:    fmt.Sprintf("while listing %q webhooks for application template with ID: %q on behalf of application with ID: %q", model.WebhookTypeConfigurationChanged, ApplicationTemplateID, ApplicationID),
 		},
 		{
 			Name: "error when getting application webhook",
@@ -971,7 +972,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
 			InputFormation:        expectedFormation,
-			ExpectedErrMessage:    "when listing application tenant mapping webhooks for applications and their application templates",
+			ExpectedErrMessage:    fmt.Sprintf("when listing %q webhooks for applications and their application templates", model.WebhookTypeApplicationTenantMapping),
 		},
 		{
 			Name: "error when preparing application and application template with labels",
@@ -1356,7 +1357,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
 			InputFormation:        expectedFormation,
-			ExpectedErrMessage:    "when listing configuration changed webhooks for applications and their application templates",
+			ExpectedErrMessage:    fmt.Sprintf("when listing %q webhooks for applications and their application templates", model.WebhookTypeConfigurationChanged),
 		},
 		{
 			Name: "error while preparing runtime with labels",
@@ -1751,7 +1752,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedErrMessage:    "when listing configuration changed webhooks for applications and their application templates",
+			ExpectedErrMessage:    fmt.Sprintf("when listing %q webhooks for applications and their application templates", model.WebhookTypeConfigurationChanged),
 		},
 		{
 			Name: "error while preparing runtime with labels",
