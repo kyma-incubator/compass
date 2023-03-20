@@ -968,6 +968,8 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) error {
+	log.C(ctx).Infof("Resynchronizing formation with ID: %q", formationID)
+
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -977,13 +979,13 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	// If it is in DELETING, it should be empty, so this shouldn't do anything
 	formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+		return errors.Wrapf(err, "while getting formation with ID: %q for tenant: %q", tenantID, formationID)
 	}
 	if formation.State != model.ReadyFormationState {
-		return fmt.Errorf("formation with ID %q is in state %q and cannot be resynchronized", formationID, formation.State)
+		return fmt.Errorf("formation with ID: %q is in state: %q and cannot be resynchronized", formationID, formation.State)
 	}
 
-	failedFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID,
+	resyncableFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID,
 		[]string{string(model.InitialAssignmentState),
 			string(model.DeletingAssignmentState),
 			string(model.CreateErrorAssignmentState),
@@ -992,9 +994,9 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 		return errors.Wrap(err, "while getting formation assignments with synchronizing and error states")
 	}
 
-	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
+	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(resyncableFormationAssignments))
 	var errs *multierror.Error
-	for _, fa := range failedFormationAssignments {
+	for _, fa := range resyncableFormationAssignments {
 		var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
 		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
 		if err != nil {
@@ -1307,7 +1309,7 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID, f
 
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
-		log.C(ctx).Infof("The object is not part of any formations. Deleting empty label")
+		log.C(ctx).Infof("After the modifications, the %q label is empty. Deleting empty label...", model.ScenariosKey)
 		return s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey)
 	}
 
