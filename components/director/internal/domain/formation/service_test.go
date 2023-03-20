@@ -2636,6 +2636,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		AsaEngineFN                              func() *automock.AsaEngine
 		FormationRepositoryFn                    func() *automock.FormationRepository
 		FormationAssignmentNotificationServiceFN func() *automock.FormationAssignmentNotificationsService
+		FormationTemplateRepoFN                  func() *automock.FormationTemplateRepository
 		NotificationServiceFN                    func() *automock.NotificationsService
 		FormationAssignmentServiceFn             func() *automock.FormationAssignmentService
 		RuntimeContextRepoFn                     func() *automock.RuntimeContextRepository
@@ -2789,15 +2790,6 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "returns error when formation is not in READY state",
-			FormationRepositoryFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(formationInInitialState, nil).Once()
-				return repo
-			},
-			ExpectedErrMessage: fmt.Sprintf("is in state %q and cannot be resynchronized", model.InitialFormationState),
-		},
-		{
 			Name: "returns error when failing processing formation assignments fails",
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
@@ -2910,6 +2902,21 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			ExpectedErrMessage: testErr.Error(),
 		},
+		// Formation Lifecycle Resynchronization
+		{
+			Name: "",
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctx, FormationID, TntInternalID).Return(formationInInitialState, nil).Once()
+				return repo
+			},
+			FormationTemplateRepoFN: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				return repo
+			},
+			ExpectedErrMessage: "",
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -2947,7 +2954,12 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			if testCase.FormationAssignmentNotificationServiceFN != nil {
 				formationAssignmentNotificationService = testCase.FormationAssignmentNotificationServiceFN()
 			}
-			svc := formation.NewServiceWithAsaEngine(nil, nil, nil, labelRepo, formationRepo, nil, labelService, nil, nil, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, asaEngine)
+			formationTemplateRepo := unusedFormationTemplateRepo()
+			if testCase.FormationTemplateRepoFN != nil {
+				formationTemplateRepo = testCase.FormationTemplateRepoFN()
+			}
+
+			svc := formation.NewServiceWithAsaEngine(nil, nil, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, nil, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, asaEngine)
 
 			// WHEN
 			err := svc.ResynchronizeFormationNotifications(ctx, FormationID)
@@ -2959,7 +2971,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
-			mock.AssertExpectationsForObjects(t, labelService, runtimeContextRepo, asaEngine, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService)
+			mock.AssertExpectationsForObjects(t, labelService, runtimeContextRepo, asaEngine, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo)
 		})
 	}
 	t.Run("returns error when empty tenant", func(t *testing.T) {

@@ -2,13 +2,12 @@ package fixtures
 
 import (
 	"context"
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func ListFormations(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, listFormationsReq *gcli.Request) *graphql.FormationPage {
@@ -80,6 +79,7 @@ func DeleteFormation(t *testing.T, ctx context.Context, gqlClient *gcli.Client, 
 }
 
 func DeleteFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string) *graphql.Formation {
+	// time.Sleep(10 * time.Second)
 	t.Logf("Deleting formation with name: %q", formationName)
 	deleteRequest := FixDeleteFormationRequest(formationName)
 	var deleteFormation graphql.Formation
