@@ -3694,8 +3694,7 @@ func TestFormationAssignmentNotificationResynchronizationAsync(stdT *testing.T) 
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		require.NotEmpty(t, formation.ID)
-		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State)   // Asserting only the formation state
-		require.Equal(t, graphql.FormationStatusConditionReady, formation.Status.Condition) // Asserting the aggregated formation status
+		require.Equal(t, graphql.FormationStatusConditionReady.String(), formation.State) // Asserting only the formation state
 
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
