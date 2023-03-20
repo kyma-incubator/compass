@@ -200,6 +200,8 @@ func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.
 			} else {
 				return resp, err
 			}
+		} else if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.OpenAccessStrategy) {
+			return c.httpClient.Do(req)
 		} else if webhook.Auth.Credential != nil {
 			ctx = saveToContext(ctx, webhook.Auth.Credential)
 			req = req.WithContext(ctx)
