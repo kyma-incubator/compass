@@ -36,36 +36,43 @@ func TestFromGraphQL(t *testing.T) {
 }
 
 func TestToGraphQL(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		// WHEN
-		actual, err := converter.ToGraphQL(&model.Formation{Name: testFormationName})
+	testCases := []struct {
+		Name              string
+		Input             *model.Formation
+		ExpectedFormation *graphql.Formation
+		ExpectedError     error
+	}{
+		{
+			Name:              "Success",
+			Input:             &model.Formation{Name: testFormationName},
+			ExpectedFormation: &graphql.Formation{Name: testFormationName},
+		},
+		{
+			Name:              "Success when input is empty",
+			Input:             nil,
+			ExpectedFormation: nil,
+		},
+		{
+			Name:              "Returns error when can't unmarshal the error",
+			Input:             &model.Formation{Name: testFormationName, Error: json.RawMessage(`{invalid}`)},
+			ExpectedFormation: nil,
+			ExpectedError:     errors.New("while unmarshalling formation error"),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// WHEN
+			result, err := converter.ToGraphQL(testCase.Input)
 
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, testFormationName, actual.Name)
-	})
-
-	t.Run("Success when input is empty", func(t *testing.T) {
-		// WHEN
-		actual, err := converter.ToGraphQL(nil)
-
-		// THEN
-		require.NoError(t, err)
-		require.Nil(t, actual)
-	})
-
-	t.Run("Returns error when can't unmarshal the error", func(t *testing.T) {
-		// WHEN
-		actual, err := converter.ToGraphQL(&model.Formation{
-			Name:  testFormationName,
-			Error: json.RawMessage(`{invalid}`),
+			if testCase.ExpectedError == nil {
+				require.Equal(t, result, testCase.ExpectedFormation)
+				require.NoError(t, err)
+			} else {
+				require.Nil(t, result)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			}
 		})
-
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "while unmarshalling formation error")
-		require.Nil(t, actual)
-	})
+	}
 }
 
 func TestConverter_ToEntity(t *testing.T) {
@@ -125,7 +132,7 @@ func Test_converter_MultipleToGraphQL(t *testing.T) {
 		Name               string
 		InputFormations    []*model.Formation
 		ExpectedFormations []*graphql.Formation
-		ExpectedErrorMsg   error
+		ExpectedError      error
 	}{
 		{
 			Name:               "Success",
@@ -146,7 +153,7 @@ func Test_converter_MultipleToGraphQL(t *testing.T) {
 			Name:               "Returns error when can't convert one of input formations",
 			InputFormations:    []*model.Formation{&modelFormation, {Error: json.RawMessage(`{invalid}`)}},
 			ExpectedFormations: nil,
-			ExpectedErrorMsg:   errors.New("while unmarshalling formation error"),
+			ExpectedError:      errors.New("while unmarshalling formation error"),
 		},
 	}
 
@@ -154,12 +161,12 @@ func Test_converter_MultipleToGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			result, err := converter.MultipleToGraphQL(testCase.InputFormations)
 
-			if testCase.ExpectedErrorMsg == nil {
+			if testCase.ExpectedError == nil {
 				require.NoError(t, err)
 				require.ElementsMatch(t, testCase.ExpectedFormations, result)
 			} else {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg.Error())
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
 				require.Nil(t, result)
 			}
 		})
