@@ -71,10 +71,11 @@ func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlC
 	return ft
 }
 
-func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName string, applicationTypes []string) graphql.FormationTemplate {
+func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName string, applicationTypes []string, leadingProductIDs []string) graphql.FormationTemplate {
 	formationTmplInput := graphql.FormationTemplateInput{
-		Name:             formationTemplateName,
-		ApplicationTypes: applicationTypes,
+		Name:              formationTemplateName,
+		ApplicationTypes:  applicationTypes,
+		LeadingProductIDs: leadingProductIDs,
 	}
 
 	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
@@ -89,7 +90,7 @@ func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Contex
 }
 
 func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplate {
-	formationTmplInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, []string{runtimeType}, applicationTypes, runtimeArtifactKind, leadingProductIDs)
+	formationTmplInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, applicationTypes, []string{runtimeType}, runtimeArtifactKind, leadingProductIDs)
 
 	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
 	require.NoError(t, err)
