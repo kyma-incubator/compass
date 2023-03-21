@@ -79,6 +79,10 @@ spec:
               value: {{ .Values.global.iasAdapter.writeTimeout }}
             - name: APP_IDLE_TIMEOUT
               value: {{ .Values.global.iasAdapter.idleTimeout }}
+            - name: APP_TENANT_INFO_ENDPOINT
+              value: https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.info.path }}
+            - name: APP_TENANT_INFO_REQUEST_TIMEOUT
+              value: {{ .Values.global.iasAdapter.tenantInfo.requestTimeout }}/{{ .Values.global.iasAdapter.ias.secret.fileName }}
             - name: APP_IAS_REQUEST_TIMEOUT
               value: {{ .Values.global.iasAdapter.ias.requestTimeout }}
             - name: APP_IAS_COCKPIT_PATH

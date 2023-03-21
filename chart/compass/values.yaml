@@ -484,6 +484,8 @@ global:
     readHeaderTimeout: 30s
     writeTimeout: 30s
     idleTimeout: 30s
+    tenantInfo:
+      requestTimeout: 30s
     ias:
       requestTimeout: 30s
       secret:

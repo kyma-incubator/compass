@@ -45,10 +45,13 @@ func Start(cfg config.Config) {
 		IASService: ias.NewService(cfg.IASConfig, iasClient),
 	}
 
-	server := api.NewServer(cfg, api.Services{
+	server, err := api.NewServer(globalCtx, cfg, api.Services{
 		HealthService:         healthService,
 		TenantMappingsService: tenantMappingsService,
 	})
+	if err != nil {
+		log.Fatal().Msgf("Failed to create server: %s", err)
+	}
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal().Msgf("Failed to listen and serve: %s", err)

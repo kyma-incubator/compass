@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal/paths"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 )
 
@@ -21,13 +23,18 @@ type Services struct {
 	TenantMappingsService handlers.TenantMappingsService
 }
 
-func NewServer(cfg config.Config, services Services) *http.Server {
+func NewServer(ctx context.Context, cfg config.Config, services Services) (*http.Server, error) {
 	log := logger.Default()
 
 	router := gin.New()
 	routerGroup := router.Group(cfg.APIRootPath)
 	routerGroup.Use(gin.Recovery())
 	routerGroup.Use(middlewares.Logging)
+	authMiddleware, err := middlewares.NewAuthMiddleware(ctx, cfg.TenantInfo)
+	if err != nil {
+		return nil, errors.Newf("failed to create auth middleware: %w", err)
+	}
+	routerGroup.Use(authMiddleware.Auth)
 
 	healthHandler := handlers.HealthHandler{Service: services.HealthService}
 	routerGroup.GET(paths.HealthPath, healthHandler.Health)
@@ -52,5 +59,5 @@ func NewServer(cfg config.Config, services Services) *http.Server {
 		WriteTimeout:      cfg.WriteTimeout,
 		IdleTimeout:       cfg.IdleTimeout,
 		Handler:           router,
-	}
+	}, nil
 }

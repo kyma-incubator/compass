@@ -25,7 +25,7 @@ func Logging(ctx *gin.Context) {
 	status := ctx.Writer.Status()
 	bodySize := ctx.Writer.Size()
 
-	ctxLogger.Info().Msgf("%d %s %s %s %s %d", status, method, path, ctx.ClientIP(), time.Since(start), bodySize)
+	ctxLogger.Info().Msgf("%d %s %s %s %d", status, method, path, time.Since(start), bodySize)
 }
 
 func getRequestID(ctx *gin.Context) string {

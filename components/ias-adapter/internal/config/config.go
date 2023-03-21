@@ -16,8 +16,14 @@ type Config struct {
 	ReadHeaderTimeout time.Duration `envconfig:"APP_READ_HEADER_TIMEOUT,default=30s"`
 	WriteTimeout      time.Duration `envconfig:"APP_WRITE_TIMEOUT,default=30s"`
 	IdleTimeout       time.Duration `envconfig:"APP_IDLE_TIMEOUT,default=30s"`
+	TenantInfo        TenantInfo
 	IASConfig         IAS
 	Postgres          Postgres
+}
+
+type TenantInfo struct {
+	Endpoint       string        `envconfig:"APP_TENANT_INFO_ENDPOINT,default=localhost:8080/v1/info"`
+	RequestTimeout time.Duration `envconfig:"APP_TENANT_INFO_REQUEST_TIMEOUT,default=30s"`
 }
 
 type IAS struct {
