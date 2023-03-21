@@ -8,8 +8,6 @@ import (
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 
-	resource "github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	tenant "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 )
 
@@ -18,13 +16,13 @@ type BusinessTenantMappingService struct {
 	mock.Mock
 }
 
-// CreateTenantAccessForResource provides a mock function with given fields: ctx, tenantID, resourceID, isOwner, resourceType
-func (_m *BusinessTenantMappingService) CreateTenantAccessForResource(ctx context.Context, tenantID string, resourceID string, isOwner bool, resourceType resource.Type) error {
-	ret := _m.Called(ctx, tenantID, resourceID, isOwner, resourceType)
+// CreateTenantAccessForResource provides a mock function with given fields: ctx, tenantAccess
+func (_m *BusinessTenantMappingService) CreateTenantAccessForResource(ctx context.Context, tenantAccess *model.TenantAccess) error {
+	ret := _m.Called(ctx, tenantAccess)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, bool, resource.Type) error); ok {
-		r0 = rf(ctx, tenantID, resourceID, isOwner, resourceType)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.TenantAccess) error); ok {
+		r0 = rf(ctx, tenantAccess)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -122,13 +120,13 @@ func (_m *BusinessTenantMappingService) ListByParentAndType(ctx context.Context,
 	return r0, r1
 }
 
-type mockConstructorTestingTNewBusinessTenantMappingService interface {
+type NewBusinessTenantMappingServiceT interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewBusinessTenantMappingService creates a new instance of BusinessTenantMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewBusinessTenantMappingService(t mockConstructorTestingTNewBusinessTenantMappingService) *BusinessTenantMappingService {
+func NewBusinessTenantMappingService(t NewBusinessTenantMappingServiceT) *BusinessTenantMappingService {
 	mock := &BusinessTenantMappingService{}
 	mock.Mock.Test(t)
 

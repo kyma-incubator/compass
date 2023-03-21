@@ -23,6 +23,8 @@ const (
 	ManagedApplicationProviderOperatorType = "Managed Application Provider Operator"
 	// ManagedApplicationConsumerType represents a managed application consumer type
 	ManagedApplicationConsumerType = "Managed Application Consumer"
+	// LandscapeResourceOperatorType represents a landscape resource operator consumer type
+	LandscapeResourceOperatorType = "Landscape Resource Operator"
 	// TechnicalClient represents a technical client consumer type
 	TechnicalClient = "Technical Client"
 
@@ -39,6 +41,7 @@ var SupportedConsumerTypes = map[string]bool{
 	BusinessIntegrationType:                true,
 	ManagedApplicationProviderOperatorType: true,
 	ManagedApplicationConsumerType:         true,
+	LandscapeResourceOperatorType:          true,
 	TechnicalClient:                        true,
 }
 

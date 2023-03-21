@@ -143,7 +143,7 @@ global:
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2929"
+      version: "PR-2953"
       name: compass-hydrator
     gateway:
       dir:
@@ -1142,6 +1142,11 @@ global:
         - "webhook:write"
         - "certificate_subject_mapping:write"
       managed_application_consumer: []
+      landscape_resource_operator:
+        - "application:read"
+        - "application:write"
+        - "application.local_tenant_id:write"
+        - "tenant_access:write"
       technical_client:
         - "tenant:read"
         - "tenant:write"
@@ -1241,6 +1246,7 @@ global:
         - "certificate_subject_mapping:read"
         - "certificate_subject_mapping:write"
         - "formation.state:write"
+        - "tenant_access:write"
       default:
         - "runtime:read"
         - "runtime:write"

@@ -203,7 +203,7 @@ func NewRootResolver(
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
@@ -594,6 +594,14 @@ func (r *queryResolver) CertificateSubjectMappings(ctx context.Context, first *i
 
 type mutationResolver struct {
 	*RootResolver
+}
+
+func (r *mutationResolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessInput) (*graphql.TenantAccess, error) {
+	return r.tenant.AddTenantAccess(ctx, in)
+}
+
+func (r *mutationResolver) RemoveTenantAccess(ctx context.Context, tenantID string, resourceID string, resourceType graphql.TenantAccessObjectType) (*graphql.TenantAccess, error) {
+	return r.tenant.RemoveTenantAccess(ctx, tenantID, resourceID, resourceType)
 }
 
 func (r *mutationResolver) UpdateFormationConstraint(ctx context.Context, id string, in graphql.FormationConstraintUpdateInput) (*graphql.FormationConstraint, error) {

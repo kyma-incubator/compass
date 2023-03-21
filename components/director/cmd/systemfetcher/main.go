@@ -200,7 +200,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
 
 	uidSvc := uid.NewService()
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
@@ -212,7 +212,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
-	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo)
