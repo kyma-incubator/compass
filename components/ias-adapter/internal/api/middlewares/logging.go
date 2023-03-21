@@ -17,13 +17,14 @@ func Logging(ctx *gin.Context) {
 	ctx.Set(logCtx.RequestIDCtxKey, requestID)
 
 	start := time.Now()
-	status := ctx.Writer.Status()
 	method := ctx.Request.Method
 	path := ctx.Request.URL.Path
 
 	ctx.Next()
 
+	status := ctx.Writer.Status()
 	bodySize := ctx.Writer.Size()
+
 	ctxLogger.Info().Msgf("%d %s %s %s %s %d", status, method, path, ctx.ClientIP(), time.Since(start), bodySize)
 }
 

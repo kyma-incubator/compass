@@ -26,6 +26,10 @@ func Start(cfg config.Config) {
 		log.Fatal().Msgf("Failed to create postgres connection: %s", err)
 	}
 	log.Info().Msg("Opened postgres connection")
+	defer func() {
+		postgresConnection.Close()
+		log.Info().Msgf("Closed postgres connection")
+	}()
 
 	healthService := service.HealthService{
 		Storage: postgresConnection,
@@ -51,19 +55,17 @@ func Start(cfg config.Config) {
 		}
 	}()
 	log.Info().Msg("Started server")
+	defer func() {
+		timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(timeoutCtx); err != nil {
+			log.Fatal().Msgf("Server forced to shutdown: %s", err)
+		}
+		log.Info().Msgf("Stopped server")
+	}()
 
 	<-globalCtx.Done()
 
 	stop()
 	log.Info().Msg("Shutting down gracefully")
-
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(timeoutCtx); err != nil {
-		log.Fatal().Msgf("Server forced to shutdown: %s", err)
-	}
-	log.Info().Msgf("Stopped server")
-
-	postgresConnection.Close()
-	log.Info().Msgf("Closed postgres connection")
 }

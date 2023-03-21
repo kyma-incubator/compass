@@ -36,19 +36,21 @@ type UpdateData struct {
 }
 
 func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateData) error {
+	assignedTenant := data.TenantMapping.AssignedTenants[0]
+
 	oldConsumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	var newConsumedAPIs []types.ApplicationConsumedAPI
 	switch {
-	case data.TenantMapping.AssignedTenants[0].Operation == types.OperationAssign:
-		for _, consumedAPI := range data.TenantMapping.AssignedTenants[0].Configuration.ConsumedAPIs {
+	case assignedTenant.Operation == types.OperationAssign:
+		for _, consumedAPI := range assignedTenant.Configuration.ConsumedAPIs {
 			newConsumedAPIs = addConsumedAPI(oldConsumedAPIs, types.ApplicationConsumedAPI{
 				Name:    consumedAPI,
 				APIName: consumedAPI,
 				AppID:   data.ProviderApplicationID,
 			})
 		}
-	case data.TenantMapping.AssignedTenants[0].Operation == types.OperationUnassign:
-		for _, consumedAPI := range data.TenantMapping.AssignedTenants[0].Configuration.ConsumedAPIs {
+	case assignedTenant.Operation == types.OperationUnassign:
+		for _, consumedAPI := range assignedTenant.Configuration.ConsumedAPIs {
 			newConsumedAPIs = removeConsumedAPI(oldConsumedAPIs, consumedAPI)
 		}
 	}
@@ -56,7 +58,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	if len(oldConsumedAPIs) != len(newConsumedAPIs) {
 		iasHost := data.TenantMapping.ReceiverTenant.ApplicationURL
 		if err := s.updateApplication(ctx, iasHost, data.ConsumerApplication.ID, newConsumedAPIs); err != nil {
-			errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, data.TenantMapping.AssignedTenants[0].UCLApplicationID, err)
+			errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, assignedTenant.UCLApplicationID, err)
 		}
 	}
 
@@ -66,11 +68,8 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 func (s Service) GetApplication(ctx context.Context, iasHost, clientID string) (types.Application, error) {
 	log := logger.FromContext(ctx)
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, s.cfg.RequestTimeout)
-	defer cancel()
-
 	url := buildGetApplicationURL(iasHost, clientID)
-	req, err := http.NewRequestWithContext(timeoutCtx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to create request: %w", err)
 	}
@@ -147,9 +146,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 		return errors.Newf("failed to marshal body: %w", err)
 	}
 	url := buildPatchApplicationURL(iasHost, applicationID)
-	timeoutCtx, cancel := context.WithTimeout(ctx, s.cfg.RequestTimeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(timeoutCtx, http.MethodPatch, url, bytes.NewBuffer(appUpdateBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(appUpdateBytes))
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
 	}

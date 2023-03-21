@@ -18,30 +18,23 @@ var (
 )
 
 func (c Connection) UpsertTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
-	timeoutCtx, cancel := context.WithTimeout(ctx, c.cfg.RequestTimeout)
-	defer cancel()
-
 	fields, err := tenantMappingFields(tenantMapping)
 	if err != nil {
 		return errors.Newf("failed to transform tenant mapping fields: %w", err)
 	}
-	if _, err := c.pool.Exec(timeoutCtx, upsertTenantMappingQuery, fields...); err != nil {
+	if _, err := c.exec(ctx, upsertTenantMappingQuery, fields...); err != nil {
 		return errors.Newf("failed to insert tenant mapping: %w", err)
 	}
-
 	return nil
 }
 
 func (c Connection) ListTenantMappings(ctx context.Context, formationID string) (map[string]types.TenantMapping, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, c.cfg.RequestTimeout)
-	defer cancel()
-
 	var (
 		tenantMappingJSONString string
 		tenantMapping           types.TenantMapping
 	)
 	tenantMappings := map[string]types.TenantMapping{}
-	rows, err := c.pool.Query(timeoutCtx, selectTenantMappingsQuery, formationID)
+	rows, err := c.query(ctx, selectTenantMappingsQuery, formationID)
 	if err != nil {
 		return tenantMappings, errors.Newf("failed to execute query: %w", err)
 	}
@@ -62,13 +55,9 @@ func (c Connection) ListTenantMappings(ctx context.Context, formationID string) 
 }
 
 func (c Connection) DeleteTenantMapping(ctx context.Context, applicationID, formationID string) error {
-	timeoutCtx, cancel := context.WithTimeout(ctx, c.cfg.RequestTimeout)
-	defer cancel()
-
-	if _, err := c.pool.Exec(timeoutCtx, deleteTenantMappingQuery, formationID, applicationID); err != nil {
+	if _, err := c.exec(ctx, deleteTenantMappingQuery, formationID, applicationID); err != nil {
 		return errors.Newf("failed to delete tenant mapping with formation_id '%s': %w", err)
 	}
-
 	return nil
 }
 

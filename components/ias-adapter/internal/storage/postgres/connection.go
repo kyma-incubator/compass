@@ -42,10 +42,24 @@ func NewConnection(ctx context.Context, cfg config.Postgres) (Connection, error)
 	}, nil
 }
 
-func (c Connection) Close() {
-	c.pool.Close()
+func (c Connection) query(ctx context.Context, sql string, args ...any) (pgx.Rows, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, c.cfg.RequestTimeout)
+	defer cancel()
+	return c.pool.Query(timeoutCtx, sql, args...)
+}
+
+func (c Connection) exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, c.cfg.RequestTimeout)
+	defer cancel()
+	return c.pool.Exec(timeoutCtx, sql, arguments...)
 }
 
 func (c Connection) Ping(ctx context.Context) error {
-	return c.pool.Ping(ctx)
+	timeoutCtx, cancel := context.WithTimeout(ctx, c.cfg.RequestTimeout)
+	defer cancel()
+	return c.pool.Ping(timeoutCtx)
+}
+
+func (c Connection) Close() {
+	c.pool.Close()
 }

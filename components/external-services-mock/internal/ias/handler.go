@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 type Applications struct {
@@ -75,9 +77,11 @@ func NewHandler(cfg Config) *Handler {
 	}
 }
 
-func returnApps(writer http.ResponseWriter, apps Applications) {
+func returnApps(writer http.ResponseWriter, request *http.Request, apps Applications) {
+	logger := log.C(request.Context())
 	appsBytes, err := json.Marshal(apps)
 	if err != nil {
+		logger.Errorf("Failed to marshal apps: %s", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -85,20 +89,23 @@ func returnApps(writer http.ResponseWriter, apps Applications) {
 	writer.Write(appsBytes)
 }
 
-func (h *Handler) GetAll(writer http.ResponseWriter, req *http.Request) {
-	escapedFilter := req.URL.Query().Get("filter")
+func (h *Handler) GetAll(writer http.ResponseWriter, request *http.Request) {
+	logger := log.C(request.Context())
+
+	escapedFilter := request.URL.Query().Get("filter")
 	if escapedFilter == "" {
-		returnApps(writer, h.applications)
+		returnApps(writer, request, h.applications)
 		return
 	}
 
 	unescapedFilter, err := url.QueryUnescape(escapedFilter)
 	if err != nil {
+		logger.Errorf("Failed to unescape filter query param '%s': %s", escapedFilter, err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if !strings.HasPrefix(unescapedFilter, "clientId eq ") {
-		returnApps(writer, h.applications)
+		returnApps(writer, request, h.applications)
 		return
 	}
 
@@ -110,7 +117,7 @@ func (h *Handler) GetAll(writer http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	returnApps(writer, apps)
+	returnApps(writer, request, apps)
 }
 
 type applicationUpdate struct {
@@ -134,21 +141,26 @@ const (
 	replacePath = "/urn:sap:identity:application:schemas:extension:sci:1.0:Authentication/consumedApis"
 )
 
-func (h *Handler) Patch(writer http.ResponseWriter, req *http.Request) {
-	appID, ok := mux.Vars(req)["appID"]
+func (h *Handler) Patch(writer http.ResponseWriter, request *http.Request) {
+	logger := log.C(request.Context())
+
+	appID, ok := mux.Vars(request)["appID"]
 	if !ok {
+		logger.Error("Failed to get appID path param")
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	appUpdate := applicationUpdate{}
-	if err := json.NewDecoder(req.Body).Decode(&appUpdate); err != nil {
+	if err := json.NewDecoder(request.Body).Decode(&appUpdate); err != nil {
+		logger.Errorf("Failed to decode app update body: %s", err)
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	if len(appUpdate.Operations) != 1 ||
 		appUpdate.Operations[0].Operation != replaceOp || appUpdate.Operations[0].Path != replacePath {
 
+		logger.Errorf("Received invalid update operation %+v", appUpdate.Operations)
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -167,6 +179,7 @@ func (h *Handler) Patch(writer http.ResponseWriter, req *http.Request) {
 		app.Authentication.ConsumedAPIs = appUpdate.Operations[0].Value
 		h.applications.Applications[appIndex] = app
 	} else {
+		logger.Errorf("App with ID '%s' not found", appID)
 		writer.WriteHeader(http.StatusNotFound)
 		return
 	}
