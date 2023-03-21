@@ -6,7 +6,8 @@ COPY cmd ./cmd
 COPY internal ./internal
 COPY go.mod go.sum ./
 
-RUN go build -o /main cmd/adapter/main.go
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /main cmd/adapter/main.go
 
 FROM alpine:3.17.2 as runtime
 
