@@ -2795,7 +2795,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				repo.On("Get", ctx, FormationID, TntInternalID).Return(formationInInitialState, nil).Once()
 				return repo
 			},
-			ExpectedErrMessage: fmt.Sprintf("is in state %q and cannot be resynchronized", model.InitialFormationState),
+			ExpectedErrMessage: fmt.Sprintf("formation with ID: %q is in state: %q and cannot be resynchronized", FormationID, model.InitialFormationState),
 		},
 		{
 			Name: "returns error when failing processing formation assignments fails",

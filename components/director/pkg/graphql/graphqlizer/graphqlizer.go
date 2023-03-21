@@ -828,6 +828,16 @@ func (g *Graphqlizer) CertificateSubjectMappingInputToGQL(in graphql.Certificate
 	}`)
 }
 
+// TenantAccessInputToGQL creates tenant access graphql input
+func (g *Graphqlizer) TenantAccessInputToGQL(in graphql.TenantAccessInput) (string, error) {
+	return g.genericToGQL(in, `{
+		tenantID: "{{.TenantID}}"
+		resourceID: "{{.ResourceID}}"
+        resourceType: {{.ResourceType}}
+		owner: {{.Owner}}
+	}`)
+}
+
 func (g *Graphqlizer) marshal(obj interface{}) string {
 	var out string
 

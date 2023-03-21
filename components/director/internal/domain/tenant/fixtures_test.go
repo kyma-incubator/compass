@@ -4,6 +4,12 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"testing"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -28,11 +34,58 @@ const (
 	testRegion                    = "eu-1"
 	testProvider                  = "Compass"
 	initializedColumn             = "initialized"
+	invalidResourceType           = "INVALID"
 )
 
 var (
-	testError        = errors.New("test error")
-	testTableColumns = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
+	testError                    = errors.New("test error")
+	testTableColumns             = []string{"id", "external_name", "external_tenant", "parent", "type", "provider_name", "status"}
+	tenantAccessTestTableColumns = []string{"tenant_id", "id", "owner"}
+	tenantAccessInput            = graphql.TenantAccessInput{
+		TenantID:     testExternal,
+		ResourceType: graphql.TenantAccessObjectTypeApplication,
+		ResourceID:   testID,
+		Owner:        true,
+	}
+	tenantAccessInputWithInvalidResourceType = graphql.TenantAccessInput{
+		TenantID:     testExternal,
+		ResourceType: graphql.TenantAccessObjectType(invalidResourceType),
+		ResourceID:   testID,
+		Owner:        true,
+	}
+	tenantAccessGQL = &graphql.TenantAccess{
+		TenantID:     testExternal,
+		ResourceType: graphql.TenantAccessObjectTypeApplication,
+		ResourceID:   testID,
+		Owner:        true,
+	}
+	tenantAccessModel = &model.TenantAccess{
+		ExternalTenantID: testExternal,
+		InternalTenantID: testInternal,
+		ResourceType:     resource.Application,
+		ResourceID:       testID,
+		Owner:            true,
+	}
+	tenantAccessModelWithoutExternalTenant = &model.TenantAccess{
+		InternalTenantID: testInternal,
+		ResourceType:     resource.Application,
+		ResourceID:       testID,
+		Owner:            true,
+	}
+	tenantAccessWithoutInternalTenantModel = &model.TenantAccess{
+		ExternalTenantID: testExternal,
+		ResourceType:     resource.Application,
+		ResourceID:       testID,
+		Owner:            true,
+	}
+	tenantAccessEntity = &repo.TenantAccess{
+		TenantID:   testInternal,
+		ResourceID: testID,
+		Owner:      true,
+	}
+	invalidTenantAccessModel = &model.TenantAccess{
+		ResourceType: invalidResourceType,
+	}
 )
 
 func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {
@@ -175,4 +228,24 @@ func fixTenantAccessesRow() []driver.Value {
 
 func boolToPtr(in bool) *bool {
 	return &in
+}
+
+func unusedConverter() *automock.BusinessTenantMappingConverter {
+	return &automock.BusinessTenantMappingConverter{}
+}
+
+func unusedDBMock(t *testing.T) (*sqlx.DB, testdb.DBMock) {
+	return testdb.MockDatabase(t)
+}
+
+func unusedTenantConverter() *automock.BusinessTenantMappingConverter {
+	return &automock.BusinessTenantMappingConverter{}
+}
+
+func unusedTenantService() *automock.BusinessTenantMappingService {
+	return &automock.BusinessTenantMappingService{}
+}
+
+func unusedFetcherService() *automock.Fetcher {
+	return &automock.Fetcher{}
 }

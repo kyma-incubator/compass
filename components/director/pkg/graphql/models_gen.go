@@ -767,6 +767,20 @@ type TemplateValueInput struct {
 	Value       string `json:"value"`
 }
 
+type TenantAccess struct {
+	TenantID     string                 `json:"tenantID"`
+	ResourceType TenantAccessObjectType `json:"resourceType"`
+	ResourceID   string                 `json:"resourceID"`
+	Owner        bool                   `json:"owner"`
+}
+
+type TenantAccessInput struct {
+	TenantID     string                 `json:"tenantID"`
+	ResourceType TenantAccessObjectType `json:"resourceType"`
+	ResourceID   string                 `json:"resourceID"`
+	Owner        bool                   `json:"owner"`
+}
+
 type TenantPage struct {
 	Data       []*Tenant `json:"data"`
 	PageInfo   *PageInfo `json:"pageInfo"`
@@ -1963,6 +1977,49 @@ func (e *TargetOperation) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TargetOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TenantAccessObjectType string
+
+const (
+	TenantAccessObjectTypeApplication    TenantAccessObjectType = "APPLICATION"
+	TenantAccessObjectTypeRuntime        TenantAccessObjectType = "RUNTIME"
+	TenantAccessObjectTypeRuntimeContext TenantAccessObjectType = "RUNTIME_CONTEXT"
+)
+
+var AllTenantAccessObjectType = []TenantAccessObjectType{
+	TenantAccessObjectTypeApplication,
+	TenantAccessObjectTypeRuntime,
+	TenantAccessObjectTypeRuntimeContext,
+}
+
+func (e TenantAccessObjectType) IsValid() bool {
+	switch e {
+	case TenantAccessObjectTypeApplication, TenantAccessObjectTypeRuntime, TenantAccessObjectTypeRuntimeContext:
+		return true
+	}
+	return false
+}
+
+func (e TenantAccessObjectType) String() string {
+	return string(e)
+}
+
+func (e *TenantAccessObjectType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TenantAccessObjectType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TenantAccessObjectType", str)
+	}
+	return nil
+}
+
+func (e TenantAccessObjectType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
