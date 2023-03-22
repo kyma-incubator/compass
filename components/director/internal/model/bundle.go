@@ -20,6 +20,7 @@ type Bundle struct {
 	Labels                         json.RawMessage
 	CredentialExchangeStrategies   json.RawMessage
 	CorrelationIDs                 json.RawMessage
+	Tags                           json.RawMessage
 	DocumentationLabels            json.RawMessage
 	*BaseEntity
 }
@@ -41,6 +42,7 @@ func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 	bndl.Labels = update.Labels
 	bndl.CredentialExchangeStrategies = update.CredentialExchangeStrategies
 	bndl.CorrelationIDs = update.CorrelationIDs
+	bndl.Tags = update.Tags
 	bndl.DocumentationLabels = update.DocumentationLabels
 }
 
@@ -61,6 +63,7 @@ type BundleCreateInput struct {
 	EventSpecs                     []*SpecInput            `json:",omitempty"`
 	Documents                      []*DocumentInput        `json:",omitempty"`
 	CorrelationIDs                 json.RawMessage         `json:"correlationIds"`
+	Tags                           json.RawMessage         `json:"tags"`
 	DocumentationLabels            json.RawMessage         `json:"documentationLabels"`
 }
 
@@ -76,6 +79,7 @@ type BundleUpdateInput struct {
 	Labels                         json.RawMessage
 	CredentialExchangeStrategies   json.RawMessage
 	CorrelationIDs                 json.RawMessage
+	Tags                           json.RawMessage
 	DocumentationLabels            json.RawMessage
 }
 
@@ -107,6 +111,7 @@ func (i *BundleCreateInput) ToBundle(id, applicationID string) *Bundle {
 		Labels:                         i.Labels,
 		CredentialExchangeStrategies:   i.CredentialExchangeStrategies,
 		CorrelationIDs:                 i.CorrelationIDs,
+		Tags:                           i.Tags,
 		DocumentationLabels:            i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
 			ID:    id,

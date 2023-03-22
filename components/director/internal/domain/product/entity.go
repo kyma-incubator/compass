@@ -16,6 +16,7 @@ type Entity struct {
 	Vendor              string         `db:"vendor"`
 	Parent              sql.NullString `db:"parent"`
 	CorrelationIDs      sql.NullString `db:"correlation_ids"`
+	Tags                sql.NullString `db:"tags"`
 	Labels              sql.NullString `db:"labels"`
 	DocumentationLabels sql.NullString `db:"documentation_labels"`
 }
