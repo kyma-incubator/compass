@@ -155,7 +155,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-87"
+      version: "PR-89"
       name: compass-ord-service
     schema_migrator:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2953"
+      version: "PR-2965"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1147,6 +1147,8 @@ global:
         - "application:write"
         - "application.local_tenant_id:write"
         - "tenant_access:write"
+        - "formation:read"
+        - "formation:write"
       technical_client:
         - "tenant:read"
         - "tenant:write"

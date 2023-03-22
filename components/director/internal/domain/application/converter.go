@@ -52,6 +52,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		OrdLabels:             repo.NewNullableStringFromJSONRawMessage(in.OrdLabels),
 		CorrelationIDs:        repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
 		SystemStatus:          repo.NewNullableString(in.SystemStatus),
+		Tags:                  repo.NewNullableStringFromJSONRawMessage(in.Tags),
 		DocumentationLabels:   repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
@@ -88,6 +89,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		OrdLabels:             repo.JSONRawMessageFromNullableString(entity.OrdLabels),
 		CorrelationIDs:        repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		SystemStatus:          repo.StringPtrFromNullableString(entity.SystemStatus),
+		Tags:                  repo.JSONRawMessageFromNullableString(entity.Tags),
 		DocumentationLabels:   repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,

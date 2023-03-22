@@ -38,12 +38,12 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	namePlaceholderKey := "name"
 	displayNamePlaceholderKey := "display-name"
 	appTemplate := &directorSchema.ApplicationTemplate{}
-	newIntSys := &directorSchema.IntegrationSystemExt{}
+	newIntSys := directorSchema.IntegrationSystemExt{}
 
 	if conf.IsLocalEnv {
 		updateAdaptersConfigmapWithDefaultValues(t, ctx, conf) // pre-clean-up
 
-		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &newIntSys)
 		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
 
 		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
@@ -131,7 +131,7 @@ func TestGettingTokenWithMTLSThroughFQN(t *testing.T) {
 	require.NotEmpty(t, respParsed.Token)
 }
 
-func createIntSystem(t *testing.T, ctx context.Context, defaultTestTenant string) *directorSchema.IntegrationSystemExt {
+func createIntSystem(t *testing.T, ctx context.Context, defaultTestTenant string) directorSchema.IntegrationSystemExt {
 	// GIVEN
 	name := "pairing-adapter-int-system"
 
@@ -145,7 +145,7 @@ func createIntSystem(t *testing.T, ctx context.Context, defaultTestTenant string
 	require.NotEmpty(t, intSys.Name)
 
 	t.Logf("Successfully registered integration system with name %q", name)
-	return intSys
+	return *intSys
 }
 
 func updateAdaptersConfigmap(t *testing.T, ctx context.Context, newIntSysID string, adapterConfig *config.PairingAdapterConfig) {
