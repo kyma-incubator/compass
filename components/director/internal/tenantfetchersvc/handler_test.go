@@ -466,7 +466,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 		tenantID        = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
 	)
 
-	target := fmt.Sprintf("/v1/fetch/:%s/:%s", parentIDPathVar, tenantIDPathVar)
+	target := fmt.Sprintf("/v1/fetch")
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
 		TenantPathParam:       "tenantId",
@@ -476,18 +476,13 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		Request             *http.Request
-		PathParams          map[string]string
 		TenantFetcherSvc    func() *automock.TenantFetcher
 		ExpectedErrorOutput string
 		ExpectedStatusCode  int
 	}{
 		{
 			Name:    "Successful fetch on-demand",
-			Request: httptest.NewRequest(http.MethodGet, target, nil),
-			PathParams: map[string]string{
-				validHandlerConfig.ParentTenantPathParam: parentID,
-				validHandlerConfig.TenantPathParam:       tenantID,
-			},
+			Request: httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer([]byte(fmt.Sprintf(`{"tenantID": "%s", "parentTenantID": "%s" }`, tenantID, parentID)))),
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
 				svc.On("SynchronizeTenant", mock.Anything, parentID, tenantID).Return(nil)
@@ -496,34 +491,15 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 			ExpectedStatusCode: http.StatusOK,
 		},
 		{
-			Name:    "Failure when parent ID is missing",
-			Request: httptest.NewRequest(http.MethodGet, target, nil),
-			PathParams: map[string]string{
-				validHandlerConfig.ParentTenantPathParam: "",
-				validHandlerConfig.TenantPathParam:       tenantID,
-			},
+			Name:                "Failure when tenant ID is missing",
+			Request:             httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer([]byte(fmt.Sprintf(`{"tenantID": "%s", "parentTenantID": "%s" }`, "", parentID)))),
 			TenantFetcherSvc:    func() *automock.TenantFetcher { return &automock.TenantFetcher{} },
 			ExpectedStatusCode:  http.StatusBadRequest,
-			ExpectedErrorOutput: "Parent tenant ID path parameter is missing from request",
-		},
-		{
-			Name:    "Failure when tenant ID is missing",
-			Request: httptest.NewRequest(http.MethodGet, target, nil),
-			PathParams: map[string]string{
-				validHandlerConfig.ParentTenantPathParam: parentIDPathVar,
-				validHandlerConfig.TenantPathParam:       "",
-			},
-			TenantFetcherSvc:    func() *automock.TenantFetcher { return &automock.TenantFetcher{} },
-			ExpectedStatusCode:  http.StatusBadRequest,
-			ExpectedErrorOutput: "Tenant path parameter is missing from request",
+			ExpectedErrorOutput: "Tenant in body is missing from request",
 		},
 		{
 			Name:    "Failure when fetch on-demand returns an error",
-			Request: httptest.NewRequest(http.MethodGet, target, nil),
-			PathParams: map[string]string{
-				validHandlerConfig.ParentTenantPathParam: parentID,
-				validHandlerConfig.TenantPathParam:       tenantID,
-			},
+			Request: httptest.NewRequest(http.MethodPost, target, bytes.NewBuffer([]byte(fmt.Sprintf(`{"tenantID": "%s", "parentTenantID": "%s" }`, tenantID, parentID)))),
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
 				svc.On("SynchronizeTenant", mock.Anything, parentID, tenantID).Return(errors.New("error"))
@@ -539,7 +515,6 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 
 			handler := tenantfetchersvc.NewTenantFetcherHTTPHandler(tf, validHandlerConfig)
 			req := testCase.Request
-			req = mux.SetURLVars(req, testCase.PathParams)
 
 			w := httptest.NewRecorder()
 
