@@ -404,11 +404,6 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.Hierarchy, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
-		validation.Field(&event.SupportedUseCases,
-			validation.By(func(value interface{}) error {
-				return validateJSONArrayOfStringsContainsInMap(value, SupportedUseCases)
-			}),
-		),
 		validation.Field(&event.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),

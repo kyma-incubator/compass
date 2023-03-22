@@ -164,7 +164,6 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		Extensible:          repo.JSONRawMessageFromNullableString(entity.Extensible),
 		ResourceHash:        repo.StringPtrFromNullableString(entity.ResourceHash),
 		Hierarchy:           repo.JSONRawMessageFromNullableString(entity.Hierarchy),
-		SupportedUseCases:   repo.JSONRawMessageFromNullableString(entity.SupportedUseCases),
 		DocumentationLabels: repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
@@ -212,7 +211,6 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		Extensible:          repo.NewNullableStringFromJSONRawMessage(eventModel.Extensible),
 		ResourceHash:        repo.NewNullableString(eventModel.ResourceHash),
 		Hierarchy:           repo.NewNullableStringFromJSONRawMessage(eventModel.Hierarchy),
-		SupportedUseCases:   repo.NewNullableStringFromJSONRawMessage(eventModel.SupportedUseCases),
 		DocumentationLabels: repo.NewNullableStringFromJSONRawMessage(eventModel.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventModel.ID,

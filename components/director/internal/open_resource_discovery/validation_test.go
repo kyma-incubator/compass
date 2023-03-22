@@ -4478,48 +4478,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid value for `supportedUseCases` field for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].SupportedUseCases = json.RawMessage(invalidSupportedUseCasesValue)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `supportedUseCases` field when it is invalid JSON for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].SupportedUseCases = json.RawMessage(invalidJSON)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `supportedUseCases` field when it isn't a JSON array for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].SupportedUseCases = json.RawMessage("{}")
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Valid `supportedUseCases` field when the JSON array is empty for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].SupportedUseCases = json.RawMessage("[]")
-
-				return []*ord.Document{doc}
-			},
-			ExpectedToBeValid: true,
-		}, {
-			Name: "Valid `supportedUseCases` field when the JSON array is one of enumerated values for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].SupportedUseCases = json.RawMessage(validSupportedUseCasesValue)
-
-				return []*ord.Document{doc}
-			},
-			ExpectedToBeValid: true,
-		}, {
 			Name: "Invalid JSON `Labels` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()

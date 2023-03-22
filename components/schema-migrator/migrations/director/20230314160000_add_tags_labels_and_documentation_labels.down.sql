@@ -7,7 +7,6 @@ DROP VIEW IF EXISTS ord_tags_applications;
 DROP VIEW IF EXISTS ord_tags_bundles;
 DROP VIEW IF EXISTS ord_hierarchy_event_definitions;
 DROP VIEW IF EXISTS ord_hierarchy_api_definitions;
-DROP VIEW IF EXISTS ord_supported_use_cases_event_definitions;
 DROP VIEW IF EXISTS ord_supported_use_cases_api_definitions;
 DROP VIEW IF EXISTS listening_applications;
 DROP VIEW IF EXISTS api_resource_definitions;
@@ -48,9 +47,6 @@ ALTER TABLE api_definitions
 
 ALTER TABLE event_api_definitions
     DROP COLUMN hierarchy;
-
-ALTER TABLE event_api_definitions
-    DROP COLUMN supported_use_cases;
 
 ALTER TABLE specifications
     ALTER COLUMN api_spec_type TYPE VARCHAR(255);

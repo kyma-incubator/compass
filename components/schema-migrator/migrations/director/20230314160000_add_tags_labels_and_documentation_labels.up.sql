@@ -7,7 +7,6 @@ DROP VIEW IF EXISTS ord_tags_applications;
 DROP VIEW IF EXISTS ord_tags_bundles;
 DROP VIEW IF EXISTS ord_hierarchy_event_definitions;
 DROP VIEW IF EXISTS ord_hierarchy_api_definitions;
-DROP VIEW IF EXISTS ord_supported_use_cases_event_definitions;
 DROP VIEW IF EXISTS ord_supported_use_cases_api_definitions;
 DROP VIEW IF EXISTS listening_applications;
 DROP VIEW IF EXISTS api_resource_definitions;
@@ -48,9 +47,6 @@ ALTER TABLE api_definitions
 
 ALTER TABLE event_api_definitions
     ADD COLUMN hierarchy JSONB;
-
-ALTER TABLE event_api_definitions
-    ADD COLUMN supported_use_cases JSONB;
 
 ALTER TABLE specifications
     ALTER COLUMN api_spec_type TYPE VARCHAR(255);
@@ -114,12 +110,6 @@ SELECT id                  AS api_definition_id,
 FROM api_definitions,
      jsonb_array_elements_text(api_definitions.hierarchy) AS elements;
 
-CREATE VIEW ord_supported_use_cases_event_definitions AS
-SELECT id                  AS event_definition_id,
-       elements.value      AS value
-FROM event_api_definitions,
-     jsonb_array_elements_text(event_api_definitions.supported_use_cases) AS elements;
-
 CREATE VIEW ord_supported_use_cases_api_definitions AS
 SELECT id                  AS api_definition_id,
        elements.value      AS value
@@ -130,7 +120,7 @@ FROM api_definitions,
 CREATE OR REPLACE VIEW tenants_events
             (tenant_id, formation_id, id, app_id, name, description, group_name, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, short_description,
-             system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, hierarchy, supported_use_cases, countries, release_status, sunset_date, labels,
+             system_instance_aware, policy_level, custom_policy_level, changelog_entries, links, tags, hierarchy, countries, release_status, sunset_date, labels,
              package_id, visibility, disabled, part_of_products, line_of_business, industry, ready, created_at,
              updated_at, deleted_at, error, extensible, successors, resource_hash)
 AS
@@ -154,7 +144,6 @@ SELECT DISTINCT t_apps.tenant_id,
                 events.links,
                 events.tags,
                 events.hierarchy, 
-                events.supported_use_cases,
                 events.countries,
                 events.release_status,
                 events.sunset_date,
