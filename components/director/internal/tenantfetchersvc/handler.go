@@ -122,21 +122,6 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	//vars := mux.Vars(request)
-	//tenantID, ok := vars[h.config.TenantPathParam]
-	//if !ok || len(tenantID) == 0 {
-	//	log.C(ctx).Error("Tenant path parameter is missing from request")
-	//	http.Error(writer, "Tenant path parameter is missing from request", http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//parentTenantID, ok := vars[h.config.ParentTenantPathParam]
-	//if !ok || len(parentTenantID) == 0 {
-	//	log.C(ctx).Error("Parent tenant path parameter is missing from request")
-	//	http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
-	//	return
-	//}
-
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", responseBody.TenantID)
 
 	if err := h.fetcher.SynchronizeTenant(ctx, responseBody.ParentTenantID, responseBody.TenantID); err != nil {
