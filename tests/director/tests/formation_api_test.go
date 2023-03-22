@@ -1581,6 +1581,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualFormationTemplateWebhook.ID) // Otherwise, FT wouldn't be able to be deleted because formation is stuck in DELETING state
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 		require.Equal(t, "INITIAL", formation.State)
+		require.Empty(t, formation.Error)
 
 		// Assign both applications when the formation is still in INITIAL state and validate no notifications are sent and formation assignments are in INITIAL state
 		t.Logf("Assign application 1 to formation: %q", formationName)
@@ -1614,6 +1615,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 		require.Equal(t, "INITIAL", formation.State)
+		require.Empty(t, formation.Error)
 
 		assertNoNotificationsAreSentForTenant(t, certSecuredHTTPClient, app1.ID)
 		assertNoNotificationsAreSentForTenant(t, certSecuredHTTPClient, app2.ID)
@@ -1743,6 +1745,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		delFormation := fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
 		require.NotEmpty(t, delFormation.ID)
 		require.Equal(t, "DELETING", delFormation.State)
+		require.Empty(t, delFormation.Error)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
@@ -1973,6 +1976,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 		require.NotEmpty(t, formation.ID)
 		require.Equal(t, "INITIAL", formation.State)
+		require.Empty(t, formation.Error)
 
 		t.Logf("Assign application 1 to formation: %q", formationName)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
@@ -2035,6 +2039,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formationName, formation.Name)
 		require.Equal(t, "INITIAL", formation.State)
+		require.Empty(t, formation.Error)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
@@ -2091,6 +2096,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		delFormation := fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
 		require.NotEmpty(t, delFormation.ID)
 		require.Equal(t, "DELETING", delFormation.State)
+		require.Empty(t, delFormation.Error)
 
 		t.Logf("Should get formation %q by id %q", formationName, formation.ID)
 		getFormationReq = fixtures.FixGetFormationRequest(formation.ID)
@@ -2111,6 +2117,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formationName, delFormation.Name)
 		require.Equal(t, "DELETING", delFormation.State)
+		require.Empty(t, delFormation.Error)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
@@ -3537,7 +3544,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 					},
 					app1.ID: {
 						app1.ID:  fixtures.AssignmentState{State: "READY", Config: nil},
-						rtCtx.ID: fixtures.AssignmentState{State: "INITIAL", Config: str.Ptr(`{"error":{"message":"test error","errorCode":2}}`)},
+						rtCtx.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil},
 					},
 				}
 
@@ -3629,7 +3636,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 						rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 					},
 					app1.ID: {
-						rtCtx.ID: fixtures.AssignmentState{State: "DELETING", Config: str.Ptr("{\"error\":{\"message\":\"test error\",\"errorCode\":2}}")},
+						rtCtx.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},
 					},
 				}
 				assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 2, expectedAssignments)
@@ -3775,7 +3782,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 						rtCtx.ID: fixtures.AssignmentState{State: "READY", Config: nil},
 					},
 					app1.ID: {
-						rtCtx.ID: fixtures.AssignmentState{State: "DELETING", Config: str.Ptr(`{"asyncKey":"asyncValue","asyncKey2":{"asyncNestedKey":"asyncNestedValue"}}`)},
+						rtCtx.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},
 					},
 				}
 

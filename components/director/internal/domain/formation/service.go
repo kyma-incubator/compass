@@ -1593,21 +1593,6 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 		return notificationErr
 	}
 
-	if formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Info("The Webhook in the notification is in ASYNC_CALLBACK mode. Waiting for the receiver to report the status on the status API...")
-		if errorState == model.CreateErrorFormationState {
-			formation.State = model.InitialFormationState
-		}
-		if errorState == model.DeleteErrorFormationState {
-			formation.State = model.DeletingFormationState
-		}
-		log.C(ctx).Infof("Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", string(formation.State))
-		if err = s.formationRepository.Update(ctx, formation); err != nil {
-			return errors.Wrapf(err, "while updating formation with id %q", formation.ID)
-		}
-		return nil
-	}
-
 	if response.Error != nil && *response.Error != "" {
 		err = s.SetFormationToErrorState(ctx, formation, *response.Error, formationassignment.ClientError, errorState)
 		if err != nil {
@@ -1620,7 +1605,19 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 	}
 
 	if formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", formationReq.Webhook.ID, graphql.WebhookModeAsyncCallback)
+		log.C(ctx).Info("The Webhook in the notification is in ASYNC_CALLBACK mode. Waiting for the receiver to report the status on the status API...")
+		if errorState == model.CreateErrorFormationState {
+			formation.State = model.InitialFormationState
+			formation.Error = nil
+		}
+		if errorState == model.DeleteErrorFormationState {
+			formation.State = model.DeletingFormationState
+			formation.Error = nil
+		}
+		log.C(ctx).Infof("Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", string(formation.State))
+		if err = s.formationRepository.Update(ctx, formation); err != nil {
+			return errors.Wrapf(err, "while updating formation with id %q", formation.ID)
+		}
 		return nil
 	}
 
