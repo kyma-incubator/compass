@@ -460,13 +460,10 @@ func TestService_Dependencies(t *testing.T) {
 }
 func TestService_FetchTenantOnDemand(t *testing.T) {
 	const (
-		parentIDPathVar = "tenantId"
-		tenantIDPathVar = "parentTenantId"
-		parentID        = "fd116270-b71d-4c49-a4d7-4a03785a5e6a"
-		tenantID        = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
+		parentID = "fd116270-b71d-4c49-a4d7-4a03785a5e6a"
+		tenantID = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
+		target   = "/v1/fetch"
 	)
-
-	target := fmt.Sprintf("/v1/fetch")
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
 		TenantPathParam:       "tenantId",

@@ -79,7 +79,8 @@ type Dependency struct {
 	Xsappname string `json:"xsappname"`
 }
 
-type FetchOnDemandResponse struct {
+// FetchOnDemandBody represents a request body
+type FetchOnDemandBody struct {
 	TenantID       string `json:"tenantID"`
 	ParentTenantID string `json:"parentTenantID"`
 }
@@ -110,7 +111,7 @@ func NewTenantFetcherHTTPHandler(fetcher TenantFetcher, config HandlerConfig) *h
 func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	responseBody := FetchOnDemandResponse{}
+	responseBody := FetchOnDemandBody{}
 	if err := json.NewDecoder(request.Body).Decode(&responseBody); err != nil {
 		http.Error(writer, "", http.StatusInternalServerError)
 		return
