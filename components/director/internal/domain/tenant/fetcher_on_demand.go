@@ -1,7 +1,9 @@
 package tenant
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/tidwall/sjson"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -13,13 +15,20 @@ type FetchOnDemandAPIConfig struct {
 	IsDisabled        bool   `envconfig:"default=false,APP_DISABLE_TENANT_ON_DEMAND_MODE"`
 }
 
+const (
+	parentID = "parentTenantID"
+	tenantID = "tenantID"
+)
+
 // Fetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//
 //go:generate mockery --name=Fetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Fetcher interface {
 	FetchOnDemand(tenant, parentTenant string) error
 }
 
 // Client is responsible for making HTTP requests.
+//
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -45,14 +54,31 @@ func NewFetchOnDemandService(client Client, config FetchOnDemandAPIConfig) Fetch
 
 // FetchOnDemand calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
 func (s *fetchOnDemandService) FetchOnDemand(tenant, parentTenant string) error {
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s/%s", s.tenantFetcherURL, parentTenant, tenant), nil)
+	var (
+		body = "{}"
+		err  error
+	)
+
+	body, err = sjson.Set(body, parentID, parentTenant)
+	if err != nil {
+		return errors.Wrapf(err, "while setting parentID json value")
+	}
+
+	body, err = sjson.Set(body, tenantID, tenant)
+	if err != nil {
+		return errors.Wrapf(err, "while setting tenantID json value")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, s.tenantFetcherURL, bytes.NewBuffer([]byte(body)))
 	if err != nil {
 		return err
 	}
+
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "while calling tenant-on-demand API")
 	}
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("received status code %d when trying to fetch tenant with ID %s", resp.StatusCode, tenant)
 	}
