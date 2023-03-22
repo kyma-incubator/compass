@@ -144,7 +144,7 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, sy
 
 	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
-	registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
+	//registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
 
 	tenantsOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.FetchTenantOnDemandScope)
