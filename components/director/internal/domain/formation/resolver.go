@@ -29,7 +29,7 @@ type Service interface {
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	ResynchronizeFormationNotifications(ctx context.Context, formationID string) error
+	ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error)
 }
 
 // Converter missing godoc
@@ -463,12 +463,7 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	err = r.service.ResynchronizeFormationNotifications(ctx, formationID)
-	if err != nil {
-		return nil, err
-	}
-
-	formationModel, err := r.service.Get(ctx, formationID)
+	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID)
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +472,7 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(formationModel), nil
+	return r.conv.ToGraphQL(updatedFormation), nil
 }
 
 func isInErrorState(state string) bool {

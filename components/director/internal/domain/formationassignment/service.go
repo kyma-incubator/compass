@@ -600,7 +600,12 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	requestWebhookMode := assignmentClone.Request.Webhook.Mode
 	if requestWebhookMode != nil && *requestWebhookMode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Infof("The webhook in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback)
+		log.C(ctx).Infof("The Webhook in the notification is in %s mode. Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback, string(model.InitialFormationState))
+		assignment.State = string(model.InitialFormationState)
+		if err := s.Update(ctx, assignment.ID, s.formationAssignmentConverter.ToInput(assignment)); err != nil {
+			return errors.Wrapf(err, "While updating formation assignment with id %q", assignment.ID)
+		}
+
 		return nil
 	}
 
