@@ -19,6 +19,7 @@ type Config struct {
 	TenantInfo        TenantInfo
 	IASConfig         IAS
 	Postgres          Postgres
+	JWKCache          JWKCache
 }
 
 type TenantInfo struct {
@@ -45,6 +46,11 @@ type Postgres struct {
 func (p Postgres) ConnectionString() string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=%s",
 		p.User, p.Password, p.Host, p.Port, p.DatabaseName, p.SSLMode)
+}
+
+type JWKCache struct {
+	Endpoint     string        `envconfig:"APP_JWK_CACHE_ENDPOINT,default=localhost:8080"`
+	SyncInterval time.Duration `envconfig:"APP_JWK_CACHE_SYNC_INTERVAL,default=3m"`
 }
 
 func New() (Config, error) {

@@ -2,11 +2,15 @@ package middlewares
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
@@ -14,12 +18,25 @@ import (
 )
 
 type AuthMiddleware struct {
-	Config config.TenantInfo
-	tenant string
+	Config      config.TenantInfo
+	client      *http.Client
+	certSubject string
 }
 
 func NewAuthMiddleware(ctx context.Context, cfg config.TenantInfo) (AuthMiddleware, error) {
-	middleware := AuthMiddleware{Config: cfg}
+	httpClient := &http.Client{
+		Timeout: cfg.RequestTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+				// RootCAs: &x509.CertPool{},
+			},
+		},
+	}
+	middleware := AuthMiddleware{
+		Config: cfg,
+		client: httpClient,
+	}
 	if err := middleware.getTenant(ctx); err != nil {
 		return middleware, errors.Newf("failed to get auth tenant: %w", err)
 	}
@@ -28,20 +45,29 @@ func NewAuthMiddleware(ctx context.Context, cfg config.TenantInfo) (AuthMiddlewa
 
 func (m *AuthMiddleware) Auth(ctx *gin.Context) {
 	log := logger.FromContext(ctx)
-	log.Info().Msgf("Header '%s': %s", "X-Forwarded-Client-Cert", ctx.Request.Header.Get("X-Forwarded-Client-Cert"))
+
+	tenant, exists := ctx.Get(tenantCtxKey)
+	if !exists {
+		log.Error().Msg("Failed to find tenant in context")
+		internal.RespondWithError(ctx, http.StatusInternalServerError, errors.New(""))
+		return
+	}
+	orgUnit := fmt.Sprintf("OU=%s", tenant)
+	if !strings.Contains(m.certSubject, orgUnit) {
+		log.Error().Msgf("Tenant %s is not authorized", tenant)
+		internal.RespondWithError(ctx, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
 
 	ctx.Next()
 }
 
 func (m *AuthMiddleware) getTenant(ctx context.Context) error {
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), m.Config.RequestTimeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(timeoutCtx, http.MethodGet, m.Config.Endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.Config.Endpoint, nil)
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := m.client.Do(req)
 	if err != nil {
 		return errors.Newf("failed to execute GET request: %w", err)
 	}
@@ -52,6 +78,6 @@ func (m *AuthMiddleware) getTenant(ctx context.Context) error {
 		return errors.Newf("failed to decode response: %w", err)
 	}
 
-	m.tenant = tenantInfo.Tenant()
+	m.certSubject = tenantInfo.CertSubject
 	return nil
 }

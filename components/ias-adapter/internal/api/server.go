@@ -30,22 +30,20 @@ func NewServer(ctx context.Context, cfg config.Config, services Services) (*http
 	routerGroup := router.Group(cfg.APIRootPath)
 	routerGroup.Use(gin.Recovery())
 	routerGroup.Use(middlewares.Logging)
+	routerGroup.GET(paths.HealthPath, handlers.HealthHandler{Service: services.HealthService}.Health)
+	routerGroup.GET(paths.ReadyPath, handlers.ReadyHandler{}.Ready)
+
+	tenantMappingRouter := routerGroup.Group("")
+	tenantMappingRouter.Use(middlewares.JWT)
 	authMiddleware, err := middlewares.NewAuthMiddleware(ctx, cfg.TenantInfo)
 	if err != nil {
 		return nil, errors.Newf("failed to create auth middleware: %w", err)
 	}
 	routerGroup.Use(authMiddleware.Auth)
-
-	healthHandler := handlers.HealthHandler{Service: services.HealthService}
-	routerGroup.GET(paths.HealthPath, healthHandler.Health)
-
-	readyHandler := handlers.ReadyHandler{}
-	routerGroup.GET(paths.ReadyPath, readyHandler.Ready)
-
 	tenantMappingsHandler := handlers.TenantMappingsHandler{
 		Service: services.TenantMappingsService,
 	}
-	routerGroup.PATCH(paths.TenantMappingsPath, tenantMappingsHandler.Patch)
+	tenantMappingRouter.PATCH(paths.TenantMappingsPath, tenantMappingsHandler.Patch)
 
 	routes := router.Routes()
 	for _, route := range routes {

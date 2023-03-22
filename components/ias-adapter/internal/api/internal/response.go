@@ -1,4 +1,4 @@
-package handlers
+package internal
 
 import (
 	"github.com/gin-gonic/gin"
@@ -12,9 +12,9 @@ type errorResponse struct {
 	RequestID string `json:"requestID"`
 }
 
-func respondWithError(ctx *gin.Context, statusCode int, err error) {
+func RespondWithError(ctx *gin.Context, statusCode int, err error) {
 	log := logger.FromContext(ctx)
 	log.Err(err).Send()
 	requestID, _ := ctx.Get(logCtx.RequestIDCtxKey)
-	ctx.JSON(statusCode, errorResponse{Error: err.Error(), RequestID: requestID.(string)})
+	ctx.AbortWithStatusJSON(statusCode, errorResponse{Error: err.Error(), RequestID: requestID.(string)})
 }

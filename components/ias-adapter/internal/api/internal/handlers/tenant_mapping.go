@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
@@ -24,19 +25,19 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
-		respondWithError(ctx, http.StatusUnprocessableEntity, err)
+		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	if err := tenantMapping.Validate(); err != nil {
 		err = errors.Newf("tenant mapping body is invalid: %w", err)
-		respondWithError(ctx, http.StatusUnprocessableEntity, err)
+		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
-		respondWithError(ctx, http.StatusInternalServerError, err)
+		internal.RespondWithError(ctx, http.StatusInternalServerError, err)
 		return
 	}
 
