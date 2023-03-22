@@ -101,12 +101,12 @@ func main() {
 		}
 	}()
 
-	for _, sync := range tenantSynchronizers {
-		log.C(ctx).Infof("Starting tenant synchronizer %s...", sync.Name())
-		go func(synchronizer *resync.TenantsSynchronizer) {
-			synchronizeTenants(synchronizer, ctx)
-		}(sync)
-	}
+	//for _, sync := range tenantSynchronizers {
+	//	log.C(ctx).Infof("Starting tenant synchronizer %s...", sync.Name())
+	//	go func(synchronizer *resync.TenantsSynchronizer) {
+	//		synchronizeTenants(synchronizer, ctx)
+	//	}(sync)
+	//}
 
 	httpClient := &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
