@@ -1289,10 +1289,10 @@ func (s *service) SetFormationToErrorState(ctx context.Context, formation *model
 	log.C(ctx).Infof("Setting formation with ID: %q to state: %q", formation.ID, state)
 	formation.State = state
 
-	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
+	formationError := formationassignment.AssignmentError{
 		Message:   errorMessage,
 		ErrorCode: errorCode,
-	}}
+	}
 
 	marshaledErr, err := json.Marshal(formationError)
 	if err != nil {

@@ -680,7 +680,7 @@ func (h *Handler) AsyncFormationFailOnce(writer http.ResponseWriter, r *http.Req
 		}
 	}
 	if h.ShouldReturnError {
-		h.asyncFormationResponse(writer, r, operation, "test error", responseFunc)
+		h.asyncFormationResponse(writer, r, operation, "failed to parse request", responseFunc)
 	} else {
 		h.asyncFormationResponse(writer, r, operation, "", responseFunc)
 	}

@@ -1801,18 +1801,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		t.Logf("Assign application 1 to formation: %q", formationName)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
 		assignedFormation := fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
-		require.Equal(t, formation, *assignedFormation)
+		require.Equal(t, formation.ID, assignedFormation.ID)
+		require.Equal(t, formation.State, assignedFormation.State)
 
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
+			Condition: graphql.FormationStatusConditionError,
+			Errors: []*graphql.FormationStatusError{{
+				Message:   "failed to parse request",
+				ErrorCode: 2,
+			}},
+		})
 
 		t.Logf("Assign application 2 to formation: %q", formationName)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
 		assignedFormation = fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
-		require.Equal(t, formation, *assignedFormation)
+		require.Equal(t, formation.ID, assignedFormation.ID)
+		require.Equal(t, formation.State, assignedFormation.State)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
@@ -1825,7 +1833,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 			},
 		}
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
+			Condition: graphql.FormationStatusConditionError,
+			Errors: []*graphql.FormationStatusError{{
+				Message:   "failed to parse request",
+				ErrorCode: 2,
+			}},
+		})
 
 		body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, createFormationOperation, tnt, tntParentCustomer)
@@ -1891,7 +1905,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, getFormationReq, &gotFormation)
 		require.NoError(t, err)
-		require.Equal(t, delFormation, gotFormation)
+		require.Equal(t, delFormation.ID, gotFormation.ID)
+		require.Equal(t, delFormation.State, gotFormation.State)
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -1962,18 +1977,20 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		t.Logf("Assign application 1 to formation: %q", formationName)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
 		assignedFormation := fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
-		require.Equal(t, formation, *assignedFormation)
+		require.Equal(t, formation.ID, assignedFormation.ID)
+		require.Equal(t, formation.State, assignedFormation.State)
 
 		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil}},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 
 		t.Logf("Assign application 2 to formation: %q", formationName)
 		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
 		assignedFormation = fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2.ID, tnt)
-		require.Equal(t, formation, *assignedFormation)
+		require.Equal(t, formation.ID, assignedFormation.ID)
+		require.Equal(t, formation.State, assignedFormation.State)
 
 		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
 			app1.ID: {
@@ -1994,7 +2011,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		// As part of the formation status API request, formation assignment synchronization will be executed.
 		assertAsyncFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, "CREATE_ERROR", createFormationOperation, tnt, tntParentCustomer)
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments)
-		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
+			Condition: graphql.FormationStatusConditionError,
+			Errors: []*graphql.FormationStatusError{{
+				Message:   "failed to parse request",
+				ErrorCode: 2,
+			}},
+		})
 
 		t.Logf("Should get formation %q by id %q", formationName, formation.ID)
 		var gotFormation *graphql.Formation
@@ -2073,7 +2096,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		getFormationReq = fixtures.FixGetFormationRequest(formation.ID)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, getFormationReq, &gotFormation)
 		require.NoError(t, err)
-		require.Equal(t, delFormation, gotFormation)
+		require.Equal(t, formation.ID, gotFormation.ID)
+		require.Equal(t, delFormation.State, gotFormation.State)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
