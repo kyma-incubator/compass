@@ -54,13 +54,13 @@ func CreateFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *g
 	return formation
 }
 
-func CreateFormationFromTemplateWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string, formationTemplateName *string) graphql.Formation {
+func CreateFormationFromTemplateWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string, formationTemplateName *string) graphql.FormationExt {
 	t.Logf("Creating formation with name: %q from template with name: %q", formationName, *formationTemplateName)
 	formationInput := FixFormationInput(formationName, formationTemplateName)
 	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
 	require.NoError(t, err)
 
-	var formation graphql.Formation
+	var formation graphql.FormationExt
 	createFormationReq := FixCreateFormationWithTemplateRequest(formationInputGQL)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createFormationReq, &formation)
 	require.NoError(t, err)
@@ -80,10 +80,10 @@ func DeleteFormation(t *testing.T, ctx context.Context, gqlClient *gcli.Client, 
 	return &deleteFormation
 }
 
-func DeleteFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string) *graphql.Formation {
+func DeleteFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string) *graphql.FormationExt {
 	t.Logf("Deleting formation with name: %q", formationName)
 	deleteRequest := FixDeleteFormationRequest(formationName)
-	var deleteFormation graphql.Formation
+	var deleteFormation graphql.FormationExt
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, &deleteFormation)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 	t.Logf("Deleted formation with name: %q", formationName)

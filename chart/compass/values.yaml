@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2953"
+      version: "PR-2955"
       name: compass-director
     hydrator:
       dir:
@@ -180,7 +180,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2944"
+      version: "PR-2965"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1147,6 +1147,8 @@ global:
         - "application:write"
         - "application.local_tenant_id:write"
         - "tenant_access:write"
+        - "formation:read"
+        - "formation:write"
       technical_client:
         - "tenant:read"
         - "tenant:write"

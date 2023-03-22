@@ -37,8 +37,8 @@ type Service interface {
 //go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	FromGraphQL(i graphql.FormationInput) model.Formation
-	ToGraphQL(i *model.Formation) *graphql.Formation
-	MultipleToGraphQL(in []*model.Formation) []*graphql.Formation
+	ToGraphQL(i *model.Formation) (*graphql.Formation, error)
+	MultipleToGraphQL(in []*model.Formation) ([]*graphql.Formation, error)
 }
 
 //go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -112,7 +112,7 @@ func (r *Resolver) getFormation(ctx context.Context, get func(context.Context) (
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(formation), nil
+	return r.conv.ToGraphQL(formation)
 }
 
 // FormationByName returns a Formation by its name
@@ -160,7 +160,10 @@ func (r *Resolver) Formations(ctx context.Context, first *int, after *graphql.Pa
 		return nil, err
 	}
 
-	formations := r.conv.MultipleToGraphQL(formationPage.Data)
+	formations, err := r.conv.MultipleToGraphQL(formationPage.Data)
+	if err != nil {
+		return nil, err
+	}
 
 	return &graphql.FormationPage{
 		Data:       formations,
@@ -202,7 +205,7 @@ func (r *Resolver) CreateFormation(ctx context.Context, formationInput graphql.F
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.conv.ToGraphQL(newFormation), nil
+	return r.conv.ToGraphQL(newFormation)
 }
 
 // DeleteFormation deletes the formation from the caller tenant formations
@@ -229,7 +232,7 @@ func (r *Resolver) DeleteFormation(ctx context.Context, formation graphql.Format
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.conv.ToGraphQL(deletedFormation), nil
+	return r.conv.ToGraphQL(deletedFormation)
 }
 
 // AssignFormation assigns object to the provided formation
@@ -262,7 +265,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.conv.ToGraphQL(newFormation), nil
+	return r.conv.ToGraphQL(newFormation)
 }
 
 // UnassignFormation unassigns the object from the provided formation
@@ -289,7 +292,7 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 		return nil, errors.Wrap(err, "while committing transaction")
 	}
 
-	return r.conv.ToGraphQL(newFormation), nil
+	return r.conv.ToGraphQL(newFormation)
 }
 
 // FormationAssignments retrieves a page of FormationAssignments for the specified Formation
@@ -384,7 +387,7 @@ func (r *Resolver) FormationAssignment(ctx context.Context, obj *graphql.Formati
 
 // Status retrieves a Status for the specified Formation
 func (r *Resolver) Status(ctx context.Context, obj *graphql.Formation) (*graphql.FormationStatus, error) {
-	param := dataloader.ParamFormationStatus{ID: obj.ID, Ctx: ctx}
+	param := dataloader.ParamFormationStatus{ID: obj.ID, State: obj.State, Message: obj.Error.Message, ErrorCode: obj.Error.ErrorCode, Ctx: ctx}
 	return dataloader.FormationStatusFor(ctx).FormationStatusByID.Load(param)
 }
 
@@ -413,16 +416,28 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		return nil, []error{err}
 	}
 	gqlFormationStatuses := make([]*graphql.FormationStatus, 0, len(formationAssignmentsPerFormation))
-	for _, formationAssignments := range formationAssignmentsPerFormation {
-		condition := graphql.FormationStatusConditionReady
+	for i := 0; i < len(keys); i++ {
+		formationAssignments := formationAssignmentsPerFormation[i]
+
+		var condition graphql.FormationStatusCondition
 		var formationStatusErrors []*graphql.FormationStatusError
+
+		switch formationState := keys[i].State; formationState {
+		case string(model.ReadyFormationState):
+			condition = graphql.FormationStatusConditionReady
+		case string(model.InitialFormationState), string(model.DeletingFormationState):
+			condition = graphql.FormationStatusConditionInProgress
+		case string(model.CreateErrorFormationState), string(model.DeleteErrorFormationState):
+			condition = graphql.FormationStatusConditionError
+			formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{Message: keys[i].Message, ErrorCode: keys[i].ErrorCode})
+		}
 
 		for _, fa := range formationAssignments {
 			if isInErrorState(fa.State) {
 				condition = graphql.FormationStatusConditionError
 
 				if fa.Value == nil {
-					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: fa.ID})
+					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
 					continue
 				}
 				var assignmentError formationassignment.AssignmentErrorWrapper
@@ -431,7 +446,7 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 				}
 
 				formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
-					AssignmentID: fa.ID,
+					AssignmentID: &fa.ID,
 					Message:      assignmentError.Error.Message,
 					ErrorCode:    int(assignmentError.Error.ErrorCode),
 				})
@@ -472,7 +487,7 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 		return nil, err
 	}
 
-	return r.conv.ToGraphQL(updatedFormation), nil
+	return r.conv.ToGraphQL(updatedFormation)
 }
 
 func isInErrorState(state string) bool {
