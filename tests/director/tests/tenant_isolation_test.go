@@ -2,8 +2,9 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 

@@ -3,8 +3,9 @@ package fixtures
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	gcli "github.com/machinebox/graphql"
