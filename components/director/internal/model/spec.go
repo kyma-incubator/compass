@@ -95,8 +95,6 @@ const (
 	APISpecTypeSQLAPIDefinitionV1 APISpecType = "sap-sql-api-definition-v1"
 	// APISpecTypeCustom is the Custom Specification.
 	APISpecTypeCustom APISpecType = "custom"
-	// APISpecTypeApiDef is the Custom Specification.
-	APISpecTypeApiDef APISpecType = "sap-sql-api-definition-v1"
 )
 
 // EventSpecType is the type of the Event Specification.

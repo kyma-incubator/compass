@@ -69,42 +69,6 @@ CREATE OR REPLACE VIEW data_product_tenants AS
 SELECT dp.*, ta.tenant_id, ta.owner FROM data_products AS dp
                                              INNER JOIN tenant_applications ta ON ta.id = dp.app_id;
 
-ALTER TABLE api_definitions
-    DROP CONSTRAINT api_protocol_check;
-
-ALTER TABLE api_definitions
-    ADD CONSTRAINT api_protocol_check CHECK (api_protocol IN ('odata-v2', 'odata-v4', 'soap-inbound', 'soap-outbound', 'rest', 'sap-sql-api-v1'));
-
-
--- ALTER TABLE specifications
---     ALTER COLUMN api_spec_type TYPE VARCHAR(255);
---
--- DROP TYPE api_spec_type;
---
--- CREATE TYPE api_spec_type AS ENUM (
---     --- CMP types ---
---
---     'ODATA',
---     'OPEN_API',
---
---     --- ORD types ---
---
---     'openapi-v2',
---     'openapi-v3',
---     'raml-v1',
---     'edmx',
---     'csdl-json',
---     'wsdl-v1',
---     'wsdl-v2',
---     'sap-rfc-metadata-v1',
---     'sap-sql-api-definition-v1',
---     'custom'
---
---     );
---
--- ALTER TABLE specifications
---     ALTER COLUMN api_spec_type TYPE api_spec_type USING (api_spec_type::api_spec_type);
-
 CREATE OR REPLACE VIEW tenants_data_products
             (tenant_id, formation_id, id, app_id, ord_id, local_id, title, short_description, description,
              version, release_status, visibility, package_id, tags, industry, line_of_business, product_type, data_product_owner)
@@ -197,5 +161,3 @@ FROM ports p
 
 
 COMMIT;
-
-ALTER TYPE api_spec_type ADD VALUE 'sap-sql-api-definition-v1' BEFORE 'custom';
