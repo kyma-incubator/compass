@@ -40,7 +40,7 @@ func TestCreateCertSubjectMapping(t *testing.T) {
 
 	t.Logf("Creating certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, certSubjectMappingReq, &csm)
-	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csm.ID)
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csm)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, csm.ID)
@@ -50,8 +50,10 @@ func TestCreateCertSubjectMapping(t *testing.T) {
 func TestDeleteCertSubjectMapping(t *testing.T) {
 	csmInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &internalConsumerID, tenantAccessLevels)
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
-	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
-	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
+
+	var csmCreate graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
+	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 
 	deleteCertSubjectMappingReq := fixtures.FixDeleteCertificateSubjectMappingRequest(csmCreate.ID)
 	saveExample(t, deleteCertSubjectMappingReq.Query(), "delete certificate subject mapping")
@@ -68,8 +70,10 @@ func TestDeleteCertSubjectMapping(t *testing.T) {
 func TestUpdateCertSubjectMapping(t *testing.T) {
 	csmCreateInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &internalConsumerID, tenantAccessLevels)
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
-	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreateInput)
-	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
+
+	var csmCreate graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
+	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreateInput)
 
 	updatedCertSubjectMappingInput := fixtures.FixCertificateSubjectMappingInput(updatedSubject, updatedConsumerType, &updatedInternalConsumerID, updatedTntAccessLevels)
 	csmUpdatedGQLInput, err := testctx.Tc.Graphqlizer.CertificateSubjectMappingInputToGQL(updatedCertSubjectMappingInput)
@@ -90,8 +94,10 @@ func TestUpdateCertSubjectMapping(t *testing.T) {
 func TestQuerySingleCertSubjectMapping(t *testing.T) {
 	csmInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &internalConsumerID, tenantAccessLevels)
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
-	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
-	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
+
+	var csmCreate graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
+	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 
 	queryCertSubjectMappingReq := fixtures.FixQueryCertificateSubjectMappingRequest(csmCreate.ID)
 	saveExample(t, queryCertSubjectMappingReq.Query(), "query certificate subject mapping")
@@ -119,14 +125,18 @@ func TestQueryCertSubjectMappings(t *testing.T) {
 	// Create first certificate subject mapping
 	csmInput := fixtures.FixCertificateSubjectMappingInput(subject, consumerType, &internalConsumerID, tenantAccessLevels)
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", subject, consumerType, tenantAccessLevels)
-	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
-	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
+
+	var csmCreate graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
+	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 
 	// Create second certificate subject mapping
 	csmInput2 := fixtures.FixCertificateSubjectMappingInput(updatedSubject, updatedConsumerType, &updatedInternalConsumerID, updatedTntAccessLevels)
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", updatedSubject, updatedConsumerType, updatedTntAccessLevels)
-	csmCreate2 := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput2)
-	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate2.ID)
+
+	var csmCreate2 graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate2)
+	csmCreate2 = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput2)
 
 	certSubjectMappings := graphql.CertificateSubjectMappingPage{}
 	t.Log("Query certificate subject mappings...")
@@ -171,8 +181,10 @@ func TestQueryCertSubjectMappingWithNewlyCreatedSubjectMapping(t *testing.T) {
 	certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubjectMappingCustomSubject, "/"), "/", ",")
 	csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
 	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, tenantAccessLevels)
-	csmCreate := fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
-	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmCreate.ID)
+
+	var csmCreate graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
+	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 
 	t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())
 	time.Sleep(conf.CertSubjectMappingResyncInterval)
