@@ -3,8 +3,9 @@ package tenant
 import (
 	"bytes"
 	"fmt"
-	"github.com/tidwall/sjson"
 	"net/http"
+
+	"github.com/tidwall/sjson"
 
 	"github.com/pkg/errors"
 )
