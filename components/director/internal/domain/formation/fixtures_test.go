@@ -1296,10 +1296,10 @@ func fixFormationModelWithState(state model.FormationState) *model.Formation {
 }
 
 func fixFormationModelWithStateAndAssignmentError(t *testing.T, state model.FormationState, errMsg string, errCode formationassignment.AssignmentErrorCode) *model.Formation {
-	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
+	formationError := formationassignment.AssignmentError{
 		Message:   errMsg,
 		ErrorCode: errCode,
-	}}
+	}
 
 	marshaledErr, err := json.Marshal(formationError)
 	require.NoError(t, err)

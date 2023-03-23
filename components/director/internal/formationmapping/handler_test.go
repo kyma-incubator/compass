@@ -1126,7 +1126,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
 				formationSvc.On("Update", contextThatHasTenant(internalTntID), formationWithReadyState).Return(nil).Once()
-				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(nil).Once()
+				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationRequestBody{
@@ -1190,7 +1190,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
 				formationSvc.On("Update", contextThatHasTenant(internalTntID), formationWithReadyState).Return(nil).Once()
-				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(testErr).Once()
+				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(nil, testErr).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationRequestBody{
@@ -1207,7 +1207,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
 				formationSvc.On("Update", contextThatHasTenant(internalTntID), formationWithReadyState).Return(nil).Once()
-				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(nil).Once()
+				formationSvc.On("ResynchronizeFormationNotifications", contextThatHasTenant(internalTntID), testFormationID).Return(nil, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationRequestBody{
@@ -1217,6 +1217,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
 		},
+		// TODO::Add unit tests for create error and delete error states
 	}
 
 	for _, tCase := range testCases {
