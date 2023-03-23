@@ -23,9 +23,10 @@ type Config struct {
 }
 
 type TenantInfo struct {
-	Endpoint       string        `envconfig:"APP_TENANT_INFO_ENDPOINT,default=localhost:8080/v1/info"`
-	RequestTimeout time.Duration `envconfig:"APP_TENANT_INFO_REQUEST_TIMEOUT,default=30s"`
-	RootCA         string        `envconfig:"APP_TENANT_INFO_ROOT_CA"`
+	Endpoint           string        `envconfig:"APP_TENANT_INFO_ENDPOINT,default=localhost:8080/v1/info"`
+	RequestTimeout     time.Duration `envconfig:"APP_TENANT_INFO_REQUEST_TIMEOUT,default=30s"`
+	InsecureSkipVerify bool          `envconfig:"APP_TENANT_INFO_INSECURE_SKIP_VERIFY,default=false"`
+	RootCA             string        `envconfig:"APP_TENANT_INFO_ROOT_CA"`
 }
 
 type IAS struct {

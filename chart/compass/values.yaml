@@ -486,6 +486,7 @@ global:
     idleTimeout: 30s
     tenantInfo:
       requestTimeout: 30s
+      insecureSkipVerify: false
     ias:
       requestTimeout: 30s
       secret:

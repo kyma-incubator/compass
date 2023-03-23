@@ -83,6 +83,8 @@ spec:
               value: https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.info.path }}
             - name: APP_TENANT_INFO_REQUEST_TIMEOUT
               value: {{ .Values.global.iasAdapter.tenantInfo.requestTimeout }}
+            - name: APP_TENANT_INFO_INSECURE_SKIP_VERIFY
+              value: {{ .Values.global.iasAdapter.tenantInfo.insecureSkipVerify | quote }}
             - name: APP_TENANT_INFO_ROOT_CA
               valueFrom:
                 secretKeyRef:

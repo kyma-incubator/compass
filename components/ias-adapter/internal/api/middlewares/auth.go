@@ -25,25 +25,42 @@ type AuthMiddleware struct {
 }
 
 func NewAuthMiddleware(ctx context.Context, cfg config.TenantInfo) (AuthMiddleware, error) {
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM([]byte(cfg.RootCA))
-	httpClient := &http.Client{
-		Timeout: cfg.RequestTimeout,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-				RootCAs:            caCertPool,
-			},
-		},
-	}
 	middleware := AuthMiddleware{
 		Config: cfg,
-		client: httpClient,
 	}
+	httpClient, err := newInfoClient(cfg)
+	if err != nil {
+		return middleware, errors.Newf("failed to create info http client: %w", err)
+	}
+	middleware.client = httpClient
 	if err := middleware.getTenant(ctx); err != nil {
 		return middleware, errors.Newf("failed to get auth tenant: %w", err)
 	}
 	return middleware, nil
+}
+
+func newInfoClient(cfg config.TenantInfo) (*http.Client, error) {
+	httpClient := &http.Client{
+		Timeout: cfg.RequestTimeout,
+	}
+	if cfg.InsecureSkipVerify {
+		httpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cfg.InsecureSkipVerify,
+			},
+		}
+		return httpClient, nil
+	}
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM([]byte(cfg.RootCA)); !ok {
+		return nil, errors.New("failed to append info endpoint root CA")
+	}
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs: caCertPool,
+		},
+	}
+	return httpClient, nil
 }
 
 func (m *AuthMiddleware) Auth(ctx *gin.Context) {
