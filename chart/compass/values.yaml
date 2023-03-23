@@ -1054,7 +1054,13 @@ global:
         clientCertKey: client-cert
         clientKeyKey: client-key
     iasAdapter:
-      applyMockConfiguration: false
+      consumerAppID: "consumer-app-id"
+      consumerAppClientID: "consumer-client-id"
+      consumerAppTenantID: "consumer-app-tenant-id"
+      providerAppID: "provider-app-id"
+      providerAppClientID: "provider-client-id"
+      providerAppTenantID: "provider-app-tenant-id"
+      apiName: "Test API Name"
   tests:
     http:
       client:
@@ -1111,13 +1117,6 @@ global:
       subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
       subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
-    iasAdapter:
-      consumerAppID: "consumer-app-id"
-      consumerAppClientID: "consumer-client-id"
-      providerAppID: "provider-app-id"
-      providerAppClientID: "provider-client-id"
-      apiName: "Test API Name"
-      iasTenantURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local

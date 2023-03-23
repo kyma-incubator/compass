@@ -21,9 +21,14 @@ type Application struct {
 }
 
 type ApplicationAuthentication struct {
-	ClientID     string                   `json:"clientId"`
-	ProvidedAPIs []ApplicationProvidedAPI `json:"providedApis"`
-	ConsumedAPIs []ApplicationConsumedAPI `json:"consumedApis"`
+	ClientID             string                   `json:"clientId"`
+	ProvidedAPIs         []ApplicationProvidedAPI `json:"providedApis"`
+	ConsumedAPIs         []ApplicationConsumedAPI `json:"consumedApis"`
+	SAPManagedAttributes SAPManagedAttributes     `json:"sapManagedAttributes"`
+}
+
+type SAPManagedAttributes struct {
+	AppTenantId string `json:"appTenantId"`
 }
 
 type ApplicationProvidedAPI struct {
@@ -41,8 +46,10 @@ type ApplicationConsumedAPI struct {
 type Config struct {
 	ConsumerAppID       string `envconfig:"APP_IAS_ADAPTER_CONSUMER_APP_ID"`
 	ConsumerAppClientID string `envconfig:"APP_IAS_ADAPTER_CONSUMER_APP_CLIENT_ID"`
+	ConsumerAppTenantID string `envconfig:"APP_IAS_ADAPTER_CONSUMER_APP_TENANT_ID"`
 	ProviderAppID       string `envconfig:"APP_IAS_ADAPTER_PROVIDER_APP_ID"`
 	ProviderAppClientID string `envconfig:"APP_IAS_ADAPTER_PROVIDER_APP_CLIENT_ID"`
+	ProviderAppTenantID string `envconfig:"APP_IAS_ADAPTER_PROVIDER_APP_TENANT_ID"`
 	ProvidedAPIName     string `envconfig:"APP_IAS_ADAPTER_PROVIDED_API_NAME"`
 }
 
@@ -64,12 +71,18 @@ func NewHandler(cfg Config) *Handler {
 								Description: cfg.ProvidedAPIName,
 							},
 						},
+						SAPManagedAttributes: SAPManagedAttributes{
+							AppTenantId: cfg.ProviderAppTenantID,
+						},
 					},
 				},
 				{
 					ID: cfg.ConsumerAppID,
 					Authentication: ApplicationAuthentication{
 						ClientID: cfg.ConsumerAppClientID,
+						SAPManagedAttributes: SAPManagedAttributes{
+							AppTenantId: cfg.ConsumerAppTenantID,
+						},
 					},
 				},
 			},

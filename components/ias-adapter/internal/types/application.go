@@ -12,7 +12,12 @@ type Application struct {
 }
 
 type ApplicationAuthentication struct {
-	ConsumedAPIs []ApplicationConsumedAPI `json:"consumedApis"`
+	ConsumedAPIs         []ApplicationConsumedAPI `json:"consumedApis"`
+	SAPManagedAttributes SAPManagedAttributes     `json:"sapManagedAttributes"`
+}
+
+type SAPManagedAttributes struct {
+	AppTenantId string `json:"appTenantId"`
 }
 
 type ApplicationConsumedAPI struct {

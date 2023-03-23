@@ -17,7 +17,7 @@ type TenantMappingsStorage interface {
 }
 
 type IASService interface {
-	GetApplication(ctx context.Context, iasHost, clientID string) (types.Application, error)
+	GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
 }
 
@@ -80,13 +80,15 @@ func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Contex
 
 	iasHost := tenantMapping1.ReceiverTenant.ApplicationURL
 	tenantMapping1UCLApplicationID := tenantMapping1.AssignedTenants[0].UCLApplicationID
-	iasApplication1, err := s.IASService.GetApplication(ctx, iasHost, tenantMapping1.AssignedTenants[0].Parameters.ClientID)
+	iasApplication1, err := s.IASService.GetApplication(ctx, iasHost,
+		tenantMapping1.AssignedTenants[0].Parameters.ClientID, tenantMapping1.AssignedTenants[0].LocalTenantID)
 	if err != nil {
 		return errors.Newf("failed to get IAS application with UCL ID '%s': %w", tenantMapping1UCLApplicationID, err)
 	}
 
 	tenantMapping2UCLApplicationID := tenantMapping2.AssignedTenants[0].UCLApplicationID
-	iasApplication2, err := s.IASService.GetApplication(ctx, iasHost, tenantMapping2.AssignedTenants[0].Parameters.ClientID)
+	iasApplication2, err := s.IASService.GetApplication(ctx, iasHost,
+		tenantMapping2.AssignedTenants[0].Parameters.ClientID, tenantMapping2.AssignedTenants[0].LocalTenantID)
 	if err != nil {
 		return errors.Newf("failed to get IAS application with UCL ID '%s': %w", tenantMapping2UCLApplicationID, err)
 	}

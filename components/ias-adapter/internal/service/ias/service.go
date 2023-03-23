@@ -65,7 +65,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	return nil
 }
 
-func (s Service) GetApplication(ctx context.Context, iasHost, clientID string) (types.Application, error) {
+func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error) {
 	log := logger.FromContext(ctx)
 
 	url := buildGetApplicationURL(iasHost, clientID)
@@ -93,13 +93,23 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID string) (
 	}
 
 	if len(applications.Applications) == 0 {
-		return types.Application{}, errors.Newf("application with clientID '%s' not found", clientID)
+		return types.Application{}, errors.Newf("no applications found with clientID '%s'", clientID)
 	}
-	if len(applications.Applications) > 1 {
-		return types.Application{}, errors.Newf("found more than one application with clientID '%s'", clientID)
+	if len(applications.Applications) == 1 {
+		return applications.Applications[0], nil // TODO do we leave this?
 	}
 
-	return applications.Applications[0], nil
+	return filterByAppTenantID(applications.Applications, clientID, appTenantID)
+}
+
+func filterByAppTenantID(applications []types.Application, clientID, appTenantID string) (types.Application, error) {
+	for _, application := range applications {
+		if application.Authentication.SAPManagedAttributes.AppTenantId == appTenantID {
+			return application, nil
+		}
+	}
+	return types.Application{}, errors.Newf(
+		"application with clientID '%s' and appTenantID '%s' not found", clientID, appTenantID)
 }
 
 func addConsumedAPI(consumedAPIs []types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) []types.ApplicationConsumedAPI {

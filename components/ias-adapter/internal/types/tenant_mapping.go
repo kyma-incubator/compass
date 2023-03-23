@@ -25,6 +25,7 @@ const (
 
 type AssignedTenant struct {
 	UCLApplicationID string                      `json:"uclApplicationId"`
+	LocalTenantID    string                      `json:"localTenantId"`
 	Operation        Operation                   `json:"operation"`
 	Parameters       AssignedTenantParameters    `json:"parameters"`
 	Configuration    AssignedTenantConfiguration `json:"configuration"`
