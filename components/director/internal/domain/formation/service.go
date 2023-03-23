@@ -417,13 +417,8 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		}
 	}
 
-	updatedFormation, err := s.formationRepository.Get(ctx, formationID, tnt)
-	if err != nil {
-		return nil, err
-	}
-
-	if updatedFormation.State == model.DeleteErrorFormationState || updatedFormation.State == model.DeletingFormationState {
-		return updatedFormation, nil
+	if ft.formation.State == model.DeleteErrorFormationState || ft.formation.State == model.DeletingFormationState {
+		return ft.formation, nil
 	}
 
 	for _, webhook := range formationTemplateWebhooks {
@@ -991,16 +986,16 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 		if previousState == model.DeleteErrorFormationState && updatedFormation.State == model.ReadyFormationState {
 			return updatedFormation, nil
 		}
+		formation, err = s.formationRepository.Get(ctx, formationID, tenantID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
+		}
+		if updatedFormation.State != model.ReadyFormationState {
+			return updatedFormation, nil
+		}
 	}
 
-	updatedFormation, err := s.formationRepository.Get(ctx, formationID, tenantID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
-	}
-	if updatedFormation.State != model.ReadyFormationState {
-		return updatedFormation, nil
-	}
-	return s.resynchronizeFormationAssignmentNotifications(ctx, tenantID, updatedFormation)
+	return s.resynchronizeFormationAssignmentNotifications(ctx, tenantID, formation)
 }
 
 func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation) (*model.Formation, error) {

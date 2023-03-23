@@ -1055,6 +1055,22 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
+			name:       "Successfully update formation status when operation is delete formation with DELETE_ERROR",
+			transactFn: txGen.ThatSucceeds,
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithDeletingState, nil).Once()
+				formationSvc.On("SetFormationToErrorState", contextThatHasTenant(internalTntID), formationWithDeletingState, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.DeleteErrorFormationState).Return(nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationRequestBody{
+				State: model.DeleteErrorFormationState,
+				Error: testErr.Error(),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+		},
+		{
 			name:       "Error when request body state is not correct for delete formation operation",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			formationSvcFn: func() *automock.FormationService {
@@ -1131,6 +1147,22 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			},
 			reqBody: fm.FormationRequestBody{
 				State: model.ReadyFormationState,
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+		},
+		{
+			name:       "Successfully update formation status when operation is create formation when state is CREATE_ERROR",
+			transactFn: txGen.ThatSucceeds,
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
+				formationSvc.On("SetFormationToErrorState", contextThatHasTenant(internalTntID), formationWithInitialState, testErr.Error(), formationassignment.AssignmentErrorCode(formationassignment.ClientError), model.CreateErrorFormationState).Return(nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationRequestBody{
+				State: model.CreateErrorFormationState,
+				Error: testErr.Error(),
 			},
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusOK,
@@ -1217,7 +1249,6 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
 		},
-		// TODO::Add unit tests for create error and delete error states
 	}
 
 	for _, tCase := range testCases {

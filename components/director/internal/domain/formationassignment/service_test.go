@@ -2182,8 +2182,8 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		CorrelationID: "",
 	}
 
-	// whMode := graphql.WebhookModeAsyncCallback
-	/*reqWebhookWithAsyncCallbackMode := &webhookclient.FormationAssignmentNotificationRequest{
+	whMode := graphql.WebhookModeAsyncCallback
+	reqWebhookWithAsyncCallbackMode := &webhookclient.FormationAssignmentNotificationRequest{
 		Webhook: graphql.Webhook{
 			ID:   TestWebhookID,
 			Mode: &whMode,
@@ -2191,7 +2191,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		},
 		Object:        input,
 		CorrelationID: "",
-	}*/
+	}
 
 	testCases := []struct {
 		Name                         string
@@ -2483,11 +2483,20 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(initialStateAssignment), reqWebhook),
 			ExpectedErrorMsg:        testErr.Error(),
 		},
-		/*{
-			Name:                         "Success: webhook has mode ASYNC_CALLBACK",
-			Context:                      ctxWithTenant,
-			FormationAssignmentRepo:      unusedFormationAssignmentRepository,
-			FormationAssignmentConverter: unusedFormationAssignmentConverter,
+		{
+			Name:    "Success: webhook has mode ASYNC_CALLBACK",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, initialStateAssignment).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", initialStateAssignment).Return(initialStateAssignmentInput).Once()
+				return conv
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, reqWebhookWithAsyncCallbackMode).Return(&webhook.Response{
@@ -2499,7 +2508,33 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhookWithAsyncCallbackMode),
 			ExpectedErrorMsg:        "",
-		},*/
+		},
+		{
+			Name:    "ERROR: webhook has mode ASYNC_CALLBACK but fails on update",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, initialStateAssignment).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", initialStateAssignment).Return(initialStateAssignmentInput).Once()
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				notificationSvc := &automock.NotificationService{}
+				notificationSvc.On("SendNotification", ctxWithTenant, reqWebhookWithAsyncCallbackMode).Return(&webhook.Response{
+					SuccessStatusCode:    &ok,
+					IncompleteStatusCode: &incomplete,
+					ActualStatusCode:     &ok,
+				}, nil)
+				return notificationSvc
+			},
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhookWithAsyncCallbackMode),
+			ExpectedErrorMsg:        testErr.Error(),
+		},
 		{
 			Name:    "Success: assignment with config",
 			Context: ctxWithTenant,
