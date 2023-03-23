@@ -421,13 +421,6 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return ft.formation, nil
 	}
 
-	for _, webhook := range formationTemplateWebhooks {
-		if *webhook.Mode == model.WebhookModeAsyncCallback {
-			log.C(ctx).Infof("The Webhook in the notification is in %s mode. Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", graphql.WebhookModeAsyncCallback, string(model.DeletingAssignmentState))
-			return ft.formation, nil
-		}
-	}
-
 	if err := s.DeleteFormationEntityAndScenarios(ctx, tnt, formationName); err != nil {
 		return nil, errors.Wrapf(err, "An error occurred while deleting formation entity with name: %q and its scenarios label", formationName)
 	}
