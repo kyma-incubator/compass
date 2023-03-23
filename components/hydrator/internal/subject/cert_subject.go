@@ -2,6 +2,7 @@ package subject
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
@@ -70,6 +71,8 @@ func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, stri
 	return func(ctx context.Context, subject string) map[string]interface{} {
 		log.C(ctx).Infof("trying to extract auth session extra from subject %s", subject)
 		mappings := p.certSubjectMappingCache.Get()
+		fmt.Printf("tst --> len of csm cache: %d\n\n", len(mappings))
+		fmt.Printf("tst --> list csm mappings: %+v", mappings)
 		for _, m := range mappings {
 			log.C(ctx).Infof("trying to match subject pattern %s", m.Subject)
 			if subjectsMatch(subject, m.Subject) {
