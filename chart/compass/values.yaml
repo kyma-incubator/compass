@@ -139,12 +139,16 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2949"
+      version: "PR-2960"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2953"
+      version: "PR-2970"
       name: compass-hydrator
+    ias_adapter:
+      dir:
+      version: "PR-2948"
+      name: compass-ias-adapter
     gateway:
       dir:
       version: "PR-2929"
@@ -180,7 +184,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2965"
+      version: "PR-2959"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false

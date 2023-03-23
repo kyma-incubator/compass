@@ -111,6 +111,8 @@ func TestNewProcessor(t *testing.T) {
 }
 
 func TestAuthIDFromSubjectFunc(t *testing.T) {
+	expectedID := "ed1f789b-1a85-4a63-b360-fac9d6484544"
+
 	t.Run("Success when internal consumer id is provided", func(t *testing.T) {
 		cache := &automock.Cache{}
 		cache.On("Get").Return(validCertSubjectMappings).Twice()
@@ -131,8 +133,8 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		p, err := subject.NewProcessor(cache, "Compass Clients", "")
 		require.NoError(t, err)
 
-		res := p.AuthIDFromSubjectFunc()(validSubjectWithoutRegion)
-		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
+		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
+		require.Equal(t, expectedID, res)
 	})
 
 	t.Run("Success getting authID from mapping", func(t *testing.T) {
@@ -143,8 +145,8 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		p, err := subject.NewProcessor(cache, "Compass Clients", "")
 		require.NoError(t, err)
 
-		res := p.AuthIDFromSubjectFunc()(validSubjectWithoutRegion)
-		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
+		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
+		require.Equal(t, expectedID, res)
 	})
 
 	t.Run("Success getting authID from OUs when region is missing", func(t *testing.T) {
@@ -155,8 +157,8 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		p, err := subject.NewProcessor(cache, "Compass Clients", "")
 		require.NoError(t, err)
 
-		res := p.AuthIDFromSubjectFunc()(validSubjectWithoutRegion)
-		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
+		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
+		require.Equal(t, expectedID, res)
 	})
 
 	t.Run("Success getting authID from OUs when region exists in subject", func(t *testing.T) {
@@ -167,8 +169,8 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		p, err := subject.NewProcessor(cache, "Compass Clients", "Region")
 		require.NoError(t, err)
 
-		res := p.AuthIDFromSubjectFunc()(validSubjectWithRegion)
-		require.Equal(t, "ed1f789b-1a85-4a63-b360-fac9d6484544", res)
+		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithRegion)
+		require.Equal(t, expectedID, res)
 	})
 }
 
