@@ -38,7 +38,7 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
+	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch"`
 	RegionalHandlerEndpoint            string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
 	DependenciesEndpoint               string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
 	TenantPathParam                    string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
@@ -79,6 +79,12 @@ type Dependency struct {
 	Xsappname string `json:"xsappname"`
 }
 
+// FetchOnDemandBody represents a request body
+type FetchOnDemandBody struct {
+	TenantID       string `json:"tenantID"`
+	ParentTenantID string `json:"parentTenantID"`
+}
+
 type handler struct {
 	fetcher    TenantFetcher
 	subscriber TenantSubscriber
@@ -105,29 +111,26 @@ func NewTenantFetcherHTTPHandler(fetcher TenantFetcher, config HandlerConfig) *h
 func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	vars := mux.Vars(request)
-	tenantID, ok := vars[h.config.TenantPathParam]
-	if !ok || len(tenantID) == 0 {
-		log.C(ctx).Error("Tenant path parameter is missing from request")
-		http.Error(writer, "Tenant path parameter is missing from request", http.StatusBadRequest)
+	responseBody := FetchOnDemandBody{}
+	if err := json.NewDecoder(request.Body).Decode(&responseBody); err != nil {
+		http.Error(writer, "", http.StatusInternalServerError)
 		return
 	}
 
-	parentTenantID, ok := vars[h.config.ParentTenantPathParam]
-	if !ok || len(parentTenantID) == 0 {
-		log.C(ctx).Error("Parent tenant path parameter is missing from request")
-		http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
+	if responseBody.TenantID == "" {
+		log.C(ctx).Error("Tenant in body is missing from request")
+		http.Error(writer, "Tenant in body is missing from request", http.StatusBadRequest)
 		return
 	}
 
-	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
+	log.C(ctx).Infof("Fetching create event for tenant with ID %s", responseBody.TenantID)
 
-	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {
-		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
+	if err := h.fetcher.SynchronizeTenant(ctx, responseBody.ParentTenantID, responseBody.TenantID); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", responseBody.TenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
-	writeCreatedResponse(writer, ctx, tenantID)
+	writeCreatedResponse(writer, ctx, responseBody.TenantID)
 }
 
 func writeCreatedResponse(writer http.ResponseWriter, ctx context.Context, tenantID string) {
