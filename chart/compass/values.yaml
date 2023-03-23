@@ -498,6 +498,8 @@ global:
     postgres:
       connectTimeout: 30s
       requestTimeout: 30s
+    authentication:
+      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
   operations_controller:
     enabled: true
   connectivity_adapter:

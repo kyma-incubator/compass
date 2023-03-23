@@ -25,6 +25,7 @@ type Config struct {
 type TenantInfo struct {
 	Endpoint       string        `envconfig:"APP_TENANT_INFO_ENDPOINT,default=localhost:8080/v1/info"`
 	RequestTimeout time.Duration `envconfig:"APP_TENANT_INFO_REQUEST_TIMEOUT,default=30s"`
+	RootCA         string        `envconfig:"APP_TENANT_INFO_ROOT_CA"`
 }
 
 type IAS struct {
@@ -49,8 +50,9 @@ func (p Postgres) ConnectionString() string {
 }
 
 type JWKCache struct {
-	Endpoint     string        `envconfig:"APP_JWK_CACHE_ENDPOINT,default=localhost:8080"`
-	SyncInterval time.Duration `envconfig:"APP_JWK_CACHE_SYNC_INTERVAL,default=3m"`
+	Endpoint       string        `envconfig:"APP_JWK_CACHE_ENDPOINT"`
+	SyncInterval   time.Duration `envconfig:"APP_JWK_CACHE_SYNC_INTERVAL,default=5m"`
+	RequestTimeout time.Duration `envconfig:"APP_JWK_REQUEST_TIMEOUT,default=30s"`
 }
 
 func New() (Config, error) {

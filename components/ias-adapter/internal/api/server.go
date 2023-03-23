@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/middlewares"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/jwk"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 )
 
@@ -34,7 +35,13 @@ func NewServer(ctx context.Context, cfg config.Config, services Services) (*http
 	routerGroup.GET(paths.ReadyPath, handlers.ReadyHandler{}.Ready)
 
 	tenantMappingRouter := routerGroup.Group("")
-	tenantMappingRouter.Use(middlewares.JWT)
+
+	jwkCache, err := jwk.NewJWKCache(ctx, cfg.JWKCache)
+	if err != nil {
+		return nil, errors.Newf("failed to create jwk cache: %w", err)
+	}
+	jwtMiddleware := middlewares.NewJWTMiddleware(jwkCache)
+	tenantMappingRouter.Use(jwtMiddleware.JWT)
 	authMiddleware, err := middlewares.NewAuthMiddleware(ctx, cfg.TenantInfo)
 	if err != nil {
 		return nil, errors.Newf("failed to create auth middleware: %w", err)

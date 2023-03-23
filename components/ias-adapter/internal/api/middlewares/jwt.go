@@ -5,25 +5,33 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/lestrrat-go/jwx/jwk"
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/jwk"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 )
 
 const (
 	authorizationHeader = "Authorization"
 	tenantCtxKey        = "tenant"
+	keyIDHeader         = "kid"
 )
 
-func JWT(ctx *gin.Context) {
+type JWTMiddleware struct {
+	cache jwk.Cache
+}
+
+func NewJWTMiddleware(cache jwk.Cache) JWTMiddleware {
+	return JWTMiddleware{
+		cache: cache,
+	}
+}
+
+func (m JWTMiddleware) JWT(ctx *gin.Context) {
 	log := logger.FromContext(ctx)
 
 	bearerToken, err := getBearerToken(ctx.Request)
@@ -33,9 +41,7 @@ func JWT(ctx *gin.Context) {
 		return
 	}
 
-	// get key
-
-	jwtClaims, err := verifyJWT(bearerToken, "???")
+	jwtClaims, err := m.verifyJWT(ctx, bearerToken)
 	if err != nil {
 		log.Err(err).Msg("Failed to verify Authorization header token")
 		internal.RespondWithError(ctx, http.StatusUnauthorized, err)
@@ -78,13 +84,23 @@ func (c jwtClaims) extractTenant() (string, error) {
 	return tenant.ProviderExternalTenant, nil
 }
 
-func verifyJWT(jwtToken, key string) (jwtClaims, error) {
+func (m JWTMiddleware) verifyJWT(ctx context.Context, jwtToken string) (jwtClaims, error) {
 	claims := jwtClaims{}
 	// if _, _, err := jwt.NewParser().ParseUnverified(jwtToken, &claims); err != nil {
 	// 	return jwtClaims{}, errors.Newf("failed to parse token: %s: %w", err, errors.InvalidAccessToken)
 	// }
 	token, err := jwt.ParseWithClaims(jwtToken, &claims, func(token *jwt.Token) (any, error) {
-		return []byte(key), nil
+		keyID, ok := token.Header[keyIDHeader]
+		if !ok {
+			return []byte{}, errors.Newf("jwt header %s not found in token", keyIDHeader)
+		}
+
+		kid, ok := keyID.(string)
+		if !ok {
+			return []byte{}, errors.Newf("failed to cast jwt header %s of type %T to string", keyIDHeader, keyID)
+		}
+
+		return m.cache.Get(ctx, kid)
 	})
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
@@ -100,51 +116,4 @@ func verifyJWT(jwtToken, key string) (jwtClaims, error) {
 	}
 
 	return claims, nil
-}
-
-type jwkCache struct {
-	jwkEndpoint  string
-	syncInterval time.Duration
-	lastSyncTime time.Time
-	keys         map[string]jwk.Key
-	mutex        sync.RWMutex
-	client       *http.Client
-}
-
-func newJWKCache(ctx context.Context, cfg config.JWKCache) *jwkCache {
-	cache := &jwkCache{
-		jwkEndpoint:  cfg.Endpoint,
-		keys:         make(map[string]jwk.Key),
-		syncInterval: cfg.SyncInterval,
-	}
-	ticker := time.NewTicker(cache.syncInterval)
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				cache.sync(ctx)
-			case <-ctx.Done():
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-	return cache
-}
-
-func (c *jwkCache) sync(ctx context.Context) {
-	if time.Since(c.lastSyncTime) > c.syncInterval {
-
-	}
-}
-
-func (c *jwkCache) getKey(ctx context.Context, id string) (jwk.Key, error) {
-	key, exists := c.keys[id]
-	if !exists {
-		return key, errors.New("jwk not found")
-	}
-	if key.Algorithm() != jwt.SigningMethodRS256.Alg() {
-		return key, errors.Newf("jwk doesn't match expected algorithm '%s'", jwt.SigningMethodRS256.Alg())
-	}
-	return key, nil
 }

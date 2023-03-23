@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -24,12 +25,14 @@ type AuthMiddleware struct {
 }
 
 func NewAuthMiddleware(ctx context.Context, cfg config.TenantInfo) (AuthMiddleware, error) {
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM([]byte(cfg.RootCA))
 	httpClient := &http.Client{
 		Timeout: cfg.RequestTimeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
-				// RootCAs: &x509.CertPool{},
+				RootCAs:            caCertPool,
 			},
 		},
 	}
