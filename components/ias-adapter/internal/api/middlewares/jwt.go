@@ -69,7 +69,7 @@ func getBearerToken(r *http.Request) (string, error) {
 
 type jwtClaims struct {
 	Tenants string `json:"tenant"`
-	jwt.Claims
+	jwt.RegisteredClaims
 }
 
 type tenant struct {
@@ -86,9 +86,6 @@ func (c jwtClaims) extractTenant() (string, error) {
 
 func (m JWTMiddleware) verifyJWT(ctx context.Context, jwtToken string) (jwtClaims, error) {
 	claims := jwtClaims{}
-	// if _, _, err := jwt.NewParser().ParseUnverified(jwtToken, &claims); err != nil {
-	// 	return jwtClaims{}, errors.Newf("failed to parse token: %s: %w", err, errors.InvalidAccessToken)
-	// }
 	token, err := jwt.ParseWithClaims(jwtToken, &claims, func(token *jwt.Token) (any, error) {
 		keyID, ok := token.Header[keyIDHeader]
 		if !ok {
@@ -104,9 +101,9 @@ func (m JWTMiddleware) verifyJWT(ctx context.Context, jwtToken string) (jwtClaim
 	})
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
-			return jwtClaims{}, errors.Newf("invalid token signature %s: %w", err, errors.InvalidAccessToken)
+			return jwtClaims{}, errors.Newf("invalid token signature: %s: %w", err, errors.InvalidAccessToken)
 		}
-		return jwtClaims{}, errors.Newf("failed to validate token signature %s: %w", err, errors.InvalidAccessToken)
+		return jwtClaims{}, errors.Newf("failed to validate token signature: %s: %w", err, errors.InvalidAccessToken)
 	}
 	if token.Method.Alg() != jwt.SigningMethodRS256.Alg() {
 		return jwtClaims{}, errors.Newf("invalid signing method: %w", errors.InvalidAccessToken)
