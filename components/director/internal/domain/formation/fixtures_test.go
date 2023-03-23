@@ -587,6 +587,13 @@ var (
 			CorrelationID: "",
 		},
 	}
+	formationNotificationDeleteRequest = &webhookclient.FormationNotificationRequest{
+		Request: &webhookclient.Request{
+			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
+			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
+			CorrelationID: "",
+		},
+	}
 	formationNotificationAsyncRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
@@ -595,8 +602,9 @@ var (
 		},
 	}
 
-	formationNotificationRequests      = []*webhookclient.FormationNotificationRequest{formationNotificationRequest}
-	formationNotificationAsyncRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncRequest}
+	formationNotificationRequests       = []*webhookclient.FormationNotificationRequest{formationNotificationRequest}
+	formationNotificationDeleteRequests = []*webhookclient.FormationNotificationRequest{formationNotificationDeleteRequest}
+	formationNotificationAsyncRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncRequest}
 
 	formationNotificationWebhookSuccessResponse = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, nil)
 	formationNotificationWebhookErrorResponse   = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, str.Ptr(testErr.Error()))

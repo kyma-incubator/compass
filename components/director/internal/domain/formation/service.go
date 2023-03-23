@@ -1619,6 +1619,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 
 	if *response.ActualStatusCode == *response.SuccessStatusCode {
 		formation.State = model.ReadyFormationState
+		formation.Error = nil
 		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state", formation.ID, formation.Name, model.ReadyFormationState)
 		if err := s.formationRepository.Update(ctx, formation); err != nil {
 			return errors.Wrapf(err, "while updating formation with ID: %q and name: %q to state: %s", formation.ID, formation.Name, model.ReadyFormationState)
