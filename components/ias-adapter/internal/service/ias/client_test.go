@@ -3,7 +3,6 @@ package ias
 import (
 	"net/http"
 	"net/http/httptest"
-	"testing"
 
 	"github.com/gin-gonic/gin"
 	. "github.com/onsi/ginkgo/v2"
@@ -11,11 +10,6 @@ import (
 
 	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
-
-func TestClient(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "IAS Client Test Suite")
-}
 
 var _ = Describe("IAS Client", func() {
 	When("Outbound request is sent", func() {

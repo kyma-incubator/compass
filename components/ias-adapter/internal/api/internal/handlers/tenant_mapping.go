@@ -50,5 +50,5 @@ func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {
 	log := logger.FromContext(ctx)
 	tenantMapping.AssignedTenants[0].Parameters = types.AssignedTenantParameters{}
 	tenantMapping.AssignedTenants[0].Configuration = types.AssignedTenantConfiguration{}
-	log.Info().Msgf("Processing tenant mapping: %+v", tenantMapping)
+	log.Info().Msgf("Processing tenant mapping notification: %+v", tenantMapping)
 }

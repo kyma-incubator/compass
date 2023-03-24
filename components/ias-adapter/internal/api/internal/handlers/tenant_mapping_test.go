@@ -17,13 +17,15 @@ import (
 
 var _ = Describe("Tenant Mapping Handler", func() {
 	var tenantMapping = types.TenantMapping{
-		FormationID: "formationID",
+		FormationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
 		ReceiverTenant: types.ReceiverTenant{
 			ApplicationURL: "localhost",
 		},
 		AssignedTenants: []types.AssignedTenant{
 			{
-				Operation: types.OperationAssign,
+				UCLApplicationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				LocalTenantID:    "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				Operation:        types.OperationAssign,
 				Parameters: types.AssignedTenantParameters{
 					ClientID: "clientID",
 				},
@@ -42,7 +44,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			handler.Patch(ctx)
 			responseBody, err := io.ReadAll(w.Body)
 			Expect(err).Error().ToNot(HaveOccurred())
-			Expect(responseBody).To(ContainSubstring("Failed to decode tenant mapping body"))
+			Expect(responseBody).To(ContainSubstring("failed to decode tenant mapping body"))
 			Expect(w.Code).To(Equal(http.StatusUnprocessableEntity))
 		})
 	})
@@ -58,14 +60,14 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			handler.Patch(ctx)
 			responseBody, err := io.ReadAll(w.Body)
 			Expect(err).Error().ToNot(HaveOccurred())
-			Expect(responseBody).To(ContainSubstring("Tenant mapping body is invalid"))
+			Expect(responseBody).To(ContainSubstring("tenant mapping body is invalid"))
 			Expect(w.Code).To(Equal(http.StatusUnprocessableEntity))
 		})
 	})
 	When("Consumed APIs cannot be updated", func() {
 		It("Should fail with 500", func() {
 			service := &automock.TenantMappingsService{}
-			service.On("UpdateApplicationsConsumedAPIs", mock.Anything, mock.Anything).Return(errors.New("error"))
+			service.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errors.New("error"))
 			handler := TenantMappingsHandler{
 				Service: service,
 			}
@@ -82,7 +84,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 	When("Consumed APIs are successfully updated", func() {
 		It("Should return 200", func() {
 			service := &automock.TenantMappingsService{}
-			service.On("UpdateApplicationsConsumedAPIs", mock.Anything, mock.Anything).Return(nil)
+			service.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(nil)
 			handler := TenantMappingsHandler{
 				Service: service,
 			}

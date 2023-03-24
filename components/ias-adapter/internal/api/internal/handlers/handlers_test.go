@@ -30,7 +30,9 @@ func createTestRequest(body io.Reader) (*httptest.ResponseRecorder, *gin.Context
 		Body: io.NopCloser(body),
 	}
 	ctx.Request = req
-	ctxLogger := logger.Default().With().Str(logCtx.RequestIDCtxKey, uuid.NewString()).Logger()
+	requestID := uuid.NewString()
+	ctxLogger := logger.Default().With().Str(logCtx.RequestIDCtxKey, requestID).Logger()
 	ctx.Set(logCtx.LoggerCtxKey, &ctxLogger)
+	ctx.Set(logCtx.RequestIDCtxKey, requestID)
 	return w, ctx
 }
