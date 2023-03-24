@@ -82,10 +82,10 @@ func (cl *certSubjectMappingLoader) Run(ctx context.Context, certSubjectMappings
 		mappings, err := cl.loadCertSubjectMappings(ctx, certSubjectMappingsFromEnv)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Certificate subject mapping resync failed with error: %v", err)
-			continue
+		} else {
+			log.C(ctx).Info("Update certificate subject mapping cache with the newly fetched data")
+			cl.certSubjectMappingCache.Put(mappings)
 		}
-		log.C(ctx).Info("Update certificate subject mapping cache with the newly fetched data")
-		cl.certSubjectMappingCache.Put(mappings)
 
 		select {
 		case <-ctx.Done():
