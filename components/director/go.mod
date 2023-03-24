@@ -21,9 +21,9 @@ require (
 	github.com/imdario/mergo v0.3.14
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230309104348-5a1c0141fb41
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230309104348-5a1c0141fb41
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230309104348-5a1c0141fb41
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230324140113-d5f67659cae1
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230324140113-d5f67659cae1
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230324140113-d5f67659cae1
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/lib/pq v1.10.7
@@ -44,7 +44,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/mod v0.8.0
 	golang.org/x/net v0.8.0
-	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
+	golang.org/x/oauth2 v0.6.0
 	golang.org/x/sync v0.1.0
 	golang.org/x/text v0.8.0
 	k8s.io/api v0.26.3
@@ -117,8 +117,6 @@ require (
 	go.mongodb.org/mongo-driver v1.8.3 // indirect
 	go.opentelemetry.io/otel v1.11.1 // indirect
 	go.opentelemetry.io/otel/trace v1.11.1 // indirect
-	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
