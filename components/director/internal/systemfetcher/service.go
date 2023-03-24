@@ -239,6 +239,11 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			}
 
 			if system.AdditionalAttributes[LifecycleAttributeName] == LifecycleDeleted && s.config.EnableSystemDeletion {
+				if app == nil {
+					log.C(ctx).Warnf("System with system number %s is not present. Skipping deletion.", system.SystemNumber)
+					return nil
+				}
+
 				if !app.Ready && !app.GetDeletedAt().IsZero() {
 					log.C(ctx).Infof("System with id %s is currently being deleted", app.ID)
 					return nil

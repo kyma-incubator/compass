@@ -47,7 +47,7 @@ const (
                     SELECT t2.id, t2.parent
                     FROM business_tenant_mappings t2
                              INNER JOIN parents t on t2.id = t.parent)
-			DELETE FROM %s WHERE %s AND owner = true AND tenant_id IN (SELECT id FROM parents)`
+			DELETE FROM %s WHERE %s AND tenant_id IN (SELECT id FROM parents)`
 )
 
 // M2MColumns are the column names of the tenant access tables / views.
@@ -66,6 +66,19 @@ type TenantAccessCollection []TenantAccess
 // Len returns the current number of entities in the collection.
 func (tc TenantAccessCollection) Len() int {
 	return len(tc)
+}
+
+// GetSingleTenantAccess gets a tenant access record for tenant with ID tenantID and resource with ID resourceID
+func GetSingleTenantAccess(ctx context.Context, m2mTable string, tenantID, resourceID string) (*TenantAccess, error) {
+	getter := NewSingleGetterGlobal(resource.TenantAccess, m2mTable, M2MColumns)
+
+	tenantAccess := &TenantAccess{}
+	err := getter.GetGlobal(ctx, Conditions{NewEqualCondition(M2MTenantIDColumn, tenantID), NewEqualCondition(M2MResourceIDColumn, resourceID)}, NoOrderBy, tenantAccess)
+	if err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Get, "while fetching tenant access record from '%s' table", m2mTable)
+	}
+
+	return tenantAccess, nil
 }
 
 // CreateSingleTenantAccess create a tenant access for a single entity

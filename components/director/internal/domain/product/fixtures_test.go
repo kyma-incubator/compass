@@ -46,6 +46,7 @@ func fixEntityProductWithTitle(title string) *product.Entity {
 			String: correlationIDs,
 			Valid:  true,
 		},
+		Tags:                repo.NewValidNullableString("[]"),
 		Labels:              repo.NewValidNullableString("{}"),
 		DocumentationLabels: repo.NewValidNullableString("{}"),
 	}
@@ -66,6 +67,7 @@ func fixProductModelWithTitle(title string) *model.Product {
 		Vendor:              "vendorID",
 		Parent:              &parent,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
+		Tags:                json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
 		DocumentationLabels: json.RawMessage("{}"),
 	}
@@ -81,6 +83,7 @@ func fixGlobalProductModel() *model.Product {
 		Vendor:              "vendorID",
 		Parent:              &parent,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
+		Tags:                json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
 		DocumentationLabels: json.RawMessage("{}"),
 	}
@@ -95,13 +98,14 @@ func fixProductModelInput() *model.ProductInput {
 		Vendor:              "vendorID",
 		Parent:              &parent,
 		CorrelationIDs:      json.RawMessage(correlationIDs),
+		Tags:                json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
 		DocumentationLabels: json.RawMessage("{}"),
 	}
 }
 
 func fixProductColumns() []string {
-	return []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "documentation_labels"}
+	return []string{"ord_id", "app_id", "title", "short_description", "vendor", "parent", "labels", "correlation_ids", "id", "tags", "documentation_labels"}
 }
 
 func fixProductRow() []driver.Value {
@@ -110,9 +114,9 @@ func fixProductRow() []driver.Value {
 
 func fixProductRowWithTitle(title string) []driver.Value {
 	return []driver.Value{ordID, appID, title, "short desc", "vendorID", "parent",
-		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID, repo.NewValidNullableString("{}")}
+		repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), productID, repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}")}
 }
 
 func fixProductUpdateArgs() []driver.Value {
-	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("{}")}
+	return []driver.Value{"title", "short desc", "vendorID", "parent", repo.NewValidNullableString("{}"), repo.NewValidNullableString(correlationIDs), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}")}
 }

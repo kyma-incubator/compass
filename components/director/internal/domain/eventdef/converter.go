@@ -163,6 +163,7 @@ func (c *converter) FromEntity(entity *Entity) *model.EventDefinition {
 		Version:             c.vc.FromEntity(entity.Version),
 		Extensible:          repo.JSONRawMessageFromNullableString(entity.Extensible),
 		ResourceHash:        repo.StringPtrFromNullableString(entity.ResourceHash),
+		Hierarchy:           repo.JSONRawMessageFromNullableString(entity.Hierarchy),
 		DocumentationLabels: repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
@@ -209,6 +210,7 @@ func (c *converter) ToEntity(eventModel *model.EventDefinition) *Entity {
 		Version:             c.convertVersionToEntity(eventModel.Version),
 		Extensible:          repo.NewNullableStringFromJSONRawMessage(eventModel.Extensible),
 		ResourceHash:        repo.NewNullableString(eventModel.ResourceHash),
+		Hierarchy:           repo.NewNullableStringFromJSONRawMessage(eventModel.Hierarchy),
 		DocumentationLabels: repo.NewNullableStringFromJSONRawMessage(eventModel.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        eventModel.ID,

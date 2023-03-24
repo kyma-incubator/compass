@@ -111,6 +111,8 @@ func fixFullAPIDefinitionModelWithID(id string, placeholder string) (model.APIDe
 		Version:                                 v,
 		Extensible:                              json.RawMessage(extensible),
 		ResourceHash:                            str.Ptr(resourceHash),
+		Hierarchy:                               json.RawMessage("[]"),
+		SupportedUseCases:                       json.RawMessage("[]"),
 		DocumentationLabels:                     json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
 			ID:        id,
@@ -272,6 +274,8 @@ func fixFullEntityAPIDefinition(apiDefID, placeholder string) api.Entity {
 			ForRemoval:      repo.NewValidNullableBool(false),
 		},
 		ResourceHash:        repo.NewValidNullableString(resourceHash),
+		SupportedUseCases:   repo.NewValidNullableString("[]"),
+		Hierarchy:           repo.NewValidNullableString("[]"),
 		DocumentationLabels: repo.NewValidNullableString("[]"),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiDefID,
@@ -291,7 +295,7 @@ func fixAPIDefinitionColumns() []string {
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready",
 		"created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard",
-		"custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "documentation_labels"}
+		"custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "hierarchy", "supported_use_cases", "documentation_labels"}
 }
 
 func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
@@ -301,7 +305,7 @@ func fixAPIDefinitionRow(id, placeholder string) []driver.Value {
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil,
 		"implementationStandard", "customImplementationStandard", "customImplementationStandardDescription", repo.NewValidNullableString(`["` + fmt.Sprintf("https://%s.com", placeholder) + `"]`),
-		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
+		repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
@@ -312,7 +316,7 @@ func fixAPICreateArgs(id string, apiDef *model.APIDefinition) []driver.Value {
 		apiDef.Disabled, repo.NewNullableStringFromJSONRawMessage(apiDef.PartOfProducts), repo.NewNullableStringFromJSONRawMessage(apiDef.LineOfBusiness), repo.NewNullableStringFromJSONRawMessage(apiDef.Industry),
 		apiDef.Version.Value, apiDef.Version.Deprecated, apiDef.Version.DeprecatedSince, apiDef.Version.ForRemoval, apiDef.Ready, apiDef.CreatedAt, apiDef.UpdatedAt, apiDef.DeletedAt, apiDef.Error,
 		apiDef.ImplementationStandard, apiDef.CustomImplementationStandard, apiDef.CustomImplementationStandardDescription, repo.NewNullableStringFromJSONRawMessage(apiDef.TargetURLs), extensible,
-		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels)}
+		repo.NewNullableStringFromJSONRawMessage(apiDef.Successors), apiDef.ResourceHash, repo.NewNullableStringFromJSONRawMessage(apiDef.Hierarchy), repo.NewNullableStringFromJSONRawMessage(apiDef.SupportedUseCases), repo.NewNullableStringFromJSONRawMessage(apiDef.DocumentationLabels)}
 }
 
 func fixModelFetchRequest(id, url string, timestamp time.Time) *model.FetchRequest {

@@ -19,8 +19,11 @@ type FormationStatusLoaders struct {
 
 // ParamFormationStatus missing godoc
 type ParamFormationStatus struct {
-	ID  string
-	Ctx context.Context
+	ID        string
+	State     string
+	Message   string
+	ErrorCode int
+	Ctx       context.Context
 }
 
 // HandlerFormationStatus missing godoc

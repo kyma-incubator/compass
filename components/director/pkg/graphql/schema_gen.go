@@ -332,6 +332,7 @@ type ComplexityRoot struct {
 	}
 
 	Formation struct {
+		Error                func(childComplexity int) int
 		FormationAssignment  func(childComplexity int, id string) int
 		FormationAssignments func(childComplexity int, first *int, after *PageCursor) int
 		FormationTemplateID  func(childComplexity int) int
@@ -367,6 +368,11 @@ type ComplexityRoot struct {
 		ResourceSubtype func(childComplexity int) int
 		ResourceType    func(childComplexity int) int
 		TargetOperation func(childComplexity int) int
+	}
+
+	FormationError struct {
+		ErrorCode func(childComplexity int) int
+		Message   func(childComplexity int) int
 	}
 
 	FormationPage struct {
@@ -453,6 +459,7 @@ type ComplexityRoot struct {
 		AddBundle                                    func(childComplexity int, applicationID string, in BundleCreateInput) int
 		AddDocumentToBundle                          func(childComplexity int, bundleID string, in DocumentInput) int
 		AddEventDefinitionToBundle                   func(childComplexity int, bundleID string, in EventDefinitionInput) int
+		AddTenantAccess                              func(childComplexity int, in TenantAccessInput) int
 		AddWebhook                                   func(childComplexity int, applicationID *string, applicationTemplateID *string, runtimeID *string, formationTemplateID *string, in WebhookInput) int
 		AssignFormation                              func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		AttachConstraintToFormationTemplate          func(childComplexity int, constraintID string, formationTemplateID string) int
@@ -490,6 +497,7 @@ type ComplexityRoot struct {
 		RegisterIntegrationSystem                    func(childComplexity int, in IntegrationSystemInput) int
 		RegisterRuntime                              func(childComplexity int, in RuntimeRegisterInput) int
 		RegisterRuntimeContext                       func(childComplexity int, runtimeID string, in RuntimeContextInput) int
+		RemoveTenantAccess                           func(childComplexity int, tenantID string, resourceID string, resourceType TenantAccessObjectType) int
 		RequestBundleInstanceAuthCreation            func(childComplexity int, bundleID string, in BundleInstanceAuthRequestInput) int
 		RequestBundleInstanceAuthDeletion            func(childComplexity int, authID string) int
 		RequestClientCredentialsForApplication       func(childComplexity int, id string) int
@@ -678,6 +686,13 @@ type ComplexityRoot struct {
 		Type        func(childComplexity int) int
 	}
 
+	TenantAccess struct {
+		Owner        func(childComplexity int) int
+		ResourceID   func(childComplexity int) int
+		ResourceType func(childComplexity int) int
+		TenantID     func(childComplexity int) int
+	}
+
 	TenantPage struct {
 		Data       func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
@@ -846,6 +861,8 @@ type MutationResolver interface {
 	CreateCertificateSubjectMapping(ctx context.Context, in CertificateSubjectMappingInput) (*CertificateSubjectMapping, error)
 	UpdateCertificateSubjectMapping(ctx context.Context, id string, in CertificateSubjectMappingInput) (*CertificateSubjectMapping, error)
 	DeleteCertificateSubjectMapping(ctx context.Context, id string) (*CertificateSubjectMapping, error)
+	AddTenantAccess(ctx context.Context, in TenantAccessInput) (*TenantAccess, error)
+	RemoveTenantAccess(ctx context.Context, tenantID string, resourceID string, resourceType TenantAccessObjectType) (*TenantAccess, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -2204,6 +2221,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FetchRequestStatus.Timestamp(childComplexity), true
 
+	case "Formation.error":
+		if e.complexity.Formation.Error == nil {
+			break
+		}
+
+		return e.complexity.Formation.Error(childComplexity), true
+
 	case "Formation.formationAssignment":
 		if e.complexity.Formation.FormationAssignment == nil {
 			break
@@ -2395,6 +2419,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationConstraint.TargetOperation(childComplexity), true
+
+	case "FormationError.errorCode":
+		if e.complexity.FormationError.ErrorCode == nil {
+			break
+		}
+
+		return e.complexity.FormationError.ErrorCode(childComplexity), true
+
+	case "FormationError.message":
+		if e.complexity.FormationError.Message == nil {
+			break
+		}
+
+		return e.complexity.FormationError.Message(childComplexity), true
 
 	case "FormationPage.data":
 		if e.complexity.FormationPage.Data == nil {
@@ -2744,6 +2782,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddEventDefinitionToBundle(childComplexity, args["bundleID"].(string), args["in"].(EventDefinitionInput)), true
+
+	case "Mutation.addTenantAccess":
+		if e.complexity.Mutation.AddTenantAccess == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addTenantAccess_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddTenantAccess(childComplexity, args["in"].(TenantAccessInput)), true
 
 	case "Mutation.addWebhook":
 		if e.complexity.Mutation.AddWebhook == nil {
@@ -3188,6 +3238,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RegisterRuntimeContext(childComplexity, args["runtimeID"].(string), args["in"].(RuntimeContextInput)), true
+
+	case "Mutation.removeTenantAccess":
+		if e.complexity.Mutation.RemoveTenantAccess == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_removeTenantAccess_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RemoveTenantAccess(childComplexity, args["tenantID"].(string), args["resourceID"].(string), args["resourceType"].(TenantAccessObjectType)), true
 
 	case "Mutation.requestBundleInstanceAuthCreation":
 		if e.complexity.Mutation.RequestBundleInstanceAuthCreation == nil {
@@ -4551,6 +4613,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.Type(childComplexity), true
 
+	case "TenantAccess.owner":
+		if e.complexity.TenantAccess.Owner == nil {
+			break
+		}
+
+		return e.complexity.TenantAccess.Owner(childComplexity), true
+
+	case "TenantAccess.resourceID":
+		if e.complexity.TenantAccess.ResourceID == nil {
+			break
+		}
+
+		return e.complexity.TenantAccess.ResourceID(childComplexity), true
+
+	case "TenantAccess.resourceType":
+		if e.complexity.TenantAccess.ResourceType == nil {
+			break
+		}
+
+		return e.complexity.TenantAccess.ResourceType(childComplexity), true
+
+	case "TenantAccess.tenantID":
+		if e.complexity.TenantAccess.TenantID == nil {
+			break
+		}
+
+		return e.complexity.TenantAccess.TenantID(childComplexity), true
+
 	case "TenantPage.data":
 		if e.complexity.TenantPage.Data == nil {
 			break
@@ -5027,6 +5117,12 @@ enum TargetOperation {
 	DELETE_FORMATION
 	GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION
 	GENERATE_FORMATION_NOTIFICATION
+}
+
+enum TenantAccessObjectType {
+	APPLICATION
+	RUNTIME
+	RUNTIME_CONTEXT
 }
 
 enum ViewerType {
@@ -5626,6 +5722,13 @@ input TemplateValueInput {
 	value: String!
 }
 
+input TenantAccessInput {
+	tenantID: ID!
+	resourceType: TenantAccessObjectType!
+	resourceID: ID!
+	owner: Boolean!
+}
+
 input VersionInput {
 	"""
 	**Validation:** max=256
@@ -5966,9 +6069,19 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	"""
+	Formation lifecycle notifications state
+	"""
 	state: String!
+	"""
+	Formation lifecycle notifications error
+	"""
+	error: FormationError
 	formationAssignment(id: ID!): FormationAssignment
 	formationAssignments(first: Int = 200, after: PageCursor): FormationAssignmentPage
+	"""
+	Aggregated formation status
+	"""
 	status: FormationStatus!
 }
 
@@ -6000,6 +6113,11 @@ type FormationConstraint {
 	constraintScope: String!
 }
 
+type FormationError {
+	message: String!
+	errorCode: Int!
+}
+
 type FormationPage implements Pageable {
 	data: [Formation!]!
 	pageInfo: PageInfo!
@@ -6012,7 +6130,7 @@ type FormationStatus {
 }
 
 type FormationStatusError {
-	assignmentID: ID!
+	assignmentID: ID
 	message: String!
 	errorCode: Int!
 }
@@ -6193,6 +6311,13 @@ type Tenant {
 	initialized: Boolean
 	labels(key: String): Labels
 	provider: String!
+}
+
+type TenantAccess {
+	tenantID: ID!
+	resourceType: TenantAccessObjectType!
+	resourceID: ID!
+	owner: Boolean!
 }
 
 type TenantPage implements Pageable {
@@ -6715,6 +6840,16 @@ type Mutation {
 	- [delete certificate subject mapping](examples/delete-certificate-subject-mapping/delete-certificate-subject-mapping.graphql)
 	"""
 	deleteCertificateSubjectMapping(id: ID!): CertificateSubjectMapping @hasScopes(path: "graphql.mutation.deleteCertificateSubjectMapping")
+	"""
+	**Examples**
+	- [add tenant access](examples/add-tenant-access/add-tenant-access.graphql)
+	"""
+	addTenantAccess(in: TenantAccessInput!): TenantAccess @hasScopes(path: "graphql.mutation.addTenantAccess")
+	"""
+	**Examples**
+	- [remove tenant access](examples/remove-tenant-access/remove-tenant-access.graphql)
+	"""
+	removeTenantAccess(tenantID: ID!, resourceID: ID!, resourceType: TenantAccessObjectType!): TenantAccess @hasScopes(path: "graphql.mutation.removeTenantAccess")
 }
 
 `, BuiltIn: false},
@@ -7202,6 +7337,20 @@ func (ec *executionContext) field_Mutation_addEventDefinitionToBundle_args(ctx c
 		}
 	}
 	args["in"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addTenantAccess_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 TenantAccessInput
+	if tmp, ok := rawArgs["in"]; ok {
+		arg0, err = ec.unmarshalNTenantAccessInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccessInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["in"] = arg0
 	return args, nil
 }
 
@@ -7989,6 +8138,36 @@ func (ec *executionContext) field_Mutation_registerRuntime_args(ctx context.Cont
 		}
 	}
 	args["in"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_removeTenantAccess_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["tenantID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tenantID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["resourceID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["resourceID"] = arg1
+	var arg2 TenantAccessObjectType
+	if tmp, ok := rawArgs["resourceType"]; ok {
+		arg2, err = ec.unmarshalNTenantAccessObjectType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccessObjectType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["resourceType"] = arg2
 	return args, nil
 }
 
@@ -15912,6 +16091,37 @@ func (ec *executionContext) _Formation_state(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Formation_error(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(FormationError)
+	fc.Result = res
+	return ec.marshalOFormationError2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationError(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Formation_formationAssignment(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16665,6 +16875,74 @@ func (ec *executionContext) _FormationConstraint_constraintScope(ctx context.Con
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _FormationError_message(ctx context.Context, field graphql.CollectedField, obj *FormationError) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationError",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationError_errorCode(ctx context.Context, field graphql.CollectedField, obj *FormationError) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationError",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ErrorCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _FormationPage_data(ctx context.Context, field graphql.CollectedField, obj *FormationPage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -16856,14 +17134,11 @@ func (ec *executionContext) _FormationStatusError_assignmentID(ctx context.Conte
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationStatusError_message(ctx context.Context, field graphql.CollectedField, obj *FormationStatusError) (ret graphql.Marshaler) {
@@ -23311,6 +23586,130 @@ func (ec *executionContext) _Mutation_deleteCertificateSubjectMapping(ctx contex
 	return ec.marshalOCertificateSubjectMapping2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐCertificateSubjectMapping(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_addTenantAccess(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_addTenantAccess_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AddTenantAccess(rctx, args["in"].(TenantAccessInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addTenantAccess")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*TenantAccess); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.TenantAccess`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*TenantAccess)
+	fc.Result = res
+	return ec.marshalOTenantAccess2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccess(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_removeTenantAccess(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_removeTenantAccess_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().RemoveTenantAccess(rctx, args["tenantID"].(string), args["resourceID"].(string), args["resourceType"].(TenantAccessObjectType))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.removeTenantAccess")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*TenantAccess); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.TenantAccess`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*TenantAccess)
+	fc.Result = res
+	return ec.marshalOTenantAccess2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccess(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -27937,6 +28336,142 @@ func (ec *executionContext) _Tenant_provider(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _TenantAccess_tenantID(ctx context.Context, field graphql.CollectedField, obj *TenantAccess) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TenantAccess",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TenantAccess_resourceType(ctx context.Context, field graphql.CollectedField, obj *TenantAccess) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TenantAccess",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TenantAccessObjectType)
+	fc.Result = res
+	return ec.marshalNTenantAccessObjectType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccessObjectType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TenantAccess_resourceID(ctx context.Context, field graphql.CollectedField, obj *TenantAccess) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TenantAccess",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TenantAccess_owner(ctx context.Context, field graphql.CollectedField, obj *TenantAccess) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "TenantAccess",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Owner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TenantPage_data(ctx context.Context, field graphql.CollectedField, obj *TenantPage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31557,6 +32092,42 @@ func (ec *executionContext) unmarshalInputTemplateValueInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTenantAccessInput(ctx context.Context, obj interface{}) (TenantAccessInput, error) {
+	var it TenantAccessInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "tenantID":
+			var err error
+			it.TenantID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "resourceType":
+			var err error
+			it.ResourceType, err = ec.unmarshalNTenantAccessObjectType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccessObjectType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "resourceID":
+			var err error
+			it.ResourceID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "owner":
+			var err error
+			it.Owner, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputVersionInput(ctx context.Context, obj interface{}) (VersionInput, error) {
 	var it VersionInput
 	var asMap = obj.(map[string]interface{})
@@ -33371,6 +33942,8 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "error":
+			out.Values[i] = ec._Formation_error(ctx, field, obj)
 		case "formationAssignment":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -33576,6 +34149,38 @@ func (ec *executionContext) _FormationConstraint(ctx context.Context, sel ast.Se
 	return out
 }
 
+var formationErrorImplementors = []string{"FormationError"}
+
+func (ec *executionContext) _FormationError(ctx context.Context, sel ast.SelectionSet, obj *FormationError) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, formationErrorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FormationError")
+		case "message":
+			out.Values[i] = ec._FormationError_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "errorCode":
+			out.Values[i] = ec._FormationError_errorCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var formationPageImplementors = []string{"FormationPage", "Pageable"}
 
 func (ec *executionContext) _FormationPage(ctx context.Context, sel ast.SelectionSet, obj *FormationPage) graphql.Marshaler {
@@ -33655,9 +34260,6 @@ func (ec *executionContext) _FormationStatusError(ctx context.Context, sel ast.S
 			out.Values[i] = graphql.MarshalString("FormationStatusError")
 		case "assignmentID":
 			out.Values[i] = ec._FormationStatusError_assignmentID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "message":
 			out.Values[i] = ec._FormationStatusError_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -34412,6 +35014,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_updateCertificateSubjectMapping(ctx, field)
 		case "deleteCertificateSubjectMapping":
 			out.Values[i] = ec._Mutation_deleteCertificateSubjectMapping(ctx, field)
+		case "addTenantAccess":
+			out.Values[i] = ec._Mutation_addTenantAccess(ctx, field)
+		case "removeTenantAccess":
+			out.Values[i] = ec._Mutation_removeTenantAccess(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -35554,6 +36160,48 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Tenant_provider(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var tenantAccessImplementors = []string{"TenantAccess"}
+
+func (ec *executionContext) _TenantAccess(ctx context.Context, sel ast.SelectionSet, obj *TenantAccess) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tenantAccessImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TenantAccess")
+		case "tenantID":
+			out.Values[i] = ec._TenantAccess_tenantID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "resourceType":
+			out.Values[i] = ec._TenantAccess_resourceType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "resourceID":
+			out.Values[i] = ec._TenantAccess_resourceID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "owner":
+			out.Values[i] = ec._TenantAccess_owner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -37823,6 +38471,19 @@ func (ec *executionContext) marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋ
 	return ec._Tenant(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNTenantAccessInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccessInput(ctx context.Context, v interface{}) (TenantAccessInput, error) {
+	return ec.unmarshalInputTenantAccessInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNTenantAccessObjectType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccessObjectType(ctx context.Context, v interface{}) (TenantAccessObjectType, error) {
+	var res TenantAccessObjectType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNTenantAccessObjectType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccessObjectType(ctx context.Context, sel ast.SelectionSet, v TenantAccessObjectType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNTenantPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantPage(ctx context.Context, sel ast.SelectionSet, v TenantPage) graphql.Marshaler {
 	return ec._TenantPage(ctx, sel, &v)
 }
@@ -38838,6 +39499,10 @@ func (ec *executionContext) marshalOFormationAssignmentPage2ᚖgithubᚗcomᚋky
 	return ec._FormationAssignmentPage(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOFormationError2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationError(ctx context.Context, sel ast.SelectionSet, v FormationError) graphql.Marshaler {
+	return ec._FormationError(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalOFormationStatusError2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatusErrorᚄ(ctx context.Context, sel ast.SelectionSet, v []*FormationStatusError) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -39608,6 +40273,17 @@ func (ec *executionContext) marshalOTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋ
 		return graphql.Null
 	}
 	return ec._Tenant(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTenantAccess2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccess(ctx context.Context, sel ast.SelectionSet, v TenantAccess) graphql.Marshaler {
+	return ec._TenantAccess(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOTenantAccess2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantAccess(ctx context.Context, sel ast.SelectionSet, v *TenantAccess) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TenantAccess(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {

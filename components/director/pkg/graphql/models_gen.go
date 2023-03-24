@@ -519,6 +519,11 @@ type FormationConstraintUpdateInput struct {
 	InputTemplate string `json:"inputTemplate"`
 }
 
+type FormationError struct {
+	Message   string `json:"message"`
+	ErrorCode int    `json:"errorCode"`
+}
+
 type FormationInput struct {
 	Name         string  `json:"name"`
 	TemplateName *string `json:"templateName"`
@@ -541,9 +546,9 @@ type FormationStatus struct {
 }
 
 type FormationStatusError struct {
-	AssignmentID string `json:"assignmentID"`
-	Message      string `json:"message"`
-	ErrorCode    int    `json:"errorCode"`
+	AssignmentID *string `json:"assignmentID"`
+	Message      string  `json:"message"`
+	ErrorCode    int     `json:"errorCode"`
 }
 
 type FormationTemplateInput struct {
@@ -765,6 +770,20 @@ type TemplateValueInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Placeholder string `json:"placeholder"`
 	Value       string `json:"value"`
+}
+
+type TenantAccess struct {
+	TenantID     string                 `json:"tenantID"`
+	ResourceType TenantAccessObjectType `json:"resourceType"`
+	ResourceID   string                 `json:"resourceID"`
+	Owner        bool                   `json:"owner"`
+}
+
+type TenantAccessInput struct {
+	TenantID     string                 `json:"tenantID"`
+	ResourceType TenantAccessObjectType `json:"resourceType"`
+	ResourceID   string                 `json:"resourceID"`
+	Owner        bool                   `json:"owner"`
 }
 
 type TenantPage struct {
@@ -1963,6 +1982,49 @@ func (e *TargetOperation) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TargetOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TenantAccessObjectType string
+
+const (
+	TenantAccessObjectTypeApplication    TenantAccessObjectType = "APPLICATION"
+	TenantAccessObjectTypeRuntime        TenantAccessObjectType = "RUNTIME"
+	TenantAccessObjectTypeRuntimeContext TenantAccessObjectType = "RUNTIME_CONTEXT"
+)
+
+var AllTenantAccessObjectType = []TenantAccessObjectType{
+	TenantAccessObjectTypeApplication,
+	TenantAccessObjectTypeRuntime,
+	TenantAccessObjectTypeRuntimeContext,
+}
+
+func (e TenantAccessObjectType) IsValid() bool {
+	switch e {
+	case TenantAccessObjectTypeApplication, TenantAccessObjectTypeRuntime, TenantAccessObjectTypeRuntimeContext:
+		return true
+	}
+	return false
+}
+
+func (e TenantAccessObjectType) String() string {
+	return string(e)
+}
+
+func (e *TenantAccessObjectType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TenantAccessObjectType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TenantAccessObjectType", str)
+	}
+	return nil
+}
+
+func (e TenantAccessObjectType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
