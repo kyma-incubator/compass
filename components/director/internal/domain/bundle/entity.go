@@ -21,6 +21,7 @@ type Entity struct {
 	Labels                        sql.NullString `db:"labels"`
 	CredentialExchangeStrategies  sql.NullString `db:"credential_exchange_strategies"`
 	CorrelationIDs                sql.NullString `db:"correlation_ids"`
+	Tags                          sql.NullString `db:"tags"`
 	DocumentationLabels           sql.NullString `db:"documentation_labels"`
 	*repo.BaseEntity
 }

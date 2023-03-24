@@ -149,6 +149,10 @@ var (
 
 	invalidTagsValueIntegerElement = `["storage", 992]`
 
+	invalidSupportedUseCasesValue = `["some-value"]`
+
+	validSupportedUseCasesValue = `["mass-extraction"]`
+
 	invalidLabelsWhenValueIsNotArray = `{
   		"label-key-1": "label-value-1"
 		}`
@@ -365,6 +369,8 @@ var (
 		  "version": "1.0.0"
         }
       ]`
+	validNamespace   = `foo.bar.baz`
+	invalidNamespace = `.foo.bar.baz`
 
 	invalidCorrelationIDsElement          = `["foo.bar.baz:123456", "wrongID"]`
 	invalidCorrelationIDsNonStringElement = `["foo.bar.baz:123456", 992]`
@@ -380,9 +386,6 @@ var (
 	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty  = `{"supported":"automatic"}`
 	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty     = `{"supported":"manual"}`
 	invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength = `{"supported":"%s", "description": "%s"}`
-
-	invalidSuccessorsDueToInvalidAPIRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
-	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
 
 	invalidDescriptionFieldWithExceedingMaxLength = strings.Repeat("a", maxDescriptionLength+1)
 )
@@ -662,6 +665,64 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 
 				return []*ord.Document{doc}
 			},
+		}, {
+			Name: "Invalid `tags` field element for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidTagsValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it is invalid JSON for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `tags` field when it isn't a JSON array for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `tags` field when the JSON array is empty",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `tags` field when it contains non string value",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.Tags = json.RawMessage(invalidTagsValueIntegerElement)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`ApplicationNamespace` values are not valid",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(invalidNamespace)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "`ApplicationNamespace` values are valid",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.DescribedSystemInstance.ApplicationNamespace = str.Ptr(validNamespace)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
 		},
 	}
 
@@ -2286,6 +2347,48 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid value for `supportedUseCases` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(invalidSupportedUseCasesValue)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `supportedUseCases` field when it is invalid JSON for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(invalidJSON)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `supportedUseCases` field when it isn't a JSON array for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage("{}")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Valid `supportedUseCases` field when the JSON array is empty for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage("[]")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid `supportedUseCases` field when the JSON array is one of enumerated values for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].SupportedUseCases = json.RawMessage(validSupportedUseCasesValue)
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
 			Name: "Invalid value for `countries` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -2900,31 +3003,6 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.APIResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
 				doc.APIResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, api2ORDID))
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Missing `successors` field when `releaseStatus` field has value `deprecated` for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
-				doc.APIResources[0].SunsetDate = str.Ptr("2020-04-29")
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` field for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].Successors = json.RawMessage(invalidJSON)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` when values do not match the regex for API",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.APIResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidAPIRegex)
 
 				return []*ord.Document{doc}
 			},
@@ -3663,6 +3741,82 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeRaml
 				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatTextYAML
 				doc.APIResources[0].ResourceDefinitions[2] = &model.APIResourceDefinition{}
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `implementationStandard`  when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = nil
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeCustom
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Wrong `type` when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeOpenAPI
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeOpenAPI
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Correct `type` when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeCustom
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Wrong `type` in one of the ResourceDefinitions when APIResources has apiProtocol `websocket`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolWebsocket
+				doc.APIResources[0].ImplementationStandard = str.Ptr("sap:cdi-api:v1")
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeOpenAPI
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Correct `type` when APIResources has apiProtocol `sap-sql-api-v1`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSAPSQLAPIV1
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCustom
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeSQLAPIDefinitionV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationJSON
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Wrong `type` when APIResources has apiProtocol `sap-sql-api-v1`",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].PolicyLevel = ord.PolicyLevelSapPartner
+				doc.Packages[0].Vendor = str.Ptr(ord.PartnerVendor)
+				*doc.APIResources[0].APIProtocol = ord.APIProtocolSAPSQLAPIV1
+				doc.APIResources[0].ResourceDefinitions[0].Type = model.APISpecTypeCsdl
+				doc.APIResources[0].ResourceDefinitions[0].MediaType = model.SpecFormatTextYAML
+				doc.APIResources[0].ResourceDefinitions[1].Type = model.APISpecTypeSQLAPIDefinitionV1
+				doc.APIResources[0].ResourceDefinitions[1].MediaType = model.SpecFormatApplicationJSON
 				return []*ord.Document{doc}
 			},
 		},
@@ -4630,22 +4784,6 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid json field `successors` field for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].Successors = json.RawMessage(invalidJSON)
-
-				return []*ord.Document{doc}
-			},
-		}, {
-			Name: "Invalid `successors` when values do not match the regex for Event",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.EventResources[0].Successors = json.RawMessage(invalidSuccessorsDueToInvalidEventRegex)
 
 				return []*ord.Document{doc}
 			},

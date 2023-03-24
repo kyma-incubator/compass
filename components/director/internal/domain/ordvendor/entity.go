@@ -13,6 +13,7 @@ type Entity struct {
 	ApplicationID       sql.NullString `db:"app_id"`
 	Title               string         `db:"title"`
 	Partners            sql.NullString `db:"partners"`
+	Tags                sql.NullString `db:"tags"`
 	Labels              sql.NullString `db:"labels"`
 	DocumentationLabels sql.NullString `db:"documentation_labels"`
 }
