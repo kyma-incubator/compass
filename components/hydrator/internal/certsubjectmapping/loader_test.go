@@ -93,7 +93,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			},
 			eventualTickInterval:            120 * time.Millisecond,
 			expectedCertSubjectMappingCount: 2,
-		}, //
+		},
 		{
 			name:                  "Successfully resync certificate subject mappings with paging",
 			certSubjectMappingCfg: cfg,
