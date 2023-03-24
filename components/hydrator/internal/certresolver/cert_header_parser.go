@@ -26,25 +26,31 @@ type certificateInfo struct {
 	Subject string
 }
 
+type subjectMatcherFunc func(subject string) bool
+type clientIDRetrieverFunc func(subject string) string
+type authSessionExtraRetrieverFunc func(ctx context.Context, subject string) map[string]interface{}
+
 type headerParser struct {
-	certHeaderName                 string
-	issuer                         string
-	isSubjectMatching              func(subject string) bool
-	getClientIDFromSubject         func(subject string) string
-	getAuthSessionExtraFromSubject func(ctx context.Context, subject string) map[string]interface{}
+	certHeaderName              string
+	issuer                      string
+	subjectMatcherFn            subjectMatcherFunc
+	clientIDRetrieverFn         clientIDRetrieverFunc
+	authSessionExtraRetrieverFn authSessionExtraRetrieverFunc
 }
 
-func NewHeaderParser(certHeaderName, issuer string, isSubjectMatching func(subject string) bool, getClientIDFromSubject func(subject string) string, getAuthSessionExtraFromSubject func(ctx context.Context, subject string) map[string]interface{}) *headerParser {
+func NewHeaderParser(certHeaderName, issuer string, subjectMatcherFn subjectMatcherFunc, clientIDRetrieverFn clientIDRetrieverFunc, authSessionExtraRetrieverFn authSessionExtraRetrieverFunc) *headerParser {
 	return &headerParser{
-		certHeaderName:                 certHeaderName,
-		issuer:                         issuer,
-		isSubjectMatching:              isSubjectMatching,
-		getClientIDFromSubject:         getClientIDFromSubject,
-		getAuthSessionExtraFromSubject: getAuthSessionExtraFromSubject,
+		certHeaderName:              certHeaderName,
+		issuer:                      issuer,
+		subjectMatcherFn:            subjectMatcherFn,
+		clientIDRetrieverFn:         clientIDRetrieverFn,
+		authSessionExtraRetrieverFn: authSessionExtraRetrieverFn,
 	}
 }
 
 func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
+	ctx := r.Context()
+
 	certHeader := r.Header.Get(hp.certHeaderName)
 	if certHeader == "" {
 		return nil
@@ -58,7 +64,7 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 
 	certificateInfos := createCertInfos(subjects, hashes)
 
-	log.C(r.Context()).Debugf("Trying to match certificate subjects [%s] for issuer %s", strings.Join(subjects, ","), hp.GetIssuer())
+	log.C(ctx).Debugf("Trying to match certificate subjects [%s] for issuer %s", strings.Join(subjects, ","), hp.GetIssuer())
 
 	certificateInfo, found := hp.getCertificateInfoWithMatchingSubject(certificateInfos)
 	if !found {
@@ -66,9 +72,9 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 	}
 
 	certData := &CertificateData{
-		ClientID:         hp.getClientIDFromSubject(certificateInfo.Subject),
+		ClientID:         hp.clientIDRetrieverFn(certificateInfo.Subject),
 		CertificateHash:  certificateInfo.Hash,
-		AuthSessionExtra: hp.getAuthSessionExtraFromSubject(r.Context(), certificateInfo.Subject),
+		AuthSessionExtra: hp.authSessionExtraRetrieverFn(ctx, certificateInfo.Subject),
 	}
 
 	return certData
@@ -93,7 +99,7 @@ func createCertInfos(subjects, hashes []string) []certificateInfo {
 
 func (hp *headerParser) getCertificateInfoWithMatchingSubject(infos []certificateInfo) (certificateInfo, bool) {
 	for _, info := range infos {
-		if hp.isSubjectMatching(info.Subject) {
+		if hp.subjectMatcherFn(info.Subject) {
 			return info, true
 		}
 	}
