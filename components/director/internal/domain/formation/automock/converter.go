@@ -29,7 +29,7 @@ func (_m *Converter) FromGraphQL(i graphql.FormationInput) model.Formation {
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in
-func (_m *Converter) MultipleToGraphQL(in []*model.Formation) []*graphql.Formation {
+func (_m *Converter) MultipleToGraphQL(in []*model.Formation) ([]*graphql.Formation, error) {
 	ret := _m.Called(in)
 
 	var r0 []*graphql.Formation
@@ -41,11 +41,18 @@ func (_m *Converter) MultipleToGraphQL(in []*model.Formation) []*graphql.Formati
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func([]*model.Formation) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ToGraphQL provides a mock function with given fields: i
-func (_m *Converter) ToGraphQL(i *model.Formation) *graphql.Formation {
+func (_m *Converter) ToGraphQL(i *model.Formation) (*graphql.Formation, error) {
 	ret := _m.Called(i)
 
 	var r0 *graphql.Formation
@@ -57,7 +64,14 @@ func (_m *Converter) ToGraphQL(i *model.Formation) *graphql.Formation {
 		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(*model.Formation) error); ok {
+		r1 = rf(i)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 type mockConstructorTestingTNewConverter interface {

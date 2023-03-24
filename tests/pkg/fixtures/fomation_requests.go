@@ -41,7 +41,7 @@ func FixCreateFormationRequest(formationName string) *gcli.Request {
 				  result: createFormation(formation: {name: "%s"}){
 					%s
 				  }
-				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
+				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
 func FixCreateFormationWithTemplateRequest(formationInput string) *gcli.Request {
@@ -50,7 +50,7 @@ func FixCreateFormationWithTemplateRequest(formationInput string) *gcli.Request 
 				  result: createFormation(formation: %s){
 					%s
 				  }
-				}`, formationInput, testctx.Tc.GQLFieldsProvider.ForFormation()))
+				}`, formationInput, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
 func FixDeleteFormationRequest(formationName string) *gcli.Request {
@@ -59,7 +59,7 @@ func FixDeleteFormationRequest(formationName string) *gcli.Request {
 				  result: deleteFormation(formation: {name: "%s"}){
 					%s
 				  }
-				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
+				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
 func FixDeleteFormationWithTemplateRequest(formationInput string) *gcli.Request {
@@ -77,7 +77,7 @@ func FixAssignFormationRequest(objID, objType, formationName string) *gcli.Reque
 			  result: assignFormation(objectID:"%s",objectType: %s ,formation: {name: "%s"}){
 				%s
 			  }
-			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
+			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
 func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Request {
@@ -86,7 +86,7 @@ func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Req
 			  result: unassignFormation(objectID:"%s",objectType: %s ,formation: {name: "%s"}){
 				%s
 			  }
-			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
+			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
 func FixResynchronizeFormationNotificationsRequest(formationID string) *gcli.Request {

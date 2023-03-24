@@ -64,6 +64,8 @@ const (
 	CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
 	SAPProductOrdIDNamespaceRegex = "^(sap)((\\.)([a-z0-9-]+(?:[.][a-z0-9-]+)*))*$"
+	// OrdNamespaceRegex represents the valid structure of a Ord Namespace
+	OrdNamespaceRegex = "^[a-z0-9]+(?:[.][a-z0-9]+)*$"
 
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
@@ -103,6 +105,10 @@ const (
 	APIProtocolRest string = "rest"
 	// APIProtocolSapRfc is one of the available api protocol options
 	APIProtocolSapRfc string = "sap-rfc"
+	// APIProtocolWebsocket is one of the available api protocol options
+	APIProtocolWebsocket string = "websocket"
+	// APIProtocolSAPSQLAPIV1 is one of the available api protocol options
+	APIProtocolSAPSQLAPIV1 string = "sap-sql-api-v1"
 
 	// APIVisibilityPublic is one of the available api visibility options
 	APIVisibilityPublic string = "public"
@@ -117,6 +123,10 @@ const (
 	APIImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
 	// APIImplementationStandardCsnExposure is one of the available api implementation standard options
 	APIImplementationStandardCsnExposure string = "sap:csn-exposure:v1"
+	// APIImplementationStandardApeAPI is one of the available api implementation standard options
+	APIImplementationStandardApeAPI string = "sap:ape-api:v1"
+	// APIImplementationStandardCdiAPI is one of the available api implementation standard options
+	APIImplementationStandardCdiAPI string = "sap:cdi-api:v1"
 	// APIImplementationStandardCustom is one of the available api implementation standard options
 	APIImplementationStandardCustom = custom
 
@@ -174,6 +184,11 @@ var (
 		"Utilities":                           true,
 		"Wholesale Distribution":              true,
 	}
+	// SupportedUseCases contain all valid values for this field from the spec
+	SupportedUseCases = map[string]bool{
+		"mass-extraction": true,
+		// "mass-import":     true, // will be added later in spec
+	}
 )
 
 var shortDescriptionRules = []validation.Rule{
@@ -199,8 +214,12 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 		validation.Field(&app.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
+		validation.Field(&app.ApplicationNamespace, validation.Match(regexp.MustCompile(OrdNamespaceRegex))),
 		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
 		validation.Field(&app.OrdLabels, validation.By(validateORDLabels)),
+		validation.Field(&app.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
 		validation.Field(&app.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -282,6 +301,9 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 		validation.Field(&bndl.CorrelationIDs, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
+		validation.Field(&bndl.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
 		validation.Field(&bndl.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -298,10 +320,18 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
 		})),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
-		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc)),
+		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
+		})),
+		validation.Field(&api.SupportedUseCases,
+			validation.By(func(value interface{}) error {
+				return validateJSONArrayOfStringsContainsInMap(value, SupportedUseCases)
+			}),
+		),
+		validation.Field(&api.Hierarchy, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 		validation.Field(&api.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -336,13 +366,10 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
-		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
-		})),
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
-		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardCustom)),
+		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardApeAPI, APIImplementationStandardCdiAPI, APIImplementationStandardCustom)),
 		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
 		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
@@ -373,6 +400,9 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&event.PartOfProducts, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
+		})),
+		validation.Field(&event.Hierarchy, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 		validation.Field(&event.Tags, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
@@ -406,9 +436,6 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
 		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate))),
-		validation.Field(&event.Successors, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
-			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EventOrdIDRegex))
-		})),
 		validation.Field(&event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&event.Labels, validation.By(validateORDLabels)),
 		validation.Field(&event.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
@@ -440,6 +467,9 @@ func validateProductInput(product *model.ProductInput) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&product.Labels, validation.By(validateORDLabels)),
+		validation.Field(&product.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+		})),
 		validation.Field(&product.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
@@ -451,6 +481,9 @@ func validateVendorInput(vendor *model.VendorInput) error {
 		validation.Field(&vendor.Labels, validation.By(validateORDLabels)),
 		validation.Field(&vendor.Partners, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(VendorPartnersRegex))
+		})),
+		validation.Field(&vendor.Tags, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
 		})),
 		validation.Field(&vendor.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
@@ -688,6 +721,14 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	rfcMetadataTypeExists := resourceDefinitionTypes[model.APISpecTypeRfcMetadata]
 	if isPolicyCoreOrPartner && apiProtocol == APIProtocolSapRfc && !rfcMetadataTypeExists {
 		return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='sap-rfc' it is mandatory to provide SAP RFC definitions")
+	}
+
+	if apiProtocol == APIProtocolWebsocket && (api.ImplementationStandard == nil || !resourceDefinitionTypes[model.APISpecTypeCustom]) {
+		return errors.New("for APIResources with apiProtocol='websocket' it is mandatory to provide implementationStandard definition and type to be set to custom")
+	}
+
+	if apiProtocol == APIProtocolSAPSQLAPIV1 && !(resourceDefinitionTypes[model.APISpecTypeCustom] || resourceDefinitionTypes[model.APISpecTypeSQLAPIDefinitionV1]) {
+		return errors.New("for APIResources with apiProtocol='sap-sql-api-v1' it is mandatory type to be set either to sap-sql-api-definition-v1 or custom")
 	}
 
 	return nil

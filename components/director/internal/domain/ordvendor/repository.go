@@ -14,11 +14,12 @@ import (
 const vendorTable string = `public.vendors`
 
 var (
-	vendorColumns    = []string{"ord_id", "app_id", "title", "labels", "partners", "id", "documentation_labels"}
-	updatableColumns = []string{"title", "labels", "partners", "documentation_labels"}
+	vendorColumns    = []string{"ord_id", "app_id", "title", "labels", "partners", "id", "tags", "documentation_labels"}
+	updatableColumns = []string{"title", "labels", "partners", "tags", "documentation_labels"}
 )
 
 // EntityConverter missing godoc
+//
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Vendor) *Entity

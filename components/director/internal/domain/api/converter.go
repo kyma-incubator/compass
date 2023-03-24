@@ -174,6 +174,8 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		Version:                                 c.version.FromEntity(entity.Version),
 		Extensible:                              repo.JSONRawMessageFromNullableString(entity.Extensible),
 		ResourceHash:                            repo.StringPtrFromNullableString(entity.ResourceHash),
+		Hierarchy:                               repo.JSONRawMessageFromNullableString(entity.Hierarchy),
+		SupportedUseCases:                       repo.JSONRawMessageFromNullableString(entity.SupportedUseCases),
 		DocumentationLabels:                     repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
@@ -226,7 +228,9 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		Version:                                 c.convertVersionToEntity(apiModel.Version),
 		Extensible:                              repo.NewNullableStringFromJSONRawMessage(apiModel.Extensible),
 		ResourceHash:                            repo.NewNullableString(apiModel.ResourceHash),
+		Hierarchy:                               repo.NewNullableStringFromJSONRawMessage(apiModel.Hierarchy),
 		DocumentationLabels:                     repo.NewNullableStringFromJSONRawMessage(apiModel.DocumentationLabels),
+		SupportedUseCases:                       repo.NewNullableStringFromJSONRawMessage(apiModel.SupportedUseCases),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,

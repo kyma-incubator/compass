@@ -27,6 +27,7 @@ type Application struct {
 	Type                  string          `json:"-"`
 	// SystemStatus shows whether the on-premise system is reachable or unreachable
 	SystemStatus        *string
+	Tags                json.RawMessage `json:"tags"`
 	DocumentationLabels json.RawMessage `json:"documentationLabels"`
 
 	*BaseEntity
@@ -74,6 +75,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	if update.LocalTenantID != nil {
 		app.LocalTenantID = update.LocalTenantID
+	}
+	if update.Tags != nil {
+		app.Tags = update.Tags
 	}
 	if update.DocumentationLabels != nil {
 		app.DocumentationLabels = update.DocumentationLabels
@@ -144,6 +148,7 @@ type ApplicationRegisterInput struct {
 	OrdLabels            json.RawMessage
 	CorrelationIDs       json.RawMessage
 	SystemStatus         *string
+	Tags                 json.RawMessage
 	DocumentationLabels  json.RawMessage
 	LocalTenantID        *string
 }
@@ -177,6 +182,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 		SystemNumber:         i.SystemNumber,
 		LocalTenantID:        i.LocalTenantID,
 		SystemStatus:         i.SystemStatus,
+		Tags:                 i.Tags,
 		DocumentationLabels:  i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
 			ID:    id,
@@ -206,6 +212,7 @@ type ApplicationUpdateInput struct {
 	OrdLabels            json.RawMessage
 	CorrelationIDs       json.RawMessage
 	SystemStatus         *string
+	Tags                 json.RawMessage
 	DocumentationLabels  json.RawMessage
 	LocalTenantID        *string
 }

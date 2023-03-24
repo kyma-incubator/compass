@@ -27,6 +27,7 @@ func (c *converter) ToEntity(in *model.Vendor) *Entity {
 		ApplicationID:       repo.NewNullableString(in.ApplicationID),
 		Title:               in.Title,
 		Partners:            repo.NewNullableStringFromJSONRawMessage(in.Partners),
+		Tags:                repo.NewNullableStringFromJSONRawMessage(in.Tags),
 		Labels:              repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		DocumentationLabels: repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
 	}
@@ -46,6 +47,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Vendor, error) {
 		ApplicationID:       repo.StringPtrFromNullableString(entity.ApplicationID),
 		Title:               entity.Title,
 		Partners:            repo.JSONRawMessageFromNullableString(entity.Partners),
+		Tags:                repo.JSONRawMessageFromNullableString(entity.Tags),
 		Labels:              repo.JSONRawMessageFromNullableString(entity.Labels),
 		DocumentationLabels: repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 	}
