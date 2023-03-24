@@ -32,7 +32,7 @@ type AssignedTenant struct {
 }
 
 type AssignedTenantParameters struct {
-	ClientID string `json:"clientId"`
+	ClientID string `json:"technicalIntegrationId"`
 }
 
 type AssignedTenantConfiguration struct {
@@ -56,7 +56,7 @@ func (tm TenantMapping) Validate() error {
 		return errors.New("$.assignedTenants[0].operation can only be assign or unassign")
 	}
 	if tm.AssignedTenants[0].Parameters.ClientID == "" {
-		return errors.New("$.assignedTenants[0].parameters.clientId is required")
+		return errors.New("$.assignedTenants[0].parameters.technicalIntegrationId is required")
 	}
 	return nil
 }
