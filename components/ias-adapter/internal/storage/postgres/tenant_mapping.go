@@ -54,7 +54,7 @@ func (c Connection) ListTenantMappings(ctx context.Context, formationID string) 
 	return tenantMappings, nil
 }
 
-func (c Connection) DeleteTenantMapping(ctx context.Context, applicationID, formationID string) error {
+func (c Connection) DeleteTenantMapping(ctx context.Context, formationID, applicationID string) error {
 	if _, err := c.exec(ctx, deleteTenantMappingQuery, formationID, applicationID); err != nil {
 		return errors.Newf("failed to delete tenant mapping with formation_id '%s': %w", err)
 	}

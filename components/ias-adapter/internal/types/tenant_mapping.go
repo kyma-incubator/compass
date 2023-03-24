@@ -49,8 +49,8 @@ func (tm TenantMapping) Validate() error {
 	if _, err := uuid.Parse(tm.AssignedTenants[0].UCLApplicationID); err != nil {
 		return errors.New("$.assignedTenants[0].uclApplicationId is not a valid uuid")
 	}
-	if tm.AssignedTenants[0].Operation == "" {
-		return errors.New("$.assignedTenants[0].operation is required")
+	if tm.AssignedTenants[0].Operation != OperationAssign && tm.AssignedTenants[0].Operation != OperationUnassign {
+		return errors.New("$.assignedTenants[0].operation can only be assign or unassign")
 	}
 	if tm.AssignedTenants[0].Parameters.ClientID == "" {
 		return errors.New("$.assignedTenants[0].parameters.clientId is required")

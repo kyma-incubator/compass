@@ -36,29 +36,28 @@ type UpdateData struct {
 }
 
 func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateData) error {
-	assignedTenant := data.TenantMapping.AssignedTenants[0]
-
-	oldConsumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
-	var newConsumedAPIs []types.ApplicationConsumedAPI
+	consumerTenant := data.TenantMapping.AssignedTenants[0]
+	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
+	consumedAPIsLen := len(consumedAPIs)
 	switch {
-	case assignedTenant.Operation == types.OperationAssign:
-		for _, consumedAPI := range assignedTenant.Configuration.ConsumedAPIs {
-			newConsumedAPIs = addConsumedAPI(oldConsumedAPIs, types.ApplicationConsumedAPI{
+	case consumerTenant.Operation == types.OperationAssign:
+		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
+			addConsumedAPI(&consumedAPIs, types.ApplicationConsumedAPI{
 				Name:    consumedAPI,
 				APIName: consumedAPI,
 				AppID:   data.ProviderApplicationID,
 			})
 		}
-	case assignedTenant.Operation == types.OperationUnassign:
-		for _, consumedAPI := range assignedTenant.Configuration.ConsumedAPIs {
-			newConsumedAPIs = removeConsumedAPI(oldConsumedAPIs, consumedAPI)
+	case consumerTenant.Operation == types.OperationUnassign:
+		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
+			removeConsumedAPI(&consumedAPIs, consumedAPI)
 		}
 	}
 
-	if len(oldConsumedAPIs) != len(newConsumedAPIs) {
+	if consumedAPIsLen != len(consumedAPIs) {
 		iasHost := data.TenantMapping.ReceiverTenant.ApplicationURL
-		if err := s.updateApplication(ctx, iasHost, data.ConsumerApplication.ID, newConsumedAPIs); err != nil {
-			errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, assignedTenant.UCLApplicationID, err)
+		if err := s.updateApplication(ctx, iasHost, data.ConsumerApplication.ID, consumedAPIs); err != nil {
+			errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, consumerTenant.UCLApplicationID, err)
 		}
 	}
 
@@ -112,29 +111,29 @@ func filterByAppTenantID(applications []types.Application, clientID, appTenantID
 		"application with clientID '%s' and appTenantID '%s' not found", clientID, appTenantID)
 }
 
-func addConsumedAPI(consumedAPIs []types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) []types.ApplicationConsumedAPI {
-	for _, api := range consumedAPIs {
+func addConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, consumedAPI types.ApplicationConsumedAPI) {
+	for _, api := range *consumedAPIs {
 		if api.APIName == consumedAPI.APIName {
-			return consumedAPIs
+			return
 		}
 	}
-	return append(consumedAPIs, consumedAPI)
+	*consumedAPIs = append(*consumedAPIs, consumedAPI)
 }
 
-func removeConsumedAPI(consumedAPIs []types.ApplicationConsumedAPI, apiName string) []types.ApplicationConsumedAPI {
+func removeConsumedAPI(consumedAPIs *[]types.ApplicationConsumedAPI, apiName string) {
 	found := false
 	i := -1
-	for i = range consumedAPIs {
-		if consumedAPIs[i].APIName == apiName {
+	for i = range *consumedAPIs {
+		if (*consumedAPIs)[i].APIName == apiName {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return consumedAPIs
+		return
 	}
-	consumedAPIs[i] = consumedAPIs[len(consumedAPIs)-1]
-	return consumedAPIs[:len(consumedAPIs)-1]
+	(*consumedAPIs)[i] = (*consumedAPIs)[len(*consumedAPIs)-1]
+	*consumedAPIs = (*consumedAPIs)[:len(*consumedAPIs)-1]
 }
 
 func (s Service) updateApplication(ctx context.Context, iasHost, applicationID string,

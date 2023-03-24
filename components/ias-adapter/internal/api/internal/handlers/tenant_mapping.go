@@ -9,6 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
@@ -35,6 +36,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		return
 	}
 
+	logProcessing(ctx, tenantMapping)
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
 		internal.RespondWithError(ctx, http.StatusInternalServerError, err)
@@ -42,4 +44,11 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusOK)
+}
+
+func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {
+	log := logger.FromContext(ctx)
+	tenantMapping.AssignedTenants[0].Parameters = types.AssignedTenantParameters{}
+	tenantMapping.AssignedTenants[0].Configuration = types.AssignedTenantConfiguration{}
+	log.Info().Msgf("Processing tenant mapping: %+v", tenantMapping)
 }

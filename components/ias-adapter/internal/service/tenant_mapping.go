@@ -76,6 +76,7 @@ func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Contex
 	tenantMapping2ConsumedAPIs := tenantMapping2.AssignedTenants[0].Configuration.ConsumedAPIs
 	if len(tenantMapping1ConsumedAPIs) == 0 && len(tenantMapping2ConsumedAPIs) == 0 {
 		log.Info().Msgf("No APIs to configure for applications in formation '%s'", formationID)
+		return nil
 	}
 
 	iasHost := tenantMapping1.ReceiverTenant.ApplicationURL
@@ -115,6 +116,7 @@ func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Contex
 			return err
 		}
 	}
+
 	return nil
 }
 
