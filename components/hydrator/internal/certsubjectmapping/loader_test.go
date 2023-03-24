@@ -27,10 +27,12 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 	testID := "testID"
 	internalConsumerID := "internalConsumerID"
 	endCursor := "endCursor"
+	envMappings := "[{\"consumer_type\":\"Runtime\",\"tenant_access_levels\":[\"account\"],\"subject\":\"C=DE,O=SAP SE,OU=SAP Cloud Platform Clients,OU=unit-test-ou,L=unit-test-locality,CN=unit-test-cn\"}]"
 	testErr := errors.New("cert-subject-mapping-test-error")
 
 	cfg := certsubjectmapping.Config{
-		ResyncInterval: 100 * time.Millisecond,
+		ResyncInterval:      100 * time.Millisecond,
+		EnvironmentMappings: envMappings,
 	}
 
 	certSubjectMapping := &graphql.CertificateSubjectMapping{
@@ -78,7 +80,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 				return directorClient
 			},
 			eventualTickInterval:            30 * time.Millisecond,
-			expectedCertSubjectMappingCount: 1,
+			expectedCertSubjectMappingCount: 2,
 		},
 		{
 			name:                  "Successfully resync certificate subject mappings multiple times",
@@ -90,7 +92,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 				return directorClient
 			},
 			eventualTickInterval:            120 * time.Millisecond,
-			expectedCertSubjectMappingCount: 1,
+			expectedCertSubjectMappingCount: 2,
 		},
 		{
 			name:                  "Successfully resync certificate subject mappings with paging",
@@ -102,7 +104,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 				return directorClient
 			},
 			eventualTickInterval:            30 * time.Millisecond,
-			expectedCertSubjectMappingCount: 3,
+			expectedCertSubjectMappingCount: 4,
 		},
 		{
 			name:                  "Error when the first list of certificate subject mappings fails and the second one succeeds",
@@ -114,7 +116,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 				return directorClient
 			},
 			eventualTickInterval:            30 * time.Millisecond,
-			expectedCertSubjectMappingCount: 1,
+			expectedCertSubjectMappingCount: 2,
 		},
 	}
 
