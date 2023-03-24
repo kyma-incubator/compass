@@ -112,10 +112,11 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(nil, testErr).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Once()
 				return directorClient
 			},
-			eventualTickInterval:            30 * time.Millisecond,
-			expectedCertSubjectMappingCount: 0,
+			eventualTickInterval:            120 * time.Millisecond,
+			expectedCertSubjectMappingCount: 2,
 		},
 	}
 
