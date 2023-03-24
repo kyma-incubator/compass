@@ -114,8 +114,6 @@ spec:
               value: {{ .Values.global.hydrator.certificateDataHeader | quote }}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
               value: {{ .Values.global.hydrator.certSubjectMappingResyncInterval | quote }}
-            - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
-              value: {{ .Values.global.hydrator.subjectConsumerMappingConfig | quote }}
             - name: APP_CONSUMER_CLAIMS_CLIENT_ID_KEY
               value: {{ .Values.global.hydrator.consumerClaimsKeys.clientIDKey }}
             - name: APP_CONSUMER_CLAIMS_TENANT_ID_KEY

@@ -2,7 +2,6 @@ package certsubjectmapping
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -27,7 +26,7 @@ type SubjectConsumerTypeMapping struct {
 
 // Loader provide mechanism to load certificate subject mappings' data into in-memory storage
 type Loader interface {
-	Run(ctx context.Context, certSubjectMappingsFromEnv string)
+	Run(ctx context.Context)
 }
 
 type certSubjectMappingLoader struct {
@@ -67,57 +66,54 @@ func (s *SubjectConsumerTypeMapping) Validate() error {
 func StartCertSubjectMappingLoader(ctx context.Context, certSubjectMappingCfg Config, directorClient DirectorClient) Cache {
 	cache := NewCertSubjectMappingCache()
 	certSubjectLoader := NewCertSubjectMappingLoader(cache, certSubjectMappingCfg, directorClient)
-	go certSubjectLoader.Run(ctx, certSubjectMappingCfg.EnvironmentMappings)
+	go certSubjectLoader.Run(ctx)
 
 	return cache
 }
 
-func (cl *certSubjectMappingLoader) Run(ctx context.Context, certSubjectMappingsFromEnv string) {
+func (cl *certSubjectMappingLoader) Run(ctx context.Context) {
 	entry := log.C(ctx)
 	entry = entry.WithField(log.FieldRequestID, CertSubjectMappingLoaderCorrelationID)
 	ctx = log.ContextWithLogger(ctx, entry)
 
 	t := time.NewTicker(cl.certSubjectMappingCfg.ResyncInterval)
 	for {
+		mappings, err := cl.loadCertSubjectMappings(ctx)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Certificate subject mapping resync failed with error: %v", err)
+			continue
+		}
+		log.C(ctx).Info("Update certificate subject mapping cache with the newly fetched data")
+		cl.certSubjectMappingCache.Put(mappings)
+
 		select {
-		case <-t.C:
-			mappings, err := cl.loadCertSubjectMappings(ctx, certSubjectMappingsFromEnv)
-			if err != nil {
-				log.C(ctx).WithError(err).Errorf("Certificate subject mapping resync failed with error: %v", err)
-				continue
-			}
-			log.C(ctx).Info("Update certificate subject mapping cache with the newly fetched data")
-			cl.certSubjectMappingCache.Put(mappings)
 		case <-ctx.Done():
 			log.C(ctx).Infof("Context cancelled, stopping certificate subject mapping resyncer...")
 			t.Stop()
 			return
+		case <-t.C:
 		}
 	}
 }
 
-func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context, certSubjectMappingsFromEnv string) ([]SubjectConsumerTypeMapping, error) {
+func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context) ([]SubjectConsumerTypeMapping, error) {
 	after := ""
 	mappings := make([]SubjectConsumerTypeMapping, 0)
 	hasNextPage := true
+	csmTotalCount := 0
 	log.C(ctx).Info("Listing certificate subject mapping from DB...")
 	for hasNextPage == true {
 		csmGQLPage, err := cl.directorClient.ListCertificateSubjectMappings(ctx, after)
 		if err != nil {
 			return nil, errors.Wrap(err, "while listing certificate subject mappings from DB")
 		}
+		csmTotalCount = csmGQLPage.TotalCount
 		mappings = append(mappings, convertGQLCertSubjectMappings(csmGQLPage.Data)...)
 		hasNextPage = csmGQLPage.PageInfo.HasNextPage
 		after = string(csmGQLPage.PageInfo.EndCursor)
 	}
 
-	mappingsFromEnv, err := unmarshalMappings(certSubjectMappingsFromEnv)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting certificate subject mappings from environment")
-	}
-
-	mappings = append(mappings, mappingsFromEnv...)
-
+	log.C(ctx).Infof("Total count of certificate subject mapping(s): %d", csmTotalCount)
 	return mappings, nil
 }
 
@@ -137,13 +133,4 @@ func convertGQLCertSubjectMappings(gqlMappings []*schema.CertificateSubjectMappi
 		m = append(m, scm)
 	}
 	return m
-}
-
-func unmarshalMappings(certSubjectMappingsFromEnv string) ([]SubjectConsumerTypeMapping, error) {
-	var mappingsFromEnv []SubjectConsumerTypeMapping
-	if err := json.Unmarshal([]byte(certSubjectMappingsFromEnv), &mappingsFromEnv); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling mappings")
-	}
-
-	return mappingsFromEnv, nil
 }
