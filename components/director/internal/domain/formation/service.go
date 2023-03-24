@@ -583,6 +583,7 @@ func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID str
 		FormationType:       formationTemplate.Name,
 		FormationTemplateID: formationTemplate.ID,
 		FormationID:         formation.ID,
+		FormationName:       formation.Name,
 		TenantID:            tnt,
 	}
 	return joinPointDetails, nil

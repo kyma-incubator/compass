@@ -14,6 +14,8 @@ import (
 const (
 	// IsNotAssignedToAnyFormationOfTypeOperator represents the IsNotAssignedToAnyFormationOfType operator
 	IsNotAssignedToAnyFormationOfTypeOperator = "IsNotAssignedToAnyFormationOfType"
+	// DoesNotContainResourceOfSubtypeOperator represents the DoesNotContainResourceOfSubtype operator
+	DoesNotContainResourceOfSubtypeOperator = "DoesNotContainResourceOfSubtype"
 )
 
 // OperatorName represents the constraint operator name
@@ -31,6 +33,11 @@ type OperatorInputConstructor func() OperatorInput
 // NewIsNotAssignedToAnyFormationOfTypeInput is input constructor for IsNotAssignedToAnyFormationOfType operator. It returns empty OperatorInput.
 func NewIsNotAssignedToAnyFormationOfTypeInput() OperatorInput {
 	return &formationconstraint.IsNotAssignedToAnyFormationOfTypeInput{}
+}
+
+// NewDoesNotContainResourceOfSubtypeInput is input constructor for DoesNotContainResourceOfSubtypeOperator operator. It returns empty OperatorInput
+func NewDoesNotContainResourceOfSubtypeInput() OperatorInput {
+	return &formationconstraint.DoesNotContainResourceOfSubtypeInput{}
 }
 
 // IsNotAssignedToAnyFormationOfType is a constraint operator. It checks if the resource from the OperatorInput is already part of formation of the type that the operator is associated with
@@ -83,6 +90,46 @@ func (e *ConstraintEngine) IsNotAssignedToAnyFormationOfType(ctx context.Context
 	}
 
 	return isAllowedToParticipateInFormationsOfType, nil
+}
+
+// DoesNotContainResourceOfSubtype is a constraint operator. It checks if the formation contains resource with the same subtype as the resource subtype from the OperatorInput
+func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, input OperatorInput) (bool, error) {
+	log.C(ctx).Infof("Executing operator: %s", DoesNotContainResourceOfSubtypeOperator)
+
+	i, ok := input.(*formationconstraint.DoesNotContainResourceOfSubtypeInput)
+	if !ok {
+		return false, errors.New("Incompatible input")
+	}
+
+	log.C(ctx).Infof("Enforcing constraint on resource of type: %q, subtype: %q and ID: %q", i.ResourceType, i.ResourceSubtype, i.ResourceID)
+
+	switch i.ResourceType {
+	case model.ApplicationResourceType:
+		inputAppType, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, i.ResourceID, e.applicationTypeLabelKey)
+		if err != nil {
+			return false, err
+		}
+
+		applications, err := e.applicationRepository.ListByScenariosNoPaging(ctx, i.Tenant, []string{i.FormationName})
+		if err != nil {
+			return false, err
+		}
+
+		for _, application := range applications {
+			appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, application.ID, e.applicationTypeLabelKey)
+			if err != nil {
+				return false, err
+			}
+
+			if inputAppType.Value.(string) == appTypeLbl.Value.(string) {
+				return false, nil
+			}
+		}
+	default:
+		return false, errors.Errorf("Unsupported resource type %q", i.ResourceType)
+	}
+
+	return true, nil
 }
 
 func (e *ConstraintEngine) isAllowedToParticipateInFormationsOfType(ctx context.Context, assignedFormationNames []string, tenant, formationTemplateID, resourceSubtype string, exceptSystemTypes []string) (bool, error) {

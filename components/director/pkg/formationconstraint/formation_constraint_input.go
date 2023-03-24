@@ -11,3 +11,12 @@ type IsNotAssignedToAnyFormationOfTypeInput struct {
 	Tenant              string             `json:"tenant"`
 	ExceptSystemTypes   []string           `json:"exceptSystemTypes"`
 }
+
+// DoesNotContainResourceOfSubtypeInput input for DoesNotContainResourceOfSubtype operator
+type DoesNotContainResourceOfSubtypeInput struct {
+	FormationName   string             `json:"formation_name"`
+	ResourceType    model.ResourceType `json:"resource_type"`
+	ResourceSubtype string             `json:"resource_subtype"`
+	ResourceID      string             `json:"resource_id"`
+	Tenant          string             `json:"tenant"`
+}

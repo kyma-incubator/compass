@@ -40,6 +40,7 @@ type AssignFormationOperationDetails struct {
 	FormationType       string
 	FormationTemplateID string
 	FormationID         string
+	FormationName       string
 	TenantID            string
 }
 
