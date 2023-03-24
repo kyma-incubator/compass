@@ -30,8 +30,8 @@ require (
 )
 
 require (
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230324140113-d5f67659cae1
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230324140113-d5f67659cae1
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230324140444-a477e7a61e6f
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230324140444-a477e7a61e6f
 	github.com/tidwall/sjson v1.2.5
 	k8s.io/apimachinery v0.26.3
 )
@@ -60,7 +60,7 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.1.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
+	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.3.0 // indirect

@@ -10,7 +10,7 @@ require (
 	github.com/gavv/httpexpect/v2 v2.3.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230324140113-d5f67659cae1
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230324140444-a477e7a61e6f
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0
@@ -101,7 +101,7 @@ require (
 	golang.org/x/crypto v0.3.0 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
+	golang.org/x/oauth2 v0.6.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
