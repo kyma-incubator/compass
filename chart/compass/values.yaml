@@ -145,6 +145,10 @@ global:
       dir:
       version: "PR-2970"
       name: compass-hydrator
+    ias_adapter:
+      dir:
+      version: "PR-2948"
+      name: compass-ias-adapter
     gateway:
       dir:
       version: "PR-2970"
@@ -473,6 +477,30 @@ global:
       port: 3003
       enableClientInstrumentation: true
       censoredFlows: "JWT"
+  iasAdapter:
+    port: 8080
+    apiRootPath: "/ias-adapter"
+    readTimeout: 30s
+    readHeaderTimeout: 30s
+    writeTimeout: 30s
+    idleTimeout: 30s
+    tenantInfo:
+      requestTimeout: 30s
+      insecureSkipVerify: false
+    ias:
+      requestTimeout: 30s
+      secret:
+        name: "ias-adapter-cockpit"
+        path: "/tmp"
+        fileName: "ias-adapter-cockpit.yaml"
+        clientCert: cert
+        clientKey: key
+        ca: ca
+    postgres:
+      connectTimeout: 30s
+      requestTimeout: 30s
+    authentication:
+      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -538,11 +566,17 @@ global:
       enabled: true
       director:
         name: "postgres"
+      ias_adapter:
+        name: "postgres2"
       directorDBName: "postgres"
     managedGCP:
       serviceAccountKey: ""
       instanceConnectionName: ""
       director:
+        name: ""
+        user: ""
+        password: ""
+      iasAdapter:
         name: ""
         user: ""
         password: ""
@@ -1020,6 +1054,14 @@ global:
         clientSecretKey: client-secret
         clientCertKey: client-cert
         clientKeyKey: client-key
+    iasAdapter:
+      consumerAppID: "consumer-app-id"
+      consumerAppClientID: "consumer-client-id"
+      consumerAppTenantID: "consumer-app-tenant-id"
+      providerAppID: "provider-app-id"
+      providerAppClientID: "provider-client-id"
+      providerAppTenantID: "provider-app-tenant-id"
+      apiName: "Test API Name"
   tests:
     http:
       client:
@@ -1095,6 +1137,9 @@ global:
   expectedSchemaVersionUpdateJob:
     cm:
       name: "expected-schema-version"
+    ias_adapter:
+      cm:
+        name: "ias-adapter-expected-schema-version"
   migratorJob:
     nodeSelectorEnabled: false
     pvc:
@@ -1102,6 +1147,12 @@ global:
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
       storageClass: local-path
+    ias_adapter:
+      pvc:
+        name: "compass-ias-adapter-migrations"
+        namespace: "compass-system"
+        migrationsPath: "/compass-ias-adapter-migrations"
+        storageClass: local-path
   http:
     client:
       skipSSLValidation: false

@@ -79,19 +79,20 @@ func (cl *certSubjectMappingLoader) Run(ctx context.Context, certSubjectMappings
 
 	t := time.NewTicker(cl.certSubjectMappingCfg.ResyncInterval)
 	for {
-		select {
-		case <-t.C:
-			mappings, err := cl.loadCertSubjectMappings(ctx, certSubjectMappingsFromEnv)
-			if err != nil {
-				log.C(ctx).WithError(err).Errorf("Certificate subject mapping resync failed with error: %v", err)
-				continue
-			}
+		mappings, err := cl.loadCertSubjectMappings(ctx, certSubjectMappingsFromEnv)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Certificate subject mapping resync failed with error: %v", err)
+		} else {
 			log.C(ctx).Info("Update certificate subject mapping cache with the newly fetched data")
 			cl.certSubjectMappingCache.Put(mappings)
+		}
+
+		select {
 		case <-ctx.Done():
 			log.C(ctx).Infof("Context cancelled, stopping certificate subject mapping resyncer...")
 			t.Stop()
 			return
+		case <-t.C:
 		}
 	}
 }
@@ -100,21 +101,25 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 	after := ""
 	mappings := make([]SubjectConsumerTypeMapping, 0)
 	hasNextPage := true
+	csmTotalCount := 0
 	log.C(ctx).Info("Listing certificate subject mapping from DB...")
 	for hasNextPage == true {
 		csmGQLPage, err := cl.directorClient.ListCertificateSubjectMappings(ctx, after)
 		if err != nil {
 			return nil, errors.Wrap(err, "while listing certificate subject mappings from DB")
 		}
+		csmTotalCount = csmGQLPage.TotalCount
 		mappings = append(mappings, convertGQLCertSubjectMappings(csmGQLPage.Data)...)
 		hasNextPage = csmGQLPage.PageInfo.HasNextPage
 		after = string(csmGQLPage.PageInfo.EndCursor)
 	}
+	log.C(ctx).Infof("Certificate subject mapping(s) count from DB: %d", csmTotalCount)
 
 	mappingsFromEnv, err := unmarshalMappings(certSubjectMappingsFromEnv)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting certificate subject mappings from environment")
 	}
+	log.C(ctx).Infof("Certificate subject mapping(s) count from environment: %d", len(mappingsFromEnv))
 
 	mappings = append(mappings, mappingsFromEnv...)
 

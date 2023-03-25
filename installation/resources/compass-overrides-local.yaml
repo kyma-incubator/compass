@@ -46,6 +46,8 @@ global:
       manage: true
     regionInstancesCredentials:
       manage: true
+    ias:
+      applyMockConfiguration: true
   http:
     client:
       skipSSLValidation: true
@@ -84,6 +86,9 @@ global:
     http:
       client:
         skipSSLValidation: true
+  iasAdapter:
+    tenantInfo:
+      insecureSkipVerify: true
   tenantFetcher:
     omitDependenciesParamName: "omit"
     omitDependenciesParamValue: "true"
