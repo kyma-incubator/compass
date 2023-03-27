@@ -30,7 +30,7 @@ type PortRepository interface {
 // PortApiRefRepository is responsible for the repo-layer PortApiRef operations.
 //go:generate mockery --name=PortApiRefRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type PortApiRefRepository interface {
-	Create(ctx context.Context, tenant string, id, appID, portID, apiID string) error
+	Create(ctx context.Context, tenant string, id, appID, portID, apiID string, minVersion *string) error
 }
 
 // PortEventRefRepository is responsible for the repo-layer PortEventRef operations.
@@ -162,7 +162,7 @@ func (s *service) createPort(ctx context.Context, portInput *model.PortInput, te
 		}
 
 		apiRefID := s.uidService.Generate()
-		if err := s.portApiRefRepo.Create(ctx, tenant, apiRefID, appID, portID, *apiID); err != nil {
+		if err := s.portApiRefRepo.Create(ctx, tenant, apiRefID, appID, portID, *apiID, api.MinVersion); err != nil {
 			return errors.Wrap(err, "while creating api port ref")
 		}
 	}

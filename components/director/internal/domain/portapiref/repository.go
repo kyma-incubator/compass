@@ -10,7 +10,7 @@ import (
 const portApiRefTable string = `"public"."port_api_reference"`
 
 var (
-	portApiRefColumns = []string{"id", "app_id", "port_id", "api_id"}
+	portApiRefColumns = []string{"id", "app_id", "port_id", "api_id", "min_version"}
 )
 
 type pgRepository struct {
@@ -33,12 +33,13 @@ func (r PortApiRefCollection) Len() int {
 }
 
 // Create creates a PortApiRef.
-func (r *pgRepository) Create(ctx context.Context, tenant string, id, appID, portID, apiID string) error {
+func (r *pgRepository) Create(ctx context.Context, tenant string, id, appID, portID, apiID string, minVersion *string) error {
 	entity := &Entity{
 		ID:            id,
 		ApplicationID: appID,
 		PortID:        portID,
 		ApiID:         apiID,
+		MinVersion:    repo.NewNullableString(minVersion),
 	}
 	err := r.creator.Create(ctx, resource.PortApiRef, tenant, entity)
 	if err != nil {

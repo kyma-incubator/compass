@@ -51,7 +51,8 @@ CREATE TABLE port_api_reference (
     port_id uuid NOT NULL,
     CONSTRAINT port_api_reference_port_id_fk FOREIGN KEY (port_id) REFERENCES ports (id) ON DELETE CASCADE,
     api_id uuid NOT NULL,
-    CONSTRAINT port_api_reference_api_id_fk FOREIGN KEY (api_id) REFERENCES api_definitions (id)
+    CONSTRAINT port_api_reference_api_id_fk FOREIGN KEY (api_id) REFERENCES api_definitions (id),
+    min_version VARCHAR(256)
 );
 
 CREATE TABLE port_event_reference (

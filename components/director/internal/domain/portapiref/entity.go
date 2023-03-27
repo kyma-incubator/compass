@@ -1,15 +1,17 @@
 package portapiref
 
 import (
+	"database/sql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
 // Entity is a representation of a PortApiRef in the database.
 type Entity struct {
-	ID            string `db:"id"`
-	ApplicationID string `db:"app_id"`
-	PortID        string `db:"port_id"`
-	ApiID         string `db:"api_id"`
+	ID            string         `db:"id"`
+	ApplicationID string         `db:"app_id"`
+	PortID        string         `db:"port_id"`
+	ApiID         string         `db:"api_id"`
+	MinVersion    sql.NullString `db:"min_version"`
 }
 
 // GetParent returns the parent type and the parent ID of the entity.
