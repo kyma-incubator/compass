@@ -42,6 +42,7 @@ func TestCreateTenantAccessForNewApplication(t *testing.T) {
 	require.NoError(t, err)
 
 	//THEN
+	require.NotEmpty(t, actualApp)
 	require.NotEmpty(t, actualApp.ID)
 	assertions.AssertApplication(t, in, actualApp)
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
@@ -104,6 +105,7 @@ func TestCreateTenantAccessForNewTenants(t *testing.T) {
 	}()
 
 	//THEN
+	require.NotEmpty(t, actualApp)
 	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, newExternalTenantID, actualApp.ID)
 	assert.Equal(t, actualApp.ID, app.ID)
 }
@@ -160,6 +162,7 @@ func TestCreateTenantAccessForNewTenant(t *testing.T) {
 	}()
 
 	//THEN
+	require.NotEmpty(t, actualApp)
 	app := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, newExternalTenantID, actualApp.ID)
 	assert.Equal(t, actualApp.ID, app.ID)
 }

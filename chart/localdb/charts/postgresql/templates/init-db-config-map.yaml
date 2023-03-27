@@ -6,3 +6,4 @@ metadata:
 data:
   init-director-db.sql: |
     CREATE DATABASE postgres;
+    CREATE DATABASE postgres2;
