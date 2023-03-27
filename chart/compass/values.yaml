@@ -163,7 +163,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2970"
+      version: "PR-2978"
       name: compass-schema-migrator
     system_broker:
       dir:
