@@ -147,7 +147,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir:
-      version: "PR-2975"
+      version: "PR-2974"
       name: compass-ias-adapter
     gateway:
       dir:
