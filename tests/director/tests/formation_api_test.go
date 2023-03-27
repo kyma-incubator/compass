@@ -652,6 +652,7 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 
 func TestApplicationOfGivenTypeInAtMostOneFormationOfGivenType(t *testing.T) {
 	ctx := context.Background()
+
 	const (
 		formationName         = "test-formation"
 		applicationType       = "app-type"
