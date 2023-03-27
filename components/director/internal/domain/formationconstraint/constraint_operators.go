@@ -2,6 +2,7 @@ package formationconstraint
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -94,11 +95,11 @@ func (e *ConstraintEngine) IsNotAssignedToAnyFormationOfType(ctx context.Context
 
 // DoesNotContainResourceOfSubtype is a constraint operator. It checks if the formation contains resource with the same subtype as the resource subtype from the OperatorInput
 func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, input OperatorInput) (bool, error) {
-	log.C(ctx).Infof("Executing operator: %s", DoesNotContainResourceOfSubtypeOperator)
+	log.C(ctx).Infof("Executing operator: %q", DoesNotContainResourceOfSubtypeOperator)
 
 	i, ok := input.(*formationconstraint.DoesNotContainResourceOfSubtypeInput)
 	if !ok {
-		return false, errors.New("Incompatible input")
+		return false, errors.New(fmt.Sprintf("Incompatible input for operator %q", DoesNotContainResourceOfSubtypeOperator))
 	}
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q, subtype: %q and ID: %q", i.ResourceType, i.ResourceSubtype, i.ResourceID)
@@ -107,18 +108,18 @@ func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, 
 	case model.ApplicationResourceType:
 		inputAppType, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, i.ResourceID, e.applicationTypeLabelKey)
 		if err != nil {
-			return false, err
+			return false, errors.Wrap(err, fmt.Sprintf("while getting label with key %q of application with ID %q in tenant %q", e.applicationTypeLabelKey, i.ResourceID, i.Tenant))
 		}
 
 		applications, err := e.applicationRepository.ListByScenariosNoPaging(ctx, i.Tenant, []string{i.FormationName})
 		if err != nil {
-			return false, err
+			return false, errors.Wrap(err, fmt.Sprintf("while listing applications in scenario %q", i.FormationName))
 		}
 
 		for _, application := range applications {
 			appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, application.ID, e.applicationTypeLabelKey)
 			if err != nil {
-				return false, err
+				return false, errors.Wrap(err, fmt.Sprintf("while getting label with key %q of application with ID %q in tenant %q", e.applicationTypeLabelKey, application.ID, i.Tenant))
 			}
 
 			if inputAppType.Value.(string) == appTypeLbl.Value.(string) {
