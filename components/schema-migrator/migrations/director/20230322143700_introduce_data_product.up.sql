@@ -39,6 +39,7 @@ CREATE TABLE ports (
     CONSTRAINT ports_application_id_fk FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
     name VARCHAR(256),
     port_type VARCHAR(256),
+    CONSTRAINT port_type_check CHECK (port_type in ('input', 'output')),
     description TEXT,
     producer_cardinality VARCHAR(256),
     disabled bool DEFAULT FALSE
@@ -55,6 +56,24 @@ CREATE TABLE port_api_reference (
     min_version VARCHAR(256)
 );
 
+CREATE VIEW input_port_api_reference AS
+SELECT par.id as id,
+       par.app_id as app_id,
+       par.port_id as port_id,
+       par.api_id as api_id,
+       par.min_version as min_version
+FROM port_api_reference par JOIN ports p on par.port_id = p.id
+WHERE p.port_type = 'input';
+
+CREATE VIEW output_port_api_reference AS
+SELECT par.id as id,
+       par.app_id as app_id,
+       par.port_id as port_id,
+       par.api_id as api_id,
+       par.min_version as min_version
+FROM port_api_reference par JOIN ports p on par .port_id = p.id
+WHERE p.port_type = 'output';
+
 CREATE TABLE port_event_reference (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     app_id uuid NOT NULL,
@@ -65,6 +84,24 @@ CREATE TABLE port_event_reference (
     CONSTRAINT port_event_reference_event_id_fk FOREIGN KEY (event_id) REFERENCES event_api_definitions (id),
     min_version VARCHAR(256)
 );
+
+CREATE VIEW input_port_event_reference AS
+SELECT per.id as id,
+       per.app_id as app_id,
+       per.port_id as port_id,
+       per.event_id as event_id,
+       per.min_version as min_version
+FROM port_event_reference per JOIN ports p on per.port_id = p.id
+WHERE p.port_type = 'input';
+
+CREATE VIEW output_port_event_reference AS
+SELECT per.id as id,
+       per.app_id as app_id,
+       per.port_id as port_id,
+       per.event_id as event_id,
+       per.min_version as min_version
+FROM port_event_reference per JOIN ports p on per .port_id = p.id
+WHERE p.port_type = 'output';
 
 CREATE OR REPLACE VIEW data_product_tenants AS
 SELECT dp.*, ta.tenant_id, ta.owner FROM data_products AS dp
@@ -129,7 +166,7 @@ FROM data_products,
      jsonb_array_elements_text(data_products.line_of_business) AS elements;
 
 
-CREATE OR REPLACE VIEW tenants_ports
+CREATE OR REPLACE VIEW tenants_input_ports
             (tenant_id, formation_id, id, data_product_id, app_id, name, port_type, description,
              producer_cardinality, disabled)
 AS
@@ -158,7 +195,40 @@ FROM ports p
                       apps_subaccounts.tenant_id,
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
-              ON p.app_id = t_apps.id;
+              ON p.app_id = t_apps.id
+WHERE p.port_type='input';
 
+
+CREATE OR REPLACE VIEW tenants_output_ports
+            (tenant_id, formation_id, id, data_product_id, app_id, name, port_type, description,
+             producer_cardinality, disabled)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.formation_id,
+                p.id,
+                p.data_product_id,
+                p.app_id,
+                p.name,
+                p.port_type,
+                p.description,
+                p.producer_cardinality,
+                p.disabled
+FROM ports p
+         JOIN (SELECT a1.id,
+                      a1.tenant_id AS tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps
+              ON p.app_id = t_apps.id
+WHERE p.port_type='output';
 
 COMMIT;
