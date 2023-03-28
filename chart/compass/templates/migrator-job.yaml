@@ -37,7 +37,7 @@ spec:
           {{ end }}
           - name: migrator
             image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
-            imagePullPolicy: IfNotPresent
+            imagePullPolicy: Always
             env:
             - name: DB_USER
               valueFrom:

@@ -13,7 +13,7 @@ deployment:
     timeoutSeconds: 2
     periodSeconds: 5
   image:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources: {}
   resourcesCloudsqlProxy: {}
   resourcesIstioProxy:

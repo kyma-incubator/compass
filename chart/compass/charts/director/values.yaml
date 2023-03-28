@@ -5,7 +5,7 @@ deployment:
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 75
   image:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   resources: {}
   resourcesCloudsqlProxy: {}
   resourcesIstioProxy:
