@@ -584,6 +584,74 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	saveExample(t, deleteApplicationTemplateRequest.Query(), "delete application template")
 }
 
+func TestDeleteApplicationTemplateBeforeDeletingAssociatedApplicationsWithIt(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	nameJSONPath := "$.name-json-path"
+	displayNameJSONPath := "$.display-name-json-path"
+	appTemplateName := createAppTemplateName("template")
+	appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
+	appTemplateInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
+	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        "name",
+			Description: ptr.String("name"),
+			JSONPath:    &nameJSONPath,
+		},
+		{
+			Name:        "display-name",
+			Description: ptr.String("display-name"),
+			JSONPath:    &displayNameJSONPath,
+		},
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Log("Creating application template")
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	require.NoError(t, err)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTemplate.Labels[tenantfetcher.RegionKey])
+
+	appFromTemplate := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
+		{
+			Placeholder: "name",
+			Value:       "new-name",
+		},
+		{
+			Placeholder: "display-name",
+			Value:       "new-display-name",
+		}}}
+	appFromTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTemplate)
+	require.NoError(t, err)
+	createAppFromTemplateRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateGQL)
+	outputApp := graphql.ApplicationExt{}
+
+	t.Logf("Creating application from application template with id %s", appTemplate.ID)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTemplateRequest, &outputApp)
+	require.NoError(t, err)
+
+	deleteApplicationTemplateRequest := fixtures.FixDeleteApplicationTemplateRequest(appTemplate.ID)
+	deleteOutput := graphql.ApplicationTemplate{}
+
+	// WHEN
+	t.Logf("Deleting application template with id %s when application with id %s is associated with it", appTemplate.ID, outputApp.ID)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteApplicationTemplateRequest, &deleteOutput)
+	require.Error(t, err)
+
+	//THEN
+	t.Logf("Checking if application template with id %s was deleted", appTemplate.ID)
+
+	out := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate.ID)
+	require.NotEmpty(t, out)
+
+	t.Logf("Deleting application with id %s", outputApp.ID)
+	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
+	require.NotEmpty(t, outputApp)
+	require.NotNil(t, outputApp.Application.Description)
+	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
+}
+
 func TestQueryApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
