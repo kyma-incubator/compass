@@ -46,7 +46,7 @@ global:
       manage: true
     regionInstancesCredentials:
       manage: true
-    ias:
+    iasAdapter:
       applyMockConfiguration: true
   http:
     client:

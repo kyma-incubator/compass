@@ -1062,6 +1062,7 @@ global:
       providerAppClientID: "provider-client-id"
       providerAppTenantID: "provider-app-tenant-id"
       apiName: "Test API Name"
+      applyMockConfiguration: false
   tests:
     http:
       client:
