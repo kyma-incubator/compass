@@ -55,9 +55,9 @@ type ConstraintEngine struct {
 	labelRepo                 labelRepository
 	labelService              labelService
 	applicationRepository     applicationRepository
-	applicationTypeLabelKey   string
 	operators                 map[OperatorName]OperatorFunc
 	operatorInputConstructors map[OperatorName]OperatorInputConstructor
+	applicationTypeLabelKey   string
 }
 
 // NewConstraintEngine returns new ConstraintEngine
