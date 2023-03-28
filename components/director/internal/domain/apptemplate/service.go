@@ -338,7 +338,53 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
 	}
+
+	for _, placeholder := range appTemplate.Placeholders {
+		newValue, err := values.FindPlaceholderValue(placeholder.Name)
+		isOptional := false
+		if placeholder.Optional != nil {
+			isOptional = *placeholder.Optional
+		}
+
+		if err != nil && !isOptional {
+			return "", errors.Wrap(err, "required placeholder not provided")
+		}
+
+		if strings.TrimSpace(newValue) == "" && isOptional {
+			appCreateInputJSON, err = removeEmptyKey(appCreateInputJSON, placeholder.Name)
+			if err != nil {
+				return "", errors.Wrap(err, "error while clear optional empty value")
+			}
+		}
+	}
 	return appCreateInputJSON, nil
+}
+
+func removeEmptyKey(stringInput string, keyName string) (string, error) {
+	var objMap map[string]interface{}
+	err := json.Unmarshal([]byte(stringInput), &objMap)
+	if err != nil {
+		return "", errors.Wrap(err, "error while unmarshal input")
+	}
+	processMap(&objMap, keyName)
+
+	output, err := json.Marshal(objMap)
+	if err != nil {
+		return "", errors.Wrap(err, "error while marshal output")
+	}
+	return string(output), nil
+}
+
+func processMap(input *map[string]interface{}, keyName string) {
+	for key, value := range *input {
+		if _, ok := value.(string); ok {
+			if value == "" && key == keyName {
+				delete(*input, key)
+			}
+		} else {
+			processMap(value.(*map[string]interface{}), keyName)
+		}
+	}
 }
 
 func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string) (interface{}, error) {
