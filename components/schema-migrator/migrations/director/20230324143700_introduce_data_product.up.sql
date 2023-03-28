@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE TABLE data_products (
+CREATE TABLE IF NOT EXISTS data_products (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     app_id uuid NOT NULL,
     CONSTRAINT data_products_application_id_fk FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
@@ -29,9 +29,9 @@ ALTER TABLE bundle_references
     ADD CONSTRAINT bundle_references_data_product_id_fkey FOREIGN KEY (data_product_id) REFERENCES data_products(id);
 
 ALTER TABLE bundle_references
-    DROP CONSTRAINT valid_refs;
+    DROP CONSTRAINT IF EXISTS valid_refs;
 
-CREATE TABLE ports (
+CREATE TABLE IF NOT EXISTS ports (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     data_product_id uuid NOT NULL,
     CONSTRAINT ports_data_product_id_fk FOREIGN KEY (data_product_id) REFERENCES data_products (id) ON DELETE CASCADE,
@@ -45,7 +45,7 @@ CREATE TABLE ports (
     disabled bool DEFAULT FALSE
 );
 
-CREATE TABLE port_api_reference (
+CREATE TABLE IF NOT EXISTS port_api_reference (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     app_id uuid NOT NULL,
     CONSTRAINT port_api_ref_application_id_fk FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
@@ -74,7 +74,7 @@ SELECT par.id as id,
 FROM port_api_reference par JOIN ports p on par .port_id = p.id
 WHERE p.port_type = 'output';
 
-CREATE TABLE port_event_reference (
+CREATE TABLE IF NOT EXISTS port_event_reference (
     id uuid PRIMARY KEY CHECK (id <> '00000000-0000-0000-0000-000000000000'),
     app_id uuid NOT NULL,
     CONSTRAINT port_event_ref_application_id_fk FOREIGN KEY (app_id) REFERENCES applications (id) ON DELETE CASCADE,
