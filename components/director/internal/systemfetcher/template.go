@@ -48,7 +48,9 @@ func NewTemplateRenderer(appTemplateService applicationTemplateService, appConve
 	placeholders := make([]model.ApplicationTemplatePlaceholder, 0)
 	for _, p := range mapping {
 		placeholders = append(placeholders, model.ApplicationTemplatePlaceholder{
-			Name: p.PlaceholderName,
+			Name:     p.PlaceholderName,
+			JSONPath: &p.SystemKey,
+			Optional: &p.Optional,
 		})
 	}
 
