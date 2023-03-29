@@ -31,7 +31,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 	defer ctx.Request.Body.Close()
 	if err != nil {
 		err = errors.Newf("failed to read body: %w", err)
-		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
+		internal.RespondWithError(ctx, http.StatusInternalServerError, err)
 		return
 	}
 	log.Info().Msgf("raw body -> %s", bodyBytes)
@@ -69,8 +69,8 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 
 func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {
 	log := logger.FromContext(ctx)
-	tenantMapping.AssignedTenants[0].Parameters = types.AssignedTenantParameters{}
-	tenantMapping.AssignedTenants[0].Config = types.AssignedTenantConfiguration{}
-	tenantMapping.AssignedTenants[0].Configuration = types.AssignedTenantConfiguration{}
+	// tenantMapping.AssignedTenants[0].Parameters = types.AssignedTenantParameters{}
+	// tenantMapping.AssignedTenants[0].Config = types.AssignedTenantConfiguration{}
+	// tenantMapping.AssignedTenants[0].Configuration = types.AssignedTenantConfiguration{}
 	log.Info().Msgf("Processing tenant mapping notification: %+v", tenantMapping)
 }
