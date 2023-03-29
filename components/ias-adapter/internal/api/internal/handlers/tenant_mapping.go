@@ -23,11 +23,17 @@ type TenantMappingsHandler struct {
 }
 
 func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
+	log := logger.FromContext(ctx)
+
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
 		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
 		return
+	}
+	if err := tenantMapping.AssignedTenants[0].SetConfiguration(); err != nil {
+		err = errors.Newf("failed to set assigned tenant configuration: %w", err)
+		log.Info().Msg(err.Error())
 	}
 
 	if err := tenantMapping.Validate(); err != nil {
@@ -49,6 +55,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {
 	log := logger.FromContext(ctx)
 	tenantMapping.AssignedTenants[0].Parameters = types.AssignedTenantParameters{}
+	tenantMapping.AssignedTenants[0].Config = types.AssignedTenantConfiguration{}
 	tenantMapping.AssignedTenants[0].Configuration = types.AssignedTenantConfiguration{}
 	log.Info().Msgf("Processing tenant mapping notification: %+v", tenantMapping)
 }

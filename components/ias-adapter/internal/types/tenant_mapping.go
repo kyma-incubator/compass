@@ -1,9 +1,10 @@
 package types
 
 import (
-	"errors"
+	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 )
 
 type TenantMapping struct {
@@ -24,11 +25,23 @@ const (
 )
 
 type AssignedTenant struct {
-	UCLApplicationID string                      `json:"uclApplicationId"`
-	LocalTenantID    string                      `json:"localTenantId"`
-	Operation        Operation                   `json:"operation"`
-	Parameters       AssignedTenantParameters    `json:"parameters"`
-	Configuration    AssignedTenantConfiguration `json:"configuration"`
+	UCLApplicationID string                   `json:"uclApplicationId"`
+	LocalTenantID    string                   `json:"localTenantId"`
+	Operation        Operation                `json:"operation"`
+	Parameters       AssignedTenantParameters `json:"parameters"`
+	Config           any                      `json:"configuration"`
+	Configuration    AssignedTenantConfiguration
+}
+
+func (at *AssignedTenant) SetConfiguration() error {
+	b, err := json.Marshal(at.Config)
+	if err != nil {
+		return errors.Newf("failed to marshal $.assignedTenants[0].configuration: %w", err)
+	}
+	if err := json.Unmarshal(b, &at.Configuration); err != nil {
+		return errors.Newf("failed to unmarshal $.assignedTenants[0].configuration: %w", err)
+	}
+	return nil
 }
 
 type AssignedTenantParameters struct {
@@ -36,7 +49,7 @@ type AssignedTenantParameters struct {
 }
 
 type AssignedTenantConfiguration struct {
-	ConsumedAPIs []string `json:"consumedApis"`
+	ConsumedAPIs []string `json:"apis"`
 }
 
 func (tm TenantMapping) Validate() error {
