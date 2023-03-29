@@ -1434,7 +1434,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
-			Name: "Success when optional placeholder is not provided",
+			Name: "Success when optional placeholder is not provided on root level",
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{Name}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
@@ -1442,11 +1442,36 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 				},
 			},
 			InputValues:    []*model.ApplicationTemplateValueInput{},
-			ExpectedOutput: `{"Description":"Lorem ipsum"}`,
+			ExpectedOutput: `{"Name":"","Description":"Lorem ipsum"}`,
 			ExpectedError:  nil,
 		},
 		{
-			Name: "Returns error when required placeholder value not provided",
+			Name: "Success when optional placeholder is not provided in labels",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "{{Name}}", "labels": {"label1":"label1" ,"optionalLabel": "{{optionalLabel}}"}, "Description": "Lorem ipsum"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "Name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName"), Optional: &placeholderIsOptional},
+					{Name: "optionalLabel", Description: str.Ptr("optionalLabel description"), JSONPath: str.Ptr("optionalLabel"), Optional: &placeholderIsOptional},
+				},
+			},
+			InputValues:    []*model.ApplicationTemplateValueInput{},
+			ExpectedOutput: `{"Name":"","Description":"Lorem ipsum", "labels":{"label1":"label1"}}`,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Returns error when required placeholder value not provided in labels",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"labels": {"label1":"label1" ,"nonOptionalLabel": "{{nonOptionalLabel}}"}, "Description": "Lorem ipsum"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "nonOptionalLabel", Description: str.Ptr("nonOptionalLabel description"), JSONPath: str.Ptr("nonOptionalLabel"), Optional: &placeholderNotOptional},
+				},
+			},
+			InputValues:    []*model.ApplicationTemplateValueInput{},
+			ExpectedOutput: "",
+			ExpectedError:  errors.New("required placeholder not provided: value for placeholder name 'nonOptionalLabel' not found"),
+		},
+		{
+			Name: "Returns error when required placeholder value not provided on root level",
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"Name": "{{name}}", "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
@@ -1499,7 +1524,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedOutput, result)
+				assert.JSONEq(t, testCase.ExpectedOutput, result)
 			}
 		})
 	}

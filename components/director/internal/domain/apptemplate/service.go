@@ -351,7 +351,7 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 		}
 
 		if strings.TrimSpace(newValue) == "" && isOptional {
-			appCreateInputJSON, err = removeEmptyKey(appCreateInputJSON, placeholder.Name)
+			appCreateInputJSON, err = removeEmptyKeyFromLabels(appCreateInputJSON, placeholder.Name)
 			if err != nil {
 				return "", errors.Wrap(err, "error while clear optional empty value")
 			}
@@ -360,13 +360,13 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 	return appCreateInputJSON, nil
 }
 
-func removeEmptyKey(stringInput string, keyName string) (string, error) {
+func removeEmptyKeyFromLabels(stringInput string, keyName string) (string, error) {
 	var objMap map[string]interface{}
 	err := json.Unmarshal([]byte(stringInput), &objMap)
 	if err != nil {
 		return "", errors.Wrap(err, "error while unmarshal input")
 	}
-	processMap(&objMap, keyName)
+	processMap(&objMap, keyName, true)
 
 	output, err := json.Marshal(objMap)
 	if err != nil {
@@ -375,14 +375,20 @@ func removeEmptyKey(stringInput string, keyName string) (string, error) {
 	return string(output), nil
 }
 
-func processMap(input *map[string]interface{}, keyName string) {
+func processMap(input *map[string]interface{}, keyName string, rootObject bool) {
 	for key, value := range *input {
 		if _, ok := value.(string); ok {
+			// String value
 			if value == "" && key == keyName {
-				delete(*input, key)
+				if !rootObject {
+					delete(*input, key)
+				}
 			}
-		} else {
-			processMap(value.(*map[string]interface{}), keyName)
+		} else if mapValue, ok := value.(map[string]interface{}); ok {
+			// Object value - process only labels object
+			if key == "labels" {
+				processMap(&mapValue, keyName, false)
+			}
 		}
 	}
 }
