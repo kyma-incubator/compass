@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +25,19 @@ type TenantMappingsHandler struct {
 }
 
 func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
+	log := logger.FromContext(ctx)
+
+	bodyBytes, err := io.ReadAll(ctx.Request.Body)
+	defer ctx.Request.Body.Close()
+	if err != nil {
+		err = errors.Newf("failed to read body: %w", err)
+		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
+		return
+	}
+	log.Info().Msgf("raw body -> %s", bodyBytes)
+
+	ctx.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
