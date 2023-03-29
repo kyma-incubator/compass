@@ -1,10 +1,12 @@
 package types
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 )
 
 type TenantMapping struct {
@@ -25,22 +27,30 @@ const (
 )
 
 type AssignedTenant struct {
-	UCLApplicationID string                   `json:"uclApplicationId"`
-	LocalTenantID    string                   `json:"localTenantId"`
-	Operation        Operation                `json:"operation"`
-	Parameters       AssignedTenantParameters `json:"parameters"`
-	Config           any                      `json:"configuration"`
-	Configuration    AssignedTenantConfiguration
+	UCLApplicationID string                      `json:"uclApplicationId"`
+	LocalTenantID    string                      `json:"localTenantId"`
+	Operation        Operation                   `json:"operation"`
+	Parameters       AssignedTenantParameters    `json:"parameters"`
+	Config           any                         `json:"configuration"`
+	Configuration    AssignedTenantConfiguration `json:"-"`
 }
 
-func (at *AssignedTenant) SetConfiguration() error {
+func (at *AssignedTenant) SetConfiguration(ctx context.Context) error {
+	log := logger.FromContext(ctx)
+
+	if at.Config == nil {
+		log.Info().Msg("$.assignedTenants[0].configuration is empty")
+		return nil
+	}
 	b, err := json.Marshal(at.Config)
 	if err != nil {
 		return errors.Newf("failed to marshal $.assignedTenants[0].configuration: %w", err)
 	}
 	if err := json.Unmarshal(b, &at.Configuration); err != nil {
-		return errors.Newf("failed to unmarshal $.assignedTenants[0].configuration: %w", err)
+		log.Info().Msgf("$.assignedTenants[0].configuration doesn't contain apis: %s", err)
+		return nil
 	}
+
 	return nil
 }
 
