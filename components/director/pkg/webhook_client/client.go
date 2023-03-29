@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io"
 	"net/http"
 
@@ -85,6 +86,8 @@ func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Respo
 			return nil, errors.Wrap(err, "unable to parse webhook input body")
 		}
 	}
+
+	spew.Dump("WEBHOOK REQUEST BODY ", body)
 
 	headers := http.Header{}
 	if webhook.HeaderTemplate != nil {
