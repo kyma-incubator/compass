@@ -36,6 +36,10 @@ type UpdateData struct {
 }
 
 func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateData) error {
+	log := logger.FromContext(ctx)
+
+	log.Info().Msgf("executing update with data: %+v", data)
+
 	consumerTenant := data.TenantMapping.AssignedTenants[0]
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
@@ -53,6 +57,8 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 			removeConsumedAPI(&consumedAPIs, consumedAPI)
 		}
 	}
+
+	log.Info().Msgf("executing update with consumedAPIs: %+v", consumedAPIs)
 
 	if consumedAPIsLen != len(consumedAPIs) {
 		iasHost := data.TenantMapping.ReceiverTenant.ApplicationURL
@@ -154,6 +160,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to marshal body: %w", err)
 	}
+	log.Info().Msgf("executing patch request with body: %s", appUpdateBytes)
 	url := buildPatchApplicationURL(iasHost, applicationID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(appUpdateBytes))
 	if err != nil {
