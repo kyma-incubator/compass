@@ -46,11 +46,11 @@ func NewTemplateRenderer(appTemplateService applicationTemplateService, appConve
 		return nil, errors.Wrapf(err, "while converting override application input JSON into application input")
 	}
 	placeholders := make([]model.ApplicationTemplatePlaceholder, 0)
-	for _, p := range mapping {
+	for i := 0; i < len(mapping); i++ {
 		placeholders = append(placeholders, model.ApplicationTemplatePlaceholder{
-			Name:     p.PlaceholderName,
-			JSONPath: &p.SystemKey,
-			Optional: &p.Optional,
+			Name:     mapping[i].PlaceholderName,
+			JSONPath: &mapping[i].SystemKey,
+			Optional: &mapping[i].Optional,
 		})
 	}
 
