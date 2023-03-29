@@ -587,31 +587,34 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 func TestDeleteApplicationTemplateBeforeDeletingAssociatedApplicationsWithIt(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	nameJSONPath := "$.name-json-path"
-	displayNameJSONPath := "$.display-name-json-path"
-	appTemplateName := createAppTemplateName("template")
-	appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
-	appTemplateInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
-	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
-		{
-			Name:        "name",
-			Description: ptr.String("name"),
-			JSONPath:    &nameJSONPath,
-		},
-		{
-			Name:        "display-name",
-			Description: ptr.String("display-name"),
-			JSONPath:    &displayNameJSONPath,
-		},
-	}
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	name := "template"
+
+	t.Log("Creating integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issuing a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	appTemplateName := createAppTemplateName(name)
+	appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
 
 	t.Log("Creating application template")
-	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate)
 	require.NoError(t, err)
-	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTemplate.Labels[tenantfetcher.RegionKey])
 
 	appFromTemplate := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
 		{
@@ -628,7 +631,8 @@ func TestDeleteApplicationTemplateBeforeDeletingAssociatedApplicationsWithIt(t *
 	outputApp := graphql.ApplicationExt{}
 
 	t.Logf("Creating application from application template with id %s", appTemplate.ID)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTemplateRequest, &outputApp)
+	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, createAppFromTemplateRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, tenantId, outputApp.ID)
 	require.NoError(t, err)
 
 	deleteApplicationTemplateRequest := fixtures.FixDeleteApplicationTemplateRequest(appTemplate.ID)
@@ -636,20 +640,19 @@ func TestDeleteApplicationTemplateBeforeDeletingAssociatedApplicationsWithIt(t *
 
 	// WHEN
 	t.Logf("Deleting application template with id %s when application with id %s is associated with it", appTemplate.ID, outputApp.ID)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteApplicationTemplateRequest, &deleteOutput)
+	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, deleteApplicationTemplateRequest, &deleteOutput)
 	require.Error(t, err)
 
 	//THEN
 	t.Logf("Checking if application template with id %s was deleted", appTemplate.ID)
 
-	out := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate.ID)
+	out := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate.ID)
 	require.NotEmpty(t, out)
 
-	t.Logf("Deleting application with id %s", outputApp.ID)
-	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
+	require.Equal(t, "new-name", outputApp.Application.Name)
 }
 
 func TestQueryApplicationTemplate(t *testing.T) {
@@ -766,10 +769,10 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	outputApp := graphql.ApplicationExt{}
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 
 	//THEN
 	require.NoError(t, err)
-	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
@@ -811,10 +814,10 @@ func TestRegisterApplicationFromTemplatewithPlaceholderPayload(t *testing.T) {
 	outputApp := graphql.ApplicationExt{}
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 
 	//THEN
 	require.NoError(t, err)
-	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "appName", outputApp.Application.Name)
