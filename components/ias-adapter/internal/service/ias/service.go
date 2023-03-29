@@ -179,7 +179,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 
 func buildGetApplicationURL(host, clientID string) string {
 	escapedFilter := url.QueryEscape(fmt.Sprintf("clientId eq %s", clientID))
-	return fmt.Sprintf("%s%s?filter=%s", host, applicationsPath, escapedFilter)
+	return fmt.Sprintf("%s%s/?filter=%s", host, applicationsPath, escapedFilter)
 }
 
 func buildPatchApplicationURL(host, applicationID string) string {
