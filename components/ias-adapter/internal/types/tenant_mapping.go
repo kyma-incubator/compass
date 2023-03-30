@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
@@ -13,6 +14,15 @@ type TenantMapping struct {
 	FormationID     string           `json:"formationId"`
 	ReceiverTenant  ReceiverTenant   `json:"receiverTenant"`
 	AssignedTenants []AssignedTenant `json:"assignedTenants"`
+}
+
+func (tm TenantMapping) String() string {
+	if len(tm.AssignedTenants) == 0 {
+		return fmt.Sprintf("$.formationId: %s, $.receiverTenant.applicationUrl: %s, no assigned tenants", tm.FormationID, tm.ReceiverTenant.ApplicationURL)
+	}
+	assignedTenant := tm.AssignedTenants[0]
+	return fmt.Sprintf("$.formationId: '%s', $.receiverTenant.applicationUrl: '%s', $.assignedTenants[0]: (%s)",
+		tm.FormationID, tm.ReceiverTenant.ApplicationURL, assignedTenant)
 }
 
 type ReceiverTenant struct {
@@ -33,6 +43,12 @@ type AssignedTenant struct {
 	Parameters       AssignedTenantParameters    `json:"parameters"`
 	Config           any                         `json:"configuration"`
 	Configuration    AssignedTenantConfiguration `json:"-"`
+}
+
+func (at *AssignedTenant) String() string {
+	return fmt.Sprintf(
+		"$.operation: %s, $.localTenantId: %s, $.uclApplicationId: %s, $.parameters.technicalIntegrationId: %s, $.configuration: %+v",
+		at.Operation, at.LocalTenantID, at.UCLApplicationID, at.Parameters.ClientID, at.Configuration)
 }
 
 func (at *AssignedTenant) SetConfiguration(ctx context.Context) error {

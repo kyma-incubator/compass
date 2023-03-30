@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,19 +23,6 @@ type TenantMappingsHandler struct {
 }
 
 func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
-	log := logger.FromContext(ctx)
-
-	bodyBytes, err := io.ReadAll(ctx.Request.Body)
-	defer ctx.Request.Body.Close()
-	if err != nil {
-		err = errors.Newf("failed to read body: %w", err)
-		internal.RespondWithError(ctx, http.StatusInternalServerError, err)
-		return
-	}
-	log.Info().Msgf("raw body -> %s", bodyBytes)
-
-	ctx.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
@@ -69,8 +54,5 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 
 func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {
 	log := logger.FromContext(ctx)
-	// tenantMapping.AssignedTenants[0].Parameters = types.AssignedTenantParameters{}
-	// tenantMapping.AssignedTenants[0].Config = types.AssignedTenantConfiguration{}
-	// tenantMapping.AssignedTenants[0].Configuration = types.AssignedTenantConfiguration{}
-	log.Info().Msgf("Processing tenant mapping notification: %+v", tenantMapping)
+	log.Info().Msgf("Processing tenant mapping notification (%s)", tenantMapping)
 }
