@@ -147,7 +147,6 @@ func (r *repository) ListByReferenceObjectIDGlobal(ctx context.Context, objID st
 // ListByReferenceObjectTypeAndWebhookType lists all webhooks of a given type for a given object type
 func (r *repository) ListByReferenceObjectTypeAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	var entities Collection
-
 	refColumn, err := getReferenceColumnForListByReferenceObjectType(objType)
 	if err != nil {
 		return nil, err
@@ -214,7 +213,9 @@ func (r *repository) ListByReferenceObjectTypesAndWebhookType(ctx context.Contex
 	return convertToWebhooks(entities, r)
 }
 
-// GetByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType
+// GetByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType.
+// Global getter is used for object type ApplicationTemplateWebhookReference as the application template is not tenant scoped
+// and single getter is used for all other object types.
 func (r *repository) GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
 	var entity Entity
 	refColumn, err := getReferenceColumnForListByReferenceObjectType(objectType)
@@ -226,9 +227,18 @@ func (r *repository) GetByIDAndWebhookType(ctx context.Context, tenant, objectID
 		repo.NewEqualCondition(refColumn, objectID),
 		repo.NewEqualCondition("type", webhookType),
 	}
-	if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, conditions, repo.NoOrderBy, &entity); err != nil {
-		return nil, err
+
+	switch objectType {
+	case model.ApplicationTemplateWebhookReference:
+		if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
+			return nil, err
+		}
+	default:
+		if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, conditions, repo.NoOrderBy, &entity); err != nil {
+			return nil, err
+		}
 	}
+
 	m, err := r.conv.FromEntity(&entity)
 	if err != nil {
 		return nil, errors.Wrap(err, "while converting from entity to model")
