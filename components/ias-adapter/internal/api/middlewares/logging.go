@@ -26,7 +26,7 @@ func Logging(ctx *gin.Context) {
 	ctx.Next()
 
 	status := ctx.Writer.Status()
-	if strings.HasPrefix(path, paths.HealthPath) || strings.HasPrefix(path, paths.ReadyPath) {
+	if strings.HasSuffix(path, paths.HealthPath) || strings.HasSuffix(path, paths.ReadyPath) {
 		if status == http.StatusOK {
 			return
 		}
