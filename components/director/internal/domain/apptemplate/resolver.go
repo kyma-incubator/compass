@@ -769,7 +769,7 @@ func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels
 
 		if regionExists {
 			filters = append(filters, labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)))
-			msg = msg + fmt.Sprintf(" and %q: %q", regionLabelKey, region)
+			msg += fmt.Sprintf(" and %q: %q", regionLabelKey, region)
 		}
 
 		log.C(ctx).Infof("Getting application template for labels %s", msg)
