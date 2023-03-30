@@ -29,16 +29,16 @@ func (c Connection) UpsertTenantMapping(ctx context.Context, tenantMapping types
 }
 
 func (c Connection) ListTenantMappings(ctx context.Context, formationID string) (map[string]types.TenantMapping, error) {
-	var (
-		tenantMappingJSONString string
-		tenantMapping           types.TenantMapping
-	)
 	tenantMappings := map[string]types.TenantMapping{}
 	rows, err := c.query(ctx, selectTenantMappingsQuery, formationID)
 	if err != nil {
 		return tenantMappings, errors.Newf("failed to execute query: %w", err)
 	}
 	for rows.Next() {
+		var (
+			tenantMappingJSONString string
+			tenantMapping           types.TenantMapping
+		)
 		if err := rows.Err(); err != nil {
 			return tenantMappings, errors.Newf("failed to read db row: %w", err)
 		}
