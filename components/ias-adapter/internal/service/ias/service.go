@@ -37,10 +37,6 @@ type UpdateData struct {
 }
 
 func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateData) error {
-	log := logger.FromContext(ctx)
-
-	log.Info().Msgf("executing update with data: %+v", data)
-
 	consumerTenant := data.TenantMapping.AssignedTenants[0]
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
@@ -58,8 +54,6 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 			removeConsumedAPI(&consumedAPIs, consumedAPI)
 		}
 	}
-
-	log.Info().Msgf("executing update with consumedAPIs: %+v", consumedAPIs)
 
 	if consumedAPIsLen != len(consumedAPIs) {
 		iasHost := data.TenantMapping.ReceiverTenant.ApplicationURL
@@ -80,14 +74,12 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 		return types.Application{}, errors.Newf("failed to create request: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
-	log.Info().Msgf("get application req headers: %+v", req.Header)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
-	log.Info().Msgf("get application resp headers: %+v", resp.Header)
 
 	if resp.StatusCode != http.StatusOK {
 		respBytes, err := io.ReadAll(resp.Body)
@@ -165,21 +157,18 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to marshal body: %w", err)
 	}
-	log.Info().Msgf("executing patch request with body: %s", appUpdateBytes)
 	url := buildPatchApplicationURL(iasHost, applicationID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(appUpdateBytes))
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
-	log.Info().Msgf("update application req headers: %+v", req.Header)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return errors.Newf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
-	log.Info().Msgf("update application resp headers: %+v", resp.Header)
 
 	if resp.StatusCode != http.StatusOK {
 		respBytes, err := io.ReadAll(resp.Body)
