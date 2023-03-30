@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/compass/components/ias-adapter/internal/api/internal/paths"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/compass/components/ias-adapter/internal/api/internal/paths"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
