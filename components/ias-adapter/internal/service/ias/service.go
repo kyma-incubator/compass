@@ -156,6 +156,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to marshal body: %w", err)
 	}
+	log.Info().Msgf("executing patch with body: %s", appUpdateBytes)
 	url := buildPatchApplicationURL(iasHost, applicationID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(appUpdateBytes))
 	if err != nil {
