@@ -75,7 +75,8 @@ func GetSingleTenantAccess(ctx context.Context, m2mTable string, tenantID, resou
 	tenantAccess := &TenantAccess{}
 	err := getter.GetGlobal(ctx, Conditions{NewEqualCondition(M2MTenantIDColumn, tenantID), NewEqualCondition(M2MResourceIDColumn, resourceID)}, NoOrderBy, tenantAccess)
 	if err != nil {
-		return nil, persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Get, "while fetching tenant access record from '%s' table", m2mTable)
+		log.C(ctx).Error(persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.Get, "while fetching tenant access record from '%s' table", m2mTable))
+		return nil, err
 	}
 
 	return tenantAccess, nil
