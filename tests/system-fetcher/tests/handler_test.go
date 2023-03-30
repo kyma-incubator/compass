@@ -1106,9 +1106,7 @@ func fixApplicationTemplate(name, intSystemID, systemRole string) directorSchema
 			},
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
-		Labels: directorSchema.Labels{
-			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
-		},
+		Labels:      directorSchema.Labels{},
 	}
 
 	if len(systemRole) > 0 {
