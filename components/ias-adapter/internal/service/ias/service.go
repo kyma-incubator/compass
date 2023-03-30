@@ -30,6 +30,7 @@ func NewService(cfg config.IAS, client *http.Client) Service {
 }
 
 type UpdateData struct {
+	Operation             types.Operation
 	TenantMapping         types.TenantMapping
 	ConsumerApplication   types.Application
 	ProviderApplicationID string
@@ -43,8 +44,8 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	consumerTenant := data.TenantMapping.AssignedTenants[0]
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
-	switch {
-	case consumerTenant.Operation == types.OperationAssign:
+	switch data.Operation {
+	case types.OperationAssign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
 			addConsumedAPI(&consumedAPIs, types.ApplicationConsumedAPI{
 				Name:    consumedAPI,
@@ -52,7 +53,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 				AppID:   data.ProviderApplicationID,
 			})
 		}
-	case consumerTenant.Operation == types.OperationUnassign:
+	case types.OperationUnassign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
 			removeConsumedAPI(&consumedAPIs, consumedAPI)
 		}
