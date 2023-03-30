@@ -73,7 +73,6 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to create request: %w", err)
 	}
-	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -162,7 +161,6 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
 	}
-	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := s.client.Do(req)
 	if err != nil {

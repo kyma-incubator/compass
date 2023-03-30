@@ -54,5 +54,6 @@ func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if requestID != "" {
 		req.Header.Add(logCtx.RequestIDHeader, requestID)
 	}
+	req.Header.Add("Content-Type", "application/json")
 	return t.clientTransport.RoundTrip(req)
 }
