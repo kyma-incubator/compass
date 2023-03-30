@@ -37,6 +37,8 @@ type UpdateData struct {
 }
 
 func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateData) error {
+	log := logger.FromContext(ctx)
+	log.Info().Msgf("UpdateApplicationConsumedAPIs(...) data: %+v", data)
 	consumerTenant := data.TenantMapping.AssignedTenants[0]
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
@@ -142,6 +144,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	consumedAPIs []types.ApplicationConsumedAPI) error {
 
 	log := logger.FromContext(ctx)
+	log.Info().Msgf("updateApplication(...) iasHost: %s, applicationID: %s, consumedAPIs: %v", iasHost, applicationID, consumedAPIs)
 
 	appUpdate := types.ApplicationUpdate{
 		Operations: []types.ApplicationUpdateOperation{
