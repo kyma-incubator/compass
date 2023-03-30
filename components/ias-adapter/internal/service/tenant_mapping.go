@@ -28,7 +28,6 @@ type TenantMappingsService struct {
 
 func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantMapping1 types.TenantMapping) error {
 	log := logger.FromContext(ctx)
-	log.Info().Msgf("ProcessTenantMapping(...) tenantMapping1: %+v", tenantMapping1)
 
 	formationID := tenantMapping1.FormationID
 	tenantMappings, err := s.Storage.ListTenantMappings(ctx, formationID)
@@ -68,7 +67,6 @@ func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantM
 
 func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Context, tenantMapping1, tenantMapping2 types.TenantMapping) error {
 	log := logger.FromContext(ctx)
-	log.Info().Msgf("updateApplicationsConsumedAPIs(...) tenantMapping1: %+v, tenantMapping2: %+v", tenantMapping1, tenantMapping2)
 
 	formationID := tenantMapping1.FormationID
 	log.Info().Msgf("Updating consumed APIs for applications in formation '%s', triggered by '%s' operation",
