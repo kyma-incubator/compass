@@ -78,11 +78,14 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to create request: %w", err)
 	}
+	log.Info().Msgf("get application req headers: %+v", req.Header)
+
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
+	log.Info().Msgf("get application resp headers: %+v", resp.Header)
 
 	if resp.StatusCode != http.StatusOK {
 		respBytes, err := io.ReadAll(resp.Body)
@@ -166,12 +169,14 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
 	}
+	log.Info().Msgf("update application req headers: %+v", req.Header)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return errors.Newf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
+	log.Info().Msgf("update application resp headers: %+v", resp.Header)
 
 	if resp.StatusCode != http.StatusOK {
 		respBytes, err := io.ReadAll(resp.Body)
