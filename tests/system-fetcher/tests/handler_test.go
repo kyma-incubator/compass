@@ -1111,6 +1111,8 @@ func fixApplicationTemplate(name, intSystemID, systemRole string) directorSchema
 
 	if len(systemRole) > 0 {
 		appTemplateInput.Labels[cfg.TemplateLabelFilter] = systemRole
+	} else {
+		appTemplateInput.Labels[cfg.SelfRegDistinguishLabelKey] = []interface{}{cfg.SelfRegDistinguishLabelValue}
 	}
 
 	return appTemplateInput
