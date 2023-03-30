@@ -287,8 +287,26 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
 	require.NotEmpty(t, constraint.ID)
 
+	// Assert no constraints attached
+	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", formationTemplate.Name, formationTemplate.ID)
+	formationTemplateOutput := fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
+	assert.Empty(t, formationTemplateOutput.FormationConstraints)
+
+	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", secondFormationTemplate.Name, secondFormationTemplate.ID)
+	secondFormationTemplateOutput := fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
+	assert.Empty(t, secondFormationTemplateOutput.FormationConstraints)
+
 	t.Logf("Attaching constraint to formation template")
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
+
+	// Assert the constraint is attached only to the first formation template
+	t.Logf("Get formation template with name %q and id %q, and assert there are is one constraint attached to it", formationTemplate.Name, formationTemplate.ID)
+	formationTemplateOutput = fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
+	assert.Equal(t, formationTemplateOutput.FormationConstraints, []graphql.FormationConstraint{*constraint})
+
+	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", secondFormationTemplate.Name, secondFormationTemplate.ID)
+	secondFormationTemplateOutput = fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
+	assert.Empty(t, secondFormationTemplateOutput.FormationConstraints)
 
 	secondConstraint := graphql.FormationConstraintInput{
 		Name:            "test_constraint_second",
@@ -309,6 +327,15 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	t.Logf("Attaching second constraint to formation template")
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintSecond.ID, formationTemplate.ID)
 
+	// Assert the two constraints are attached only to the first formation template
+	t.Logf("Get formation template with name %q and id %q, and assert there are is one constraint attached to it", formationTemplate.Name, formationTemplate.ID)
+	formationTemplateOutput = fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
+	assert.Equal(t, formationTemplateOutput.FormationConstraints, []graphql.FormationConstraint{*constraint, *constraintSecond})
+
+	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", secondFormationTemplate.Name, secondFormationTemplate.ID)
+	secondFormationTemplateOutput = fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
+	assert.Empty(t, secondFormationTemplateOutput.FormationConstraints)
+
 	constraintForOtherTemplateInput := graphql.FormationConstraintInput{
 		Name:            "test_constraint_other_template",
 		ConstraintType:  graphql.ConstraintTypePre,
@@ -327,6 +354,15 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 
 	t.Logf("Attaching constraintForOtherTemplate to formation template other")
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraintForOtherTemplate.ID, secondFormationTemplate.ID)
+
+	// Assert the two constraints are attached to the first formation template and one to the second formation template
+	t.Logf("Get formation template with name %q and id %q, and assert there are is one constraint attached to it", formationTemplate.Name, formationTemplate.ID)
+	formationTemplateOutput = fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
+	assert.Equal(t, formationTemplateOutput.FormationConstraints, []graphql.FormationConstraint{*constraint, *constraintSecond})
+
+	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", secondFormationTemplate.Name, secondFormationTemplate.ID)
+	secondFormationTemplateOutput = fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
+	assert.Equal(t, secondFormationTemplateOutput.FormationConstraints, []graphql.FormationConstraint{*constraintForOtherTemplate})
 
 	queryRequest := fixtures.FixQueryFormationConstraintsForFormationTemplateRequest(formationTemplate.ID)
 	saveExample(t, queryRequest.Query(), "list formation constraints for formation template")

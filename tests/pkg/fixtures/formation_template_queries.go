@@ -95,6 +95,16 @@ func QueryFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *
 	return &formationTemplate
 }
 
+func QueryFormationTemplateWithConstraints(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationTemplateExt {
+	queryRequest := FixQueryFormationTemplateWithConstraintsRequest(id)
+
+	formationTemplate := graphql.FormationTemplateExt{}
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryRequest, &formationTemplate))
+	require.NotEmpty(t, formationTemplate.ID)
+
+	return &formationTemplate
+}
+
 func QueryFormationTemplatesWithPageSize(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, pageSize int) *graphql.FormationTemplatePage {
 	queryPaginationRequest := FixQueryFormationTemplatesRequestWithPageSize(pageSize)
 
