@@ -40,6 +40,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	consumerTenant := data.TenantMapping.AssignedTenants[0]
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
+
 	switch data.Operation {
 	case types.OperationAssign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
@@ -73,7 +74,6 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to create request: %w", err)
 	}
-
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to send request: %w", err)
