@@ -97,3 +97,12 @@ func SelfRegManagerThatInitiatesCleanupButNotFinishIt(res map[string]interface{}
 		return srm
 	}
 }
+
+// SelfRegManagerThatOnlyGetsDistinguishLabelKey mock for GetSelfRegDistinguishingLabelKey executed 2 times, PrepareForSelfRegistration once
+func SelfRegManagerThatOnlyGetsDistinguishLabelKey(res map[string]interface{}) func() *automock.SelfRegisterManager {
+	return func() *automock.SelfRegisterManager {
+		srm := NoopSelfRegManager()
+		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Times(2)
+		return srm
+	}
+}

@@ -121,10 +121,11 @@ type Resolver struct {
 	uidService               UIDService
 	tenantMappingConfig      map[string]interface{}
 	tenantMappingCallbackURL string
+	appTemplateProductLabel  string
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, tenantMappingConfig map[string]interface{}, tenantMappingCallbackURL string) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, tenantMappingConfig map[string]interface{}, tenantMappingCallbackURL string, appTemplateProductLabel string) *Resolver {
 	return &Resolver{
 		transact:                 transact,
 		appSvc:                   appSvc,
@@ -137,6 +138,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		uidService:               uidService,
 		tenantMappingConfig:      tenantMappingConfig,
 		tenantMappingCallbackURL: tenantMappingCallbackURL,
+		appTemplateProductLabel:  appTemplateProductLabel,
 	}
 }
 
@@ -745,28 +747,41 @@ func validateAppTemplateNameBasedOnProvider(name string, appInput *graphql.Appli
 }
 
 func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels map[string]interface{}) error {
-	distinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+	selfRegisterDistinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
 	regionLabelKey := selfregmanager.RegionLabel
-
-	distinguishLabelValue, distinguishLabelExists := labels[distinguishLabelKey]
 	region, regionExists := labels[regionLabelKey]
 
-	if distinguishLabelExists && regionExists {
+	distinguishLabelKeys := []string{selfRegisterDistinguishLabelKey, r.appTemplateProductLabel}
+	appTemplateDistinguishLabels := make(map[string]string, len(distinguishLabelKeys))
+
+	for _, key := range distinguishLabelKeys {
+		if value, exists := labels[key]; exists {
+			appTemplateDistinguishLabels[key] = value.(string)
+		}
+	}
+
+	for labelKey, labelValue := range appTemplateDistinguishLabels {
+		msg := fmt.Sprintf("%q: %q", labelKey, labelValue)
+
 		filters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery(distinguishLabelKey, fmt.Sprintf("\"%s\"", distinguishLabelValue)),
-			labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)),
+			labelfilter.NewForKeyWithQuery(labelKey, fmt.Sprintf("\"%s\"", labelValue)),
 		}
 
-		log.C(ctx).Infof("Getting application template for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+		if regionExists {
+			filters = append(filters, labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)))
+			msg = msg + fmt.Sprintf(" and %q: %q", regionLabelKey, region)
+		}
+
+		log.C(ctx).Infof("Getting application template for labels %s", msg)
 		appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
 		if err != nil && !apperrors.IsNotFoundError(err) {
-			return errors.Wrap(err, fmt.Sprintf("Failed to get application template for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+			return errors.Wrap(err, fmt.Sprintf("Failed to get application template for labels %s", msg))
 		}
 
 		if appTemplate != nil {
-			msg := fmt.Sprintf("Cannot have more than one application template with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
-			log.C(ctx).Error(msg)
-			return errors.New(msg)
+			errMsg := fmt.Sprintf("Cannot have more than one application template with labels %s", msg)
+			log.C(ctx).Error(errMsg)
+			return errors.New(errMsg)
 		}
 	}
 	return nil

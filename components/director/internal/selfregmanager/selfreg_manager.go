@@ -46,17 +46,18 @@ type ExternalSvcCallerProvider interface {
 const RegionLabel = "region"
 
 type selfRegisterManager struct {
-	cfg            config.SelfRegConfig
-	callerProvider ExternalSvcCallerProvider
+	cfg                     config.SelfRegConfig
+	callerProvider          ExternalSvcCallerProvider
+	appTemplateProductLabel string
 }
 
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
+func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider, appTemplateProductLabel string) (*selfRegisterManager, error) {
 	if err := cfg.PrepareConfiguration(); err != nil {
 		return nil, errors.Wrap(err, "while preparing self register manager configuration")
 	}
-	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
+	return &selfRegisterManager{cfg: cfg, callerProvider: provider, appTemplateProductLabel: appTemplateProductLabel}, nil
 }
 
 // IsSelfRegistrationFlow check if self registration flow is triggered
@@ -85,12 +86,26 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 	}
 
 	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
-		distinguishLabel, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
-		if !exists {
+		if resourceType == resource.ApplicationTemplate {
+			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+		}
+
+		distinguishLabel, distinguishLabelExists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
+		_, productLabelExists := labels[s.appTemplateProductLabel]
+
+		switch {
+		case !distinguishLabelExists && !productLabelExists:
 			if resourceType == resource.Runtime {
 				return labels, nil
 			}
-			return nil, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
+			return nil, errors.Errorf("missing %q or %q label", s.cfg.SelfRegisterDistinguishLabelKey, s.appTemplateProductLabel)
+		case distinguishLabelExists && productLabelExists:
+			if resourceType == resource.Runtime {
+				return labels, nil
+			}
+			return nil, errors.Errorf("should provide either %q or %q label - providing both at the same time is not allowed", s.cfg.SelfRegisterDistinguishLabelKey, s.appTemplateProductLabel)
+		case productLabelExists:
+			return labels, nil
 		}
 
 		if err := validate(); err != nil {
@@ -152,10 +167,6 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 			}
 
 			labels[s.cfg.SaaSAppNameLabelKey] = saasAppName
-		}
-
-		if resourceType == resource.ApplicationTemplate {
-			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
 		}
 
 		log.C(ctx).Infof("Successfully executed prep for self-registration with distinguishing label value %s", str.CastOrEmpty(distinguishLabel))
