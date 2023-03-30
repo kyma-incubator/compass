@@ -3,6 +3,8 @@ package formationtemplate
 import (
 	"context"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -37,22 +39,38 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
+// FormationConstraintService represents the FormationConstraint service layer
+//go:generate mockery --name=FormationConstraintService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationConstraintService interface {
+	ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([][]*model.FormationConstraint, error)
+}
+
+// FormationConstraintConverter represents the FormationConstraint converter
+//go:generate mockery --name=FormationConstraintConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationConstraintConverter interface {
+	MultipleToGraphQL(in []*model.FormationConstraint) []*graphql.FormationConstraint
+}
+
 // Resolver is the FormationTemplate resolver
 type Resolver struct {
 	transact persistence.Transactioner
 
-	formationTemplateSvc FormationTemplateService
-	converter            FormationTemplateConverter
-	webhookConverter     WebhookConverter
+	formationTemplateSvc         FormationTemplateService
+	converter                    FormationTemplateConverter
+	webhookConverter             WebhookConverter
+	formationConstraintSvc       FormationConstraintService
+	formationConstraintConverter FormationConstraintConverter
 }
 
 // NewResolver creates FormationTemplate resolver
-func NewResolver(transact persistence.Transactioner, converter FormationTemplateConverter, formationTemplateSvc FormationTemplateService, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, converter FormationTemplateConverter, formationTemplateSvc FormationTemplateService, webhookConverter WebhookConverter, formationConstraintSvc FormationConstraintService, formationConstraintConverter FormationConstraintConverter) *Resolver {
 	return &Resolver{
-		transact:             transact,
-		converter:            converter,
-		formationTemplateSvc: formationTemplateSvc,
-		webhookConverter:     webhookConverter,
+		transact:                     transact,
+		converter:                    converter,
+		formationTemplateSvc:         formationTemplateSvc,
+		webhookConverter:             webhookConverter,
+		formationConstraintSvc:       formationConstraintSvc,
+		formationConstraintConverter: formationConstraintConverter,
 	}
 }
 
@@ -279,4 +297,47 @@ func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.FormationTemplate)
 	}
 
 	return gqlWebhooks, nil
+}
+
+// FormationConstraint retrieves a FormationConstraint for the specified FormationTemplate
+func (r *Resolver) FormationConstraint(ctx context.Context, obj *graphql.FormationTemplate) ([]*graphql.FormationConstraint, error) {
+	params := dataloader.ParamFormationConstraint{ID: obj.ID, Ctx: ctx}
+	return dataloader.FormationTemplateFor(ctx).FormationConstraintByID.Load(params)
+}
+
+func (r *Resolver) FormationConstraintsDataLoader(keys []dataloader.ParamFormationConstraint) ([][]*graphql.FormationConstraint, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Formation Templates found")}
+	}
+
+	ctx := keys[0].Ctx
+	formationTemplateIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		formationTemplateIDs = append(formationTemplateIDs, key.ID)
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	formationConstraintsPerFormation, err := r.formationConstraintSvc.ListByFormationTemplateIDs(ctx, formationTemplateIDs)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	var gqlFormationConstraints [][]*graphql.FormationConstraint
+
+	for _, formationConstraints := range formationConstraintsPerFormation {
+		gqlFormationConstraints = append(gqlFormationConstraints, r.formationConstraintConverter.MultipleToGraphQL(formationConstraints))
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
+	return gqlFormationConstraints, nil
 }

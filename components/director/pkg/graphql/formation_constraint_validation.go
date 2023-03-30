@@ -38,7 +38,7 @@ var JoinPointDetailsByLocation = map[formationconstraint.JoinPointLocation]forma
 func (i FormationConstraintInput) Validate() error {
 	if err := validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required),
-		validation.Field(&i.ConstraintType, validation.Required, validation.In(ConstraintTypePre, ConstraintTypePost)),
+		validation.Field(&i.ConstraintType, validation.Required, validation.In(ConstraintTypePre, ConstraintTypePost, ConstraintTypeUI)),
 		validation.Field(&i.TargetOperation, validation.Required, validation.In(TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification)),
 		validation.Field(&i.Operator, validation.Required),
 		validation.Field(&i.ResourceType, validation.Required, validation.In(ResourceTypeApplication, ResourceTypeRuntime, ResourceTypeFormation, ResourceTypeTenant, ResourceTypeRuntimeContext)),
@@ -49,9 +49,11 @@ func (i FormationConstraintInput) Validate() error {
 		return err
 	}
 
-	input := FormationConstraintInputByOperator[i.Operator]
-	if err := formationconstraint.ParseInputTemplate(i.InputTemplate, JoinPointDetailsByLocation[formationconstraint.JoinPointLocation{ConstraintType: model.FormationConstraintType(i.ConstraintType), OperationName: model.TargetOperation(i.TargetOperation)}], input); err != nil {
-		return apperrors.NewInvalidDataError("failed to parse input template: %s", err)
+	if i.ConstraintType != ConstraintTypeUI {
+		input := FormationConstraintInputByOperator[i.Operator]
+		if err := formationconstraint.ParseInputTemplate(i.InputTemplate, JoinPointDetailsByLocation[formationconstraint.JoinPointLocation{ConstraintType: model.FormationConstraintType(i.ConstraintType), OperationName: model.TargetOperation(i.TargetOperation)}], input); err != nil {
+			return apperrors.NewInvalidDataError("failed to parse input template: %s", err)
+		}
 	}
 
 	return nil

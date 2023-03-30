@@ -48,6 +48,27 @@ func (r *repository) ListByFormationTemplateID(ctx context.Context, formationTem
 	return r.multipleFromEntities(entityCollection)
 }
 
+// ListByFormationTemplateIDs lists formationTemplateConstraintReferences for the provided formationTemplate IDs
+func (r *repository) ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([][]*model.FormationTemplateConstraintReference, error) {
+	var entityCollection EntityCollection
+
+	if err := r.lister.ListGlobal(ctx, &entityCollection, repo.NewInConditionForStringValues(formationTemplateColumn, formationTemplateIDs)); err != nil {
+		return nil, errors.Wrap(err, "while listing formationTemplate-constraint references by formationTemplate ID")
+	}
+
+	formationConstraintsByFormationTemplateID := map[string][]*model.FormationTemplateConstraintReference{}
+	for _, fcEntity := range entityCollection {
+		formationConstraintsByFormationTemplateID[fcEntity.FormationTemplateID] = append(formationConstraintsByFormationTemplateID[fcEntity.FormationTemplateID], r.conv.FromEntity(fcEntity))
+	}
+
+	formationConstraintsPerFormationTemplate := make([][]*model.FormationTemplateConstraintReference, 0, len(formationTemplateIDs))
+	for _, formationTemplateID := range formationTemplateIDs {
+		formationConstraintsPerFormationTemplate = append(formationConstraintsPerFormationTemplate, formationConstraintsByFormationTemplateID[formationTemplateID])
+	}
+
+	return formationConstraintsPerFormationTemplate, nil
+}
+
 // Create stores new formationTemplateConstraintReference in the database
 func (r *repository) Create(ctx context.Context, item *model.FormationTemplateConstraintReference) error {
 	if item == nil {

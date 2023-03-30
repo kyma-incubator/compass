@@ -108,6 +108,7 @@ enum ConstraintScope {
 enum ConstraintType {
 	PRE
 	POST
+	UI
 }
 
 enum DocumentFormat {
@@ -1241,6 +1242,7 @@ type FormationTemplate {
 	runtimeArtifactKind: ArtifactType
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
+	formationConstraints: [FormationConstraint!]!
 }
 
 type FormationTemplatePage implements Pageable {

@@ -1,9 +1,15 @@
 package formationtemplateconstraintreferences_test
 
 import (
+	"context"
 	"database/sql/driver"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -87,4 +93,53 @@ func TestRepository_Delete(t *testing.T) {
 	}
 
 	suite.Run(t)
+}
+
+func TestRepository_ListByFormationTemplateIDs(t *testing.T) {
+	testErr := errors.New("test error")
+
+	t.Run("success", func(t *testing.T) {
+		converterMock := &automock.ConstraintReferenceConverter{}
+		defer converterMock.AssertExpectations(t)
+		converterMock.On("FromEntity", entity).Return(constraintReference).Once()
+		converterMock.On("FromEntity", entitySecond).Return(constraintReferenceSecond).Once()
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT formation_constraint_id, formation_template_id FROM public.formation_template_constraint_references WHERE formation_template_id IN ($1, $2)`)).
+			WithArgs(templateID, templateIDSecond).WillReturnRows(sqlmock.NewRows(fixColumns()).
+			AddRow(templateID, constraintID).
+			AddRow(templateIDSecond, constraintID))
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		expected := [][]*model.FormationTemplateConstraintReference{{constraintReference}, {constraintReferenceSecond}}
+		repository := formationtemplateconstraintreferences.NewRepository(converterMock)
+
+		// WHEN
+		actual, err := repository.ListByFormationTemplateIDs(ctx, []string{templateID, templateIDSecond})
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("returns error when listing fails", func(t *testing.T) {
+		converterMock := &automock.ConstraintReferenceConverter{}
+		defer converterMock.AssertExpectations(t)
+
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT formation_constraint_id, formation_template_id FROM public.formation_template_constraint_references WHERE formation_template_id IN ($1, $2)`)).
+			WithArgs(templateID, templateIDSecond).WillReturnError(testErr)
+
+		ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+		repository := formationtemplateconstraintreferences.NewRepository(converterMock)
+
+		// WHEN
+		actual, err := repository.ListByFormationTemplateIDs(ctx, []string{templateID, templateIDSecond})
+
+		// THEN
+		assert.Error(t, err)
+		assert.Nil(t, actual)
+	})
 }

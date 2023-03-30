@@ -254,3 +254,11 @@ func UnusedTenantService() *automock.TenantService {
 func UnusedWebhookService() *automock.WebhookService {
 	return &automock.WebhookService{}
 }
+
+func UnusedFormationConstraintService() *automock.FormationConstraintService {
+	return &automock.FormationConstraintService{}
+}
+
+func UnusedFormationConstraintConverter() *automock.FormationConstraintConverter {
+	return &automock.FormationConstraintConverter{}
+}

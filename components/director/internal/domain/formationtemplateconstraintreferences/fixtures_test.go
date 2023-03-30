@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	constraintID = "constraint_id"
-	templateID   = "template_id"
+	constraintID     = "constraint_id"
+	templateID       = "template_id"
+	templateIDSecond = "template_id_2"
 )
 
 func fixColumns() []string {
@@ -25,10 +26,18 @@ var (
 		ConstraintID:        constraintID,
 		FormationTemplateID: templateID,
 	}
+	constraintReferenceSecond = &model.FormationTemplateConstraintReference{
+		ConstraintID:        constraintID,
+		FormationTemplateID: templateIDSecond,
+	}
 	nilModel *model.FormationTemplateConstraintReference
 	entity   = &formationtemplateconstraintreferences.Entity{
 		ConstraintID:        constraintID,
 		FormationTemplateID: templateID,
+	}
+	entitySecond = &formationtemplateconstraintreferences.Entity{
+		ConstraintID:        constraintID,
+		FormationTemplateID: templateIDSecond,
 	}
 )
 

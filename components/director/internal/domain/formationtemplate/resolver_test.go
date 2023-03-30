@@ -2,7 +2,10 @@ package formationtemplate_test
 
 import (
 	"context"
+	"reflect"
 	"testing"
+
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -131,7 +134,7 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.FormationTemplate(ctx, testID)
@@ -268,7 +271,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.FormationTemplates(ctx, testCase.First, &gqlAfter)
@@ -459,7 +462,7 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.UpdateFormationTemplate(ctx, testID, testCase.Input)
@@ -594,7 +597,7 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.DeleteFormationTemplate(ctx, testID)
@@ -785,7 +788,7 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			formationTemplateConverter := testCase.FormationTemplateConverter()
 
-			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil)
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.CreateFormationTemplate(ctx, testCase.Input)
@@ -925,7 +928,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			formationTemplateSvc := testCase.FormationTemplateService()
 			whConv := testCase.WebhookConverter()
 
-			resolver := formationtemplate.NewResolver(transact, nil, formationTemplateSvc, whConv)
+			resolver := formationtemplate.NewResolver(transact, nil, formationTemplateSvc, whConv, nil, nil)
 
 			// WHEN
 			result, err := resolver.Webhooks(ctx, testCase.Input)
@@ -940,6 +943,160 @@ func TestResolver_Webhooks(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
 			mock.AssertExpectationsForObjects(t, persist, whConv)
+		})
+	}
+}
+
+func TestResolver_FormationConstraints(t *testing.T) {
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	formationConstraintIDs := []string{"123", "345"}
+
+	firstFormationConstraintModel := &model.FormationConstraint{
+		ID:              formationConstraintIDs[0],
+		Name:            "test",
+		ConstraintType:  "test",
+		TargetOperation: "test",
+		Operator:        "test",
+		ResourceType:    "test",
+		ResourceSubtype: "test",
+		InputTemplate:   "test",
+		ConstraintScope: "test",
+	}
+	secondFormationConstraintModel := &model.FormationConstraint{
+		ID:              formationConstraintIDs[1],
+		Name:            "test",
+		ConstraintType:  "test",
+		TargetOperation: "test",
+		Operator:        "test",
+		ResourceType:    "test",
+		ResourceSubtype: "test",
+		InputTemplate:   "test",
+		ConstraintScope: "test",
+	}
+	formationConstraintsModel := [][]*model.FormationConstraint{{firstFormationConstraintModel}, {secondFormationConstraintModel}}
+
+	firstFormationConstraintGql := &graphql.FormationConstraint{
+		ID:              formationConstraintIDs[0],
+		Name:            "test",
+		ConstraintType:  "test",
+		TargetOperation: "test",
+		Operator:        "test",
+		ResourceType:    "test",
+		ResourceSubtype: "test",
+		InputTemplate:   "test",
+		ConstraintScope: "test",
+	}
+	secondFormationConstraintGql := &graphql.FormationConstraint{
+		ID:              formationConstraintIDs[1],
+		Name:            "test",
+		ConstraintType:  "test",
+		TargetOperation: "test",
+		Operator:        "test",
+		ResourceType:    "test",
+		ResourceSubtype: "test",
+		InputTemplate:   "test",
+		ConstraintScope: "test",
+	}
+	formationConstraintsGql := [][]*graphql.FormationConstraint{{firstFormationConstraintGql}, {secondFormationConstraintGql}}
+
+	testCases := []struct {
+		Name                         string
+		TxFn                         func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		Input                        []dataloader.ParamFormationConstraint
+		FormationConstraintSvc       func() *automock.FormationConstraintService
+		FormationConstraintConverter func() *automock.FormationConstraintConverter
+		ExpectedConstraints          [][]*graphql.FormationConstraint
+		ExpectedErrors               []error
+	}{
+		{
+			Name:  "Success",
+			TxFn:  txGen.ThatSucceeds,
+			Input: []dataloader.ParamFormationConstraint{{ID: formationConstraintIDs[0], Ctx: ctx}, {ID: formationConstraintIDs[1], Ctx: ctx}},
+			FormationConstraintSvc: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(formationConstraintsModel, nil)
+				return svc
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("MultipleToGraphQL", formationConstraintsModel[0]).Return(formationConstraintsGql[0])
+				converter.On("MultipleToGraphQL", formationConstraintsModel[1]).Return(formationConstraintsGql[1])
+				return converter
+			},
+			ExpectedConstraints: formationConstraintsGql,
+			ExpectedErrors:      nil,
+		},
+		{
+			Name:  "Returns error if commit fails",
+			TxFn:  txGen.ThatFailsOnCommit,
+			Input: []dataloader.ParamFormationConstraint{{ID: formationConstraintIDs[0], Ctx: ctx}, {ID: formationConstraintIDs[1], Ctx: ctx}},
+			FormationConstraintSvc: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(formationConstraintsModel, nil)
+				return svc
+			},
+			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
+				converter := &automock.FormationConstraintConverter{}
+				converter.On("MultipleToGraphQL", formationConstraintsModel[0]).Return(formationConstraintsGql[0])
+				converter.On("MultipleToGraphQL", formationConstraintsModel[1]).Return(formationConstraintsGql[1])
+				return converter
+			},
+			ExpectedConstraints: nil,
+			ExpectedErrors:      []error{testErr},
+		},
+		{
+			Name:  "Returns error when listing the formation templates by ids fail",
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			Input: []dataloader.ParamFormationConstraint{{ID: formationConstraintIDs[0], Ctx: ctx}, {ID: formationConstraintIDs[1], Ctx: ctx}},
+			FormationConstraintSvc: func() *automock.FormationConstraintService {
+				svc := &automock.FormationConstraintService{}
+				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(nil, testErr)
+				return svc
+			},
+			FormationConstraintConverter: UnusedFormationConstraintConverter,
+			ExpectedConstraints:          nil,
+			ExpectedErrors:               []error{testErr},
+		},
+		{
+			Name:                         "Returns error when can't start transaction",
+			TxFn:                         txGen.ThatFailsOnBegin,
+			Input:                        []dataloader.ParamFormationConstraint{{ID: formationConstraintIDs[0], Ctx: ctx}, {ID: formationConstraintIDs[1], Ctx: ctx}},
+			FormationConstraintSvc:       UnusedFormationConstraintService,
+			FormationConstraintConverter: UnusedFormationConstraintConverter,
+			ExpectedConstraints:          nil,
+			ExpectedErrors:               []error{testErr},
+		},
+		{
+			Name:                         "Returns error when input does not contain formation templates",
+			TxFn:                         txGen.ThatDoesntStartTransaction,
+			Input:                        []dataloader.ParamFormationConstraint{},
+			FormationConstraintSvc:       UnusedFormationConstraintService,
+			FormationConstraintConverter: UnusedFormationConstraintConverter,
+			ExpectedConstraints:          nil,
+			ExpectedErrors:               []error{apperrors.NewInternalError("No Formation Templates found")},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+			svc := testCase.FormationConstraintSvc()
+			converter := testCase.FormationConstraintConverter()
+
+			resolver := formationtemplate.NewResolver(transact, nil, nil, nil, svc, converter)
+
+			res, errs := resolver.FormationConstraintsDataLoader(testCase.Input)
+			if testCase.ExpectedErrors != nil {
+				assert.Error(t, errs[0])
+				assert.Nil(t, res)
+			} else {
+				require.Nil(t, errs)
+				reflect.DeepEqual(res, testCase.ExpectedConstraints)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, svc, converter)
 		})
 	}
 }

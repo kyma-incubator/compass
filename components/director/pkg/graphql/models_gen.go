@@ -1179,16 +1179,18 @@ type ConstraintType string
 const (
 	ConstraintTypePre  ConstraintType = "PRE"
 	ConstraintTypePost ConstraintType = "POST"
+	ConstraintTypeUI   ConstraintType = "UI"
 )
 
 var AllConstraintType = []ConstraintType{
 	ConstraintTypePre,
 	ConstraintTypePost,
+	ConstraintTypeUI,
 }
 
 func (e ConstraintType) IsValid() bool {
 	switch e {
-	case ConstraintTypePre, ConstraintTypePost:
+	case ConstraintTypePre, ConstraintTypePost, ConstraintTypeUI:
 		return true
 	}
 	return false
