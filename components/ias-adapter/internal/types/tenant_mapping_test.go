@@ -36,7 +36,7 @@ var _ = Describe("Tenant Mapping Type", func() {
 				},
 			}
 			Expect(tenantMapping.AssignedTenants[0].Configuration).To(Equal(AssignedTenantConfiguration{}))
-			Expect(tenantMapping.AssignedTenants[0].SetConfiguration(context.Background())).To(Succeed())
+			Expect(tenantMapping.AssignedTenants[0].ParseConfiguration(context.Background())).To(Succeed())
 			Expect(tenantMapping.AssignedTenants[0].Configuration).To(Equal(AssignedTenantConfiguration{ConsumedAPIs: []string{"qwe"}}))
 		})
 	})
