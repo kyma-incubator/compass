@@ -21,9 +21,9 @@ require (
 	github.com/imdario/mergo v0.3.14
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230324140444-a477e7a61e6f
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230324140444-a477e7a61e6f
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230324140444-a477e7a61e6f
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20230330075610-615c1fd1d90b
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20230330075610-615c1fd1d90b
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230330075610-615c1fd1d90b
 	github.com/lestrrat-go/iter v1.0.2
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/lib/pq v1.10.7
@@ -112,7 +112,6 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
-	github.com/vektah/dataloaden v0.3.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	go.mongodb.org/mongo-driver v1.8.3 // indirect

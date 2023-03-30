@@ -305,6 +305,7 @@ func (r *Resolver) FormationConstraint(ctx context.Context, obj *graphql.Formati
 	return dataloader.FormationTemplateFor(ctx).FormationConstraintByID.Load(params)
 }
 
+// FormationConstraintsDataLoader retrieves Formation Constraints for each FormationTemplate ID in the keys
 func (r *Resolver) FormationConstraintsDataLoader(keys []dataloader.ParamFormationConstraint) ([][]*graphql.FormationConstraint, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Formation Templates found")}
@@ -329,7 +330,7 @@ func (r *Resolver) FormationConstraintsDataLoader(keys []dataloader.ParamFormati
 		return nil, []error{err}
 	}
 
-	var gqlFormationConstraints [][]*graphql.FormationConstraint
+	gqlFormationConstraints := make([][]*graphql.FormationConstraint, 0, len(formationConstraintsPerFormation))
 
 	for _, formationConstraints := range formationConstraintsPerFormation {
 		gqlFormationConstraints = append(gqlFormationConstraints, r.formationConstraintConverter.MultipleToGraphQL(formationConstraints))
