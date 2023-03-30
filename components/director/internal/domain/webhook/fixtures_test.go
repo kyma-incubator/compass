@@ -144,6 +144,12 @@ func fixApplicationTemplateModelWebhookWithType(id, appTemplateID, url string, w
 	return
 }
 
+func fixApplicationTemplateModelWebhookWithTypeAndTimestamp(id, appTemplateID, url string, webhookType model.WebhookType, createdAt time.Time) (w *model.Webhook) {
+	w = fixApplicationTemplateModelWebhookWithType(id, appTemplateID, url, webhookType)
+	w.CreatedAt = &createdAt
+	return
+}
+
 func fixBasicAuth() *model.Auth {
 	return &model.Auth{
 		Credential: model.CredentialData{
@@ -229,6 +235,12 @@ func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
 		OutputTemplate:        repo.NewValidNullableString(emptyTemplate),
 		CreatedAt:             nil,
 	}
+}
+
+func fixApplicationTemplateWebhookEntityWithTimestamp(t *testing.T, createdAt time.Time) *webhook.Entity {
+	w := fixApplicationTemplateWebhookEntity(t)
+	w.CreatedAt = &createdAt
+	return w
 }
 
 func newModelBusinessTenantMappingWithType(tenantType tenant.Type) *model.BusinessTenantMapping {
