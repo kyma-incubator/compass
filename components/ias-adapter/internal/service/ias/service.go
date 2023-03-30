@@ -30,6 +30,7 @@ func NewService(cfg config.IAS, client *http.Client) Service {
 }
 
 type UpdateData struct {
+	Operation             types.Operation
 	TenantMapping         types.TenantMapping
 	ConsumerApplication   types.Application
 	ProviderApplicationID string
@@ -43,8 +44,8 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	consumerTenant := data.TenantMapping.AssignedTenants[0]
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
-	switch {
-	case consumerTenant.Operation == types.OperationAssign:
+	switch data.Operation {
+	case types.OperationAssign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
 			addConsumedAPI(&consumedAPIs, types.ApplicationConsumedAPI{
 				Name:    consumedAPI,
@@ -52,7 +53,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 				AppID:   data.ProviderApplicationID,
 			})
 		}
-	case consumerTenant.Operation == types.OperationUnassign:
+	case types.OperationUnassign:
 		for _, consumedAPI := range consumerTenant.Configuration.ConsumedAPIs {
 			removeConsumedAPI(&consumedAPIs, consumedAPI)
 		}
@@ -78,11 +79,15 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to create request: %w", err)
 	}
+	req.Header.Add("Content-Type", "application/json")
+	log.Info().Msgf("get application req headers: %+v", req.Header)
+
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return types.Application{}, errors.Newf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
+	log.Info().Msgf("get application resp headers: %+v", resp.Header)
 
 	if resp.StatusCode != http.StatusOK {
 		respBytes, err := io.ReadAll(resp.Body)
@@ -166,12 +171,15 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
 	}
+	req.Header.Add("Content-Type", "application/json")
+	log.Info().Msgf("update application req headers: %+v", req.Header)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return errors.Newf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
+	log.Info().Msgf("update application resp headers: %+v", resp.Header)
 
 	if resp.StatusCode != http.StatusOK {
 		respBytes, err := io.ReadAll(resp.Body)
