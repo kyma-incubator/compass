@@ -214,7 +214,9 @@ func (r *repository) ListByReferenceObjectTypesAndWebhookType(ctx context.Contex
 	return convertToWebhooks(entities, r)
 }
 
-// GetByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType
+// GetByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType.
+// Global getter is used for object type ApplicationTemplateWebhookReference as the application template is not tenant scoped
+// and single getter is used for all other object types.
 func (r *repository) GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
 	var entity Entity
 	refColumn, err := getReferenceColumnForListByReferenceObjectType(objectType)
