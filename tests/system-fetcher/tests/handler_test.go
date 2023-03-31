@@ -1138,13 +1138,12 @@ func fixApplicationTemplateWithoutWebhooks(name, intSystemID, systemRole string)
 			},
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
-		Labels: directorSchema.Labels{
-			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
-		},
 	}
 
 	if len(systemRole) > 0 {
 		appTemplateInput.Labels[cfg.TemplateLabelFilter] = systemRole
+	} else {
+		appTemplateInput.Labels[cfg.SelfRegDistinguishLabelKey] = []interface{}{cfg.SelfRegDistinguishLabelValue}
 	}
 
 	return appTemplateInput
