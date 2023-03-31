@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -756,10 +755,7 @@ func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels
 	appTemplateDistinguishLabels := make(map[string]interface{}, len(distinguishLabelKeys))
 
 	for _, key := range distinguishLabelKeys {
-		fmt.Printf("ALEX key: %+v\n", key)
 		if value, exists := labels[key]; exists {
-			fmt.Printf("ALEX value: %+v\n", value)
-			fmt.Printf("ALEX value type: %+v\n", reflect.TypeOf(value))
 			appTemplateDistinguishLabels[key] = value
 		}
 	}
