@@ -84,7 +84,6 @@ func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Respo
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse webhook input body")
 		}
-		log.C(ctx).Infof("Webhook request body: %s", string(body))
 	}
 
 	headers := http.Header{}
