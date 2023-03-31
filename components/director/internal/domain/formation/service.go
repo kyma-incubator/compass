@@ -417,16 +417,14 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		}
 	}
 
-	if ft.formation.State == model.DeleteErrorFormationState || ft.formation.State == model.DeletingFormationState {
-		return ft.formation, nil
-	}
+	if ft.formation.State == model.ReadyFormationState {
+		if err := s.DeleteFormationEntityAndScenarios(ctx, tnt, formationName); err != nil {
+			return nil, errors.Wrapf(err, "An error occurred while deleting formation entity with name: %q and its scenarios label", formationName)
+		}
 
-	if err := s.DeleteFormationEntityAndScenarios(ctx, tnt, formationName); err != nil {
-		return nil, errors.Wrapf(err, "An error occurred while deleting formation entity with name: %q and its scenarios label", formationName)
-	}
-
-	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostDelete, joinPointDetails, formationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PostOperation)
+		if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostDelete, joinPointDetails, formationTemplateID); err != nil {
+			return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PostOperation)
+		}
 	}
 
 	return ft.formation, nil
@@ -961,6 +959,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error) {
+	log.C(ctx).Infof("Resynchronizing formation with ID: %q", formationID)
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -970,11 +969,11 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", tenantID, formationID)
 	}
-	previousState := formation.State
 	if formation.State != model.ReadyFormationState {
-		updatedFormation, err := s.resynchronizeFormationLifecycleNotifications(ctx, tenantID, formation)
+		previousState := formation.State
+		updatedFormation, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while resynchronizing formation lifecycle notifications for formation with ID %q", formationID)
+			return nil, errors.Wrapf(err, "while resynchronizing formation notifications for formation with ID %q", formationID)
 		}
 		if previousState == model.DeleteErrorFormationState && updatedFormation.State == model.ReadyFormationState {
 			return updatedFormation, nil
@@ -994,7 +993,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation) (*model.Formation, error) {
 	formationID := formation.ID
 
-	failedFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID,
+	resyncableFormationAssignments, err := s.formationAssignmentService.GetAssignmentsForFormationWithStates(ctx, tenantID, formationID,
 		[]string{string(model.InitialAssignmentState),
 			string(model.DeletingAssignmentState),
 			string(model.CreateErrorAssignmentState),
@@ -1003,9 +1002,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		return nil, errors.Wrap(err, "while getting formation assignments with synchronizing and error states")
 	}
 
-	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(failedFormationAssignments))
+	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0, len(resyncableFormationAssignments))
 	var errs *multierror.Error
-	for _, fa := range failedFormationAssignments {
+	for _, fa := range resyncableFormationAssignments {
 		var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
 		notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, fa)
 		if err != nil {
@@ -1080,7 +1079,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 	return formation, errs.ErrorOrNil()
 }
 
-func (s *service) resynchronizeFormationLifecycleNotifications(ctx context.Context, tenantID string, formation *model.Formation) (*model.Formation, error) {
+func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenantID string, formation *model.Formation) (*model.Formation, error) {
 	fTmpl, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "An error occurred while getting formation template with ID: %q", formation.FormationTemplateID)
@@ -1353,7 +1352,7 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID, f
 
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
-		log.C(ctx).Infof("The object is not part of any formations. Deleting empty label")
+		log.C(ctx).Infof("After the modifications, the %q label is empty. Deleting empty label...", model.ScenariosKey)
 		return s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey)
 	}
 
@@ -1590,11 +1589,13 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 
 		err = errors.Errorf("Received error from formation webhook response: %v", *response.Error)
 		log.C(ctx).Error(err)
+		// This is the client error case, and we should not return an error,
+		// because otherwise the transaction will be rolled back
 		return nil
 	}
 
 	if formationReq.Webhook.Mode != nil && *formationReq.Webhook.Mode == graphql.WebhookModeAsyncCallback {
-		log.C(ctx).Info("The Webhook in the notification is in ASYNC_CALLBACK mode. Waiting for the receiver to report the status on the status API...")
+		log.C(ctx).Infof("The webhook with ID: %q in the notification is in %q mode. Waiting for the receiver to report the status on the status API...", formationReq.Webhook.ID, graphql.WebhookModeAsyncCallback)
 		if errorState == model.CreateErrorFormationState {
 			formation.State = model.InitialFormationState
 			formation.Error = nil
@@ -1603,7 +1604,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 			formation.State = model.DeletingFormationState
 			formation.Error = nil
 		}
-		log.C(ctx).Infof("Updating the assignment state to %s and waiting for the receiver to report the status on the status API...", string(formation.State))
+		log.C(ctx).Infof("Updating the formation state to %s and waiting for the receiver to report the status on the status API...", string(formation.State))
 		if err = s.formationRepository.Update(ctx, formation); err != nil {
 			return errors.Wrapf(err, "while updating formation with id %q", formation.ID)
 		}

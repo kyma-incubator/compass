@@ -1055,7 +1055,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
-			name:       "Successfully update formation status when operation is delete formation with DELETE_ERROR",
+			name:       "Successfully update formation status when operation is delete formation and state is DELETE_ERROR",
 			transactFn: txGen.ThatSucceeds,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
@@ -1152,7 +1152,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 		},
 		{
-			name:       "Successfully update formation status when operation is create formation when state is CREATE_ERROR",
+			name:       "Successfully update formation status and operation is create formation when state is CREATE_ERROR",
 			transactFn: txGen.ThatSucceeds,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}

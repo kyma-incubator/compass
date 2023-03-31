@@ -580,21 +580,21 @@ var (
 	// Formation notification variables
 	emptyFormationNotificationRequests = make([]*webhookclient.FormationNotificationRequest, 0)
 
-	formationNotificationRequest = &webhookclient.FormationNotificationRequest{
+	formationNotificationSyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
 	}
-	formationNotificationDeleteRequest = &webhookclient.FormationNotificationRequest{
+	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
 			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
 	}
-	formationNotificationAsyncRequest = &webhookclient.FormationNotificationRequest{
+	formationNotificationAsyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
@@ -602,9 +602,9 @@ var (
 		},
 	}
 
-	formationNotificationRequests       = []*webhookclient.FormationNotificationRequest{formationNotificationRequest}
-	formationNotificationDeleteRequests = []*webhookclient.FormationNotificationRequest{formationNotificationDeleteRequest}
-	formationNotificationAsyncRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncRequest}
+	formationNotificationSyncCreateRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationSyncCreateRequest}
+	formationNotificationSyncDeleteRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationSyncDeleteRequest}
+	formationNotificationAsyncCreateRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncCreateRequest}
 
 	formationNotificationWebhookSuccessResponse = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, nil)
 	formationNotificationWebhookErrorResponse   = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, str.Ptr(testErr.Error()))
