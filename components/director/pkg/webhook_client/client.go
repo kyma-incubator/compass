@@ -194,22 +194,28 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.Respo
 
 func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook graphql.Webhook) (*http.Response, error) {
 	if webhook.Auth != nil {
+		log.C(ctx).Infof("p --> authn/authz configuration available in the webhook with ID: %q", webhook.ID)
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
+			log.C(ctx).Info("p --> cmp mtls access strategy configured in the webhook")
 			if resp, err := c.mtlsClient.Do(req); err != nil {
 				return c.extSvcMtlsClient.Do(req)
 			} else {
 				return resp, err
 			}
 		} else if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.OpenAccessStrategy) {
+			log.C(ctx).Info("p --> OPEN access strategy configured in the webhook")
 			return c.httpClient.Do(req)
 		} else if webhook.Auth.Credential != nil {
+			log.C(ctx).Info("p --> oauth creds configured in the webhook")
 			ctx = saveToContext(ctx, webhook.Auth.Credential)
 			req = req.WithContext(ctx)
 			return c.httpClient.Do(req)
 		} else {
+			log.C(ctx).Info("p --> could not determine auth flow for webhook")
 			return nil, errors.New("could not determine auth flow for webhook")
 		}
 	} else {
+		log.C(ctx).Infof("p --> NO authn/authz configuration available in the webhook with ID: %q", webhook.ID)
 		return c.httpClient.Do(req)
 	}
 }
@@ -292,11 +298,13 @@ func saveToContext(ctx context.Context, credentialData graphql.CredentialData) c
 
 	switch v := credentialData.(type) {
 	case *graphql.BasicCredentialData:
+		log.C(ctx).Infof("p --> BASIC oauth creds configured in the webhook, username: %q", v.Username)
 		credentials = &auth.BasicCredentials{
 			Username: v.Username,
 			Password: v.Password,
 		}
 	case *graphql.OAuthCredentialData:
+		log.C(ctx).Infof("p --> oauth creds configured in the webhook, client ID: %q and URL: %q", v.ClientID, v.URL)
 		credentials = &auth.OAuthCredentials{
 			ClientID:     v.ClientID,
 			ClientSecret: v.ClientSecret,
