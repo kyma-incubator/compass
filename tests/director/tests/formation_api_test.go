@@ -1549,17 +1549,17 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		applicationWebhookType := graphql.WebhookTypeApplicationTenantMapping
-		applicationWebhookMode := graphql.WebhookModeAsyncCallback
+		webhookType := graphql.WebhookTypeApplicationTenantMapping
+		webhookMode := graphql.WebhookModeAsyncCallback
 		urlTemplateApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.Config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationWebhookType, applicationWebhookMode, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication)
 
-		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationWebhookType, applicationWebhookMode, app1.ID)
-		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
-		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID)
+		t.Logf("Add webhook with type %q and mode: %q to application template with ID %q", webhookType, webhookMode, appTmpl.ID)
+		actualApplicationTemplateWebhook := fixtures.AddWebhookToApplicationTemplate(t, ctx, oauthGraphQLClient, applicationWebhookInput, "", appTmpl.ID)
+		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualApplicationTemplateWebhook.ID)
 
 		formationTemplateWebhookType := graphql.WebhookTypeFormationLifecycle
 		formationTemplateWebhookMode := graphql.WebhookModeAsyncCallback
