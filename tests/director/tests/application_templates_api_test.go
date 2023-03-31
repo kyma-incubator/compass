@@ -69,9 +69,10 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	t.Run("Success for template with product label created with certificate", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
+		productLabelValue := "productLabelValue"
 		appTemplateName := createAppTemplateName("app-template-name-product")
 		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
-		appTemplateInput.Labels[conf.ApplicationTemplateProductLabel] = "productLabelValue"
+		appTemplateInput.Labels[conf.ApplicationTemplateProductLabel] = productLabelValue
 		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 		require.NoError(t, err)
 
@@ -84,6 +85,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), output)
 
 		// THEN
+		require.Equal(t, output.Labels[conf.ApplicationTemplateProductLabel], productLabelValue)
 		require.NoError(t, err)
 		require.NotEmpty(t, output.ID)
 	})
