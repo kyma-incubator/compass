@@ -97,6 +97,7 @@ func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Contex
 	if len(tenantMapping1ConsumedAPIs) != 0 {
 		log.Info().Msgf("Updating consumed APIs for application with UCL ID '%s'", tenantMapping1UCLApplicationID)
 		updateData := ias.UpdateData{
+			Operation:             tenantMapping1.AssignedTenants[0].Operation,
 			TenantMapping:         tenantMapping1,
 			ConsumerApplication:   iasApplication1,
 			ProviderApplicationID: iasApplication2.ID,
@@ -108,6 +109,7 @@ func (s TenantMappingsService) updateApplicationsConsumedAPIs(ctx context.Contex
 	if len(tenantMapping2ConsumedAPIs) != 0 {
 		log.Info().Msgf("Updating consumed APIs for application with UCL ID '%s'", tenantMapping2UCLApplicationID)
 		updateData := ias.UpdateData{
+			Operation:             tenantMapping1.AssignedTenants[0].Operation,
 			TenantMapping:         tenantMapping2,
 			ConsumerApplication:   iasApplication2,
 			ProviderApplicationID: iasApplication1.ID,

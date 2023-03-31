@@ -31,5 +31,8 @@ func Default() *zerolog.Logger {
 
 func FromContext(ctx context.Context) *zerolog.Logger {
 	log := ctx.Value(logCtx.LoggerCtxKey)
-	return log.(*zerolog.Logger)
+	if logr, ok := log.(*zerolog.Logger); ok {
+		return logr
+	}
+	return &logger
 }
