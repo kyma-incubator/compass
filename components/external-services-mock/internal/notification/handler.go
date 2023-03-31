@@ -646,14 +646,15 @@ func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Reque
 	h.asyncFormationResponse(writer, r, DeleteFormation, "", formationResponseFunc)
 }
 
-// AsyncNoResponseCreate handles asynchronous formation assignment notification requests for Create operation that do not send any request to the formation status API
-func (h *Handler) AsyncNoResponseCreate(writer http.ResponseWriter, r *http.Request) {
-	h.asyncFormationResponse(writer, r, CreateFormation, "", NoopFormationResponseFn)
-}
-
-// AsyncNoResponseDelete handles asynchronous formation assignment notification requests for Create operation that do not send any request to the formation status API
-func (h *Handler) AsyncNoResponseDelete(writer http.ResponseWriter, r *http.Request) {
-	h.asyncFormationResponse(writer, r, DeleteFormation, "", NoopFormationResponseFn)
+// AsyncNoResponse handles asynchronous formation notification requests that do not send any request to the formation status API
+func (h *Handler) AsyncNoResponse(writer http.ResponseWriter, r *http.Request) {
+	operation := CreateFormation
+	if r.Method == http.MethodPost {
+		operation = CreateFormation
+	} else if r.Method == http.MethodDelete {
+		operation = DeleteFormation
+	}
+	h.asyncFormationResponse(writer, r, operation, "", NoopFormationResponseFn)
 }
 
 // AsyncFormationFailOnce handles asynchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the

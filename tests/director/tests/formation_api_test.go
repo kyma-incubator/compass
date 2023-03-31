@@ -1527,7 +1527,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		t.Logf("Add webhook with type %q and mode: %q to formation template with ID %q", webhookType, webhookMode, ft.ID)
 		actualFormationTemplateWebhook := fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
-		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
 
 		formationName := "formation-name-from-template-with-webhook"
 		t.Logf("Creating formation with name: %q from template with name: %q that has %q webhook", formationName, formationTmplName, graphql.WebhookTypeFormationLifecycle)
@@ -1573,12 +1573,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		t.Logf("Add webhook with type %q and mode: %q to formation template with ID %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
 		actualFormationTemplateWebhook := fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
-		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
 
 		formationName := "formation-name-from-template-with-webhook"
 		t.Logf("Creating formation with name: %q from template with name: %q that has %q webhook", formationName, formationTmplName, formationTemplateWebhookType)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
-		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualFormationTemplateWebhook.ID) // Otherwise, FT wouldn't be able to be deleted because formation is stuck in DELETING state
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID) // Otherwise, FT wouldn't be able to be deleted because formation is stuck in DELETING state
 		formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName, &formationTmplName)
 		require.Equal(t, "INITIAL", formation.State)
 		require.Empty(t, formation.Error)
@@ -1772,7 +1772,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1.ID)
 		actualFormationTemplateWebhook := fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
-		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
 
 		urlTemplateAsyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
@@ -1940,15 +1940,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		formationTemplateWebhookType := graphql.WebhookTypeFormationLifecycle
 		formationTemplateWebhookMode := graphql.WebhookModeAsyncCallback
-		urlTemplateFormation := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async-fail-once/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
+		urlTemplateThatNeverResponds := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async-no-response/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
 		inputTemplateFormation := "{\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"details\\\":{\\\"id\\\":\\\"{{.Formation.ID}}\\\",\\\"name\\\":\\\"{{.Formation.Name}}\\\"}}"
 		outputTemplateFormation := "{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-		formationTemplateWebhookInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateFormation, inputTemplateFormation, outputTemplateFormation)
+		formationTemplateWebhookInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateThatNeverResponds, inputTemplateFormation, outputTemplateFormation)
 
-		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", graphql.WebhookTypeFormationLifecycle, graphql.WebhookModeAsyncCallback, ft.ID)
+		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
 		actualFormationTemplateWebhook := fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
-		defer fixtures.CleanupWebhook(t, ctx, oauthGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
 
 		urlAsyncTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 		inputAsyncTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
@@ -2013,6 +2013,36 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		body := getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
+		t.Logf("Should get formation %q by id %q", formationName, formation.ID)
+		var gotFormation *graphql.Formation
+		getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, getFormationReq, &gotFormation)
+		require.NoError(t, err)
+		require.Equal(t, formation.ID, gotFormation.ID)
+		require.Equal(t, "INITIAL", gotFormation.State)
+
+		assertAsyncFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, "INITIAL", createFormationOperation, tnt, tntParentCustomer)
+		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments)
+		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
+
+		urlTemplateThatFailsOnce := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async-fail-once/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
+
+		// TODO::Change with updateWebhook when it is fixed for global FT
+		webhookThatFailsOnceInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateThatFailsOnce, inputTemplateFormation, outputTemplateFormation)
+
+		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
+		fixtures.DeleteWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		actualFormationTemplateWebhook = fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, webhookThatFailsOnceInput, "", ft.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+
+		t.Logf("Resynchronize formation %s should retry and fail", formation.Name)
+		resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, resynchronizeReq, &formation)
+		require.NoError(t, err)
+		require.Equal(t, formationName, formation.Name)
+		require.Equal(t, "INITIAL", formation.State)
+		require.Empty(t, formation.Error)
+
 		// As part of the formation status API request, formation assignment synchronization will be executed.
 		assertAsyncFormationNotificationFromCreationOrDeletion(t, body, formation.ID, formation.Name, "CREATE_ERROR", createFormationOperation, tnt, tntParentCustomer)
 		assertFormationAssignmentsAsynchronously(t, ctx, tnt, formation.ID, 4, expectedAssignments)
@@ -2025,8 +2055,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		})
 
 		t.Logf("Should get formation %q by id %q", formationName, formation.ID)
-		var gotFormation *graphql.Formation
-		getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
+		getFormationReq = fixtures.FixGetFormationRequest(formation.ID)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, getFormationReq, &gotFormation)
 		require.NoError(t, err)
 		require.Equal(t, formation.ID, gotFormation.ID)
@@ -2035,7 +2064,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		t.Logf("Resynchronize formation %s should retry and succeed", formation.Name)
-		resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
+		resynchronizeReq = fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, resynchronizeReq, &formation)
 		require.NoError(t, err)
 		require.Equal(t, formationName, formation.Name)
@@ -2094,6 +2123,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		resetShouldFailEndpointFromExternalSvcMock(t, certSecuredHTTPClient)
 
+		// TODO::Change with updateWebhook when it is fixed for global FT
+		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
+		fixtures.DeleteWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		actualFormationTemplateWebhook = fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+
 		delFormation := fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
 		require.NotEmpty(t, delFormation.ID)
 		require.Equal(t, "DELETING", delFormation.State)
@@ -2105,6 +2140,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, formation.ID, gotFormation.ID)
 		require.Equal(t, delFormation.State, gotFormation.State)
+
+		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
+		assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t, body, formation.ID, formation.Name, "DELETING", deleteFormationOperation, tnt, tntParentCustomer, false)
+
+		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+		// TODO::Change with updateWebhook when it is fixed for global FT
+		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
+		fixtures.DeleteWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		actualFormationTemplateWebhook = fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, webhookThatFailsOnceInput, "", ft.ID)
+		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+
+		t.Logf("Resynchronize formation %s should retry and fail", formation.Name)
+		resynchronizeReq = fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, resynchronizeReq, &formation)
+		require.NoError(t, err)
+		require.Equal(t, formationName, formation.Name)
+		require.Equal(t, "DELETING", formation.State)
+		require.Empty(t, formation.Error)
 
 		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForFormationID(t, body, formation.ID, 1)
@@ -3943,6 +3998,16 @@ func assertFormationNotificationFromCreationOrDeletion(t *testing.T, body []byte
 }
 
 func assertAsyncFormationNotificationFromCreationOrDeletion(t *testing.T, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string) {
+	var shouldExpectDeleted bool
+	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {
+		shouldExpectDeleted = false
+	} else {
+		shouldExpectDeleted = true
+	}
+	assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, shouldExpectDeleted)
+}
+
+func assertAsyncFormationNotificationFromCreationOrDeletionWithShouldExpectDeleted(t *testing.T, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool) {
 	t.Logf("Assert asynchronous formation lifecycle notifications are sent for %q operation...", formationOperation)
 	notificationsForFormation := gjson.GetBytes(body, formationID)
 	require.True(t, notificationsForFormation.Exists())
@@ -3963,14 +4028,14 @@ func assertAsyncFormationNotificationFromCreationOrDeletion(t *testing.T, body [
 
 	t.Log("Assert formation lifecycle notifications are successfully processed...")
 	formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, certSecuredGraphQLClient)
-	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {
+	if shouldExpectDeleted {
+		require.Equal(t, 0, formationPage.TotalCount)
+		require.Empty(t, formationPage.Data)
+	} else {
 		require.Equal(t, 1, formationPage.TotalCount)
 		require.Equal(t, formationState, formationPage.Data[0].State)
 		require.Equal(t, formationID, formationPage.Data[0].ID)
 		require.Equal(t, formationName, formationPage.Data[0].Name)
-	} else {
-		require.Equal(t, 0, formationPage.TotalCount)
-		require.Empty(t, formationPage.Data)
 	}
 
 	t.Logf("Asynchronous formation lifecycle notifications are successfully validated for %q operation.", formationOperation)
