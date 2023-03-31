@@ -297,7 +297,7 @@ func saveToContext(ctx context.Context, credentialData graphql.CredentialData) c
 	var credentials auth.Credentials
 
 	log.C(ctx).Infof("The credentials data configurated in the webhook has type: %T", credentialData)
-	switch v := credentialData.(type) {
+	switch v := credentialData.(type) { // The implementation of graphql.CredentialData is done by value receiver, that's why in the switch-case we need to pass structure value, not their pointers
 	case graphql.BasicCredentialData:
 		credentials = &auth.BasicCredentials{
 			Username: v.Username,
