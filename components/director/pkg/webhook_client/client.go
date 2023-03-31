@@ -194,15 +194,19 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.Respo
 
 func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook graphql.Webhook) (*http.Response, error) {
 	if webhook.Auth != nil {
+		log.C(ctx).Infof("Authentication configuration is available in the webhook with ID: %q", webhook.ID)
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
+			log.C(ctx).Infof("Access strategy: %q is used in the webhook authentication configuration", accessstrategy.CMPmTLSAccessStrategy)
 			if resp, err := c.mtlsClient.Do(req); err != nil {
 				return c.extSvcMtlsClient.Do(req)
 			} else {
 				return resp, err
 			}
 		} else if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.OpenAccessStrategy) {
+			log.C(ctx).Infof("Access strategy: %q is used in the webhook authentication configuration", accessstrategy.OpenAccessStrategy)
 			return c.httpClient.Do(req)
 		} else if webhook.Auth.Credential != nil {
+			log.C(ctx).Info("Credentials data is used in the webhook authentication configuration")
 			ctx = saveToContext(ctx, webhook.Auth.Credential)
 			req = req.WithContext(ctx)
 			return c.httpClient.Do(req)
@@ -210,6 +214,7 @@ func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.
 			return nil, errors.New("could not determine auth flow for webhook")
 		}
 	} else {
+		log.C(ctx).Infof("No authentication configuration is available in the webhook with ID: %q. Executing the request with unsecured client.", webhook.ID)
 		return c.httpClient.Do(req)
 	}
 }
@@ -290,19 +295,21 @@ func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 func saveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
 	var credentials auth.Credentials
 
-	switch v := credentialData.(type) {
-	case *graphql.BasicCredentialData:
+	log.C(ctx).Infof("The credentials data configurated in the webhook has type: %T", credentialData)
+	switch v := credentialData.(type) { // The implementation of graphql.CredentialData is done by value receiver, that's why in the switch-case we need to pass structure value, not their pointers
+	case graphql.BasicCredentialData:
 		credentials = &auth.BasicCredentials{
 			Username: v.Username,
 			Password: v.Password,
 		}
-	case *graphql.OAuthCredentialData:
+	case graphql.OAuthCredentialData:
 		credentials = &auth.OAuthCredentials{
 			ClientID:     v.ClientID,
 			ClientSecret: v.ClientSecret,
 			TokenURL:     v.URL,
 		}
 	default:
+		log.C(ctx).Info("The credentials data didn't match neither \"graphql.BasicCredentialData\" or \"graphql.OAuthCredentialData\"")
 		return ctx
 	}
 
