@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,6 +28,11 @@ func NewAuthMiddleware(ctx context.Context, cfg config.TenantInfo) (AuthMiddlewa
 		config: cfg,
 		client: &http.Client{
 			Timeout: cfg.RequestTimeout,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: cfg.InsecureSkipVerify,
+				},
+			},
 		},
 	}
 	if err := middleware.getTenant(ctx); err != nil {
