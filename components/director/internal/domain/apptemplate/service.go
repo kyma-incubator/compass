@@ -26,6 +26,7 @@ import (
 const applicationTypeLabelKey = "applicationType"
 const otherSystemType = "Other System Type"
 const providerSAP = "SAP"
+const labelsKey = "labels"
 
 // ApplicationTemplateRepository missing godoc
 //
@@ -371,7 +372,7 @@ func processMap(input *map[string]interface{}, keyName string, rootObject bool) 
 			}
 		} else if mapValue, ok := value.(map[string]interface{}); ok {
 			// Object value - process only labels object
-			if key == "labels" {
+			if key == labelsKey {
 				processMap(&mapValue, keyName, false)
 			}
 		}
@@ -419,7 +420,7 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 		return "", errors.Wrapf(err, "while unmarshaling application input json")
 	}
 
-	labels, ok := appInput["labels"]
+	labels, ok := appInput[labelsKey]
 	if ok && labels != nil {
 		labelsMap, ok := labels.(map[string]interface{})
 		if !ok {
@@ -438,9 +439,9 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 		}
 
 		labelsMap[applicationTypeLabelKey] = applicationType
-		appInput["labels"] = labelsMap
+		appInput[labelsKey] = labelsMap
 	} else {
-		appInput["labels"] = map[string]interface{}{applicationTypeLabelKey: applicationType}
+		appInput[labelsKey] = map[string]interface{}{applicationTypeLabelKey: applicationType}
 	}
 
 	inputJSON, err := json.Marshal(appInput)
