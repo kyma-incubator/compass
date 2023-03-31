@@ -1473,6 +1473,20 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
+			Name: "Returns error when app input is invalid JSON",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{{}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "nonOptionalLabel", Description: str.Ptr("nonOptionalLabel description"), JSONPath: str.Ptr("nonOptionalLabel"), Optional: &placeholderNotOptional},
+				},
+			},
+			InputValues: []*model.ApplicationTemplateValueInput{
+				{Placeholder: "nonOptionalLabel", Value: ""},
+			},
+			ExpectedOutput: "",
+			ExpectedError:  errors.New("error while clear optional empty value"),
+		},
+		{
 			Name: "Returns error when required placeholder value not provided in labels",
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"labels": {"label1":"label1" ,"nonOptionalLabel": "{{nonOptionalLabel}}"}, "Description": "Lorem ipsum"}`,
