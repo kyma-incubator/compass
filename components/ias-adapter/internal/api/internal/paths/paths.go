@@ -3,5 +3,5 @@ package paths
 const (
 	HealthPath         = "/healthz"
 	ReadyPath          = "/readyz"
-	TenantMappingsPath = "/tenantMappings/:tenantID"
+	TenantMappingsPath = "/v1/tenantMappings/:tenantID"
 )
