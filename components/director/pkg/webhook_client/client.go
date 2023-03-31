@@ -297,16 +297,16 @@ func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 func saveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
 	var credentials auth.Credentials
 
-	log.C(ctx).Infof("p --> credentials type %T", credentialData)
+	log.C(ctx).Infof("p --> credentials type: %T", credentialData)
 
 	switch v := credentialData.(type) {
-	case *graphql.BasicCredentialData:
+	case graphql.BasicCredentialData:
 		log.C(ctx).Infof("p --> BASIC oauth creds configured in the webhook, username: %q", v.Username)
 		credentials = &auth.BasicCredentials{
 			Username: v.Username,
 			Password: v.Password,
 		}
-	case *graphql.OAuthCredentialData:
+	case graphql.OAuthCredentialData:
 		log.C(ctx).Infof("p --> oauth creds configured in the webhook, client ID: %q and URL: %q", v.ClientID, v.URL)
 		credentials = &auth.OAuthCredentials{
 			ClientID:     v.ClientID,
