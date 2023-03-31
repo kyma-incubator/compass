@@ -2919,7 +2919,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			ExpectedErrMessage: testErr.Error(),
 		},
-		// Business logic tests for formation lifecycle and tenant mapping notifications
+		// Business logic tests for formation and tenant mapping notifications
 		{
 			Name: "success when both formation and formation assignment resynchronization are successful and there no left formation assignments should unassign",
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
@@ -2974,7 +2974,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		},
 		// Business logic tests for formation notifications only
 		{
-			Name: "success when resynchronization is successful for lifecycle notifications",
+			Name: "success when resynchronization is successful for notifications",
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)
