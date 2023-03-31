@@ -297,6 +297,8 @@ func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 func saveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
 	var credentials auth.Credentials
 
+	log.C(ctx).Infof("p --> credentials type %T", credentialData)
+
 	switch v := credentialData.(type) {
 	case *graphql.BasicCredentialData:
 		log.C(ctx).Infof("p --> BASIC oauth creds configured in the webhook, username: %q", v.Username)
@@ -312,6 +314,7 @@ func saveToContext(ctx context.Context, credentialData graphql.CredentialData) c
 			TokenURL:     v.URL,
 		}
 	default:
+		log.C(ctx).Info("p --> the credentials type didn't match BASIC neither OAUTH")
 		return ctx
 	}
 
