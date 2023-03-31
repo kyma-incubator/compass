@@ -337,24 +337,9 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 		}
 
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
-	}
-
-	for _, placeholder := range appTemplate.Placeholders {
-		newValue, err := values.FindPlaceholderValue(placeholder.Name)
-		isOptional := false
-		if placeholder.Optional != nil {
-			isOptional = *placeholder.Optional
-		}
-
-		if err != nil && !isOptional {
-			return "", errors.Wrap(err, "required placeholder not provided")
-		}
-
-		if strings.TrimSpace(newValue) == "" && isOptional {
-			appCreateInputJSON, err = removeEmptyKeyFromLabels(appCreateInputJSON, placeholder.Name)
-			if err != nil {
-				return "", errors.Wrap(err, "error while clear optional empty value")
-			}
+		appCreateInputJSON, err = removeEmptyKeyFromLabels(appCreateInputJSON, placeholder.Name)
+		if err != nil {
+			return "", errors.Wrap(err, "error while clear optional empty value")
 		}
 	}
 	return appCreateInputJSON, nil
