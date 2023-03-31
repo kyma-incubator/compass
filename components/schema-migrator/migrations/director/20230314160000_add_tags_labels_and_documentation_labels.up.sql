@@ -49,7 +49,16 @@ ALTER TABLE event_api_definitions
     ADD COLUMN hierarchy JSONB;
 
 ALTER TABLE specifications
-    ALTER COLUMN api_spec_type TYPE VARCHAR(255);
+    RENAME COLUMN api_spec_type TO api_spec_type_old;
+
+ALTER TABLE specifications
+    ADD COLUMN api_spec_type_var VARCHAR(255);
+
+UPDATE specifications
+    SET api_spec_type_var = api_spec_type_old;
+
+ALTER TABLE specifications
+    DROP COLUMN api_spec_type_old;
 
 DROP TYPE api_spec_type;
 
@@ -71,7 +80,13 @@ CREATE TYPE api_spec_type AS ENUM (
     );
 
 ALTER TABLE specifications
-    ALTER COLUMN api_spec_type TYPE api_spec_type USING (api_spec_type::api_spec_type);
+    ADD COLUMN api_spec_type api_spec_type;
+
+UPDATE specifications
+    SET api_spec_type = CAST(api_spec_type_var AS api_spec_type);
+
+ALTER TABLE specifications
+    DROP COLUMN api_spec_type_var;
 
 -- Create new views --
 CREATE VIEW ord_tags_products AS

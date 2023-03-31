@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.global.migratorJob.ias_adapter.pvc.name }}
+  namespace: {{ .Values.global.migratorJob.ias_adapter.pvc.namespace }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  storageClassName: {{ .Values.global.migratorJob.ias_adapter.pvc.storageClass }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

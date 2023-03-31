@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: update-expected-schema-version-ias-adapter
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-rollback,pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    spec:
+      serviceAccountName: update-expected-schema-version
+      restartPolicy: Never
+      shareProcessNamespace: true
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
+      containers:
+      - name: editor
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - "/bin/bash"
+        args:
+        - "-c"
+        - " chmod +x ./update-expected-schema-version.sh; ./update-expected-schema-version.sh --component ias-adapter --cm-name {{ .Values.global.expectedSchemaVersionUpdateJob.ias_adapter.cm.name }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"

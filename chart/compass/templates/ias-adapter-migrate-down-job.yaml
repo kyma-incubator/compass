@@ -1,0 +1,103 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ias-adapter-migration-down
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+  annotations:
+    "helm.sh/hook": pre-rollback
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    spec:
+      serviceAccountName: {{ $.Chart.Name }}-ias-adapter-migration-down-job
+      {{- if eq .Values.global.migratorJob.nodeSelectorEnabled true }}
+      nodeSelector:
+        migrationJobs: "true"
+      {{- end }}
+      restartPolicy: Never
+      shareProcessNamespace: true
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
+      containers:
+        {{- if eq .Values.global.database.embedded.enabled false }}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - "trap 'exit 0' SIGINT; echo 'Waiting for istio-proxy to start...' && sleep 15; /cloud_sql_proxy -instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432 -term_timeout=2s"
+        {{- end }}
+        - name: migrator
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-ias-adapter-db-name
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-ias-adapter-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-ias-adapter-password
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-serviceName
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-servicePort
+            - name: DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: ias-adapter-postgresql
+                  key: postgresql-sslMode
+          command:
+            - "/bin/bash"
+          args:
+            - "-c"
+            - "sleep 20; ./run.sh --down --component ias-adapter --pv-path {{ .Values.global.migratorJob.ias_adapter.pvc.migrationsPath }}; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+          volumeMounts:
+            - name: migrations-ias-adapter-storage
+              mountPath: {{ .Values.global.migratorJob.ias_adapter.pvc.migrationsPath }}
+      volumes:
+        - name: migrations-ias-adapter-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.global.migratorJob.ias_adapter.pvc.name }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-ias-adapter-migration-down-job
+  namespace: {{ $.Release.Namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
