@@ -332,6 +332,21 @@ func TestModifyFormationTemplateWebhooks(t *testing.T) {
 		assertions.AssertWebhooks(t, []*graphql.WebhookInput{webhookInput}, []graphql.Webhook{*updatedFormationTemplate.Webhooks[0]})
 	})
 
+	urlUpdated := "https://test.com"
+	t.Run("Update formation template webhook", func(t *testing.T) {
+		webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+			URL: &urlUpdated, Type: graphql.WebhookTypeFormationLifecycle})
+
+		require.NoError(t, err)
+		updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
+
+		var updatedWebhook graphql.Webhook
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateReq, &updatedWebhook)
+		require.NoError(t, err)
+		assert.NotNil(t, updatedWebhook.URL)
+		assert.Equal(t, urlUpdated, *updatedWebhook.URL)
+	})
+
 	t.Run("Delete formation template webhook", func(t *testing.T) {
 		//GIVEN
 		deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
@@ -343,7 +358,7 @@ func TestModifyFormationTemplateWebhooks(t *testing.T) {
 		//THEN
 		require.NoError(t, err)
 		assert.NotNil(t, actualWebhook.URL)
-		assert.Equal(t, *webhookInput.URL, *actualWebhook.URL)
+		assert.Equal(t, urlUpdated, *actualWebhook.URL)
 	})
 }
 
