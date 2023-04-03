@@ -33,6 +33,7 @@ const (
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type tenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
@@ -68,6 +69,7 @@ type Config struct {
 
 	EnableSystemDeletion bool   `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
 	OperationalMode      string `envconfig:"APP_OPERATIONAL_MODE"`
+	VerifyTenant         string `envconfig:"APP_VERIFY_TENANT"`
 }
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
@@ -201,9 +203,18 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenants, err := s.tenantService.List(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to retrieve tenants")
+	var tenants []*model.BusinessTenantMapping
+	if len(s.config.VerifyTenant) > 0 {
+		singleTenant, err := s.tenantService.GetTenantByExternalID(ctx, s.config.VerifyTenant)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to retrieve tenant %s", s.config.VerifyTenant)
+		}
+		tenants = append(tenants, singleTenant)
+	} else {
+		tenants, err = s.tenantService.List(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to retrieve tenants")
+		}
 	}
 
 	err = tx.Commit()
