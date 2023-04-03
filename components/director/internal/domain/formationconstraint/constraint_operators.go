@@ -106,23 +106,18 @@ func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, 
 
 	switch i.ResourceType {
 	case model.ApplicationResourceType:
-		inputAppType, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, i.ResourceID, e.applicationTypeLabelKey)
-		if err != nil {
-			return false, errors.Wrap(err, fmt.Sprintf("while getting label with key %q of application with ID %q in tenant %q", e.applicationTypeLabelKey, i.ResourceID, i.Tenant))
-		}
-
 		applications, err := e.applicationRepository.ListByScenariosNoPaging(ctx, i.Tenant, []string{i.FormationName})
 		if err != nil {
 			return false, errors.Wrap(err, fmt.Sprintf("while listing applications in scenario %q", i.FormationName))
 		}
 
 		for _, application := range applications {
-			appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, application.ID, e.applicationTypeLabelKey)
+			appTypeLbl, err := e.labelService.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, application.ID, i.ResourceTypeLabelKey)
 			if err != nil {
-				return false, errors.Wrap(err, fmt.Sprintf("while getting label with key %q of application with ID %q in tenant %q", e.applicationTypeLabelKey, application.ID, i.Tenant))
+				return false, errors.Wrap(err, fmt.Sprintf("while getting label with key %q of application with ID %q in tenant %q", i.ResourceTypeLabelKey, application.ID, i.Tenant))
 			}
 
-			if inputAppType.Value.(string) == appTypeLbl.Value.(string) {
+			if i.ResourceSubtype == appTypeLbl.Value.(string) {
 				return false, nil
 			}
 		}

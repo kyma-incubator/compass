@@ -239,7 +239,7 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
 
-			engine := formationconstraint.NewConstraintEngine(nil, tenantSvc, asaSvc, formationRepo, labelRepo, nil, nil, "")
+			engine := formationconstraint.NewConstraintEngine(nil, tenantSvc, asaSvc, formationRepo, labelRepo, nil, nil)
 			// WHEN
 			result, err := engine.IsNotAssignedToAnyFormationOfType(ctx, testCase.Input)
 
@@ -267,11 +267,12 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 	appID := "b55131c4-ca3a-11ed-afa1-0242ac120002"
 
 	in := &formationconstraintpkg.DoesNotContainResourceOfSubtypeInput{
-		FormationName:   scenario,
-		ResourceType:    model.ApplicationResourceType,
-		ResourceSubtype: inputAppType,
-		ResourceID:      inputAppID,
-		Tenant:          testTenantID,
+		FormationName:        scenario,
+		ResourceType:         model.ApplicationResourceType,
+		ResourceSubtype:      inputAppType,
+		ResourceID:           inputAppID,
+		Tenant:               testTenantID,
+		ResourceTypeLabelKey: applicationTypeLabel,
 	}
 
 	testCases := []struct {
@@ -287,7 +288,6 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 			Input: in,
 			LabelSvc: func() *automock.LabelService {
 				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, inputAppID, applicationTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
 				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(&model.Label{Value: "different-type"}, nil).Once()
 				return svc
 			},
@@ -304,7 +304,6 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 			Input: in,
 			LabelSvc: func() *automock.LabelService {
 				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, inputAppID, applicationTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
 				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
 				return svc
 			},
@@ -321,7 +320,6 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 			Input: in,
 			LabelSvc: func() *automock.LabelService {
 				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, inputAppID, applicationTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
 				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, appID, applicationTypeLabel).Return(nil, testErr).Once()
 				return svc
 			},
@@ -334,30 +332,14 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:  "Returns error when can't get the applications in the formation",
-			Input: in,
-			LabelSvc: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, inputAppID, applicationTypeLabel).Return(&model.Label{Value: inputAppType}, nil).Once()
-				return svc
-			},
+			Name:     "Returns error when can't get the applications in the formation",
+			Input:    in,
+			LabelSvc: UnusedLabelService,
 			ApplicationRepo: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("ListByScenariosNoPaging", ctx, testTenantID, []string{scenario}).Return(nil, testErr).Once()
 				return repo
 			},
-			ExpectedResult:   false,
-			ExpectedErrorMsg: testErr.Error(),
-		},
-		{
-			Name:  "Returns error when can't get the input application type",
-			Input: in,
-			LabelSvc: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, inputAppID, applicationTypeLabel).Return(nil, testErr).Once()
-				return svc
-			},
-			ApplicationRepo:  UnusedApplicationRepo,
 			ExpectedResult:   false,
 			ExpectedErrorMsg: testErr.Error(),
 		},
@@ -388,7 +370,7 @@ func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			labelSvc := testCase.LabelSvc()
 			appRepo := testCase.ApplicationRepo()
-			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, appRepo, applicationTypeLabel)
+			engine := formationconstraint.NewConstraintEngine(nil, nil, nil, nil, nil, labelSvc, appRepo)
 
 			result, err := engine.DoesNotContainResourceOfSubtype(ctx, testCase.Input)
 

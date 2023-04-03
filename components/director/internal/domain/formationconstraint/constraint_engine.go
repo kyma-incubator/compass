@@ -57,11 +57,10 @@ type ConstraintEngine struct {
 	applicationRepository     applicationRepository
 	operators                 map[OperatorName]OperatorFunc
 	operatorInputConstructors map[OperatorName]OperatorInputConstructor
-	applicationTypeLabelKey   string
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, applicationTypeLabelKey string) *ConstraintEngine {
+func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository) *ConstraintEngine {
 	c := &ConstraintEngine{
 		constraintSvc:         constraintSvc,
 		tenantSvc:             tenantSvc,
@@ -74,7 +73,6 @@ func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantS
 			IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput,
 			DoesNotContainResourceOfSubtypeOperator:   NewDoesNotContainResourceOfSubtypeInput,
 		},
-		applicationTypeLabelKey: applicationTypeLabelKey,
 	}
 	c.operators = map[OperatorName]OperatorFunc{
 		IsNotAssignedToAnyFormationOfTypeOperator: c.IsNotAssignedToAnyFormationOfType,
