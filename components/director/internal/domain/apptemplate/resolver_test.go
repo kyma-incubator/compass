@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
@@ -516,8 +517,9 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	labelsContainingSelfRegistrationAndInvaidRegion := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal", RegionKey: 1}
 	labelsContainingSelfRegistration := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal", RegionKey: "region"}
 	labelsContainingSelfRegAndSubaccount := map[string]interface{}{
-		apptmpltest.TestDistinguishLabel: "selfRegVal",
-		RegionKey:                        "region",
+		apptmpltest.TestDistinguishLabel:   "selfRegVal",
+		RegionKey:                          "region",
+		scenarioassignment.SubaccountIDKey: testTenant,
 	}
 	distinguishLabel := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal"}
 	regionLabel := map[string]interface{}{RegionKey: "region"}
@@ -1032,7 +1034,9 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				modelAppTemplateInput.Labels = map[string]interface{}{}
+				modelAppTemplateInput.Labels = map[string]interface{}{
+					scenarioassignment.SubaccountIDKey: testTenant,
+				}
 				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, modelAppTemplateInput.Labels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc

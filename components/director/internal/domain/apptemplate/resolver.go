@@ -5,10 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"regexp"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -265,7 +265,6 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		}
 
 		if isSelfReg {
-			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
 
 			validate := func() error {
 				return validateAppTemplateForSelfReg(in.ApplicationInput)
@@ -276,6 +275,8 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 			}
 		}
 	}
+
+	labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
 
 	tx, err := r.transact.Begin()
 	if err != nil {
