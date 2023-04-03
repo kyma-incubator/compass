@@ -399,7 +399,7 @@ func (h *Handler) AsyncNoResponseUnassign(writer http.ResponseWriter, r *http.Re
 	h.asyncFAResponse(writer, r, Unassign, "", NoopFAResponseFn)
 }
 
-// AsyncFailOnce handles asynchronous formation assignment notification requests for both Assign and Unassign operations by first failing and setting error states. Afterwards the
+// AsyncFailOnce handles asynchronous formation assignment notification requests for both Assign and Unassign operations by first failing and setting error states. Afterwards the operation succeeds
 func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 	operation := Assign
 	if r.Method == http.MethodPatch {
@@ -536,6 +536,54 @@ func (h *Handler) DeleteFormation(writer http.ResponseWriter, r *http.Request) {
 	h.synchronousFormationResponse(writer, r, DeleteFormation)
 }
 
+// FailOnceFormation handles synchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the operation succeeds
+func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request) {
+	operation := CreateFormation
+	if r.Method == http.MethodPost {
+		operation = CreateFormation
+	} else if r.Method == http.MethodDelete {
+		operation = DeleteFormation
+	}
+
+	if h.ShouldReturnError {
+		formationID, ok := mux.Vars(r)["uclFormationId"]
+		if !ok {
+			httphelpers.WriteError(writer, errors.New("missing uclFormationId in url"), http.StatusBadRequest)
+			return
+		}
+
+		if _, ok := h.Mappings[formationID]; !ok {
+			h.Mappings[formationID] = make([]Response, 0, 1)
+		}
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+			return
+		}
+
+		var result interface{}
+		if err := json.Unmarshal(bodyBytes, &result); err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+			return
+		}
+
+		h.Mappings[formationID] = append(h.Mappings[formationID], Response{
+			Operation:   operation,
+			RequestBody: bodyBytes,
+		})
+
+		response := struct {
+			Error string `json:"error"`
+		}{
+			Error: "failed to parse request",
+		}
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusBadRequest, response)
+		h.ShouldReturnError = false
+		return
+	}
+	h.synchronousFormationResponse(writer, r, operation)
+}
+
 // synchronousFormationResponse extracts the logic that handles formation notification requests
 func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *http.Request, formationOperation Operation) {
 	formationID, ok := mux.Vars(r)["uclFormationId"]
@@ -572,6 +620,9 @@ func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *ht
 // FormationResponseFn is a function type that represents the formation response function signature
 type FormationResponseFn func(ctx context.Context, client *http.Client, formationError, formationID string)
 
+// NoopFormationResponseFn is an empty implementation of the FormationResponseFn function
+var NoopFormationResponseFn = func(ctx context.Context, client *http.Client, formationError, formationID string) {}
+
 // AsyncPostFormation handles asynchronous formation notification requests for CreateFormation operation.
 func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request) {
 	formationResponseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string) {
@@ -594,6 +645,49 @@ func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Reque
 		}
 	}
 	h.asyncFormationResponse(writer, r, DeleteFormation, "", formationResponseFunc)
+}
+
+// AsyncFormationFailOnce handles asynchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the operation succeeds
+func (h *Handler) AsyncFormationFailOnce(writer http.ResponseWriter, r *http.Request) {
+	operation := CreateFormation
+	if r.Method == http.MethodPost {
+		operation = CreateFormation
+	} else if r.Method == http.MethodDelete {
+		operation = DeleteFormation
+	}
+	responseFunc := func(ctx context.Context, client *http.Client, formationError, formationID string) {
+		time.Sleep(time.Second * time.Duration(h.config.FormationMappingAsyncResponseDelay))
+		state := ReadyFormationState
+		if r.Method == http.MethodPost && h.ShouldReturnError {
+			state = CreateErrorFormationState
+			h.ShouldReturnError = false
+		} else if r.Method == http.MethodDelete && h.ShouldReturnError {
+			state = DeleteErrorFormationState
+			h.ShouldReturnError = false
+		}
+		err := h.executeFormationStatusUpdateRequest(client, state, formationError, formationID)
+		if err != nil {
+			log.C(ctx).Errorf("while executing formation status update request: %s", err.Error())
+		}
+	}
+	if h.ShouldReturnError {
+		h.asyncFormationResponse(writer, r, operation, "failed to parse request", responseFunc)
+	} else {
+		h.asyncFormationResponse(writer, r, operation, "", responseFunc)
+	}
+
+	writer.WriteHeader(http.StatusAccepted)
+}
+
+// AsyncNoResponse handles asynchronous formation notification requests that do not send any request to the formation status API
+func (h *Handler) AsyncNoResponse(writer http.ResponseWriter, r *http.Request) {
+	operation := CreateFormation
+	if r.Method == http.MethodPost {
+		operation = CreateFormation
+	} else if r.Method == http.MethodDelete {
+		operation = DeleteFormation
+	}
+	h.asyncFormationResponse(writer, r, operation, "", NoopFormationResponseFn)
 }
 
 // executeFormationStatusUpdateRequest prepares a request with the given inputs and sends it to the formation status API

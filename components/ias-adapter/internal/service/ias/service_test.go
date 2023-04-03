@@ -7,10 +7,9 @@ import (
 )
 
 var testConsumedAPI = types.ApplicationConsumedAPI{
-	Name:     "name1",
-	APIName:  "apiname1",
-	AppID:    "appId1",
-	ClientID: "clientId1",
+	Name:    "name1",
+	APIName: "apiname1",
+	AppID:   "appId1",
 }
 
 var _ = Describe("Adding consumed API", func() {
@@ -18,10 +17,9 @@ var _ = Describe("Adding consumed API", func() {
 		It("Should add it", func() {
 			consumedAPIs := []types.ApplicationConsumedAPI{testConsumedAPI}
 			newConsumedAPI := types.ApplicationConsumedAPI{
-				Name:     "name2",
-				APIName:  "apiname2",
-				AppID:    "appId2",
-				ClientID: "clientId2",
+				Name:    "name2",
+				APIName: "apiname2",
+				AppID:   "appId2",
 			}
 			addConsumedAPI(&consumedAPIs, newConsumedAPI)
 			Expect(len(consumedAPIs)).To(Equal(2))
