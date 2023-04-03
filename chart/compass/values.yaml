@@ -496,6 +496,7 @@ global:
         clientCert: cert
         clientKey: key
         ca: ca
+        manage: false
     postgres:
       connectTimeout: 30s
       requestTimeout: 30s

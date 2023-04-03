@@ -72,6 +72,10 @@ global:
     http:
       client:
         skipSSLValidation: true
+  iasAdapter:
+    ias:
+      secret:
+        manage: true
   tenantFetcher:
     omitDependenciesParamName: "omit"
     omitDependenciesParamValue: "true"
