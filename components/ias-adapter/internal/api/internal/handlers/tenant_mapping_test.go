@@ -54,7 +54,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 				Service: &automock.TenantMappingsService{},
 			}
 
-			body := strings.NewReader("{}")
+			body := strings.NewReader(`{"assignedTenants":[{"configuration": ""}]}`)
 			w, ctx := createTestRequest(body)
 
 			handler.Patch(ctx)

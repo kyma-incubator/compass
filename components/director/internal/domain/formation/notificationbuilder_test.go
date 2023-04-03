@@ -190,7 +190,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 				return webhookConv
 			},
 			formationTemplateWebhooks:         formationLifecycleSyncWebhooks,
-			expectedFormationNotificationReqs: formationNotificationRequests,
+			expectedFormationNotificationReqs: formationNotificationSyncCreateRequests,
 		},
 		{
 			name: "Error when enforcing pre generate formation notification constraints",
