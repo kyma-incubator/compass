@@ -2974,7 +2974,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		},
 		// Business logic tests for formation notifications only
 		{
-			Name: "success when resynchronization is successful for notifications",
+			Name: "success when resynchronization is successful for formation notifications",
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil)

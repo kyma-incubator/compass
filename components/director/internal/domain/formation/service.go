@@ -1604,7 +1604,7 @@ func (s *service) processFormationNotifications(ctx context.Context, formation *
 			formation.State = model.DeletingFormationState
 			formation.Error = nil
 		}
-		log.C(ctx).Infof("Updating the formation state to %s and waiting for the receiver to report the status on the status API...", string(formation.State))
+		log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state and waiting for the receiver to report the status on the status API...", formation.ID, formation.Name, formation.State)
 		if err = s.formationRepository.Update(ctx, formation); err != nil {
 			return errors.Wrapf(err, "while updating formation with id %q", formation.ID)
 		}

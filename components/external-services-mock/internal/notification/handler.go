@@ -536,6 +536,7 @@ func (h *Handler) DeleteFormation(writer http.ResponseWriter, r *http.Request) {
 	h.synchronousFormationResponse(writer, r, DeleteFormation)
 }
 
+// FailOnceFormation handles synchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the operation succeeds
 func (h *Handler) FailOnceFormation(writer http.ResponseWriter, r *http.Request) {
 	operation := CreateFormation
 	if r.Method == http.MethodPost {
@@ -646,18 +647,7 @@ func (h *Handler) AsyncDeleteFormation(writer http.ResponseWriter, r *http.Reque
 	h.asyncFormationResponse(writer, r, DeleteFormation, "", formationResponseFunc)
 }
 
-// AsyncNoResponse handles asynchronous formation notification requests that do not send any request to the formation status API
-func (h *Handler) AsyncNoResponse(writer http.ResponseWriter, r *http.Request) {
-	operation := CreateFormation
-	if r.Method == http.MethodPost {
-		operation = CreateFormation
-	} else if r.Method == http.MethodDelete {
-		operation = DeleteFormation
-	}
-	h.asyncFormationResponse(writer, r, operation, "", NoopFormationResponseFn)
-}
-
-// AsyncFormationFailOnce handles asynchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the
+// AsyncFormationFailOnce handles asynchronous formation notification requests for both Create and Delete operations by first failing and setting error states. Afterwards the operation succeeds
 func (h *Handler) AsyncFormationFailOnce(writer http.ResponseWriter, r *http.Request) {
 	operation := CreateFormation
 	if r.Method == http.MethodPost {
@@ -687,6 +677,17 @@ func (h *Handler) AsyncFormationFailOnce(writer http.ResponseWriter, r *http.Req
 	}
 
 	writer.WriteHeader(http.StatusAccepted)
+}
+
+// AsyncNoResponse handles asynchronous formation notification requests that do not send any request to the formation status API
+func (h *Handler) AsyncNoResponse(writer http.ResponseWriter, r *http.Request) {
+	operation := CreateFormation
+	if r.Method == http.MethodPost {
+		operation = CreateFormation
+	} else if r.Method == http.MethodDelete {
+		operation = DeleteFormation
+	}
+	h.asyncFormationResponse(writer, r, operation, "", NoopFormationResponseFn)
 }
 
 // executeFormationStatusUpdateRequest prepares a request with the given inputs and sends it to the formation status API
