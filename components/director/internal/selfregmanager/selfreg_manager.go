@@ -44,18 +44,17 @@ type ExternalSvcCallerProvider interface {
 const RegionLabel = "region"
 
 type selfRegisterManager struct {
-	cfg                     config.SelfRegConfig
-	callerProvider          ExternalSvcCallerProvider
-	appTemplateProductLabel string
+	cfg            config.SelfRegConfig
+	callerProvider ExternalSvcCallerProvider
 }
 
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider, appTemplateProductLabel string) (*selfRegisterManager, error) {
+func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
 	if err := cfg.PrepareConfiguration(); err != nil {
 		return nil, errors.Wrap(err, "while preparing self register manager configuration")
 	}
-	return &selfRegisterManager{cfg: cfg, callerProvider: provider, appTemplateProductLabel: appTemplateProductLabel}, nil
+	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
 }
 
 // IsSelfRegistrationFlow check if self registration flow is triggered

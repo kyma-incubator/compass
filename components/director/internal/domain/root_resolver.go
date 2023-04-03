@@ -235,7 +235,7 @@ func NewRootResolver(
 	constraintReferenceSvc := formationtemplateconstraintreferences.NewService(constraintReferencesRepo, constraintReferencesConverter)
 	certSubjectMappingSvc := certsubjectmapping.NewService(certSubjectMappingRepo)
 
-	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{}, appTemplateProductLabel)
+	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
 	if err != nil {
 		return nil, err
 	}

@@ -10,7 +10,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/selfregmngrtest"
@@ -25,9 +24,7 @@ import (
 
 const (
 	selfRegisterDistinguishLabelKey = "test-distinguish-label-key"
-	appTemplateProductLabelKey      = "systemRole"
 	distinguishLblVal               = "test-value"
-	appTemplateProductLabelValue    = "s4"
 	testUUID                        = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testRegion                      = "test-region"
 	fakeRegion                      = "fake-region"
@@ -199,7 +196,7 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil, "")
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil)
 			require.NoError(t, err)
 
 			output, err := manager.IsSelfRegistrationFlow(testCase.Context, testCase.InputLabels)
@@ -245,7 +242,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
-			ExpectedOutput: fixLblInputAfterPrep(),
+			ExpectedOutput: fixLblInputAfterPrepForRuntime(),
 		},
 		{
 			Name:           "Success with subaccount label for application templates",
@@ -257,7 +254,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ResourceType:   resource.ApplicationTemplate,
 			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
-			ExpectedOutput: fixLblInputAfterPrepWithSubaccount(),
+			ExpectedOutput: fixLblInputAfterPrep(),
 		},
 		{
 			Name:           "Success for non-matching consumer",
@@ -284,33 +281,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ExpectedOutput: map[string]interface{}{},
 		},
 		{
-			Name:           "Success for having distinguished label and product label but resource is Runtime",
-			Config:         testConfig,
-			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			Region:         testRegion,
-			InputLabels:    fixLblWithDistinguishAndProduct(),
-			Context:        ctxWithCertConsumer,
-			ResourceType:   resource.Runtime,
-			Validation:     func() error { return nil },
-			ExpectedErr:    nil,
-			ExpectedOutput: fixLblWithDistinguishAndProduct(),
-		},
-		{
-			Name:           "Success for only having product label",
-			Config:         testConfig,
-			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			Region:         testRegion,
-			InputLabels:    fixLblWithProduct(),
-			Context:        ctxWithCertConsumer,
-			ResourceType:   resource.ApplicationTemplate,
-			Validation:     func() error { return nil },
-			ExpectedErr:    nil,
-			ExpectedOutput: map[string]interface{}{
-				scenarioassignment.SubaccountIDKey: consumerID,
-				appTemplateProductLabelKey:         appTemplateProductLabelValue,
-			},
-		},
-		{
 			Name:           "Error validation failed",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
@@ -320,30 +290,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ResourceType:   resource.ApplicationTemplate,
 			Validation:     func() error { return errors.New("validation failed") },
 			ExpectedErr:    errors.New("validation failed"),
-			ExpectedOutput: nil,
-		},
-		{
-			Name:           "Error for missing distinguished label and resource is App Template",
-			Config:         testConfig,
-			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			Region:         testRegion,
-			InputLabels:    map[string]interface{}{},
-			Context:        ctxWithCertConsumer,
-			ResourceType:   resource.ApplicationTemplate,
-			Validation:     func() error { return nil },
-			ExpectedErr:    fmt.Errorf("missing %q or %q label", selfRegisterDistinguishLabelKey, appTemplateProductLabelKey),
-			ExpectedOutput: nil,
-		},
-		{
-			Name:           "Error for distinguished label and product label present for App Template",
-			Config:         testConfig,
-			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			Region:         testRegion,
-			InputLabels:    fixLblWithDistinguishAndProduct(),
-			Context:        ctxWithCertConsumer,
-			ResourceType:   resource.ApplicationTemplate,
-			Validation:     func() error { return nil },
-			ExpectedErr:    fmt.Errorf("should provide either %q or %q label - providing both at the same time is not allowed", selfRegisterDistinguishLabelKey, appTemplateProductLabelKey),
 			ExpectedOutput: nil,
 		},
 		{
@@ -459,7 +405,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider, appTemplateProductLabelKey)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
 			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.InputLabels, testUUID, testCase.Validation)
@@ -576,7 +522,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider, "")
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
 			err = manager.CleanupSelfRegistration(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue, testCase.Region)
@@ -593,7 +539,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 func TestNewSelfRegisterManager(t *testing.T) {
 	t.Run("Error when creating self register manager fails", func(t *testing.T) {
 		cfg := config.SelfRegConfig{}
-		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil, "")
+		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "config path cannot be empty")
 		require.Nil(t, manager)
@@ -605,35 +551,21 @@ func fixLblInputAfterPrep() map[string]interface{} {
 		testConfig.SelfRegisterLabelKey: selfregmngrtest.ResponseLabelValue,
 		selfregmanager.RegionLabel:      testRegion,
 		selfRegisterDistinguishLabelKey: distinguishLblVal,
-		testConfig.SaaSAppNameLabelKey:  testSaaSAppName,
 	}
 }
 
-func fixLblInputAfterPrepWithSubaccount() map[string]interface{} {
+func fixLblInputAfterPrepForRuntime() map[string]interface{} {
 	return map[string]interface{}{
-		testConfig.SelfRegisterLabelKey:    selfregmngrtest.ResponseLabelValue,
-		scenarioassignment.SubaccountIDKey: consumerID,
-		selfregmanager.RegionLabel:         testRegion,
-		selfRegisterDistinguishLabelKey:    distinguishLblVal,
+		testConfig.SelfRegisterLabelKey: selfregmngrtest.ResponseLabelValue,
+		selfregmanager.RegionLabel:      testRegion,
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+		testConfig.SaaSAppNameLabelKey:  testSaaSAppName,
 	}
 }
 
 func fixLblWithDistinguish() map[string]interface{} {
 	return map[string]interface{}{
 		selfRegisterDistinguishLabelKey: distinguishLblVal,
-	}
-}
-
-func fixLblWithDistinguishAndProduct() map[string]interface{} {
-	return map[string]interface{}{
-		selfRegisterDistinguishLabelKey: distinguishLblVal,
-		appTemplateProductLabelKey:      appTemplateProductLabelValue,
-	}
-}
-
-func fixLblWithProduct() map[string]interface{} {
-	return map[string]interface{}{
-		appTemplateProductLabelKey: appTemplateProductLabelValue,
 	}
 }
 
