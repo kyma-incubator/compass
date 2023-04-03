@@ -265,7 +265,6 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		}
 
 		if isSelfReg {
-
 			validate := func() error {
 				return validateAppTemplateForSelfReg(in.ApplicationInput)
 			}
