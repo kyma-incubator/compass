@@ -8,6 +8,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -248,13 +251,30 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
-	validate := func() error {
-		return validateAppTemplateForSelfReg(in.ApplicationInput)
+
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading consumer")
 	}
 
-	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
-	if err != nil {
-		return nil, err
+	labels := convertedIn.Labels
+	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
+		isSelfReg, selfRegFlowErr := r.isSelfRegFlow(labels)
+		if selfRegFlowErr != nil {
+			return nil, selfRegFlowErr
+		}
+
+		if isSelfReg {
+			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+
+			validate := func() error {
+				return validateAppTemplateForSelfReg(in.ApplicationInput)
+			}
+			labels, err = r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	tx, err := r.transact.Begin()
@@ -267,7 +287,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				label, ok := selfRegLabels[selfregmanager.RegionLabel].(string)
+				label, ok := labels[selfregmanager.RegionLabel].(string)
 				if !ok {
 					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
@@ -279,12 +299,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := r.checkProviderAppTemplateExistence(ctx, selfRegLabels); err != nil {
+	if err := r.checkProviderAppTemplateExistence(ctx, labels); err != nil {
 		return nil, err
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
-	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, selfRegLabels)
+	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, labels)
 	if err != nil {
 		return nil, err
 	}
@@ -768,6 +788,9 @@ func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels
 		}
 
 		if regionExists {
+			if _, ok := region.(string); !ok {
+				return errors.Errorf("%s label should be string", regionLabelKey)
+			}
 			filters = append(filters, labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)))
 			msg += fmt.Sprintf(" and %q: %q", regionLabelKey, region)
 		}
@@ -785,4 +808,23 @@ func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels
 		}
 	}
 	return nil
+}
+
+func (r *Resolver) isSelfRegFlow(labels map[string]interface{}) (bool, error) {
+	selfRegLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+	_, distinguishLabelExists := labels[selfRegLabelKey]
+	_, productLabelExists := labels[r.appTemplateProductLabel]
+	if !distinguishLabelExists && !productLabelExists {
+		return false, errors.Errorf("missing %q or %q label", selfRegLabelKey, r.appTemplateProductLabel)
+	}
+
+	if distinguishLabelExists && productLabelExists {
+		return false, errors.Errorf("should provide either %q or %q label - providing both at the same time is not allowed", selfRegLabelKey, r.appTemplateProductLabel)
+	}
+
+	if distinguishLabelExists {
+		return true, nil
+	}
+
+	return false, nil
 }

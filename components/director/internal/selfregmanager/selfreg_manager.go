@@ -13,8 +13,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -86,26 +84,12 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 	}
 
 	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
-		if resourceType == resource.ApplicationTemplate {
-			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
-		}
-
-		distinguishLabel, distinguishLabelExists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
-		_, productLabelExists := labels[s.appTemplateProductLabel]
-
-		switch {
-		case !distinguishLabelExists && !productLabelExists:
+		distinguishLabel, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
+		if !exists {
 			if resourceType == resource.Runtime {
 				return labels, nil
 			}
-			return nil, errors.Errorf("missing %q or %q label", s.cfg.SelfRegisterDistinguishLabelKey, s.appTemplateProductLabel)
-		case distinguishLabelExists && productLabelExists:
-			if resourceType == resource.Runtime {
-				return labels, nil
-			}
-			return nil, errors.Errorf("should provide either %q or %q label - providing both at the same time is not allowed", s.cfg.SelfRegisterDistinguishLabelKey, s.appTemplateProductLabel)
-		case productLabelExists:
-			return labels, nil
+			return nil, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
 
 		if err := validate(); err != nil {
