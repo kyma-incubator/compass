@@ -26,18 +26,10 @@ var (
 		ConstraintID:        constraintID,
 		FormationTemplateID: templateID,
 	}
-	constraintReferenceSecond = &model.FormationTemplateConstraintReference{
-		ConstraintID:        constraintID,
-		FormationTemplateID: templateIDSecond,
-	}
 	nilModel *model.FormationTemplateConstraintReference
 	entity   = &formationtemplateconstraintreferences.Entity{
 		ConstraintID:        constraintID,
 		FormationTemplateID: templateID,
-	}
-	entitySecond = &formationtemplateconstraintreferences.Entity{
-		ConstraintID:        constraintID,
-		FormationTemplateID: templateIDSecond,
 	}
 )
 

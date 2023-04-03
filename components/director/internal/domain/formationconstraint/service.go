@@ -143,10 +143,7 @@ func (s *service) ListByFormationTemplateIDs(ctx context.Context, formationTempl
 		}
 
 		// Add global constraints
-		for _, constraint := range globalConstraints {
-			formationConstraintsPerFormationTemplate[i] = append(formationConstraintsPerFormationTemplate[i], constraint)
-		}
-
+		formationConstraintsPerFormationTemplate[i] = append(formationConstraintsPerFormationTemplate[i], globalConstraints...)
 	}
 
 	return formationConstraintsPerFormationTemplate, nil
