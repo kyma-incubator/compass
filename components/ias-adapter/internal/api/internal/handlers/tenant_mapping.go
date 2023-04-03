@@ -29,6 +29,13 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
 		return
 	}
+	logProcessing(ctx, tenantMapping)
+
+	if err := tenantMapping.AssignedTenants[0].SetConfiguration(ctx); err != nil {
+		err = errors.Newf("failed to set assigned tenant configuration: %w", err)
+		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
+		return
+	}
 
 	if err := tenantMapping.Validate(); err != nil {
 		err = errors.Newf("tenant mapping body is invalid: %w", err)
@@ -36,7 +43,6 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		return
 	}
 
-	logProcessing(ctx, tenantMapping)
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
 		internal.RespondWithError(ctx, http.StatusInternalServerError, err)
@@ -48,7 +54,5 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 
 func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {
 	log := logger.FromContext(ctx)
-	tenantMapping.AssignedTenants[0].Parameters = types.AssignedTenantParameters{}
-	tenantMapping.AssignedTenants[0].Configuration = types.AssignedTenantConfiguration{}
-	log.Info().Msgf("Processing tenant mapping notification: %+v", tenantMapping)
+	log.Info().Msgf("Processing tenant mapping notification (%s)", tenantMapping)
 }

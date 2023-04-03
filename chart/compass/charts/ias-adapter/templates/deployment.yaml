@@ -85,11 +85,6 @@ spec:
               value: {{ .Values.global.iasAdapter.tenantInfo.requestTimeout }}
             - name: APP_TENANT_INFO_INSECURE_SKIP_VERIFY
               value: {{ .Values.global.iasAdapter.tenantInfo.insecureSkipVerify | quote }}
-            - name: APP_TENANT_INFO_ROOT_CA
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.gateway.mtls.external.certSecret }}-cacert
-                  key: cacert
             - name: APP_JWK_CACHE_ENDPOINT
               value: {{ .Values.global.iasAdapter.authentication.jwksEndpoint | quote }}
             - name: APP_IAS_REQUEST_TIMEOUT

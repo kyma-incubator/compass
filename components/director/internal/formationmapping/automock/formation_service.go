@@ -80,17 +80,26 @@ func (_m *FormationService) GetGlobalByID(ctx context.Context, id string) (*mode
 }
 
 // ResynchronizeFormationNotifications provides a mock function with given fields: ctx, formationID
-func (_m *FormationService) ResynchronizeFormationNotifications(ctx context.Context, formationID string) error {
+func (_m *FormationService) ResynchronizeFormationNotifications(ctx context.Context, formationID string) (*model.Formation, error) {
 	ret := _m.Called(ctx, formationID)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+	var r0 *model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
 		r0 = rf(ctx, formationID)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Formation)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, formationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // SetFormationToErrorState provides a mock function with given fields: ctx, formation, errorMessage, errorCode, state
