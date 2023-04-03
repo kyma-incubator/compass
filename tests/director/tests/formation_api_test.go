@@ -2027,7 +2027,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		urlTemplateThatFailsOnce := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async-fail-once/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
 		webhookThatFailsOnceInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateThatFailsOnce, inputTemplateFormation, outputTemplateFormation)
 
-		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
+		t.Logf("Update webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
 		updatedFormationTemplateWebhook := fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID, webhookThatFailsOnceInput)
 		require.Equal(t, updatedFormationTemplateWebhook.ID, actualFormationTemplateWebhook.ID)
 
@@ -2141,7 +2141,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
+		t.Logf("Update webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
 		updatedFormationTemplateWebhook = fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID, webhookThatFailsOnceInput)
 		require.Equal(t, updatedFormationTemplateWebhook.ID, actualFormationTemplateWebhook.ID)
 
