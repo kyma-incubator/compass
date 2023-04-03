@@ -69,7 +69,7 @@ type Config struct {
 
 	EnableSystemDeletion bool   `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
 	OperationalMode      string `envconfig:"APP_OPERATIONAL_MODE"`
-	VerifyTenant         string `envconfig:"APP_VERIFY_TENANT"`
+	VerifyTenant         string `envconfig:"optional,APP_VERIFY_TENANT"`
 }
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
