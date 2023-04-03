@@ -917,7 +917,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TenantMappingConfigFn: EmptyTenantMappingConfig,
 			Ctx:                   ctxWithCertConsumer,
 			Input:                 gqlAppTemplateInput,
-			ExpectedError:         errors.New(fmt.Sprintf("should provide either %q or %q label", apptmpltest.TestDistinguishLabel, AppTemplateProductLabel)),
+			ExpectedError:         fmt.Errorf("should provide either %q or %q label", apptmpltest.TestDistinguishLabel, AppTemplateProductLabel),
 		},
 		{
 			Name: "Returns error when flow is cert and self reg label or product label is not present",
@@ -936,7 +936,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TenantMappingConfigFn: EmptyTenantMappingConfig,
 			Ctx:                   ctxWithCertConsumer,
 			Input:                 gqlAppTemplateInput,
-			ExpectedError:         errors.New(fmt.Sprintf("missing %q or %q label", apptmpltest.TestDistinguishLabel, AppTemplateProductLabel)),
+			ExpectedError:         fmt.Errorf("missing %q or %q label", apptmpltest.TestDistinguishLabel, AppTemplateProductLabel),
 		},
 		{
 			Name: "Returns error when creating application template failed",
