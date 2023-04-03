@@ -333,7 +333,7 @@ func TestModifyFormationTemplateWebhooks(t *testing.T) {
 	})
 
 	urlUpdated := "https://test.com"
-	t.Run("Update formation template webhook", func(t *testing.T) {
+	t.Run("Update formation template webhook globally", func(t *testing.T) {
 		webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
 			URL: &urlUpdated, Type: graphql.WebhookTypeFormationLifecycle})
 
