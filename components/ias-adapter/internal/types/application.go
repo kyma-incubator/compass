@@ -21,10 +21,9 @@ type SAPManagedAttributes struct {
 }
 
 type ApplicationConsumedAPI struct {
-	Name     string `json:"name"`
-	APIName  string `json:"apiName"`
-	AppID    string `json:"appId"`
-	ClientID string `json:"clientId"`
+	Name    string `json:"name"`
+	APIName string `json:"apiName"`
+	AppID   string `json:"appId"`
 }
 
 type ApplicationUpdate struct {

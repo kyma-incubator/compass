@@ -575,14 +575,21 @@ var (
 	// Formation notification variables
 	emptyFormationNotificationRequests = make([]*webhookclient.FormationNotificationRequest, 0)
 
-	formationNotificationRequest = &webhookclient.FormationNotificationRequest{
+	formationNotificationSyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
 			CorrelationID: "",
 		},
 	}
-	formationNotificationAsyncRequest = &webhookclient.FormationNotificationRequest{
+	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
+		Request: &webhookclient.Request{
+			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
+			Object:        fixFormationLifecycleInput(model.DeleteFormation, TntCustomerID, TntExternalID),
+			CorrelationID: "",
+		},
+	}
+	formationNotificationAsyncCreateRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModelAsync(FormationLifecycleWebhookID, FormationTemplateID),
 			Object:        fixFormationLifecycleInput(model.CreateFormation, TntCustomerID, TntExternalID),
@@ -590,8 +597,9 @@ var (
 		},
 	}
 
-	formationNotificationRequests      = []*webhookclient.FormationNotificationRequest{formationNotificationRequest}
-	formationNotificationAsyncRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncRequest}
+	formationNotificationSyncCreateRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationSyncCreateRequest}
+	formationNotificationSyncDeleteRequests  = []*webhookclient.FormationNotificationRequest{formationNotificationSyncDeleteRequest}
+	formationNotificationAsyncCreateRequests = []*webhookclient.FormationNotificationRequest{formationNotificationAsyncCreateRequest}
 
 	formationNotificationWebhookSuccessResponse = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, nil)
 	formationNotificationWebhookErrorResponse   = fixFormationNotificationWebhookResponse(http.StatusOK, http.StatusOK, str.Ptr(testErr.Error()))
@@ -1254,10 +1262,10 @@ func fixFormationModelWithState(state model.FormationState) *model.Formation {
 }
 
 func fixFormationModelWithStateAndAssignmentError(t *testing.T, state model.FormationState, errMsg string, errCode formationassignment.AssignmentErrorCode) *model.Formation {
-	formationError := formationassignment.AssignmentErrorWrapper{Error: formationassignment.AssignmentError{
+	formationError := formationassignment.AssignmentError{
 		Message:   errMsg,
 		ErrorCode: errCode,
-	}}
+	}
 
 	marshaledErr, err := json.Marshal(formationError)
 	require.NoError(t, err)
