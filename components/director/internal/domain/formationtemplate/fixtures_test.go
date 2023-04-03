@@ -3,6 +3,8 @@ package formationtemplate_test
 import (
 	"encoding/json"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -154,6 +156,59 @@ var (
 			HasNextPage: false,
 		},
 		TotalCount: 1,
+	}
+
+	constraintID1           = "constraintID1"
+	constraintID2           = "constraintID2"
+	operatorName            = formationconstraint.IsNotAssignedToAnyFormationOfTypeOperator
+	formationConstraintName = "constraint-name"
+	resourceSubtype         = "test subtype"
+	inputTemplate           = `{"formation_template_id": "{{.FormationTemplateID}}","resource_type": "{{.ResourceType}}","resource_subtype": "{{.ResourceSubtype}}","resource_id": "{{.ResourceID}}","tenant": "{{.TenantID}}"}`
+
+	formationConstraint1 = &model.FormationConstraint{
+		ID:              constraintID1,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+	formationConstraint2 = &model.FormationConstraint{
+		ID:              constraintID2,
+		Name:            formationConstraintName,
+		ConstraintType:  model.PreOperation,
+		TargetOperation: model.AssignFormationOperation,
+		Operator:        operatorName,
+		ResourceType:    model.ApplicationResourceType,
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: model.FormationTypeFormationConstraintScope,
+	}
+
+	formationConstraintGql1 = &graphql.FormationConstraint{
+		ID:              constraintID1,
+		Name:            formationConstraintName,
+		ConstraintType:  graphql.ConstraintTypePre.String(),
+		TargetOperation: graphql.TargetOperationAssignFormation.String(),
+		Operator:        operatorName,
+		ResourceType:    graphql.ResourceTypeApplication.String(),
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: graphql.ConstraintScopeFormationType.String(),
+	}
+	formationConstraintGql2 = &graphql.FormationConstraint{
+		ID:              constraintID2,
+		Name:            formationConstraintName,
+		ConstraintType:  graphql.ConstraintTypePre.String(),
+		TargetOperation: graphql.TargetOperationAssignFormation.String(),
+		Operator:        operatorName,
+		ResourceType:    graphql.ResourceTypeApplication.String(),
+		ResourceSubtype: resourceSubtype,
+		InputTemplate:   inputTemplate,
+		ConstraintScope: graphql.ConstraintScopeFormationType.String(),
 	}
 )
 

@@ -39,15 +39,15 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplat
 }
 
 // ListByFormationTemplateIDs provides a mock function with given fields: ctx, formationTemplateIDs
-func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([][]*model.FormationTemplateConstraintReference, error) {
+func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([]*model.FormationTemplateConstraintReference, error) {
 	ret := _m.Called(ctx, formationTemplateIDs)
 
-	var r0 [][]*model.FormationTemplateConstraintReference
-	if rf, ok := ret.Get(0).(func(context.Context, []string) [][]*model.FormationTemplateConstraintReference); ok {
+	var r0 []*model.FormationTemplateConstraintReference
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FormationTemplateConstraintReference); ok {
 		r0 = rf(ctx, formationTemplateIDs)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([][]*model.FormationTemplateConstraintReference)
+			r0 = ret.Get(0).([]*model.FormationTemplateConstraintReference)
 		}
 	}
 

@@ -523,91 +523,35 @@ func TestService_ListByFormationTemplateIDs(t *testing.T) {
 	ctx := context.TODO()
 
 	testErr := errors.New("test err")
+	formationTemplateIDs := []string{formationTemplateID1, formationTemplateID2, formationTemplateID3}
+	constraintIDs := []string{constraintID1, constraintID2}
 
-	formationTemplateIDs := []string{"123", "456", "789"}
-	constraintIDs := []string{"constraintID1", "constraintID2"}
-
-	constraintRefs := [][]*model.FormationTemplateConstraintReference{
+	constraintRefs := []*model.FormationTemplateConstraintReference{
 		{
-			{
-				ConstraintID:        constraintIDs[0],
-				FormationTemplateID: formationTemplateIDs[0],
-			},
-			{
-				ConstraintID:        constraintIDs[1],
-				FormationTemplateID: formationTemplateIDs[1],
-			},
+			ConstraintID:        constraintIDs[0],
+			FormationTemplateID: formationTemplateIDs[0],
 		},
 		{
-			{
-				ConstraintID:        constraintIDs[1],
-				FormationTemplateID: formationTemplateIDs[2],
-			},
+			ConstraintID:        constraintIDs[1],
+			FormationTemplateID: formationTemplateIDs[1],
+		},
+		{
+			ConstraintID:        constraintIDs[1],
+			FormationTemplateID: formationTemplateIDs[2],
 		},
 	}
 
-	constraints := []*model.FormationConstraint{
-		{
-			ID:              constraintIDs[0],
-			Name:            "test",
-			ConstraintType:  "test",
-			TargetOperation: "test",
-			Operator:        "test",
-			ResourceType:    "test",
-			ResourceSubtype: "test",
-			InputTemplate:   "test",
-			ConstraintScope: "test",
-		},
-		{
-			ID:              constraintIDs[1],
-			Name:            "test2",
-			ConstraintType:  "test2",
-			TargetOperation: "test2",
-			Operator:        "test2",
-			ResourceType:    "test2",
-			ResourceSubtype: "test2",
-			InputTemplate:   "test2",
-			ConstraintScope: "test2",
-		},
-	}
+	constraints := []*model.FormationConstraint{formationConstraint1, formationConstraint2, globalConstraint}
 
 	constraintsPerFormationTemplate := [][]*model.FormationConstraint{
 		{
-			{
-				ID:              constraintIDs[0],
-				Name:            "test",
-				ConstraintType:  "test",
-				TargetOperation: "test",
-				Operator:        "test",
-				ResourceType:    "test",
-				ResourceSubtype: "test",
-				InputTemplate:   "test",
-				ConstraintScope: "test",
-			},
-			{
-				ID:              constraintIDs[1],
-				Name:            "test2",
-				ConstraintType:  "test2",
-				TargetOperation: "test2",
-				Operator:        "test2",
-				ResourceType:    "test2",
-				ResourceSubtype: "test2",
-				InputTemplate:   "test2",
-				ConstraintScope: "test2",
-			},
+			formationConstraint1,
+			formationConstraint2,
+			globalConstraint,
 		},
 		{
-			{
-				ID:              constraintIDs[1],
-				Name:            "test2",
-				ConstraintType:  "test2",
-				TargetOperation: "test2",
-				Operator:        "test2",
-				ResourceType:    "test2",
-				ResourceSubtype: "test2",
-				InputTemplate:   "test2",
-				ConstraintScope: "test2",
-			},
+			formationConstraint1,
+			globalConstraint,
 		},
 	}
 
@@ -628,7 +572,7 @@ func TestService_ListByFormationTemplateIDs(t *testing.T) {
 			},
 			FormationConstraintRepo: func() *automock.FormationConstraintRepository {
 				constraintRepo := &automock.FormationConstraintRepository{}
-				constraintRepo.On("ListByIDs", ctx, append(constraintIDs, constraintIDs[1])).Return(constraints, nil)
+				constraintRepo.On("ListByIDsAndGlobal", ctx, append(constraintIDs, constraintIDs[1])).Return(constraints, nil)
 				return constraintRepo
 			},
 			Input:               formationTemplateIDs,
@@ -644,7 +588,7 @@ func TestService_ListByFormationTemplateIDs(t *testing.T) {
 			},
 			FormationConstraintRepo: func() *automock.FormationConstraintRepository {
 				constraintRepo := &automock.FormationConstraintRepository{}
-				constraintRepo.On("ListByIDs", ctx, append(constraintIDs, constraintIDs[1])).Return(nil, testErr)
+				constraintRepo.On("ListByIDsAndGlobal", ctx, append(constraintIDs, constraintIDs[1])).Return(nil, testErr)
 				return constraintRepo
 			},
 			Input:               formationTemplateIDs,
@@ -658,17 +602,19 @@ func TestService_ListByFormationTemplateIDs(t *testing.T) {
 				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(nil, testErr)
 				return refRepo
 			},
-			FormationConstraintRepo: UnusedFormationConstraintRepository,
-			Input:                   formationTemplateIDs,
-			ExpectedConstraints:     nil,
-			ExpectedError:           testErr,
+			Input:               formationTemplateIDs,
+			ExpectedConstraints: nil,
+			ExpectedError:       testErr,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			constraintRefRepo := testCase.FormationTemplateConstraintReferenceRepo()
-			constraintRepo := testCase.FormationConstraintRepo()
+			constraintRepo := UnusedFormationConstraintRepository()
+			if testCase.FormationConstraintRepo != nil {
+				constraintRepo = testCase.FormationConstraintRepo()
+			}
 			svc := formationconstraint.NewService(constraintRepo, constraintRefRepo, nil, nil)
 
 			res, err := svc.ListByFormationTemplateIDs(ctx, testCase.Input)
