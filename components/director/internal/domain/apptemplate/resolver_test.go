@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
@@ -464,6 +465,14 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		selfregmanager.RegionLabel: "region",
 	}
 
+	modelAppTemplateInputWithProductAndSelfRegLabels := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInputWithProductAndSelfRegLabels.ID = &testUUID
+	modelAppTemplateInputWithProductAndSelfRegLabels.Labels = graphql.Labels{
+		AppTemplateProductLabel:          "role",
+		selfregmanager.RegionLabel:       "region",
+		apptmpltest.TestDistinguishLabel: "selfRegVal",
+	}
+
 	gqlAppTemplateWithSelfRegLabels := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateWithSelfRegLabels.Labels = graphql.Labels{
 		apptmpltest.TestDistinguishLabel: "selfRegVal",
@@ -535,19 +544,18 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name                    string
-		TxFn                    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		AppTemplateSvcFn        func() *automock.ApplicationTemplateService
-		AppTemplateConvFn       func() *automock.ApplicationTemplateConverter
-		WebhookSvcFn            func() *automock.WebhookService
-		WebhookConvFn           func() *automock.WebhookConverter
-		SelfRegManagerFn        func() *automock.SelfRegisterManager
-		TenantMappingConfigFn   func() map[string]interface{}
-		AppTemplateProductLabel string
-		Ctx                     context.Context
-		Input                   *graphql.ApplicationTemplateInput
-		ExpectedOutput          *graphql.ApplicationTemplate
-		ExpectedError           error
+		Name                  string
+		TxFn                  func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		AppTemplateSvcFn      func() *automock.ApplicationTemplateService
+		AppTemplateConvFn     func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn          func() *automock.WebhookService
+		WebhookConvFn         func() *automock.WebhookConverter
+		SelfRegManagerFn      func() *automock.SelfRegisterManager
+		TenantMappingConfigFn func() map[string]interface{}
+		Ctx                   context.Context
+		Input                 *graphql.ApplicationTemplateInput
+		ExpectedOutput        *graphql.ApplicationTemplate
+		ExpectedError         error
 	}{
 		{
 			Name: "Success - no self reg flow",
@@ -758,14 +766,13 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn:           UnusedWebhookConv,
-			WebhookSvcFn:            UnusedWebhookSvc,
-			SelfRegManagerFn:        apptmpltest.SelfRegManagerThatInitiatesCleanupButNotFinishIt(),
-			TenantMappingConfigFn:   EmptyTenantMappingConfig,
-			Ctx:                     ctxWithCertConsumer,
-			AppTemplateProductLabel: AppTemplateProductLabel,
-			Input:                   gqlAppTemplateInputWithProductLabels,
-			ExpectedError:           errors.New("Cannot have more than one application template with labels \"systemRole\": \"role\" and \"region\": \"region\""),
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerThatInitiatesCleanupButNotFinishIt(),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Ctx:                   ctxWithCertConsumer,
+			Input:                 gqlAppTemplateInputWithProductLabels,
+			ExpectedError:         errors.New("Cannot have more than one application template with labels \"systemRole\": \"role\" and \"region\": \"region\""),
 		},
 		{
 			Name: "Error when missing tenant mapping configuration for mode XXXX",
@@ -868,6 +875,68 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			Ctx:                   ctxWithTokenConsumer,
 			Input:                 gqlAppTemplateInput,
 			ExpectedError:         testError,
+		},
+		{
+			Name: "Returns error when loading consumer info",
+			TxFn: txGen.ThatDoesntStartTransaction,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Get")
+				appTemplateSvc.AssertNotCalled(t, "GetByFilters")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.NoopSelfRegManager,
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Ctx:                   context.Background(),
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         errors.New("while loading consumer"),
+		},
+		{
+			Name: "Returns error when flow is cert and self reg label and product label are present",
+			TxFn: txGen.ThatDoesntStartTransaction,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				return &automock.ApplicationTemplateService{}
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInputWithProductAndSelfRegLabels, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Ctx:                   ctxWithCertConsumer,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         errors.New(fmt.Sprintf("should provide either %q or %q label", apptmpltest.TestDistinguishLabel, AppTemplateProductLabel)),
+		},
+		{
+			Name: "Returns error when flow is cert and self reg label or product label is not present",
+			TxFn: txGen.ThatDoesntStartTransaction,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				return &automock.ApplicationTemplateService{}
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn:         UnusedWebhookConv,
+			WebhookSvcFn:          UnusedWebhookSvc,
+			SelfRegManagerFn:      apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKey(),
+			TenantMappingConfigFn: EmptyTenantMappingConfig,
+			Ctx:                   ctxWithCertConsumer,
+			Input:                 gqlAppTemplateInput,
+			ExpectedError:         errors.New(fmt.Sprintf("missing %q or %q label", apptmpltest.TestDistinguishLabel, AppTemplateProductLabel)),
 		},
 		{
 			Name: "Returns error when creating application template failed",
@@ -1172,7 +1241,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				ctx = testCase.Ctx
 			}
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, uuidSvc, tenantMappingConfig, testURL, testCase.AppTemplateProductLabel)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, uuidSvc, tenantMappingConfig, testURL, AppTemplateProductLabel)
 
 			// WHEN
 			result, err := resolver.CreateApplicationTemplate(ctx, *testCase.Input)

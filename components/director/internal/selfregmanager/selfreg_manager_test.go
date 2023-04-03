@@ -293,6 +293,18 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ExpectedOutput: nil,
 		},
 		{
+			Name:           "Error for missing distinguished label and resource is App Template",
+			Config:         testConfig,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{},
+			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.ApplicationTemplate,
+			Validation:     func() error { return nil },
+			ExpectedErr:    fmt.Errorf("missing %q label", selfRegisterDistinguishLabelKey),
+			ExpectedOutput: nil,
+		},
+		{
 			Name:           "Error during region check when tenant region is unable to be retrieved from context",
 			Config:         testConfig,
 			InputLabels:    fixLblWithoutRegion(),
