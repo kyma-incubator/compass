@@ -1,11 +1,14 @@
 package middlewares
 
 import (
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal/paths"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
@@ -23,6 +26,11 @@ func Logging(ctx *gin.Context) {
 	ctx.Next()
 
 	status := ctx.Writer.Status()
+	if strings.HasSuffix(path, paths.HealthPath) || strings.HasSuffix(path, paths.ReadyPath) {
+		if status == http.StatusOK {
+			return
+		}
+	}
 	bodySize := ctx.Writer.Size()
 
 	ctxLogger.Info().Msgf("%d %s %s %s %d", status, method, path, time.Since(start), bodySize)

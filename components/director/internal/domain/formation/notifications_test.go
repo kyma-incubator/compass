@@ -474,10 +474,10 @@ func Test_NotificationService_GenerateFormationNotifications(t *testing.T) {
 			},
 			notificationsGeneratorFn: func() *automock.NotificationsGenerator {
 				notificationGenerator := &automock.NotificationsGenerator{}
-				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(formationNotificationRequests, nil).Once()
+				notificationGenerator.On("GenerateFormationLifecycleNotifications", ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, CustomerTenantContextAccount).Return(formationNotificationSyncCreateRequests, nil).Once()
 				return notificationGenerator
 			},
-			expectedFormationNotificationReqs: formationNotificationRequests,
+			expectedFormationNotificationReqs: formationNotificationSyncCreateRequests,
 		},
 		{
 			name: "Error when extracting customer tenant context fails",

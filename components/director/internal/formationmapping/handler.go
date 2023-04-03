@@ -459,6 +459,7 @@ func (h *Handler) processAsynchronousFormationDelete(ctx context.Context, format
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state to: %s for formation with ID: %q", reqBody.State, formation.ID)
 		}
+		return nil
 	}
 
 	log.C(ctx).Infof("Deleting formation with ID: %q and name: %q", formation.ID, formation.Name)
@@ -481,6 +482,7 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 		if err != nil {
 			return errors.Wrapf(err, "while updating error state to: %s for formation with ID: %q", reqBody.State, formation.ID)
 		}
+		return nil
 	}
 
 	log.C(ctx).Infof("Updating formation with ID: %q and name: %q to: %q state", formation.ID, formation.Name, reqBody.State)
@@ -491,7 +493,7 @@ func (h *Handler) processAsynchronousFormationCreate(ctx context.Context, format
 	}
 
 	log.C(ctx).Infof("Resynchronizing formation with ID: %q and name: %q", formation.ID, formation.Name)
-	err = h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID)
+	_, err = h.formationService.ResynchronizeFormationNotifications(ctx, formation.ID)
 	if err != nil {
 		return errors.Wrapf(err, "while resynchronize formation notifications for formation with ID: %q", formation.ID)
 	}

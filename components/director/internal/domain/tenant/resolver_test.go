@@ -1478,6 +1478,18 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 			ExpectedErrorMsg: "while fetching stored tenant access for tenant",
 		},
 		{
+			Name: "Error not found when getting tenant access record",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetInternalTenant", txtest.CtxWithDBMatcher(), testExternal).Return(testInternal, nil).Once()
+				TenantSvc.On("GetTenantAccessForResource", txtest.CtxWithDBMatcher(), testInternal, testID, resource.Application).Return(nil, apperrors.NewNotFoundErrorWithType(resource.TenantAccess)).Once()
+				return TenantSvc
+			},
+			Input:            tenantAccessInput,
+			ExpectedErrorMsg: "Object not found [object=tenantAccess]",
+		},
+		{
 			Name: "Error when resource type is invalid",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
