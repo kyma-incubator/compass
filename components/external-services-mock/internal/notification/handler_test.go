@@ -455,3 +455,114 @@ func TestHandler_PostAndDeleteFormation(t *testing.T) {
 		require.Equal(t, fixFormationMappings(notification.DeleteFormation, formationID, formationReqBody), handler.Mappings)
 	})
 }
+
+func TestHandler_FailOnceFormation(t *testing.T) {
+	formationID := "testFormationID"
+	apiPath := fmt.Sprintf("/v1/businessIntegration/fail-once/%s", formationID)
+
+	testCases := []struct {
+		Name                 string
+		RequestBody          string
+		FormationID          string
+		ExpectedResponseCode int
+		Method               string
+		ExpectedMappings     map[string][]notification.Response
+		ShouldFail           bool
+	}{
+		{
+			Name:                 "Success for create formation when it shouldn't fail",
+			RequestBody:          formationReqBody,
+			FormationID:          formationID,
+			Method:               http.MethodPost,
+			ExpectedResponseCode: http.StatusOK,
+			ShouldFail:           false,
+			ExpectedMappings:     fixFormationMappings(notification.CreateFormation, formationID, formationReqBody),
+		},
+		{
+			Name:                 "Success for delete formation when it shouldn't fail",
+			RequestBody:          formationReqBody,
+			FormationID:          formationID,
+			Method:               http.MethodDelete,
+			ExpectedResponseCode: http.StatusOK,
+			ShouldFail:           false,
+			ExpectedMappings:     fixFormationMappings(notification.DeleteFormation, formationID, formationReqBody),
+		},
+		{
+			Name:                 "Success for create formation when it should fail",
+			RequestBody:          formationReqBody,
+			FormationID:          formationID,
+			Method:               http.MethodPost,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ShouldFail:           true,
+			ExpectedMappings:     fixFormationMappings(notification.CreateFormation, formationID, formationReqBody),
+		},
+		{
+			Name:                 "Success for delete formation when it should fail",
+			RequestBody:          formationReqBody,
+			FormationID:          formationID,
+			Method:               http.MethodDelete,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ShouldFail:           true,
+			ExpectedMappings:     fixFormationMappings(notification.DeleteFormation, formationID, formationReqBody),
+		},
+		{
+			Name:                 "Error when required formationID path parameter is missing",
+			Method:               http.MethodPost,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ShouldFail:           false,
+			ExpectedMappings:     map[string][]notification.Response{},
+		},
+		{
+			Name:                 "Error when formation request body is not valid json",
+			RequestBody:          "invalid json",
+			Method:               http.MethodPost,
+			FormationID:          formationID,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ShouldFail:           false,
+			ExpectedMappings:     map[string][]notification.Response{formationID: {}},
+		},
+		{
+			Name:                 "Error when required formationID path parameter is missing when should fail",
+			Method:               http.MethodPost,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ShouldFail:           true,
+			ExpectedMappings:     map[string][]notification.Response{},
+		},
+		{
+			Name:                 "Error when formation request body is not valid json when should fail",
+			RequestBody:          "invalid json",
+			Method:               http.MethodPost,
+			FormationID:          formationID,
+			ExpectedResponseCode: http.StatusBadRequest,
+			ShouldFail:           true,
+			ExpectedMappings:     map[string][]notification.Response{formationID: {}},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			req, err := http.NewRequest(testCase.Method, url+apiPath, bytes.NewBuffer([]byte(testCase.RequestBody)))
+			require.NoError(t, err)
+
+			if testCase.FormationID != "" {
+				req = mux.SetURLVars(req, map[string]string{formationIDParam: testCase.FormationID})
+			}
+
+			handler := notification.NewHandler(notification.NotificationsConfiguration{})
+			handler.ShouldReturnError = testCase.ShouldFail
+			recorder := httptest.NewRecorder()
+
+			//WHEN
+			handler.FailOnceFormation(recorder, req)
+			resp := recorder.Result()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			//THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			require.Equal(t, testCase.ExpectedMappings, handler.Mappings)
+		})
+	}
+}

@@ -139,7 +139,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2988"
+      version: "PR-2967"
       name: compass-director
     hydrator:
       dir:
@@ -176,7 +176,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2970"
+      version: "PR-2967"
       name: compass-external-services-mock
     console:
       dir:
@@ -184,7 +184,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2984"
+      version: "PR-2967"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
