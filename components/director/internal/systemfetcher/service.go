@@ -177,6 +177,10 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
 					return
 				}
+				log.C(ctx).Infof("found %d systems for tenant %s", len(systems), t.ExternalTenant)
+				if len(s.config.VerifyTenant) > 0 {
+					log.C(ctx).Infof("systems: %#v", systems)
+				}
 				if len(systems) > 0 {
 					systemsQueue <- tenantSystems{
 						tenant:  t,
