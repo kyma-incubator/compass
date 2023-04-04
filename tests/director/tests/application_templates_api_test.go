@@ -60,7 +60,6 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
 
 		appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
-		appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplateOutput)

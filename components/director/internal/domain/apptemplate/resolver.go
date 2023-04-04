@@ -274,9 +274,9 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 				return nil, err
 			}
 		}
-	}
 
-	labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+		labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+	}
 
 	tx, err := r.transact.Begin()
 	if err != nil {
