@@ -972,13 +972,13 @@ func TestResolver_FormationConstraints(t *testing.T) {
 			Input: []dataloader.ParamFormationConstraint{{ID: formationConstraintIDs[0], Ctx: ctx}, {ID: formationConstraintIDs[1], Ctx: ctx}},
 			FormationConstraintSvc: func() *automock.FormationConstraintService {
 				svc := &automock.FormationConstraintService{}
-				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(formationConstraintsModel, nil)
+				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(formationConstraintsModel, nil).Once()
 				return svc
 			},
 			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
 				converter := &automock.FormationConstraintConverter{}
-				converter.On("MultipleToGraphQL", formationConstraintsModel[0]).Return(formationConstraintsGql[0])
-				converter.On("MultipleToGraphQL", formationConstraintsModel[1]).Return(formationConstraintsGql[1])
+				converter.On("MultipleToGraphQL", formationConstraintsModel[0]).Return(formationConstraintsGql[0]).Once()
+				converter.On("MultipleToGraphQL", formationConstraintsModel[1]).Return(formationConstraintsGql[1]).Once()
 				return converter
 			},
 			ExpectedConstraints: formationConstraintsGql,
@@ -990,13 +990,13 @@ func TestResolver_FormationConstraints(t *testing.T) {
 			Input: []dataloader.ParamFormationConstraint{{ID: formationConstraintIDs[0], Ctx: ctx}, {ID: formationConstraintIDs[1], Ctx: ctx}},
 			FormationConstraintSvc: func() *automock.FormationConstraintService {
 				svc := &automock.FormationConstraintService{}
-				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(formationConstraintsModel, nil)
+				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(formationConstraintsModel, nil).Once()
 				return svc
 			},
 			FormationConstraintConverter: func() *automock.FormationConstraintConverter {
 				converter := &automock.FormationConstraintConverter{}
-				converter.On("MultipleToGraphQL", formationConstraintsModel[0]).Return(formationConstraintsGql[0])
-				converter.On("MultipleToGraphQL", formationConstraintsModel[1]).Return(formationConstraintsGql[1])
+				converter.On("MultipleToGraphQL", formationConstraintsModel[0]).Return(formationConstraintsGql[0]).Once()
+				converter.On("MultipleToGraphQL", formationConstraintsModel[1]).Return(formationConstraintsGql[1]).Once()
 				return converter
 			},
 			ExpectedConstraints: nil,
@@ -1008,7 +1008,7 @@ func TestResolver_FormationConstraints(t *testing.T) {
 			Input: []dataloader.ParamFormationConstraint{{ID: formationConstraintIDs[0], Ctx: ctx}, {ID: formationConstraintIDs[1], Ctx: ctx}},
 			FormationConstraintSvc: func() *automock.FormationConstraintService {
 				svc := &automock.FormationConstraintService{}
-				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(nil, testErr)
+				svc.On("ListByFormationTemplateIDs", txtest.CtxWithDBMatcher(), formationConstraintIDs).Return(nil, testErr).Once()
 				return svc
 			},
 			ExpectedConstraints: nil,

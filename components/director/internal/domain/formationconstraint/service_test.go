@@ -567,12 +567,12 @@ func TestService_ListByFormationTemplateIDs(t *testing.T) {
 			Name: "Success",
 			FormationTemplateConstraintReferenceRepo: func() *automock.FormationTemplateConstraintReferenceRepository {
 				refRepo := &automock.FormationTemplateConstraintReferenceRepository{}
-				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(constraintRefs, nil)
+				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(constraintRefs, nil).Once()
 				return refRepo
 			},
 			FormationConstraintRepo: func() *automock.FormationConstraintRepository {
 				constraintRepo := &automock.FormationConstraintRepository{}
-				constraintRepo.On("ListByIDsAndGlobal", ctx, append(constraintIDs, constraintIDs[1])).Return(constraints, nil)
+				constraintRepo.On("ListByIDsAndGlobal", ctx, append(constraintIDs, constraintIDs[1])).Return(constraints, nil).Once()
 				return constraintRepo
 			},
 			Input:               formationTemplateIDs,
@@ -583,12 +583,12 @@ func TestService_ListByFormationTemplateIDs(t *testing.T) {
 			Name: "Returns error when listing constraints fails",
 			FormationTemplateConstraintReferenceRepo: func() *automock.FormationTemplateConstraintReferenceRepository {
 				refRepo := &automock.FormationTemplateConstraintReferenceRepository{}
-				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(constraintRefs, nil)
+				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(constraintRefs, nil).Once()
 				return refRepo
 			},
 			FormationConstraintRepo: func() *automock.FormationConstraintRepository {
 				constraintRepo := &automock.FormationConstraintRepository{}
-				constraintRepo.On("ListByIDsAndGlobal", ctx, append(constraintIDs, constraintIDs[1])).Return(nil, testErr)
+				constraintRepo.On("ListByIDsAndGlobal", ctx, append(constraintIDs, constraintIDs[1])).Return(nil, testErr).Once()
 				return constraintRepo
 			},
 			Input:               formationTemplateIDs,
@@ -599,7 +599,7 @@ func TestService_ListByFormationTemplateIDs(t *testing.T) {
 			Name: "Returns error when listing constraints refs fails",
 			FormationTemplateConstraintReferenceRepo: func() *automock.FormationTemplateConstraintReferenceRepository {
 				refRepo := &automock.FormationTemplateConstraintReferenceRepository{}
-				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(nil, testErr)
+				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(nil, testErr).Once()
 				return refRepo
 			},
 			Input:               formationTemplateIDs,
