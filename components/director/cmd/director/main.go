@@ -181,6 +181,8 @@ type config struct {
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
+
+	ApplicationTemplateProductLabel string `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 }
 
 func main() {
@@ -294,6 +296,7 @@ func main() {
 		ordWebhookMapping,
 		tenantMappingConfig,
 		cfg.TenantMappingCallbackURL,
+		cfg.ApplicationTemplateProductLabel,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 

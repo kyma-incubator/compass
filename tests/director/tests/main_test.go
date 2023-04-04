@@ -71,6 +71,7 @@ type DirectorConfig struct {
 	FormationMappingAsyncResponseDelay              int64         `envconfig:"APP_FORMATION_MAPPING_ASYNC_RESPONSE_DELAY"`
 	SubscriptionProviderAppNameProperty             string        `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
 	CertSubjectMappingResyncInterval                time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
+	ApplicationTemplateProductLabel                 string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 }
 
 var (

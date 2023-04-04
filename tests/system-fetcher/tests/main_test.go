@@ -20,7 +20,8 @@ type Config struct {
 	SystemFetcherPageSize          int    `envconfig:"SYSTEM_FETCHER_PAGE_SIZE"`
 	SystemFetcherContainerName     string `envconfig:"SYSTEM_FETCHER_CONTAINER_NAME"`
 	DirectorExternalCertSecuredURL string
-	SkipSSLValidation              bool `envconfig:"default=false"`
+	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
+	SkipSSLValidation              bool   `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
 
 	SelfRegDistinguishLabelKey   string

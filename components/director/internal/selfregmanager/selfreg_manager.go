@@ -13,8 +13,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -152,10 +150,6 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 			}
 
 			labels[s.cfg.SaaSAppNameLabelKey] = saasAppName
-		}
-
-		if resourceType == resource.ApplicationTemplate {
-			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
 		}
 
 		log.C(ctx).Infof("Successfully executed prep for self-registration with distinguishing label value %s", str.CastOrEmpty(distinguishLabel))
