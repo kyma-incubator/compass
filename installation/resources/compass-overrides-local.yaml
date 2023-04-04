@@ -87,6 +87,9 @@ global:
   iasAdapter:
     tenantInfo:
       insecureSkipVerify: true
+    ias:
+      secret:
+        manage: true
   tenantFetcher:
     omitDependenciesParamName: "omit"
     omitDependenciesParamValue: "true"
