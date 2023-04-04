@@ -15,6 +15,7 @@ import (
 )
 
 // APIClient missing godoc
+//
 //go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIClient interface {
 	Do(*http.Request, string) (*http.Response, error)
@@ -116,10 +117,12 @@ func (c *Client) buildFilter() map[string]string {
 			continue
 		}
 
-		queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
+		if lbl.Value == "ZXC" || lbl.Value == "ZXW" {
+			queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
 
-		if idx < len(ApplicationTemplates)-1 {
-			queryBuilder.WriteString("or")
+			if idx < len(ApplicationTemplates)-1 {
+				queryBuilder.WriteString("or")
+			}
 		}
 	}
 
