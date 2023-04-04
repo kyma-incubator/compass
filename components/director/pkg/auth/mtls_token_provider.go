@@ -35,6 +35,7 @@ import (
 )
 
 // CertificateCache missing godoc
+//
 //go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertificateCache interface {
 	Get() map[string]*tls.Certificate
@@ -112,6 +113,8 @@ func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (
 	if err != nil {
 		return "", err
 	}
+
+	log.C(ctx).Debugf("_______Token: %s", token.AccessToken)
 
 	return "Bearer " + token.AccessToken, nil
 }
