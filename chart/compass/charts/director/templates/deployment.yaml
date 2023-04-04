@@ -231,6 +231,8 @@ spec:
               value: "{{ .Values.global.http.client.skipSSLValidation }}"
             - name: APP_SELF_REGISTER_OAUTH_MODE
               value: {{ .Values.global.director.selfRegister.oauthMode }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
