@@ -394,6 +394,7 @@ type ComplexityRoot struct {
 
 	FormationTemplate struct {
 		ApplicationTypes       func(childComplexity int) int
+		FormationConstraints   func(childComplexity int) int
 		ID                     func(childComplexity int) int
 		LeadingProductIDs      func(childComplexity int) int
 		Name                   func(childComplexity int) int
@@ -778,6 +779,8 @@ type FormationResolver interface {
 }
 type FormationTemplateResolver interface {
 	Webhooks(ctx context.Context, obj *FormationTemplate) ([]*Webhook, error)
+
+	FormationConstraints(ctx context.Context, obj *FormationTemplate) ([]*FormationConstraint, error)
 }
 type IntegrationSystemResolver interface {
 	Auths(ctx context.Context, obj *IntegrationSystem) ([]*IntSysSystemAuth, error)
@@ -2496,6 +2499,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationTemplate.ApplicationTypes(childComplexity), true
+
+	case "FormationTemplate.formationConstraints":
+		if e.complexity.FormationTemplate.FormationConstraints == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.FormationConstraints(childComplexity), true
 
 	case "FormationTemplate.id":
 		if e.complexity.FormationTemplate.ID == nil {
@@ -5011,6 +5021,7 @@ enum ConstraintScope {
 enum ConstraintType {
 	PRE
 	POST
+	UI
 }
 
 enum DocumentFormat {
@@ -5117,6 +5128,8 @@ enum TargetOperation {
 	DELETE_FORMATION
 	GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION
 	GENERATE_FORMATION_NOTIFICATION
+	LOAD_FORMATIONS
+	SELECT_SYSTEMS_FOR_FORMATION
 }
 
 enum TenantAccessObjectType {
@@ -6144,6 +6157,7 @@ type FormationTemplate {
 	runtimeArtifactKind: ArtifactType
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.formation_template.webhooks")
 	leadingProductIDs: [String!]
+	formationConstraints: [FormationConstraint!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -17488,6 +17502,37 @@ func (ec *executionContext) _FormationTemplate_leadingProductIDs(ctx context.Con
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationTemplate_formationConstraints(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FormationTemplate().FormationConstraints(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*FormationConstraint)
+	fc.Result = res
+	return ec.marshalOFormationConstraint2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraintᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *FormationTemplatePage) (ret graphql.Marshaler) {
@@ -34326,6 +34371,17 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			})
 		case "leadingProductIDs":
 			out.Values[i] = ec._FormationTemplate_leadingProductIDs(ctx, field, obj)
+		case "formationConstraints":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FormationTemplate_formationConstraints(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39497,6 +39553,46 @@ func (ec *executionContext) marshalOFormationAssignmentPage2ᚖgithubᚗcomᚋky
 		return graphql.Null
 	}
 	return ec._FormationAssignmentPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOFormationConstraint2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraintᚄ(ctx context.Context, sel ast.SelectionSet, v []*FormationConstraint) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFormationConstraint2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationConstraint(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOFormationError2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationError(ctx context.Context, sel ast.SelectionSet, v FormationError) graphql.Marshaler {

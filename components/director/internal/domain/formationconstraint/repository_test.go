@@ -133,6 +133,37 @@ func TestRepository_ListMatchingFormationConstraints(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ListByIDsAndGlobal(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List Formation Constraints by IDs and Global ones",
+		MethodName: "ListByIDsAndGlobal",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, name, constraint_type, target_operation, operator, resource_type, resource_subtype, input_template, constraint_scope FROM public.formation_constraints WHERE (constraint_scope = $1 OR id IN ($2))`),
+				IsSelect: true,
+				Args:     []driver.Value{"GLOBAL", testID},
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.ID, entity.Name, entity.ConstraintType, entity.TargetOperation, entity.Operator, entity.ResourceType, entity.ResourceSubtype, entity.InputTemplate, entity.ConstraintScope)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			conv := &automock.EntityConverter{}
+			return conv
+		},
+		RepoConstructorFunc:       formationconstraint.NewRepository,
+		MethodArgs:                []interface{}{[]string{testID}},
+		ExpectedDBEntities:        []interface{}{&entity},
+		ExpectedModelEntities:     []interface{}{formationConstraintModel},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_Create(t *testing.T) {
 	suite := testdb.RepoCreateTestSuite{
 		Name:       "Create Formation Constraint",
