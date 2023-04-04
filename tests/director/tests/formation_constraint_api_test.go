@@ -289,8 +289,12 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 
 	// Assert no constraints attached
 	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", formationTemplate.Name, formationTemplate.ID)
-	formationTemplateOutput := fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
-	assert.Empty(t, formationTemplateOutput.FormationConstraints)
+	ftOutput := graphql.FormationTemplateExt{}
+	queryReq := fixtures.FixQueryFormationTemplateWithConstraintsRequest(formationTemplate.ID)
+	saveExample(t, queryReq.Query(), "query formation template with constraints")
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryReq, &formationTemplate))
+	require.NotEmpty(t, formationTemplate.ID)
+	assert.Empty(t, ftOutput.FormationConstraints)
 
 	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", secondFormationTemplate.Name, secondFormationTemplate.ID)
 	secondFormationTemplateOutput := fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
@@ -301,7 +305,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 
 	// Assert the constraint is attached only to the first formation template
 	t.Logf("Get formation template with name %q and id %q, and assert there is one constraint attached to it", formationTemplate.Name, formationTemplate.ID)
-	formationTemplateOutput = fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
+	formationTemplateOutput := fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, formationTemplate.ID)
 	assert.Equal(t, formationTemplateOutput.FormationConstraints, []graphql.FormationConstraint{*constraint})
 
 	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", secondFormationTemplate.Name, secondFormationTemplate.ID)
