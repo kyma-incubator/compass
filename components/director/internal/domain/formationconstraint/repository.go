@@ -152,6 +152,26 @@ func (r *repository) ListMatchingFormationConstraints(ctx context.Context, forma
 	return r.multipleFromEntities(entityCollection)
 }
 
+// ListByIDsAndGlobal lists formationConstraints whose ID can be found in formationConstraintIDs or have constraint scope "global"
+func (r *repository) ListByIDsAndGlobal(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error) {
+	var entityCollection EntityCollection
+
+	formationTypeRelevanceConditions := []repo.Condition{
+		repo.NewEqualCondition("constraint_scope", model.GlobalFormationConstraintScope),
+	}
+
+	if len(formationConstraintIDs) > 0 {
+		formationTypeRelevanceConditions = append(formationTypeRelevanceConditions, repo.NewInConditionForStringValues("id", formationConstraintIDs))
+	}
+
+	conditions := repo.Or(repo.ConditionTreesFromConditions(formationTypeRelevanceConditions)...)
+
+	if err := r.conditionTreeLister.ListConditionTreeGlobal(ctx, resource.FormationConstraint, &entityCollection, conditions); err != nil {
+		return nil, errors.Wrap(err, "while listing constraints")
+	}
+	return r.multipleFromEntities(entityCollection)
+}
+
 // Update updates the FormationConstraint matching the ID of the input model
 func (r *repository) Update(ctx context.Context, model *model.FormationConstraint) error {
 	if model == nil {
