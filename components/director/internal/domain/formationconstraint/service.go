@@ -137,8 +137,8 @@ func (s *service) ListByFormationTemplateIDs(ctx context.Context, formationTempl
 
 	for i, ftID := range formationTemplateIDs {
 		// Add attached constraints
-		constraintsPerFormation := formationTemplateIDToConstraintIDsMap[ftID]
-		for _, constraintID := range constraintsPerFormation {
+		constraintIDsPerFT := formationTemplateIDToConstraintIDsMap[ftID]
+		for _, constraintID := range constraintIDsPerFT {
 			formationConstraintsPerFormationTemplate[i] = append(formationConstraintsPerFormationTemplate[i], attachedConstraintsMap[constraintID])
 		}
 
