@@ -114,7 +114,7 @@ func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (
 		return "", err
 	}
 
-	log.C(ctx).Debugf("_______Token: %s", token.AccessToken)
+	log.C(ctx).Infof("---------------Token: %s", token.AccessToken)
 
 	return "Bearer " + token.AccessToken, nil
 }
