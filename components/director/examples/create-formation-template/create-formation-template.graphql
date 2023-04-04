@@ -3,10 +3,11 @@ mutation {
   result: createFormationTemplate(
     in: {
       name: "create-formation-template-name"
-      applicationTypes: ["app-type-1", "app-type-2"]
-      runtimeTypes: ["runtime-type"]
-      runtimeTypeDisplayName: "runtime-type-display-name"
-      runtimeArtifactKind: SUBSCRIPTION
+      applicationTypes: ["async-app-type-1"]
+      runtimeTypes: ["runtimeTypeTest"]
+      runtimeTypeDisplayName: "create-formation-template-name"
+      runtimeArtifactKind: ENVIRONMENT_INSTANCE
+      leadingProductIDs: ["leading-product-id"]
     }
   ) {
     id

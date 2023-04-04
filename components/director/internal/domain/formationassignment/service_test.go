@@ -2484,10 +2484,19 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ExpectedErrorMsg:        testErr.Error(),
 		},
 		{
-			Name:                         "Success: webhook has mode ASYNC_CALLBACK",
-			Context:                      ctxWithTenant,
-			FormationAssignmentRepo:      unusedFormationAssignmentRepository,
-			FormationAssignmentConverter: unusedFormationAssignmentConverter,
+			Name:    "Success: webhook has mode ASYNC_CALLBACK",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, initialStateAssignment).Return(nil).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", initialStateAssignment).Return(initialStateAssignmentInput).Once()
+				return conv
+			},
 			NotificationService: func() *automock.NotificationService {
 				notificationSvc := &automock.NotificationService{}
 				notificationSvc.On("SendNotification", ctxWithTenant, reqWebhookWithAsyncCallbackMode).Return(&webhook.Response{
@@ -2499,6 +2508,32 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhookWithAsyncCallbackMode),
 			ExpectedErrorMsg:        "",
+		},
+		{
+			Name:    "ERROR: webhook has mode ASYNC_CALLBACK but fails on update",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, initialStateAssignment).Return(testErr).Once()
+				return repo
+			},
+			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
+				conv := &automock.FormationAssignmentConverter{}
+				conv.On("ToInput", initialStateAssignment).Return(initialStateAssignmentInput).Once()
+				return conv
+			},
+			NotificationService: func() *automock.NotificationService {
+				notificationSvc := &automock.NotificationService{}
+				notificationSvc.On("SendNotification", ctxWithTenant, reqWebhookWithAsyncCallbackMode).Return(&webhook.Response{
+					SuccessStatusCode:    &ok,
+					IncompleteStatusCode: &incomplete,
+					ActualStatusCode:     &ok,
+				}, nil)
+				return notificationSvc
+			},
+			FormationAssignmentPair: fixAssignmentMappingPairWithAssignmentAndRequest(fixFormationAssignmentModelWithIDAndTenantID(fixFormationAssignmentOnlyWithSourceAndTarget()), reqWebhookWithAsyncCallbackMode),
+			ExpectedErrorMsg:        testErr.Error(),
 		},
 		{
 			Name:    "Success: assignment with config",
@@ -2819,18 +2854,18 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 		Value:    []byte(config),
 	}
 
-	configAssignmentWithTenantAndIDInDeletingState := &model.FormationAssignment{
+	assignmentWithTenantAndIDInDeletingState := &model.FormationAssignment{
 		ID:       TestID,
 		TenantID: TestTenantID,
 		Source:   source,
 		State:    string(model.DeletingAssignmentState),
-		Value:    []byte(config),
+		Value:    nil,
 	}
 
-	configAssignmentInputInDeletingState := &model.FormationAssignmentInput{
+	assignmentInputInDeletingState := &model.FormationAssignmentInput{
 		Source: source,
 		State:  string(model.DeletingAssignmentState),
-		Value:  []byte(config),
+		Value:  nil,
 	}
 
 	marshaledErrClientError, err := json.Marshal(formationassignment.AssignmentErrorWrapper{
@@ -2968,12 +3003,12 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, configAssignmentWithTenantAndIDInDeletingState).Return(nil).Once()
+				repo.On("Update", ctxWithTenant, assignmentWithTenantAndIDInDeletingState).Return(nil).Once()
 				return repo
 			},
 			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
 				conv := &automock.FormationAssignmentConverter{}
-				conv.On("ToInput", configAssignmentWithTenantAndIDInDeletingState).Return(configAssignmentInputInDeletingState).Once()
+				conv.On("ToInput", assignmentWithTenantAndIDInDeletingState).Return(assignmentInputInDeletingState).Once()
 				return conv
 			},
 			NotificationService: func() *automock.NotificationService {
@@ -3017,12 +3052,12 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
 				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, configAssignmentWithTenantAndIDInDeletingState).Return(testErr).Once()
+				repo.On("Update", ctxWithTenant, assignmentWithTenantAndIDInDeletingState).Return(testErr).Once()
 				return repo
 			},
 			FormationAssignmentConverter: func() *automock.FormationAssignmentConverter {
 				conv := &automock.FormationAssignmentConverter{}
-				conv.On("ToInput", configAssignmentWithTenantAndIDInDeletingState).Return(configAssignmentInputInDeletingState).Once()
+				conv.On("ToInput", assignmentWithTenantAndIDInDeletingState).Return(assignmentInputInDeletingState).Once()
 				return conv
 			},
 			NotificationService: func() *automock.NotificationService {

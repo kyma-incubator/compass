@@ -18,11 +18,13 @@ type formationConstraintRepository interface {
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, model *model.FormationConstraint) error
 	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
+	ListByIDsAndGlobal(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error)
 }
 
 //go:generate mockery --exported --name=formationTemplateConstraintReferenceRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationTemplateConstraintReferenceRepository interface {
 	ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error)
+	ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([]*model.FormationTemplateConstraintReference, error)
 }
 
 //go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -97,6 +99,54 @@ func (s *service) ListByFormationTemplateID(ctx context.Context, formationTempla
 		return nil, errors.Wrapf(err, "while listing Formation Constraints for FormationTemplate with ID: %s", formationTemplateID)
 	}
 	return formationConstraints, nil
+}
+
+// ListByFormationTemplateIDs lists all formation constraints associated with the formation templates
+func (s *service) ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([][]*model.FormationConstraint, error) {
+	constraintRefs, err := s.formationTemplateConstraintReferenceRepo.ListByFormationTemplateIDs(ctx, formationTemplateIDs)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing Formation Constraint References for FormationTemplates with IDs: %q", formationTemplateIDs)
+	}
+
+	constraintIDs := make([]string, 0, len(constraintRefs))
+	formationTemplateIDToConstraintIDsMap := make(map[string][]string, len(constraintRefs))
+
+	for _, cr := range constraintRefs {
+		constraintIDs = append(constraintIDs, cr.ConstraintID)
+
+		formationTemplateIDToConstraintIDsMap[cr.FormationTemplateID] = append(formationTemplateIDToConstraintIDsMap[cr.FormationTemplateID], cr.ConstraintID)
+	}
+
+	formationConstraints, err := s.repo.ListByIDsAndGlobal(ctx, constraintIDs)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing Formation Constraints by IDs %q and the global ones", formationTemplateIDs)
+	}
+
+	globalConstraints := make([]*model.FormationConstraint, 0, len(formationConstraints))
+	attachedConstraintsMap := make(map[string]*model.FormationConstraint, len(formationConstraints))
+
+	for _, constraint := range formationConstraints {
+		if constraint.ConstraintScope == model.GlobalFormationConstraintScope {
+			globalConstraints = append(globalConstraints, constraint)
+		} else {
+			attachedConstraintsMap[constraint.ID] = constraint
+		}
+	}
+
+	formationConstraintsPerFormationTemplate := make([][]*model.FormationConstraint, len(formationTemplateIDs))
+
+	for i, ftID := range formationTemplateIDs {
+		// Add attached constraints
+		constraintIDsPerFT := formationTemplateIDToConstraintIDsMap[ftID]
+		for _, constraintID := range constraintIDsPerFT {
+			formationConstraintsPerFormationTemplate[i] = append(formationConstraintsPerFormationTemplate[i], attachedConstraintsMap[constraintID])
+		}
+
+		// Add global constraints
+		formationConstraintsPerFormationTemplate[i] = append(formationConstraintsPerFormationTemplate[i], globalConstraints...)
+	}
+
+	return formationConstraintsPerFormationTemplate, nil
 }
 
 // Delete deletes formation constraint by id
