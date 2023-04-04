@@ -2025,14 +2025,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 
 		urlTemplateThatFailsOnce := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async-fail-once/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
-
-		// TODO::Change with updateWebhook when it is fixed for global FT
 		webhookThatFailsOnceInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateThatFailsOnce, inputTemplateFormation, outputTemplateFormation)
 
-		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
-		fixtures.DeleteWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
-		actualFormationTemplateWebhook = fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, webhookThatFailsOnceInput, "", ft.ID)
-		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		t.Logf("Update webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
+		updatedFormationTemplateWebhook := fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID, webhookThatFailsOnceInput)
+		require.Equal(t, updatedFormationTemplateWebhook.ID, actualFormationTemplateWebhook.ID)
 
 		t.Logf("Resynchronize formation %q should retry and fail", formation.Name)
 		resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
@@ -2122,11 +2119,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		resetShouldFailEndpointFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		// TODO::Change with updateWebhook when it is fixed for global FT
-		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
-		fixtures.DeleteWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
-		actualFormationTemplateWebhook = fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
-		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		t.Logf("Update webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
+		updatedFormationTemplateWebhook = fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID, formationTemplateWebhookInput)
+		require.Equal(t, updatedFormationTemplateWebhook.ID, actualFormationTemplateWebhook.ID)
 
 		delFormation := fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, formationName)
 		require.NotEmpty(t, delFormation.ID)
@@ -2146,11 +2141,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
-		// TODO::Change with updateWebhook when it is fixed for global FT
-		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
-		fixtures.DeleteWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
-		actualFormationTemplateWebhook = fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, webhookThatFailsOnceInput, "", ft.ID)
-		defer fixtures.CleanupWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID)
+		t.Logf("Update webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
+		updatedFormationTemplateWebhook = fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID, webhookThatFailsOnceInput)
+		require.Equal(t, updatedFormationTemplateWebhook.ID, actualFormationTemplateWebhook.ID)
 
 		t.Logf("Resynchronize formation %s should retry and fail", formation.Name)
 		resynchronizeReq = fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
