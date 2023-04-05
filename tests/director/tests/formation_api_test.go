@@ -652,6 +652,79 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	require.Equal(t, 0, len(asaPage.Data))
 }
 
+func TestApplicationOfGivenTypeInAtMostOneFormationOfGivenType(t *testing.T) {
+	ctx := context.Background()
+
+	const (
+		formationName         = "test-formation"
+		applicationType       = "app-type"
+		applicationNameFirst  = "e2e-tests-app-first"
+		applicationNameSecond = "e2e-tests-app-second"
+	)
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	formationInputGql := graphql.FormationInput{Name: formationName}
+
+	formationTemplateName := "create-formation-template-name"
+	formationTemplateInput := fixtures.FixFormationTemplateInputWithApplicationTypes(formationTemplateName, []string{applicationType})
+
+	t.Logf("Create formation template with name: %q", formationTemplateName)
+	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
+	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+
+	in := graphql.FormationConstraintInput{
+		Name:            "SystemOfGivenTypeInAtMostOneFormationOfGivenType",
+		ConstraintType:  graphql.ConstraintTypePre,
+		TargetOperation: graphql.TargetOperationAssignFormation,
+		Operator:        DoesNotContainResourceOfSubtypeOperator,
+		ResourceType:    graphql.ResourceTypeApplication,
+		ResourceSubtype: applicationType,
+		InputTemplate:   "{\\\"formation_name\\\": \\\"{{.FormationName}}\\\",\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"tenant\\\": \\\"{{.TenantID}}\\\",\\\"resource_type_label_key\\\": \\\"{{.ResourceTypeLabelKey}}\\\"}",
+		ConstraintScope: graphql.ConstraintScopeFormationType,
+	}
+	constraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, in)
+	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, constraint.ID)
+	require.NotEmpty(t, constraint.ID)
+
+	t.Logf("Attaching constraint to formation template")
+	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
+
+	t.Logf("Should create formation: %q", formationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, formationName, &formationTemplate.Name)
+
+	t.Logf("Create application with name %q and type %q", applicationNameFirst, applicationType)
+	appFirst := graphql.ApplicationExt{} // needed so the 'defer' can be above the application creation
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &appFirst)
+	appFirst, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, applicationNameFirst, conf.ApplicationTypeLabelKey, applicationType, tenantId)
+	require.NoError(t, err)
+	require.NotEmpty(t, appFirst.ID)
+
+	t.Logf("Create application with name %q and type %q", applicationNameSecond, applicationType)
+	appSecond := graphql.ApplicationExt{} // needed so the 'defer' can be above the application creation
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &appSecond)
+	appSecond, err = fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, applicationNameSecond, conf.ApplicationTypeLabelKey, applicationType, tenantId)
+	require.NoError(t, err)
+	require.NotEmpty(t, appSecond.ID)
+
+	t.Logf("Assign first application to formation with name: %q", formation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInputGql, appFirst.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInputGql, appFirst.ID, tenantId)
+
+	t.Logf("Should fail to assign second application formation with name: %q", formation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInputGql, appSecond.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectTypeExpectError(t, ctx, certSecuredGraphQLClient, formationInputGql, appSecond.ID, tenantId)
+
+	t.Logf("Detaching constraint from formation template")
+	fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
+
+	t.Logf("Should assign second application formation with name: %q", formation.Name)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInputGql, appSecond.ID, tenantId)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, formationInputGql, appSecond.ID, tenantId)
+}
+
 func TestSystemInAtMostOneFormationOfType(t *testing.T) {
 	ctx := context.Background()
 	const (
