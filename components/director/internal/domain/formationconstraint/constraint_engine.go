@@ -36,6 +36,16 @@ type labelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
+//go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type applicationRepository interface {
+	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+}
+
+//go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type labelService interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+}
+
 // ConstraintEngine determines which constraints are applicable to the reached join point and enforces them
 type ConstraintEngine struct {
 	constraintSvc             formationConstraintSvc
@@ -43,21 +53,31 @@ type ConstraintEngine struct {
 	asaSvc                    automaticScenarioAssignmentService
 	formationRepo             formationRepository
 	labelRepo                 labelRepository
+	labelService              labelService
+	applicationRepository     applicationRepository
 	operators                 map[OperatorName]OperatorFunc
 	operatorInputConstructors map[OperatorName]OperatorInputConstructor
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository) *ConstraintEngine {
+func NewConstraintEngine(constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository) *ConstraintEngine {
 	c := &ConstraintEngine{
-		constraintSvc:             constraintSvc,
-		tenantSvc:                 tenantSvc,
-		asaSvc:                    asaSvc,
-		formationRepo:             formationRepo,
-		labelRepo:                 labelRepo,
-		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput},
+		constraintSvc:         constraintSvc,
+		tenantSvc:             tenantSvc,
+		asaSvc:                asaSvc,
+		formationRepo:         formationRepo,
+		labelRepo:             labelRepo,
+		labelService:          labelService,
+		applicationRepository: applicationRepository,
+		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
+			IsNotAssignedToAnyFormationOfTypeOperator: NewIsNotAssignedToAnyFormationOfTypeInput,
+			DoesNotContainResourceOfSubtypeOperator:   NewDoesNotContainResourceOfSubtypeInput,
+		},
 	}
-	c.operators = map[OperatorName]OperatorFunc{IsNotAssignedToAnyFormationOfTypeOperator: c.IsNotAssignedToAnyFormationOfType}
+	c.operators = map[OperatorName]OperatorFunc{
+		IsNotAssignedToAnyFormationOfTypeOperator: c.IsNotAssignedToAnyFormationOfType,
+		DoesNotContainResourceOfSubtypeOperator:   c.DoesNotContainResourceOfSubtype,
+	}
 	return c
 }
 

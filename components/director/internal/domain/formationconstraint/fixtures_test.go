@@ -298,3 +298,11 @@ func UnusedFormationTemplateConstraintReferenceRepository() *automock.FormationT
 func fixColumns() []string {
 	return []string{"id", "name", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope"}
 }
+
+func UnusedLabelService() *automock.LabelService {
+	return &automock.LabelService{}
+}
+
+func UnusedApplicationRepo() *automock.ApplicationRepository {
+	return &automock.ApplicationRepository{}
+}
