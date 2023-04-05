@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -44,6 +45,9 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 		appRegisterInputJSON = `{"name":"test"}`
 		appInputOverride     = `{"name":"{{name}}"}`
 	)
+	var (
+		optionalFalse = false
+	)
 
 	placeholdersMappings := []systemfetcher.PlaceholderMapping{
 		{
@@ -60,7 +64,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 	appTemplateWithOverrides := &model.ApplicationTemplate{
 		ID: appTemplateID,
 		Placeholders: []model.ApplicationTemplatePlaceholder{
-			{Name: "name"},
+			{Name: "name", JSONPath: str.Ptr("displayName"), Optional: &optionalFalse},
 		},
 		ApplicationInputJSON: appInputOverride,
 	}
