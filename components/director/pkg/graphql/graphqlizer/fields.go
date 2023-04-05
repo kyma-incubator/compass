@@ -166,6 +166,21 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 	`, fp.ForWebhooks())
 }
 
+// ForFormationTemplateWithConstraints missing godoc
+func (fp *GqlFieldsProvider) ForFormationTemplateWithConstraints() string {
+	return fmt.Sprintf(`
+		id
+		name
+        applicationTypes
+	    runtimeTypes
+		runtimeTypeDisplayName	
+		runtimeArtifactKind
+        leadingProductIDs
+        webhooks {%s}
+		formationConstraints {%s}
+	`, fp.ForWebhooks(), fp.ForFormationConstraint())
+}
+
 // ForFormationAssignment missing godoc
 func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 	return `

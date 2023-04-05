@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	constraintID = "constraint_id"
-	templateID   = "template_id"
+	constraintID     = "constraint_id"
+	templateID       = "template_id"
+	templateIDSecond = "template_id_2"
 )
 
 func fixColumns() []string {

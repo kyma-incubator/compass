@@ -67,6 +67,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [query formation by name](./query-formation-by-name/query-formation-by-name.graphql)
 - [query formation constraint](./query-formation-constraint/query-formation-constraint.graphql)
 - [query formation template](./query-formation-template/query-formation-template.graphql)
+- [query formation template with constraints](./query-formation-template-with-constraints/query-formation-template-with-constraints.graphql)
 - [query formation templates](./query-formation-templates/query-formation-templates.graphql)
 - [query formations](./query-formations/query-formations.graphql)
 - [query integration system](./query-integration-system/query-integration-system.graphql)
