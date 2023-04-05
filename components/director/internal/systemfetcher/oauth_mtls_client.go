@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
@@ -46,5 +47,6 @@ func (omc *oauthMtlsClient) Do(req *http.Request, tenant string) (*http.Response
 		AdditionalHeaders: map[string]string{omc.tenantHeader: tenant},
 	}))
 
+	time.Sleep(time.Second * 2)
 	return omc.c.Do(req)
 }

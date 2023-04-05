@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -130,71 +128,25 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		return errors.Wrap(err, "failed to list tenants")
 	}
 
-	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
 	for _, tnt := range allTenants {
 		if tnt.Type == tenantEntity.Account {
-			tenants = append(tenants, tnt)
-		}
-	}
+			systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, tnt.ExternalTenant)
+			if err != nil {
+				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", tnt.ExternalTenant)))
+			}
+			log.C(ctx).Infof("found %d systems for tenant %s", len(systems), tnt.ExternalTenant)
+			if len(s.config.VerifyTenant) > 0 {
+				log.C(ctx).Infof("systems: %#v", systems)
+			}
 
-	systemsQueue := make(chan tenantSystems, s.config.SystemsQueueSize)
-	wgDB := sync.WaitGroup{}
-	wgDB.Add(1)
-	go func() {
-		defer func() {
-			wgDB.Done()
-		}()
-		for tenantSystems := range systemsQueue {
-			entry := log.C(ctx)
-			entry = entry.WithField(log.FieldRequestID, uuid.New().String())
-			ctx = log.ContextWithLogger(ctx, entry)
-
-			if err = s.processSystemsForTenant(ctx, tenantSystems.tenant, tenantSystems.systems); err != nil {
-				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tenantSystems.tenant.ExternalTenant)))
+			if err = s.processSystemsForTenant(ctx, tnt, systems); err != nil {
+				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to save systems for tenant %s", tnt.ExternalTenant)))
 				continue
 			}
 
-			log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tenantSystems.tenant.ExternalTenant))
+			log.C(ctx).Info(fmt.Sprintf("Successfully synced systems for tenant %s", tnt.ExternalTenant))
 		}
-	}()
-
-	chunks := splitBusinessTenantMappingsToChunks(tenants, 20)
-
-	for _, chunk := range chunks {
-		time.Sleep(time.Second * 1)
-
-		wg := sync.WaitGroup{}
-		for _, t := range chunk {
-			wg.Add(1)
-			s.workers <- struct{}{}
-			go func(t *model.BusinessTenantMapping) {
-				defer func() {
-					wg.Done()
-					<-s.workers
-				}()
-				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
-				if err != nil {
-					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
-					return
-				}
-				log.C(ctx).Infof("found %d systems for tenant %s", len(systems), t.ExternalTenant)
-				if len(s.config.VerifyTenant) > 0 {
-					log.C(ctx).Infof("systems: %#v", systems)
-				}
-				if len(systems) > 0 {
-					systemsQueue <- tenantSystems{
-						tenant:  t,
-						systems: systems,
-					}
-				}
-			}(t)
-		}
-
-		wg.Wait()
 	}
-	close(systemsQueue)
-	wgDB.Wait()
-
 	return nil
 }
 
