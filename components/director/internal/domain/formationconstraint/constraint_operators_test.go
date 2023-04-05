@@ -259,8 +259,8 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 
 func TestConstraintOperators_DoesNotContainResourceOfSubtype(t *testing.T) {
 	ctx := context.TODO()
-
 	testErr := errors.New("test error")
+
 	applicationTypeLabel := "applicationType"
 	inputAppType := "input-type"
 	inputAppID := "eb2d5110-ca3a-11ed-afa1-0242ac120002"
