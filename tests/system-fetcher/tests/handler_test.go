@@ -74,7 +74,7 @@ const (
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {}
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"}
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -91,6 +91,7 @@ const (
 	nameLabelKey           = "displayName"
 	namePlaceholder        = "name"
 	displayNamePlaceholder = "display-name"
+	regionLabelKey         = "region"
 )
 
 var (
@@ -156,7 +157,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
 		},
 		{
 			Application: directorSchema.Application{
@@ -165,7 +166,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false),
+			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 	}
 
@@ -239,7 +240,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
 		},
 		{
 			Application: directorSchema.Application{
@@ -248,7 +249,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false),
+			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 	}
 
@@ -347,7 +348,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -355,7 +356,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 				Description:  &description,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false),
+			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 	}
 
@@ -534,7 +535,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -543,7 +544,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false),
+			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 	}
 
@@ -647,7 +648,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -655,7 +656,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:  &description,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false),
+			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -663,7 +664,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:  &description,
 				SystemNumber: str.Ptr("3"),
 			},
-			Labels: applicationLabels("name1", "", "", false),
+			Labels: applicationLabels("name1", "", "", false, ""),
 		},
 	}
 
@@ -783,14 +784,14 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				ApplicationTemplateID: &template.ID,
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, ""),
 		},
 		{
 			Application: directorSchema.Application{
 				Name:        "name2",
 				Description: &description,
 			},
-			Labels: applicationLabels("name2", "", "", false),
+			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -799,7 +800,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				ApplicationTemplateID: &template2.ID,
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name3", appTemplateName2, intSys.ID, true),
+			Labels: applicationLabels("name3", appTemplateName2, intSys.ID, true, ""),
 		},
 	}
 
@@ -898,7 +899,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Name:        "name2",
 				Description: &description,
 			},
-			Labels: applicationLabels("name2", "", "", false),
+			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 	}
 
@@ -977,7 +978,7 @@ func TestSystemFetcherUpdate(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
 		},
 		{
 			Application: directorSchema.Application{
@@ -986,7 +987,7 @@ func TestSystemFetcherUpdate(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false),
+			Labels: applicationLabels("name2", "", "", false, ""),
 		},
 	}
 
@@ -1024,7 +1025,7 @@ func TestSystemFetcherUpdate(t *testing.T) {
 
 	// Assert the previously updated Application still contains it's updated StatusCondition
 	updatedSystems := 0
-	resp, actualApps = retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	resp, _ = retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
 	for _, app := range resp.Data {
 		if app.ID == updatedAppID {
 			updatedSystems += 1
@@ -1040,6 +1041,7 @@ func waitForDeleteOperation(ctx context.Context, t *testing.T, appID string) {
 	require.NoError(t, err)
 
 	k8sClient, err := client.NewForConfig(cfg)
+	require.NoError(t, err)
 	operationsK8sClient := k8sClient.Operations(systemFetcherJobNamespace)
 	opName := fmt.Sprintf("application-%s", appID)
 
@@ -1129,7 +1131,7 @@ func getFixExpectedMockSystems(count int, description string) []directorSchema.A
 				Description:  &description,
 				SystemNumber: str.Ptr(fmt.Sprintf("%d", i)),
 			},
-			Labels: applicationLabels(systemName, "", "", false),
+			Labels: applicationLabels(systemName, "", "", false, ""),
 		}
 	}
 	return result
@@ -1156,7 +1158,7 @@ func cleanupMockSystems(t *testing.T) {
 	log.D().Info("Successfully reset mock systems")
 }
 
-func applicationLabels(name, appTemplateName, integrationSystemID string, fromTemplate bool) directorSchema.Labels {
+func applicationLabels(name, appTemplateName, integrationSystemID string, fromTemplate bool, regionLabel string) directorSchema.Labels {
 	labels := directorSchema.Labels{
 		"managed":              "true",
 		"name":                 fmt.Sprintf("mp-%s", name),
@@ -1168,6 +1170,10 @@ func applicationLabels(name, appTemplateName, integrationSystemID string, fromTe
 	if fromTemplate {
 		labels[nameLabelKey] = name
 		labels["applicationType"] = appTemplateName
+	}
+
+	if len(regionLabel) > 0 {
+		labels[regionLabelKey] = regionLabel
 	}
 
 	return labels
