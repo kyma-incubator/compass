@@ -117,6 +117,10 @@ func (c *Client) buildFilter() map[string]string {
 			continue
 		}
 
+		if lbl.Value != "ZXC" && lbl.Value != "ZXW" {
+			continue
+		}
+
 		queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
 
 		if idx < len(ApplicationTemplates)-1 {
