@@ -110,6 +110,6 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 
 func (c *Client) buildFilter() map[string]string {
 	var queryBuilder strings.Builder
-	queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' or  %s eq '%s'  ", c.apiConfig.SystemSourceKey, "ZXC", c.apiConfig.SystemSourceKey, "ZXW"))
+	queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, "ARIBA_NETWORK"))
 	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, queryBuilder.String()), "fetchAcrossZones": "true"}
 }
