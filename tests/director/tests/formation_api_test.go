@@ -1924,6 +1924,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipants(t *testing.T) {
 
 		t.Logf("Resynchronize formation %q should retry and succeed", formation.Name)
 		resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequest(formation.ID)
+		saveExample(t, resynchronizeReq.Query(), "resynchronize formation notifications")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, resynchronizeReq, &formation)
 		require.NoError(t, err)
 		require.Equal(t, formationName, formation.Name)
