@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -50,6 +51,7 @@ func NewPageIterator(baseURL, skipParam, sizeParam string, additionalQueryParams
 // Next should be called until it returns false and no error.
 // Once Next returns false and no error, Next should not be called anymore because it will do nothing.
 func (p *PageIterator) Next() (bool, error) {
+	time.Sleep(time.Second * 2)
 	if !p.hasNext {
 		return false, nil
 	}
