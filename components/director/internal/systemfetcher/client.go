@@ -110,23 +110,6 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 
 func (c *Client) buildFilter() map[string]string {
 	var queryBuilder strings.Builder
-
-	for idx, at := range ApplicationTemplates {
-		lbl, ok := at.Labels[ApplicationTemplateLabelFilter]
-		if !ok {
-			continue
-		}
-
-		if lbl.Value != "ZXC" && lbl.Value != "ZXW" {
-			continue
-		}
-
-		queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
-
-		if idx < len(ApplicationTemplates)-1 {
-			queryBuilder.WriteString("or")
-		}
-	}
-
+	queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' or  %s eq '%s'  ", c.apiConfig.SystemSourceKey, "ZXC", c.apiConfig.SystemSourceKey, "ZXW"))
 	return map[string]string{"$filter": fmt.Sprintf(c.apiConfig.FilterCriteria, queryBuilder.String()), "fetchAcrossZones": "true"}
 }
