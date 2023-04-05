@@ -117,12 +117,10 @@ func (c *Client) buildFilter() map[string]string {
 			continue
 		}
 
-		if lbl.Value == "ZXC" || lbl.Value == "ZXW" {
-			queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
+		queryBuilder.WriteString(fmt.Sprintf(" %s eq '%s' ", c.apiConfig.SystemSourceKey, lbl.Value))
 
-			if idx < len(ApplicationTemplates)-1 {
-				queryBuilder.WriteString("or")
-			}
+		if idx < len(ApplicationTemplates)-1 {
+			queryBuilder.WriteString("or")
 		}
 	}
 
