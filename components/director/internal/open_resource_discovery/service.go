@@ -355,7 +355,7 @@ func (s *Service) processDocuments(ctx context.Context, app *model.Application, 
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
 	}
 
-	ordLocalID := s.getUniqueLocalTenantId(documents)
+	ordLocalID := s.getUniqueLocalTenantID(documents)
 	if ordLocalID != "" && app.LocalTenantID == nil {
 		if err := s.appSvc.Update(ctx, app.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalID)}); err != nil {
 			return err
@@ -1371,7 +1371,7 @@ func (s *Service) getApplicationsForAppTemplate(ctx context.Context, appTemplate
 	return apps, err
 }
 
-func (s *Service) getUniqueLocalTenantId(documents Documents) string {
+func (s *Service) getUniqueLocalTenantID(documents Documents) string {
 	var uniqueLocalTenantIds []string
 	localTenants := make(map[string]bool, 0)
 
