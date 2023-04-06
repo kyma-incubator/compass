@@ -19,77 +19,6 @@ ALTER TABLE event_api_definitions
     ADD COLUMN local_tenant_id VARCHAR(256);
 
 -- Recreate views --
-CREATE OR REPLACE VIEW tenants_specifications
-            (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type,
-             event_spec_format, event_spec_type, custom_type, created_at)
-AS
-SELECT DISTINCT t_api_event_def.tenant_id,
-                spec.id,
-                spec.api_def_id,
-                spec.event_def_id,
-                spec.spec_data,
-                spec.api_spec_format,
-                spec.api_spec_type,
-                spec.event_spec_format,
-                spec.event_spec_type,
-                spec.custom_type,
-                spec.created_at
-FROM specifications spec
-         JOIN (SELECT a.id,
-                      a.tenant_id
-               FROM tenants_apis a
-               UNION ALL
-               SELECT e.id,
-                      e.tenant_id
-               FROM tenants_events e) t_api_event_def
-              ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
-
-
-CREATE OR REPLACE VIEW tenants_bundles
-            (tenant_id, formation_id, id, app_id, name, description, version, instance_auth_request_json_schema,
-             default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, tags, credential_exchange_strategies, ready,
-             created_at, updated_at, deleted_at, error, correlation_ids, resource_hash)
-AS
-SELECT DISTINCT t_apps.tenant_id,
-                t_apps.formation_id,
-                b.id,
-                b.app_id,
-                b.name,
-                b.description,
-                b.version,
-                b.instance_auth_request_json_schema,
-                b.default_instance_auth,
-                b.ord_id,
-                b.local_tenant_id,
-                b.short_description,
-                b.links,
-                b.labels,
-                b.tags,
-                b.credential_exchange_strategies,
-                b.ready,
-                b.created_at,
-                b.updated_at,
-                b.deleted_at,
-                b.error,
-                b.correlation_ids,
-                b.resource_hash
-FROM bundles b
-         JOIN (SELECT a1.id,
-                      a1.tenant_id AS tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-               FROM tenant_applications a1
-               UNION ALL
-               SELECT apps_subaccounts.id,
-                      apps_subaccounts.tenant_id,
-                      apps_subaccounts.formation_id
-               FROM apps_subaccounts
-               UNION ALL
-               SELECT apps_subaccounts.id,
-                      apps_subaccounts.tenant_id,
-                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
-               FROM apps_subaccounts) t_apps
-              ON b.app_id = t_apps.id;
-
 CREATE OR REPLACE VIEW tenants_events
             (tenant_id, formation_id, id, app_id, name, description, group_name, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id, short_description,
@@ -152,6 +81,7 @@ FROM event_api_definitions events
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON events.app_id = t_apps.id;
+
 
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
@@ -226,6 +156,78 @@ FROM api_definitions apis
                       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
                FROM apps_subaccounts) t_apps
               ON apis.app_id = t_apps.id;
+
+CREATE OR REPLACE VIEW tenants_specifications
+            (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type,
+             event_spec_format, event_spec_type, custom_type, created_at)
+AS
+SELECT DISTINCT t_api_event_def.tenant_id,
+                spec.id,
+                spec.api_def_id,
+                spec.event_def_id,
+                spec.spec_data,
+                spec.api_spec_format,
+                spec.api_spec_type,
+                spec.event_spec_format,
+                spec.event_spec_type,
+                spec.custom_type,
+                spec.created_at
+FROM specifications spec
+         JOIN (SELECT a.id,
+                      a.tenant_id
+               FROM tenants_apis a
+               UNION ALL
+               SELECT e.id,
+                      e.tenant_id
+               FROM tenants_events e) t_api_event_def
+              ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
+
+
+CREATE OR REPLACE VIEW tenants_bundles
+            (tenant_id, formation_id, id, app_id, name, description, version, instance_auth_request_json_schema,
+             default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, tags, credential_exchange_strategies, ready,
+             created_at, updated_at, deleted_at, error, correlation_ids, resource_hash)
+AS
+SELECT DISTINCT t_apps.tenant_id,
+                t_apps.formation_id,
+                b.id,
+                b.app_id,
+                b.name,
+                b.description,
+                b.version,
+                b.instance_auth_request_json_schema,
+                b.default_instance_auth,
+                b.ord_id,
+                b.local_tenant_id,
+                b.short_description,
+                b.links,
+                b.labels,
+                b.tags,
+                b.credential_exchange_strategies,
+                b.ready,
+                b.created_at,
+                b.updated_at,
+                b.deleted_at,
+                b.error,
+                b.correlation_ids,
+                b.resource_hash
+FROM bundles b
+         JOIN (SELECT a1.id,
+                      a1.tenant_id AS tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM tenant_applications a1
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      apps_subaccounts.formation_id
+               FROM apps_subaccounts
+               UNION ALL
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id,
+                      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' AS formation_id
+               FROM apps_subaccounts) t_apps
+              ON b.app_id = t_apps.id;
+
 
 CREATE OR REPLACE VIEW tenants_apps
             (tenant_id, formation_id, id, name, description, status_condition, status_timestamp, healthcheck_url,
