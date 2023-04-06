@@ -60,7 +60,6 @@ func (s *service) Create(ctx context.Context, applicationID string, in model.Bun
 
 // CreateBundle Creates bundle for an application with given id
 func (s *service) CreateBundle(ctx context.Context, applicationID string, in model.BundleCreateInput, bndlHash uint64) (string, error) {
-
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
