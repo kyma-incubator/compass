@@ -1,5 +1,6 @@
 BEGIN;
 
+DROP VIEW IF EXISTS tenants_specifications;
 DROP VIEW IF EXISTS tenants_bundles;
 DROP VIEW IF EXISTS tenants_apis;
 DROP VIEW IF EXISTS tenants_events;
@@ -18,6 +19,32 @@ ALTER TABLE event_api_definitions
     ADD COLUMN local_tenant_id VARCHAR(256);
 
 -- Recreate views --
+CREATE OR REPLACE VIEW tenants_specifications
+            (tenant_id, id, api_def_id, event_def_id, spec_data, api_spec_format, api_spec_type,
+             event_spec_format, event_spec_type, custom_type, created_at)
+AS
+SELECT DISTINCT t_api_event_def.tenant_id,
+                spec.id,
+                spec.api_def_id,
+                spec.event_def_id,
+                spec.spec_data,
+                spec.api_spec_format,
+                spec.api_spec_type,
+                spec.event_spec_format,
+                spec.event_spec_type,
+                spec.custom_type,
+                spec.created_at
+FROM specifications spec
+         JOIN (SELECT a.id,
+                      a.tenant_id
+               FROM tenants_apis a
+               UNION ALL
+               SELECT e.id,
+                      e.tenant_id
+               FROM tenants_events e) t_api_event_def
+              ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
+
+
 CREATE OR REPLACE VIEW tenants_bundles
             (tenant_id, formation_id, id, app_id, name, description, version, instance_auth_request_json_schema,
              default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, tags, credential_exchange_strategies, ready,
