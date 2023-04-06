@@ -280,6 +280,26 @@ func TestRepositoryUpdate(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 	})
+	t.Run("Update FormationTemplate webhook", func(t *testing.T) {
+		tmplWhModel := fixFormationTemplateModelWebhook(givenID(), givenFormationTemplateID(), "http://kyma.io")
+		// GIVEN
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", tmplWhModel).Return(fixFormationTemplateWebhookEntityWithID(t, givenID()), nil)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND formation_template_id = ?`)).
+			WithArgs(string(model.WebhookTypeFormationLifecycle), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenFormationTemplateID()).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		sut := webhook.NewRepository(mockConverter)
+		// WHEN
+		err := sut.Update(ctx, "", tmplWhModel)
+		// THEN
+		require.NoError(t, err)
+	})
 }
 
 func TestRepositoryDelete(t *testing.T) {

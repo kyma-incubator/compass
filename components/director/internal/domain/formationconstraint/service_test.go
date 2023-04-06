@@ -3,6 +3,7 @@ package formationconstraint_test
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
@@ -514,6 +515,119 @@ func TestService_Update(t *testing.T) {
 			}
 
 			mock.AssertExpectationsForObjects(t, repo, conv)
+		})
+	}
+}
+
+func TestService_ListByFormationTemplateIDs(t *testing.T) {
+	ctx := context.TODO()
+
+	testErr := errors.New("test err")
+	formationTemplateIDs := []string{formationTemplateID1, formationTemplateID2, formationTemplateID3}
+	constraintIDs := []string{constraintID1, constraintID2}
+
+	constraintRefs := []*model.FormationTemplateConstraintReference{
+		{
+			ConstraintID:        constraintIDs[0],
+			FormationTemplateID: formationTemplateIDs[0],
+		},
+		{
+			ConstraintID:        constraintIDs[1],
+			FormationTemplateID: formationTemplateIDs[1],
+		},
+		{
+			ConstraintID:        constraintIDs[1],
+			FormationTemplateID: formationTemplateIDs[2],
+		},
+	}
+
+	constraints := []*model.FormationConstraint{formationConstraint1, formationConstraint2, globalConstraint}
+
+	constraintsPerFormationTemplate := [][]*model.FormationConstraint{
+		{
+			formationConstraint1,
+			formationConstraint2,
+			globalConstraint,
+		},
+		{
+			formationConstraint1,
+			globalConstraint,
+		},
+	}
+
+	testCases := []struct {
+		Name                                     string
+		FormationTemplateConstraintReferenceRepo func() *automock.FormationTemplateConstraintReferenceRepository
+		FormationConstraintRepo                  func() *automock.FormationConstraintRepository
+		Input                                    []string
+		ExpectedConstraints                      [][]*model.FormationConstraint
+		ExpectedError                            error
+	}{
+		{
+			Name: "Success",
+			FormationTemplateConstraintReferenceRepo: func() *automock.FormationTemplateConstraintReferenceRepository {
+				refRepo := &automock.FormationTemplateConstraintReferenceRepository{}
+				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(constraintRefs, nil).Once()
+				return refRepo
+			},
+			FormationConstraintRepo: func() *automock.FormationConstraintRepository {
+				constraintRepo := &automock.FormationConstraintRepository{}
+				constraintRepo.On("ListByIDsAndGlobal", ctx, append(constraintIDs, constraintIDs[1])).Return(constraints, nil).Once()
+				return constraintRepo
+			},
+			Input:               formationTemplateIDs,
+			ExpectedConstraints: constraintsPerFormationTemplate,
+			ExpectedError:       nil,
+		},
+		{
+			Name: "Returns error when listing constraints fails",
+			FormationTemplateConstraintReferenceRepo: func() *automock.FormationTemplateConstraintReferenceRepository {
+				refRepo := &automock.FormationTemplateConstraintReferenceRepository{}
+				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(constraintRefs, nil).Once()
+				return refRepo
+			},
+			FormationConstraintRepo: func() *automock.FormationConstraintRepository {
+				constraintRepo := &automock.FormationConstraintRepository{}
+				constraintRepo.On("ListByIDsAndGlobal", ctx, append(constraintIDs, constraintIDs[1])).Return(nil, testErr).Once()
+				return constraintRepo
+			},
+			Input:               formationTemplateIDs,
+			ExpectedConstraints: nil,
+			ExpectedError:       testErr,
+		},
+		{
+			Name: "Returns error when listing constraints refs fails",
+			FormationTemplateConstraintReferenceRepo: func() *automock.FormationTemplateConstraintReferenceRepository {
+				refRepo := &automock.FormationTemplateConstraintReferenceRepository{}
+				refRepo.On("ListByFormationTemplateIDs", ctx, formationTemplateIDs).Return(nil, testErr).Once()
+				return refRepo
+			},
+			Input:               formationTemplateIDs,
+			ExpectedConstraints: nil,
+			ExpectedError:       testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			constraintRefRepo := testCase.FormationTemplateConstraintReferenceRepo()
+			constraintRepo := UnusedFormationConstraintRepository()
+			if testCase.FormationConstraintRepo != nil {
+				constraintRepo = testCase.FormationConstraintRepo()
+			}
+			svc := formationconstraint.NewService(constraintRepo, constraintRefRepo, nil, nil)
+
+			res, err := svc.ListByFormationTemplateIDs(ctx, testCase.Input)
+
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				require.Nil(t, res)
+			} else {
+				require.Nil(t, err)
+				reflect.DeepEqual(res, testCase.ExpectedConstraints)
+			}
+
+			mock.AssertExpectationsForObjects(t, constraintRefRepo, constraintRepo)
 		})
 	}
 }

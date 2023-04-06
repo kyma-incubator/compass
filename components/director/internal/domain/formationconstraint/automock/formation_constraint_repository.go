@@ -114,6 +114,29 @@ func (_m *FormationConstraintRepository) ListByIDs(ctx context.Context, formatio
 	return r0, r1
 }
 
+// ListByIDsAndGlobal provides a mock function with given fields: ctx, formationConstraintIDs
+func (_m *FormationConstraintRepository) ListByIDsAndGlobal(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error) {
+	ret := _m.Called(ctx, formationConstraintIDs)
+
+	var r0 []*model.FormationConstraint
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.FormationConstraint); ok {
+		r0 = rf(ctx, formationConstraintIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FormationConstraint)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, formationConstraintIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListMatchingFormationConstraints provides a mock function with given fields: ctx, formationConstraintIDs, location, details
 func (_m *FormationConstraintRepository) ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location pkgformationconstraint.JoinPointLocation, details pkgformationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
 	ret := _m.Called(ctx, formationConstraintIDs, location, details)
