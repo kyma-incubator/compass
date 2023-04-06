@@ -23,6 +23,7 @@ type WebhookService interface {
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
+	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 }
 
 // BundleService is responsible for the service-layer Bundle operations.

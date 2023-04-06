@@ -317,8 +317,8 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return ordWebhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
-	apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, err := s.fetchResources(ctx, appID)
+func (s *Service) processDocuments(ctx context.Context, app *model.Application, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+	apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, err := s.fetchResources(ctx, app.ID)
 	if err != nil {
 		return err
 	}
@@ -355,37 +355,44 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		tombstonesInput = append(tombstonesInput, doc.Tombstones...)
 	}
 
-	vendorsFromDB, err := s.processVendors(ctx, appID, vendorsInput)
+	ordLocalID := s.getUniqueLocalTenantId(documents)
+	if ordLocalID != "" && app.LocalTenantID == nil {
+		if err := s.appSvc.Update(ctx, app.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalID)}); err != nil {
+			return err
+		}
+	}
+
+	vendorsFromDB, err := s.processVendors(ctx, app.ID, vendorsInput)
 	if err != nil {
 		return err
 	}
 
-	productsFromDB, err := s.processProducts(ctx, appID, productsInput)
+	productsFromDB, err := s.processProducts(ctx, app.ID, productsInput)
 	if err != nil {
 		return err
 	}
 
-	packagesFromDB, err := s.processPackages(ctx, appID, packagesInput, resourceHashes)
+	packagesFromDB, err := s.processPackages(ctx, app.ID, packagesInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	bundlesFromDB, err := s.processBundles(ctx, appID, bundlesInput, resourceHashes)
+	bundlesFromDB, err := s.processBundles(ctx, app.ID, bundlesInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, appID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
+	apisFromDB, apiFetchRequests, err := s.processAPIs(ctx, app.ID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, appID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
+	eventsFromDB, eventFetchRequests, err := s.processEvents(ctx, app.ID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
 	if err != nil {
 		return err
 	}
 
-	tombstonesFromDB, err := s.processTombstones(ctx, appID, tombstonesInput)
+	tombstonesFromDB, err := s.processTombstones(ctx, app.ID, tombstonesInput)
 	if err != nil {
 		return err
 	}
@@ -1295,7 +1302,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsCon
 	if len(documents) > 0 {
 		log.C(ctx).Info("Processing ORD documents")
 		var validationErrors error
-		if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs, &validationErrors); err != nil {
+		if err = s.processDocuments(ctx, app, baseURL, documents, globalResourcesOrdIDs, &validationErrors); err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
@@ -1362,6 +1369,26 @@ func (s *Service) getApplicationsForAppTemplate(ctx context.Context, appTemplate
 	}
 
 	return apps, err
+}
+
+func (s *Service) getUniqueLocalTenantId(documents Documents) string {
+	var uniqueLocalTenantIds []string
+	localTenants := make(map[string]bool, 0)
+
+	for _, doc := range documents {
+		systemInstanceLocalTenantID := doc.DescribedSystemInstance.LocalTenantID
+		if systemInstanceLocalTenantID != nil {
+			if _, exists := localTenants[*systemInstanceLocalTenantID]; !exists {
+				localTenants[*systemInstanceLocalTenantID] = true
+				uniqueLocalTenantIds = append(uniqueLocalTenantIds, *doc.DescribedSystemInstance.LocalTenantID)
+			}
+		}
+	}
+	if len(uniqueLocalTenantIds) == 1 {
+		return uniqueLocalTenantIds[0]
+	}
+
+	return ""
 }
 
 func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID string) (context.Context, error) {
