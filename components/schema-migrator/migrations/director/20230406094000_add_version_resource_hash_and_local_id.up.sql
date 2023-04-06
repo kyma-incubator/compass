@@ -82,7 +82,6 @@ FROM event_api_definitions events
                FROM apps_subaccounts) t_apps
               ON events.app_id = t_apps.id;
 
-
 CREATE OR REPLACE VIEW tenants_apis
             (tenant_id, formation_id, id, app_id, name, description, group_name, default_auth, version_value,
              version_deprecated, version_deprecated_since, version_for_removal, ord_id, local_tenant_id, short_description,
@@ -181,7 +180,6 @@ FROM specifications spec
                       e.tenant_id
                FROM tenants_events e) t_api_event_def
               ON spec.api_def_id = t_api_event_def.id OR spec.event_def_id = t_api_event_def.id;
-
 
 CREATE OR REPLACE VIEW tenants_bundles
             (tenant_id, formation_id, id, app_id, name, description, version, instance_auth_request_json_schema,
