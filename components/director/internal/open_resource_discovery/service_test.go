@@ -50,6 +50,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	packagePreSanitizedHash, err := ord.HashObject(fixORDDocument().Packages[0])
 	require.NoError(t, err)
 
+	bundlePreSanitizedHash, err := ord.HashObject(fixORDDocument().ConsumptionBundles[0])
+	require.NoError(t, err)
+
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
 		whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
@@ -59,7 +62,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulBundleUpdate := func() *automock.BundleService {
 		bundlesSvc := &automock.BundleService{}
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
-		bundlesSvc.On("Update", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(nil).Once()
+		bundlesSvc.On("UpdateBundle", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0]), bundlePreSanitizedHash).Return(nil).Once()
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 		return bundlesSvc
 	}
@@ -67,7 +71,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulBundleCreate := func() *automock.BundleService {
 		bundlesSvc := &automock.BundleService{}
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		bundlesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0]).Return("", nil).Once()
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+		bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0], mock.Anything).Return("", nil).Once()
 		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 		return bundlesSvc
 	}
@@ -169,6 +174,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		pkgService.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 
 		return pkgService
+	}
+
+	successfulEmptyBundleList := func() *automock.BundleService {
+		bundlesSvc := &automock.BundleService{}
+		bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+
+		return bundlesSvc
 	}
 
 	successfulEmptyVendorList := func() *automock.VendorService {
@@ -1123,7 +1135,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn: successfulWebhookList,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
-				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
+				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Times(3)
 				return bundlesSvc
 			},
 			apiSvcFn: func() *automock.APIService {
@@ -1338,6 +1350,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -1364,6 +1377,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
@@ -1393,6 +1407,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
@@ -1420,6 +1435,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1447,6 +1463,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn:  successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
@@ -1474,6 +1491,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn:  successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
@@ -1504,6 +1522,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn:  successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
@@ -1532,6 +1551,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			vendorSvcFn:  successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
@@ -1560,6 +1580,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
 			packageSvcFn: func() *automock.PackageService {
@@ -1588,6 +1609,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
 			packageSvcFn: func() *automock.PackageService {
@@ -1618,6 +1640,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
 			packageSvcFn: func() *automock.PackageService {
@@ -1647,6 +1670,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
 			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulEmptyBundleList,
 			productSvcFn: successfulProductCreate,
 			vendorSvcFn:  successfulVendorCreate,
 			packageSvcFn: func() *automock.PackageService {
@@ -1681,6 +1705,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			packageSvcFn: successfulPackageUpdate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
+				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return bundlesSvc
 			},
@@ -1709,8 +1734,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			packageSvcFn: successfulPackageUpdate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
-				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
-				bundlesSvc.On("Update", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(nil).Once()
+				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Twice()
+				bundlesSvc.On("UpdateBundle", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0]), bundlePreSanitizedHash).Return(nil).Once()
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return bundlesSvc
 			},
@@ -1739,8 +1764,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			packageSvcFn: successfulPackageUpdate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
+				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
-				bundlesSvc.On("Update", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(testErr).Once()
+				bundlesSvc.On("UpdateBundle", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0]), bundlePreSanitizedHash).Return(testErr).Once()
 				return bundlesSvc
 			},
 			clientFn:          successfulClientFetch,
@@ -1769,7 +1795,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				bundlesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0]).Return("", testErr).Once()
+				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
+				bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0], mock.Anything).Return("", testErr).Once()
 				return bundlesSvc
 			},
 			clientFn:          successfulClientFetch,
@@ -3048,8 +3075,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn: successfulWebhookList,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
-				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				bundlesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0]).Return("", nil).Once()
+				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Twice()
+				bundlesSvc.On("CreateBundle", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0], mock.Anything).Return("", nil).Once()
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
 				bundlesSvc.On("Delete", txtest.CtxWithDBMatcher(), bundleID).Return(testErr).Once()
 				return bundlesSvc

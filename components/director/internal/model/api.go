@@ -26,6 +26,7 @@ type APIDefinition struct {
 	TargetURLs                              json.RawMessage
 	Group                                   *string //  group allows you to find the same API but in different version
 	OrdID                                   *string
+	LocalTenantID                           *string
 	ShortDescription                        *string
 	SystemInstanceAware                     *bool
 	PolicyLevel                             *string
@@ -71,6 +72,7 @@ type APIDefinitionInput struct {
 	TargetURLs                              json.RawMessage               `json:"entryPoints"`
 	Group                                   *string                       `json:",omitempty"` //  group allows you to find the same API but in different version
 	OrdID                                   *string                       `json:"ordId"`
+	LocalTenantID                           *string                       `json:"localTenantId"`
 	ShortDescription                        *string                       `json:"shortDescription"`
 	SystemInstanceAware                     *bool                         `json:"systemInstanceAware"`
 	PolicyLevel                             *string                       `json:"policyLevel"`
@@ -194,6 +196,7 @@ func (a *APIDefinitionInput) ToAPIDefinition(id, appID string, packageID *string
 		TargetURLs:          a.TargetURLs,
 		Group:               a.Group,
 		OrdID:               a.OrdID,
+		LocalTenantID:       a.LocalTenantID,
 		ShortDescription:    a.ShortDescription,
 		SystemInstanceAware: a.SystemInstanceAware,
 		PolicyLevel:         a.PolicyLevel,

@@ -18,12 +18,12 @@ const apiDefTable string = `"public"."api_definitions"`
 var (
 	bundleColumn  = "bundle_id"
 	idColumn      = "id"
-	apiDefColumns = []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
+	apiDefColumns = []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "hierarchy", "supported_use_cases", "documentation_labels"}
 	idColumns        = []string{"id"}
-	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id",
+	updatableColumns = []string{"package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level", "api_protocol", "tags", "countries", "links", "api_resource_links", "release_status",
 		"sunset_date", "changelog_entries", "labels", "visibility", "disabled", "part_of_products", "line_of_business",
 		"industry", "version_value", "version_deprecated", "version_deprecated_since", "version_for_removal", "ready", "created_at", "updated_at", "deleted_at", "error", "implementation_standard", "custom_implementation_standard", "custom_implementation_standard_description", "target_urls", "extensible", "successors", "resource_hash", "hierarchy", "supported_use_cases", "documentation_labels"}

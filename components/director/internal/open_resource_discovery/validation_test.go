@@ -21,6 +21,7 @@ const (
 	invalidOrdID                  = "invalidOrdId"
 	invalidShortDescriptionLength = 257 // max allowed: 256
 	invalidTitleLength            = 256 // max allowed: 255
+	invalidLocalTenantIDLength    = 256 //max allowed: 255
 	maxDescriptionLength          = 5000
 	invalidVersion                = "invalidVersion"
 	invalidPolicyLevel            = "invalidPolicyLevel"
@@ -723,6 +724,33 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 			ExpectedToBeValid: true,
+		}, {
+			Name: "Valid missing `localID` field for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
+			Name: "Exceeded length of `localID` field for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid empty `localID` field for SystemInstance",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
 		},
 	}
 
@@ -742,7 +770,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 				url = baseURL
 			}
 
-			err := docs.Validate(url, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(url, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -790,7 +818,7 @@ func TestDocuments_ValidateDocument(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -1588,7 +1616,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -1632,6 +1660,34 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Name = ""
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Valid missing `localID` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		},
+		{
+			Name: "Exceeded length of `localID` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid empty `localID` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr("")
 
 				return []*ord.Document{doc}
 			},
@@ -2012,7 +2068,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -2051,6 +2107,30 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].Name = ""
 
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `localID` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `localID` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `localID` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].LocalTenantID = str.Ptr("")
 				return []*ord.Document{doc}
 			},
 		}, {
@@ -3854,7 +3934,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -3897,6 +3977,31 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Name = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `localID` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LocalTenantID = nil
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Exceeded length of `localID` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `localID` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].LocalTenantID = str.Ptr("")
 
 				return []*ord.Document{doc}
 			},
@@ -4998,7 +5103,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 
 			if test.AfterTest != nil {
 				test.AfterTest()
@@ -5265,7 +5370,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5432,7 +5537,7 @@ func TestDocuments_ValidateVendor(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5486,7 +5591,7 @@ func TestDocuments_ValidateTombstone(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents{test.DocumentProvider()[0]}
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, nil)
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, nil)
 			if test.ExpectedToBeValid {
 				require.NoError(t, err)
 			} else {
@@ -5530,7 +5635,7 @@ func TestDocuments_ValidateMultipleErrors(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			docs := ord.Documents(test.DocumentProvider())
-			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, resourceHashes, map[string]bool{})
+			err := docs.Validate(baseURL, apisFromDB, eventsFromDB, pkgsFromDB, bndlsFromDB, resourceHashes, map[string]bool{})
 			if len(test.ExpectedStringsInError) != 0 {
 				require.Error(t, err)
 				for _, expectedStr := range test.ExpectedStringsInError {

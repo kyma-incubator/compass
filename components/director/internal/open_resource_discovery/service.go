@@ -318,7 +318,7 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 }
 
 func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
-	apiDataFromDB, eventDataFromDB, packageDataFromDB, err := s.fetchResources(ctx, appID)
+	apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, err := s.fetchResources(ctx, appID)
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs)
+	validationResult := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, bundleDataFromDB, resourceHashes, globalResourcesOrdIDs)
 	if validationResult != nil {
 		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
 		*validationErrors = validationResult
@@ -370,7 +370,7 @@ func (s *Service) processDocuments(ctx context.Context, appID string, baseURL st
 		return err
 	}
 
-	bundlesFromDB, err := s.processBundles(ctx, appID, bundlesInput)
+	bundlesFromDB, err := s.processBundles(ctx, appID, bundlesInput, resourceHashes)
 	if err != nil {
 		return err
 	}
@@ -710,14 +710,15 @@ func (s *Service) resyncPackageInTx(ctx context.Context, appID string, packagesF
 	return tx.Commit()
 }
 
-func (s *Service) processBundles(ctx context.Context, appID string, bundles []*model.BundleCreateInput) ([]*model.Bundle, error) {
+func (s *Service) processBundles(ctx context.Context, appID string, bundles []*model.BundleCreateInput, resourceHashes map[string]uint64) ([]*model.Bundle, error) {
 	bundlesFromDB, err := s.listBundlesInTx(ctx, appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, bndl := range bundles {
-		if err := s.resyncBundleInTx(ctx, appID, bundlesFromDB, bndl); err != nil {
+		bndlHash := resourceHashes[str.PtrStrToStr(bndl.OrdID)]
+		if err := s.resyncBundleInTx(ctx, appID, bundlesFromDB, bndl, bndlHash); err != nil {
 			return nil, err
 		}
 	}
@@ -746,7 +747,7 @@ func (s *Service) listBundlesInTx(ctx context.Context, appID string) ([]*model.B
 	return bundlesFromDB, tx.Commit()
 }
 
-func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bundle *model.BundleCreateInput) error {
+func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bundle *model.BundleCreateInput, bndlHash uint64) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -754,7 +755,7 @@ func (s *Service) resyncBundleInTx(ctx context.Context, appID string, bundlesFro
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := s.resyncBundle(ctx, appID, bundlesFromDB, *bundle); err != nil {
+	if err := s.resyncBundle(ctx, appID, bundlesFromDB, *bundle, bndlHash); err != nil {
 		return errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bundle.OrdID)
 	}
 	return tx.Commit()
@@ -940,14 +941,14 @@ func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromD
 	return err
 }
 
-func (s *Service) resyncBundle(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput) error {
+func (s *Service) resyncBundle(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput, bndlHash uint64) error {
 	ctx = addFieldToLogger(ctx, "bundle_ord_id", *bndl.OrdID)
 	if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool {
 		return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
 	}); found {
-		return s.bundleSvc.Update(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl))
+		return s.bundleSvc.UpdateBundle(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl), bndlHash)
 	}
-	_, err := s.bundleSvc.Create(ctx, appID, bndl)
+	_, err := s.bundleSvc.CreateBundle(ctx, appID, bndl, bndlHash)
 	return err
 }
 
@@ -1218,10 +1219,26 @@ func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[st
 	return eventDataFromDB, nil
 }
 
-func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]*model.APIDefinition, map[string]*model.EventDefinition, map[string]*model.Package, error) {
+func (s *Service) fetchBundlesFromDB(ctx context.Context, appID string) (map[string]*model.Bundle, error) {
+	bundlesFromDB, err := s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing bundles for app with id %s", appID)
+	}
+
+	bundleDataFromDB := make(map[string]*model.Bundle)
+
+	for _, bndl := range bundlesFromDB {
+		bndlOrdID := str.PtrStrToStr(bndl.OrdID)
+		bundleDataFromDB[bndlOrdID] = bndl
+	}
+
+	return bundleDataFromDB, nil
+}
+
+func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]*model.APIDefinition, map[string]*model.EventDefinition, map[string]*model.Package, map[string]*model.Bundle, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
@@ -1229,20 +1246,25 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 
 	apiDataFromDB, err := s.fetchAPIDefFromDB(ctx, appID)
 	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "while fetching apis for app with id %s", appID)
+		return nil, nil, nil, nil, errors.Wrapf(err, "while fetching apis for app with id %s", appID)
 	}
 
 	eventDataFromDB, err := s.fetchEventDefFromDB(ctx, appID)
 	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "while fetching events for app with id %s", appID)
+		return nil, nil, nil, nil, errors.Wrapf(err, "while fetching events for app with id %s", appID)
 	}
 
 	packageDataFromDB, err := s.fetchPackagesFromDB(ctx, appID)
 	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "while fetching packages for app with id %s", appID)
+		return nil, nil, nil, nil, errors.Wrapf(err, "while fetching packages for app with id %s", appID)
 	}
 
-	return apiDataFromDB, eventDataFromDB, packageDataFromDB, tx.Commit()
+	bundlDataFromDB, err := s.fetchBundlesFromDB(ctx, appID)
+	if err != nil {
+		return nil, nil, nil, nil, errors.Wrapf(err, "while fetching bundles for app with id %s", appID)
+	}
+
+	return apiDataFromDB, eventDataFromDB, packageDataFromDB, bundlDataFromDB, tx.Commit()
 }
 
 func (s *Service) processWebhookAndDocuments(ctx context.Context, cfg MetricsConfig, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
@@ -1453,6 +1475,20 @@ func hashResources(docs Documents) (map[string]uint64, error) {
 			}
 
 			resourceHashes[packageInput.OrdID] = hash
+		}
+
+		for _, bundleInput := range doc.ConsumptionBundles {
+			normalizedBndl, err := normalizeBundle(bundleInput)
+			if err != nil {
+				return nil, err
+			}
+
+			hash, err := HashObject(normalizedBndl)
+			if err != nil {
+				return nil, errors.Wrapf(err, "while hashing bundle with ORD ID: %v", normalizedBndl.OrdID)
+			}
+
+			resourceHashes[str.PtrStrToStr(bundleInput.OrdID)] = hash
 		}
 	}
 
