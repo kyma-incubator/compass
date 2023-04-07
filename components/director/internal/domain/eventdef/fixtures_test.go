@@ -25,6 +25,7 @@ const (
 	packageID        = "ppppppppp-pppp-pppp-pppp-pppppppppppp"
 	appID            = "aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	ordID            = "com.compass.ord.v1"
+	localTenantID    = "localTenantID"
 	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
 	successors       = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
 	resourceHash     = "123456"
@@ -80,6 +81,7 @@ func fixFullEventDefinitionModelWithID(id, placeholder string) (model.EventDefin
 		Description:         str.Ptr("desc_" + placeholder),
 		Group:               str.Ptr("group_" + placeholder),
 		OrdID:               str.Ptr(ordID),
+		LocalTenantID:       str.Ptr(localTenantID),
 		ShortDescription:    str.Ptr("shortDescription"),
 		SystemInstanceAware: &boolVar,
 		PolicyLevel:         nil,
@@ -227,6 +229,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 		Description:         repo.NewValidNullableString("desc_" + placeholder),
 		GroupName:           repo.NewValidNullableString("group_" + placeholder),
 		OrdID:               repo.NewValidNullableString(ordID),
+		LocalTenantID:       repo.NewValidNullableString(localTenantID),
 		ShortDescription:    repo.NewValidNullableString("shortDescription"),
 		SystemInstanceAware: repo.NewValidNullableBool(false),
 		PolicyLevel:         sql.NullString{},
@@ -266,7 +269,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 }
 
 func fixEventDefinitionColumns() []string {
-	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id",
+	return []string{"id", "app_id", "package_id", "name", "description", "group_name", "ord_id", "local_tenant_id",
 		"short_description", "system_instance_aware", "policy_level", "custom_policy_level",
 		"changelog_entries", "links", "tags", "countries", "release_status",
 		"sunset_date", "labels", "visibility", "disabled", "part_of_products", "line_of_business", "industry", "version_value", "version_deprecated", "version_deprecated_since",
@@ -275,14 +278,14 @@ func fixEventDefinitionColumns() []string {
 
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
-	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar, nil, nil,
+	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, localTenantID, "shortDescription", &boolVar, nil, nil,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(extensible),
 		repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]")}
 }
 
 func fixEventCreateArgs(id string, event *model.EventDefinition) []driver.Value {
-	return []driver.Value{id, appID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.ShortDescription,
+	return []driver.Value{id, appID, packageID, event.Name, event.Description, event.Group, event.OrdID, event.LocalTenantID, event.ShortDescription,
 		event.SystemInstanceAware, event.PolicyLevel, event.CustomPolicyLevel, repo.NewNullableStringFromJSONRawMessage(event.ChangeLogEntries), repo.NewNullableStringFromJSONRawMessage(event.Links),
 		repo.NewNullableStringFromJSONRawMessage(event.Tags), repo.NewNullableStringFromJSONRawMessage(event.Countries), event.ReleaseStatus, event.SunsetDate,
 		repo.NewNullableStringFromJSONRawMessage(event.Labels), event.Visibility,
