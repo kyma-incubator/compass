@@ -60,6 +60,20 @@ func (_m *ApplicationService) ListAllByApplicationTemplateID(ctx context.Context
 	return r0, r1
 }
 
+// Update provides a mock function with given fields: ctx, id, in
+func (_m *ApplicationService) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
+	ret := _m.Called(ctx, id, in)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationUpdateInput) error); ok {
+		r0 = rf(ctx, id, in)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewApplicationService interface {
 	mock.TestingT
 	Cleanup(func())

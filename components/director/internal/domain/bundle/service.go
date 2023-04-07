@@ -13,6 +13,7 @@ import (
 )
 
 // BundleRepository missing godoc
+//
 //go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Bundle) error
@@ -26,6 +27,7 @@ type BundleRepository interface {
 }
 
 // UIDService missing godoc
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -53,13 +55,18 @@ func NewService(bndlRepo BundleRepository, apiSvc APIService, eventSvc EventServ
 
 // Create missing godoc
 func (s *service) Create(ctx context.Context, applicationID string, in model.BundleCreateInput) (string, error) {
+	return s.CreateBundle(ctx, applicationID, in, 0)
+}
+
+// CreateBundle Creates bundle for an application with given id
+func (s *service) CreateBundle(ctx context.Context, applicationID string, in model.BundleCreateInput, bndlHash uint64) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
 	}
 
 	id := s.uidService.Generate()
-	bndl := in.ToBundle(id, applicationID)
+	bndl := in.ToBundle(id, applicationID, bndlHash)
 
 	if err = s.bndlRepo.Create(ctx, tnt, bndl); err != nil {
 		return "", errors.Wrapf(err, "error occurred while creating a Bundle with id %s and name %s for Application with id %s", id, bndl.Name, applicationID)
@@ -97,22 +104,22 @@ func (s *service) CreateMultiple(ctx context.Context, applicationID string, in [
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateInput) error {
+	return s.UpdateBundle(ctx, id, in, 0)
+}
+
+// UpdateBundle missing godoc
+func (s *service) UpdateBundle(ctx context.Context, id string, in model.BundleUpdateInput, bndlHash uint64) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
 	bndl, err := s.bndlRepo.GetByID(ctx, tnt, id)
-
-	return updateBundle(ctx, id, in, err, bndl, s, tnt)
-}
-
-func updateBundle(ctx context.Context, id string, in model.BundleUpdateInput, err error, bndl *model.Bundle, s *service, tnt string) error {
 	if err != nil {
 		return errors.Wrapf(err, "while getting Bundle with id %s", id)
 	}
 
-	bndl.SetFromUpdateInput(in)
+	bndl.SetFromUpdateInput(in, bndlHash)
 
 	if err = s.bndlRepo.Update(ctx, tnt, bndl); err != nil {
 		return errors.Wrapf(err, "while updating Bundle with id %s", id)

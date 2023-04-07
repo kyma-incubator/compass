@@ -50,6 +50,7 @@ const (
 	event1ID         = "testEvent1"
 	event2ID         = "testEvent2"
 	tombstoneID      = "testTs"
+	localTenantID    = "localTenantID"
 
 	api1spec1ID  = "api1spec1ID"
 	api1spec2ID  = "api1spec2ID"
@@ -188,6 +189,10 @@ var (
 		packageORDID: fixPackagesWithHash()[0],
 	}
 
+	bndlsFromDB = map[string]*model.Bundle{
+		bundleORDID: fixBundlesWithHash()[0],
+	}
+
 	hashAPI1, _    = ord.HashObject(fixORDDocument().APIResources[0])
 	hashAPI2, _    = ord.HashObject(fixORDDocument().APIResources[1])
 	hashEvent1, _  = ord.HashObject(fixORDDocument().EventResources[0])
@@ -298,7 +303,9 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			{
 				Name:                         "BUNDLE TITLE",
 				Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
+				Version:                      str.Ptr("1.1.2"),
 				OrdID:                        str.Ptr(bundleORDID),
+				LocalTenantID:                str.Ptr(localTenantID),
 				ShortDescription:             str.Ptr("lorem ipsum"),
 				Links:                        json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				Tags:                         json.RawMessage(tags),
@@ -324,6 +331,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		APIResources: []*model.APIDefinitionInput{
 			{
 				OrdID:                                   str.Ptr(api1ORDID),
+				LocalTenantID:                           str.Ptr(localTenantID),
 				OrdPackageID:                            str.Ptr(packageORDID),
 				Name:                                    "API TITLE",
 				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -397,6 +405,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			{
 				Extensible:                              json.RawMessage(`{"supported":"automatic","description":"Please find the extensibility documentation"}`),
 				OrdID:                                   str.Ptr(api2ORDID),
+				LocalTenantID:                           str.Ptr(localTenantID),
 				OrdPackageID:                            str.Ptr(packageORDID),
 				Name:                                    "Gateway Sample Service",
 				Description:                             str.Ptr("lorem ipsum dolor sit amet"),
@@ -459,6 +468,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		EventResources: []*model.EventDefinitionInput{
 			{
 				OrdID:               str.Ptr(event1ORDID),
+				LocalTenantID:       str.Ptr(localTenantID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "EVENT TITLE",
 				Description:         str.Ptr("lorem ipsum dolor sit amet"),
@@ -503,6 +513,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			},
 			{
 				OrdID:               str.Ptr(event2ORDID),
+				LocalTenantID:       str.Ptr(localTenantID),
 				OrdPackageID:        str.Ptr(packageORDID),
 				Name:                "EVENT TITLE 2",
 				Description:         str.Ptr("lorem ipsum dolor sit amet"),
@@ -725,7 +736,9 @@ func fixBundles() []*model.Bundle {
 			ApplicationID:                appID,
 			Name:                         "BUNDLE TITLE",
 			Description:                  str.Ptr("lorem ipsum dolor nsq sme"),
+			Version:                      str.Ptr("1.1.2"),
 			OrdID:                        str.Ptr(bundleORDID),
+			LocalTenantID:                str.Ptr(localTenantID),
 			ShortDescription:             str.Ptr("lorem ipsum"),
 			Links:                        json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			Labels:                       json.RawMessage(labels),
@@ -745,7 +758,9 @@ func fixBundleCreateInput() []*model.BundleCreateInput {
 		{
 			Name:                "BUNDLE TITLE",
 			Description:         str.Ptr("lorem ipsum dolor nsq sme"),
+			Version:             str.Ptr("1.1.2"),
 			OrdID:               str.Ptr(bundleORDID),
+			LocalTenantID:       str.Ptr(localTenantID),
 			ShortDescription:    str.Ptr("lorem ipsum"),
 			Labels:              json.RawMessage(labels),
 			DocumentationLabels: json.RawMessage(documentLabels),
@@ -754,7 +769,9 @@ func fixBundleCreateInput() []*model.BundleCreateInput {
 		{
 			Name:                "BUNDLE TITLE 2 ",
 			Description:         str.Ptr("foo bar"),
+			Version:             str.Ptr("1.1.2"),
 			OrdID:               str.Ptr(secondBundleORDID),
+			LocalTenantID:       str.Ptr(localTenantID),
 			ShortDescription:    str.Ptr("bar foo"),
 			Labels:              json.RawMessage(labels),
 			DocumentationLabels: json.RawMessage(documentLabels),
@@ -799,6 +816,18 @@ func fixPackagesWithHash() []*model.Package {
 	}
 
 	return pkgs
+}
+
+func fixBundlesWithHash() []*model.Bundle {
+	bndls := fixBundles()
+
+	for idx, bndl := range bndls {
+		hash := str.Ptr(strconv.FormatUint(resourceHashes[str.PtrStrToStr(bndl.OrdID)], 10))
+		bndl.ResourceHash = hash
+		bndl.Version = fixORDDocument().ConsumptionBundles[idx].Version
+	}
+
+	return bndls
 }
 
 func fixAPIs() []*model.APIDefinition {
