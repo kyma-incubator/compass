@@ -50,5 +50,10 @@ The System Fetcher requires access to:
 1. API that can be called to fetch systems. For details about implementing the System Registry API that the System Fetcher can consume, see the [Systems Endpoint](#systems-endpoint) section in this document. 
 
 ### Run
-Since the System Fetcher is usually a short-lived process, it is useful to start and debug it directly from your IDE.
-Make sure that you provide all required configuration properties as environment variables.
+There is a `./runSystemFetcher.sh` script that automatically runs system fetcher locally with the necessary configuration and environment variables. The script require local director (run.sh) to be started. There are several flags that can be used:
+- `--tenant <TENANT IDENTIFIER>` - Tenant identifier that will be used for this local execution.
+- `--skip-tenant-creation` - On sequential runs to not aregisterdd the tenant again in director.
+- `--debug` - Starts system fetcher in debugging mode on default port `40001`.
+- `--debug-port <PORT NUMBER>` - Sets the debug port to specific value.
+   
+ 
