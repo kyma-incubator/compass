@@ -806,15 +806,15 @@ func validateBundleVersionInput(value interface{}, bndl model.BundleCreateInput,
 	if !ok || isResourceHashMissing(bndlFromDB.ResourceHash) {
 		return nil
 	}
-	log.C(context.Background()).Infof("BundleFromDb: %v", bndlFromDB)
-	log.C(context.Background()).Infof("is bundle resource hash mising: %v", isResourceHashMissing(bndlFromDB.ResourceHash))
+	log.C(context.Background()).Infof("BundleFromDb: %+v", bndlFromDB)
+	log.C(context.Background()).Infof("is bundle resource hash mising: %+v", isResourceHashMissing(bndlFromDB.ResourceHash))
 
 	hashDB := str.PtrStrToStr(bndlFromDB.ResourceHash)
 	hashDoc := strconv.FormatUint(resourceHashes[str.PtrStrToStr(bndl.OrdID)], 10)
 
-	log.C(context.Background()).Infof("hashDB: %v", hashDB)
-	log.C(context.Background()).Infof("hashDoc: %v", hashDoc)
-	log.C(context.Background()).Infof("ord bundle: %v", bndl)
+	log.C(context.Background()).Infof("hashDB: %+v", hashDB)
+	log.C(context.Background()).Infof("hashDoc: %+v", hashDoc)
+	log.C(context.Background()).Infof("ord bundle: %+v", bndl)
 
 	return checkHashEquality(*bndlFromDB.Version, *bndl.Version, hashDB, hashDoc)
 }
