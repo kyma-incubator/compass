@@ -816,7 +816,10 @@ func validateBundleVersionInput(value interface{}, bndl model.BundleCreateInput,
 	log.C(context.Background()).Infof("hashDoc: %+v", hashDoc)
 	log.C(context.Background()).Infof("ord bundle: %+v", bndl)
 
-	return checkHashEquality(*bndlFromDB.Version, *bndl.Version, hashDB, hashDoc)
+	if bndlFromDB.Version != nil && bndl.Version != nil {
+		return checkHashEquality(*bndlFromDB.Version, *bndl.Version, hashDB, hashDoc)
+	}
+	return nil
 }
 
 func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
