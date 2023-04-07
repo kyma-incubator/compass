@@ -1,10 +1,8 @@
 package ord
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -808,18 +806,8 @@ func validateBundleVersionInput(value interface{}, bndl model.BundleCreateInput,
 		return nil
 	}
 
-	log.C(context.Background()).Infof("BundleFromDb: %+v", bndlFromDB)
-	log.C(context.Background()).Infof("is bundle resource hash mising: %+v", isResourceHashMissing(bndlFromDB.ResourceHash))
-
 	hashDB := str.PtrStrToStr(bndlFromDB.ResourceHash)
 	hashDoc := strconv.FormatUint(resourceHashes[str.PtrStrToStr(bndl.OrdID)], 10)
-
-	log.C(context.Background()).Infof("hashDB: %+v", hashDB)
-	log.C(context.Background()).Infof("hashDoc: %+v", hashDoc)
-	log.C(context.Background()).Infof("ord bundle: %+v", bndl)
-
-	log.C(context.Background()).Infof("bndlFromDB.Version: %+v", bndlFromDB.Version)
-	log.C(context.Background()).Infof("bndl.Version: %+v", bndl.Version)
 
 	if bndlFromDB.Version != nil && bndl.Version != nil {
 		return checkHashEquality(*bndlFromDB.Version, *bndl.Version, hashDB, hashDoc)
