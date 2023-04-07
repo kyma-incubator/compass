@@ -11,8 +11,9 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-//go:generate mockery --name=DestinationSyncer --output=automock --outpkg=automock --case=underscore --disable-version-string
 // DestinationSyncer missing godoc
+//
+//go:generate mockery --name=DestinationSyncer --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DestinationSyncer interface {
 	SyncTenantDestinations(ctx context.Context, tenantID string) error
 	GetSubscribedTenantIDs(ctx context.Context) ([]string, error)
@@ -87,7 +88,11 @@ func syncTenantDestinationsWithTimeout(
 	defer cancel()
 	start := time.Now()
 	defer func() {
-		log.C(ctx).Infof("Destinations synced for tenant '%s' for %s", tenantID, time.Since(start).String())
+		duration := time.Since(start)
+		log.C(ctx).Debug("Destinations synced for tenant '%s' for %s", tenantID, duration)
+		if duration > timeout/2 {
+			log.C(ctx).Warnf("Destinations synchronization for tenant '%s' took %s", tenantID, duration)
+		}
 	}()
 	return destinationSyncer.SyncTenantDestinations(tenantSyncTimeoutCtx, tenantID)
 }

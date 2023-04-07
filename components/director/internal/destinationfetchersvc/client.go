@@ -225,7 +225,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, tenantID, page
 	}
 
 	logDuration := log.C(ctx).Debugf
-	if destinationsPageCallFullDuration > c.apiConfig.Timeout/5 {
+	if destinationsPageCallFullDuration > c.apiConfig.Timeout/2 {
 		logDuration = log.C(ctx).Warnf
 	}
 	destinationCorrelationHeader := c.apiConfig.ResponseCorrelationIDHeader
