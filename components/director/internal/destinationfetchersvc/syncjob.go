@@ -89,7 +89,7 @@ func syncTenantDestinationsWithTimeout(
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
-		log.C(ctx).Debug("Destinations synced for tenant '%s' for %s", tenantID, duration)
+		log.C(ctx).Debugf("Destinations synced for tenant '%s' for %s", tenantID, duration)
 		if duration > timeout/2 {
 			log.C(ctx).Warnf("Destinations synchronization for tenant '%s' took %s", tenantID, duration)
 		}
