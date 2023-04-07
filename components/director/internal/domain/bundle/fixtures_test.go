@@ -175,7 +175,7 @@ const (
 	ordID            = "com.compass.v1"
 	localTenantID    = "localTenantID"
 	correlationIDs   = `["id1", "id2"]`
-	version          = "v1.0.5"
+	version          = "1.2.2"
 	resourceHash     = "123456"
 )
 

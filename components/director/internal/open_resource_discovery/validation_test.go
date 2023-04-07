@@ -725,7 +725,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
-			Name: "Valid missing `localID` field for SystemInstance",
+			Name: "Valid missing `localTenantID` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].LocalTenantID = nil
@@ -735,7 +735,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			ExpectedToBeValid: true,
 		},
 		{
-			Name: "Exceeded length of `localID` field for SystemInstance",
+			Name: "Exceeded length of `localTenantID` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
@@ -744,7 +744,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid empty `localID` field for SystemInstance",
+			Name: "Invalid empty `localTenantID` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr("")
@@ -1665,7 +1665,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Valid missing `localID` field for Bundle",
+			Name: "Valid missing `localTenantID` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].LocalTenantID = nil
@@ -1675,7 +1675,7 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			ExpectedToBeValid: true,
 		},
 		{
-			Name: "Exceeded length of `localID` field for Bundle",
+			Name: "Exceeded length of `localTenantID` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
@@ -1684,10 +1684,27 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
-			Name: "Invalid empty `localID` field for Bundle",
+			Name: "Invalid empty `localTenantID` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].LocalTenantID = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Missing `version` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Version = str.Ptr("")
+
+				return []*ord.Document{doc}
+			},
+			ExpectedToBeValid: true,
+		}, {
+			Name: "Invalid `version` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Version = str.Ptr(invalidVersion)
 
 				return []*ord.Document{doc}
 			},
@@ -2110,7 +2127,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `localID` field for API",
+			Name: "Missing `localTenantID` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LocalTenantID = nil
@@ -2119,7 +2136,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
-			Name: "Exceeded length of `localID` field for API",
+			Name: "Exceeded length of `localTenantID` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
@@ -2127,7 +2144,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid empty `localID` field for API",
+			Name: "Invalid empty `localTenantID` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].LocalTenantID = str.Ptr("")
@@ -3981,7 +3998,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `localID` field for Event",
+			Name: "Missing `localTenantID` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LocalTenantID = nil
@@ -3990,7 +4007,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 			ExpectedToBeValid: true,
 		}, {
-			Name: "Exceeded length of `localID` field for Event",
+			Name: "Exceeded length of `localTenantID` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LocalTenantID = str.Ptr(strings.Repeat("a", invalidLocalTenantIDLength))
@@ -3998,7 +4015,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid empty `localID` field for Event",
+			Name: "Invalid empty `localTenantID` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].LocalTenantID = str.Ptr("")
