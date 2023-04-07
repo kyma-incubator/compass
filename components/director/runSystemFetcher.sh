@@ -1,4 +1,4 @@
-git checkout #!/usr/bin/env bash
+#!/usr/bin/env bash
 
 # This script is responsible for running Director with PostgreSQL.
 
