@@ -171,7 +171,6 @@ kubectl create secret generic "$EXT_SVC_CERT_SECRET_NAME"-stage --from-literal="
 if [[  ${TENANT_CREATION} == true ]]; then
     echo -e "${GREEN}Creating tenant${NC}"
     . ${ROOT_PATH}/hack/jwt_generator.sh
-    /Users/i028667/SAPDevelop/go/src/github.com/kyma-incubator/compass/components/director/hack/jwt_generator.sh
     DIRECTOR_TOKEN="$(get_token | tr -d '\n')"
 
     CREATE_TENANT_MUTATION="mutation { writeTenant(in: { name: \\\"Validation Tenant\\\", externalTenant: \\\"${APP_VERIFY_TENANT}\\\", type: \\\"account\\\", provider: \\\"Compass Tests\\\" })}"
