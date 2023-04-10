@@ -30,8 +30,8 @@ require (
 )
 
 require (
-	github.com/kyma-incubator/compass/components/director v0.0.0-20230410095247-fa36b4a884e3
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230410095247-fa36b4a884e3
+	github.com/kyma-incubator/compass/components/director v0.0.0-20230410095712-be8c0a57707d
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20230410095712-be8c0a57707d
 	github.com/tidwall/sjson v1.2.5
 	k8s.io/apimachinery v0.26.3
 )
