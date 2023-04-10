@@ -253,7 +253,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	dataLoader := systemfetcher.NewDataLoader(tx, appTemplateSvc, intSysSvc)
+	dataLoader := systemfetcher.NewDataLoader(tx, cfg.SystemFetcher, appTemplateSvc, intSysSvc)
 	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
 		return nil, err
 	}
