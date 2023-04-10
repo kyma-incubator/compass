@@ -18,6 +18,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
@@ -808,7 +809,13 @@ func validateBundleVersionInput(value interface{}, bndl model.BundleCreateInput,
 	hashDB := str.PtrStrToStr(bndlFromDB.ResourceHash)
 	hashDoc := strconv.FormatUint(resourceHashes[str.PtrStrToStr(bndl.OrdID)], 10)
 
-	return checkHashEquality(*bndlFromDB.Version, *bndl.Version, hashDB, hashDoc)
+	if bndlFromDB.Version != nil && bndl.Version != nil {
+		return checkHashEquality(*bndlFromDB.Version, *bndl.Version, hashDB, hashDoc)
+	}
+	if bndlFromDB.Version != nil && bndl.Version == nil {
+		return errors.New("bundle version is present in the DB, but is missing from the document")
+	}
+	return nil
 }
 
 func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
