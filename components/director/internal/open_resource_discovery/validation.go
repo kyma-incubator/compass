@@ -809,10 +809,14 @@ func validateBundleVersionInput(value interface{}, bndl model.BundleCreateInput,
 	hashDB := str.PtrStrToStr(bndlFromDB.ResourceHash)
 	hashDoc := strconv.FormatUint(resourceHashes[str.PtrStrToStr(bndl.OrdID)], 10)
 
-	if bndlFromDB.Version != nil && bndl.Version != nil {
-		return checkHashEquality(*bndlFromDB.Version, *bndl.Version, hashDB, hashDoc)
+	var versionFromDB, versionFromDoc string
+	if bndlFromDB.Version != nil {
+		versionFromDB = *bndlFromDB.Version
 	}
-	return nil
+	if bndl.Version != nil {
+		versionFromDoc = *bndl.Version
+	}
+	return checkHashEquality(versionFromDB, versionFromDoc, hashDB, hashDoc)
 }
 
 func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error {
