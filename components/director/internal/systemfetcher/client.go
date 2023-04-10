@@ -106,20 +106,32 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 		err := retry.Do(
 			func() error {
 				if atomic.LoadUint64(&currentRPS) >= c.apiConfig.SystemRPSLimit {
-					return errors.New("RPS reached, will retry")
+					return errors.New("RPS limit reached")
 				}
 				atomic.AddUint64(&currentRPS, 1)
 				return nil
 			},
 			retry.Attempts(0),
-			retry.Delay(time.Second),
+			retry.Delay(time.Millisecond*100),
 		)
 
 		if err != nil {
 			return 0, err
 		}
 
-		currentSystems, err := c.fetchSystemsForTenant(ctx, url, tenant)
+		var currentSystems []System
+		err = retry.Do(
+			func() error {
+				currentSystems, err = c.fetchSystemsForTenant(ctx, url, tenant)
+				return err
+			},
+			retry.Attempts(3),
+			retry.Delay(time.Second),
+			retry.OnRetry(func(n uint, err error) {
+				log.C(ctx).Infof("Retrying request attempt (%d) after error %v", n, err)
+			}),
+		)
+
 		atomic.AddUint64(&currentRPS, ^uint64(0))
 
 		if err != nil {
