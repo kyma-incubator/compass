@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -38,7 +39,6 @@ type APIConfig struct {
 type Client struct {
 	apiConfig  APIConfig
 	httpClient APIClient
-	currentRPS uint64
 }
 
 // NewClient missing godoc
@@ -46,9 +46,10 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 	return &Client{
 		apiConfig:  apiConfig,
 		httpClient: client,
-		currentRPS: 0,
 	}
 }
+
+var currentRPS uint64
 
 // FetchSystemsForTenant fetches systems from the service
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
@@ -104,15 +105,14 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 	return func(url string) (uint64, error) {
 		err := retry.Do(
 			func() error {
-				if c.currentRPS >= c.apiConfig.SystemRPSLimit {
-					time.Sleep(time.Second)
+				if atomic.LoadUint64(&currentRPS) >= c.apiConfig.SystemRPSLimit {
 					return errors.New("RPS reached, will retry")
 				}
-				c.currentRPS = c.currentRPS + 1
+				atomic.AddUint64(&currentRPS, 1)
 				return nil
 			},
 			retry.Attempts(0),
-			retry.Delay(time.Microsecond*500),
+			retry.Delay(time.Second),
 		)
 
 		if err != nil {
@@ -120,7 +120,7 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 		}
 
 		currentSystems, err := c.fetchSystemsForTenant(ctx, url, tenant)
-		c.currentRPS = c.currentRPS - 1
+		atomic.AddUint64(&currentRPS, ^uint64(0))
 
 		if err != nil {
 			return 0, err
