@@ -643,7 +643,7 @@ func TestLoadData(t *testing.T) {
 			mockedTx, transactioner := testCase.mockTransactioner()
 			defer mock.AssertExpectationsForObjects(t, appTmplSvc, intSysSvc, mockedTx, transactioner)
 
-			dataLoader := systemfetcher.NewDataLoader(transactioner, appTmplSvc, intSysSvc)
+			dataLoader := systemfetcher.NewDataLoader(transactioner, systemfetcher.Config{}, appTmplSvc, intSysSvc)
 			err := dataLoader.LoadData(context.TODO(), testCase.readDirFunc, testCase.readFileFunc)
 
 			if testCase.expectedErr != nil {

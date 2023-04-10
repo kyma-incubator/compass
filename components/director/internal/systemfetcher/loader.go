@@ -46,14 +46,16 @@ type DataLoader struct {
 	transaction persistence.Transactioner
 	appTmplSvc  appTmplService
 	intSysSvc   intSysSvc
+	cfg         Config
 }
 
 // NewDataLoader creates new DataLoader
-func NewDataLoader(tx persistence.Transactioner, appTmplSvc appTmplService, intSysSvc intSysSvc) *DataLoader {
+func NewDataLoader(tx persistence.Transactioner, cfg Config, appTmplSvc appTmplService, intSysSvc intSysSvc) *DataLoader {
 	return &DataLoader{
 		transaction: tx,
 		appTmplSvc:  appTmplSvc,
 		intSysSvc:   intSysSvc,
+		cfg:         cfg,
 	}
 }
 
@@ -88,9 +90,14 @@ func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) 
 }
 
 func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname string) ([]os.DirEntry, error), readFile func(filename string) ([]byte, error)) ([]map[string]interface{}, error) {
-	files, err := readDir(applicationTemplatesDirectoryPath)
+	appTemplatesFileLocation := applicationTemplatesDirectoryPath
+	if len(d.cfg.TemplatesFileLocation) > 0 {
+		appTemplatesFileLocation = d.cfg.TemplatesFileLocation
+	}
+
+	files, err := readDir(appTemplatesFileLocation)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while reading directory with application templates files [%s]", applicationTemplatesDirectoryPath)
+		return nil, errors.Wrapf(err, "while reading directory with application templates files [%s]", appTemplatesFileLocation)
 	}
 
 	var appTemplateInputs []map[string]interface{}
@@ -101,14 +108,14 @@ func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname 
 			return nil, apperrors.NewInternalError(fmt.Sprintf("unsupported file format %q, supported format: json", filepath.Ext(f.Name())))
 		}
 
-		bytes, err := readFile(applicationTemplatesDirectoryPath + f.Name())
+		bytes, err := readFile(appTemplatesFileLocation + f.Name())
 		if err != nil {
-			return nil, errors.Wrapf(err, "while reading application templates file %q", applicationTemplatesDirectoryPath+f.Name())
+			return nil, errors.Wrapf(err, "while reading application templates file %q", appTemplatesFileLocation+f.Name())
 		}
 
 		var templatesFromFile []map[string]interface{}
 		if err := json.Unmarshal(bytes, &templatesFromFile); err != nil {
-			return nil, errors.Wrapf(err, "while unmarshalling application templates from file %s", applicationTemplatesDirectoryPath+f.Name())
+			return nil, errors.Wrapf(err, "while unmarshalling application templates from file %s", appTemplatesFileLocation+f.Name())
 		}
 		log.C(ctx).Infof("Successfully loaded application templates from file: %s", f.Name())
 		appTemplateInputs = append(appTemplateInputs, templatesFromFile...)
