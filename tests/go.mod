@@ -3,7 +3,7 @@ module github.com/kyma-incubator/compass/tests
 go 1.18
 
 require (
-	github.com/avast/retry-go v3.0.0+incompatible
+	github.com/avast/retry-go/v4 v4.3.3
 	github.com/google/uuid v1.3.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20230403081244-f4288b1d398c
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20230403081244-f4288b1d398c

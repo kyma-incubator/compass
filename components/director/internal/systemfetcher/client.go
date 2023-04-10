@@ -9,12 +9,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/paging"
 	"github.com/pkg/errors"
 )
 
 // APIClient missing godoc
+//
 //go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIClient interface {
 	Do(*http.Request, string) (*http.Response, error)
@@ -29,12 +31,14 @@ type APIConfig struct {
 	PagingSkipParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
 	PagingSizeParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
 	SystemSourceKey string        `envconfig:"APP_SYSTEM_INFORMATION_SOURCE_KEY"`
+	SystemRPSLimit  uint64        `envconfig:"default=15,APP_SYSTEM_INFORMATION_RPS_LIMIT"`
 }
 
 // Client missing godoc
 type Client struct {
 	apiConfig  APIConfig
 	httpClient APIClient
+	currentRPS uint64
 }
 
 // NewClient missing godoc
@@ -42,6 +46,7 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 	return &Client{
 		apiConfig:  apiConfig,
 		httpClient: client,
+		currentRPS: 0,
 	}
 }
 
@@ -97,7 +102,26 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) 
 
 func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant string) func(string) (uint64, error) {
 	return func(url string) (uint64, error) {
+		err := retry.Do(
+			func() error {
+				if c.currentRPS >= c.apiConfig.SystemRPSLimit {
+					time.Sleep(time.Second)
+					return errors.New("RPS reached, will retry")
+				}
+				c.currentRPS = c.currentRPS + 1
+				return nil
+			},
+			retry.Attempts(0),
+			retry.Delay(time.Microsecond*500),
+		)
+
+		if err != nil {
+			return 0, err
+		}
+
 		currentSystems, err := c.fetchSystemsForTenant(ctx, url, tenant)
+		c.currentRPS = c.currentRPS - 1
+
 		if err != nil {
 			return 0, err
 		}

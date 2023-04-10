@@ -151,7 +151,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		}
 	}()
 
-	chunks := splitBusinessTenantMappingsToChunks(tenants, 20)
+	chunks := splitBusinessTenantMappingsToChunks(tenants, 15)
 
 	for _, chunk := range chunks {
 		time.Sleep(time.Second * 1)
