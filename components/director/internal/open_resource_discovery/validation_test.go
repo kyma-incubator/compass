@@ -1695,11 +1695,10 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			Name: "Missing `version` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].Version = str.Ptr("")
+				doc.ConsumptionBundles[0].Version = nil
 
 				return []*ord.Document{doc}
 			},
-			ExpectedToBeValid: true,
 		}, {
 			Name: "Invalid `version` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
