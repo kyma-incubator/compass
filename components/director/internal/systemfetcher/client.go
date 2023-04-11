@@ -124,6 +124,9 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 		err = retry.Do(
 			func() error {
 				currentSystems, err = c.fetchSystemsForTenant(ctx, url, tenant)
+				if err != nil && err.Error() == "unexpected status code: expected: 200, but got: 401" {
+					return retry.Unrecoverable(err)
+				}
 				return err
 			},
 			retry.Attempts(3),
