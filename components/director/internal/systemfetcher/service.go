@@ -32,7 +32,7 @@ const (
 
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type tenantService interface {
-	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	ListByType(ctx context.Context, tenantType tenantEntity.Type) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
@@ -125,16 +125,9 @@ func splitBusinessTenantMappingsToChunks(slice []*model.BusinessTenantMapping, c
 // SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
 // and creates any new applications present in the external source.
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
-	allTenants, err := s.listTenants(ctx)
+	tenants, err := s.listTenants(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to list tenants")
-	}
-
-	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
-	for _, tnt := range allTenants {
-		if tnt.Type == tenantEntity.Account {
-			tenants = append(tenants, tnt)
-		}
 	}
 
 	systemsQueue := make(chan tenantSystems, s.config.SystemsQueueSize)
@@ -158,7 +151,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		}
 	}()
 
-	chunks := splitBusinessTenantMappingsToChunks(tenants, 20)
+	chunks := splitBusinessTenantMappingsToChunks(tenants, 15)
 
 	for _, chunk := range chunks {
 		time.Sleep(time.Second * 1)
@@ -217,7 +210,7 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 		}
 		tenants = append(tenants, singleTenant)
 	} else {
-		tenants, err = s.tenantService.List(ctx)
+		tenants, err = s.tenantService.ListByType(ctx, tenantEntity.Account)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to retrieve tenants")
 		}

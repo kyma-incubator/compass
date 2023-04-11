@@ -19,7 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
