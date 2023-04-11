@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
