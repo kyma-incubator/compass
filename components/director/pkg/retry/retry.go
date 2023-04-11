@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/pkg/errors"
 )
 

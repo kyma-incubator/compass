@@ -72,6 +72,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		PagingSkipParam: "$skip",
 		PagingSizeParam: "$top",
 		SystemSourceKey: sourceKey,
+		SystemRPSLimit:  15,
 	}, mock.httpClient)
 
 	t.Run("Success", func(t *testing.T) {

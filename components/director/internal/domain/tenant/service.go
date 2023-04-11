@@ -21,6 +21,7 @@ const (
 )
 
 // TenantMappingRepository is responsible for the repo-layer tenant operations.
+//
 //go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMappingRepository interface {
 	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error
@@ -36,22 +37,26 @@ type TenantMappingRepository interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	ListByExternalTenants(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error)
 	ListByParentAndType(ctx context.Context, parentID string, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
+	ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error)
 	GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error)
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
+//
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 // LabelRepository is responsible for the repo-layer label operations.
+//
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal tenant IDs when tenants are created.
+//
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -119,6 +124,11 @@ func (s *service) List(ctx context.Context) ([]*model.BusinessTenantMapping, err
 // ListsByExternalIDs returns all tenants for provided external IDs.
 func (s *service) ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
 	return s.tenantMappingRepo.ListByExternalTenants(ctx, ids)
+}
+
+// ListsByType returns all tenants for provided external IDs.
+func (s *service) ListByType(ctx context.Context, tenantType tenantpkg.Type) ([]*model.BusinessTenantMapping, error) {
+	return s.tenantMappingRepo.ListByType(ctx, tenantType)
 }
 
 // ListPageBySearchTerm returns all tenants present in the Compass storage.
@@ -257,8 +267,8 @@ func (s *service) ListByParentAndType(ctx context.Context, parentID string, tena
 }
 
 // ExtractTenantIDForTenantScopedFormationTemplates returns the tenant ID based on its type:
-//		1. If it's a SA -> return its parent GA id
-//		2. If it's any other tenant type -> return its ID
+//  1. If it's a SA -> return its parent GA id
+//  2. If it's any other tenant type -> return its ID
 func (s *service) ExtractTenantIDForTenantScopedFormationTemplates(ctx context.Context) (string, error) {
 	internalTenantID, err := s.getTenantFromContext(ctx)
 	if err != nil {
@@ -282,9 +292,9 @@ func (s *service) ExtractTenantIDForTenantScopedFormationTemplates(ctx context.C
 }
 
 // getTenantFromContext validates and returns the tenant present in the context:
-//  - if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
-//  - if both internalID and externalID are NOT present -> -> proceed with global formation templates (return empty id)
-//  - otherwise return TenantNotFoundError
+//   - if both internalID and externalID are present -> proceed with tenant scoped formation templates (return the internalID from ctx)
+//   - if both internalID and externalID are NOT present -> -> proceed with global formation templates (return empty id)
+//   - otherwise return TenantNotFoundError
 func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 	tntCtx, err := LoadTenantPairFromContextNoChecks(ctx)
 	if err != nil {
