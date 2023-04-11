@@ -107,9 +107,10 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 			func() error {
 				if atomic.LoadUint64(&currentRPS) >= c.apiConfig.SystemRPSLimit {
 					return errors.New("RPS limit reached")
+				} else {
+					atomic.AddUint64(&currentRPS, 1)
+					return nil
 				}
-				atomic.AddUint64(&currentRPS, 1)
-				return nil
 			},
 			retry.Attempts(0),
 			retry.Delay(time.Millisecond*100),
