@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -41,6 +42,9 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		err = errors.Newf("tenant mapping body is invalid: %w", err)
 		internal.RespondWithError(ctx, http.StatusUnprocessableEntity, err)
 		return
+	}
+	if !strings.HasPrefix(tenantMapping.ReceiverTenant.ApplicationURL, "http") {
+		tenantMapping.ReceiverTenant.ApplicationURL = "https://" + tenantMapping.ReceiverTenant.ApplicationURL
 	}
 
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
