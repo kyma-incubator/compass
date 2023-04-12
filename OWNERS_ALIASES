@@ -28,6 +28,7 @@ aliases:
     - georgifarashev
     - yordanovagabriela
     - nickormushev
+    - alexpenev-s
   technical-writers: # Special value respected by kyma's prow installation.
     - alexandra-simeonova
     - Peteva
