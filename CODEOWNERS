@@ -10,6 +10,7 @@
 /chart/compass/charts/connectivity-adapter @kyma-incubator/team-falcon
 /chart/compass/charts/connector @kyma-incubator/team-raptor
 /chart/compass/charts/gateway @kyma-incubator/team-raptor
+/chart/compass/charts/ias-adapter @kyma-incubator/team-atlas
 /chart/compass/charts/ns-adapter @kyma-incubator/team-falcon
 /chart/compass/charts/operations-controller @kyma-incubator/team-falcon
 /chart/compass/charts/ord-service @kyma-incubator/team-raptor
