@@ -2,8 +2,10 @@ package datainputbuilder
 
 import (
 	"context"
-
+	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"strconv"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
@@ -205,7 +207,8 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 		runtimesIDs = append(runtimesIDs, rt.ID)
 	}
 
-	runtimesLabels, err := b.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeLabelableObject, runtimesIDs)
+	runtimesLabels, err := b.getLabelsForObjects(ctx, tenant, runtimesIDs, model.RuntimeLabelableObject)
+	//b.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeLabelableObject, runtimesIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing runtime labels")
 	}
@@ -218,7 +221,8 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 		}
 	}
 
-	runtimeContextsLabels, err := b.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeContextLabelableObject, runtimeContextsIDs)
+	runtimeContextsLabels, err := b.getLabelsForObjects(ctx, tenant, runtimeContextsIDs, model.RuntimeContextLabelableObject)
+	//b.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeContextLabelableObject, runtimeContextsIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing labels for runtime contexts")
 	}
@@ -257,7 +261,8 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		}
 	}
 
-	applicationsToBeNotifiedForLabels, err := b.labelRepository.ListForObjectIDs(ctx, tenant, model.ApplicationLabelableObject, applicationsToBeNotifiedForIDs)
+	applicationsToBeNotifiedForLabels, err := b.getLabelsForObjects(ctx, tenant, applicationsToBeNotifiedForIDs, model.ApplicationLabelableObject)
+	//b.labelRepository.ListForObjectIDs(ctx, tenant, model.ApplicationLabelableObject, applicationsToBeNotifiedForIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing labels for applications")
 	}
@@ -275,7 +280,8 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 		return nil, nil, errors.Wrap(err, "while listing application templates")
 	}
 
-	applicationTemplatesLabels, err := b.labelRepository.ListForObjectIDs(ctx, tenant, model.AppTemplateLabelableObject, applicationsTemplateIDs)
+	applicationTemplatesLabels, err := b.getLabelsForObjects(ctx, tenant, applicationsTemplateIDs, model.AppTemplateLabelableObject)
+	//b.labelRepository.ListForObjectIDs(ctx, tenant, model.AppTemplateLabelableObject, applicationsTemplateIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing labels for application templates")
 	}
@@ -291,14 +297,57 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 	return applicationMapping, applicationTemplatesMapping, nil
 }
 
-func (b *WebhookDataInputBuilder) getLabelsForObject(ctx context.Context, tenant, objectID string, objectType model.LabelableObject) (map[string]interface{}, error) {
+func (b *WebhookDataInputBuilder) getLabelsForObject(ctx context.Context, tenant, objectID string, objectType model.LabelableObject) (map[string]string, error) {
 	labels, err := b.labelRepository.ListForObject(ctx, tenant, objectType, objectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing labels for %q with ID: %q", objectType, objectID)
 	}
-	labelsMap := make(map[string]interface{}, len(labels))
+	labelsMap := make(map[string]string, len(labels))
 	for _, l := range labels {
-		labelsMap[l.Key] = l.Value
+		labelBytes, err := json.Marshal(l.Value)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshaling label value")
+		}
+
+		stringLabel := string(labelBytes)
+		unquotedLabel, err := strconv.Unquote(stringLabel)
+		if err != nil {
+			labelsMap[l.Key] = stringLabel
+		} else {
+			labelsMap[l.Key] = unquotedLabel
+		}
+
 	}
 	return labelsMap, nil
+}
+
+func (b *WebhookDataInputBuilder) getLabelsForObjects(ctx context.Context, tenant string, objectIDs []string, objectType model.LabelableObject) (map[string]map[string]string, error) {
+	labelsForResources, err := b.labelRepository.ListForObjectIDs(ctx, tenant, objectType, objectIDs)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing labels for %q with IDs: %q", objectType, objectIDs)
+	}
+	labelsForResourcesMap := make(map[string]map[string]string, len(labelsForResources))
+	for resourceId, labels := range labelsForResources {
+		for key, value := range labels {
+			labelBytes, err := json.Marshal(value)
+			if err != nil {
+				return nil, errors.Wrap(err, "while marshaling label value")
+			}
+
+			if _, ok := labelsForResourcesMap[resourceId]; !ok {
+				labelsForResourcesMap[resourceId] = make(map[string]string)
+			}
+
+			stringLabel := string(labelBytes)
+			spew.Dump("STRING LABEL", stringLabel)
+			unquotedLabel, err := strconv.Unquote(stringLabel)
+			spew.Dump("UNQUOTED LABEL", unquotedLabel)
+			if err != nil {
+				labelsForResourcesMap[resourceId][key] = stringLabel
+			} else {
+				labelsForResourcesMap[resourceId][key] = unquotedLabel
+			}
+		}
+	}
+	return labelsForResourcesMap, nil
 }

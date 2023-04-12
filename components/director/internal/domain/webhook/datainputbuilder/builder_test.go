@@ -2,6 +2,7 @@ package datainputbuilder_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -28,6 +29,12 @@ var (
 		ID:     "testLabelID",
 		Tenant: &testTenantID,
 		Value:  "testLabelValue",
+	}}
+
+	testLabelsComposite = map[string]*model.Label{"testLabelKey": {
+		ID:     "testLabelID",
+		Tenant: &testTenantID,
+		Value:  []string{"testLabelValue"},
 	}}
 
 	testRuntime = &model.Runtime{
@@ -71,6 +78,11 @@ func TestWebhookDataInputBuilder_PrepareApplicationAndAppTemplateWithLabels(t *t
 		Labels:      convertLabels(testLabels),
 	}
 
+	testExpectedAppWithCompositeLabel := &webhook.ApplicationWithLabels{
+		Application: testApplication,
+		Labels:      convertLabels(testLabelsComposite),
+	}
+
 	testExpectedAppTemplateWithLabels := &webhook.ApplicationTemplateWithLabels{
 		ApplicationTemplate: testAppTemplate,
 		Labels:              convertLabels(testLabels),
@@ -108,6 +120,29 @@ func TestWebhookDataInputBuilder_PrepareApplicationAndAppTemplateWithLabels(t *t
 				return lblRepo
 			},
 			expectedAppWithLabels:         testExpectedAppWithLabels,
+			expectedAppTemplateWithLabels: testExpectedAppTemplateWithLabels,
+		},
+		{
+			name: "Success when fails to unquote label",
+			appRepo: func() *automock.ApplicationRepository {
+				appRepo := &automock.ApplicationRepository{}
+				appRepo.On("GetByID", emptyCtx, testTenantID, testAppID).Return(testApplication, nil).Once()
+				return appRepo
+			},
+			appTemplateRepo: func() *automock.ApplicationTemplateRepository {
+				appTmplRepo := &automock.ApplicationTemplateRepository{}
+				appTmplRepo.On("Get", emptyCtx, testAppTemplateID).Return(testAppTemplate, nil).Once()
+				return appTmplRepo
+			},
+			runtimeRepo:    unusedRuntimeRepo,
+			runtimeCtxRepo: unusedRuntimeCtxRepo,
+			labelRepo: func() *automock.LabelRepository {
+				lblRepo := &automock.LabelRepository{}
+				lblRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testAppID).Return(testLabelsComposite, nil).Once()
+				lblRepo.On("ListForObject", emptyCtx, testTenantID, model.AppTemplateLabelableObject, testAppTemplateID).Return(testLabels, nil).Once()
+				return lblRepo
+			},
+			expectedAppWithLabels:         testExpectedAppWithCompositeLabel,
 			expectedAppTemplateWithLabels: testExpectedAppTemplateWithLabels,
 		},
 		{
@@ -747,6 +782,34 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 			ExpectedErrMessage:           "",
 		},
 		{
+			Name: "success when fails to unquote label",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
+				return repo
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, mock.MatchedBy(func(ids []string) bool { return checkIfEqual(ids, []string{ApplicationID, Application2ID}) })).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMapWithUnquotableLabels(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil).Once()
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil).Once()
+				return repo
+			},
+			FormationName:                ScenarioName,
+			ExpectedApplicationsMappings: applicationMappingsWithCompositeLabel,
+			ExpectedAppTemplateMappings:  applicationTemplateMappings,
+			ExpectedErrMessage:           "",
+		},
+		{
 			Name: "success when there are no applications in scenario",
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
@@ -869,10 +932,19 @@ func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testin
 	}
 }
 
-func convertLabels(labels map[string]*model.Label) map[string]interface{} {
-	convertedLabels := make(map[string]interface{}, len(labels))
+func convertLabels(labels map[string]*model.Label) map[string]string {
+	convertedLabels := make(map[string]string, len(labels))
 	for _, l := range labels {
-		convertedLabels[l.Key] = l.Value
+		stringLabel, ok := l.Value.(string)
+		if !ok {
+			marshaled, err := json.Marshal(l.Value)
+			if err != nil {
+				return nil
+			}
+			stringLabel = string(marshaled)
+		}
+
+		convertedLabels[l.Key] = stringLabel
 	}
 	return convertedLabels
 }
