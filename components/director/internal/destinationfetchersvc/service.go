@@ -140,6 +140,7 @@ func (d *DestinationService) SyncTenantDestinations(ctx context.Context, tenantI
 	if err != nil {
 		return errors.Wrapf(err, "failed to create destinations client for tenant '%s'", tenantID)
 	}
+	defer client.Close()
 
 	log.C(ctx).Debugf("Successfully created destination client for tenant '%s' with subdomain '%s'", tenantID, subdomainLabel.Value)
 
@@ -272,6 +273,7 @@ func (d *DestinationService) FetchDestinationsSensitiveData(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+	defer client.Close()
 
 	log.C(ctx).Infof("Getting data for destinations %v from tenant '%s'", destinationNames, tenantID)
 
