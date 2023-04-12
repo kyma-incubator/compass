@@ -33,6 +33,7 @@ const (
 	testSubdomain                 = "subdomain"
 	testRegion                    = "eu-1"
 	testProvider                  = "Compass"
+	testLicenseType               = "TESTLICENSE"
 	initializedColumn             = "initialized"
 	invalidResourceType           = "INVALID"
 )
@@ -89,10 +90,14 @@ var (
 )
 
 func newModelBusinessTenantMapping(id, name string) *model.BusinessTenantMapping {
-	return newModelBusinessTenantMappingWithType(id, name, "", tenant.Account)
+	return newModelBusinessTenantMappingWithType(id, name, "", nil, tenant.Account)
 }
 
-func newModelBusinessTenantMappingWithType(id, name, parent string, tenantType tenant.Type) *model.BusinessTenantMapping {
+func newModelBusinessTenantMappingWithLicense(id, name string, licenseType *string) *model.BusinessTenantMapping {
+	return newModelBusinessTenantMappingWithType(id, name, "", licenseType, tenant.Account)
+}
+
+func newModelBusinessTenantMappingWithType(id, name, parent string, licenseType *string, tenantType tenant.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
@@ -101,6 +106,7 @@ func newModelBusinessTenantMappingWithType(id, name, parent string, tenantType t
 		Type:           tenantType,
 		Provider:       testProvider,
 		Status:         tenant.Active,
+		LicenseType:    licenseType,
 	}
 }
 
@@ -110,7 +116,7 @@ func newModelBusinessTenantMappingWithComputedValues(id, name string, initialize
 	return tenantModel
 }
 
-func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, tntType tenant.Type) *model.BusinessTenantMapping {
+func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, licenseType *string, tntType tenant.Type) *model.BusinessTenantMapping {
 	return &model.BusinessTenantMapping{
 		ID:             id,
 		Name:           name,
@@ -120,6 +126,7 @@ func newModelBusinessTenantMappingWithParentAndType(id, name, parent string, tnt
 		Provider:       testProvider,
 		Status:         tenant.Active,
 		Initialized:    boolToPtr(true),
+		LicenseType:    licenseType,
 	}
 }
 
@@ -188,11 +195,11 @@ func fixTenantMappingCreateArgs(ent tenant.Entity) []driver.Value {
 	return []driver.Value{ent.ID, ent.Name, ent.ExternalTenant, ent.Parent, ent.Type, ent.ProviderName, ent.Status}
 }
 
-func newModelBusinessTenantMappingInput(name, subdomain, region string) model.BusinessTenantMappingInput {
-	return newModelBusinessTenantMappingInputWithType(testExternal, name, "", subdomain, region, tenant.Account)
+func newModelBusinessTenantMappingInput(name, subdomain, region string, licenseType *string) model.BusinessTenantMappingInput {
+	return newModelBusinessTenantMappingInputWithType(testExternal, name, "", subdomain, region, licenseType, tenant.Account)
 }
 
-func newModelBusinessTenantMappingInputWithType(tenantID, name, parent, subdomain, region string, tenantType tenant.Type) model.BusinessTenantMappingInput {
+func newModelBusinessTenantMappingInputWithType(tenantID, name, parent, subdomain, region string, licenseType *string, tenantType tenant.Type) model.BusinessTenantMappingInput {
 	return model.BusinessTenantMappingInput{
 		Name:           name,
 		ExternalTenant: tenantID,
@@ -201,6 +208,7 @@ func newModelBusinessTenantMappingInputWithType(tenantID, name, parent, subdomai
 		Parent:         parent,
 		Type:           tenant.TypeToStr(tenantType),
 		Provider:       testProvider,
+		LicenseType:    licenseType,
 	}
 }
 

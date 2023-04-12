@@ -15,6 +15,7 @@ type BusinessTenantMapping struct {
 	Provider       string
 	Status         tenant.Status
 	Initialized    *bool // computed value
+	LicenseType    *string
 }
 
 // WithExternalTenant missing godoc
@@ -39,6 +40,7 @@ func (t BusinessTenantMapping) ToInput() BusinessTenantMappingInput {
 		Region:         "",
 		Type:           tenant.TypeToStr(t.Type),
 		Provider:       t.Provider,
+		LicenseType:    t.LicenseType,
 	}
 }
 
@@ -51,6 +53,7 @@ type BusinessTenantMappingInput struct {
 	Region         string `json:"region"`
 	Type           string `json:"type"`
 	Provider       string
+	LicenseType    *string `json:"licenseType"`
 }
 
 // MovedSubaccountMappingInput missing godoc
@@ -71,6 +74,7 @@ func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *Busines
 		Type:           tenant.StrToType(i.Type),
 		Provider:       i.Provider,
 		Status:         tenant.Active,
+		LicenseType:    i.LicenseType,
 	}
 }
 
