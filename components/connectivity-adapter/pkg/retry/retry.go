@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	gcli "github.com/machinebox/graphql"
 )
 

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -18,12 +18,14 @@ import (
 )
 
 // EventAPIClient missing godoc
+//
 //go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventAPIClient interface {
 	FetchTenantEventsPage(ctx context.Context, eventsType EventsType, additionalQueryParams QueryParams) (*EventsPage, error)
 }
 
 // TenantConverter expects tenant converter implementation
+//
 //go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantConverter interface {
 	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
@@ -31,6 +33,7 @@ type TenantConverter interface {
 }
 
 // DirectorGraphQLClient expects graphql implementation
+//
 //go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
