@@ -312,7 +312,6 @@ func (b *WebhookDataInputBuilder) getLabelsForObject(ctx context.Context, tenant
 		} else {
 			labelsMap[l.Key] = unquotedLabel
 		}
-
 	}
 	return labelsMap, nil
 }
@@ -323,23 +322,23 @@ func (b *WebhookDataInputBuilder) getLabelsForObjects(ctx context.Context, tenan
 		return nil, errors.Wrapf(err, "while listing labels for %q with IDs: %q", objectType, objectIDs)
 	}
 	labelsForResourcesMap := make(map[string]map[string]string, len(labelsForResources))
-	for resourceId, labels := range labelsForResources {
+	for resourceID, labels := range labelsForResources {
 		for key, value := range labels {
 			labelBytes, err := json.Marshal(value)
 			if err != nil {
 				return nil, errors.Wrap(err, "while marshaling label value")
 			}
 
-			if _, ok := labelsForResourcesMap[resourceId]; !ok {
-				labelsForResourcesMap[resourceId] = make(map[string]string)
+			if _, ok := labelsForResourcesMap[resourceID]; !ok {
+				labelsForResourcesMap[resourceID] = make(map[string]string)
 			}
 
 			stringLabel := string(labelBytes)
 			unquotedLabel, err := strconv.Unquote(stringLabel)
 			if err != nil {
-				labelsForResourcesMap[resourceId][key] = stringLabel
+				labelsForResourcesMap[resourceID][key] = stringLabel
 			} else {
-				labelsForResourcesMap[resourceId][key] = unquotedLabel
+				labelsForResourcesMap[resourceID][key] = unquotedLabel
 			}
 		}
 	}
