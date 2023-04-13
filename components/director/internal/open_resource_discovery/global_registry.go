@@ -10,6 +10,7 @@ import (
 )
 
 // GlobalRegistryService processes global resources (products and vendors) provided via global registry.
+//
 //go:generate mockery --name=GlobalRegistryService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GlobalRegistryService interface {
 	SyncGlobalResources(ctx context.Context) (map[string]bool, error)
@@ -61,7 +62,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	if err := documents.Validate(s.config.URL, nil, nil, nil, nil, map[string]bool{}); err != nil {
+	if err := documents.Validate(s.config.URL, nil, nil, nil, nil, nil, map[string]bool{}); err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}
 

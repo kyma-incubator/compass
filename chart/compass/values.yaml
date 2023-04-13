@@ -127,47 +127,47 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2986"
+      version: "PR-3007"
       name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2986"
+      version: "PR-3007"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2986"
+      version: "PR-3007"
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2981"
+      version: "PR-3007"
       name: compass-director
     hydrator:
       dir:
-      version: "PR-2986"
+      version: "PR-3007"
       name: compass-hydrator
     ias_adapter:
       dir:
-      version: "PR-2983"
+      version: "PR-3010"
       name: compass-ias-adapter
     gateway:
       dir:
-      version: "PR-2986"
+      version: "PR-3007"
       name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2986"
+      version: "PR-3007"
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-89"
+      version: "PR-91"
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2986"
+      version: "PR-3001"
       name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2986"
+      version: "PR-3007"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -176,7 +176,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2986"
+      version: "PR-3007"
       name: compass-external-services-mock
     console:
       dir:
@@ -184,7 +184,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2981"
+      version: "PR-3007"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1242,6 +1242,7 @@ global:
         - "application:read"
         - "application:write"
         - "application.local_tenant_id:write"
+        - "application.application_template:read"
         - "application_template:read"
         - "application_template:write"
         - "runtime:read"

@@ -32,7 +32,8 @@ const (
 
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type tenantService interface {
-	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	ListByType(ctx context.Context, tenantType tenantEntity.Type) ([]*model.BusinessTenantMapping, error)
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
@@ -66,8 +67,10 @@ type Config struct {
 	DirectorRequestTimeout    time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
 	DirectorSkipSSLValidation bool          `envconfig:"default=false,APP_DIRECTOR_SKIP_SSL_VALIDATION"`
 
-	EnableSystemDeletion bool   `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
-	OperationalMode      string `envconfig:"APP_OPERATIONAL_MODE"`
+	EnableSystemDeletion  bool   `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
+	OperationalMode       string `envconfig:"APP_OPERATIONAL_MODE"`
+	TemplatesFileLocation string `envconfig:"optional,APP_TEMPLATES_FILE_LOCATION"`
+	VerifyTenant          string `envconfig:"optional,APP_VERIFY_TENANT"`
 }
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.
@@ -123,16 +126,9 @@ func splitBusinessTenantMappingsToChunks(slice []*model.BusinessTenantMapping, c
 // SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
 // and creates any new applications present in the external source.
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
-	allTenants, err := s.listTenants(ctx)
+	tenants, err := s.listTenants(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to list tenants")
-	}
-
-	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
-	for _, tnt := range allTenants {
-		if tnt.Type == tenantEntity.Account {
-			tenants = append(tenants, tnt)
-		}
 	}
 
 	systemsQueue := make(chan tenantSystems, s.config.SystemsQueueSize)
@@ -156,7 +152,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		}
 	}()
 
-	chunks := splitBusinessTenantMappingsToChunks(tenants, 20)
+	chunks := splitBusinessTenantMappingsToChunks(tenants, 15)
 
 	for _, chunk := range chunks {
 		time.Sleep(time.Second * 1)
@@ -175,6 +171,12 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
 					return
 				}
+
+				log.C(ctx).Infof("found %d systems for tenant %s", len(systems), t.ExternalTenant)
+				if len(s.config.VerifyTenant) > 0 {
+					log.C(ctx).Infof("systems: %#v", systems)
+				}
+
 				if len(systems) > 0 {
 					systemsQueue <- tenantSystems{
 						tenant:  t,
@@ -201,9 +203,18 @@ func (s *SystemFetcher) listTenants(ctx context.Context) ([]*model.BusinessTenan
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenants, err := s.tenantService.List(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to retrieve tenants")
+	var tenants []*model.BusinessTenantMapping
+	if len(s.config.VerifyTenant) > 0 {
+		singleTenant, err := s.tenantService.GetTenantByExternalID(ctx, s.config.VerifyTenant)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to retrieve tenant %s", s.config.VerifyTenant)
+		}
+		tenants = append(tenants, singleTenant)
+	} else {
+		tenants, err = s.tenantService.ListByType(ctx, tenantEntity.Account)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to retrieve tenants")
+		}
 	}
 
 	err = tx.Commit()

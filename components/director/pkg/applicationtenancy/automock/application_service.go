@@ -37,13 +37,13 @@ func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application
 	return r0, r1
 }
 
-type NewApplicationServiceT interface {
+type mockConstructorTestingTNewApplicationService interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewApplicationService(t NewApplicationServiceT) *ApplicationService {
+func NewApplicationService(t mockConstructorTestingTNewApplicationService) *ApplicationService {
 	mock := &ApplicationService{}
 	mock.Mock.Test(t)
 

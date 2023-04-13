@@ -2,6 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -12,9 +15,12 @@ type Bundle struct {
 	ApplicationID                  string
 	Name                           string
 	Description                    *string
+	Version                        *string
+	ResourceHash                   *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *Auth
 	OrdID                          *string
+	LocalTenantID                  *string
 	ShortDescription               *string
 	Links                          json.RawMessage
 	Labels                         json.RawMessage
@@ -31,12 +37,20 @@ func (*Bundle) GetType() resource.Type {
 }
 
 // SetFromUpdateInput missing godoc
-func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
+func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput, bndlHash uint64) {
+	var hash *string
+	if bndlHash != 0 {
+		hash = str.Ptr(strconv.FormatUint(bndlHash, 10))
+	}
+
 	bndl.Name = update.Name
 	bndl.Description = update.Description
+	bndl.Version = update.Version
+	bndl.ResourceHash = hash
 	bndl.InstanceAuthRequestInputSchema = update.InstanceAuthRequestInputSchema
 	bndl.DefaultInstanceAuth = update.DefaultInstanceAuth.ToAuth()
 	bndl.OrdID = update.OrdID
+	bndl.LocalTenantID = update.LocalTenantID
 	bndl.ShortDescription = update.ShortDescription
 	bndl.Links = update.Links
 	bndl.Labels = update.Labels
@@ -50,9 +64,11 @@ func (bndl *Bundle) SetFromUpdateInput(update BundleUpdateInput) {
 type BundleCreateInput struct {
 	Name                           string                  `json:"title"`
 	Description                    *string                 `json:"description"`
+	Version                        *string                 `json:"version" hash:"ignore"`
 	InstanceAuthRequestInputSchema *string                 `json:",omitempty"`
 	DefaultInstanceAuth            *AuthInput              `json:",omitempty"`
 	OrdID                          *string                 `json:"ordId"`
+	LocalTenantID                  *string                 `json:"localTenantId"`
 	ShortDescription               *string                 `json:"shortDescription"`
 	Links                          json.RawMessage         `json:"links"`
 	Labels                         json.RawMessage         `json:"labels"`
@@ -71,9 +87,11 @@ type BundleCreateInput struct {
 type BundleUpdateInput struct {
 	Name                           string
 	Description                    *string
+	Version                        *string
 	InstanceAuthRequestInputSchema *string
 	DefaultInstanceAuth            *AuthInput
 	OrdID                          *string
+	LocalTenantID                  *string
 	ShortDescription               *string
 	Links                          json.RawMessage
 	Labels                         json.RawMessage
@@ -94,18 +112,26 @@ type BundlePage struct {
 func (BundlePage) IsPageable() {}
 
 // ToBundle missing godoc
-func (i *BundleCreateInput) ToBundle(id, applicationID string) *Bundle {
+func (i *BundleCreateInput) ToBundle(id, applicationID string, bndlHash uint64) *Bundle {
 	if i == nil {
 		return nil
+	}
+
+	var hash *string
+	if bndlHash != 0 {
+		hash = str.Ptr(strconv.FormatUint(bndlHash, 10))
 	}
 
 	return &Bundle{
 		ApplicationID:                  applicationID,
 		Name:                           i.Name,
 		Description:                    i.Description,
+		Version:                        i.Version,
+		ResourceHash:                   hash,
 		InstanceAuthRequestInputSchema: i.InstanceAuthRequestInputSchema,
 		DefaultInstanceAuth:            i.DefaultInstanceAuth.ToAuth(),
 		OrdID:                          i.OrdID,
+		LocalTenantID:                  i.LocalTenantID,
 		ShortDescription:               i.ShortDescription,
 		Links:                          i.Links,
 		Labels:                         i.Labels,
