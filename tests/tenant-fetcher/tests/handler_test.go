@@ -616,6 +616,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Region:         &region,
 			Type:           string(tenant.Account),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           gaNames[1],
@@ -625,6 +626,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Region:         &region,
 			Type:           string(tenant.Account),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           subaccountNames[0],
@@ -634,6 +636,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           subaccountNames[1],
@@ -643,6 +646,7 @@ func TestMoveSubaccounts(t *testing.T) {
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
@@ -742,6 +746,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 			Region:         &region,
 			Type:           string(tenant.Account),
 			Provider:       provider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           subaccountExternalTenants[0],
@@ -751,6 +756,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
 			Provider:       provider,
+			LicenseType:    &testLicenseType,
 		},
 	}
 
@@ -832,6 +838,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 			Region:         &region,
 			Type:           string(tenant.Account),
 			Provider:       provider,
+			LicenseType:    &testLicenseType,
 		},
 		{
 			Name:           subaccountNames[0],
@@ -841,6 +848,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Subaccount),
 			Provider:       provider,
+			LicenseType:    &testLicenseType,
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
@@ -907,6 +915,7 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 			Region:         &subaccountRegion,
 			Type:           string(tenant.Account),
 			Provider:       testProvider,
+			LicenseType:    &testLicenseType,
 		},
 	}
 	err := fixtures.WriteTenants(t, ctx, directorInternalGQLClient, tenants)
