@@ -39,6 +39,7 @@ type TenantSubscriptionRequest struct {
 	Subdomain                   string
 	Region                      string
 	SubscriptionProviderID      string
+	SubscriptionLcenseType      string
 	ProviderSubaccountID        string
 	ConsumerTenantID            string
 	SubscriptionProviderAppName string

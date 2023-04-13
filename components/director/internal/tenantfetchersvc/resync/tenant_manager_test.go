@@ -22,6 +22,10 @@ const (
 	provider      = "external-service"
 )
 
+var (
+	testLicenseType = "LICENSETYPE"
+)
+
 func TestTenantManager_TenantsToCreate(t *testing.T) {
 	const (
 		centralRegion = "central"
@@ -37,8 +41,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 
 	jobConfig := configForTenantType(tenant.Account)
 
-	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", "", tenant.Account)
-	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", "", "", tenant.Account)
+	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", "", tenant.Account, &testLicenseType)
+	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", "", "", tenant.Account, nil)
 
 	event1 := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant1))
 	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant2))
@@ -339,8 +343,8 @@ func TestTenantManager_CreateTenants(t *testing.T) {
 	// GIVEN
 	tenantConverter := domaintenant.NewConverter()
 
-	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", region, "", tenant.Account)
-	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", region, "", tenant.Account)
+	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", region, "", tenant.Account, &testLicenseType)
+	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", region, "", tenant.Account, nil)
 	busTenants := []model.BusinessTenantMappingInput{busTenant1, busTenant2}
 
 	testCases := []struct {
@@ -422,8 +426,8 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 
 	jobConfig := configForTenantType(tenant.Account)
 
-	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", "", tenant.Account)
-	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", "", "", tenant.Account)
+	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", "", tenant.Account, &testLicenseType)
+	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", "", "", tenant.Account, nil)
 
 	event1 := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant1))
 	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant2))
@@ -648,8 +652,8 @@ func TestTenantManager_DeleteTenants(t *testing.T) {
 	// GIVEN
 	tenantConverter := domaintenant.NewConverter()
 
-	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", region, "", tenant.Account)
-	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", region, "", tenant.Account)
+	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", region, "", tenant.Account, &testLicenseType)
+	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", region, "", tenant.Account, nil)
 	busTenants := []model.BusinessTenantMappingInput{busTenant1, busTenant2}
 
 	testCases := []struct {
@@ -725,7 +729,7 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 
 	jobConfig := configForTenantType(tenant.Account)
 
-	busTenant := fixBusinessTenantMappingInput("1", provider, "subdomain-1", region, "", tenant.Subaccount)
+	busTenant := fixBusinessTenantMappingInput("1", provider, "subdomain-1", region, "", tenant.Subaccount, &testLicenseType)
 	event := fixEvent(t, "Subaccount", busTenant.Parent, eventFieldsFromTenant(tenant.Subaccount, jobConfig.APIConfig.TenantFieldMapping, busTenant))
 
 	queryParams := resync.QueryParams{
@@ -877,6 +881,7 @@ func configForTenantType(tenantType tenant.Type) resync.JobConfig {
 			EntityIDField:          "entityId",
 			EntityTypeField:        "type",
 			RegionField:            "region",
+			LicenseTypeField:       "licenseType",
 		},
 		MovedSubaccountsFieldMapping: resync.MovedSubaccountsFieldMapping{
 			SubaccountID: "subaccountId",
@@ -923,6 +928,10 @@ func eventFieldsFromTenant(tenantType tenant.Type, tenantFieldMapping resync.Ten
 		tenantFieldMapping.SubdomainField: tenantInput.Subdomain,
 		tenantFieldMapping.RegionField:    tenantInput.Region,
 	}
+	if tenantInput.LicenseType != nil {
+		fields[tenantFieldMapping.LicenseTypeField] = *tenantInput.LicenseType
+	}
+
 	switch tenantType {
 	case tenant.Account:
 		fields[tenantFieldMapping.EntityTypeField] = "GlobalAccount"
