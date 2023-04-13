@@ -3,7 +3,7 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-
+	"fmt"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -610,13 +610,21 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	if *response.ActualStatusCode == *response.SuccessStatusCode {
-		assignment.State = string(model.ReadyAssignmentState)
-		assignment.Value = nil
-	}
+	if response.State != nil { // if there is a state in the response
+		log.C(ctx).Info("There is a state in the response. Validating it...")
+		if isValid := validateResponseState(*response.State, assignment.State); !isValid {
+			return errors.New(fmt.Sprintf("The provided state in the response %q is not valid.", *response.State))
+		}
+		assignment.State = *response.State
+	} else {
+		if *response.ActualStatusCode == *response.SuccessStatusCode {
+			assignment.State = string(model.ReadyAssignmentState)
+			assignment.Value = nil
+		}
 
-	if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
-		assignment.State = string(model.ConfigPendingAssignmentState)
+		if response.IncompleteStatusCode != nil && *response.ActualStatusCode == *response.IncompleteStatusCode {
+			assignment.State = string(model.ConfigPendingAssignmentState)
+		}
 	}
 
 	var shouldSendReverseNotification bool
@@ -672,6 +680,29 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 
 	return nil
+}
+
+func validateResponseState(newState, previousState string) bool {
+	if newState != string(model.InitialAssignmentState) &&
+		newState != string(model.ReadyAssignmentState) &&
+		newState != string(model.ConfigPendingAssignmentState) &&
+		newState != string(model.CreateErrorAssignmentState) &&
+		newState != string(model.DeletingAssignmentState) &&
+		newState != string(model.DeleteErrorAssignmentState) {
+		return false
+	}
+
+	if previousState == string(model.DeletingAssignmentState) &&
+		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState)) {
+		return false
+	}
+
+	if previousState == string(model.InitialAssignmentState) &&
+		(newState != string(model.CreateErrorAssignmentState) && newState != string(model.ConfigPendingAssignmentState) && newState != string(model.ReadyAssignmentState)) {
+		return false
+	}
+
+	return true
 }
 
 // CleanupFormationAssignment If the provided mappingPair does not contain notification request the assignment is deleted.

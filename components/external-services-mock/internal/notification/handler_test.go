@@ -19,34 +19,46 @@ var assignMappingsWithoutConfig = fixFormationAssignmentMappings(notification.As
 var assignMappingsWithConfig = fixFormationAssignmentMappings(notification.Assign, testTenantID, formationAssignmentReqConfigBody, nil)
 var unassignMappings = fixFormationAssignmentMappings(notification.Unassign, testTenantID, formationAssignmentReqBody, &appID)
 
-func TestHandler_Patch(t *testing.T) {
+func TestHandler_NewPatchHandler(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/%s", testTenantID)
 
 	testCases := []struct {
-		Name                 string
-		RequestBody          string
-		TenantID             string
-		ExpectedResponseCode int
-		ExpectedMappings     map[string][]notification.Response
+		Name                  string
+		ShouldHaveStateInBody bool
+		RequestBody           string
+		TenantID              string
+		ExpectedResponseCode  int
+		ExpectedMappings      map[string][]notification.Response
 	}{
 		{
-			Name:                 "success",
-			RequestBody:          formationAssignmentReqBody,
-			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusOK,
-			ExpectedMappings:     assignMappingsWithoutConfig,
+			Name:                  "success without state in body",
+			ShouldHaveStateInBody: false,
+			RequestBody:           formationAssignmentReqBody,
+			TenantID:              testTenantID,
+			ExpectedResponseCode:  http.StatusOK,
+			ExpectedMappings:      assignMappingsWithoutConfig,
 		},
 		{
-			Name:                 "Error tenant id not found in path",
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{},
+			Name:                  "success with state in body",
+			ShouldHaveStateInBody: true,
+			RequestBody:           formationAssignmentReqBody,
+			TenantID:              testTenantID,
+			ExpectedResponseCode:  http.StatusOK,
+			ExpectedMappings:      assignMappingsWithoutConfig,
 		},
 		{
-			Name:                 "Error when body is not valid json",
-			RequestBody:          "invalid json",
-			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: {}},
+			Name:                  "Error tenant id not found in path",
+			ShouldHaveStateInBody: false,
+			ExpectedResponseCode:  http.StatusBadRequest,
+			ExpectedMappings:      map[string][]notification.Response{},
+		},
+		{
+			Name:                  "Error when body is not valid json",
+			ShouldHaveStateInBody: false,
+			RequestBody:           "invalid json",
+			TenantID:              testTenantID,
+			ExpectedResponseCode:  http.StatusBadRequest,
+			ExpectedMappings:      map[string][]notification.Response{testTenantID: {}},
 		},
 	}
 
@@ -63,7 +75,8 @@ func TestHandler_Patch(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			//WHEN
-			h.Patch(r, req)
+			patchHandler := h.NewPatchHandler(testCase.ShouldHaveStateInBody)
+			patchHandler(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)
@@ -140,43 +153,57 @@ func TestHandler_RespondWithIncomplete(t *testing.T) {
 	}
 }
 
-func TestHandler_Delete(t *testing.T) {
+func TestHandler_NewDeleteHandler(t *testing.T) {
 	apiPath := fmt.Sprintf("/formation-callback/%s/%s", testTenantID, appID)
 
 	testCases := []struct {
-		Name                 string
-		RequestBody          string
-		TenantID             string
-		AppID                string
-		ExpectedResponseCode int
-		ExpectedMappings     map[string][]notification.Response
+		Name                  string
+		ShouldHaveStateInBody bool
+		RequestBody           string
+		TenantID              string
+		AppID                 string
+		ExpectedResponseCode  int
+		ExpectedMappings      map[string][]notification.Response
 	}{
 		{
-			Name:                 "success",
-			RequestBody:          formationAssignmentReqBody,
-			TenantID:             testTenantID,
-			AppID:                appID,
-			ExpectedResponseCode: http.StatusOK,
-			ExpectedMappings:     unassignMappings,
+			Name:                  "success",
+			ShouldHaveStateInBody: false,
+			RequestBody:           formationAssignmentReqBody,
+			TenantID:              testTenantID,
+			AppID:                 appID,
+			ExpectedResponseCode:  http.StatusOK,
+			ExpectedMappings:      unassignMappings,
 		},
 		{
-			Name:                 "Error tenant id not found in path",
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{},
+			Name:                  "success with state in body",
+			ShouldHaveStateInBody: true,
+			RequestBody:           formationAssignmentReqBody,
+			TenantID:              testTenantID,
+			AppID:                 appID,
+			ExpectedResponseCode:  http.StatusOK,
+			ExpectedMappings:      unassignMappings,
 		},
 		{
-			Name:                 "Error appID not found in path",
-			TenantID:             testTenantID,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{},
+			Name:                  "Error tenant id not found in path",
+			ShouldHaveStateInBody: false,
+			ExpectedResponseCode:  http.StatusBadRequest,
+			ExpectedMappings:      map[string][]notification.Response{},
 		},
 		{
-			Name:                 "Error when body is not valid json",
-			RequestBody:          "invalid json",
-			TenantID:             testTenantID,
-			AppID:                appID,
-			ExpectedResponseCode: http.StatusBadRequest,
-			ExpectedMappings:     map[string][]notification.Response{testTenantID: {}},
+			Name:                  "Error appID not found in path",
+			ShouldHaveStateInBody: false,
+			TenantID:              testTenantID,
+			ExpectedResponseCode:  http.StatusBadRequest,
+			ExpectedMappings:      map[string][]notification.Response{},
+		},
+		{
+			Name:                  "Error when body is not valid json",
+			ShouldHaveStateInBody: false,
+			RequestBody:           "invalid json",
+			TenantID:              testTenantID,
+			AppID:                 appID,
+			ExpectedResponseCode:  http.StatusBadRequest,
+			ExpectedMappings:      map[string][]notification.Response{testTenantID: {}},
 		},
 	}
 
@@ -198,7 +225,8 @@ func TestHandler_Delete(t *testing.T) {
 			r := httptest.NewRecorder()
 
 			//WHEN
-			h.Delete(r, req)
+			deleteHandler := h.NewDeleteHandler(testCase.ShouldHaveStateInBody)
+			deleteHandler(r, req)
 			resp := r.Result()
 
 			body, err := ioutil.ReadAll(resp.Body)

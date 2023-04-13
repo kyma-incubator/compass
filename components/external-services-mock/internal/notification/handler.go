@@ -116,56 +116,85 @@ func NewHandler(notificationConfiguration NotificationsConfiguration) *Handler {
 
 // Formation Assignment notifications synchronous handlers
 
-// Patch handles synchronous formation assignment notification requests for Assign operation
-func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["tenantId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
-		return
-	}
-
-	if _, ok = h.Mappings[id]; !ok {
-		h.Mappings[id] = make([]Response, 0, 1)
-	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	}
-	mappings := h.Mappings[id]
-	mappings = append(h.Mappings[id], Response{
-		Operation:   Assign,
-		RequestBody: bodyBytes,
-	})
-	h.Mappings[id] = mappings
-
-	response := struct {
-		Config struct {
-			Key  string `json:"key"`
-			Key2 struct {
-				Key string `json:"key"`
-			} `json:"key2"`
+// NewPatchHandler returns a handler function that handles synchronous formation assignment notification requests for Assign operation.
+// If shouldHaveStateInBody is 'true' the handler will add State in the response body and if it is 'false' it won't.
+func (h *Handler) NewPatchHandler(shouldHaveStateInBody bool) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, r *http.Request) {
+		id, ok := mux.Vars(r)["tenantId"]
+		if !ok {
+			httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+			return
 		}
-	}{
-		Config: struct {
-			Key  string `json:"key"`
-			Key2 struct {
-				Key string `json:"key"`
-			} `json:"key2"`
-		}{
-			Key: "value",
-			Key2: struct {
-				Key string `json:"key"`
-			}{Key: "value2"},
-		},
+
+		if _, ok = h.Mappings[id]; !ok {
+			h.Mappings[id] = make([]Response, 0, 1)
+		}
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+			return
+		}
+
+		var result interface{}
+		if err := json.Unmarshal(bodyBytes, &result); err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+			return
+		}
+		mappings := h.Mappings[id]
+		mappings = append(h.Mappings[id], Response{
+			Operation:   Assign,
+			RequestBody: bodyBytes,
+		})
+		h.Mappings[id] = mappings
+
+		var response interface{}
+		if !shouldHaveStateInBody {
+			response = struct {
+				Config struct {
+					Key  string `json:"key"`
+					Key2 struct {
+						Key string `json:"key"`
+					} `json:"key2"`
+				}
+			}{
+				Config: struct {
+					Key  string `json:"key"`
+					Key2 struct {
+						Key string `json:"key"`
+					} `json:"key2"`
+				}{
+					Key: "value",
+					Key2: struct {
+						Key string `json:"key"`
+					}{Key: "value2"},
+				},
+			}
+		} else {
+			response = struct {
+				State  string `json:"state"`
+				Config struct {
+					Key  string `json:"key"`
+					Key2 struct {
+						Key string `json:"key"`
+					} `json:"key2"`
+				}
+			}{
+				State: "CONFIG_PENDING",
+				Config: struct {
+					Key  string `json:"key"`
+					Key2 struct {
+						Key string `json:"key"`
+					} `json:"key2"`
+				}{
+					Key: "value",
+					Key2: struct {
+						Key string `json:"key"`
+					}{Key: "value2"},
+				},
+			}
+		}
+		httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 	}
-	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 }
 
 // RespondWithIncomplete handles synchronous formation assignment notification requests for Assign operation
@@ -227,41 +256,52 @@ func (h *Handler) RespondWithIncomplete(writer http.ResponseWriter, r *http.Requ
 	httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
 }
 
-// Delete handles synchronous formation assignment notification requests for Unassign operation
-func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["tenantId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
-		return
-	}
-	applicationId, ok := mux.Vars(r)["applicationId"]
-	if !ok {
-		httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
-		return
-	}
+// NewDeleteHandler returns a handler function that handles synchronous formation assignment notification requests for Unassign operation
+func (h *Handler) NewDeleteHandler(shouldHaveStateInBody bool) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, r *http.Request) {
+		id, ok := mux.Vars(r)["tenantId"]
+		if !ok {
+			httphelpers.WriteError(writer, errors.New("missing tenantId in url"), http.StatusBadRequest)
+			return
+		}
+		applicationId, ok := mux.Vars(r)["applicationId"]
+		if !ok {
+			httphelpers.WriteError(writer, errors.New("missing applicationId in url"), http.StatusBadRequest)
+			return
+		}
 
-	if _, ok := h.Mappings[id]; !ok {
-		h.Mappings[id] = make([]Response, 0, 1)
-	}
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
-		return
-	}
+		if _, ok := h.Mappings[id]; !ok {
+			h.Mappings[id] = make([]Response, 0, 1)
+		}
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
+			return
+		}
 
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
+		var result interface{}
+		if err := json.Unmarshal(bodyBytes, &result); err != nil {
+			httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
+			return
+		}
+
+		h.Mappings[id] = append(h.Mappings[id], Response{
+			Operation:     Unassign,
+			ApplicationID: &applicationId,
+			RequestBody:   bodyBytes,
+		})
+
+		if !shouldHaveStateInBody {
+			writer.WriteHeader(http.StatusOK)
+		} else {
+			response := struct {
+				State string `json:"state"`
+			}{
+				State: "CONFIG_PENDING",
+			}
+			httputils.RespondWithBody(context.TODO(), writer, http.StatusOK, response)
+		}
 	}
-
-	h.Mappings[id] = append(h.Mappings[id], Response{
-		Operation:     Unassign,
-		ApplicationID: &applicationId,
-		RequestBody:   bodyBytes,
-	})
-
-	writer.WriteHeader(http.StatusOK)
 }
 
 // GetResponses returns the notification data saved in the Mappings
@@ -336,11 +376,13 @@ func (h *Handler) FailOnceResponse(writer http.ResponseWriter, r *http.Request) 
 	}
 
 	if r.Method == http.MethodPatch {
-		h.Patch(writer, r)
+		patchHandler := h.NewPatchHandler(false)
+		patchHandler(writer, r)
 	}
 
 	if r.Method == http.MethodDelete {
-		h.Delete(writer, r)
+		deleteHandler := h.NewDeleteHandler(false)
+		deleteHandler(writer, r)
 	}
 }
 
