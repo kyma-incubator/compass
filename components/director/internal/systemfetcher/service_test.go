@@ -10,6 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/automock"
 	pAutomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -64,7 +65,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
@@ -151,7 +152,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
@@ -225,7 +226,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
@@ -263,7 +264,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
@@ -317,7 +318,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
@@ -377,7 +378,7 @@ func TestSyncSystems(t *testing.T) {
 				secondTenant.ExternalTenant = "t2"
 				tenants := []*model.BusinessTenantMapping{firstTenant, secondTenant}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
@@ -420,7 +421,7 @@ func TestSyncSystems(t *testing.T) {
 			},
 			setupTenantSvc: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(nil, testErr).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
@@ -484,7 +485,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
@@ -519,7 +520,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
@@ -562,7 +563,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
@@ -609,7 +610,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t1", "tenant1"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
@@ -670,7 +671,7 @@ func TestSyncSystems(t *testing.T) {
 					newModelBusinessTenantMapping("t3", "tenant3"),
 				}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: setupSuccessfulTemplateRenderer,
@@ -742,7 +743,7 @@ func TestSyncSystems(t *testing.T) {
 				secondTenant.ExternalTenant = "t2"
 				tenants := []*model.BusinessTenantMapping{firstTenant, secondTenant}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
@@ -820,7 +821,7 @@ func TestSyncSystems(t *testing.T) {
 				secondTenant.ExternalTenant = "t2"
 				tenants := []*model.BusinessTenantMapping{firstTenant, secondTenant}
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("List", txtest.CtxWithDBMatcher()).Return(tenants, nil).Once()
+				tenantSvc.On("ListByType", txtest.CtxWithDBMatcher(), tenantEntity.Account).Return(tenants, nil).Once()
 				return tenantSvc
 			},
 			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
