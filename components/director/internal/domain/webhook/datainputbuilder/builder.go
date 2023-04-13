@@ -3,9 +3,9 @@ package datainputbuilder
 import (
 	"context"
 	"encoding/json"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
@@ -339,9 +339,7 @@ func (b *WebhookDataInputBuilder) getLabelsForObjects(ctx context.Context, tenan
 			}
 
 			stringLabel := string(labelBytes)
-			spew.Dump("STRING LABEL", stringLabel)
 			unquotedLabel, err := strconv.Unquote(stringLabel)
-			spew.Dump("UNQUOTED LABEL", unquotedLabel)
 			if err != nil {
 				labelsForResourcesMap[resourceId][key] = stringLabel
 			} else {
