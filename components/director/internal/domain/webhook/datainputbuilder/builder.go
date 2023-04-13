@@ -208,7 +208,6 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 	}
 
 	runtimesLabels, err := b.getLabelsForObjects(ctx, tenant, runtimesIDs, model.RuntimeLabelableObject)
-	//b.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeLabelableObject, runtimesIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing runtime labels")
 	}
@@ -222,7 +221,6 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 	}
 
 	runtimeContextsLabels, err := b.getLabelsForObjects(ctx, tenant, runtimeContextsIDs, model.RuntimeContextLabelableObject)
-	//b.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeContextLabelableObject, runtimeContextsIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing labels for runtime contexts")
 	}
@@ -262,7 +260,6 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 	}
 
 	applicationsToBeNotifiedForLabels, err := b.getLabelsForObjects(ctx, tenant, applicationsToBeNotifiedForIDs, model.ApplicationLabelableObject)
-	//b.labelRepository.ListForObjectIDs(ctx, tenant, model.ApplicationLabelableObject, applicationsToBeNotifiedForIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing labels for applications")
 	}
@@ -281,7 +278,6 @@ func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx cont
 	}
 
 	applicationTemplatesLabels, err := b.getLabelsForObjects(ctx, tenant, applicationsTemplateIDs, model.AppTemplateLabelableObject)
-	//b.labelRepository.ListForObjectIDs(ctx, tenant, model.AppTemplateLabelableObject, applicationsTemplateIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing labels for application templates")
 	}
