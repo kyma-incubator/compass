@@ -69,7 +69,7 @@ data:
           },
           "gridPos": {
             "h": 7,
-            "w": 8,
+            "w": 6,
             "x": 0,
             "y": 1
           },
@@ -219,8 +219,8 @@ data:
           },
           "gridPos": {
             "h": 7,
-            "w": 8,
-            "x": 8,
+            "w": 6,
+            "x": 6,
             "y": 1
           },
           "hiddenSeries": false,
@@ -335,8 +335,8 @@ data:
           },
           "gridPos": {
             "h": 7,
-            "w": 8,
-            "x": 16,
+            "w": 6,
+            "x": 12,
             "y": 1
           },
           "hiddenSeries": false,
@@ -451,8 +451,8 @@ data:
           },
           "gridPos": {
             "h": 7,
-            "w": 8,
-            "x": 8,
+            "w": 6,
+            "x": 18,
             "y": 1
           },
           "hiddenSeries": false,
