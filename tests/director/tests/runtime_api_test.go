@@ -710,12 +710,12 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 	})
 }
 
-func TestRuntimeTypeLabels(t *testing.T) {
+func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 	ctx := context.Background()
 	runtimeName := "runtime-with-int-sys-creds"
 	runtimeInput := fixRuntimeInput(runtimeName)
 
-	t.Run(fmt.Sprintf("Validate runtime type label - %q is added when runtime is registered with integration system credentials", conf.RuntimeTypeLabelKey), func(t *testing.T) {
+	t.Run(fmt.Sprintf("Validate %q, %q labels and application namespace - they are added when runtime is registered with integration system credentials", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey), func(t *testing.T) {
 		subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount) // randomly selected subaccount the parent of which is the default tenant used below
 		tenantID := tenant.TestTenants.GetDefaultTenantID()
 		intSysName := "runtime-integration-system"
@@ -761,7 +761,7 @@ func TestRuntimeTypeLabels(t *testing.T) {
 
 	})
 
-	t.Run(fmt.Sprintf("Validate runtime type label - %q is missing when runtime is NOT registered with integration system credentials", conf.RuntimeTypeLabelKey), func(t *testing.T) {
+	t.Run(fmt.Sprintf("Validate %q, %q labels and application namespace - they are missing when runtime is NOT registered with integration system credentials", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey), func(t *testing.T) {
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
@@ -784,6 +784,15 @@ func TestRuntimeTypeLabels(t *testing.T) {
 		runtimeTypeLabelValue, ok := actualRuntime.Labels[conf.RuntimeTypeLabelKey].(string)
 		require.False(t, ok)
 		require.Empty(t, runtimeTypeLabelValue)
+
+		t.Log("Validate that the Application Namespace is nil...")
+		appNamespace := actualRuntime.ApplicationNamespace
+		require.Nil(t, appNamespace)
+
+		t.Log("Validate that the region label is not added when runtime is registered without integration system credentials...")
+		rtRegionLabelValue, ok := actualRuntime.Labels[tenantfetcher.RegionKey].(string)
+		require.False(t, ok)
+		require.Empty(t, rtRegionLabelValue)
 	})
 }
 
