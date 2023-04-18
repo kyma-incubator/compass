@@ -781,7 +781,7 @@ func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInpu
 		{{- if .Subdomain }}
 		subdomain: {{ quote .Subdomain }},
 		{{- end }}
-		{{- if $tenant.LicenseType }}
+		{{- if $.LicenseType }}
 		licenseType: {{ quote .LicenseType }},
 		{{- end }}
 		type: {{ quote .Type }},
@@ -814,7 +814,7 @@ func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingIn
 			{{- if .Subdomain }}
 			subdomain: {{ quote .Subdomain }},
 			{{- end }}
-			{{- if $tenant.LicenseType }}
+			{{- if .LicenseType }}
 			licenseType: {{ quote .LicenseType }},
 			{{- end }}
 			type: {{ quote .Type }},
