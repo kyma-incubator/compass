@@ -147,7 +147,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir:
-      version: "PR-2983"
+      version: "PR-3010"
       name: compass-ias-adapter
     gateway:
       dir:
@@ -1243,6 +1243,7 @@ global:
         - "application:read"
         - "application:write"
         - "application.local_tenant_id:write"
+        - "application.application_template:read"
         - "application_template:read"
         - "application_template:write"
         - "runtime:read"
