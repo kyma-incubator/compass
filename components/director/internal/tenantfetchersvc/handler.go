@@ -234,7 +234,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		h.config.TenantIDProperty:                    true,
 		h.config.SubaccountTenantIDProperty:          false,
 		h.config.SubdomainProperty:                   true,
-		h.config.LicenseTypeProperty:                 true,
+		h.config.LicenseTypeProperty:                 false,
 		h.config.CustomerIDProperty:                  false,
 		h.config.SubscriptionProviderIDProperty:      true,
 		h.config.ProviderSubaccountIDProperty:        true,
