@@ -472,6 +472,9 @@ func (g *Graphqlizer) RuntimeRegisterInputToGQL(in graphql.RuntimeRegisterInput)
 		{{- if .StatusCondition }}
 		statusCondition: {{ .StatusCondition }},
 		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{.ApplicationNamespace}}",
+		{{- end }}
 	}`)
 }
 
@@ -487,6 +490,9 @@ func (g *Graphqlizer) RuntimeUpdateInputToGQL(in graphql.RuntimeUpdateInput) (st
 		{{- end }}
 		{{- if .StatusCondition }}
 		statusCondition: {{ .StatusCondition }},
+		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{.ApplicationNamespace}}",
 		{{- end }}
 	}`)
 }
