@@ -55,6 +55,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubscriptionProviderID:      uuid.New().String(),
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionLicenseType:     &testLicenseType,
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
 
@@ -64,7 +65,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			// THEN
 			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
 			require.NoError(t, err)
-			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain, nil)
+			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain, providedTenant.SubscriptionLicenseType)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 		})
 	})
@@ -499,7 +500,7 @@ func assertTenant(t *testing.T, tenant *graphql.Tenant, tenantID, subdomain stri
 		require.Equal(t, subdomain, tenant.Labels["subdomain"])
 	}
 	if licenseType != nil {
-		require.Equal(t, licenseType, tenant.Labels["licensetype"])
+		require.Equal(t, *licenseType, tenant.Labels["licensetype"])
 	}
 }
 

@@ -91,7 +91,7 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 		require.NoError(t, err)
 	}
 	if tenants.SubscriptionLicenseType != nil {
-		body, err = sjson.Set(body, tenantProperties.SubscriptionLicenseTypeProperty, tenants.SubscriptionLicenseType)
+		body, err = sjson.Set(body, tenantProperties.SubscriptionLicenseTypeProperty, *tenants.SubscriptionLicenseType)
 		require.NoError(t, err)
 	}
 	if len(tenants.ProviderSubaccountID) > 0 {
