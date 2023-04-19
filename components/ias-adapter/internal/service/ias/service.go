@@ -96,9 +96,6 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	if len(applications.Applications) == 0 {
 		return types.Application{}, errors.Newf("no applications found with clientID '%s'", clientID)
 	}
-	if len(applications.Applications) == 1 {
-		return applications.Applications[0], nil // TODO do we leave this?
-	}
 
 	return filterByAppTenantID(applications.Applications, clientID, appTenantID)
 }

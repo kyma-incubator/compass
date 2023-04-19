@@ -6,10 +6,11 @@
 
 # These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
 
-* @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
+* @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor @kyma-incubator/team-atlas
 /chart/compass/charts/connectivity-adapter @kyma-incubator/team-falcon
 /chart/compass/charts/connector @kyma-incubator/team-raptor
 /chart/compass/charts/gateway @kyma-incubator/team-raptor
+/chart/compass/charts/ias-adapter @kyma-incubator/team-atlas
 /chart/compass/charts/ns-adapter @kyma-incubator/team-falcon
 /chart/compass/charts/operations-controller @kyma-incubator/team-falcon
 /chart/compass/charts/ord-service @kyma-incubator/team-raptor
@@ -44,6 +45,7 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 /components/director/pkg/scenario @kyma-incubator/team-raptor
 /components/gateway @kyma-incubator/team-raptor
 /components/hydrator @kyma-incubator/team-raptor
+/components/ias-adapter @kyma-incubator/team-atlas
 /components/operations-controller @kyma-incubator/team-falcon
 /components/pairing-adapter @kyma-incubator/team-falcon
 /components/schema-migrator @kyma-incubator/team-falcon @kyma-incubator/team-raptor @kyma-incubator/team-dragon
