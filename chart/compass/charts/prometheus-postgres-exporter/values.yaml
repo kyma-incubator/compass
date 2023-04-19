@@ -324,7 +324,7 @@ config:
       metrics:
         - quantity:
             usage: "COUNTER"
-            description: "Number of tenants that have at least one non auto-discovered Application (the tenant is owner and its parent is null) or Global Account tenants that are part of at least 1 formation different from the default one"
+            description: "Number of tenants that have at least one non auto-discovered Application (the tenant is owner and its parent is null) or Global Account tenants that have at least 1 formation different from the default one"
 
     compass_director_applications_total:
       query: "SELECT COUNT(ID) as quantity FROM applications;"
