@@ -325,10 +325,10 @@ github.com/kr/text v0.0.0-20160504234017-7cafcd837844/go.mod h1:sjUstKUATFIcff4q
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230419161616-314864c10c43 h1:HGeRNGBuYmTMzrVIAiQcGChmnKUpRF8HAiwoge7Daoo=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230419161616-314864c10c43/go.mod h1:JqsMXrMPgHi/hTCkLJeUiN431MmJrkuAP+YaLRSwtfA=
-github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230419161616-314864c10c43 h1:3bW7EhwZlfSj11QrybLTRRZN+s1FHpp6Sg/oMU3t1rY=
-github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230419161616-314864c10c43/go.mod h1:y2RqiYwBv07F5j3WSbVwVG4eDUoSviBczPRrm2C4Nzk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230419161912-a84962c82b68 h1:Z3trtkgYjZwmQFNRan4CDtFGupLD+lZ89YDAtGdbVbI=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230419161912-a84962c82b68/go.mod h1:qnDzgKeBXVLRA3tU9Cc7Bu4MNdrR00nRZ8ylu3EOPdo=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230419161912-a84962c82b68 h1:xaOxLSb8YyOc31Ip/kdvItqsQm59HNhtK0ddFfzPCFU=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20230419161912-a84962c82b68/go.mod h1:jd/zQ+MVSLcsuE2nHkvuCjYcXAIwTQXZZGTjwmQYzNE=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.10.7 h1:p7ZhMD+KsSRozJr34udlUrhboJwWAgCg34+/ZZNvZZw=
 github.com/lib/pq v1.10.7/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=

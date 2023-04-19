@@ -341,8 +341,8 @@ github.com/kr/text v0.0.0-20160504234017-7cafcd837844/go.mod h1:sjUstKUATFIcff4q
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230419161616-314864c10c43 h1:HGeRNGBuYmTMzrVIAiQcGChmnKUpRF8HAiwoge7Daoo=
-github.com/kyma-incubator/compass/components/director v0.0.0-20230419161616-314864c10c43/go.mod h1:JqsMXrMPgHi/hTCkLJeUiN431MmJrkuAP+YaLRSwtfA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230419161912-a84962c82b68 h1:Z3trtkgYjZwmQFNRan4CDtFGupLD+lZ89YDAtGdbVbI=
+github.com/kyma-incubator/compass/components/director v0.0.0-20230419161912-a84962c82b68/go.mod h1:qnDzgKeBXVLRA3tU9Cc7Bu4MNdrR00nRZ8ylu3EOPdo=
 github.com/lib/pq v1.10.7 h1:p7ZhMD+KsSRozJr34udlUrhboJwWAgCg34+/ZZNvZZw=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225 h1:guHWmqIKr4G+gQ4uYU5vcZjsUhhklRA2uOcGVfcfqis=
