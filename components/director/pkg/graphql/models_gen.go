@@ -733,9 +733,10 @@ type RuntimeRegisterInput struct {
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels          Labels                  `json:"labels"`
-	Webhooks        []*WebhookInput         `json:"webhooks"`
-	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
+	Labels               Labels                  `json:"labels"`
+	Webhooks             []*WebhookInput         `json:"webhooks"`
+	StatusCondition      *RuntimeStatusCondition `json:"statusCondition"`
+	ApplicationNamespace *string                 `json:"applicationNamespace"`
 }
 
 type RuntimeStatus struct {
@@ -759,8 +760,9 @@ type RuntimeUpdateInput struct {
 	// **Validation:**  max=2000
 	Description *string `json:"description"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels          Labels                  `json:"labels"`
-	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
+	Labels               Labels                  `json:"labels"`
+	StatusCondition      *RuntimeStatusCondition `json:"statusCondition"`
+	ApplicationNamespace *string                 `json:"applicationNamespace"`
 }
 
 type SystemAuthUpdateInput struct {

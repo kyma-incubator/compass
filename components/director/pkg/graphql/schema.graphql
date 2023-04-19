@@ -793,6 +793,7 @@ input RuntimeRegisterInput {
 	labels: Labels
 	webhooks: [WebhookInput!]
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input RuntimeUpdateInput {
@@ -809,6 +810,7 @@ input RuntimeUpdateInput {
 	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
+	applicationNamespace: String
 }
 
 input SystemAuthUpdateInput {
@@ -1362,6 +1364,7 @@ type Runtime {
 	eventingConfiguration: RuntimeEventingConfiguration
 	runtimeContext(id: ID!): RuntimeContext
 	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage
+	applicationNamespace: String
 }
 
 type RuntimeContext {

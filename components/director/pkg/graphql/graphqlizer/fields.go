@@ -538,6 +538,7 @@ func (fp *GqlFieldsProvider) ForRuntime(ctx ...FieldCtx) string {
 		id
 		name
 		description
+		applicationNamespace
 		labels 
 		status {condition timestamp}
 		metadata { creationTimestamp }
